@@ -60,13 +60,13 @@ def calc_cruise_accel_limits(v_ego, following, accelMode):
   return np.vstack([a_cruise_min, a_cruise_max])
 
 
-def limit_accel_in_turns(self, v_ego, angle_steers, a_target, CP):
+def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
   This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
   this should avoid accelerating when losing the target in turns
   """
   
-  if int(self.kegman.conf['slowOnCurves']):
+  if int(kegman.conf['slowOnCurves']):
     a_total_max = interp(v_ego, _A_TOTAL_MAX_BP_SOC, _A_TOTAL_MAX_V_SOC)
   else
     a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
