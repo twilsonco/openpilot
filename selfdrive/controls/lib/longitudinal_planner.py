@@ -68,7 +68,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   
   if int(kegman.conf['slowOnCurves']):
     a_total_max = interp(v_ego, _A_TOTAL_MAX_BP_SOC, _A_TOTAL_MAX_V_SOC)
-  else
+  else:
     a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
   
   a_y = v_ego**2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
