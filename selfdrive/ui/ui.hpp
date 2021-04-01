@@ -101,6 +101,7 @@ typedef struct UIScene {
   bool world_objects_visible;
 
   bool is_rhd;
+  bool end_to_end;
   bool frontview;
 
   int lead_status;

@@ -5,6 +5,12 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <assert.h>
+#include <math.h>
+#include <poll.h>
+#include <sys/mman.h>
+#include "json11.hpp"
+#include <fstream>
+#include <algorithm>
 
 #include "common/util.h"
 #include "common/swaglog.h"
@@ -19,6 +25,34 @@ int write_param_float(float param, const char* param_name, bool persistent_param
   return Params(persistent_param).write_db_value(param_name, s, size < sizeof(s) ? size : sizeof(s));
 }
 
+void sa_init(UIState *s, bool full_init) {
+  if (full_init) {
+    s->pm = new PubMaster({"laneSpeedButton", "dynamicFollowButton", "modelLongButton"});
+  }
+
+  s->ui_debug = false;  // change to true while debugging
+  s->scene.mlButtonEnabled = false;  // state isn't saved yet
+
+  std::string dynamic_follow = util::read_file("/data/community/params/dynamic_follow");
+  if (dynamic_follow != "") {
+    dynamic_follow = dynamic_follow.substr(1, dynamic_follow.find_last_of('"') - 1);
+    std::cout << "set dfButtonStatus to " << dynamic_follow << std::endl;
+    s->scene.dfButtonStatus = DF_TO_IDX[dynamic_follow];
+  }
+  std::string model_laneless = util::read_file("/data/community/params/model_laneless");
+  if (model_laneless != "") {
+    model_laneless.erase(std::remove(model_laneless.begin(), model_laneless.end(), '\n'), model_laneless.end());  // strips whitespace and newline
+    model_laneless.erase(std::remove(model_laneless.begin(), model_laneless.end(), ' '), model_laneless.end());
+    s->scene.end_to_end = model_laneless == "true";
+    std::cout << "model_laneless is " << s->scene.end_to_end << std::endl;
+  }
+//  std::string lane_speed_alerts = util::read_file("/data/community/params/lane_speed_alerts");
+//  if (lane_speed_alerts != "") {
+//    lane_speed_alerts = lane_speed_alerts.substr(1, lane_speed_alerts.find_last_of('"') - 1);
+//    std::cout << "Set lsButtonStatus to " << lane_speed_alerts << std::endl;
+//    s->scene.lsButtonStatus = DF_TO_IDX[lane_speed_alerts];
+//  }
+}
 
 static void ui_init_vision(UIState *s) {
   // Invisible until we receive a calibration message.
