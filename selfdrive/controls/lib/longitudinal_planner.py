@@ -13,7 +13,9 @@ from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.longcontrol import LongCtrlState
 from selfdrive.controls.lib.lead_mpc import LeadMpc
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
+from selfdrive.controls.lib.limits_long_mpc import LimitsLongitudinalMpc
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
+from selfdrive.controls.lib.vision_turn_controller import VisionTurnController
 from selfdrive.swaglog import cloudlog
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
@@ -51,6 +53,7 @@ class Planner():
     self.mpcs['lead0'] = LeadMpc(0)
     self.mpcs['lead1'] = LeadMpc(1)
     self.mpcs['cruise'] = LongitudinalMpc()
+    self.mpcs['turn'] = LimitsLongitudinalMpc()
 
     self.fcw = False
     self.fcw_checker = FCWChecker()
@@ -65,6 +68,7 @@ class Planner():
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
 
+    self.vision_turn_controller = VisionTurnController(CP)
 
   def update(self, sm, CP):
     cur_time = sec_since_boot()
@@ -90,22 +94,31 @@ class Planner():
     self.v_desired = self.alpha * self.v_desired + (1 - self.alpha) * v_ego
     self.v_desired = max(0.0, self.v_desired)
 
+    # Get acceleration and active solutions for custom long mpcs.
+    a_mpc, active_mpc = self.mpc_solutions(enabled, self.v_desired, self.a_desired, v_cruise, sm)
+
     accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     if force_slow_decel:
       # if required so, force a smooth deceleration
       accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
       accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
+
     # clip limits, cannot init MPC outside of bounds
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired)
     self.mpcs['cruise'].set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
 
+    # ensure lower accel limit (for braking) is lower than target acc for custom controllers.
+    for key in ['turn']:
+      accel_limits = [min(accel_limits_turns[0], a_mpc[key]), accel_limits_turns[1]]
+      self.mpcs[key].set_accel_limits(accel_limits[0], accel_limits[1])
+
     next_a = np.inf
     for key in self.mpcs:
       self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
-      self.mpcs[key].update(sm['carState'], sm['radarState'], v_cruise)
-      if self.mpcs[key].status and self.mpcs[key].a_solution[5] < next_a:
+      self.mpcs[key].update(sm['carState'], sm['radarState'], v_cruise, a_mpc[key], active_mpc[key])
+      if self.mpcs[key].status and active_mpc[key] and self.mpcs[key].a_solution[5] < next_a:
         self.longitudinalPlanSource = key
         self.v_desired_trajectory = self.mpcs[key].v_solution[:CONTROL_N]
         self.a_desired_trajectory = self.mpcs[key].a_solution[:CONTROL_N]
@@ -147,4 +160,27 @@ class Planner():
     longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
     longitudinalPlan.fcw = self.fcw
 
+    longitudinalPlan.visionTurnControllerState = self.vision_turn_controller.state
+    longitudinalPlan.visionTurnSpeed = float(self.vision_turn_controller.v_turn)
+
     pm.send('longitudinalPlan', plan_send)
+
+  def mpc_solutions(self, enabled, v_ego, a_ego, v_cruise, sm):
+    # Update controllers
+    self.vision_turn_controller.update(enabled, v_ego, a_ego, v_cruise, sm)
+
+    a_sol = {
+      'cruise': a_ego,  # Irrelevant
+      'lead0': a_ego,   # Irrelevant
+      'lead1': a_ego,   # Irrelevant
+      'turn': self.vision_turn_controller.a_target,
+    }
+
+    active_sol = {
+      'cruise': True,  # Irrelevant
+      'lead0': True,   # Irrelevant
+      'lead1': True,   # Irrelevant
+      'turn': self.vision_turn_controller.is_active,
+    }
+
+    return a_sol, active_sol
