@@ -8,7 +8,7 @@ from selfdrive.controls.lib.drive_helpers import LON_MPC_N
 from selfdrive.modeld.constants import T_IDXS
 
 
-class LongitudinalMpc():
+class LimitsLongitudinalMpc():
   def __init__(self):
     self.reset_mpc()
     self.last_cloudlog_t = 0.0
@@ -17,10 +17,9 @@ class LongitudinalMpc():
     self.min_a = -1.2
     self.max_a = 1.2
 
-
   def reset_mpc(self):
     self.libmpc = libmpc_py.libmpc
-    self.libmpc.init(0.0, 1.0, 0.0, 50.0, 10000.0)
+    self.libmpc.init(0.0, 10.0, 0.0, 50.0, 10000.0)
 
     self.mpc_solution = libmpc_py.ffi.new("log_t *")
     self.cur_state = libmpc_py.ffi.new("state_t *")
@@ -31,7 +30,7 @@ class LongitudinalMpc():
 
     self.v_solution = [0.0 for i in range(len(T_IDXS))]
     self.a_solution = [0.0 for i in range(len(T_IDXS))]
-    self.j_solution = [0.0 for i in range(len(T_IDXS)-1)]
+    self.j_solution = [0.0 for i in range(len(T_IDXS) - 1)]
 
   def set_accel_limits(self, min_a, max_a):
     self.min_a = min_a
@@ -45,14 +44,21 @@ class LongitudinalMpc():
     self.cur_state[0].v_ego = v_safe
     self.cur_state[0].a_ego = a_safe
 
-  def update(self, carstate, radarstate, v_cruise, a_target, active):
-    v_cruise_clipped = np.clip(v_cruise, self.cur_state[0].v_ego - 10., self.cur_state[0].v_ego + 10.0)
-    poss = v_cruise_clipped * np.array(T_IDXS[:LON_MPC_N+1])
-    speeds = v_cruise_clipped * np.ones(LON_MPC_N+1)
-    accels = np.zeros(LON_MPC_N+1)
-    self.update_with_xva(poss, speeds, accels)
+  def update(self, carstate, model, v_cruise, a_target, active):
+    t = np.array(T_IDXS[:LON_MPC_N + 1])
+    v_ego = self.cur_state[0].v_ego
 
-  def update_with_xva(self, poss, speeds, accels):
+    # If active, provide targets for a constant acceleration following a_target
+    # otherwise just target cruising at current speed
+    if active:
+      poss = v_ego * t + a_target * t**2 / 2.
+      speeds = v_ego + a_target * t
+      accels = a_target + np.ones(LON_MPC_N + 1)
+    else:
+      poss = v_ego * t
+      speeds = v_ego * np.ones(LON_MPC_N + 1)
+      accels = np.zeros(LON_MPC_N + 1)
+
     # Calculate mpc
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                         list(poss), list(speeds), list(accels),

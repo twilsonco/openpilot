@@ -208,7 +208,25 @@ static void ui_draw_vision_speed(UIState *s) {
 }
 
 static void ui_draw_vision_event(UIState *s) {
-  if (s->scene.engageable) {
+  auto longitudinal_plan = (*s->sm)["longitudinalPlan"].getLongitudinalPlan();
+  auto visionTurnControllerState = longitudinal_plan.getVisionTurnControllerState();
+  if (visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::DISABLED && s->scene.engageable) {
+    // draw a rectangle with colors indicating the state with the value of the acceleration inside.
+    const int size = 184;
+    const Rect rect = {s->fb_w - size - bdr_s, int(bdr_s * 1.5), size, size};
+    ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 30.);
+
+    auto source = longitudinal_plan.getLongitudinalPlanSource();
+    const int alpha = source == cereal::LongitudinalPlan::LongitudinalPlanSource::TURN ? 255 : 100;
+    const QColor &color = tcs_colors[int(visionTurnControllerState)];
+    NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), alpha);
+    ui_draw_rect(s->vg, rect, nvg_color, 10, 20.);
+    
+    const float vision_turn_speed = longitudinal_plan.getVisionTurnSpeed() * (s->scene.is_metric ? 3.6 : 2.2369363);
+    std::string acc_str = std::to_string((int)std::nearbyint(vision_turn_speed));
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+    ui_draw_text(s, rect.centerX(), rect.centerY(), acc_str.c_str(), 56, COLOR_WHITE_ALPHA(alpha), "sans-bold");
+  } else if (s->scene.engageable) {
     // draw steering wheel
     const int radius = 96;
     const int center_x = s->fb_w - radius - bdr_s * 2;
