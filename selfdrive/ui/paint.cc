@@ -211,7 +211,9 @@ static void ui_draw_vision_speed(UIState *s) {
 static void ui_draw_vision_event(UIState *s) {
   auto longitudinal_plan = (*s->sm)["longitudinalPlan"].getLongitudinalPlan();
   auto visionTurnControllerState = longitudinal_plan.getVisionTurnControllerState();
-  if (visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::DISABLED && s->scene.engageable) {
+  if (s->scene.show_debug_ui && 
+      visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::DISABLED && 
+      s->scene.engageable) {
     // draw a rectangle with colors indicating the state with the value of the acceleration inside.
     const int size = 184;
     const Rect rect = {s->fb_w - size - bdr_s, int(bdr_s * 1.5), size, size};

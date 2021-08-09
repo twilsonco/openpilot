@@ -84,6 +84,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Use vision path predictions to estimate the appropiate speed to drive through turns ahead.",
                                   "../assets/offroad/icon_road.png",
                                   this));
+  toggles.append(new ParamControl("ShowDebugUI",
+                                  "Show debug UI elements",
+                                  "Show UI elements that aid debugging.",
+                                  "../assets/offroad/icon_calibration.png",
+                                  this));
 
 #ifdef ENABLE_MAPS
   toggles.append(new ParamControl("NavSettingTime24h",
