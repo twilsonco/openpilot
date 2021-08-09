@@ -17,6 +17,7 @@ from selfdrive.controls.lib.limits_long_mpc import LimitsLongitudinalMpc
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
 from selfdrive.controls.lib.vision_turn_controller import VisionTurnController
 from selfdrive.controls.lib.speed_limit_controller import SpeedLimitController, SpeedLimitResolver
+from selfdrive.controls.lib.turn_speed_controller import TurnSpeedController
 from selfdrive.controls.lib.events import Events
 from selfdrive.swaglog import cloudlog
 
@@ -57,6 +58,7 @@ class Planner():
     self.mpcs['cruise'] = LongitudinalMpc()
     self.mpcs['turn'] = LimitsLongitudinalMpc()
     self.mpcs['limit'] = LimitsLongitudinalMpc()
+    self.mpcs['turnlimit'] = LimitsLongitudinalMpc()
 
     self.fcw = False
     self.fcw_checker = FCWChecker()
@@ -74,6 +76,7 @@ class Planner():
     self.vision_turn_controller = VisionTurnController(CP)
     self.speed_limit_controller = SpeedLimitController()
     self.events = Events()
+    self.turn_speed_controller = TurnSpeedController()
 
   def update(self, sm, CP):
     cur_time = sec_since_boot()
@@ -115,7 +118,7 @@ class Planner():
     self.mpcs['cruise'].set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
 
     # ensure lower accel limit (for braking) is lower than target acc for custom controllers.
-    for key in ['turn', 'limit']:
+    for key in ['turn', 'limit', 'turnlimit']:
       accel_limits = [min(accel_limits_turns[0], a_mpc[key]), accel_limits_turns[1]]
       self.mpcs[key].set_accel_limits(accel_limits[0], accel_limits[1])
 
@@ -176,6 +179,11 @@ class Planner():
     longitudinalPlan.isMapSpeedLimit = bool(self.speed_limit_controller.source == SpeedLimitResolver.Source.map_data)
     longitudinalPlan.eventsDEPRECATED = self.events.to_msg()
 
+    longitudinalPlan.turnSpeedControlState = self.turn_speed_controller.state
+    longitudinalPlan.turnSpeed = float(self.turn_speed_controller.speed_limit)
+    longitudinalPlan.distToTurn = float(self.turn_speed_controller.distance)
+    longitudinalPlan.turnSign = int(self.turn_speed_controller.turn_sign)
+
     pm.send('longitudinalPlan', plan_send)
 
   def mpc_solutions(self, enabled, v_ego, a_ego, v_cruise, sm):
@@ -183,6 +191,7 @@ class Planner():
     self.vision_turn_controller.update(enabled, v_ego, a_ego, v_cruise, sm)
     self.events = Events()
     self.speed_limit_controller.update(enabled, v_ego, a_ego, sm, v_cruise, self.events)
+    self.turn_speed_controller.update(enabled, v_ego, a_ego, sm)
 
     a_sol = {
       'cruise': a_ego,  # Irrelevant
@@ -190,6 +199,7 @@ class Planner():
       'lead1': a_ego,   # Irrelevant
       'turn': self.vision_turn_controller.a_target,
       'limit': self.speed_limit_controller.a_target,
+      'turnlimit': self.turn_speed_controller.a_target,
     }
 
     active_sol = {
@@ -198,6 +208,7 @@ class Planner():
       'lead1': True,   # Irrelevant
       'turn': self.vision_turn_controller.is_active,
       'limit': self.speed_limit_controller.is_active,
+      'turnlimit': self.turn_speed_controller.is_active,
     }
 
     return a_sol, active_sol
