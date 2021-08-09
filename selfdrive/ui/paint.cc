@@ -30,6 +30,36 @@ static void ui_draw_text(const UIState *s, float x, float y, const char *string,
   nvgText(s->vg, x, y, string, NULL);
 }
 
+static void ui_draw_circle(UIState *s, float x, float y, float size, NVGcolor color) {
+  nvgBeginPath(s->vg);
+  nvgCircle(s->vg, x, y, size);
+  nvgFillColor(s->vg, color);
+  nvgFill(s->vg);
+}
+
+static void ui_draw_speed_sign(UIState *s, float x, float y, int size, float speed, const char *subtext, 
+                               float subtext_size, const char *font_name, bool is_map_sourced, bool is_active) {
+  NVGcolor ring_color = is_active ? COLOR_RED : COLOR_BLACK_ALPHA(.2f * 255);
+  NVGcolor inner_color = is_active ? COLOR_WHITE : COLOR_WHITE_ALPHA(.35f * 255);
+  NVGcolor text_color = is_active ? COLOR_BLACK : COLOR_BLACK_ALPHA(.3f * 255);
+
+  ui_draw_circle(s, x, y, float(size), ring_color);
+  ui_draw_circle(s, x, y, float(size) * 0.8, inner_color);
+
+  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+
+  const std::string speedlimit_str = std::to_string((int)std::nearbyint(speed));
+  ui_draw_text(s, x, y, speedlimit_str.c_str(), 120, text_color, font_name);
+  ui_draw_text(s, x, y + 55, subtext, subtext_size, text_color, font_name);
+
+  if (is_map_sourced) {
+    const int img_size = 35;
+    const int img_y = int(y - 55);
+    ui_draw_image(s, {int(x - (img_size / 2)), img_y - (img_size / 2), img_size, img_size}, "map_source_icon", 
+                  is_active ? 1. : .3);
+  }
+}
+
 static void draw_chevron(UIState *s, float x, float y, float sz, NVGcolor fillColor, NVGcolor glowColor) {
   // glow
   float g_xo = sz/5;
@@ -200,6 +230,45 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   }
 }
 
+static void ui_draw_vision_speedlimit(UIState *s) {
+  auto longitudinal_plan = (*s->sm)["longitudinalPlan"].getLongitudinalPlan();
+  const float speedLimit = longitudinal_plan.getSpeedLimit();
+  const float speedLimitOffset = longitudinal_plan.getSpeedLimitOffset();
+
+  if (speedLimit > 0.0 && s->scene.engageable) {
+    const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
+    const Rect speed_sign_rect = {maxspeed_rect.right() + bdr_s, maxspeed_rect.y, 2 * speed_sgn_r, 2 * speed_sgn_r};
+    const float speed = speedLimit * (s->scene.is_metric ? 3.6 : 2.2369362921);
+    const float speed_offset = speedLimitOffset * (s->scene.is_metric ? 3.6 : 2.2369362921);
+
+    auto speedLimitControlState = longitudinal_plan.getSpeedLimitControlState();
+    const bool force_active = s->scene.speed_limit_control_enabled && 
+                              seconds_since_boot() < s->scene.last_speed_limit_sign_tap + 2.0;
+    const bool inactive = !force_active && (!s->scene.speed_limit_control_enabled || 
+                          speedLimitControlState == cereal::LongitudinalPlan::SpeedLimitControlState::INACTIVE);
+    const bool temp_inactive = !force_active && (s->scene.speed_limit_control_enabled && 
+                               speedLimitControlState == cereal::LongitudinalPlan::SpeedLimitControlState::TEMP_INACTIVE);
+
+    const int distToSpeedLimit = int(longitudinal_plan.getDistToSpeedLimit() * 
+                                     (s->scene.is_metric ? 1.0 : 3.28084) / 10.0) * 10;
+    const bool is_map_sourced = longitudinal_plan.getIsMapSpeedLimit();
+    const std::string distance_str = std::to_string(distToSpeedLimit) + (s->scene.is_metric ? "m" : "f");
+    const std::string offset_str = speed_offset > 0.0 ? "+" + std::to_string((int)std::nearbyint(speed_offset)) : "";
+    const std::string inactive_str = temp_inactive ? "TEMP" : "";
+    const std::string substring = inactive || temp_inactive ? inactive_str : 
+                                                              distToSpeedLimit > 0 ? distance_str : offset_str;
+    const float substring_size = inactive || temp_inactive || distToSpeedLimit > 0 ? 30.0 : 50.0;
+
+    ui_draw_speed_sign(s, speed_sign_rect.centerX(), speed_sign_rect.centerY(), speed_sgn_r, speed, substring.c_str(), 
+                       substring_size, "sans-bold", is_map_sourced, !inactive && !temp_inactive);
+
+    s->scene.speed_limit_sign_touch_rect = Rect{speed_sign_rect.x - speed_sgn_touch_pad, 
+                                                speed_sign_rect.y - speed_sgn_touch_pad,
+                                                speed_sign_rect.w + 2 * speed_sgn_touch_pad, 
+                                                speed_sign_rect.h + 2 * speed_sgn_touch_pad};
+  }
+}
+
 static void ui_draw_vision_speed(UIState *s) {
   const float speed = std::max(0.0, (*s->sm)["carState"].getCarState().getVEgo() * (s->scene.is_metric ? 3.6 : 2.2369363));
   const std::string speed_str = std::to_string((int)std::nearbyint(speed));
@@ -263,6 +332,7 @@ static void ui_draw_vision_header(UIState *s) {
                                         nvgRGBAf(0, 0, 0, 0.45), nvgRGBAf(0, 0, 0, 0));
   ui_fill_rect(s->vg, {0, 0, s->fb_w , header_h}, gradient);
   ui_draw_vision_maxspeed(s);
+  ui_draw_vision_speedlimit(s);
   ui_draw_vision_speed(s);
   ui_draw_vision_event(s);
 }
@@ -391,6 +461,7 @@ void ui_nvg_init(UIState *s) {
     {"wheel", "../assets/img_chffr_wheel.png"},
     {"driver_face", "../assets/img_driver_face.png"},
     {"hands_on_wheel", "../assets/img_hands_on_wheel.png"},
+    {"map_source_icon", "../assets/img_world_icon.png"},
   };
   for (auto [name, file] : images) {
     s->images[name] = nvgCreateImage(s->vg, file, 1);
