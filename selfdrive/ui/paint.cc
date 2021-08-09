@@ -60,6 +60,59 @@ static void ui_draw_speed_sign(UIState *s, float x, float y, int size, float spe
   }
 }
 
+static void ui_draw_turn_speed_sign(UIState *s, float x, float y, int width, float speed, int curv_sign, 
+                                    const char *subtext, const char *font_name, bool is_active) {
+  const float stroke_w = 15.0;
+  NVGcolor border_color = is_active ? COLOR_RED : COLOR_BLACK_ALPHA(.2f * 255);
+  NVGcolor inner_color = is_active ? COLOR_WHITE : COLOR_WHITE_ALPHA(.35f * 255);
+  NVGcolor text_color = is_active ? COLOR_BLACK : COLOR_BLACK_ALPHA(.3f * 255);
+
+  const float cS = stroke_w / 2.0 + 4.5;  // half width of the stroke on the corners of the triangle
+  const float R = width / 2.0 - stroke_w / 2.0;
+  const float A = 0.73205;
+  const float h2 = 2.0 * R / (1.0 + A);
+  const float h1 = A * h2;
+  const float L = 4.0 * R / sqrt(3.0);
+
+  // Draw the internal triangle, compensate for stroke width. Needed to improve rendering when in inactive 
+  // state due to stroke transparency being different from inner transparency.
+  nvgBeginPath(s->vg);
+  nvgMoveTo(s->vg, x, y - R + cS);
+  nvgLineTo(s->vg, x - L / 2.0 + cS, y + h1 + h2 - R - stroke_w / 2.0);
+  nvgLineTo(s->vg, x + L / 2.0 - cS, y + h1 + h2 - R - stroke_w / 2.0);
+  nvgClosePath(s->vg);
+
+  nvgFillColor(s->vg, inner_color);
+  nvgFill(s->vg);
+  
+  // Draw the stroke
+  nvgLineJoin(s->vg, NVG_ROUND);
+  nvgStrokeWidth(s->vg, stroke_w);
+  nvgStrokeColor(s->vg, border_color);
+
+  nvgBeginPath(s->vg);
+  nvgMoveTo(s->vg, x, y - R);
+  nvgLineTo(s->vg, x - L / 2.0, y + h1 + h2 - R);
+  nvgLineTo(s->vg, x + L / 2.0, y + h1 + h2 - R);
+  nvgClosePath(s->vg);
+
+  nvgStroke(s->vg);
+
+  // Draw the turn sign
+  if (curv_sign != 0) {
+    const int img_size = 35;
+    const int img_y = int(y - R + stroke_w + 30);
+    ui_draw_image(s, {int(x - (img_size / 2)), img_y, img_size, img_size}, 
+                  curv_sign > 0 ? "turn_left_icon" : "turn_right_icon", is_active ? 1. : .3);
+  }
+
+  // Draw the texts.
+  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+  const std::string speedlimit_str = std::to_string((int)std::nearbyint(speed));
+  ui_draw_text(s, x, y + 25, speedlimit_str.c_str(), 90., text_color, font_name);
+  ui_draw_text(s, x, y + 65, subtext, 30., text_color, font_name);
+}
+
 static void draw_chevron(UIState *s, float x, float y, float sz, NVGcolor fillColor, NVGcolor glowColor) {
   // glow
   float g_xo = sz/5;
@@ -269,6 +322,31 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   }
 }
 
+static void ui_draw_vision_turnspeed(UIState *s) {
+  auto longitudinal_plan = (*s->sm)["longitudinalPlan"].getLongitudinalPlan();
+  const float turnSpeed = longitudinal_plan.getTurnSpeed();
+  const float vEgo = (*s->sm)["carState"].getCarState().getVEgo();
+  const bool show = turnSpeed > 0.0 && (turnSpeed < vEgo || s->scene.show_debug_ui);
+
+  if (show) {
+    const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
+    const Rect speed_sign_rect = {maxspeed_rect.right() + bdr_s + 2 * speed_sgn_r, maxspeed_rect.y, 
+                                  2 * speed_sgn_r, maxspeed_rect.h};
+    const float speed = turnSpeed * (s->scene.is_metric ? 3.6 : 2.2369362921);
+
+    auto turnSpeedControlState = longitudinal_plan.getTurnSpeedControlState();
+    const bool is_active = turnSpeedControlState > cereal::LongitudinalPlan::SpeedLimitControlState::TEMP_INACTIVE;
+
+    const int curveSign = longitudinal_plan.getTurnSign();
+    const int distToTurn = int(longitudinal_plan.getDistToTurn() * 
+                               (s->scene.is_metric ? 1.0 : 3.28084) / 10.0) * 10;
+    const std::string distance_str = std::to_string(distToTurn) + (s->scene.is_metric ? "m" : "f");
+
+    ui_draw_turn_speed_sign(s, speed_sign_rect.centerX(), speed_sign_rect.centerY(), speed_sign_rect.w, speed, 
+                            curveSign, distToTurn > 0 ? distance_str.c_str() : "", "sans-bold", is_active);
+  }
+}
+
 static void ui_draw_vision_speed(UIState *s) {
   const float speed = std::max(0.0, (*s->sm)["carState"].getCarState().getVEgo() * (s->scene.is_metric ? 3.6 : 2.2369363));
   const std::string speed_str = std::to_string((int)std::nearbyint(speed));
@@ -334,6 +412,7 @@ static void ui_draw_vision_header(UIState *s) {
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speedlimit(s);
   ui_draw_vision_speed(s);
+  ui_draw_vision_turnspeed(s);
   ui_draw_vision_event(s);
 }
 
@@ -461,6 +540,8 @@ void ui_nvg_init(UIState *s) {
     {"wheel", "../assets/img_chffr_wheel.png"},
     {"driver_face", "../assets/img_driver_face.png"},
     {"hands_on_wheel", "../assets/img_hands_on_wheel.png"},
+    {"turn_left_icon", "../assets/img_turn_left_icon.png"},
+    {"turn_right_icon", "../assets/img_turn_right_icon.png"},
     {"map_source_icon", "../assets/img_world_icon.png"},
   };
   for (auto [name, file] : images) {
