@@ -73,6 +73,9 @@ const int bdr_s = 30;
 const int header_h = 420;
 const int footer_h = 280;
 
+const int speed_sgn_r = 96;
+const int speed_sgn_touch_pad = 50;
+
 const int UI_FREQ = 20;   // Hz
 
 typedef enum UIStatus {
@@ -113,6 +116,12 @@ typedef struct UIScene {
 
   // Debug UI
   bool show_debug_ui;
+
+  // Speed limit control
+  bool speed_limit_control_enabled;
+  bool speed_limit_perc_offset;
+  Rect speed_limit_sign_touch_rect;
+  double last_speed_limit_sign_tap;
 
   cereal::PandaState::PandaType pandaType;
 

@@ -67,8 +67,22 @@ void HomeWindow::showDriverView(bool show) {
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
+  // Toggle speed limit control enabled
+  Rect touch_rect = QUIState::ui_state.scene.speed_limit_sign_touch_rect;
+  if (sidebar->isVisible()) {
+    touch_rect.x += sidebar->width();
+  }
+  SubMaster &sm = *(QUIState::ui_state.sm);
+  if (sm["longitudinalPlan"].getLongitudinalPlan().getSpeedLimit() > 0.0 &&
+      touch_rect.ptInRect(e->x(), e->y())) {
+    // If touching the speed limit sign area when visible
+    QUIState::ui_state.scene.last_speed_limit_sign_tap = seconds_since_boot();
+    QUIState::ui_state.scene.speed_limit_control_enabled = !QUIState::ui_state.scene.speed_limit_control_enabled;
+    Params().putBool("SpeedLimitControl", QUIState::ui_state.scene.speed_limit_control_enabled);
+  }
+
   // Handle sidebar collapsing
-  if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {
+  else if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {
 
     // TODO: Handle this without exposing pointer to map widget
     // Hide map first if visible, then hide sidebar

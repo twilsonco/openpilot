@@ -561,6 +561,22 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.PERMANENT: NormalPermanentAlert("Sensor Malfunction", "Contact Support"),
   },
 
+  EventName.speedLimitActive: {
+    ET.WARNING: Alert(
+      "Cruise set to speed limit",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimePrompt, 1., 0., 2.),
+  },
+
+  EventName.speedLimitValueChange: {
+    ET.WARNING: Alert(
+      "Adjusting speed to match new speed limit",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimePrompt, 1., 0., 2.),
+  },
+
   # ********** events that affect controls state transitions **********
 
   EventName.pcmEnable: {
