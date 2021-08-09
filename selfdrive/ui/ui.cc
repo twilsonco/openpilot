@@ -260,6 +260,7 @@ static void update_status(UIState *s) {
       } else {
         s->vipc_client = s->vipc_client_rear;
       }
+      s->scene.show_debug_ui = Params().getBool("ShowDebugUI");
     } else {
       s->vipc_client->connected = false;
     }
