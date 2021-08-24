@@ -144,7 +144,6 @@ class WayRelation():
     self.way = way
     self.reset_location_variables()
     self.direction = DIRECTION.NONE
-    self.distance_to_node_ahead = 0.
     self._speed_limit = None
     self._one_way = way.tags.get("oneway")
     self.name = way.tags.get('name')
@@ -188,9 +187,11 @@ class WayRelation():
     return False
 
   def reset_location_variables(self):
+    self.distance_to_node_ahead = 0.
     self.location_rad = None
     self.bearing_rad = None
     self.active = False
+    self.diverting = False
     self.ahead_idx = None
     self.behind_idx = None
     self._active_bearing_delta = None
@@ -255,9 +256,8 @@ class WayRelation():
     min_delta_idx = possible_idxs[min_h_possible_idx]
 
     # - If the distance to the road is greater than the accuracy + half the maximum road width estimate then we
-    # are most likely not on this way anymore.
-    if h_possible[min_h_possible_idx] > location_accuracy + self.lanes * _LANE_WIDTH / 2.:
-      return
+    # are most likely diverting from this route.
+    diverting = h_possible[min_h_possible_idx] > location_accuracy + self.lanes * _LANE_WIDTH / 2.
 
     # Populate location variables with result
     if is_ahead[min_delta_idx]:
@@ -271,8 +271,12 @@ class WayRelation():
 
     self._distance_to_way = h[min_delta_idx]
     self._active_bearing_delta = abs_sin_bw_delta_possible[min_h_possible_idx]
+    # TODO: The distance to node ahead currently represent the distance from the GPS fix location.
+    # It would be perhaps more accurate to use the distance on the projection over the direct line between
+    # the two nodes.
     self.distance_to_node_ahead = distances[self.ahead_idx]
     self.active = True
+    self.diverting = diverting
     self.location_rad = location_rad
     self.bearing_rad = bearing_rad
     self._speed_limit = None

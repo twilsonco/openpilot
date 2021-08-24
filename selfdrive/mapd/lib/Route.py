@@ -140,7 +140,7 @@ class Route():
       last_wr = way_relations[best_idx]
 
     # Build the node data from the ordered list of way relations
-    self._nodes_data = NodesData(self._ordered_way_relations)
+    self._nodes_data = NodesData(self._ordered_way_relations, wr_index)
 
     # Locate where we are in the route node list.
     self._locate()
@@ -162,7 +162,7 @@ class Route():
 
   def _locate(self):
     """Will resolve the index in the nodes_data list for the node ahead of the current location.
-    It updates as well the distance from the current location to the node ahead.
+       It updates as well the distance from the current location to the node ahead.
     """
     current = self.current_wr
     if current is None:
@@ -204,15 +204,24 @@ class Route():
       if not wr.active:
         continue
 
-      if wr.direction == active_direction:
-        # We have now the current wr. Repopulate from here till the end and locate
-        self._ordered_way_relations = self._ordered_way_relations[idx:]
-        self._reset()
-        self._locate()
-        return
+      if wr.direction != active_direction:
+        # Driving direction on the route has changed. stop.
+        break
 
-      # Driving direction on the route has changed. stop.
-      break
+      # We have now the current wr. Repopulate from here till the end and locate
+      self._ordered_way_relations = self._ordered_way_relations[idx:]
+      self._reset()
+      self._locate()
+
+      # If the active way is diverting, check whether there are posibilities to divert from the route in the
+      # vecinity of the current location. If there are possibilities, then stop here to loose the route as we are
+      # most likely driving away. If there are no possibilites, then stick to the route as the diversion is probably
+      # just a matter of GPS accuracy. (It can happen after driving under a bridge)
+      if wr.diverting and len(self._nodes_data.possible_divertions(self._ahead_idx, self._distance_to_node_ahead)) > 0:
+        break
+
+      # The current location in route is valid, return.
+      return
 
     # if we got here, there is no new active way relation or driving direction has changed. Reset.
     self._reset()
