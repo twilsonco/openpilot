@@ -2,12 +2,12 @@ import numpy as np
 from enum import Enum
 from .geo import DIRECTION, R, vectors
 
-from selfdrive.hardware import TICI
+from selfdrive.hardware import EON
 
-if TICI:
-  from scipy.interpolate import splev, splprep
-else:
+if EON:
   from opspline import splev, splprep
+else:
+  from scipy.interpolate import splev, splprep
 
 
 _TURN_CURVATURE_THRESHOLD = 0.002  # 1/mts. A curvature over this value will generate a speed limit section.
