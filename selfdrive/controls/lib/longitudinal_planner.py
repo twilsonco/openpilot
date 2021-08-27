@@ -56,9 +56,7 @@ class Planner():
     self.mpcs['lead0'] = LeadMpc(0)
     self.mpcs['lead1'] = LeadMpc(1)
     self.mpcs['cruise'] = LongitudinalMpc()
-    self.mpcs['turn'] = LimitsLongitudinalMpc()
-    self.mpcs['limit'] = LimitsLongitudinalMpc()
-    self.mpcs['turnlimit'] = LimitsLongitudinalMpc()
+    self.mpcs['custom'] = LimitsLongitudinalMpc()
 
     self.fcw = False
     self.fcw_checker = FCWChecker()
@@ -102,8 +100,8 @@ class Planner():
     self.v_desired = self.alpha * self.v_desired + (1 - self.alpha) * v_ego
     self.v_desired = max(0.0, self.v_desired)
 
-    # Get acceleration and active solutions for custom long mpcs.
-    a_mpc, active_mpc = self.mpc_solutions(enabled, self.v_desired, self.a_desired, v_cruise, sm)
+    # Get acceleration and active solutions for custom long mpc.
+    a_mpc, active_mpc, c_source = self.mpc_solutions(enabled, self.v_desired, self.a_desired, v_cruise, sm)
 
     accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
@@ -118,9 +116,8 @@ class Planner():
     self.mpcs['cruise'].set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
 
     # ensure lower accel limit (for braking) is lower than target acc for custom controllers.
-    for key in ['turn', 'limit', 'turnlimit']:
-      accel_limits = [min(accel_limits_turns[0], a_mpc[key]), accel_limits_turns[1]]
-      self.mpcs[key].set_accel_limits(accel_limits[0], accel_limits[1])
+    accel_limits = [min(accel_limits_turns[0], a_mpc['custom']), accel_limits_turns[1]]
+    self.mpcs['custom'].set_accel_limits(accel_limits[0], accel_limits[1])
 
     next_a = np.inf
     for key in self.mpcs:
@@ -128,7 +125,7 @@ class Planner():
       self.mpcs[key].update(sm['carState'], sm['radarState'], v_cruise, a_mpc[key], active_mpc[key])
       # picks slowest solution from accel in ~0.2 seconds
       if self.mpcs[key].status and active_mpc[key] and self.mpcs[key].a_solution[5] < next_a:
-        self.longitudinalPlanSource = key
+        self.longitudinalPlanSource = c_source if key == 'custom' else key
         self.v_desired_trajectory = self.mpcs[key].v_solution[:CONTROL_N]
         self.a_desired_trajectory = self.mpcs[key].a_solution[:CONTROL_N]
         self.j_desired_trajectory = self.mpcs[key].j_solution[:CONTROL_N]
@@ -193,22 +190,32 @@ class Planner():
     self.speed_limit_controller.update(enabled, v_ego, a_ego, sm, v_cruise, self.events)
     self.turn_speed_controller.update(enabled, v_ego, a_ego, sm)
 
+    # Pick solution with lowest acceleration target.
+    a_solutions = {None: float("inf")}
+
+    if self.vision_turn_controller.is_active:
+      a_solutions['turn'] = self.vision_turn_controller.a_target
+
+    if self.speed_limit_controller.is_active:
+      a_solutions['limit'] = self.speed_limit_controller.a_target
+
+    if self.turn_speed_controller.is_active:
+      a_solutions['turnlimit'] = self.turn_speed_controller.a_target
+
+    source = min(a_solutions, key=a_solutions.get)
+
     a_sol = {
       'cruise': a_ego,  # Irrelevant
       'lead0': a_ego,   # Irrelevant
       'lead1': a_ego,   # Irrelevant
-      'turn': self.vision_turn_controller.a_target,
-      'limit': self.speed_limit_controller.a_target,
-      'turnlimit': self.turn_speed_controller.a_target,
+      'custom': 0. if source is None else a_solutions[source],
     }
 
     active_sol = {
       'cruise': True,  # Irrelevant
       'lead0': True,   # Irrelevant
       'lead1': True,   # Irrelevant
-      'turn': self.vision_turn_controller.is_active,
-      'limit': self.speed_limit_controller.is_active,
-      'turnlimit': self.turn_speed_controller.is_active,
+      'custom': source is not None,
     }
 
-    return a_sol, active_sol
+    return a_sol, active_sol, source
