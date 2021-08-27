@@ -12,7 +12,7 @@ from selfdrive.modeld.constants import T_IDXS
 
 
 _PARAMS_UPDATE_PERIOD = 2.  # secs. Time between parameter updates.
-_TEMP_INACTIVE_GUARD_PERIOD = 0.5  # secs. Time to wait after activation before considering temp deactivation signal.
+_TEMP_INACTIVE_GUARD_PERIOD = 1.  # secs. Time to wait after activation before considering temp deactivation signal.
 
 # Lookup table for speed limit percent offset depending on speed.
 _LIMIT_PERC_OFFSET_V = [0.1, 0.05, 0.038]  # 55, 105, 135 km/h
@@ -194,11 +194,12 @@ class SpeedLimitController():
     self._params = Params()
     self._resolver = SpeedLimitResolver()
     self._last_params_update = 0.0
-    self._last_activation_time = 0.0
+    self._last_op_enabled_time = 0.0
     self._is_metric = self._params.get_bool("IsMetric")
     self._is_enabled = self._params.get_bool("SpeedLimitControl")
     self._offset_enabled = self._params.get_bool("SpeedLimitPercOffset")
     self._op_enabled = False
+    self._op_enabled_prev = False
     self._v_ego = 0.
     self._a_ego = 0.
     self._v_offset = 0.
@@ -232,13 +233,6 @@ class SpeedLimitController():
         # Reset previous speed limit to current value as to prevent going out of tempInactive in
         # a single cycle when the speed limit changes at the same time the user has temporarily deactivate it.
         self._speed_limit_prev = self._speed_limit
-
-      if self._state == SpeedLimitControlState.inactive:
-        # Track the time the controller becomes active to prevent going to tempInactive right away afeter
-        # activations since controlsd will change the cruise speed every time on activation and this will
-        # cause a temp inactive transition if the controller is updated before controlsd sets actual cruise
-        # speed.
-        self._last_activation_time = sec_since_boot()
 
     self._state = value
 
@@ -280,11 +274,19 @@ class SpeedLimitController():
     # Update current velocity offset (error)
     self._v_offset = self.speed_limit_offseted - self._v_ego
 
+    # Track the time op becomes active to prevent going to tempInactive right away after
+    # op enabling since controlsd will change the cruise speed every time on enabling and this will
+    # cause a temp inactive transition if the controller is updated before controlsd sets actual cruise
+    # speed.
+    if not self._op_enabled_prev and self._op_enabled:
+      self._last_op_enabled_time = sec_since_boot()
+
     # Update change tracking variables
     self._speed_limit_changed = self._speed_limit != self._speed_limit_prev
     self._v_cruise_setpoint_changed = self._v_cruise_setpoint != self._v_cruise_setpoint_prev
     self._speed_limit_prev = self._speed_limit
     self._v_cruise_setpoint_prev = self._v_cruise_setpoint
+    self._op_enabled_prev = self._op_enabled
 
   def _state_transition(self):
     self._state_prev = self._state
@@ -299,7 +301,7 @@ class SpeedLimitController():
     # Ignore if a minimum ammount of time has not passed since activation. This is to prevent temp inactivations
     # due to controlsd logic changing cruise setpoint when going active.
     if self._v_cruise_setpoint_changed and \
-       sec_since_boot() > (self._last_activation_time + _TEMP_INACTIVE_GUARD_PERIOD):
+       sec_since_boot() > (self._last_op_enabled_time + _TEMP_INACTIVE_GUARD_PERIOD):
       self.state = SpeedLimitControlState.tempInactive
       return
 
