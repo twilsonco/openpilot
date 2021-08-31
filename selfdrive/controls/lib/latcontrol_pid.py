@@ -34,7 +34,7 @@ class LatControlPID():
 
       # TODO: feedforward something based on lat_plan.rateSteers
       steer_feedforward = angle_steers_des_no_offset  # offset does not contribute to resistive torque
-      steer_feedforward *= CS.vEgo**2  # proportional to realigning tire momentum (~ lateral accel)
+      steer_feedforward *= CS.vEgo  # proportional to realigning tire momentum (~ lateral accel)
 
       deadzone = 0.0
 
