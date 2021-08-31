@@ -1,22 +1,19 @@
 from .geo import DIRECTION, R, vectors, bearing_to_points, distance_to_points
 from selfdrive.config import Conversions as CV
+from common.basedir import BASEDIR
 from datetime import datetime
 import numpy as np
 import re
+import json
 
 
 _WAY_BBOX_PADING = 80. / R  # 80 mts of pading to bounding box. (expressed in radians)
 _LANE_WIDTH = 3.7  # Lane width estimate. Used for detecting departures from way.
 
-_COUNTRY_LIMITS_KPH = {
-  'DE': {
-    'urban': 50.,
-    'rural': 100.,
-    'motorway': 0.,
-    'living_street': 7.,
-    'bicycle_road': 30.
-  }
-}
+
+with open(BASEDIR + "/selfdrive/mapd/lib/default_speeds.json", "rb") as f:
+  _COUNTRY_LIMITS = json.loads(f.read())
+
 
 _WD = {
   'Mo': 0,
@@ -86,31 +83,38 @@ def is_osm_time_condition_active(condition_string):
   return False
 
 
+def speed_limit_value_for_limit_string(limit_string):
+  # Look for matches of speed by default in kph, or in mph when explicitly noted.
+  v = re.match(r'^\s*([0-9]{1,3})\s*?(mph)?\s*$', limit_string)
+  if v is None:
+    return None
+  conv = CV.MPH_TO_MS if v[2] is not None and v[2] == "mph" else CV.KPH_TO_MS
+  return conv * float(v[1])
+
+
 def speed_limit_for_osm_tag_limit_string(limit_string):
   # https://wiki.openstreetmap.org/wiki/Key:maxspeed
   if limit_string is None:
     # When limit is set to 0. is considered not existing.
     return 0.
 
-  limit = 0.
-  # Look for matches of speed by default in kph, or in mph when explicitly noted.
-  v = re.match(r'^\s*([0-9]{1,3})\s*?(mph)?\s*$', limit_string)
-  if v is not None:
-    conv = CV.MPH_TO_MS if v[2] is not None and v[2] == "mph" else CV.KPH_TO_MS
-    limit = conv * float(v[1])
+  # Attempt to parse limit as simple numeric value considering units.
+  limit = speed_limit_value_for_limit_string(limit_string)
+  if limit is not None:
+    return limit
 
-  else:
-    # Look for matches of speed with country implicit values.
-    v = re.match(r'^\s*([A-Z]{2}):([a-z_]+):?([0-9]{1,3})?(\s+)?(mph)?\s*', limit_string)
+  # Look for matches of speed with country implicit values.
+  v = re.match(r'^\s*([A-Z]{2}):([a-z_]+):?([0-9]{1,3})?(\s+)?(mph)?\s*', limit_string)
+  if v is None:
+    return 0.
 
-    if v is not None:
-      if v[2] == "zone" and v[3] is not None:
-        conv = CV.MPH_TO_MS if v[5] is not None and v[5] == "mph" else CV.KPH_TO_MS
-        limit = conv * float(v[3])
-      elif v[1] in _COUNTRY_LIMITS_KPH and v[2] in _COUNTRY_LIMITS_KPH[v[1]]:
-        limit = _COUNTRY_LIMITS_KPH[v[1]][v[2]] * CV.KPH_TO_MS
+  if v[2] == "zone" and v[3] is not None:
+    conv = CV.MPH_TO_MS if v[5] is not None and v[5] == "mph" else CV.KPH_TO_MS
+    limit = conv * float(v[3])
+  elif f'{v[1]}:{v[2]}' in _COUNTRY_LIMITS:
+    limit = speed_limit_value_for_limit_string(_COUNTRY_LIMITS[f'{v[1]}:{v[2]}'])
 
-  return limit
+  return limit if limit is not None else 0.
 
 
 def conditional_speed_limit_for_osm_tag_limit_string(limit_string):
