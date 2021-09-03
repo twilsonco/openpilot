@@ -16,14 +16,19 @@ env:
       docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
 jobs:
+  print:
+    name: print
+    runs-on: ubuntu-20.04
+    timeout-minutes: 60
+    steps:
+    - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+    - run: echo "🎉 The job was automatically triggered with branch ${{ github.event.workflow_run.head_branch }} event."
   build_base:
     name: build base
     runs-on: ubuntu-20.04
     timeout-minutes: 60
     if: github.repository == 'move-fast/openpilot' && github.event.workflow_run.conclusion == 'success' #  && startsWith( github.event.workflow_run.head_branch, 'refs/heads/release_' )
     steps:
-    - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-    - run: echo "🎉 The job was automatically triggered with branch ${{ github.event.workflow_run.head_branch }} event."
     - uses: actions/checkout@v2
       with:
         submodules: true
