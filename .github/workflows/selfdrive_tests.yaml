@@ -158,6 +158,7 @@ jobs:
     name: static analysis
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -171,6 +172,7 @@ jobs:
     name: valgrind
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -195,6 +197,7 @@ jobs:
     name: unit tests
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -275,6 +278,7 @@ jobs:
     name: longitudinal
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -298,6 +302,7 @@ jobs:
     name: car models
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v2
       with:
