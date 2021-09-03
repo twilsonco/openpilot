@@ -3,8 +3,6 @@ on:
   workflow_run:
     workflows:
       - 'selfdrive'
-    branches:
-      - 'release_**'
 
 env:
   BASE_IMAGE: openpilot-base
