@@ -5,8 +5,8 @@ on:
 
 env:
   BASE_IMAGE: openpilot-base
-  DOCKER_REGISTRY: ghcr.io/commaai
-  DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
+  DOCKER_REGISTRY: ghcr.io/move-fast
+  DOCKER_LOGIN: docker login ghcr.io -u ${GITHUB_ACTOR} -p ${{ secrets.GITHUB_TOKEN }}
 
   BUILD: |
       docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
@@ -20,6 +20,7 @@ jobs:
     name: plotjuggler
     runs-on: ubuntu-20.04
     timeout-minutes: 30
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v2
       with:

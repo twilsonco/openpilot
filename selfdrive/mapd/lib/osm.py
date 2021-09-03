@@ -1,6 +1,6 @@
 import overpy
 import numpy as np
-from .geo import R
+from selfdrive.mapd.lib.geo import R
 
 
 class OSM():

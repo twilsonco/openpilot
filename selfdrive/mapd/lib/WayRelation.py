@@ -1,22 +1,17 @@
-from .geo import DIRECTION, R, vectors, bearing_to_points, distance_to_points
+from selfdrive.mapd.lib.geo import DIRECTION, R, vectors, bearing_to_points, distance_to_points
 from selfdrive.config import Conversions as CV
-from datetime import datetime
+from common.basedir import BASEDIR
+from datetime import datetime as dt
 import numpy as np
 import re
+import json
 
 
 _WAY_BBOX_PADING = 80. / R  # 80 mts of pading to bounding box. (expressed in radians)
 _LANE_WIDTH = 3.7  # Lane width estimate. Used for detecting departures from way.
 
-_COUNTRY_LIMITS_KPH = {
-  'DE': {
-    'urban': 50.,
-    'rural': 100.,
-    'motorway': 0.,
-    'living_street': 7.,
-    'bicycle_road': 30.
-  }
-}
+with open(BASEDIR + "/selfdrive/mapd/lib/default_speeds.json", "rb") as f:
+  _COUNTRY_LIMITS = json.loads(f.read())
 
 _WD = {
   'Mo': 0,
@@ -52,7 +47,7 @@ def is_osm_time_condition_active(condition_string):
   @ https://wiki.openstreetmap.org/wiki/Conditional_restrictions
   is active for the current date and time of day.
   """
-  now = datetime.now().astimezone()
+  now = dt.now().astimezone()
   today = now.date()
   week_days = []
 
@@ -78,39 +73,44 @@ def is_osm_time_condition_active(condition_string):
 
   # Search among time ranges matched, one where now time belongs too. If found range is active.
   for times_tup in tr:
-    times = list(map(lambda tt: datetime.
-                 combine(today, datetime.strptime(tt, '%H:%M').time().replace(tzinfo=now.tzinfo)), times_tup))
+    times = list(map(lambda tt: dt.
+                 combine(today, dt.strptime(tt, '%H:%M').time().replace(tzinfo=now.tzinfo)), times_tup))
     if now >= times[0] and now <= times[1]:
       return True
 
   return False
 
 
+def speed_limit_value_for_limit_string(limit_string):
+  # Look for matches of speed by default in kph, or in mph when explicitly noted.
+  v = re.match(r'^\s*([0-9]{1,3})\s*?(mph)?\s*$', limit_string)
+  if v is None:
+    return None
+  conv = CV.MPH_TO_MS if v[2] is not None and v[2] == "mph" else CV.KPH_TO_MS
+  return conv * float(v[1])
 def speed_limit_for_osm_tag_limit_string(limit_string):
   # https://wiki.openstreetmap.org/wiki/Key:maxspeed
   if limit_string is None:
     # When limit is set to 0. is considered not existing.
     return 0.
 
-  limit = 0.
-  # Look for matches of speed by default in kph, or in mph when explicitly noted.
-  v = re.match(r'^\s*([0-9]{1,3})\s*?(mph)?\s*$', limit_string)
-  if v is not None:
-    conv = CV.MPH_TO_MS if v[2] is not None and v[2] == "mph" else CV.KPH_TO_MS
-    limit = conv * float(v[1])
+  # Attempt to parse limit as simple numeric value considering units.
+  limit = speed_limit_value_for_limit_string(limit_string)
+  if limit is not None:
+    return limit
 
-  else:
-    # Look for matches of speed with country implicit values.
-    v = re.match(r'^\s*([A-Z]{2}):([a-z_]+):?([0-9]{1,3})?(\s+)?(mph)?\s*', limit_string)
+  # Look for matches of speed with country implicit values.
+  v = re.match(r'^\s*([A-Z]{2}):([a-z_]+):?([0-9]{1,3})?(\s+)?(mph)?\s*', limit_string)
+  if v is None:
+    return 0.
 
-    if v is not None:
-      if v[2] == "zone" and v[3] is not None:
-        conv = CV.MPH_TO_MS if v[5] is not None and v[5] == "mph" else CV.KPH_TO_MS
-        limit = conv * float(v[3])
-      elif v[1] in _COUNTRY_LIMITS_KPH and v[2] in _COUNTRY_LIMITS_KPH[v[1]]:
-        limit = _COUNTRY_LIMITS_KPH[v[1]][v[2]] * CV.KPH_TO_MS
+  if v[2] == "zone" and v[3] is not None:
+    conv = CV.MPH_TO_MS if v[5] is not None and v[5] == "mph" else CV.KPH_TO_MS
+    limit = conv * float(v[3])
+  elif f'{v[1]}:{v[2]}' in _COUNTRY_LIMITS:
+    limit = speed_limit_value_for_limit_string(_COUNTRY_LIMITS[f'{v[1]}:{v[2]}'])
 
-  return limit
+  return limit if limit is not None else 0.
 
 
 def conditional_speed_limit_for_osm_tag_limit_string(limit_string):
@@ -140,7 +140,7 @@ def conditional_speed_limit_for_osm_tag_limit_string(limit_string):
 class WayRelation():
   """A class that represent the relationship of an OSM way and a given `location` and `bearing` of a driving vehicle.
   """
-  def __init__(self, way, location_rad=None, bearing=None):
+  def __init__(self, way):
     self.way = way
     self.reset_location_variables()
     self.direction = DIRECTION.NONE
@@ -174,9 +174,6 @@ class WayRelation():
 
     # Get the edge nodes ids.
     self.edge_nodes_ids = [way.nodes[0].id, way.nodes[-1].id]
-
-    if location_rad is not None and bearing is not None:
-      self.update(location_rad, bearing)
 
   def __repr__(self):
     return f'(id: {self.id}, between {self.behind_idx} and {self.ahead_idx}, {self.direction}, active: {self.active})'

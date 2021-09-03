@@ -566,7 +566,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Cruise set to speed limit",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimePrompt, 1., 0., 2.),
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 1., 0., 2.),
   },
 
   EventName.speedLimitValueChange: {

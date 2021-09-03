@@ -110,6 +110,14 @@ class VisionTurnController():
   def state(self):
     return self._state
 
+  @state.setter
+  def state(self, value):
+    if value != self._state:
+      _debug(f'TVC: TurnVisionController state: {_description_for_state(value)}')
+      if value == VisionTurnControllerState.disabled:
+        self._reset()
+    self._state = value
+
   @property
   def a_target(self):
     return self._a_target if self.is_active else self._a_ego
@@ -121,14 +129,6 @@ class VisionTurnController():
   @property
   def is_active(self):
     return self._state != VisionTurnControllerState.disabled
-
-  @state.setter
-  def state(self, value):
-    if value != self._state:
-      _debug(f'TVC: TurnVisionController state: {_description_for_state(value)}')
-      if value == VisionTurnControllerState.disabled:
-        self._reset()
-    self._state = value
 
   def _reset(self):
     self._current_lat_acc = 0.

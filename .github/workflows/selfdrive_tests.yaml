@@ -1,15 +1,16 @@
 name: selfdrive
 on:
   push:
-    branches-ignore:
-      - 'testing-closet*'
+    branches:
+      - 'release_**'
+      - 'develop'
   pull_request:
 
 env:
   BASE_IMAGE: openpilot-base
-  DOCKER_REGISTRY: ghcr.io/commaai
+  DOCKER_REGISTRY: ghcr.io/move-fast
 
-  DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
+  DOCKER_LOGIN: docker login ghcr.io -u ${GITHUB_ACTOR} -p ${{ secrets.GITHUB_TOKEN }}
   BUILD: |
       docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
       docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
@@ -19,11 +20,18 @@ env:
   UNIT_TEST: coverage run --append -m unittest discover
 
 jobs:
+  print:
+    name: print
+    runs-on: ubuntu-20.04
+    timeout-minutes: 60
+    steps:
+    - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
   # TODO: once actions/cache supports read only mode, use the cache for all jobs
   build_release:
     name: build release
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    if: github.repository == 'commaai/openpilot'
     env:
       STRIPPED_DIR: tmppilot
     steps:
@@ -115,6 +123,7 @@ jobs:
     name: build webcam
     runs-on: ubuntu-20.04
     timeout-minutes: 90
+    if: github.repository == 'commaai/openpilot'
     env:
       IMAGE_NAME: openpilotwebcamci
     steps:
@@ -155,6 +164,7 @@ jobs:
     name: static analysis
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -168,6 +178,7 @@ jobs:
     name: valgrind
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -192,6 +203,7 @@ jobs:
     name: unit tests
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -212,6 +224,7 @@ jobs:
                         $UNIT_TEST selfdrive/locationd && \
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
+                        $UNIT_TEST selfdrive/mapd && \
                         $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/common/tests/test_util && \
                         ./selfdrive/proclogd/tests/test_proclog && \
@@ -223,6 +236,7 @@ jobs:
     name: process replay
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    if: github.repository == 'commaai/openpilot' # Do not run on move-fast repo.
     steps:
     - uses: actions/checkout@v2
       with:
@@ -270,6 +284,7 @@ jobs:
     name: longitudinal
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -293,6 +308,7 @@ jobs:
     name: car models
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v2
       with:

@@ -81,8 +81,8 @@ def install_dep(spinner):
 
     # remove numpy installed to PYEXTRA_DIR since numpy is already present in the AGNOS image
     if OPSPLINE_SPEC is None:
-      for dir in glob(f'{PYEXTRA_DIR}/numpy*'):
-        shutil.rmtree(dir)
+      for directory in glob(f'{PYEXTRA_DIR}/numpy*'):
+        shutil.rmtree(directory)
       shutil.rmtree(f'{PYEXTRA_DIR}/bin')
 
 
