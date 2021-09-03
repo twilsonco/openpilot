@@ -3,7 +3,6 @@ on:
   workflow_dispatch:
   workflow_run:
     workflows: ["selfdrive"]
-    types: [completed]
 
 env:
   BASE_IMAGE: openpilot-base
@@ -23,6 +22,7 @@ jobs:
     steps:
     - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
     - run: echo "🎉 The job was automatically triggered with branch ${{ github.event.workflow_run.head_branch }} event."
+    - run: echo "🎉 The job was automatically triggered with conclusion ${{ github.event.workflow_run.conclusion }}."
   build_base:
     name: build base
     runs-on: ubuntu-20.04
