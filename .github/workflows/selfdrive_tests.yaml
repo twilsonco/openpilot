@@ -1,15 +1,16 @@
 name: selfdrive
 on:
   push:
-    branches-ignore:
-      - 'testing-closet*'
+    branches:
+      - 'release_**'
+      - 'develop'
   pull_request:
 
 env:
   BASE_IMAGE: openpilot-base
-  DOCKER_REGISTRY: ghcr.io/commaai
+  DOCKER_REGISTRY: ghcr.io/move-fast
 
-  DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
+  DOCKER_LOGIN: docker login ghcr.io -u ${GITHUB_ACTOR} -p ${{ secrets.GITHUB_TOKEN }}
   BUILD: |
       docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
       docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
@@ -24,6 +25,7 @@ jobs:
     name: build release
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    if: github.repository == 'commaai/openpilot'
     env:
       STRIPPED_DIR: tmppilot
     steps:
@@ -115,6 +117,7 @@ jobs:
     name: build webcam
     runs-on: ubuntu-20.04
     timeout-minutes: 90
+    if: github.repository == 'commaai/openpilot'
     env:
       IMAGE_NAME: openpilotwebcamci
     steps:
@@ -223,6 +226,7 @@ jobs:
     name: process replay
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    if: github.repository == 'commaai/openpilot' # Do not run on move-fast repo.
     steps:
     - uses: actions/checkout@v2
       with:
