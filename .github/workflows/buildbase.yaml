@@ -3,6 +3,8 @@ on:
   workflow_run:
     workflows:
       - 'selfdrive'
+    types: 
+      - completed
     branches:
       - 'release_**'
 
@@ -29,11 +31,10 @@ jobs:
   #   name: build base
   #   runs-on: ubuntu-20.04
   #   timeout-minutes: 60
-  #   if: github.repository == 'move-fast/openpilot' && github.event.workflow_run.conclusion == 'success' #  && startsWith( github.event.workflow_run.head_branch, 'refs/heads/release_' )
+  #   if: github.repository == 'move-fast/openpilot' && github.event.workflow_run.conclusion == 'success'
   #   steps:
   #   - uses: actions/checkout@v2
   #     with:
-  #       ref: ${{ github.event.workflow_run.head_branch }}
   #       submodules: true
   #   - name: Build Docker image
   #     run: |
