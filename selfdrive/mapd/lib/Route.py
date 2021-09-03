@@ -1,6 +1,6 @@
-from .NodesData import NodesData, NodeDataIdx
+from selfdrive.mapd.lib.NodesData import NodesData, NodeDataIdx
 from selfdrive.mapd.config import QUERY_RADIUS
-from .geo import ref_vectors, R, distance_to_points
+from selfdrive.mapd.lib.geo import ref_vectors, R, distance_to_points
 from itertools import compress
 import numpy as np
 

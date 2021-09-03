@@ -1,7 +1,7 @@
-from .geo import DIRECTION, R, vectors, bearing_to_points, distance_to_points
+from selfdrive.mapd.lib.geo import DIRECTION, R, vectors, bearing_to_points, distance_to_points
 from selfdrive.config import Conversions as CV
 from common.basedir import BASEDIR
-from datetime import datetime
+from datetime import datetime as dt
 import numpy as np
 import re
 import json
@@ -49,7 +49,7 @@ def is_osm_time_condition_active(condition_string):
   @ https://wiki.openstreetmap.org/wiki/Conditional_restrictions
   is active for the current date and time of day.
   """
-  now = datetime.now().astimezone()
+  now = dt.now().astimezone()
   today = now.date()
   week_days = []
 
@@ -75,8 +75,8 @@ def is_osm_time_condition_active(condition_string):
 
   # Search among time ranges matched, one where now time belongs too. If found range is active.
   for times_tup in tr:
-    times = list(map(lambda tt: datetime.
-                 combine(today, datetime.strptime(tt, '%H:%M').time().replace(tzinfo=now.tzinfo)), times_tup))
+    times = list(map(lambda tt: dt.
+                 combine(today, dt.strptime(tt, '%H:%M').time().replace(tzinfo=now.tzinfo)), times_tup))
     if now >= times[0] and now <= times[1]:
       return True
 
@@ -144,7 +144,7 @@ def conditional_speed_limit_for_osm_tag_limit_string(limit_string):
 class WayRelation():
   """A class that represent the relationship of an OSM way and a given `location` and `bearing` of a driving vehicle.
   """
-  def __init__(self, way, location_rad=None, bearing=None):
+  def __init__(self, way):
     self.way = way
     self.reset_location_variables()
     self.direction = DIRECTION.NONE
@@ -178,9 +178,6 @@ class WayRelation():
 
     # Get the edge nodes ids.
     self.edge_nodes_ids = [way.nodes[0].id, way.nodes[-1].id]
-
-    if location_rad is not None and bearing is not None:
-      self.update(location_rad, bearing)
 
   def __repr__(self):
     return f'(id: {self.id}, between {self.behind_idx} and {self.ahead_idx}, {self.direction}, active: {self.active})'

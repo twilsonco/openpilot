@@ -1,11 +1,11 @@
 import numpy as np
 from enum import Enum
-from .geo import DIRECTION, R, vectors
+from selfdrive.mapd.lib.geo import DIRECTION, R, vectors
 
 from selfdrive.hardware import EON
 
 if EON:
-  from opspline import splev, splprep
+  from opspline import splev, splprep  # pylint: disable=E0401
 else:
   from scipy.interpolate import splev, splprep
 
@@ -289,7 +289,7 @@ class NodesData:
       wr.update_direction_from_starting_node(node_id)
       return not wr.is_prohibited
 
-    self._divertions = [list(filter(lambda wr: _is_valid_divertion(wr, node_id), wr_index.get(node_id, [])))
+    self._divertions = [[wr for wr in wr_index.get(node_id, []) if _is_valid_divertion(wr, node_id)]
                         for node_id in nodes_data[:, 0]]
 
     # Store calculcations for curvature sections speed limits. We need more than 3 points to be able to process.

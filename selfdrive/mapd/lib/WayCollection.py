@@ -1,5 +1,5 @@
-from .WayRelation import WayRelation
-from .Route import Route
+from selfdrive.mapd.lib.WayRelation import WayRelation
+from selfdrive.mapd.lib.Route import Route
 import uuid
 
 
@@ -17,7 +17,7 @@ class WayCollection():
         query_center (Numpy Array): [lat, lon] numpy array in radians indicating the center of the data query.
     """
     self.id = uuid.uuid4()
-    self.way_relations = list(map(lambda way: WayRelation(way), ways))
+    self.way_relations = [WayRelation(way) for way in ways]
     self.query_center = query_center
 
     # Create the index by edge node ids.
@@ -38,7 +38,7 @@ class WayCollection():
 
     # Get the way relations where a match was found. i.e. those now marked as active as long as the direction of
     # travel is valid.
-    valid_way_relations = list(filter(lambda wr: wr.active and not wr.is_prohibited, self.way_relations))
+    valid_way_relations = [wr for wr in self.way_relations if wr.active and not wr.is_prohibited]
 
     # If no active, then we could not find a current way to build a route.
     if len(valid_way_relations) == 0:
