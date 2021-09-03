@@ -22,19 +22,20 @@ jobs:
     - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
     - run: echo "🎉 The job was automatically triggered with branch ${{ github.event.workflow_run.head_branch }} event."
     - run: echo "🎉 The job was automatically triggered with conclusion ${{ github.event.workflow_run.conclusion }}."
-  build_base:
-    name: build base
-    runs-on: ubuntu-20.04
-    timeout-minutes: 60
-    if: github.repository == 'move-fast/openpilot' && github.event.workflow_run.conclusion == 'success' #  && startsWith( github.event.workflow_run.head_branch, 'refs/heads/release_' )
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Build Docker image
-      run: |
-        eval "$BUILD"
-    - name: Push to container registry
-      run: |
-        $DOCKER_LOGIN
-        docker push $DOCKER_REGISTRY/$BASE_IMAGE:latest
+  # build_base:
+  #   name: build base
+  #   runs-on: ubuntu-20.04
+  #   timeout-minutes: 60
+  #   if: github.repository == 'move-fast/openpilot' && github.event.workflow_run.conclusion == 'success' #  && startsWith( github.event.workflow_run.head_branch, 'refs/heads/release_' )
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #     with:
+  #       ref: ${{ github.event.workflow_run.head_branch }}
+  #       submodules: true
+  #   - name: Build Docker image
+  #     run: |
+  #       eval "$BUILD"
+  #   - name: Push to container registry
+  #     run: |
+  #       $DOCKER_LOGIN
+  #       docker push $DOCKER_REGISTRY/$BASE_IMAGE:latest
