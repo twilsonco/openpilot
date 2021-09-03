@@ -20,6 +20,12 @@ env:
   UNIT_TEST: coverage run --append -m unittest discover
 
 jobs:
+  print:
+    name: print
+    runs-on: ubuntu-20.04
+    timeout-minutes: 60
+    steps:
+    - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
   # TODO: once actions/cache supports read only mode, use the cache for all jobs
   build_release:
     name: build release
