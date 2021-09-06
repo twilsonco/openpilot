@@ -93,7 +93,7 @@ class CarState(CarStateBase):
       ret.brakePressed = ret.brakePressed or bool(pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"])
 
     ret.cruiseState.enabled = self.pcm_acc_status != AccState.OFF
-    ret.cruiseState.standstill = self.pcm_acc_status == AccState.STANDSTILL
+    ret.cruiseState.standstill = False
 
     return ret
 

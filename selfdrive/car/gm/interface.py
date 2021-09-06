@@ -94,7 +94,7 @@ class CarInterface(CarInterfaceBase):
 
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
-      ret.minEnableSpeed = 3 * CV.MPH_TO_MS
+      ret.minEnableSpeed = -1
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
@@ -183,20 +183,9 @@ class CarInterface(CarInterfaceBase):
 
     ret = self.CS.update(self.cp)
     
-    '''
-    # brake pedal
-    ret.brake = self.CS.user_brake / 0xd0
-    ret.brakePressed = self.CS.brake_pressed
-    ret.brakeLights = self.CS.frictionBrakesActive
-    
-    # cruise state
-    ret.cruiseState.available = bool(self.CS.main_on)
-    '''
     cruiseEnabled = self.CS.pcm_acc_status != AccState.OFF
     ret.cruiseState.enabled = cruiseEnabled
-    '''
-    ret.cruiseState.standstill = False
-    '''
+    
     ret.readdistancelines = self.CS.follow_level
 
     ret.canValid = self.cp.can_valid
@@ -242,8 +231,6 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowEngageSpeed)
     if self.CS.park_brake:
       events.add(EventName.parkBrake)
-    if ret.cruiseState.standstill:
-      events.add(EventName.resumeRequired)
     if self.CS.pcm_acc_status == AccState.FAULTED:
       events.add(EventName.accFaulted)
     if ret.vEgo < self.CP.minSteerSpeed:

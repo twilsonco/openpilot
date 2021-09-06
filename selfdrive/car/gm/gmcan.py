@@ -38,8 +38,12 @@ def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_f
   mode = 0x1
   if apply_brake > 0:
     mode = 0xa
-    if at_full_stop:
-      mode = 0xd
+  
+  if near_stop:
+    mode = 0xb
+
+  if at_full_stop:
+    mode = 0xd
 
     # TODO: this is to have GM bringing the car to complete stop,
     # but currently it conflicts with OP controls, so turned off.
