@@ -29,6 +29,7 @@ class CarState(CarStateBase):
     self.distance_button = 0
     self.follow_level = 3
     self.lkMode = True
+    self.engineRPM = 0
 
   def update(self, pt_cp):
     ret = car.CarState.new_message()
@@ -70,6 +71,9 @@ class CarState(CarStateBase):
     self.lkas_status = pt_cp.vl["PSCMStatus"]["LKATorqueDeliveredStatus"]
     ret.steerWarning = self.lkas_status == 2
     ret.steerError = self.lkas_status == 3
+    
+    ret.steeringTorqueEps = pt_cp.vl["PSCMStatus"]['LKATorqueDelivered']
+    self.engineRPM = pt_cp.vl["ECMEngineStatus"]['EngineRPM']
 
     # 1 - open, 0 - closed
     ret.doorOpen = (pt_cp.vl["BCMDoorBeltStatus"]["FrontLeftDoor"] == 1 or
@@ -128,6 +132,8 @@ class CarState(CarStateBase):
       ("LKATorqueDelivered", "PSCMStatus", 0),
       ("LKATorqueDeliveredStatus", "PSCMStatus", 0),
       ("DistanceButton", "ASCMSteeringButton", 0),
+      ("LKATorqueDelivered", "PSCMStatus", 0),
+      ("EngineRPM", "ECMEngineStatus", 0),
       ("TractionControlOn", "ESPStatus", 0),
       ("EPBClosed", "EPBStatus", 0),
       ("CruiseMainOn", "ECMEngineStatus", 0),
