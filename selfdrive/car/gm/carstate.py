@@ -27,8 +27,13 @@ class CarState(CarStateBase):
     self.prev_lka_button = 0
     self.lka_button = 0
     self.distance_button = 0
-    self.follow_level = 3
+    self.follow_level = 2
     self.lkMode = True
+    self.autoHold = False
+    self.autoHoldActive = False
+    self.autoHoldActivated = False
+    self.regenPaddlePressed = 0
+    self.cruiseMain = False
     self.engineRPM = 0
 
   def update(self, pt_cp):
@@ -88,16 +93,25 @@ class CarState(CarStateBase):
 
     self.park_brake = pt_cp.vl["EPBStatus"]["EPBClosed"]
     ret.cruiseState.available = bool(pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"])
+    self.cruiseMain = ret.cruiseState.available
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
     self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
 
     ret.brakePressed = ret.brake > 1e-5
     # Regen braking is braking
     if self.car_fingerprint == CAR.VOLT:
-      ret.brakePressed = ret.brakePressed or bool(pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"])
+      self.regenPaddlePressed = bool(pt_cp.vl["EBCMRegenPaddle"]['RegenPaddle'])
+      ret.brakePressed = ret.brakePressed or self.regenPaddlePressed
 
     ret.cruiseState.enabled = self.pcm_acc_status != AccState.OFF
     ret.cruiseState.standstill = False
+    
+    if True:
+      self.autoHold = True
+    else:
+      self.autoHold = False
+
+    ret.autoHoldActivated = self.autoHoldActivated
 
     return ret
 
