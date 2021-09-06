@@ -23,11 +23,11 @@ class CarControllerParams():
 
     # pedal lookups, only for Volt
     MAX_GAS = 3072              # Only a safety limit
-    ZERO_GAS = 2048
+    self.ZERO_GAS = 2048
     MAX_BRAKE = 350             # Should be around 3.5m/s^2, including regen
     self.MAX_ACC_REGEN = 1404  # ACC Regen braking is slightly less powerful than max regen paddle
     self.GAS_LOOKUP_BP = [-0.25, 0., 0.5]
-    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
+    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, MAX_GAS]
     self.BRAKE_LOOKUP_BP = [-1., -0.25]
     self.BRAKE_LOOKUP_V = [MAX_BRAKE, 0]
 

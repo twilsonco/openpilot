@@ -4,7 +4,7 @@ from common.numpy_fast import interp
 from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams
+from selfdrive.car.gm.values import DBC, AccState, CanBus, CarControllerParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -16,6 +16,7 @@ class CarController():
     self.apply_steer_last = 0
     self.lka_icon_status_last = (False, False)
     self.steer_rate_limited = False
+    self.fcw_count = 0
 
     self.params = CarControllerParams()
 
@@ -63,15 +64,30 @@ class CarController():
     if (frame % 4) == 0:
       idx = (frame // 4) % 4
 
-      at_full_stop = enabled and CS.out.standstill
-      near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
+      car_stopping = apply_gas < P.ZERO_GAS
+      standstill = CS.pcm_acc_status == AccState.STANDSTILL
+      at_full_stop = enabled and standstill and car_stopping
+      near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
+      
       can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, apply_brake, idx, near_stop, at_full_stop))
-      can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, enabled, at_full_stop))
+      
+      # Auto-resume from full stop by resetting ACC control
+      acc_enabled = enabled
+      if standstill and not car_stopping:
+        acc_enabled = False
+
+      can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, acc_enabled, at_full_stop))
 
     # Send dashboard UI commands (ACC status), 25hz
+    follow_level = CS.get_follow_level()
     if (frame % 4) == 0:
-      send_fcw = hud_alert == VisualAlert.fcw
-      can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, enabled, hud_v_cruise * CV.MS_TO_KPH, hud_show_car, send_fcw))
+      
+      send_fcw = 0
+      if self.fcw_count > 0:
+        self.fcw_count -= 1
+        send_fcw = 0x3
+      can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, enabled, 
+                                                                 hud_v_cruise * CV.MS_TO_KPH, hud_show_car, follow_level, send_fcw))
 
     # Radar needs to know current speed and yaw rate (50hz),
     # and that ADAS is alive (10hz)

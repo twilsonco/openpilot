@@ -7,18 +7,38 @@ from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, \
                                     CruiseButtons, STEER_THRESHOLD
 
+def get_chassis_can_parser(CP, canbus):
+  # this function generates lists for signal, messages and initial values
+  signals = [
+      # sig_name, sig_address, default
+      ("FrictionBrakePressure", "EBCMFrictionBrakeStatus", 0),
+  ]
+
+  return CANParser(DBC[CP.carFingerprint]['chassis'], signals, [], canbus.chassis)
+  
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
+    
+    self.prev_distance_button = 0
+    self.prev_lka_button = 0
+    self.lka_button = 0
+    self.distance_button = 0
+    self.follow_level = 3
+    self.lkMode = True
 
   def update(self, pt_cp):
     ret = car.CarState.new_message()
 
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
+    self.prev_lka_button = self.lka_button
+    self.lka_button = pt_cp.vl["ASCMSteeringButton"]["LKAButton"]
+    self.prev_distance_button = self.distance_button
+    self.distance_button = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"]
 
     ret.wheelSpeeds.fl = pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"] * CV.KPH_TO_MS
     ret.wheelSpeeds.fr = pt_cp.vl["EBCMWheelSpdFront"]["FRWheelSpd"] * CV.KPH_TO_MS
@@ -28,6 +48,9 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.01
 
+    self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
+    self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
+    self.user_brake = pt_cp.vl["EBCMBrakePedalPosition"]['BrakePedalPosition']
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]["PRNDL"], None))
     ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
     # Brake pedal's potentiometer returns near-zero reading even when pedal is not pressed.
@@ -74,6 +97,9 @@ class CarState(CarStateBase):
 
     return ret
 
+  def get_follow_level(self):
+    return self.follow_level
+
   @staticmethod
   def get_can_parser(CP):
     # this function generates lists for signal, messages and initial values
@@ -90,6 +116,7 @@ class CarState(CarStateBase):
       ("AcceleratorPedal", "AcceleratorPedal", 0),
       ("CruiseState", "AcceleratorPedal2", 0),
       ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
+      ("LKAButton", "ASCMSteeringButton", 0),
       ("SteeringWheelAngle", "PSCMSteeringAngle", 0),
       ("SteeringWheelRate", "PSCMSteeringAngle", 0),
       ("FLWheelSpd", "EBCMWheelSpdFront", 0),
@@ -100,6 +127,7 @@ class CarState(CarStateBase):
       ("LKADriverAppldTrq", "PSCMStatus", 0),
       ("LKATorqueDelivered", "PSCMStatus", 0),
       ("LKATorqueDeliveredStatus", "PSCMStatus", 0),
+      ("DistanceButton", "ASCMSteeringButton", 0),
       ("TractionControlOn", "ESPStatus", 0),
       ("EPBClosed", "EPBStatus", 0),
       ("CruiseMainOn", "ECMEngineStatus", 0),
@@ -129,5 +157,12 @@ class CarState(CarStateBase):
       checks += [
         ("EBCMRegenPaddle", 50),
       ]
+      
+    signals += [
+      ("TractionControlOn", "ESPStatus", 0),
+      ("EPBClosed", "EPBStatus", 0),
+      ("CruiseMainOn", "ECMEngineStatus", 0),
+      ("CruiseState", "AcceleratorPedal2", 0),
+    ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.POWERTRAIN)
