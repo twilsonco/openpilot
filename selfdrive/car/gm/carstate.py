@@ -1,11 +1,14 @@
 from cereal import car
+from common.params import Params
 from common.numpy_fast import mean
+from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, \
                                     CruiseButtons, STEER_THRESHOLD
+from selfdrive.swaglog import cloudlog
 
 def get_chassis_can_parser(CP, canbus):
   # this function generates lists for signal, messages and initial values
@@ -22,6 +25,7 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
+    self._params = Params()
     
     self.prev_distance_button = 0
     self.prev_lka_button = 0
@@ -29,12 +33,14 @@ class CarState(CarStateBase):
     self.distance_button = 0
     self.follow_level = 2
     self.lkMode = True
-    self.autoHold = False
+    self.autoHold = self._params.get_bool("GMAutoHold")
     self.autoHoldActive = False
     self.autoHoldActivated = False
     self.regenPaddlePressed = 0
     self.cruiseMain = False
     self.engineRPM = 0
+    self.lastAutoHoldTime = 0.0
+    self.sessionInitTime = sec_since_boot()
 
   def update(self, pt_cp):
     ret = car.CarState.new_message()
@@ -105,11 +111,6 @@ class CarState(CarStateBase):
 
     ret.cruiseState.enabled = self.pcm_acc_status != AccState.OFF
     ret.cruiseState.standstill = False
-    
-    if True:
-      self.autoHold = True
-    else:
-      self.autoHold = False
 
     ret.autoHoldActivated = self.autoHoldActivated
 

@@ -77,37 +77,42 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   toggles.append(new ParamControl("HandsOnWheelMonitoring",
                                   "Enable Hands on Wheel Monitoring",
                                   "Monitor and alert when driver is not keeping the hands on the steering wheel.",
-                                  "../assets/offroad/icon_openpilot.png",
+                                  "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
   toggles.append(new ParamControl("TurnVisionControl",
                                   "Enable vision based turn control",
                                   "Use vision path predictions to estimate the appropiate speed to drive through turns ahead.",
-                                  "../assets/offroad/icon_road.png",
-                                  this));
-  toggles.append(new ParamControl("SpeedLimitControl",
-                                  "Enable Speed Limit Control",
-                                  "Use speed limit signs information from map data and car interface to automatically adapt cruise speed to road limits.",
-                                  "../assets/offroad/icon_speed_limit.png",
-                                  this));
-  toggles.append(new ParamControl("SpeedLimitPercOffset",
-                                  "Enable Speed Limit Offset",
-                                  "Set speed limit slightly higher than actual speed limit for a more natural drive.",
-                                  "../assets/offroad/icon_speed_limit.png",
+                                  "../assets/offroad/icon_slow_curves_vision.png",
                                   this));
   toggles.append(new ParamControl("TurnSpeedControl",
                                   "Enable Map Data Turn Control",
                                   "Use curvature info from map data to define speed limits to take turns ahead",
-                                  "../assets/offroad/icon_openpilot.png",
+                                  "../assets/offroad/icon_slow_curves_map.png",
+                                  this));
+  toggles.append(new ParamControl("SpeedLimitControl",
+                                  "Enable Speed Limit Control",
+                                  "Use speed limit signs information from map data and car interface to automatically adapt cruise speed to road limits.",
+                                  "../assets/offroad/icon_speed_limit_sign.png",
+                                  this));
+  toggles.append(new ParamControl("SpeedLimitPercOffset",
+                                  "Enable Speed Limit Offset",
+                                  "Set speed limit slightly higher than actual speed limit for a more natural drive.",
+                                  "../assets/offroad/icon_speed_limit_percent.png",
+                                  this));
+  toggles.append(new ParamControl("GMAutoHold",
+                                  "Enable AutoHold on GM vehicles",
+                                  "Holds brakes automatically after coming to a complete stop, even when OP is disengaged.",
+                                  "../assets/offroad/icon_gm_autohold.png",
+                                  this));
+  toggles.append(new ParamControl("DisableDisengageOnGas",
+                                  "Disable disengage on gas",
+                                  "Disable default comma stock disengage on gas feature",
+                                  "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("ShowDebugUI",
                                   "Show debug UI elements",
                                   "Show UI elements that aid debugging.",
                                   "../assets/offroad/icon_calibration.png",
-                                  this));
-  toggles.append(new ParamControl("DisableDisengageOnGas",
-                                  "Disable disengage on gas",
-                                  "Disable default comma stock disengage on gas feature",
-                                  "../assets/offroad/icon_openpilot.png",
                                   this));
 
 #ifdef ENABLE_MAPS

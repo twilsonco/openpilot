@@ -93,9 +93,9 @@ class CarController():
 
 
     # Send dashboard UI commands (ACC status), 25hz
-    follow_level = CS.get_follow_level()
     if (frame % 4) == 0:
       send_fcw = hud_alert == VisualAlert.fcw
+      follow_level = CS.get_follow_level()
       can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, enabled, 
                                                                  hud_v_cruise * CV.MS_TO_KPH, hud_show_car, follow_level, send_fcw))
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from cereal import car
 from common.numpy_fast import interp
+from common.realtime import sec_since_boot
+from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.car.gm.values import CAR, CruiseButtons, \
                                     AccState
@@ -186,7 +188,6 @@ class CarInterface(CarInterfaceBase):
     cruiseEnabled = self.CS.pcm_acc_status != AccState.OFF
     ret.cruiseState.enabled = cruiseEnabled
     
-    ret.readdistancelines = self.CS.follow_level
 
     ret.canValid = self.cp.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
@@ -221,11 +222,15 @@ class CarInterface(CarInterfaceBase):
 
     if cruiseEnabled and self.CS.lka_button and self.CS.lka_button != self.CS.prev_lka_button:
       self.CS.lkMode = not self.CS.lkMode
+      cloudlog.info("button press event: LKA button. new value: %i" % self.CS.lkMode)
 
     if self.CS.distance_button and self.CS.distance_button != self.CS.prev_distance_button:
        self.CS.follow_level -= 1
        if self.CS.follow_level < 1:
          self.CS.follow_level = 3
+       cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
+    
+    ret.readdistancelines = self.CS.follow_level
 
     events = self.create_common_events(ret, pcm_enable=False)
 
@@ -236,8 +241,10 @@ class CarInterface(CarInterfaceBase):
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
     if self.CS.autoHoldActivated:
+      self.CS.lastAutoHoldTime = sec_since_boot()
       events.add(car.CarEvent.EventName.autoHoldActivated)
-    elif self.CS.pcm_acc_status == AccState.FAULTED:
+    t = sec_since_boot()
+    if self.CS.pcm_acc_status == AccState.FAULTED and t - self.CS.sessionInitTime > 3.0 and t - self.CS.lastAutoHoldTime > 1.0:
       events.add(EventName.accFaulted)
 
     # handle button presses
