@@ -9,6 +9,7 @@ from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, \
                                     CruiseButtons, STEER_THRESHOLD
 from selfdrive.swaglog import cloudlog
+from selfdrive.controls.lib.drive_helpers import set_v_cruise_offset
 
 def get_chassis_can_parser(CP, canbus):
   # this function generates lists for signal, messages and initial values
@@ -33,6 +34,7 @@ class CarState(CarStateBase):
     self.distance_button = 0
     self.follow_level = 2
     self.lkMode = True
+    set_v_cruise_offset(self._params.get_bool("CruiseSpeedOffset"))
     self.autoHold = self._params.get_bool("GMAutoHold")
     self.autoHoldActive = False
     self.autoHoldActivated = False

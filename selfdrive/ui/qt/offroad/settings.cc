@@ -99,6 +99,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Set speed limit slightly higher than actual speed limit for a more natural drive.",
                                   "../assets/offroad/icon_speed_limit_percent.png",
                                   this));
+  toggles.append(new ParamControl("CruiseSpeedOffset",
+                                  "Enable Cruise Speed Offset (+3mph)",
+                                  "When adjusting, cruise speed will be {8, 13, 18, 23, 28} mph.",
+                                  "../assets/offroad/icon_speed_offset.png",
+                                  this));
   toggles.append(new ParamControl("GMAutoHold",
                                   "Enable AutoHold on GM vehicles",
                                   "Holds brakes automatically after coming to a complete stop, even when OP is disengaged.",

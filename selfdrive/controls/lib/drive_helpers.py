@@ -9,7 +9,8 @@ from selfdrive.modeld.constants import T_IDXS
 V_CRUISE_MAX = 135
 V_CRUISE_MIN = 8
 V_CRUISE_DELTA = 8
-V_CRUISE_OFFSET = 3
+V_CRUISE_OFFSET = 5
+V_CRUISE_OFFSET_DEFAULT = 5
 V_CRUISE_ENABLE_MIN = 5
 LAT_MPC_N = 16
 LON_MPC_N = 32
@@ -49,6 +50,12 @@ def rate_limit(new_value, last_value, dw_step, up_step):
 def get_steer_max(CP, v_ego):
   return interp(v_ego, CP.steerMaxBP, CP.steerMaxV)
 
+def set_v_cruise_offset(do_offset):
+  global V_CRUISE_OFFSET
+  if do_offset:
+    V_CRUISE_OFFSET = V_CRUISE_OFFSET_DEFAULT
+  else:
+    V_CRUISE_OFFSET = 0
 
 def update_v_cruise(v_cruise_kph, buttonEvents, enabled):
   # handle button presses. TODO: this should be in state_control, but a decelCruise press
