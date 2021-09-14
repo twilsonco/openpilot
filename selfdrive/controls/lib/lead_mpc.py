@@ -10,7 +10,7 @@ from selfdrive.swaglog import cloudlog
 
 MPC_T = list(np.arange(0,1.,.2)) + list(np.arange(1.,10.6,.6))
 
-CITY_HWY_TRANSITION_SPEEDS = [15.65, 26.82] # [m/s], [15.65, 26.82] = [35mph, 60mph]
+CITY_HWY_TRANSITION_SPEEDS = [20.12, 33.53] # [m/s], [20.12, 33.53] = [45mph, 75mph]
 
 TR_DEFAULT = 1.8
 
@@ -25,15 +25,15 @@ FOLLOW_PROFILES = [
   ],
   [ # two-bar
     [-6.0, 0.0],
-    [0.8, 1.8],
+    [0.5, 1.8],
     0.3,
     1.8,
-    [MPC_COST_LONG.DISTANCE],
-    [0.0]
+    [MPC_COST_LONG.DISTANCE * 2, MPC_COST_LONG.DISTANCE],
+    [0.8, 1.5]
   ],
   [ # three-bar
     [-6.0, 0.0],
-    [0.8, 2.4],
+    [0.5, 2.4],
     0.5,
     2.0,
     [MPC_COST_LONG.DISTANCE * 1.1, MPC_COST_LONG.DISTANCE * 0.1],
