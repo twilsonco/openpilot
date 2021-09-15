@@ -114,6 +114,16 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Holds brakes automatically after coming to a complete stop, even when OP is disengaged.",
                                   "../assets/offroad/icon_gm_autohold.png",
                                   this));
+  toggles.append(new ParamControl("CustomSounds",
+                                  "Alternative sounds (2x restart car to apply)",
+                                  "Uses alternative set of sound effects.",
+                                  "../assets/offroad/icon_custom_sounds.png",
+                                  this));
+  toggles.append(new ParamControl("SilentEngageDisengage",
+                                  "Silent engage/disengage (2x restart car to apply)",
+                                  "Mute engage and disengage sounds.",
+                                  "../assets/offroad/icon_mute.png",
+                                  this));
   toggles.append(new ParamControl("DisableDisengageOnGas",
                                   "Disable disengage on gas",
                                   "Disable default comma stock disengage on gas feature",

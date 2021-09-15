@@ -24,6 +24,8 @@ Current and planned fork features:
 - [x] GM Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
 - [x] 1/5 mph changes for tap/hold of the inc/dec buttons [optional] (ported from Spector56)
 - [x] 3mph cruise speed offset: speed will be 23/28/33/38/etc. [optional] 
+- [x] Alternate sound effect set [optional] 
+- [x] Mute engage and disengage sounds [optional]
 - [ ] Spector56 cruising; OP won't use brakes (i.e. regen only) when speed above set speed and not following
 - [ ] Better acceleration/braking profiles tied to selected follow mode
 - [ ] Remember last follow mode
