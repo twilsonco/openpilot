@@ -44,6 +44,7 @@ def manager_init():
     ("TurnVisionControl", "1"),
     ("GMAutoHold", "1"),
     ("CruiseSpeedOffset", "1"),
+    ("StockSpeedAdjust", "1"),
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
