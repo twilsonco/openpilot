@@ -158,6 +158,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.49
 
+    elif candidate == CAR.ESCALADE:
+      ret.minEnableSpeed = -1.  # engage speed is decided by pcm
+      ret.mass = 2645. + STD_CARGO_KG
+      ret.wheelbase = 2.95
+      ret.steerRatio = 17.3  # end to end is 13.46
+      ret.steerRatioRear = 0.
+      ret.centerToFront = ret.wheelbase * 0.4
+
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
@@ -184,14 +192,14 @@ class CarInterface(CarInterfaceBase):
     self.cp.update_strings(can_strings)
 
     ret = self.CS.update(self.cp)
-    
+
     cruiseEnabled = self.CS.pcm_acc_status != AccState.OFF
     ret.cruiseState.enabled = cruiseEnabled
-    
+
 
     ret.canValid = self.cp.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
-    
+
     ret.engineRPM = self.CS.engineRPM
 
     buttonEvents = []
@@ -229,7 +237,7 @@ class CarInterface(CarInterfaceBase):
        if self.CS.follow_level < 1:
          self.CS.follow_level = 3
        cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
-    
+
     ret.readdistancelines = self.CS.follow_level
 
     events = self.create_common_events(ret, pcm_enable=False)
@@ -278,7 +286,7 @@ class CarInterface(CarInterfaceBase):
                                c.hudControl.leadVisible, c.hudControl.visualAlert)
 
     self.frame += 1
-    
+
     # Release Auto Hold and creep smoothly when regenpaddle pressed
     if self.CS.regenPaddlePressed and self.CS.autoHold:
       self.CS.autoHoldActive = False
@@ -288,5 +296,5 @@ class CarInterface(CarInterfaceBase):
         self.CS.autoHoldActive = True
       elif self.CS.out.vEgo < 0.01 and self.CS.out.brakePressed:
         self.CS.autoHoldActive = True
-    
+
     return can_sends
