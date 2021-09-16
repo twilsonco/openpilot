@@ -1,5 +1,5 @@
 import math
-
+from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.pid import PIController
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 from cereal import log
@@ -20,7 +20,8 @@ class LatControlPID():
     pid_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     pid_log.steeringRateDeg = float(CS.steeringRateDeg)
 
-    angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo))
+    angle_steers_des_no_offset_radians = VM.get_steer_from_curvature(-desired_curvature, CS.vEgo)
+    angle_steers_des_no_offset = math.degrees(angle_steers_des_no_offset_radians)
     angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
 
     pid_log.angleError = angle_steers_des - CS.steeringAngleDeg 
@@ -33,9 +34,11 @@ class LatControlPID():
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
 
-      # TODO: feedforward something based on lat_plan.rateSteers
-      steer_feedforward = angle_steers_des_no_offset  # offset does not contribute to resistive torque
-      steer_feedforward *= CS.vEgo**2  # proportional to realigning tire momentum (~ lateral accel)
+      # offset does not contribute to resistive torque
+      # !!! VOLT ONLY SIGMOID !!! Solve your car's f(speed, angle) -> command.
+      x = angle_steers_des_no_offset_radians
+      sigmoid = x / (1 + math.fabs(x))
+      steer_feedforward = (CS.vEgo + 25 * CV.KPH_TO_MS) * sigmoid
 
       deadzone = 0.0
 

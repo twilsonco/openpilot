@@ -11,7 +11,7 @@ STOPPING_TARGET_SPEED_OFFSET = 0.01
 STARTING_TARGET_SPEED = 0.5
 DECEL_THRESHOLD_TO_PID = 0.8
 
-DECEL_STOPPING_TARGET = 2.0  # apply at least this amount of brake to maintain the vehicle stationary
+BRAKE_STOPPING_TARGET = 0.25  # apply at least this amount of brake to maintain the vehicle stationary
 
 RATE = 100.0
 

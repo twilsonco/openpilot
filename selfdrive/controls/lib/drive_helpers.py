@@ -6,10 +6,12 @@ from selfdrive.modeld.constants import T_IDXS
 
 
 # kph
-V_CRUISE_MAX = 135
-V_CRUISE_MIN = 8
-V_CRUISE_DELTA = 8
-V_CRUISE_ENABLE_MIN = 40
+V_CRUISE_MAX = 145
+V_CRUISE_MIN = 5
+V_CRUISE_DELTA = 5
+V_CRUISE_OFFSET = 3
+V_CRUISE_OFFSET_DEFAULT = 3
+V_CRUISE_ENABLE_MIN = 5
 LAT_MPC_N = 16
 LON_MPC_N = 32
 CONTROL_N = 17
@@ -48,17 +50,40 @@ def rate_limit(new_value, last_value, dw_step, up_step):
 def get_steer_max(CP, v_ego):
   return interp(v_ego, CP.steerMaxBP, CP.steerMaxV)
 
+def set_v_cruise_offset(do_offset):
+  global V_CRUISE_OFFSET
+  if do_offset:
+    V_CRUISE_OFFSET = V_CRUISE_OFFSET_DEFAULT
+  else:
+    V_CRUISE_OFFSET = 0
 
-def update_v_cruise(v_cruise_kph, buttonEvents, enabled):
-  # handle button presses. TODO: this should be in state_control, but a decelCruise press
-  # would have the effect of both enabling and changing speed is checked after the state transition
-  for b in buttonEvents:
-    if enabled and not b.pressed:
-      if b.type == car.CarState.ButtonEvent.Type.accelCruise:
-        v_cruise_kph += V_CRUISE_DELTA - (v_cruise_kph % V_CRUISE_DELTA)
-      elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
-        v_cruise_kph -= V_CRUISE_DELTA - ((V_CRUISE_DELTA - v_cruise_kph) % V_CRUISE_DELTA)
+def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed,decel_pressed,accel_pressed_last,decel_pressed_last, fastMode, fast_mode_enabled):
+  if fast_mode_enabled:
+    if enabled:
+      if accel_pressed:
+        if ((cur_time-accel_pressed_last) >= 1 or (fastMode and (cur_time-accel_pressed_last) >= 0.5)):
+          v_cruise_kph += V_CRUISE_DELTA - (v_cruise_kph % V_CRUISE_DELTA)
+      elif decel_pressed:
+        if ((cur_time-decel_pressed_last) >= 1 or (fastMode and (cur_time-decel_pressed_last) >= 0.5)):
+          v_cruise_kph -= V_CRUISE_DELTA - ((V_CRUISE_DELTA - v_cruise_kph) % V_CRUISE_DELTA)
+      else:
+        for b in buttonEvents:
+          if not b.pressed:
+            if b.type == car.CarState.ButtonEvent.Type.accelCruise:
+              if (not fastMode):
+                v_cruise_kph += 1
+            elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
+              if (not fastMode):
+                v_cruise_kph -= 1
       v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
+  else:
+    for b in buttonEvents:
+      if enabled and not b.pressed:
+        if b.type == car.CarState.ButtonEvent.Type.accelCruise:
+          v_cruise_kph += V_CRUISE_DELTA - (v_cruise_kph % V_CRUISE_DELTA - V_CRUISE_OFFSET)
+        elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
+          v_cruise_kph -= V_CRUISE_DELTA - ((V_CRUISE_DELTA - v_cruise_kph + V_CRUISE_OFFSET) % V_CRUISE_DELTA)
+        v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
 
   return v_cruise_kph
 

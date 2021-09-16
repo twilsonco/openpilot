@@ -42,6 +42,11 @@ def manager_init():
     ("SpeedLimitPercOffset", "1"),
     ("TurnSpeedControl", "1"),
     ("TurnVisionControl", "1"),
+    ("GMAutoHold", "1"),
+    ("CruiseSpeedOffset", "1"),
+    ("StockSpeedAdjust", "1"),
+    ("CustomSounds", "0"),
+    ("SilentEngageDisengage", "0"),
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))

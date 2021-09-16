@@ -10,10 +10,8 @@ import json
 _WAY_BBOX_PADING = 80. / R  # 80 mts of pading to bounding box. (expressed in radians)
 _LANE_WIDTH = 3.7  # Lane width estimate. Used for detecting departures from way.
 
-
 with open(BASEDIR + "/selfdrive/mapd/lib/default_speeds.json", "rb") as f:
   _COUNTRY_LIMITS = json.loads(f.read())
-
 
 _WD = {
   'Mo': 0,
@@ -90,8 +88,7 @@ def speed_limit_value_for_limit_string(limit_string):
     return None
   conv = CV.MPH_TO_MS if v[2] is not None and v[2] == "mph" else CV.KPH_TO_MS
   return conv * float(v[1])
-
-
+  
 def speed_limit_for_osm_tag_limit_string(limit_string):
   # https://wiki.openstreetmap.org/wiki/Key:maxspeed
   if limit_string is None:
