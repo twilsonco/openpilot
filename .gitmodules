@@ -10,6 +10,7 @@
 [submodule "cereal"]
 	path = cereal
 	url = ../../twilsonco/cereal.git
+	branch = tw-0.8.9
 [submodule "rednose_repo"]
 	path = rednose_repo
 	url = ../../commaai/rednose.git
