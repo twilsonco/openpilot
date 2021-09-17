@@ -70,9 +70,9 @@ class CarInterface(CarInterfaceBase):
 
       ret.lateralTuning.pid.kpBP = [0., 40.]
       ret.lateralTuning.pid.kpV = [0., 0.19]
-      ret.lateralTuning.pid.kiBP = [0.]
-      ret.lateralTuning.pid.kiV = [0.0, 0.01]
-      ret.lateralTuning.pid.kf = 0.1 # !!! ONLY for sigmoid feedforward !!!
+      ret.lateralTuning.pid.kiBP = [0., 40.]
+      ret.lateralTuning.pid.kiV = [0., 0.01]
+      ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
       ret.steerRateCost = 1.0
       ret.steerActuatorDelay = 0.18
 
@@ -136,8 +136,7 @@ class CarInterface(CarInterfaceBase):
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
-                                                                         tire_stiffness_factor=tire_stiffness_factor)
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront, tire_stiffness_factor=tire_stiffness_factor)
 
     ret.longitudinalTuning.kpBP = [5., 35.]
     ret.longitudinalTuning.kpV = [2.4, 1.5]

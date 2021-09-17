@@ -36,9 +36,9 @@ class LatControlPID():
 
       # offset does not contribute to resistive torque
       # !!! VOLT ONLY SIGMOID !!! Solve your car's f(speed, angle) -> command.
-      x = angle_steers_des_no_offset_radians
+      x = 0.02577988 * angle_steers_des_no_offset
       sigmoid = x / (1 + math.fabs(x))
-      steer_feedforward = (CS.vEgo + 25 * CV.KPH_TO_MS) * sigmoid
+      steer_feedforward = 0.10586395 * (CS.vEgo + 3.21135674) * sigmoid
 
       deadzone = 0.0
 

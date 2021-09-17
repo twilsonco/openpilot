@@ -22,24 +22,24 @@ FOLLOW_PROFILES = [
     1.1, # stopping distance behind stopped lead car [m]
     [MPC_COST_LONG.DISTANCE * 15.0, MPC_COST_LONG.DISTANCE * 4.0], # mpc distance costs to use at close/far follow distance behind lead (higher value means harder accel/braking to make up distance) (recommended to use factors of MPC_COST_LONG.DISTANCE) (It's ok to only have one value, ie static distance cost )
     [1.0, 3.0], # distances behind lead car [s] corresponding to the distance costs above
-    2.0 # [units of MPC_COST_LONG.DISTANCE] lead car pull-away distance cost shift factor "d" (when lead car is pulling away, ie v_lead < 0, distance cost will be increased by |v_lead| * d)
+    1.0 # [units of MPC_COST_LONG.DISTANCE] lead car pull-away distance cost shift factor "d" (when lead car is pulling away, ie v_lead < 0, distance cost will be increased by |v_lead| * d)
   ],
   [ # two-bar
-    [-2.0, 0.0],
+    [-4.0, 0.0],
     [0.5, 1.8],
     0.3,
     1.5,
     [MPC_COST_LONG.DISTANCE * 2, MPC_COST_LONG.DISTANCE],
     [0.8, 1.5],
-    2.0
+    0.5
   ],
   [ # three-bar
     [-2.0, 0.0],
     [0.5, 2.4],
-    0.5,
+    0.6,
     1.5,
-    [MPC_COST_LONG.DISTANCE * 1.1, MPC_COST_LONG.DISTANCE * 0.1],
-    [0.6, 4.0],
+    [MPC_COST_LONG.DISTANCE * 1.2, MPC_COST_LONG.DISTANCE * 0.1],
+    [0.6, 3.5],
     2.0
   ]
 ]
