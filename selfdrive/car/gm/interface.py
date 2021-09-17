@@ -212,10 +212,10 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.parkBrake)
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
-    if self.CS.autoHoldActivated:
-      self.CS.lastAutoHoldTime = sec_since_boot()
-      events.add(car.CarEvent.EventName.autoHoldActivated)
     t = sec_since_boot()
+    if self.CS.autoHoldActivated:
+      self.CS.lastAutoHoldTime = t
+      events.add(car.CarEvent.EventName.autoHoldActivated)
     if self.CS.pcm_acc_status == AccState.FAULTED and t - self.CS.sessionInitTime > 3.0 and t - self.CS.lastAutoHoldTime > 1.0:
       events.add(EventName.accFaulted)
 
