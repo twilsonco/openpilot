@@ -84,7 +84,7 @@ class LanePlanner:
     self.lane_width_certainty.update(l_prob * r_prob)
     current_lane_width = abs(self.rll_y[0] - self.lll_y[0])
     self.lane_width_estimate.update(current_lane_width)
-    speed_lane_width = interp(v_ego, [0., 31.], [2.8, 3.5])
+    speed_lane_width = interp(v_ego, [0., 31.], [2.5, 3.5])
     self.lane_width = self.lane_width_certainty.x * self.lane_width_estimate.x + \
                       (1 - self.lane_width_certainty.x) * speed_lane_width
 
