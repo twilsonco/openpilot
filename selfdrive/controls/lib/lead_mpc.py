@@ -17,18 +17,18 @@ TR_DEFAULT = 1.8
 FOLLOW_PROFILES = [
   [ # one-bar
     [-1.0, 2.0], # bp0 and bp1; lead car relative velocities [m/s] (set both to 0.0 to disable dynamic brakepoints)
-    [0.6, 1.8], # follow distances corresponding to bp0 and bp1 [s]
+    [0.5, 1.6], # follow distances corresponding to bp0 and bp1 [s]
     0.2, # additional follow distance above CITY_HWY_TRANSITION_SPEEDS[1] [s]
     1.4, # stopping distance behind stopped lead car [m]
-    [MPC_COST_LONG.DISTANCE * 12.0, MPC_COST_LONG.DISTANCE * 8.0], # mpc distance costs to use at close/far follow distance behind lead (higher value means harder accel/braking to make up distance) (recommended to use factors of MPC_COST_LONG.DISTANCE) (It's ok to only have one value, ie static distance cost )
+    [MPC_COST_LONG.DISTANCE * 16.0, MPC_COST_LONG.DISTANCE * 8.0], # mpc distance costs to use at close/far follow distance behind lead (higher value means harder accel/braking to make up distance) (recommended to use factors of MPC_COST_LONG.DISTANCE) (It's ok to only have one value, ie static distance cost )
     [1.0, 2.0] # distances behind lead car [s] corresponding to the distance costs above
   ],
   [ # two-bar
     [-6.0, 0.0],
     [0.5, 1.8],
-    0.3,
+    0.2,
     1.8,
-    [MPC_COST_LONG.DISTANCE * 2, MPC_COST_LONG.DISTANCE],
+    [MPC_COST_LONG.DISTANCE * 1.3, MPC_COST_LONG.DISTANCE],
     [0.8, 1.5]
   ],
   [ # three-bar
@@ -36,7 +36,7 @@ FOLLOW_PROFILES = [
     [0.5, 2.4],
     0.5,
     2.0,
-    [MPC_COST_LONG.DISTANCE * 1.1, MPC_COST_LONG.DISTANCE * 0.1],
+    [MPC_COST_LONG.DISTANCE * 1.2, MPC_COST_LONG.DISTANCE * 0.1],
     [0.6, 4.0]
   ]
 ]

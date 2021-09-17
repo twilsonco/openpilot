@@ -3,6 +3,7 @@ import math
 import numpy as np
 from common.numpy_fast import interp
 
+from common.params import Params
 import cereal.messaging as messaging
 from cereal import log
 from common.realtime import DT_MDL
@@ -23,17 +24,39 @@ from selfdrive.swaglog import cloudlog
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
-A_CRUISE_MIN = -1.2
-A_CRUISE_MAX_VALS = [1.2, 1.2, 0.8, 0.6]
-A_CRUISE_MAX_BP = [0., 15., 25., 40.]
 
-# Lookup table for turns
-_A_TOTAL_MAX_V = [1.7, 3.2]
-_A_TOTAL_MAX_BP = [20., 40.]
+# lookup tables VS speed to determine min and max accels in cruise
+# make sure these accelerations are smaller than mpc limits
+_A_CRUISE_MIN_V_SPORT = [-3.0, -2.6, -2.3, -2.0, -1.0]
+_A_CRUISE_MIN_V_FOLLOWING = [-3.0, -2.5, -2.0, -1.5, -1.0]
+_A_CRUISE_MIN_V = [-2.0, -1.5, -1.0, -0.7, -0.5]
+_A_CRUISE_MIN_BP = [0.0, 5.0, 10.0, 20.0, 55.0]
 
+# need fast accel at very low speed for stop and go
+# make sure these accelerations are smaller than mpc limits
+_A_CRUISE_MAX_V = [2.0, 2.0, 1.5, .5, .3]
+_A_CRUISE_MAX_V_SPORT = [3.0, 3.5, 3.0, 2.0, 2.0]
+_A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.4, 1.4, .7, .3]
+_A_CRUISE_MAX_BP = [0., 5., 10., 20., 55.]
 
-def get_max_accel(v_ego):
-  return interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
+_A_CRUISE_MAX_V_MODE_LIST = [_A_CRUISE_MAX_V, _A_CRUISE_MAX_V_SPORT]
+
+# Lookup table for turns - fast accel
+_A_TOTAL_MAX_V = [3.5, 4.0, 5.0]
+_A_TOTAL_MAX_BP = [0., 25., 55.]
+
+# Lookup table for turns original - used when slowOnCurves = 1 from kegman.json
+_A_TOTAL_MAX_V_SOC = [1.7, 3.2]
+_A_TOTAL_MAX_BP_SOC = [20., 40.]
+
+def calc_cruise_accel_limits(v_ego, following, accelMode):
+  a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
+  if following:
+    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
+  else:
+    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_MODE_LIST[accelMode])
+  return np.vstack([a_cruise_min, a_cruise_max])
+
 
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
@@ -75,6 +98,8 @@ class Planner():
     self.speed_limit_controller = SpeedLimitController()
     self.events = Events()
     self.turn_speed_controller = TurnSpeedController()
+    
+    self.accel_mode = int(Params().get_bool("SportAccel")) # 0 = normal, 1 = sport;
 
   def update(self, sm, CP):
     cur_time = sec_since_boot()
@@ -92,6 +117,7 @@ class Planner():
     self.lead_1 = sm['radarState'].leadTwo
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
+    following = self.lead_1.status and self.lead_1.dRel < 45.0 and self.lead_1.vLeadK > v_ego and self.lead_1.aLeadK > 0.0
     if not enabled or sm['carState'].gasPressed:
       self.v_desired = v_ego
       self.a_desired = a_ego
@@ -103,7 +129,7 @@ class Planner():
     # Get acceleration and active solutions for custom long mpc.
     a_mpc, active_mpc, c_source = self.mpc_solutions(enabled, self.v_desired, self.a_desired, v_cruise, sm)
 
-    accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
+    accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following, self.accel_mode)]
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     if force_slow_decel:
       # if required so, force a smooth deceleration

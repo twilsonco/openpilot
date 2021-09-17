@@ -124,6 +124,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Mute engage and disengage sounds.",
                                   "../assets/offroad/icon_mute.png",
                                   this));
+  toggles.append(new ParamControl("SportAccel",
+                                  "Sport acceleration mode",
+                                  "Stronger acceleration under most conditions.",
+                                  "../assets/offroad/icon_rocket.png",
+                                  this));
   toggles.append(new ParamControl("DisableDisengageOnGas",
                                   "Disable disengage on gas",
                                   "Disable default comma stock disengage on gas feature",

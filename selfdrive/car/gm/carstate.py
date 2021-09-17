@@ -38,7 +38,7 @@ class CarState(CarStateBase):
     self.autoHold = self._params.get_bool("GMAutoHold")
     self.autoHoldActive = False
     self.autoHoldActivated = False
-    self.regenPaddlePressed = 0
+    self.regenPaddlePressed = False
     self.cruiseMain = False
     self.engineRPM = 0
     self.lastAutoHoldTime = 0.0
