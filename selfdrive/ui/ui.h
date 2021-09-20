@@ -50,8 +50,8 @@ const float ZOOM = Hardware::TICI() ? 2912.8 : 2138.5;
 
 typedef struct Rect {
   int x, y, w, h;
-  int centerX() const { return x + w * 0.5; }
-  int centerY() const { return y + h * 0.5; }
+  int centerX() const { return x + w / 2; }
+  int centerY() const { return y + h / 2; }
   int right() const { return x + w; }
   int bottom() const { return y + h; }
   bool ptInRect(int px, int py) const {
@@ -82,10 +82,10 @@ const int CONTROLS_TIMEOUT = 5;
 const int bdr_s = 30;
 const int header_h = 420;
 const int footer_h = 280;
-const Rect laneless_btn = {1585, 905, 140, 140};
+const int laneless_btn_touch_pad = 80;
 
 const int speed_sgn_r = 96;
-const int speed_sgn_touch_pad = 50;
+const int speed_sgn_touch_pad = 60;
 
 const int UI_FREQ = 20;   // Hz
 
@@ -137,6 +137,7 @@ typedef struct UIScene {
   cereal::PandaState::PandaType pandaType;
   
   int laneless_mode;
+  Rect laneless_btn_touch_rect;
 
   cereal::CarState::Reader car_state;
   cereal::ControlsState::Reader controls_state;
