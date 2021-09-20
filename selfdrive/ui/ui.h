@@ -30,6 +30,16 @@
 #define COLOR_RED_ALPHA(x) nvgRGBA(201, 34, 49, x)
 #define COLOR_YELLOW nvgRGBA(218, 202, 37, 255)
 #define COLOR_RED nvgRGBA(201, 34, 49, 255)
+#define COLOR_OCHRE nvgRGBA(218, 111, 37, 255)
+#define COLOR_OCHRE_ALPHA(x) nvgRGBA(218, 111, 37, x)
+#define COLOR_GREEN nvgRGBA(0, 255, 0, 255)
+#define COLOR_GREEN_ALPHA(x) nvgRGBA(0, 255, 0, x)
+#define COLOR_BLUE nvgRGBA(0, 0, 255, 255)
+#define COLOR_BLUE_ALPHA(x) nvgRGBA(0, 0, 255, x)
+#define COLOR_ORANGE nvgRGBA(255, 175, 3, 255)
+#define COLOR_ORANGE_ALPHA(x) nvgRGBA(255, 175, 3, x)
+#define COLOR_YELLOW_ALPHA(x) nvgRGBA(218, 202, 37, x)
+#define COLOR_GREY nvgRGBA(191, 191, 191, 1)
 
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
@@ -72,6 +82,7 @@ const int CONTROLS_TIMEOUT = 5;
 const int bdr_s = 30;
 const int header_h = 420;
 const int footer_h = 280;
+const Rect laneless_btn = {1585, 905, 140, 140};
 
 const int speed_sgn_r = 96;
 const int speed_sgn_touch_pad = 50;
@@ -124,6 +135,12 @@ typedef struct UIScene {
   double last_speed_limit_sign_tap;
 
   cereal::PandaState::PandaType pandaType;
+  
+  int laneless_mode;
+
+  cereal::CarState::Reader car_state;
+  cereal::ControlsState::Reader controls_state;
+  cereal::LateralPlan::Reader lateral_plan;
 
   // modelV2
   float lane_line_probs[4];
@@ -140,6 +157,18 @@ typedef struct UIScene {
   float light_sensor, accel_sensor, gyro_sensor;
   bool started, ignition, is_metric, longitudinal_control, end_to_end;
   uint64_t started_frame;
+  
+  struct _LateralPlan
+  {
+    float laneWidth;
+
+    float dProb;
+    float lProb;
+    float rProb;
+
+    bool lanelessModeStatus;
+  } lateralPlan;
+  
 } UIScene;
 
 typedef struct UIState {

@@ -48,6 +48,8 @@ def manager_init():
     ("CustomSounds", "0"),
     ("SilentEngageDisengage", "0"),
     ("SportAccel", "0"),
+    ("EndToEndToggle", "1"),
+    ("LanelessMode", "2"),
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
