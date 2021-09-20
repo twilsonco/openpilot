@@ -50,8 +50,8 @@ const float ZOOM = Hardware::TICI() ? 2912.8 : 2138.5;
 
 typedef struct Rect {
   int x, y, w, h;
-  int centerX() const { return x + w / 2; }
-  int centerY() const { return y + h / 2; }
+  int centerX() const { return x + w * 0.5; }
+  int centerY() const { return y + h * 0.5; }
   int right() const { return x + w; }
   int bottom() const { return y + h; }
   bool ptInRect(int px, int py) const {

@@ -55,11 +55,12 @@ static void ui_draw_speed_sign(UIState *s, float x, float y, int size, float spe
   if (is_map_sourced) {
     const int img_size = 35;
     const int img_y = int(y - 55);
-    ui_draw_image(s, {int(x - (img_size / 2)), img_y - (img_size / 2), img_size, img_size}, "map_source_icon", 
+    ui_draw_image(s, {int(x - (img_size * 0.5)), img_y - (img_size * 0.5), img_size, img_size}, "map_source_icon", 
                   is_active ? 1. : .3);
   }
 }
 
+double OneOverSqrt3 = 1.0 / sqrt(3.0);
 static void ui_draw_turn_speed_sign(UIState *s, float x, float y, int width, float speed, int curv_sign, 
                                     const char *subtext, const char *font_name, bool is_active) {
   const float stroke_w = 15.0;
@@ -67,19 +68,19 @@ static void ui_draw_turn_speed_sign(UIState *s, float x, float y, int width, flo
   NVGcolor inner_color = is_active ? COLOR_WHITE : COLOR_WHITE_ALPHA(.35f * 255);
   NVGcolor text_color = is_active ? COLOR_BLACK : COLOR_BLACK_ALPHA(.3f * 255);
 
-  const float cS = stroke_w / 2.0 + 4.5;  // half width of the stroke on the corners of the triangle
-  const float R = width / 2.0 - stroke_w / 2.0;
+  const float cS = stroke_w * 0.5 + 4.5;  // half width of the stroke on the corners of the triangle
+  const float R = width * 0.5 - stroke_w * 0.5;
   const float A = 0.73205;
   const float h2 = 2.0 * R / (1.0 + A);
   const float h1 = A * h2;
-  const float L = 4.0 * R / sqrt(3.0);
+  const float L = 4.0 * R * OneOverSqrt3;
 
   // Draw the internal triangle, compensate for stroke width. Needed to improve rendering when in inactive 
   // state due to stroke transparency being different from inner transparency.
   nvgBeginPath(s->vg);
   nvgMoveTo(s->vg, x, y - R + cS);
-  nvgLineTo(s->vg, x - L / 2.0 + cS, y + h1 + h2 - R - stroke_w / 2.0);
-  nvgLineTo(s->vg, x + L / 2.0 - cS, y + h1 + h2 - R - stroke_w / 2.0);
+  nvgLineTo(s->vg, x - L * 0.5 + cS, y + h1 + h2 - R - stroke_w * 0.5);
+  nvgLineTo(s->vg, x + L * 0.5 - cS, y + h1 + h2 - R - stroke_w * 0.5);
   nvgClosePath(s->vg);
 
   nvgFillColor(s->vg, inner_color);
@@ -92,8 +93,8 @@ static void ui_draw_turn_speed_sign(UIState *s, float x, float y, int width, flo
 
   nvgBeginPath(s->vg);
   nvgMoveTo(s->vg, x, y - R);
-  nvgLineTo(s->vg, x - L / 2.0, y + h1 + h2 - R);
-  nvgLineTo(s->vg, x + L / 2.0, y + h1 + h2 - R);
+  nvgLineTo(s->vg, x - L * 0.5, y + h1 + h2 - R);
+  nvgLineTo(s->vg, x + L * 0.5, y + h1 + h2 - R);
   nvgClosePath(s->vg);
 
   nvgStroke(s->vg);
@@ -102,7 +103,7 @@ static void ui_draw_turn_speed_sign(UIState *s, float x, float y, int width, flo
   if (curv_sign != 0) {
     const int img_size = 35;
     const int img_y = int(y - R + stroke_w + 30);
-    ui_draw_image(s, {int(x - (img_size / 2)), img_y, img_size, img_size}, 
+    ui_draw_image(s, {int(x - (img_size * 0.5)), img_y, img_size, img_size}, 
                   curv_sign > 0 ? "turn_left_icon" : "turn_right_icon", is_active ? 1. : .3);
   }
 
@@ -115,8 +116,8 @@ static void ui_draw_turn_speed_sign(UIState *s, float x, float y, int width, flo
 
 static void draw_chevron(UIState *s, float x, float y, float sz, NVGcolor fillColor, NVGcolor glowColor) {
   // glow
-  float g_xo = sz/5;
-  float g_yo = sz/10;
+  float g_xo = sz * 0.2;
+  float g_yo = sz * 0.1;
   nvgBeginPath(s->vg);
   nvgMoveTo(s->vg, x+(sz*1.35)+g_xo, y+sz+g_yo);
   nvgLineTo(s->vg, x, y-g_xo);
@@ -141,7 +142,7 @@ static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, i
   nvgFillColor(s->vg, color);
   nvgFill(s->vg);
   const int img_size = radius * 1.5;
-  ui_draw_image(s, {center_x - (img_size / 2), center_y - (img_size / 2), img_size, img_size}, image, img_alpha);
+  ui_draw_image(s, {center_x - (img_size * 0.5), center_y - (img_size * 0.5), img_size, img_size}, image, img_alpha);
 }
 
 static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, int radius, const char *image, bool active) {
@@ -167,8 +168,8 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
     fillAlpha = (int)(fmin(fillAlpha, 255));
   }
 
-  float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * 2.35;
-  x = std::clamp(x, 0.f, s->fb_w - sz / 2);
+  float sz = std::clamp((25 * 30) / (d_rel * 0.33333 + 30), 15.0f, 30.0f) * 2.35;
+  x = std::clamp(x, 0.f, s->fb_w - sz * 0.5);
   y = std::fmin(s->fb_h - sz * .6, y);
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
@@ -331,7 +332,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
                                speedLimitControlState == cereal::LongitudinalPlan::SpeedLimitControlState::TEMP_INACTIVE);
 
     const int distToSpeedLimit = int(longitudinal_plan.getDistToSpeedLimit() * 
-                                     (s->scene.is_metric ? 1.0 : 3.28084) / 10.0) * 10;
+                                     (s->scene.is_metric ? 1.0 : 3.28084) * 0.1) * 10;
     const bool is_map_sourced = longitudinal_plan.getIsMapSpeedLimit();
     const std::string distance_str = std::to_string(distToSpeedLimit) + (s->scene.is_metric ? "m" : "f");
     const std::string offset_str = speed_offset > 0.0 ? "+" + std::to_string((int)std::nearbyint(speed_offset)) : "";
@@ -367,7 +368,7 @@ static void ui_draw_vision_turnspeed(UIState *s) {
 
     const int curveSign = longitudinal_plan.getTurnSign();
     const int distToTurn = int(longitudinal_plan.getDistToTurn() * 
-                               (s->scene.is_metric ? 1.0 : 3.28084) / 10.0) * 10;
+                               (s->scene.is_metric ? 1.0 : 3.28084) * 0.1) * 10;
     const std::string distance_str = std::to_string(distToTurn) + (s->scene.is_metric ? "m" : "f");
 
     ui_draw_turn_speed_sign(s, speed_sign_rect.centerX(), speed_sign_rect.centerY(), speed_sign_rect.w, speed, 
@@ -379,8 +380,8 @@ static void ui_draw_vision_speed(UIState *s) {
   const float speed = std::max(0.0, (*s->sm)["carState"].getCarState().getVEgo() * (s->scene.is_metric ? 3.6 : 2.2369363));
   const std::string speed_str = std::to_string((int)std::nearbyint(speed));
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s, s->fb_w/2, 210, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
-  ui_draw_text(s, s->fb_w/2, 290, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
+  ui_draw_text(s, s->fb_w * 0.5, 210, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
+  ui_draw_text(s, s->fb_w * 0.5, 290, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
 }
 
 static void ui_draw_vision_event(UIState *s) {
@@ -406,7 +407,7 @@ static void ui_draw_vision_event(UIState *s) {
     ui_draw_text(s, rect.centerX(), rect.centerY(), acc_str.c_str(), 56, COLOR_WHITE_ALPHA(alpha), "sans-bold");
   } else if (s->scene.engageable) {
     // draw steering wheel
-    const int radius = 96;
+    const int radius = 88;
     const int center_x = s->fb_w - radius - bdr_s * 2;
     const int center_y = radius  + (bdr_s * 1.5);
     const QColor &color = bg_colors[s->status];
@@ -429,25 +430,29 @@ static void ui_draw_vision_event(UIState *s) {
 static void ui_draw_vision_face(UIState *s) {
   const int radius = 96;
   const int center_x = radius + (bdr_s * 2);
-  const int center_y = s->fb_h - footer_h / 2;
+  const int center_y = s->fb_h - footer_h * 0.5;
   ui_draw_circle_image(s, center_x, center_y, radius, "driver_face", s->scene.dm_active);
 }
 
 static void draw_laneless_button(UIState *s) {
   if (s->vipc_client->connected) {
-    int btn_w = 140;
-    int btn_h = 140;
-    int btn_x1 = s->fb_w - btn_w - 195 -20;
-    int btn_y = 1080 - btn_h - 35 - (btn_h / 2) - 10;
-    int btn_xc1 = btn_x1 + (btn_w/2);
-    int btn_yc = btn_y + (btn_h/2);
+    const int radius = 80;
+    const int center_x = s->fb_w - radius - bdr_s * 4;
+    const int center_y = s->fb_h - radius - bdr_s * 3.5;
+    int btn_w = radius * 2;
+    int btn_h = radius * 2;
+    int btn_x1 = center_x - 0.5 * radius;
+    int btn_y = center_y - 0.5 * radius;
+    int btn_xc1 = btn_x1 + radius;
+    int btn_yc = btn_y + radius;
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
     nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, 100);
+    // nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, 100);
     nvgStrokeColor(s->vg, nvgRGBA(0,0,0,80));
     nvgStrokeWidth(s->vg, 6);
     nvgStroke(s->vg);
-    nvgFontSize(s->vg, 43);
+    nvgFontSize(s->vg, 53);
 
     if (s->scene.laneless_mode == 0) {
       nvgStrokeColor(s->vg, nvgRGBA(0,125,0,255));
@@ -484,7 +489,7 @@ static void draw_laneless_button(UIState *s) {
 }
 
 static void ui_draw_vision_header(UIState *s) {
-  NVGpaint gradient = nvgLinearGradient(s->vg, 0, header_h - (header_h / 2.5), 0, header_h,
+  NVGpaint gradient = nvgLinearGradient(s->vg, 0, header_h - (header_h * 0.4), 0, header_h,
                                         nvgRGBAf(0, 0, 0, 0.45), nvgRGBAf(0, 0, 0, 0));
   ui_fill_rect(s->vg, {0, 0, s->fb_w , header_h}, gradient);
   ui_draw_vision_maxspeed(s);
@@ -697,7 +702,7 @@ void ui_resize(UIState *s, int width, int height) {
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
-  nvgTranslate(s->vg, width / 2, height / 2 + y_offset);
+  nvgTranslate(s->vg, width * 0.5, height * 0.5 + y_offset);
   // 2) Apply same scaling as video
   nvgScale(s->vg, zoom, zoom);
   // 3) Put (0, 0) in top left corner of video
