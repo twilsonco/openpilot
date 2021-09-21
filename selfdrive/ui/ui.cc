@@ -33,12 +33,6 @@ void sa_init(UIState *s, bool full_init) {
   s->ui_debug = false;  // change to true while debugging
   s->scene.mlButtonEnabled = false;  // state isn't saved yet
 
-  std::string dynamic_follow = util::read_file("/data/community/params/dynamic_follow");
-  if (dynamic_follow != "") {
-    dynamic_follow = dynamic_follow.substr(1, dynamic_follow.find_last_of('"') - 1);
-    std::cout << "set dfButtonStatus to " << dynamic_follow << std::endl;
-    s->scene.dfButtonStatus = DF_TO_IDX[dynamic_follow];
-  }
   std::string model_laneless = util::read_file("/data/community/params/model_laneless");
   if (model_laneless != "") {
     model_laneless.erase(std::remove(model_laneless.begin(), model_laneless.end(), '\n'), model_laneless.end());  // strips whitespace and newline
