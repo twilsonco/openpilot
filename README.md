@@ -22,12 +22,14 @@ Current and planned fork features:
 - [x] [Chevy Volt] Sigmoidal steering responce (thanks Qadmus)
 - [x] [GM] AutoHold [optional]  (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
+- [x] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#new-dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only* (ported from sunnyhaibin)
 - [x] Normal/sport acceleration modes [optional] with improved acceleration/braking profiles (ported from kegman)
 - [x] 1/5 mph changes for tap/hold of the inc/dec buttons [optional] (ported from Spector56)
 - [x] 3mph cruise speed offset: speed will be 23/28/33/38/etc. [optional] 
 - [x] Alternate sound effect set [optional] 
 - [x] Mute engage and disengage sounds [optional]
 - [ ] Spector56 cruising; OP won't use brakes (*i.e.* regen only) when speed above set speed and not following
+- [ ] [Modified assistive driving system](https://github.com/sunnyhaibin/openpilot#new-modified-assistive-driving-safety-mads) (MADS)
 - [ ] Remember last follow mode
 - [ ] 0.5 second delay before activating newly selected follow mode so user can switch around without OP slightly jerking in response
 
