@@ -191,8 +191,8 @@ class LeadMpc():
       self.prev_lead_status = False
       # Fake a fast lead car, so mpc keeps running
       for i in range(3):
-        self.cur_states[i][0].x_l = 50.0
-        self.cur_states[i][0].v_l = v_ego + 10.0
+        self.cur_states[i][0].x_l = max(v_ego * 8.0, 50.0) # put lead 8 seconds ahead
+        self.cur_states[i][0].v_l = v_ego + 20.0
       a_lead = 0.0
       self.a_lead_tau = _LEAD_ACCEL_TAU
       tr = TR_DEFAULT
