@@ -70,7 +70,7 @@ class CarInterface(CarInterfaceBase):
 
       ret.lateralTuning.pid.kpBP = [0., 40.]
       ret.lateralTuning.pid.kpV = [0., 0.19]
-      ret.lateralTuning.pid.kiBP = [0., 40.]
+      ret.lateralTuning.pid.kiBP = [0.]
       ret.lateralTuning.pid.kiV = [0.]
       ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
       ret.steerRateCost = 1.0
