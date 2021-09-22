@@ -319,13 +319,10 @@ static void ui_draw_vision_speedlimit(UIState *s) {
 
   if (speedLimit > 0.0 && s->scene.engageable) {
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
-    Rect speed_sign_rect;
-    if (s->fb_w / s->fb_h > 1.5){
-      speed_sign_rect = Rect{maxspeed_rect.right() + bdr_s, maxspeed_rect.y, 2 * speed_sgn_r, 2 * speed_sgn_r};
-    }
-    else{
-      speed_sign_rect = Rect{maxspeed_rect.centerX() - speed_sgn_r, maxspeed_rect.bottom() + bdr_s, 2 * speed_sgn_r, 2 * speed_sgn_r};
-    }
+    Rect speed_sign_rect = Rect{maxspeed_rect.centerX() - speed_sgn_r, 
+      maxspeed_rect.bottom() + bdr_s, 
+      2 * speed_sgn_r, 
+      2 * speed_sgn_r};
     const float speed = speedLimit * (s->scene.is_metric ? 3.6 : 2.2369362921);
     const float speed_offset = speedLimitOffset * (s->scene.is_metric ? 3.6 : 2.2369362921);
 
@@ -365,15 +362,10 @@ static void ui_draw_vision_turnspeed(UIState *s) {
 
   if (show) {
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
-    Rect speed_sign_rect;
-    if (s->fb_w / s->fb_h > 1.5){
-      speed_sign_rect = Rect{maxspeed_rect.right() + bdr_s + 2 * speed_sgn_r, maxspeed_rect.y, 
-                                        2 * speed_sgn_r, maxspeed_rect.h};
-    }
-    else{
-      speed_sign_rect = Rect{maxspeed_rect.centerX() - speed_sgn_r, maxspeed_rect.bottom() + 2 * (bdr_s + speed_sgn_r), 
-                                        2 * speed_sgn_r, maxspeed_rect.h};
-    }
+    Rect speed_sign_rect = Rect{maxspeed_rect.centerX() - speed_sgn_r, 
+      maxspeed_rect.bottom() + 2 * (bdr_s + speed_sgn_r), 
+      2 * speed_sgn_r, 
+      maxspeed_rect.h};
     const float speed = turnSpeed * (s->scene.is_metric ? 3.6 : 2.2369362921);
 
     auto turnSpeedControlState = longitudinal_plan.getTurnSpeedControlState();
