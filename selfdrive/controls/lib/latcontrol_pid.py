@@ -36,13 +36,13 @@ class LatControlPID():
 
       # offset does not contribute to resistive torque
       # !!! VOLT ONLY SIGMOID !!! Solve your car's f(speed, angle) -> command.
-      x = 0.02577988 * angle_steers_des_no_offset
+      x = 2.73528719e-02 * angle_steers_des_no_offset
       sigmoid = x / (1 + math.fabs(x))
-      steer_feedforward = 0.10586395 * (CS.vEgo + 3.21135674) * sigmoid
+      steer_feedforward = 1.27699321e-03 * sigmoid * ((CS.vEgo + 2.29236858e+01) ** 2)
 
       deadzone = 0.0
 
-      check_saturation = (CS.vEgo > 10) and not CS.steeringRateLimited and not CS.steeringPressed
+      check_saturation = (CS.vEgo > 8) and not CS.steeringRateLimited and not CS.steeringPressed
       output_steer = self.pid.update(angle_steers_des, CS.steeringAngleDeg, check_saturation=check_saturation, override=CS.steeringPressed,
                                      feedforward=steer_feedforward, speed=CS.vEgo, deadzone=deadzone)
       pid_log.active = True
