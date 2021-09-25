@@ -11,6 +11,8 @@ from selfdrive.config import Conversions as CV
 from common.params import Params
 import cereal.messaging as messaging
 from cereal import log
+from selfdrive.kegman_conf import kegman_conf
+
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
@@ -64,6 +66,10 @@ class LateralPlanner():
     self.plan_yaw = np.zeros((TRAJECTORY_SIZE,))
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
     self.y_pts = np.zeros(TRAJECTORY_SIZE)
+
+    self.kegman = kegman_conf(CP)
+    self.mpc_frame = 0
+
 
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
@@ -168,8 +174,15 @@ class LateralPlanner():
       self.LP.lll_prob *= self.lane_change_ll_prob
       self.LP.rll_prob *= self.lane_change_ll_prob
    
-    self.model_laneless = True
-    if not self.model_laneless:
+    
+    self.mpc_frame += 1
+    if self.mpc_frame % 1000 == 0:
+      # live tuning through /data/openpilot/tune.py for laneless toggle
+      self.kegman = kegman_conf()
+      self.model_laneless = float(self.kegman.conf['laneLess'])
+      self.mpc_frame = 0
+
+    if self.model_laneless == "0":
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
       self.libmpc.init_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, CP.steerRateCost)
     else:
