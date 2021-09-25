@@ -241,7 +241,7 @@ class Controls:
 
     # TODO: fix simulator
     if not SIMULATION:
-      if not NOSENSOR:
+      #if not NOSENSOR:
         #if not self.sm.alive['ubloxRaw'] and (self.sm.frame > 10. / DT_CTRL):
         #  self.events.add(EventName.gpsMalfunction)
         #if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000) and not TICI:
