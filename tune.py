@@ -161,10 +161,10 @@ while True:
   #if float(kegman.conf['deadzone']) < 0:
   #  kegman.conf['deadzone'] = "0"
   if float(kegman.conf['laneLess']) < 0:
-    kegman.conf['deadzone'] = "0"
+    kegman.conf['laneLess'] = "0"
   
   if float(kegman.conf['laneLess']) > 0.000001:
-    kegman.conf['deadzone'] = "1"
+    kegman.conf['laneLess'] = "1"
      
   if float(kegman.conf['1barBP0']) < -0.5:
     kegman.conf['1barBP0'] = "-0.5"  
