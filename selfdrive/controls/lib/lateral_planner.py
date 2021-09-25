@@ -69,6 +69,7 @@ class LateralPlanner():
 
     self.kegman = kegman_conf(CP)
     self.mpc_frame = 0
+    self.model_laneless = "0"
 
 
   def setup_mpc(self):
