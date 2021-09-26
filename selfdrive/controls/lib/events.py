@@ -262,7 +262,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Be ready to take over at any time",
       "Always keep hands on wheel and eyes on road",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 10.),
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },
 
   EventName.startupMaster: {
@@ -270,7 +270,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "WARNING: This branch is not tested",
       "Always keep hands on wheel and eyes on road",
       AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 10.),
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },
 
   # Car is recognized, but marked as dashcam only
