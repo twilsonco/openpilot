@@ -34,7 +34,7 @@ class CarController():
 
     # STEER
     if (frame % P.STEER_STEP) == 0:
-      lkas_enabled = enabled and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > P.MIN_STEER_SPEED
+      lkas_enabled = (enabled or CS.pause_long_on_gas_press) and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > P.MIN_STEER_SPEED
       if lkas_enabled:
         new_steer = int(round(actuators.steer * P.STEER_MAX))
         apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
@@ -47,7 +47,7 @@ class CarController():
 
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))
 
-    if not enabled:
+    if not enabled or CS.pause_long_on_gas_press:
       # Stock ECU sends max regen when not enabled.
       apply_gas = P.MAX_ACC_REGEN
       apply_brake = 0

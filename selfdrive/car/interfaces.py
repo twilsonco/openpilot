@@ -16,8 +16,6 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
 
-DISENGAGE_ON_GAS = not Params().get_bool("DisableDisengageOnGas")
-
 # WARNING: this value was determined based on the model's training distribution,
 #          model predictions above this speed can be unpredictable
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS  # 135 + 4 = 86 mph
@@ -67,6 +65,8 @@ class CarInterfaceBase():
     self.steer_warning = 0
     self.steering_unpressed = 0
     self.low_speed_alert = False
+
+    self.disengage_on_gas = not Params().get_bool("DisableDisengageOnGas")
 
     if CarState is not None:
       self.CS = CarState(CP)
@@ -176,7 +176,7 @@ class CarInterfaceBase():
     # Disable on rising edge of gas or brake. Also disable on brake when speed > 0.
     # Optionally allow to press gas at zero speed to resume.
     # e.g. Chrysler does not spam the resume button yet, so resuming with gas is handy. FIXME!
-    if (DISENGAGE_ON_GAS and cs_out.gasPressed and (not self.CS.out.gasPressed) and cs_out.vEgo > gas_resume_speed) or \
+    if (self.disengage_on_gas and cs_out.gasPressed and (not self.CS.out.gasPressed) and cs_out.vEgo > gas_resume_speed) or \
        (cs_out.brakePressed and (not self.CS.out.brakePressed or not cs_out.standstill)):
       events.add(EventName.pedalPressed)
 

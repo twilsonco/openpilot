@@ -44,6 +44,10 @@ class CarState(CarStateBase):
     self.lastAutoHoldTime = 0.0
     self.sessionInitTime = sec_since_boot()
 
+    self.pause_long_on_gas_press = False
+    self.gasPressed = False
+    self.vEgo = 0.
+
   def update(self, pt_cp):
     ret = car.CarState.new_message()
 
@@ -60,6 +64,7 @@ class CarState(CarStateBase):
     ret.wheelSpeeds.rr = pt_cp.vl["EBCMWheelSpdRear"]["RRWheelSpd"] * CV.KPH_TO_MS
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+    self.vEgo = ret.vEgo
     ret.standstill = ret.vEgoRaw < 0.01
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
@@ -73,6 +78,7 @@ class CarState(CarStateBase):
 
     ret.gas = pt_cp.vl["AcceleratorPedal"]["AcceleratorPedal"] / 254.
     ret.gasPressed = ret.gas > 1e-5
+    self.gasPressed = ret.gasPressed
 
     ret.steeringAngleDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelAngle"]
     ret.steeringRateDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelRate"]

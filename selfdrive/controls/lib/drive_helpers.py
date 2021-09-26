@@ -6,7 +6,7 @@ from selfdrive.modeld.constants import T_IDXS
 
 
 # kph
-V_CRUISE_MAX = 145
+V_CRUISE_MAX = 95
 V_CRUISE_MIN = 5
 V_CRUISE_DELTA = 5
 V_CRUISE_OFFSET = 3
@@ -57,7 +57,8 @@ def set_v_cruise_offset(do_offset):
   else:
     V_CRUISE_OFFSET = 0
 
-def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed,decel_pressed,accel_pressed_last,decel_pressed_last, fastMode, fast_mode_enabled):
+def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed,decel_pressed,accel_pressed_last,decel_pressed_last, fastMode, fast_mode_enabled, vEgo, v_cruise_last_changed):
+  
   if fast_mode_enabled:
     if enabled:
       if accel_pressed:
@@ -74,7 +75,10 @@ def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed
                 v_cruise_kph += 1
             elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
               if (not fastMode):
-                v_cruise_kph -= 1
+                if (cur_time-v_cruise_last_changed >= 3) and vEgo - v_cruise_kph > V_CRUISE_DELTA: # user pressed "set" after accelerating while engaged
+                  v_cruise_kph = vEgo
+                else:
+                  v_cruise_kph -= 1
       v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
   else:
     for b in buttonEvents:
@@ -82,7 +86,10 @@ def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed
         if b.type == car.CarState.ButtonEvent.Type.accelCruise:
           v_cruise_kph += V_CRUISE_DELTA - (v_cruise_kph % V_CRUISE_DELTA - V_CRUISE_OFFSET)
         elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
-          v_cruise_kph -= V_CRUISE_DELTA - ((V_CRUISE_DELTA - v_cruise_kph + V_CRUISE_OFFSET) % V_CRUISE_DELTA)
+          if (cur_time-v_cruise_last_changed >= 3) and vEgo - v_cruise_kph > V_CRUISE_DELTA: # user pressed "set" after accelerating while engaged
+            v_cruise_kph = vEgo
+          else:
+            v_cruise_kph -= V_CRUISE_DELTA - ((V_CRUISE_DELTA - v_cruise_kph + V_CRUISE_OFFSET) % V_CRUISE_DELTA)
         v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
 
   return v_cruise_kph

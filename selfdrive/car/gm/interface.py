@@ -207,6 +207,8 @@ class CarInterface(CarInterfaceBase):
 
     if ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
+    if self.CS.pause_long_on_gas_press:
+      events.add(EventName.gasPressed)
     if self.CS.park_brake:
       events.add(EventName.parkBrake)
     if ret.vEgo < self.CP.minSteerSpeed:
@@ -241,7 +243,9 @@ class CarInterface(CarInterfaceBase):
 
     # For Openpilot, "enabled" includes pre-enable.
     # In GM, PCM faults out if ACC command overlaps user gas.
-    enabled = c.enabled and not self.CS.out.gasPressed
+    enabled = c.enabled and not (self.CS.gasPressed and self.disengage_on_gas)
+    
+    self.CS.pause_long_on_gas_press = self.CS.gasPressed and not self.disengage_on_gas
 
     can_sends = self.CC.update(enabled, self.CS, self.frame,
                                c.actuators,
