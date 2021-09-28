@@ -165,7 +165,7 @@ class LeadMpc():
         v_lead = 0.0
         a_lead = 0.0
 
-      self.a_lead_tau = lead.aLeadTau
+      self.a_lead_tau = max(lead.aLeadTau, (a_lead ** 2 * math.pi) / (2 * (v_lead + 0.01) ** 2))
       self.new_lead = False
       if not self.prev_lead_status or abs(x_lead - self.prev_lead_x) > 2.5:
         for i in range(3):
