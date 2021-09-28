@@ -3,6 +3,7 @@ from common.numpy_fast import clip, interp
 from selfdrive.controls.lib.pid import PIController
 from selfdrive.controls.lib.drive_helpers import CONTROL_N
 from selfdrive.modeld.constants import T_IDXS
+from common.params import Params
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
@@ -66,6 +67,7 @@ class LongControl():
                             sat_limit=0.8)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
+    self.longPlan = ""
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
@@ -106,6 +108,8 @@ class LongControl():
     # tracking objects and driving
     elif self.long_control_state == LongCtrlState.pid:
       self.v_pid = v_target
+
+      self.longPlan = long_plan.longitudinalPlanSource
 
       # Toyota starts braking more when it thinks you want to stop
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration

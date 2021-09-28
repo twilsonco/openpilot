@@ -43,10 +43,14 @@ class CarState(CarStateBase):
     self.engineRPM = 0
     self.lastAutoHoldTime = 0.0
     self.sessionInitTime = sec_since_boot()
+    self.coasting_enabled = self._params.get_bool("Coasting")
+    self.coasting_brake_over_speed_enabled = self._params.get_bool("CoastingBrakeOverSpeed")
 
+    self.coasting_long_plan = ""
     self.pause_long_on_gas_press = False
     self.gasPressed = False
     self.vEgo = 0.
+    self.v_cruise_kph = 0
 
   def update(self, pt_cp):
     ret = car.CarState.new_message()

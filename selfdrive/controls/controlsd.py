@@ -413,6 +413,8 @@ class Controls:
     elif self.CP.pcmCruise and CS.cruiseState.enabled:
       self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
 
+    self.CI.CS.v_cruise_kph = self.v_cruise_kph
+
     # decrease the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state
     self.soft_disable_timer = max(0, self.soft_disable_timer - 1)
@@ -508,6 +510,11 @@ class Controls:
       # accel PID loop
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS)
       actuators.accel, self.v_target, self.a_target = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits)
+      
+      coasting_enabled = getattr(self.CI.CS, "coasting_enabled", False)
+      if coasting_enabled:
+        self.CI.CS.coasting_long_plan = self.LoC.longPlan
+          
 
       # Steering PID loop and lateral MPC
       desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,

@@ -115,7 +115,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
   toggles.append(new ParamControl("GMAutoHold",
-                                  "Enable AutoHold on GM vehicles",
+                                  "[GM] Enable AutoHold on GM vehicles",
                                   "Holds brakes automatically after coming to a complete stop, even when OP is disengaged.",
                                   "../assets/offroad/icon_gm_autohold.png",
                                   this));
@@ -133,6 +133,16 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Sport acceleration mode",
                                   "Stronger acceleration under most conditions.",
                                   "../assets/offroad/icon_rocket.png",
+                                  this));
+  toggles.append(new ParamControl("Coasting",
+                                  "[GM] Coast downhill (take a brake!)",
+                                  "COMPLETELY disable normal cruise braking; still brake when following/curves/etc.",
+                                  "../assets/offroad/icon_car_pedal.png",
+                                  this));
+  toggles.append(new ParamControl("CoastingBrakeOverSpeed",
+                                  "[GM] Coast: start applying brakes when 10mph+ over set speed",
+                                  "When coasting, start applying desired cruise braking when [10,15]mph over set speed.",
+                                  "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("DisableDisengageOnGas",
                                   "Disable disengage on gas",

@@ -71,16 +71,6 @@ def interp_mpc_solution(x, x_vals, y_vals):
     setattr(out, prop, y_prop)
   out.cost = interp(x, x_vals, [y.cost for y in y_vals])
   return out
-
-def log_mpcsolution(mpcsolution, ind):
-  cloudlog.debug("lead_mpc solution {}".format(ind))
-  for prop in ['x_ego','v_ego','a_ego','j_ego','x_l','v_l','a_l','t']:
-    cloudlog.debug("   {}: {}".format(prop, ",".join(["{0:4.2f}".format(i) for i in getattr(mpcsolution, prop)])))
-  cloudlog.debug("   cost: {0:7.4f}".format(mpcsolution.cost))
-
-def log_curstate(state, ind):
-  logstr = ";".join(["{0}: {1:7.4f}".format(prop, getattr(state, prop)) for prop in ['x_ego', 'v_ego', 'a_ego', 'x_l', 'v_l', 'a_l']])
-  cloudlog.debug("lead_mpc state {};{}".format(ind, logstr))
   
 
 class LeadMpc():
@@ -198,14 +188,6 @@ class LeadMpc():
     self.libmpc = self.libmpcs[1]
     self.cur_state = self.cur_states[1]
     self.mpc_solution = interp_mpc_solution(dist_cost, DIST_COSTS, self.mpc_solutions)
-    
-    if do_log:
-      self.last_follow_log_t = t_log
-      for i in range(3):
-        log_mpcsolution(self.mpc_solutions[i], i)
-      log_mpcsolution(self.mpc_solution, -1)
-      for i in range(3):
-        log_curstate(self.cur_states[i], i)
     
     self.v_solution = interp(T_IDXS[:CONTROL_N], MPC_T, self.mpc_solution.v_ego)
     self.a_solution = interp(T_IDXS[:CONTROL_N], MPC_T, self.mpc_solution.a_ego)

@@ -197,6 +197,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"TurnVisionControl", PERSISTENT},
     {"GMAutoHold", PERSISTENT},
     {"SportAccel", PERSISTENT},
+    {"Coasting", PERSISTENT},
+    {"CoastingBrakeOverSpeed", PERSISTENT},
     {"CruiseSpeedOffset", PERSISTENT},
     {"NudgelessLaneChange", PERSISTENT},
     {"CustomSounds", PERSISTENT},
