@@ -20,7 +20,7 @@ FOLLOW_PROFILES = [
     [0.5, 1.6], # follow distances corresponding to bp0 and bp1 [s]
     0.2, # additional follow distance above CITY_HWY_TRANSITION_SPEEDS[1] [s]
     2.0, # stopping distance behind stopped lead car [m]
-    [MPC_COST_LONG.DISTANCE * 15.0, MPC_COST_LONG.DISTANCE * 4.0], # mpc distance costs to use at close/far follow distance behind lead (higher value means harder accel/braking to make up distance) (recommended to use factors of MPC_COST_LONG.DISTANCE) (It's ok to only have one value, ie static distance cost )
+    [MPC_COST_LONG.DISTANCE * 15.0, MPC_COST_LONG.DISTANCE * 4.0], # mpc distance costs lookup table based on follow distance behind lead (higher value means harder accel/braking to make up distance) (recommended to use factors of MPC_COST_LONG.DISTANCE) (It's ok to only have one value, ie static distance cost )
     [1.0, 3.0], # distances behind lead car [s] corresponding to the distance costs above
     1.0 # [units of MPC_COST_LONG.DISTANCE] lead car pull-away distance cost shift factor "d" (when lead car is pulling away, ie v_lead < 0, distance cost will be increased by |v_lead| * d)
   ],
@@ -29,17 +29,17 @@ FOLLOW_PROFILES = [
     [0.5, 1.8],
     0.3,
     2.0,
-    [MPC_COST_LONG.DISTANCE * 2., MPC_COST_LONG.DISTANCE],
-    [0.8, 1.5],
-    0.5
+    [MPC_COST_LONG.DISTANCE * 2., MPC_COST_LONG.DISTANCE, MPC_COST_LONG.DISTANCE * 0.1],
+    [0.8, 1.5, 3.5],
+    1.0
   ],
   [ # three-bar
     [-3.0, -0.2],
     [0.5, 2.4],
     0.6,
     2.0,
-    [MPC_COST_LONG.DISTANCE * 1.5, MPC_COST_LONG.DISTANCE * 0.1],
-    [0.6, 3.5],
+    [MPC_COST_LONG.DISTANCE * 2., MPC_COST_LONG.DISTANCE, MPC_COST_LONG.DISTANCE * 0.1],
+    [0.8, 1.5, 3.5],
     2.0
   ]
 ]
@@ -52,7 +52,7 @@ DIST_COSTS = [f([f(p[4] + [MPC_COST_LONG.DISTANCE]) for p in FOLLOW_PROFILES]) f
 DIST_COSTS.insert(1, MPC_COST_LONG.DISTANCE)
 
 # calculate the desired follow distance and mcp distance cost from current state
-def calc_follow_profile(v_ego, v_lead, x_lead, fp, do_log = False):
+def calc_follow_profile(v_ego, v_lead, x_lead, fp):
   v_rel = v_ego - v_lead   # calculate relative velocity vs lead car
   hwy_shift = interp(v_ego, CITY_HWY_TRANSITION_SPEEDS, [0.0, fp[2]]) # calculate variable shift of objective follow distance based on city/highway speed
   od = interp(v_rel, fp[0], [fp[1][0], fp[1][1]]) + hwy_shift # calculate objective distance in seconds(ish)
@@ -60,8 +60,6 @@ def calc_follow_profile(v_ego, v_lead, x_lead, fp, do_log = False):
   dist_cost = interp(d_lead, fp[5], fp[4])
   if v_rel < D:
     dist_cost += MPC_COST_LONG.DISTANCE * (-(v_rel - D)) * fp[6]
-  if do_log:
-    cloudlog.debug("lead_mpc follow distance and distance cost; {}; {}; {}; {}; {}; {}; {}; {}".format(fp, v_ego, v_lead, x_lead, hwy_shift, d_lead, od, dist_cost))
   return od, dist_cost
 
 # like interp, but for the self.mpc_solution ie the log_t struct of ./lead_mpc_lib/longitudinal_mpc.c, so y_vals is 
@@ -98,8 +96,6 @@ class LeadMpc():
     self.n_its = 0
     self.duration = 0
     self.status = False
-    
-    self.last_follow_log_t = 0.0
 
     self.v_solution = np.zeros(CONTROL_N)
     self.a_solution = np.zeros(CONTROL_N)
@@ -159,9 +155,6 @@ class LeadMpc():
       follow_level = 1
     fp = FOLLOW_PROFILES[follow_level]
     stopping_distance = fp[3]
-    
-    t_log = sec_since_boot()
-    do_log = False and lead is not None and lead.status and t_log - self.last_follow_log_t > 0.5
 
     if lead is not None and lead.status:
       x_lead = max(0, lead.dRel - stopping_distance)  # increase stopping distance to car by X [m]
@@ -186,7 +179,7 @@ class LeadMpc():
         self.cur_states[i][0].v_l = v_lead
       
       # Setup mpc
-      tr, dist_cost = calc_follow_profile(v_ego, v_lead, lead.dRel, fp, do_log)
+      tr, dist_cost = calc_follow_profile(v_ego, v_lead, lead.dRel, fp)
     else:
       self.prev_lead_status = False
       # Fake a fast lead car, so mpc keeps running
