@@ -50,6 +50,7 @@ def manager_init():
     ("SportAccel", "0"),
     ("EndToEndToggle", "1"),
     ("LanelessMode", "2"),
+    ("NudgelessLaneChange", "0"),
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))

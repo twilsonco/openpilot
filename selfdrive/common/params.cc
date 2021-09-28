@@ -198,6 +198,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"GMAutoHold", PERSISTENT},
     {"SportAccel", PERSISTENT},
     {"CruiseSpeedOffset", PERSISTENT},
+    {"NudgelessLaneChange", PERSISTENT},
     {"CustomSounds", PERSISTENT},
     {"StockSpeedAdjust", PERSISTENT},
     {"SilentEngageDisengage", PERSISTENT},

@@ -109,6 +109,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "When adjusting, cruise speed will be {8, 13, 18, 23, 28} mph.",
                                   "../assets/offroad/icon_speed_offset.png",
                                   this));
+  toggles.append(new ParamControl("NudgelessLaneChange",
+                                  "Nudgeless lane change (1s delay)",
+                                  "Perform lane change without requiring nudge from driver",
+                                  "../assets/offroad/icon_hands_on_wheel.png",
+                                  this));
   toggles.append(new ParamControl("GMAutoHold",
                                   "Enable AutoHold on GM vehicles",
                                   "Holds brakes automatically after coming to a complete stop, even when OP is disengaged.",

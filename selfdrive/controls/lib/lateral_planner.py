@@ -52,8 +52,13 @@ class LateralPlanner():
     self.laneless_mode = int(Params().get("LanelessMode", encoding="utf8"))
     self.laneless_mode_status = False
     self.laneless_mode_status_buffer = False
+    
+    self.nudgeless_enabled = Params().get_bool("NudgelessLaneChange")
+    self.nudgeless_delay = 1.
      
     self.lane_change_state = LaneChangeState.off
+    self.prev_lane_change_state = self.lane_change_state
+    self.preLaneChange_start_t = 0.
     self.lane_change_direction = LaneChangeDirection.none
     self.lane_change_timer = 0.0
     self.lane_change_ll_prob = 1.0
@@ -119,6 +124,8 @@ class LateralPlanner():
 
       # LaneChangeState.preLaneChange
       elif self.lane_change_state == LaneChangeState.preLaneChange:
+        if self.lane_change_state != self.prev_lane_change_state:
+          self.preLaneChange_start_t = sec_since_boot()
         # Set lane change direction
         if sm['carState'].leftBlinker:
           self.lane_change_direction = LaneChangeDirection.left
@@ -130,6 +137,9 @@ class LateralPlanner():
         torque_applied = sm['carState'].steeringPressed and \
                         ((sm['carState'].steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or
                           (sm['carState'].steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right))
+        
+        if self.nudgeless_enabled and (sec_since_boot() - self.preLaneChange_start_t > self.nudgeless_delay) and self.v_ego >= 30.0 * CV.MPH_TO_MS:
+          torque_applied = True
 
         blindspot_detected = ((sm['carState'].leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
                               (sm['carState'].rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
@@ -157,6 +167,8 @@ class LateralPlanner():
           self.lane_change_state = LaneChangeState.preLaneChange
         elif self.lane_change_ll_prob > 0.99:
           self.lane_change_state = LaneChangeState.off
+
+      self.prev_lane_change_state = self.lane_change_state
 
     if self.lane_change_state in [LaneChangeState.off, LaneChangeState.preLaneChange]:
       self.lane_change_timer = 0.0
