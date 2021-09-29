@@ -183,7 +183,7 @@ class LateralPlanner():
       self.model_laneless = float(self.kegman.conf['laneLess'])
       self.mpc_frame = 0
 
-    if self.model_laneless == "0":
+    if self.model_laneless == 0:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
       self.libmpc.init_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, CP.steerRateCost)
     else:
