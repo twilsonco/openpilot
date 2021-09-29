@@ -23,6 +23,8 @@ class LatControlPID():
     angle_steers_des_no_offset_radians = VM.get_steer_from_curvature(-desired_curvature, CS.vEgo)
     angle_steers_des_no_offset = math.degrees(angle_steers_des_no_offset_radians)
     angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
+    # Feedforward with vehicle model offset
+    angle_steers_ff = angle_steers_des - params.angleOffsetAverageDeg
 
     pid_log.angleError = angle_steers_des - CS.steeringAngleDeg 
     if CS.vEgo < 0.3 or not active:
@@ -36,9 +38,9 @@ class LatControlPID():
 
       # offset does not contribute to resistive torque
       # !!! VOLT ONLY SIGMOID !!! Solve your car's f(speed, angle) -> command.
-      x = 2.73528719e-02 * angle_steers_des_no_offset
+      x = 0.02904609 * angle_steers_ff
       sigmoid = x / (1 + math.fabs(x))
-      steer_feedforward = 1.27699321e-03 * sigmoid * ((CS.vEgo + 2.29236858e+01) ** 2)
+      steer_feedforward = 0.10006696 * sigmoid * (CS.vEgo + 3.12485927)
 
       deadzone = 0.0
 
