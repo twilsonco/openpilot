@@ -13,10 +13,7 @@ MPC_T = list(np.arange(0,1.,.2)) + list(np.arange(1.,10.6,.6))
 
 TR_DEFAULT = 1.8
 SNG_SPEED = 18 * CV.MPH_TO_MS
-SNG_DIST_COST_BP = [
-  [2., .5, 0.], # [m/s] relative lead v
-  [MPC_COST_LONG.DISTANCE * 2., MPC_COST_LONG.DISTANCE, MPC_COST_LONG.DISTANCE * 0.7] # distance cost at sng speeds
-]
+SNG_DIST_COST = MPC_COST_LONG.DISTANCE
 
 FOLLOW_PROFILES = [
   [ # one-bar
@@ -24,7 +21,7 @@ FOLLOW_PROFILES = [
     [0.5, 2.0], # follow distances corresponding to bp0 and bp1 [s]
     [0.0, 1.892, 3.7432, 5.8632, 8.0727, 10.7301, 14.343, 17.6275, 22.4049, 28.6752, 34.8858, 40.35], # lookup table of speeds for additional follow distances [m/s] (stolen from shane)
     [0.0, 0.00099, -0.0324, -0.0647, -0.0636, -0.0601, -0.0296, -0.1211, -0.2341, -0.3991, -0.432, -0.4625], # additional follow distances based on speed [s]
-    2.0, # stopping distance behind stopped lead car [m]
+    2.2, # stopping distance behind stopped lead car [m]
     [1.0, 1.5, 3.0],
     [MPC_COST_LONG.DISTANCE * 15.0, MPC_COST_LONG.DISTANCE * 10.0, MPC_COST_LONG.DISTANCE * 4.0], # mpc distance costs lookup table based on follow distance behind lead (higher value means harder accel/braking to make up distance) (recommended to use factors of MPC_COST_LONG.DISTANCE) (It's ok to only have one value, ie static distance cost )
   ],
@@ -62,10 +59,9 @@ def calc_follow_profile(v_ego, v_lead, x_lead, fp):
   dist_cost = interp(d_lead, fp[5], fp[6])
   # now adjust based on speed for sng smooth stopping
   sng_factor = interp(v_ego, [SNG_SPEED * 0.5, SNG_SPEED], [1., 0.])
-  sng_dist_cost = interp(v_rel, SNG_DIST_COST_BP[0], SNG_DIST_COST_BP[1])
   
   tr = TR_DEFAULT * sng_factor + tr * (1.0 - sng_factor)
-  dist_cost = sng_dist_cost * sng_factor + dist_cost * (1.0 - sng_factor)
+  dist_cost = SNG_DIST_COST * sng_factor + dist_cost * (1.0 - sng_factor)
     
   return tr, dist_cost
 

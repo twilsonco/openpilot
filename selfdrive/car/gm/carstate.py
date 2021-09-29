@@ -1,6 +1,6 @@
 from cereal import car
 from common.params import Params
-from common.numpy_fast import mean
+from common.numpy_fast import mean, interp
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from opendbc.can.can_define import CANDefine
@@ -47,11 +47,17 @@ class CarState(CarStateBase):
     self.coasting_enabled = self._params.get_bool("Coasting")
     self.coasting_brake_over_speed_enabled = self._params.get_bool("CoastingBrakeOverSpeed")
     self.coasting_long_plan = ""
-    self.lead_d_rel = -1.
     self.pause_long_on_gas_press = False
     self.gasPressed = False
     self.vEgo = 0.
     self.v_cruise_kph = 0
+    self.min_lane_change_speed = 30. * CV.MPH_TO_MS
+    self.blinker = False
+    self.prev_blinker = self.blinker
+    self.lane_change_steer_factor = 1.
+    self.lang_change_ramp_up_steer_start_t = 0.
+    self.lang_change_ramp_down_steer_start_t = 0.
+    self.lang_change_ramp_steer_dur = .7 # [s]
 
   def update(self, pt_cp):
     ret = car.CarState.new_message()
@@ -109,6 +115,25 @@ class CarState(CarStateBase):
     ret.seatbeltUnlatched = pt_cp.vl["BCMDoorBeltStatus"]["LeftSeatBelt"] == 0
     ret.leftBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 1
     ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
+
+    self.blinker = (ret.leftBlinker or ret.rightBlinker)
+    if self.coasting_enabled:
+      cur_time = sec_since_boot()
+      if self.blinker and not self.prev_blinker:
+        self.lang_change_ramp_down_steer_start_t = cur_time
+      elif not self.blinker and self.prev_blinker:
+        self.lang_change_ramp_up_steer_start_t = cur_time
+
+      self.lane_change_steer_factor = interp(self.vEgo, [self.min_lane_change_speed * 0.7, self.min_lane_change_speed], [0., 1.])
+
+      if self.blinker:
+        self.lane_change_steer_factor = interp(cur_time - self.lang_change_ramp_down_steer_start_t, [0., self.lang_change_ramp_steer_dur], [1., self.lane_change_steer_factor])
+      else:
+        self.lane_change_steer_factor = interp(cur_time - self.lang_change_ramp_up_steer_start_t, [0., self.lang_change_ramp_steer_dur * 0.5], [self.lane_change_steer_factor, 1.])
+    else:
+      self.lane_change_steer_factor = 1.0
+    self.prev_blinker = self.blinker
+    
 
     self.park_brake = pt_cp.vl["EPBStatus"]["EPBClosed"]
     ret.cruiseState.available = bool(pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"])

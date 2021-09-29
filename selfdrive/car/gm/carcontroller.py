@@ -25,11 +25,7 @@ class CarController():
     self.packer_obj = CANPacker(DBC[CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[CP.carFingerprint]['chassis'])
     
-    self.coasting_last_strong_non_cruise_brake_t = 0.
-    self.coasting_last_strong_non_cruise_brake_wait_time = 4. # [s]
-    self.coasting_strong_brake = 150. # based on max brake in values.py
-    self.coasting_lead_dist_BP = [4., 15.] # [m]
-    self.coasting_vEgo_apply_brake_BP = [10. * CV.MPH_TO_MS, 15. * CV.MPH_TO_MS]
+    self.coasting_over_speed_vEgo_BP = [10. * CV.MPH_TO_MS, 15. * CV.MPH_TO_MS]
 
   def update(self, enabled, CS, frame, actuators,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
@@ -41,9 +37,9 @@ class CarController():
 
     # STEER
     if (frame % P.STEER_STEP) == 0:
-      lkas_enabled = (enabled or CS.pause_long_on_gas_press) and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > P.MIN_STEER_SPEED
+      lkas_enabled = (enabled or CS.pause_long_on_gas_press) and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > P.MIN_STEER_SPEED and CS.lane_change_steer_factor > 0.
       if lkas_enabled:
-        new_steer = int(round(actuators.steer * P.STEER_MAX))
+        new_steer = int(round(actuators.steer * P.STEER_MAX * CS.lane_change_steer_factor))
         apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
         self.steer_rate_limited = new_steer != apply_steer
       else:
@@ -58,31 +54,15 @@ class CarController():
       # Stock ECU sends max regen when not enabled.
       apply_gas = P.MAX_ACC_REGEN
       apply_brake = 0
-      if CS.coasting_enabled:
-        self.coasting_last_strong_non_cruise_brake_t = sec_since_boot() - self.coasting_last_strong_non_cruise_brake_wait_time
     else:
       apply_gas = int(round(interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)))
+      apply_brake = interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
       if CS.coasting_enabled:
-        cur_time = sec_since_boot()
-        apply_brake = interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
-        if CS.coasting_long_plan == 'cruise':
-          if apply_brake > 0.:
-            # compute braking that would be allowed by normal coasting
-            apply_brake_coast = interp(cur_time - self.coasting_last_strong_non_cruise_brake_t, [0., self.coasting_last_strong_non_cruise_brake_wait_time], [apply_brake, 0.])
-            # now apply brakes based on speed over set cruise speed.
-            if CS.coasting_brake_over_speed_enabled:
-              apply_brake_over_speed_factor = interp(CS.vEgo - CS.v_cruise_kph * CV.KPH_TO_MS, self.coasting_vEgo_apply_brake_BP, [0., 1.])
-              apply_brake = apply_brake * apply_brake_over_speed_factor + (1. - apply_brake_over_speed_factor) * apply_brake_coast
-            else:
-              apply_brake = apply_brake_coast
-            apply_gas = P.MAX_ACC_REGEN
-        elif apply_brake > 0. and CS.pcm_acc_status != AccState.STANDSTILL:
-          self.coasting_last_strong_non_cruise_brake_t = max(self.coasting_last_strong_non_cruise_brake_t, cur_time - interp(apply_brake, [0., self.coasting_strong_brake], [self.coasting_last_strong_non_cruise_brake_wait_time, 0.]))
-        if apply_gas > P.ZERO_GAS:
-          self.coasting_last_strong_non_cruise_brake_t = cur_time - self.coasting_last_strong_non_cruise_brake_wait_time
-        apply_brake = int(round(apply_brake))
-      else:
-        apply_brake = int(round(interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)))
+        if CS.coasting_long_plan == 'cruise' and apply_brake > 0.:
+          apply_gas = P.MAX_ACC_REGEN
+          over_speed_factor = interp(CS.vEgo - CS.v_cruise_kph * CV.KPH_TO_MS, self.coasting_over_speed_vEgo_BP, [0., 1.]) if CS.coasting_brake_over_speed_enabled else 0.
+          apply_brake *= over_speed_factor
+      apply_brake = int(round(apply_brake))
 
     # Gas/regen and brakes - all at 25Hz
     if (frame % 4) == 0:
@@ -98,12 +78,18 @@ class CarController():
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, apply_brake, idx, near_stop, at_full_stop))
         CS.autoHoldActivated = True
 
-      else : 
-        car_stopping = apply_gas < P.ZERO_GAS
-        standstill = CS.pcm_acc_status == AccState.STANDSTILL
+      else:
+        if CS.pause_long_on_gas_press:
+          at_full_stop = False
+          near_stop = False
+          car_stopping = False
+          standstill = False
+        else:
+          car_stopping = apply_gas < P.ZERO_GAS
+          standstill = CS.pcm_acc_status == AccState.STANDSTILL
+          at_full_stop = enabled and standstill and car_stopping
+          near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
 
-        at_full_stop = enabled and standstill and car_stopping
-        near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, apply_brake, idx, near_stop, at_full_stop))
         CS.autoHoldActivated = False
 

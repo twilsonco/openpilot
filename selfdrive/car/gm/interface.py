@@ -242,10 +242,10 @@ class CarInterface(CarInterfaceBase):
       hud_v_cruise = 0
 
     # For Openpilot, "enabled" includes pre-enable.
-    # In GM, PCM faults out if ACC command overlaps user gas.
-    enabled = c.enabled and not (self.CS.gasPressed and self.disengage_on_gas)
+    # In GM, PCM faults out if ACC command overlaps user gas, so keep that from happening inside CC.update().
+    self.CS.pause_long_on_gas_press = c.enabled and self.CS.gasPressed and not self.disengage_on_gas
+    enabled = c.enabled or self.CS.pause_long_on_gas_press
     
-    self.CS.pause_long_on_gas_press = self.CS.gasPressed and not self.disengage_on_gas
 
     can_sends = self.CC.update(enabled, self.CS, self.frame,
                                c.actuators,
