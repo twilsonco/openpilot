@@ -2,6 +2,7 @@ import math
 import numpy as np
 from common.numpy_fast import interp
 from common.realtime import sec_since_boot
+from selfdrive.config import Conversions as CV
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 from selfdrive.controls.lib.lead_mpc_lib import libmpc_py
@@ -10,57 +11,63 @@ from selfdrive.swaglog import cloudlog
 
 MPC_T = list(np.arange(0,1.,.2)) + list(np.arange(1.,10.6,.6))
 
-CITY_HWY_TRANSITION_SPEEDS = [20.12, 33.53] # [m/s], [20.12, 33.53] = [45mph, 75mph]
-
 TR_DEFAULT = 1.8
+SNG_SPEED = 18 * CV.MPH_TO_MS
+SNG_DIST_COST_BP = [
+  [2., .5, 0.], # [m/s] relative lead v
+  [MPC_COST_LONG.DISTANCE * 2., MPC_COST_LONG.DISTANCE, MPC_COST_LONG.DISTANCE * 0.7] # distance cost at sng speeds
+]
 
 FOLLOW_PROFILES = [
   [ # one-bar
-    [-1.0, 2.0], # bp0 and bp1; lead car relative velocities [m/s] (set both to 0.0 to disable dynamic brakepoints)
-    [0.5, 1.6], # follow distances corresponding to bp0 and bp1 [s]
-    0.2, # additional follow distance above CITY_HWY_TRANSITION_SPEEDS[1] [s]
+    [-1.0, 2.3], # bp0 and bp1; lead car relative velocities [m/s] (set both to 0.0 to disable dynamic brakepoints)
+    [0.5, 2.0], # follow distances corresponding to bp0 and bp1 [s]
+    [0.0, 1.892, 3.7432, 5.8632, 8.0727, 10.7301, 14.343, 17.6275, 22.4049, 28.6752, 34.8858, 40.35], # lookup table of speeds for additional follow distances [m/s] (stolen from shane)
+    [0.0, 0.00099, -0.0324, -0.0647, -0.0636, -0.0601, -0.0296, -0.1211, -0.2341, -0.3991, -0.432, -0.4625], # additional follow distances based on speed [s]
     2.0, # stopping distance behind stopped lead car [m]
-    [MPC_COST_LONG.DISTANCE * 15.0, MPC_COST_LONG.DISTANCE * 4.0], # mpc distance costs lookup table based on follow distance behind lead (higher value means harder accel/braking to make up distance) (recommended to use factors of MPC_COST_LONG.DISTANCE) (It's ok to only have one value, ie static distance cost )
-    [1.0, 3.0], # distances behind lead car [s] corresponding to the distance costs above
-    1.0 # [units of MPC_COST_LONG.DISTANCE] lead car pull-away distance cost shift factor "d" (when lead car is pulling away, ie v_lead < 0, distance cost will be increased by |v_lead| * d)
+    [1.0, 1.5, 3.0],
+    [MPC_COST_LONG.DISTANCE * 15.0, MPC_COST_LONG.DISTANCE * 10.0, MPC_COST_LONG.DISTANCE * 4.0], # mpc distance costs lookup table based on follow distance behind lead (higher value means harder accel/braking to make up distance) (recommended to use factors of MPC_COST_LONG.DISTANCE) (It's ok to only have one value, ie static distance cost )
   ],
   [ # two-bar
     [-2.0, -0.15],
     [0.5, 1.8],
-    0.3,
+    [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336],
+    [0.0, 0.006995, 0.01699, 0.03, 0.05, 0.0789, 0.1239, 0.149, 0.1779, 0.201, 0.2099, 0.2209, 0.2369],
     2.0,
-    [MPC_COST_LONG.DISTANCE * 2., MPC_COST_LONG.DISTANCE, MPC_COST_LONG.DISTANCE * 0.1],
     [0.8, 1.5, 3.5],
-    1.0
+    [MPC_COST_LONG.DISTANCE * 2., MPC_COST_LONG.DISTANCE, MPC_COST_LONG.DISTANCE * 0.1],
   ],
   [ # three-bar
     [-3.0, -0.2],
     [0.5, 2.4],
-    0.6,
+    [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336],
+    [0.0, 0.006995, 0.01699, 0.03, 0.05, 0.0789, 0.1239, 0.149, 0.1779, 0.201, 0.2099, 0.2209, 0.2369],
     2.0,
-    [MPC_COST_LONG.DISTANCE * 2., MPC_COST_LONG.DISTANCE, MPC_COST_LONG.DISTANCE * 0.1],
     [0.8, 1.5, 3.5],
-    2.0
+    [MPC_COST_LONG.DISTANCE * 2., MPC_COST_LONG.DISTANCE, MPC_COST_LONG.DISTANCE * 0.1],
   ]
 ]
 
-D = -0.5 # [m/s] lead car pull-away distance cost shift factor cutoff! Lead car has to be pulling away faster than this before it starts increasing the mpc distance cost (must be negative)
-D = min(D, 0.0)
 
 # In order to have a dynamic distance cost, so that far following can be more relaxed, but not at the expense of braking response when close, we'll maintain three mpcs with the low, stock, and high distance costs, then interpolate the solution each iteration from the solutions of those three
-DIST_COSTS = [f([f(p[4] + [MPC_COST_LONG.DISTANCE]) for p in FOLLOW_PROFILES]) for f in [min,max]]
+DIST_COSTS = [f([f(p[6] + [MPC_COST_LONG.DISTANCE]) for p in FOLLOW_PROFILES]) for f in [min,max]]
 DIST_COSTS.insert(1, MPC_COST_LONG.DISTANCE)
 
 # calculate the desired follow distance and mcp distance cost from current state
 def calc_follow_profile(v_ego, v_lead, x_lead, fp):
   v_rel = v_ego - v_lead   # calculate relative velocity vs lead car
-  hwy_shift = interp(v_ego, CITY_HWY_TRANSITION_SPEEDS, [0.0, fp[2]]) # calculate variable shift of objective follow distance based on city/highway speed
-  od = interp(v_rel, fp[0], [fp[1][0], fp[1][1]]) + hwy_shift # calculate objective distance in seconds(ish)
+  hwy_shift = interp(v_ego, fp[2], fp[3]) # calculate variable shift of objective follow distance based on city/highway speed
+  tr = interp(v_rel, fp[0], fp[1]) + hwy_shift # calculate objective distance in seconds(ish)
   d_lead = (x_lead / v_ego) if v_ego > 0.1 else 0.0 # distance to lead car in seconds
-  dist_cost = interp(d_lead, fp[5], fp[4])
-  if v_rel < D:
-    dist_cost += MPC_COST_LONG.DISTANCE * (-(v_rel - D)) * fp[6]
-  return od, dist_cost
+  dist_cost = interp(d_lead, fp[5], fp[6])
+  # now adjust based on speed for sng smooth stopping
+  sng_factor = interp(v_ego, [SNG_SPEED * 0.5, SNG_SPEED], [1., 0.])
+  sng_dist_cost = interp(v_rel, SNG_DIST_COST_BP[0], SNG_DIST_COST_BP[1])
+  
+  tr = TR_DEFAULT * sng_factor + tr * (1.0 - sng_factor)
+  dist_cost = sng_dist_cost * sng_factor + dist_cost * (1.0 - sng_factor)
+    
+  return tr, dist_cost
 
 # like interp, but for the self.mpc_solution ie the log_t struct of ./lead_mpc_lib/longitudinal_mpc.c, so y_vals is 
 # Probably not the fastest way to do this, but isn't Python awesome...
@@ -144,7 +151,7 @@ class LeadMpc():
     if follow_level < 0 or follow_level > 2:
       follow_level = 1
     fp = FOLLOW_PROFILES[follow_level]
-    stopping_distance = fp[3]
+    stopping_distance = fp[4]
 
     if lead is not None and lead.status:
       x_lead = max(0, lead.dRel - stopping_distance)  # increase stopping distance to car by X [m]

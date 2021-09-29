@@ -140,7 +140,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("CoastingBrakeOverSpeed",
-                                  "[GM] Coast: start applying brakes when 10mph+ over set speed",
+                                  "[GM] Coast: brake 10mph+ over set speed",
                                   "When coasting, start applying desired cruise braking when [10,15]mph over set speed.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));

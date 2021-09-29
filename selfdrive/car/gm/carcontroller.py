@@ -28,6 +28,7 @@ class CarController():
     self.coasting_last_strong_non_cruise_brake_t = 0.
     self.coasting_last_strong_non_cruise_brake_wait_time = 4. # [s]
     self.coasting_strong_brake = 150. # based on max brake in values.py
+    self.coasting_lead_dist_BP = [4., 15.] # [m]
     self.coasting_vEgo_apply_brake_BP = [10. * CV.MPH_TO_MS, 15. * CV.MPH_TO_MS]
 
   def update(self, enabled, CS, frame, actuators,
@@ -57,14 +58,17 @@ class CarController():
       # Stock ECU sends max regen when not enabled.
       apply_gas = P.MAX_ACC_REGEN
       apply_brake = 0
+      if CS.coasting_enabled:
+        self.coasting_last_strong_non_cruise_brake_t = sec_since_boot() - self.coasting_last_strong_non_cruise_brake_wait_time
     else:
       apply_gas = int(round(interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)))
       if CS.coasting_enabled:
+        cur_time = sec_since_boot()
         apply_brake = interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
         if CS.coasting_long_plan == 'cruise':
           if apply_brake > 0.:
             # compute braking that would be allowed by normal coasting
-            apply_brake_coast = interp(sec_since_boot() - self.coasting_last_strong_non_cruise_brake_t, [0., self.coasting_last_strong_non_cruise_brake_wait_time], [apply_brake, 0.])
+            apply_brake_coast = interp(cur_time - self.coasting_last_strong_non_cruise_brake_t, [0., self.coasting_last_strong_non_cruise_brake_wait_time], [apply_brake, 0.])
             # now apply brakes based on speed over set cruise speed.
             if CS.coasting_brake_over_speed_enabled:
               apply_brake_over_speed_factor = interp(CS.vEgo - CS.v_cruise_kph * CV.KPH_TO_MS, self.coasting_vEgo_apply_brake_BP, [0., 1.])
@@ -72,8 +76,10 @@ class CarController():
             else:
               apply_brake = apply_brake_coast
             apply_gas = P.MAX_ACC_REGEN
-        elif apply_brake > 0.:
-          self.coasting_last_strong_non_cruise_brake_t = max(self.coasting_last_strong_non_cruise_brake_t, sec_since_boot() - interp(apply_brake, [0., self.coasting_strong_brake], [self.coasting_last_strong_non_cruise_brake_wait_time, 0.]))
+        elif apply_brake > 0. and CS.pcm_acc_status != AccState.STANDSTILL:
+          self.coasting_last_strong_non_cruise_brake_t = max(self.coasting_last_strong_non_cruise_brake_t, cur_time - interp(apply_brake, [0., self.coasting_strong_brake], [self.coasting_last_strong_non_cruise_brake_wait_time, 0.]))
+        if apply_gas > P.ZERO_GAS:
+          self.coasting_last_strong_non_cruise_brake_t = cur_time - self.coasting_last_strong_non_cruise_brake_wait_time
         apply_brake = int(round(apply_brake))
       else:
         apply_brake = int(round(interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)))
