@@ -4,7 +4,8 @@ from selfdrive.kegman_conf import kegman_conf
 from cereal import log
 
 kegman = kegman_conf()
-CAMERA_OFFSET = float(kegman.conf['cameraOffset'])  # m from center car to camera
+PATH_OFFSET = float(kegman.conf['cameraOffset'])  # m from center car to camera
+CAMERA_OFFSET = 0.06
 
 #zorrobyte
 def mean(numbers): 
@@ -58,7 +59,7 @@ class LanePlanner:
   def get_d_path(self, v_ego, path_t, path_xyz):
     # Reduce reliance on lanelines that are too far apart or
     # will be in a few seconds
-    path_xyz[:,1] -= CAMERA_OFFSET
+    path_xyz[:,1] -= PATH_OFFSET
     l_prob, r_prob = self.lll_prob, self.rll_prob
     width_pts = self.rll_y - self.lll_y
     prob_mods = []
