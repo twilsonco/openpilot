@@ -920,7 +920,31 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.PERMANENT: Alert(
       "AutoHold Activated",
       "You can rest your foot now.",
-      AlertStatus.normal, AlertSize.mid,
+      AlertStatus.normal, AlertSize.small,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3),
     },
+
+  EventName.blinkerSteeringPaused: {
+    ET.WARNING: Alert(
+      "Autosteer paused",
+      "Low-speed blinker",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3),
+  },
+
+  EventName.pauseLongOnGasPress: {
+    ET.PERMANENT: Alert(
+      "Manual gas control",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 3., 0.3),
+  },
+
+  EventName.coastOverSpeedBraking: {
+    ET.PERMANENT: Alert(
+      "Applying brakes 10mph+ over set speed",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 1., .3),
+  },
 }

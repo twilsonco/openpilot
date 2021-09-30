@@ -24,8 +24,6 @@ class CarController():
     self.packer_pt = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.packer_obj = CANPacker(DBC[CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[CP.carFingerprint]['chassis'])
-    
-    self.coasting_over_speed_vEgo_BP = [10. * CV.MPH_TO_MS, 15. * CV.MPH_TO_MS]
 
   def update(self, enabled, CS, frame, actuators,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
@@ -60,7 +58,8 @@ class CarController():
       if CS.coasting_enabled:
         if CS.coasting_long_plan == 'cruise' and apply_brake > 0.:
           apply_gas = P.MAX_ACC_REGEN
-          over_speed_factor = interp(CS.vEgo - CS.v_cruise_kph * CV.KPH_TO_MS, self.coasting_over_speed_vEgo_BP, [0., 1.]) if CS.coasting_brake_over_speed_enabled else 0.
+          over_speed_factor = interp(CS.vEgo - CS.v_cruise_kph * CV.KPH_TO_MS, CS.coasting_over_speed_vEgo_BP, [0., 1.]) if CS.coasting_brake_over_speed_enabled else 0.
+          CS.coasting_brake_over_speed_active = over_speed_factor > 0.
           apply_brake *= over_speed_factor
       apply_brake = int(round(apply_brake))
 

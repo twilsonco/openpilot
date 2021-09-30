@@ -36,6 +36,7 @@ class CarState(CarStateBase):
     self.lkMode = True
     set_v_cruise_offset(self._params.get_bool("CruiseSpeedOffset"))
     self.autoHold = self._params.get_bool("GMAutoHold")
+    self.disengage_on_gas = not self._params.get_bool("DisableDisengageOnGas")
     self.autoHoldActive = False
     self.autoHoldActivated = False
     self.regenPaddlePressed = False
@@ -46,8 +47,11 @@ class CarState(CarStateBase):
     
     self.coasting_enabled = self._params.get_bool("Coasting")
     self.coasting_brake_over_speed_enabled = self._params.get_bool("CoastingBrakeOverSpeed")
+    self.coasting_over_speed_vEgo_BP = [10. * CV.MPH_TO_MS, 15. * CV.MPH_TO_MS]
+    self.coasting_brake_over_speed_active = False
     self.coasting_long_plan = ""
     self.pause_long_on_gas_press = False
+    self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False
     self.vEgo = 0.
     self.v_cruise_kph = 0

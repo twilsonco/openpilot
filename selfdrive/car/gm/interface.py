@@ -214,6 +214,13 @@ class CarInterface(CarInterfaceBase):
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
     t = sec_since_boot()
+    if cruiseEnabled:
+      if self.CS.coasting_brake_over_speed_active and not self.CS.pause_long_on_gas_press:
+        events.add(car.CarEvent.EventName.coastOverSpeedBraking)
+      if t - self.CS.last_pause_long_on_gas_press_t < 0.5 and t - self.CS.sessionInitTime > 10.:
+        events.add(car.CarEvent.EventName.pauseLongOnGasPress)
+      if self.CS.lane_change_steer_factor < 1.:
+        events.add(car.CarEvent.EventName.blinkerSteeringPaused)
     if self.CS.autoHoldActivated:
       self.CS.lastAutoHoldTime = t
       events.add(car.CarEvent.EventName.autoHoldActivated)
@@ -243,9 +250,18 @@ class CarInterface(CarInterfaceBase):
 
     # For Openpilot, "enabled" includes pre-enable.
     # In GM, PCM faults out if ACC command overlaps user gas, so keep that from happening inside CC.update().
-    self.CS.pause_long_on_gas_press = c.enabled and self.CS.gasPressed and not self.disengage_on_gas
+    pause_long_on_gas_press = c.enabled and self.CS.gasPressed and not self.disengage_on_gas
+    t = sec_since_boot()
+    if pause_long_on_gas_press and not self.CS.pause_long_on_gas_press:
+      if self.CS.vEgo * CV.MS_TO_MPH - self.CS.v_cruise_kph * CV.KPH_TO_MPH < 20.:
+        if t - self.CS.last_pause_long_on_gas_press_t > 30.:
+          self.CS.last_pause_long_on_gas_press_t = min(t, self.CS.last_pause_long_on_gas_press_t)
+      else:
+        if t - self.CS.last_pause_long_on_gas_press_t > 180.:
+          self.CS.last_pause_long_on_gas_press_t = min(t, self.CS.last_pause_long_on_gas_press_t)
+      
+    self.CS.pause_long_on_gas_press = pause_long_on_gas_press
     enabled = c.enabled or self.CS.pause_long_on_gas_press
-    
 
     can_sends = self.CC.update(enabled, self.CS, self.frame,
                                c.actuators,

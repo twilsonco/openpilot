@@ -48,14 +48,14 @@ class LateralPlanner():
 
     self.setup_mpc()
     self.solution_invalid_cnt = 0
-    
+
     self.laneless_mode = int(Params().get("LanelessMode", encoding="utf8"))
     self.laneless_mode_status = False
     self.laneless_mode_status_buffer = False
-    
+
     self.nudgeless_enabled = Params().get_bool("NudgelessLaneChange")
-    self.nudgeless_delay = 1.5 # longer for debugging
-     
+    self.nudgeless_delay = 2.5 # [s] amount of time blinker has to be on before nudgless lane change
+
     self.lane_change_state = LaneChangeState.off
     self.prev_lane_change_state = self.lane_change_state
     self.preLaneChange_start_t = 0.
@@ -124,8 +124,9 @@ class LateralPlanner():
 
       # LaneChangeState.preLaneChange
       elif self.lane_change_state == LaneChangeState.preLaneChange:
-        if self.lane_change_state != self.prev_lane_change_state:
-          self.preLaneChange_start_t = sec_since_boot()
+        t = sec_since_boot()
+        if self.lane_change_state != self.prev_lane_change_state and t - self.preLaneChange_start_t > self.nudgeless_delay:
+          self.preLaneChange_start_t = t
         # Set lane change direction
         if sm['carState'].leftBlinker:
           self.lane_change_direction = LaneChangeDirection.left
@@ -138,7 +139,7 @@ class LateralPlanner():
                         ((sm['carState'].steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or
                           (sm['carState'].steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right))
         
-        torque_applied = torque_applied or (self.nudgeless_enabled and (sec_since_boot() - self.preLaneChange_start_t > self.nudgeless_delay) and not below_lane_change_speed)
+        torque_applied = torque_applied or (self.nudgeless_enabled and t - self.preLaneChange_start_t > self.nudgeless_delay)
 
         blindspot_detected = ((sm['carState'].leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
                               (sm['carState'].rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
