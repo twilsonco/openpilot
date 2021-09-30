@@ -54,7 +54,7 @@ class LateralPlanner():
     self.laneless_mode_status_buffer = False
     
     self.nudgeless_enabled = Params().get_bool("NudgelessLaneChange")
-    self.nudgeless_delay = 2.5 # longer for debugging
+    self.nudgeless_delay = 1.5 # longer for debugging
      
     self.lane_change_state = LaneChangeState.off
     self.prev_lane_change_state = self.lane_change_state
