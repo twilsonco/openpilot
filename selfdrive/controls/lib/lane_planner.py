@@ -38,7 +38,7 @@ class LanePlanner:
     self.l_lane_change_prob = 0.
     self.r_lane_change_prob = 0.
     self.mpc_frame = 0
-    self.kegman = kegman_conf(CP)
+    self.kegman = kegman_conf()
 
 
   def parse_model(self, md):
