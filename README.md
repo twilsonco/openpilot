@@ -26,7 +26,7 @@ This is a fork of comma's openpilot: https://github.com/commaai/openpilot, and c
 If you wish you can buy me a beer or 3:  https://www.patreon.com/kegman
 
 #### Branches
-<b>kegman</b> - this is the default branch
+<b>kegman-ultimate</b> - this is the default branch - it will contain the best features available (newer models etc.) while maintaining backwards compatibility with grey / OG Eon / C2 while I save to buy a C4.  :-)
 
 <b>kegman-BoschGasPress</b> - this branch gives Honda Bosch users the ability to press the gas without disengaging OP for more "stock ACC"-like behavior.
 
