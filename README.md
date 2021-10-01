@@ -72,6 +72,7 @@ See openpilot's official release notes here: https://github.com/commaai/openpilo
 - C2, OP3T and Grey panda still supported
 - Added and FIXED camaraOffset and added it to live tuner so you can live tune your car centering
 - Added laneless toggle in live tuner.  See below for how to activate live tuner so you can tune your car while you drive.
+- Added Spektor's Coasting.  No more braking and annoying the guy behind you when you coast downhill.
 - Colored lanes in the UI.
 - more to come.
 
