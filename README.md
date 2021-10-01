@@ -26,7 +26,7 @@ This is a fork of comma's openpilot: https://github.com/commaai/openpilot, and c
 If you wish you can buy me a beer or 3:  https://www.patreon.com/kegman
 
 #### Branches
-<b>kegman-ultimate</b> - this is the default branch - it will contain the best features available (newer models etc.) while maintaining backwards compatibility with grey / OG Eon / C2 while I save to buy a C4.  :-)
+<b>kegman-ultimate</b> - this is the default branch - it will contain the best features available (newer models if they're better like 0.8.8 etc.) while maintaining backwards compatibility with grey / OG Eon / C2 while I save to buy a C4.  :-)
 
 <b>kegman-BoschGasPress</b> - this branch gives Honda Bosch users the ability to press the gas without disengaging OP for more "stock ACC"-like behavior.
 
@@ -67,6 +67,13 @@ Release Notes
 ------
 
 See openpilot's official release notes here: https://github.com/commaai/openpilot/blob/master/RELEASES.md
+#### Ultimate
+- no more version numbers - everyone's too caught up to get the "latest" even when it doesn't drive the car better.
+- C2, OP3T and Grey panda still supported
+- Added and FIXED camaraOffset and added it to live tuner so you can live tune your car centering
+- Added laneless toggle in live tuner.  See below for how to activate live tuner so you can tune your car while you drive.
+- Colored lanes in the UI.
+- more to come.
 
 #### v0.8.2
 - Grey panda still working - will continue to support as long as I can
