@@ -51,8 +51,9 @@ class CarState(CarStateBase):
     self.coasting_brake_over_speed_active = False
     self.coasting_long_plan = ""
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
-    self.coasting_lead_min_rel_dist_s = 3.5 # [s] coasting logic isn't used at less than this follow distance
+    self.coasting_lead_min_rel_dist_s = 1.8 # [s] coasting logic isn't used at less than this follow distance
     self.coasting_lead_min_abs_dist = 10. # [m] coasting logic isn't used at less than this absolute follow distance
+    self.coasting_lead_abs_dist_max_check_speed = 10. * CV.MPH_TO_MS
     self.pause_long_on_gas_press = False
     self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False

@@ -253,12 +253,8 @@ class CarInterface(CarInterfaceBase):
     pause_long_on_gas_press = c.enabled and self.CS.gasPressed and not self.disengage_on_gas
     t = sec_since_boot()
     if pause_long_on_gas_press and not self.CS.pause_long_on_gas_press:
-      if self.CS.vEgo * CV.MS_TO_MPH - self.CS.v_cruise_kph * CV.KPH_TO_MPH < 20.:
-        if t - self.CS.last_pause_long_on_gas_press_t > 30.:
-          self.CS.last_pause_long_on_gas_press_t = min(t, self.CS.last_pause_long_on_gas_press_t)
-      else:
-        if t - self.CS.last_pause_long_on_gas_press_t > 180.:
-          self.CS.last_pause_long_on_gas_press_t = min(t, self.CS.last_pause_long_on_gas_press_t)
+      if t - self.CS.last_pause_long_on_gas_press_t > 300.:
+        self.CS.last_pause_long_on_gas_press_t = t
       
     self.CS.pause_long_on_gas_press = pause_long_on_gas_press
     enabled = c.enabled or self.CS.pause_long_on_gas_press
