@@ -102,6 +102,7 @@ class Planner():
     self.turn_speed_controller = TurnSpeedController()
     
     self.accel_mode = int(Params().get_bool("SportAccel")) # 0 = normal, 1 = sport;
+    self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
 
   def update(self, sm, CP):
     cur_time = sec_since_boot()
@@ -120,6 +121,10 @@ class Planner():
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = self.lead_1.status and self.lead_1.dRel < 45.0 and self.lead_1.vLeadK > v_ego and self.lead_1.aLeadK > 0.0
+    if following:
+      self.coasting_lead_d = self.lead_1.dRel
+    else:
+      self.coasting_lead_d = -1.
     
     if not enabled or sm['carState'].gasPressed:
       self.v_desired = v_ego
@@ -192,6 +197,7 @@ class Planner():
     longitudinalPlan.jerks = [float(x) for x in self.j_desired_trajectory]
 
     longitudinalPlan.hasLead = self.mpcs['lead0'].status
+    longitudinalPlan.leadDist = self.coasting_lead_d
     longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
     longitudinalPlan.fcw = self.fcw
 

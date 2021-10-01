@@ -68,6 +68,7 @@ class LongControl():
     self.v_pid = 0.0
     self.last_output_accel = 0.0
     self.longPlan = ""
+    self.coasting_lead_d = -1.
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
@@ -110,6 +111,7 @@ class LongControl():
       self.v_pid = v_target
 
       self.longPlan = long_plan.longitudinalPlanSource
+      self.coasting_lead_d = long_plan.leadDist
 
       # Toyota starts braking more when it thinks you want to stop
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration

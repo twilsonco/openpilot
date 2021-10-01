@@ -68,13 +68,13 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0.
       ret.centerToFront = 0.45 * ret.wheelbase # from Volt Gen 1
 
-      ret.lateralTuning.pid.kpBP = [0., 40.]
-      ret.lateralTuning.pid.kpV = [0., 0.19]
+      ret.lateralTuning.pid.kpBP = [3., 40.]
+      ret.lateralTuning.pid.kpV = [0., 0.21]
       ret.lateralTuning.pid.kiBP = [0.]
-      ret.lateralTuning.pid.kiV = [0.]
+      ret.lateralTuning.pid.kiV = [0.01]
       ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
       ret.steerRateCost = 1.0
-      ret.steerActuatorDelay = 0.19
+      ret.steerActuatorDelay = 0.2
 
       # Only tuned to reduce oscillations. TODO.
       ret.longitudinalTuning.kpV = [1.7, 1.3]
