@@ -321,7 +321,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   if (speedLimit > 0.0 && s->scene.engageable) {
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
     Rect speed_sign_rect = Rect{maxspeed_rect.centerX() - speed_sgn_r, 
-      maxspeed_rect.bottom() - bdr_s, 
+      maxspeed_rect.bottom() + bdr_s, 
       2 * speed_sgn_r, 
       2 * speed_sgn_r};
     const float speed = speedLimit * (s->scene.is_metric ? 3.6 : 2.2369362921);
@@ -364,7 +364,7 @@ static void ui_draw_vision_turnspeed(UIState *s) {
   if (show) {
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
     Rect speed_sign_rect = Rect{maxspeed_rect.centerX() - speed_sgn_r, 
-      maxspeed_rect.bottom() + 2 * bdr_s + speed_sgn_r, 
+      maxspeed_rect.bottom() + 2 * (bdr_s + speed_sgn_r), 
       2 * speed_sgn_r, 
       maxspeed_rect.h};
     const float speed = turnSpeed * (s->scene.is_metric ? 3.6 : 2.2369362921);
@@ -449,7 +449,7 @@ static void ui_draw_vision_brake(UIState *s) {
   if (s->scene.brake_percent > 0 && s->scene.brake_percent <= 100){
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
     nvgBeginPath(s->vg);
-    nvgFontSize(s->vg, 100);
+    nvgFontSize(s->vg, s->scene.brake_percent < 100 ? 90 : 72);
     int r = 255, g = 255, b = 255;
     float p = s->scene.brake_percent;
     p *= 0.01;
@@ -467,8 +467,8 @@ static void draw_laneless_button(UIState *s) {
   if (s->vipc_client->connected) {
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
     const int vision_face_radius = 96;
-    const int radius = 80;
-    const int center_x = maxspeed_rect.centerX() + vision_face_radius + 2 * bdr_s + radius;
+    const int radius = 72;
+    const int center_x = maxspeed_rect.centerX() + vision_face_radius + bdr_s + radius;
     const int center_y = s->fb_h - footer_h / 2 - radius / 2;
     int btn_w = radius * 2;
     int btn_h = radius * 2;
@@ -483,7 +483,7 @@ static void draw_laneless_button(UIState *s) {
     nvgStrokeColor(s->vg, nvgRGBA(0,0,0,80));
     nvgStrokeWidth(s->vg, 6);
     nvgStroke(s->vg);
-    nvgFontSize(s->vg, 58);
+    nvgFontSize(s->vg, 54);
 
     if (s->scene.laneless_mode == 0) {
       nvgStrokeColor(s->vg, nvgRGBA(0,125,0,255));
