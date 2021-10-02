@@ -125,7 +125,7 @@ class LateralPlanner():
       # LaneChangeState.preLaneChange
       elif self.lane_change_state == LaneChangeState.preLaneChange:
         t = sec_since_boot()
-        if self.lane_change_state != self.prev_lane_change_state and t - self.preLaneChange_start_t > self.nudgeless_delay:
+        if self.prev_lane_change_state in [LaneChangeState.off, LaneChangeState.laneChangeFinishing] and t - self.preLaneChange_start_t > 3.:
           self.preLaneChange_start_t = t
         # Set lane change direction
         if sm['carState'].leftBlinker:

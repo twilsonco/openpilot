@@ -321,7 +321,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   if (speedLimit > 0.0 && s->scene.engageable) {
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
     Rect speed_sign_rect = Rect{maxspeed_rect.centerX() - speed_sgn_r, 
-      maxspeed_rect.bottom() + bdr_s, 
+      maxspeed_rect.bottom() - bdr_s, 
       2 * speed_sgn_r, 
       2 * speed_sgn_r};
     const float speed = speedLimit * (s->scene.is_metric ? 3.6 : 2.2369362921);
@@ -364,7 +364,7 @@ static void ui_draw_vision_turnspeed(UIState *s) {
   if (show) {
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
     Rect speed_sign_rect = Rect{maxspeed_rect.centerX() - speed_sgn_r, 
-      maxspeed_rect.bottom() + 2 * (bdr_s + speed_sgn_r), 
+      maxspeed_rect.bottom() + 2 * bdr_s + speed_sgn_r, 
       2 * speed_sgn_r, 
       maxspeed_rect.h};
     const float speed = turnSpeed * (s->scene.is_metric ? 3.6 : 2.2369362921);
@@ -434,17 +434,17 @@ static void ui_draw_vision_event(UIState *s) {
 }
 
 static void ui_draw_vision_face(UIState *s) {
+  const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
   const int radius = 96;
-  const int center_x = radius + (bdr_s * 2);
+  const int center_x = maxspeed_rect.centerX();
   const int center_y = s->fb_h - footer_h / 2;
   ui_draw_circle_image(s, center_x, center_y, radius, "driver_face", s->scene.dm_active);
 }
 
 static void ui_draw_vision_brake(UIState *s) {
-  const int brake_size = 80;
-  const int radius = 96;
-  const int brake_x = radius + (bdr_s * 4) + brake_size;
-  const int brake_y = s->fb_h - footer_h / 2 - 8;
+  const int brake_size = 108;
+  const int brake_x = s->fb_w - brake_size - bdr_s * 2;
+  const int brake_y = s->fb_h - footer_h / 2;
   ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", s->scene.brake_percent > 0);
   if (s->scene.brake_percent > 0 && s->scene.brake_percent <= 100){
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
@@ -458,16 +458,18 @@ static void ui_draw_vision_brake(UIState *s) {
     b -= int((.6 + p) * 255.);
     b = (b > 0 ? b : 0); // goes from white to orange to red at p goes from 0 to 100
     nvgFillColor(s->vg, nvgRGBA(r,g,b,255));
-    std::string brakePercentStr = std::to_string(s->scene.brake_percent);
+    const std::string brakePercentStr = std::to_string(s->scene.brake_percent);
     nvgText(s->vg, brake_x, brake_y, brakePercentStr.c_str(), NULL);
   }
 }
 
 static void draw_laneless_button(UIState *s) {
   if (s->vipc_client->connected) {
+    const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
+    const int vision_face_radius = 96;
     const int radius = 80;
-    const int center_x = s->fb_w - radius - bdr_s * 4;
-    const int center_y = s->fb_h - radius - bdr_s * 3.5;
+    const int center_x = maxspeed_rect.centerX() + vision_face_radius + 2 * bdr_s + radius;
+    const int center_y = s->fb_h - footer_h / 2 - radius / 2;
     int btn_w = radius * 2;
     int btn_h = radius * 2;
     int btn_x1 = center_x - 0.5 * radius;
@@ -531,10 +533,6 @@ static void ui_draw_vision_header(UIState *s) {
   ui_draw_vision_speed(s);
   ui_draw_vision_turnspeed(s);
   ui_draw_vision_event(s);
-  
-  if (s->scene.end_to_end) {
-    draw_laneless_button(s);
-  }
 }
 
 static void ui_draw_vision(UIState *s) {
@@ -548,6 +546,9 @@ static void ui_draw_vision(UIState *s) {
   if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE) {
     ui_draw_vision_face(s);
     ui_draw_vision_brake(s);
+    if (s->scene.end_to_end) {
+      draw_laneless_button(s);
+    }
   }
 }
 
