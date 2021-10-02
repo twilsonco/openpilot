@@ -17,7 +17,7 @@ from selfdrive.version import version, terms_version, training_version, get_git_
 
 def register(spinner=None):
   params = Params()
-  params.put("Version", version)
+  params.put("Version", "kegman-ultimate-0.001")
   params.put("TermsVersion", terms_version)
   params.put("TrainingVersion", training_version)
 
