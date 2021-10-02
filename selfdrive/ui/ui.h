@@ -136,6 +136,8 @@ typedef struct UIScene {
 
   cereal::PandaState::PandaType pandaType;
   
+  int brake_percent;
+  
   int laneless_mode;
   Rect laneless_btn_touch_rect;
 

@@ -143,6 +143,7 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("carState")){
     scene.car_state = sm["carState"].getCarState();
+    scene.brake_percent = scene.car_state.getFrictionBrakePercent();
   }
   if (sm.updated("modelV2") && s->vg) {
     auto model = sm["modelV2"].getModelV2();
@@ -268,6 +269,7 @@ static void update_status(UIState *s) {
 
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->scene.laneless_mode = std::stoi(Params().get("LanelessMode"));
+      s->scene.brake_percent = std::stoi(Params().get("FrictionBrakePercent"));
       s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
 
       // Update intrinsics matrix after possible wide camera toggle change

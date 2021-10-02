@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <string>
 
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
@@ -439,6 +440,29 @@ static void ui_draw_vision_face(UIState *s) {
   ui_draw_circle_image(s, center_x, center_y, radius, "driver_face", s->scene.dm_active);
 }
 
+static void ui_draw_vision_brake(UIState *s) {
+  const int brake_size = 80;
+  const int radius = 96;
+  const int brake_x = radius + (bdr_s * 4) + brake_size;
+  const int brake_y = s->fb_h - footer_h / 2 - 8;
+  ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", s->scene.brake_percent > 0);
+  if (s->scene.brake_percent > 0 && s->scene.brake_percent <= 100){
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+    nvgBeginPath(s->vg);
+    nvgFontSize(s->vg, 100);
+    int r = 255, g = 255, b = 255;
+    float p = s->scene.brake_percent;
+    p *= 0.01;
+    g -= int(p * 255.);
+    g = (g > 0 ? g : 0);
+    b -= int((.6 + p) * 255.);
+    b = (b > 0 ? b : 0); // goes from white to orange to red at p goes from 0 to 100
+    nvgFillColor(s->vg, nvgRGBA(r,g,b,255));
+    std::string brakePercentStr = std::to_string(s->scene.brake_percent);
+    nvgText(s->vg, brake_x, brake_y, brakePercentStr.c_str(), NULL);
+  }
+}
+
 static void draw_laneless_button(UIState *s) {
   if (s->vipc_client->connected) {
     const int radius = 80;
@@ -523,6 +547,7 @@ static void ui_draw_vision(UIState *s) {
   ui_draw_vision_header(s);
   if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE) {
     ui_draw_vision_face(s);
+    ui_draw_vision_brake(s);
   }
 }
 
@@ -640,6 +665,7 @@ void ui_nvg_init(UIState *s) {
     {"turn_left_icon", "../assets/img_turn_left_icon.png"},
     {"turn_right_icon", "../assets/img_turn_right_icon.png"},
     {"map_source_icon", "../assets/img_world_icon.png"},
+    {"brake_disk", "../assets/img_brake.png"},
   };
   for (auto [name, file] : images) {
     s->images[name] = nvgCreateImage(s->vg, file, 1);

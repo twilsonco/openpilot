@@ -939,12 +939,4 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 3., 0.3),
   },
-
-  EventName.coastOverSpeedBraking: {
-    ET.PERMANENT: Alert(
-      "Applying brakes 10mph+ over set speed",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 1., .3),
-  },
 }

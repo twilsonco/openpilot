@@ -215,8 +215,6 @@ class CarInterface(CarInterfaceBase):
       events.add(car.CarEvent.EventName.belowSteerSpeed)
     t = sec_since_boot()
     if cruiseEnabled:
-      if self.CS.coasting_brake_over_speed_active and not self.CS.pause_long_on_gas_press:
-        events.add(car.CarEvent.EventName.coastOverSpeedBraking)
       if t - self.CS.last_pause_long_on_gas_press_t < 0.5 and t - self.CS.sessionInitTime > 10.:
         events.add(car.CarEvent.EventName.pauseLongOnGasPress)
       if self.CS.lane_change_steer_factor < 1.:

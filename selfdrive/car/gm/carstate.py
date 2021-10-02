@@ -57,6 +57,7 @@ class CarState(CarStateBase):
     self.pause_long_on_gas_press = False
     self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False
+    self.apply_brake_percent = 0 # for brake percent on ui
     self.vEgo = 0.
     self.v_cruise_kph = 0
     self.min_lane_change_speed = 30. * CV.MPH_TO_MS
@@ -94,6 +95,8 @@ class CarState(CarStateBase):
     # Brake pedal's potentiometer returns near-zero reading even when pedal is not pressed.
     if ret.brake < 10/0xd0:
       ret.brake = 0.
+    
+    ret.frictionBrakePercent = self.apply_brake_percent
 
     ret.gas = pt_cp.vl["AcceleratorPedal"]["AcceleratorPedal"] / 254.
     ret.gasPressed = ret.gas > 1e-5

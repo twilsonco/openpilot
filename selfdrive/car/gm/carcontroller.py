@@ -62,6 +62,9 @@ class CarController():
           CS.coasting_brake_over_speed_active = over_speed_factor > 0.
           apply_brake *= over_speed_factor
       apply_brake = int(round(apply_brake))
+    
+
+    CS.apply_brake_percent = int(interp(apply_brake, P.BRAKE_LOOKUP_V, [0., 100.])) if CS.vEgo > 0.1 else 0
 
     # Gas/regen and brakes - all at 25Hz
     if (frame % 4) == 0:

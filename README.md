@@ -16,19 +16,31 @@ Running on move-fast fork of openpilot 0.8.8, which adds:
 * Vision and/or map-based slowing down for curves
 * Map-based automatic changing of speed limit (with optional offset)
 * Hands on wheel monitoring
+* Disable disengage when gas pressed
 
-Current and planned fork features:
+Current and planned fork features [✅ = optional via toggle]:
 
 - [x] [Chevy Volt] Sigmoidal steering responce (thanks Qadmus)
-- [x] [GM] AutoHold [optional]  (autohold brakes when stopped; ported from kegman)
+- [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
 - [x] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#new-dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only* (ported from sunnyhaibin)
-- [x] Normal/sport acceleration modes [optional] with improved acceleration/braking profiles (ported from kegman)
-- [x] 1/5 mph changes for tap/hold of the inc/dec buttons [optional] (ported from Spector56)
-- [x] 3mph cruise speed offset: speed will be 23/28/33/38/etc. [optional] 
-- [x] Alternate sound effect set [optional] 
-- [x] Mute engage and disengage sounds [optional]
-- [ ] Spector56 cruising; OP won't use brakes (*i.e.* regen only) when speed above set speed and not following
+- [x] [✅] Normal/sport acceleration modes with improved acceleration/braking profiles (ported from kegman)
+- [x] [✅] 1/5 mph changes for tap/hold of the inc/dec buttons (ported from Spector56)
+- [x] [✅] 3mph cruise speed offset: speed will be 23/28/33/38/etc.
+- [x] [✅] Alternate sound effect set
+- [x] [✅] Mute engage and disengage sounds
+- [x] [✅] Downhill (max-regen) coasting: Friction brakes won't be used in order to keep the set speed (by user or map speed limit)
+- [x] [✅] Brake when 10mph+ over set speed when downhill coasting enabled
+- [x] [✅] Nudgeless lane change: OP will start lane change automatically in direction of blinker after blinker on for 2s
+- [x] **"Auto-on steering lite" for Chevy Volt**: You control accel/decel with gas pedal in "L-mode" and OP keeps steering (down to 7mph)
+    * To use:
+
+    1. Enable the following toggles: Disable disengage on gas, Downhill coasting
+    2. Put your volt in "L-mode"
+    3. Engage OP and set the cruise speed to 1 (with or without gas pedal pressed)
+    4. Now drive around; OP will steer while you control accel/decel with the gas pedal with the Volt's regen in "L-mode"
+    * OP will pause steering if <30mph and blinker is on while in this mode
+        * won't pause steering for low speed blinker if a) both toggles in (1) are disabled, or b) cruise set speed >10mph and the gas pedal isn't pressed (i.e. under normal OP control)
 - [ ] [Modified assistive driving system](https://github.com/sunnyhaibin/openpilot#new-modified-assistive-driving-safety-mads) (MADS)
 - [ ] Remember last follow mode
 - [ ] 0.5 second delay before activating newly selected follow mode so user can switch around without OP slightly jerking in response
