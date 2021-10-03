@@ -52,7 +52,7 @@ class CarState(CarStateBase):
     self.coasting_long_plan = ""
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_min_rel_dist_s = 1.8 # [s] coasting logic isn't used at less than this follow distance
-    self.coasting_lead_min_abs_dist = 10. # [m] coasting logic isn't used at less than this absolute follow distance
+    self.coasting_lead_min_abs_dist = 20. # [m] coasting logic isn't used at less than this absolute follow distance
     self.coasting_lead_abs_dist_max_check_speed = 10. * CV.MPH_TO_MS
     self.pause_long_on_gas_press = False
     self.last_pause_long_on_gas_press_t = 0.
@@ -95,7 +95,7 @@ class CarState(CarStateBase):
     # Brake pedal's potentiometer returns near-zero reading even when pedal is not pressed.
     if ret.brake < 10/0xd0:
       ret.brake = 0.
-    
+
     ret.frictionBrakePercent = self.apply_brake_percent
 
     ret.gas = pt_cp.vl["AcceleratorPedal"]["AcceleratorPedal"] / 254.

@@ -442,14 +442,21 @@ static void ui_draw_vision_face(UIState *s) {
 }
 
 static void ui_draw_vision_brake(UIState *s) {
-  const int brake_size = 108;
+  const int brake_size = 132;
   const int brake_x = s->fb_w - brake_size - bdr_s * 2;
   const int brake_y = s->fb_h - footer_h / 2;
   ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", s->scene.brake_percent > 0);
   if (s->scene.brake_percent > 0 && s->scene.brake_percent <= 100){
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
     nvgBeginPath(s->vg);
-    nvgFontSize(s->vg, s->scene.brake_percent < 100 ? 90 : 72);
+    nvgRoundedRect(s->vg, brake_x - brake_size / 3, brake_y - brake_size / 3, 2 * brake_size / 3, 2 * brake_size / 3, 100);
+    nvgStrokeColor(s->vg, nvgRGBA(0,0,0,80));
+    nvgStrokeWidth(s->vg, 6);
+    NVGcolor fillColor = nvgRGBA(0,0,0,200);
+    nvgFillColor(s->vg, fillColor);
+    nvgFill(s->vg);
+    nvgStroke(s->vg);
+    nvgFontSize(s->vg, s->scene.brake_percent < 100 ? 72 : 64);
     int r = 255, g = 255, b = 255;
     float p = s->scene.brake_percent;
     p *= 0.01;

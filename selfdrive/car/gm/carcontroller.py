@@ -64,7 +64,7 @@ class CarController():
       apply_brake = int(round(apply_brake))
     
 
-    CS.apply_brake_percent = int(interp(apply_brake, P.BRAKE_LOOKUP_V, [100., 0.])) if CS.vEgo > 0.1 else 0
+    CS.apply_brake_percent = int(interp(apply_brake, [0., float(P.MAX_BRAKE)], [0., 100.])) if CS.vEgo > 0.1 else 0
 
     # Gas/regen and brakes - all at 25Hz
     if (frame % 4) == 0:
