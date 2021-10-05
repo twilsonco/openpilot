@@ -58,8 +58,7 @@ class CarController():
       if CS.coasting_enabled and (CS.coasting_lead_d < 0. or ((CS.coasting_lead_d >= CS.coasting_lead_min_abs_dist or CS.vEgo > CS.coasting_lead_abs_dist_max_check_speed) and CS.vEgo > 0.2 and CS.coasting_lead_d / CS.vEgo >= CS.coasting_lead_min_rel_dist_s and CS.coasting_lead_v > CS.coasting_lead_min_v)):
         if CS.coasting_long_plan in ['cruise', 'limit'] and apply_brake > 0.:
           apply_gas = P.MAX_ACC_REGEN
-          over_speed_factor = interp(CS.vEgo - CS.v_cruise_kph * CV.KPH_TO_MS, CS.coasting_over_speed_vEgo_BP, [0., 1.]) if CS.coasting_brake_over_speed_enabled else 0.
-          CS.coasting_brake_over_speed_active = over_speed_factor > 0.
+          over_speed_factor = interp(CS.vEgo - CS.v_cruise_kph * CV.KPH_TO_MS, CS.coasting_over_speed_vEgo_BP, [0., 1.]) if CS.coasting_brake_over_speed_enabled and CS.v_cruise_kph * CV.KPH_TO_MPH > 10 else 0.
           apply_brake *= over_speed_factor
       apply_brake = int(round(apply_brake))
     
