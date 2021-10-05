@@ -23,15 +23,16 @@ Current and planned fork features [✅ = optional via toggle]:
 - [x] [Chevy Volt] Sigmoidal steering responce (thanks Qadmus)
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
-- [x] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#new-dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only* (ported from sunnyhaibin)
+- [x] [✅] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#new-dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only. must enable "Disable use of lanelines" for button to appear* (ported from sunnyhaibin)
 - [x] [✅] Normal/sport acceleration modes with improved acceleration/braking profiles (ported from kegman)
 - [x] [✅] 1/5 mph changes for tap/hold of the inc/dec buttons (ported from Spector56)
 - [x] [✅] 3mph cruise speed offset: speed will be 23/28/33/38/etc.
 - [x] [✅] Alternate sound effect set
 - [x] [✅] Mute engage and disengage sounds
-- [x] [✅] Downhill (max-regen) coasting: Friction brakes won't be used in order to keep the set speed (by user or map speed limit)
+- [x] [✅] Downhill (max-regen) coasting: OP will still brake behind a lead car and to slow down for curves, but friction brakes won't be used in order to keep the set speed (by user or map speed limit)
 - [x] [✅] Brake when 10mph+ over set speed when downhill coasting enabled
 - [x] [✅] Nudgeless lane change: OP will start lane change automatically in direction of blinker after blinker on for 2s
+- [x] [✅] Friction braking indicator
 - [x] **"Auto-on steering lite" for Chevy Volt**: You control accel/decel with gas pedal in "L-mode" and OP keeps steering (down to 7mph)
     * To use:
 
