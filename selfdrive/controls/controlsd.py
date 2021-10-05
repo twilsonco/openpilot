@@ -515,6 +515,7 @@ class Controls:
       if coasting_enabled:
         self.CI.CS.coasting_long_plan = self.LoC.longPlan
         self.CI.CS.coasting_lead_d = self.LoC.coasting_lead_d
+        self.CI.CS.coasting_lead_v = self.LoC.coasting_lead_v
           
 
       # Steering PID loop and lateral MPC

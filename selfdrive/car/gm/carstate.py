@@ -51,13 +51,16 @@ class CarState(CarStateBase):
     self.coasting_brake_over_speed_active = False
     self.coasting_long_plan = ""
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
+    self.coasting_lead_v = -1.
+    self.coasting_lead_min_v = 5. * CV.MPH_TO_MS
     self.coasting_lead_min_rel_dist_s = 1.8 # [s] coasting logic isn't used at less than this follow distance
     self.coasting_lead_min_abs_dist = 20. # [m] coasting logic isn't used at less than this absolute follow distance
-    self.coasting_lead_abs_dist_max_check_speed = 10. * CV.MPH_TO_MS
+    self.coasting_lead_abs_dist_max_check_speed = 30. * CV.MPH_TO_MS
     self.pause_long_on_gas_press = False
     self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False
-    self.apply_brake_percent = 0 # for brake percent on ui
+    self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
+    self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
     self.vEgo = 0.
     self.v_cruise_kph = 0
     self.min_lane_change_speed = 30. * CV.MPH_TO_MS
@@ -135,7 +138,7 @@ class CarState(CarStateBase):
       elif not self.blinker and self.prev_blinker:
         self.lang_change_ramp_up_steer_start_t = cur_time
 
-      self.lane_change_steer_factor = interp(self.vEgo, [self.min_lane_change_speed * 0.7, self.min_lane_change_speed], [0., 1.])
+      self.lane_change_steer_factor = interp(self.vEgo, [self.min_lane_change_speed * 0.9, self.min_lane_change_speed], [0., 1.])
 
       if self.blinker:
         self.lane_change_steer_factor = interp(cur_time - self.lang_change_ramp_down_steer_start_t, [0., self.lang_change_ramp_steer_dur * 4.], [1., self.lane_change_steer_factor])

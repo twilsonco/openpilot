@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <string>
+#include <cmath>
 
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
@@ -442,31 +443,34 @@ static void ui_draw_vision_face(UIState *s) {
 }
 
 static void ui_draw_vision_brake(UIState *s) {
-  const int brake_size = 132;
-  const int brake_x = s->fb_w - brake_size - bdr_s * 2;
-  const int brake_y = s->fb_h - footer_h / 2;
-  ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", s->scene.brake_percent > 0);
-  if (s->scene.brake_percent > 0 && s->scene.brake_percent <= 100){
-    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-    nvgBeginPath(s->vg);
-    nvgRoundedRect(s->vg, brake_x - brake_size / 3, brake_y - brake_size / 3, 2 * brake_size / 3, 2 * brake_size / 3, 100);
-    nvgStrokeColor(s->vg, nvgRGBA(0,0,0,80));
-    nvgStrokeWidth(s->vg, 6);
-    NVGcolor fillColor = nvgRGBA(0,0,0,200);
-    nvgFillColor(s->vg, fillColor);
-    nvgFill(s->vg);
-    nvgStroke(s->vg);
-    nvgFontSize(s->vg, s->scene.brake_percent < 100 ? 72 : 64);
-    int r = 255, g = 255, b = 255;
-    float p = s->scene.brake_percent;
-    p *= 0.01;
-    g -= int(p * 255.);
-    g = (g > 0 ? g : 0);
-    b -= int((.6 + p) * 255.);
-    b = (b > 0 ? b : 0); // goes from white to orange to red at p goes from 0 to 100
-    nvgFillColor(s->vg, nvgRGBA(r,g,b,255));
-    const std::string brakePercentStr = std::to_string(s->scene.brake_percent);
-    nvgText(s->vg, brake_x, brake_y, brakePercentStr.c_str(), NULL);
+  if (s->scene.brake_percent >= 0){
+    const int brake_size = 132;
+    const int brake_x = s->fb_w - brake_size - bdr_s * 2;
+    const int brake_y = s->fb_h - footer_h / 2;
+    ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", s->scene.brake_percent > 0);
+    if (s->scene.brake_percent > 0 && s->scene.brake_percent <= 100){
+      const int brake_r1 = 1;
+      const int brake_r2 = 44;
+      const float brake_r_range = brake_r2 - brake_r1;
+      float p = s->scene.brake_percent;
+      const int brake_r = brake_r1 + int(brake_r_range * p * 0.01);
+      
+      nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, brake_x - brake_r, brake_y - brake_r, 2 * brake_r, 2 * brake_r, brake_r);
+      nvgStrokeWidth(s->vg, 6);
+      nvgFontSize(s->vg, s->scene.brake_percent < 100 ? 72 : 64);
+      int r = 255, g = 255, b = 255, f = 200;
+      p *= 0.01;
+      g -= int(p * 255.);
+      g = (g > 0 ? g : 0);
+      b -= int((.6 + p) * 255.);
+      b = (b > 0 ? b : 0); // goes from white to orange to red at p goes from 0 to 100
+      nvgFillColor(s->vg, nvgRGBA(r,g,b,f));
+      nvgStrokeColor(s->vg, nvgRGBA(r,g,b,255));
+      nvgFill(s->vg);
+      nvgStroke(s->vg);
+    }
   }
 }
 
@@ -673,7 +677,7 @@ void ui_nvg_init(UIState *s) {
     {"turn_left_icon", "../assets/img_turn_left_icon.png"},
     {"turn_right_icon", "../assets/img_turn_right_icon.png"},
     {"map_source_icon", "../assets/img_world_icon.png"},
-    {"brake_disk", "../assets/img_brake.png"},
+    {"brake_disk", "../assets/img_brake.png"}
   };
   for (auto [name, file] : images) {
     s->images[name] = nvgCreateImage(s->vg, file, 1);

@@ -54,6 +54,7 @@ def manager_init():
     ("Coasting", "0"),
     ("CoastingBrakeOverSpeed", "0"),
     ("FrictionBrakePercent", "0"),
+    ("BrakeIndicator", "1"),
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))

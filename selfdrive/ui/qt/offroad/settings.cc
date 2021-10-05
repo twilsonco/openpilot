@@ -109,6 +109,16 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "When adjusting, cruise speed will be {8, 13, 18, 23, 28} mph.",
                                   "../assets/offroad/icon_speed_offset.png",
                                   this));
+  toggles.append(new ParamControl("DisableDisengageOnGas",
+                                  "Disable disengage on gas",
+                                  "Disable default comma stock disengage on gas feature",
+                                  "../assets/offroad/icon_car_pedal.png",
+                                  this));
+  toggles.append(new ParamControl("SportAccel",
+                                  "Sport acceleration mode",
+                                  "Stronger acceleration under most conditions.",
+                                  "../assets/offroad/icon_rocket.png",
+                                  this));
   toggles.append(new ParamControl("NudgelessLaneChange",
                                   "\U000026A0 Nudgeless lane change (1s delay) \U000026A0",
                                   "Perform lane change without requiring nudge from driver",
@@ -118,21 +128,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "[GM] Enable AutoHold on GM vehicles",
                                   "Holds brakes automatically after coming to a complete stop, even when OP is disengaged.",
                                   "../assets/offroad/icon_gm_autohold.png",
-                                  this));
-  toggles.append(new ParamControl("CustomSounds",
-                                  "Alternative sounds (2x restart car to apply)",
-                                  "Uses alternative set of sound effects.",
-                                  "../assets/offroad/icon_custom_sounds.png",
-                                  this));
-  toggles.append(new ParamControl("SilentEngageDisengage",
-                                  "Silent engage/disengage (2x restart car to apply)",
-                                  "Mute engage and disengage sounds.",
-                                  "../assets/offroad/icon_mute.png",
-                                  this));
-  toggles.append(new ParamControl("SportAccel",
-                                  "Sport acceleration mode",
-                                  "Stronger acceleration under most conditions.",
-                                  "../assets/offroad/icon_rocket.png",
                                   this));
   toggles.append(new ParamControl("Coasting",
                                   "[GM] Coast downhill (take a brake!)",
@@ -144,10 +139,20 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "When coasting, start applying desired cruise braking when [10,15]mph over set speed.",
                                   "../assets/offroad/icon_speed_offset.png",
                                   this));
-  toggles.append(new ParamControl("DisableDisengageOnGas",
-                                  "Disable disengage on gas",
-                                  "Disable default comma stock disengage on gas feature",
-                                  "../assets/offroad/icon_car_pedal.png",
+  toggles.append(new ParamControl("BrakeIndicator",
+                                  "[GM] Brake indicator",
+                                  "Binary brake indicator",
+                                  "../assets/offroad/icon_brake_disc.png",
+                                  this));
+  toggles.append(new ParamControl("CustomSounds",
+                                  "Alternative sounds (2x restart car to apply)",
+                                  "Uses alternative set of sound effects.",
+                                  "../assets/offroad/icon_custom_sounds.png",
+                                  this));
+  toggles.append(new ParamControl("SilentEngageDisengage",
+                                  "Silent engage/disengage (2x restart car to apply)",
+                                  "Mute engage and disengage sounds.",
+                                  "../assets/offroad/icon_mute.png",
                                   this));
   toggles.append(new ParamControl("ShowDebugUI",
                                   "Show debug UI elements",

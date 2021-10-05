@@ -55,7 +55,7 @@ class CarController():
     else:
       apply_gas = int(round(interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)))
       apply_brake = interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
-      if CS.coasting_enabled and (CS.coasting_lead_d < 0. or ((CS.coasting_lead_d >= CS.coasting_lead_min_abs_dist or CS.vEgo > CS.coasting_lead_abs_dist_max_check_speed) and CS.vEgo > 0.2 and CS.coasting_lead_d / CS.vEgo >= CS.coasting_lead_min_rel_dist_s)):
+      if CS.coasting_enabled and (CS.coasting_lead_d < 0. or ((CS.coasting_lead_d >= CS.coasting_lead_min_abs_dist or CS.vEgo > CS.coasting_lead_abs_dist_max_check_speed) and CS.vEgo > 0.2 and CS.coasting_lead_d / CS.vEgo >= CS.coasting_lead_min_rel_dist_s and CS.coasting_lead_v > CS.coasting_lead_min_v)):
         if CS.coasting_long_plan in ['cruise', 'limit'] and apply_brake > 0.:
           apply_gas = P.MAX_ACC_REGEN
           over_speed_factor = interp(CS.vEgo - CS.v_cruise_kph * CV.KPH_TO_MS, CS.coasting_over_speed_vEgo_BP, [0., 1.]) if CS.coasting_brake_over_speed_enabled else 0.
@@ -63,9 +63,9 @@ class CarController():
           apply_brake *= over_speed_factor
       apply_brake = int(round(apply_brake))
     
-
-    CS.apply_brake_percent = int(interp(apply_brake, [0., float(P.MAX_BRAKE)], [0., 100.])) if CS.vEgo > 0.1 else 0
-
+    if CS.showBrakeIndicator:
+      CS.apply_brake_percent = int(interp(apply_brake, [0., float(P.MAX_BRAKE)], [0., 100.])) if CS.vEgo > 0.1 else 0
+    
     # Gas/regen and brakes - all at 25Hz
     if (frame % 4) == 0:
       idx = (frame // 4) % 4
