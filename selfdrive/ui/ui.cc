@@ -144,6 +144,7 @@ static void update_state(UIState *s) {
   if (sm.updated("carState")){
     scene.car_state = sm["carState"].getCarState();
     scene.brake_percent = scene.car_state.getFrictionBrakePercent();
+    scene.brake_indicator_alpha = scene.car_state.getFrictionBrakeAlpha();
   }
   if (sm.updated("modelV2") && s->vg) {
     auto model = sm["modelV2"].getModelV2();

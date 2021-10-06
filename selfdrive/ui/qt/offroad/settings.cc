@@ -139,6 +139,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "When coasting, start applying desired cruise braking when [10,15]mph over set speed.",
                                   "../assets/offroad/icon_speed_offset.png",
                                   this));
+  toggles.append(new ParamControl("OnePedalMode",
+                                  "[GM] One pedal driving",
+                                  "Drive with one pedal; OP will brake all the way to a stop without disengaging.",
+                                  "../assets/offroad/icon_car_pedal.png",
+                                  this));
   toggles.append(new ParamControl("BrakeIndicator",
                                   "[GM] Brake indicator",
                                   "Binary brake indicator",

@@ -143,13 +143,19 @@ static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, i
   nvgCircle(s->vg, center_x, center_y, radius);
   nvgFillColor(s->vg, color);
   nvgFill(s->vg);
-  const int img_size = radius * 1.5;
+  const int img_size = radius * 1.75;
   ui_draw_image(s, {center_x - (img_size / 2), center_y - (img_size / 2), img_size, img_size}, image, img_alpha);
 }
 
 static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, int radius, const char *image, bool active) {
   float bg_alpha = active ? 0.3f : 0.1f;
   float img_alpha = active ? 1.0f : 0.15f;
+  ui_draw_circle_image(s, center_x, center_y, radius, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
+}
+
+static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, int radius, const char *image, float img_alpha) {
+  float bg_alpha = 0.1 + 0.2 * img_alpha;
+  img_alpha = 0.15 + 0.85 * img_alpha;
   ui_draw_circle_image(s, center_x, center_y, radius, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
 
@@ -444,13 +450,13 @@ static void ui_draw_vision_face(UIState *s) {
 
 static void ui_draw_vision_brake(UIState *s) {
   if (s->scene.brake_percent >= 0){
-    const int brake_size = 132;
+    const int brake_size = 120;
     const int brake_x = s->fb_w - brake_size - bdr_s * 2;
     const int brake_y = s->fb_h - footer_h / 2;
-    ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", s->scene.brake_percent > 0);
+    ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", s->scene.brake_indicator_alpha);
     if (s->scene.brake_percent > 0 && s->scene.brake_percent <= 100){
       const int brake_r1 = 1;
-      const int brake_r2 = 44;
+      const int brake_r2 = brake_size / 3;
       const float brake_r_range = brake_r2 - brake_r1;
       float p = s->scene.brake_percent;
       const int brake_r = brake_r1 + int(brake_r_range * p * 0.01);

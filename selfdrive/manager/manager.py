@@ -52,8 +52,10 @@ def manager_init():
     ("LanelessMode", "2"),
     ("NudgelessLaneChange", "0"),
     ("Coasting", "0"),
+    ("OnePedalMode", "0"),
     ("CoastingBrakeOverSpeed", "0"),
     ("FrictionBrakePercent", "0"),
+    ("FrictionBrakeAlpha", "0"),
     ("BrakeIndicator", "1"),
   ]
   if not PC:

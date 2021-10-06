@@ -58,8 +58,15 @@ class CarState(CarStateBase):
     self.pause_long_on_gas_press = False
     self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False
+    
+    self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
+    
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
+    self.brake_alpha = 0.
+    self.brake_fade_duration = 0.3 # [s] time it takes for the brake indicator to fade in/out
+    self.brake_alpha_step = 1. / self.brake_fade_duration # will step in the transparent or opaque direction
+    self.brake_alpha_last_t = 0. # to know how much to step each iteration
     self.vEgo = 0.
     self.v_cruise_kph = 0
     self.min_lane_change_speed = 30. * CV.MPH_TO_MS
@@ -99,6 +106,17 @@ class CarState(CarStateBase):
       ret.brake = 0.
 
     ret.frictionBrakePercent = self.apply_brake_percent
+
+    t = sec_since_boot()
+    if self.apply_brake_percent > 0:
+      self.brake_alpha += self.brake_alpha_step * (t - self.brake_alpha_last_t)
+      self.brake_alpha = min(1., self.brake_alpha)
+      self.brake_alpha_last_t = t
+    elif self.brake_alpha > 0.:
+      self.brake_alpha -= self.brake_alpha_step * (t - self.brake_alpha_last_t)
+      self.brake_alpha = max(0., self.brake_alpha)
+    self.brake_alpha_last_t = t
+    ret.frictionBrakeAlpha = self.brake_alpha
 
     ret.gas = pt_cp.vl["AcceleratorPedal"]["AcceleratorPedal"] / 254.
     ret.gasPressed = ret.gas > 1e-5
