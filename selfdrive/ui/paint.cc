@@ -143,7 +143,7 @@ static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, i
   nvgCircle(s->vg, center_x, center_y, radius);
   nvgFillColor(s->vg, color);
   nvgFill(s->vg);
-  const int img_size = radius * 1.75;
+  const int img_size = radius * 1.5;
   ui_draw_image(s, {center_x - (img_size / 2), center_y - (img_size / 2), img_size, img_size}, image, img_alpha);
 }
 
@@ -153,11 +153,6 @@ static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, i
   ui_draw_circle_image(s, center_x, center_y, radius, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
 
-static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, int radius, const char *image, float img_alpha) {
-  float bg_alpha = 0.1 + 0.2 * img_alpha;
-  img_alpha = 0.15 + 0.85 * img_alpha;
-  ui_draw_circle_image(s, center_x, center_y, radius, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
-}
 
 static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const vertex_data &vd) {
   // Draw lead car indicator
@@ -453,26 +448,36 @@ static void ui_draw_vision_brake(UIState *s) {
     const int brake_size = 120;
     const int brake_x = s->fb_w - brake_size - bdr_s * 2;
     const int brake_y = s->fb_h - footer_h / 2;
-    ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", s->scene.brake_indicator_alpha);
+    float bg_alpha = 0.1 + 0.2 * s->scene.brake_indicator_alpha;
+    float img_alpha = 0.15 + 0.85 * s->scene.brake_indicator_alpha;
+    NVGcolor color = nvgRGBA(0, 0, 0, (255 * bg_alpha));
+    if (s->scene.brake_percent > 0 && s->scene.brake_percent <= 100){
+      int r = 0;
+      if (s->scene.brake_percent >= 50){
+        float p = 0.01 * float(s->scene.brake_percent - 50);
+        bg_alpha += 0.3 * p;
+        r = 200. * p;
+      }
+      color = nvgRGBA(r, 0, 0, (255 * bg_alpha));
+    }
+    ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", color, img_alpha);
     if (s->scene.brake_percent > 0 && s->scene.brake_percent <= 100){
       const int brake_r1 = 1;
-      const int brake_r2 = brake_size / 3;
+      const int brake_r2 = brake_size / 3 + 4;
       const float brake_r_range = brake_r2 - brake_r1;
       float p = s->scene.brake_percent;
       const int brake_r = brake_r1 + int(brake_r_range * p * 0.01);
-      
-      nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, brake_x - brake_r, brake_y - brake_r, 2 * brake_r, 2 * brake_r, brake_r);
       nvgStrokeWidth(s->vg, 6);
       nvgFontSize(s->vg, s->scene.brake_percent < 100 ? 72 : 64);
-      int r = 255, g = 255, b = 255, f = 200;
+      int r = 255, g = 255, b = 255, a = 200;
       p *= 0.01;
       g -= int(p * 255.);
       g = (g > 0 ? g : 0);
       b -= int((.6 + p) * 255.);
       b = (b > 0 ? b : 0); // goes from white to orange to red at p goes from 0 to 100
-      nvgFillColor(s->vg, nvgRGBA(r,g,b,f));
+      nvgFillColor(s->vg, nvgRGBA(r,g,b,a));
       nvgStrokeColor(s->vg, nvgRGBA(r,g,b,255));
       nvgFill(s->vg);
       nvgStroke(s->vg);
