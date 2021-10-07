@@ -20,6 +20,8 @@ from selfdrive.pandad import get_expected_signature
 from selfdrive.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.version import get_git_branch, terms_version, training_version
+from selfdrive.kegman_conf import kegman_conf
+kegman = kegman_conf()
 
 FW_SIGNATURE = get_expected_signature()
 
@@ -28,8 +30,8 @@ NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
 CURRENT_TAU = 15.   # 15s time constant
 CPU_TEMP_TAU = 5.   # 5s time constant
-DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without internet
-DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
+DAYS_NO_CONNECTIVITY_MAX = 9999  # do not allow to engage after a week without internet
+DAYS_NO_CONNECTIVITY_PROMPT = 9999  # send an offroad prompt after 4 days with no internet
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 
 prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
@@ -139,6 +141,25 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
 
   return new_speed
 
+def check_car_battery_voltage(should_start, pandaState, charging_disabled, msg):
+
+  # charging disallowed if:
+  #   - there are health packets from panda, and;
+  #   - 12V battery voltage is too low, and;
+  #   - onroad isn't started
+  print(pandaState)
+  
+  if charging_disabled and (pandaState is None or pandaState.pandaState.voltage > (int(kegman.conf['carVoltageMinEonShutdown'])+500)) and msg.deviceState.batteryPercent < int(kegman.conf['battChargeMin']):
+    charging_disabled = False
+    os.system('echo "1" > /sys/class/power_supply/battery/charging_enabled')
+  elif not charging_disabled and (msg.deviceState.batteryPercent > int(kegman.conf['battChargeMax']) or (pandaState is not None and pandaState.pandaState.voltage < int(kegman.conf['carVoltageMinEonShutdown']) and not should_start)):
+    charging_disabled = True
+    os.system('echo "0" > /sys/class/power_supply/battery/charging_enabled')
+  elif msg.deviceState.batteryCurrent < 0 and msg.deviceState.batteryPercent > int(kegman.conf['battChargeMax']):
+    charging_disabled = True
+    os.system('echo "0" > /sys/class/power_supply/battery/charging_enabled')
+
+  return charging_disabled
 
 def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: Optional[str]=None):
   if prev_offroad_states.get(offroad_alert, None) == (show_alert, extra_text):
@@ -176,6 +197,7 @@ def thermald_thread():
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
   cpu_temp_filter = FirstOrderFilter(0., CPU_TEMP_TAU, DT_TRML)
   pandaState_prev = None
+  charging_disabled = False
   should_start_prev = False
   handle_fan = None
   is_uno = False
@@ -367,6 +389,15 @@ def thermald_thread():
       if off_ts is None:
         off_ts = sec_since_boot()
 
+    charging_disabled = check_car_battery_voltage(should_start, pandaState, charging_disabled, msg)
+
+    if msg.deviceState.batteryCurrent > 0:
+      msg.deviceState.batteryStatus = "Discharging"
+    else:
+      msg.deviceState.batteryStatus = "Charging"
+
+    
+    msg.deviceState.chargingDisabled = charging_disabled
     # Offroad power monitoring
     power_monitor.calculate(pandaState)
     msg.deviceState.offroadPowerUsageUwh = power_monitor.get_power_used()
@@ -389,6 +420,7 @@ def thermald_thread():
     msg.deviceState.thermalStatus = thermal_status
     pm.send("deviceState", msg)
 
+    print(msg)
     set_offroad_alert_if_changed("Offroad_ChargeDisabled", (not usb_power))
 
     should_start_prev = should_start

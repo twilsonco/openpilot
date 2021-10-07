@@ -4,8 +4,6 @@ from selfdrive.kegman_conf import kegman_conf
 from cereal import log
 
 kegman = kegman_conf()
-PATH_OFFSET = float(kegman.conf['cameraOffset'])  # m from center car to camera
-CAMERA_OFFSET = 0.06
 
 #zorrobyte
 def mean(numbers): 
@@ -47,8 +45,15 @@ class LanePlanner:
       # left and right ll x is the same
       self.ll_x = md.laneLines[1].x
       # only offset left and right lane lines; offsetting path does not make sense
-      self.lll_y = np.array(md.laneLines[1].y) - CAMERA_OFFSET
-      self.rll_y = np.array(md.laneLines[2].y) - CAMERA_OFFSET
+      
+      self.mpc_frame += 1
+      if self.mpc_frame % 200 == 0:
+        # live tuning through /data/openpilot/tune.py for camera
+        self.kegman = kegman_conf()
+        self.mpc_frame = 0
+
+      self.lll_y = np.array(md.laneLines[1].y) - float(self.kegman.conf['cameraOffset'])
+      self.rll_y = np.array(md.laneLines[2].y) - float(self.kegman.conf['cameraOffset'])
       self.lll_prob = md.laneLineProbs[1]
       self.rll_prob = md.laneLineProbs[2]
       self.lll_std = md.laneLineStds[1]
@@ -61,14 +66,7 @@ class LanePlanner:
   def get_d_path(self, v_ego, path_t, path_xyz):
     # Reduce reliance on lanelines that are too far apart or
     # will be in a few seconds
-    self.mpc_frame += 1
-    if self.mpc_frame % 200 == 0:
-      # live tuning through /data/openpilot/tune.py for laneless toggle
-      self.kegman = kegman_conf()
-      self.path_offset = float(self.kegman.conf['cameraOffset'])
-      self.mpc_frame = 0
 
-    path_xyz[:,1] -= PATH_OFFSET
     l_prob, r_prob = self.lll_prob, self.rll_prob
     width_pts = self.rll_y - self.lll_y
     prob_mods = []
