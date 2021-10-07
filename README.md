@@ -74,6 +74,8 @@ See openpilot's official release notes here: https://github.com/commaai/openpilo
 - Added laneless toggle in live tuner.  See below for how to activate live tuner so you can tune your car while you drive.
 - Added Spektor's Coasting.  No more braking and annoying the guy behind you when you coast downhill.
 - Colored lanes in the UI.
+- re-introduced battery management for EON battery longevity - honors kegman.json BattMin and BattMax values
+- cameraOffset in kegman.json fixed and live tunable by using tune.sh
 - more to come.
 
 #### v0.8.2
