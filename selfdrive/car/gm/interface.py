@@ -253,6 +253,8 @@ class CarInterface(CarInterfaceBase):
     if pause_long_on_gas_press and not self.CS.pause_long_on_gas_press:
       if t - self.CS.last_pause_long_on_gas_press_t > 300.:
         self.CS.last_pause_long_on_gas_press_t = t
+    if self.CS.gasPressed:
+      self.CS.one_pedal_mode_last_gas_press_t = t
       
     self.CS.pause_long_on_gas_press = pause_long_on_gas_press
     enabled = c.enabled or self.CS.pause_long_on_gas_press

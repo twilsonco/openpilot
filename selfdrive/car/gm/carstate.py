@@ -62,8 +62,13 @@ class CarState(CarStateBase):
     self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
     self.one_pedal_mode_max_set_speed = 5 * CV.MPH_TO_MS #  one pedal mode activates if cruise set at or below this speed
     self.one_pedal_mode_max_apply_brake = 200 # based on the values of CS.BRAKE_LOOKUP_V
-    self.one_pedal_mode_stop_apply_brake_bp = [i * CV.MPH_TO_MS for i in [0., 1.5, 10.]]
-    self.one_pedal_mode_stop_apply_brake_v = [130., 130., 200.]
+    self.one_pedal_mode_stop_apply_brake_bp = [i * CV.MPH_TO_MS for i in [0., 1., 3., 15., 45., 55., 85.]]
+    self.one_pedal_mode_stop_apply_brake_v = [80., 80., 110., 160., 160., 90., 90.]
+    self.one_pedal_mode_last_gas_press_t = 0.
+    self.one_pedal_mode_max_low_speed = 8. * CV.MPH_TO_MS
+    self.one_pedal_mode_low_speed_time_offset = 0.5
+    self.one_pedal_mode_ramp_time_bp = [0., 0.5, 1.0, 2.5, 3.0, 4.0, 4.5]
+    self.one_pedal_mode_ramp_time_v = [0., 0., 0.3, 0.3, 0.7, 0.7, 1.0]
     
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
