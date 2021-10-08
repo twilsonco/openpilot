@@ -141,7 +141,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   this));
   toggles.append(new ParamControl("OnePedalMode",
                                   "[GM] One pedal driving",
-                                  "Drive with one pedal; OP will brake all the way to a stop without disengaging.",
+                                  "Drive with one pedal; OP will brake all the way to a stop without disengaging. (To activate, enage OP and set cruise speed to 1, then drive!)",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("BrakeIndicator",
