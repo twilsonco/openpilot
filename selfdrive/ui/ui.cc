@@ -140,11 +140,23 @@ static void update_state(UIState *s) {
   }
   if (scene.started && sm.updated("controlsState")) {
     scene.controls_state = sm["controlsState"].getControlsState();
+    scene.angleSteersDes = scene.controls_state.getLateralControlState().getAngleState().getSteeringAngleDeg();
   }
   if (sm.updated("carState")){
     scene.car_state = sm["carState"].getCarState();
     scene.brake_percent = scene.car_state.getFrictionBrakePercent();
     scene.brake_indicator_alpha = scene.car_state.getFrictionBrakeAlpha();
+    scene.steerOverride= scene.car_state.getSteeringPressed();
+    scene.angleSteers = scene.car_state.getSteeringAngleDeg();
+    scene.engineRPM = scene.car_state.getEngineRPM();
+    scene.aEgo = scene.car_state.getAEgo();
+    scene.steeringTorqueEps = scene.car_state.getSteeringTorqueEps();
+  }
+  if (sm.updated("radarState")) {
+    auto radar_state = sm["radarState"].getRadarState();
+    scene.lead_v_rel = radar_state.getLeadOne().getVRel();
+    scene.lead_d_rel = radar_state.getLeadOne().getDRel();
+    scene.lead_status = radar_state.getLeadOne().getStatus();
   }
   if (sm.updated("modelV2") && s->vg) {
     auto model = sm["modelV2"].getModelV2();
@@ -209,6 +221,34 @@ static void update_state(UIState *s) {
     scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
+  if (sm.updated("deviceState")) {
+    scene.deviceState = sm["deviceState"].getDeviceState();
+    s->scene.cpuTemp = scene.deviceState.getCpuTempC()[0];
+    auto cpus = scene.deviceState.getCpuUsagePercent();
+    float cpu = 0.;
+    int num_cpu = 0;
+    for (auto c : cpus){
+      cpu += c;
+      num_cpu++;
+    }
+    if (num_cpu > 1){
+      cpu /= num_cpu;
+    }
+    s->scene.cpuPerc = cpu;
+  }
+  if (sm.updated("ubloxGnss")) {
+    auto data = sm["ubloxGnss"].getUbloxGnss();
+    if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
+      scene.satelliteCount = data.getMeasurementReport().getNumMeas();
+      s->scene.satelliteCount = scene.satelliteCount;
+    }
+    auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
+    s->scene.gpsAccuracyUblox = data2.getAccuracy();
+    s->scene.altitudeUblox = data2.getAltitude();
+  }
+  if (sm.updated("liveLocationKalman")) {
+    scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();
+  }
   if (sm.updated("lateralPlan")) {
     scene.lateral_plan = sm["lateralPlan"].getLateralPlan();
     auto data = sm["lateralPlan"].getLateralPlan();
@@ -271,6 +311,14 @@ static void update_status(UIState *s) {
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->scene.laneless_mode = std::stoi(Params().get("LanelessMode"));
       s->scene.brake_percent = std::stoi(Params().get("FrictionBrakePercent"));
+
+      s->scene.measure_cur_num_slots = std::stoi(Params().get("MeasureNumSlots"));
+      s->scene.measure_slots[0] = std::stoi(Params().get("MeasureSlot00"));
+      s->scene.measure_slots[1] = std::stoi(Params().get("MeasureSlot01"));
+      s->scene.measure_slots[2] = std::stoi(Params().get("MeasureSlot02"));
+      s->scene.measure_slots[3] = std::stoi(Params().get("MeasureSlot03"));
+      s->scene.measure_slots[4] = std::stoi(Params().get("MeasureSlot04"));
+
       s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
 
       // Update intrinsics matrix after possible wide camera toggle change
@@ -299,7 +347,7 @@ static void update_status(UIState *s) {
 QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "deviceState", "roadCameraState",
-    "pandaState", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
+    "pandaState", "carParams", "driverMonitoringState", "sensorEvents", "carState", "radarState", "liveLocationKalman", "ubloxGnss", "gpsLocationExternal", 
     "longitudinalPlan", "lateralPlan",
   });
 

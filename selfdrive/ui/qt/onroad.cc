@@ -69,11 +69,23 @@ void OnroadWindow::updateState(const UIState &s) {
   }
 }
 
+bool ptInBiggerRect(Rect const & r, QMouseEvent* e){
+  Rect br = {r.x - r.w / 5, r.y - r.h / 5, 7 * r.w / 5, 7 * r.h / 5};
+  return br.ptInRect(e->x(), e->y());
+}
+
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   if (map != nullptr) {
     bool sidebarVisible = geometry().x() > 0;
-    if (!QUIState::ui_state.scene.speed_limit_sign_touch_rect.ptInRect(e->x(), e->y())
-        && !QUIState::ui_state.scene.laneless_btn_touch_rect.ptInRect(e->x(), e->y())){
+    bool ignorePress = false;
+    
+    ignorePress = ptInBiggerRect(QUIState::ui_state.scene.speed_limit_sign_touch_rect, e) 
+      || ptInBiggerRect(QUIState::ui_state.scene.laneless_btn_touch_rect, e)
+      || ptInBiggerRect(QUIState::ui_state.scene.speed_rect, e);
+    for (int i = 0; i < QUIState::ui_state.scene.measure_cur_num_slots && !ignorePress; ++i){
+      ignorePress = ptInBiggerRect(QUIState::ui_state.scene.measure_slot_touch_rects[i], e);
+    }
+    if (!ignorePress){
       map->setVisible(!sidebarVisible && !map->isVisible());
     }
   }

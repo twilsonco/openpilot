@@ -95,6 +95,34 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     }
     return;
   }
+  
+  // presses of measure boxes
+  for (int i = 0; i < QUIState::ui_state.scene.measure_cur_num_slots; ++i){
+    if (QUIState::ui_state.scene.measure_slot_touch_rects[i].ptInRect(e->x(), e->y())){
+      // user pressed one of the measure boxes. Need to increment the data shown.
+      char slotName[16];
+      snprintf(slotName, sizeof(slotName), "MeasureSlot%.2d", i);
+      int slot_val = (QUIState::ui_state.scene.measure_slots[i] + 1) % QUIState::ui_state.scene.num_measures;
+      QUIState::ui_state.scene.measure_slots[i] = slot_val;
+      char val_str[6];
+      sprintf(val_str, "%1d", slot_val);
+      Params().put(slotName, val_str, strlen(val_str));
+      return;
+    }
+  }
+  
+  // presses of vehicle speed to increment number of measure boxes
+  if (QUIState::ui_state.scene.speed_rect.ptInRect(e->x(), e->y())){
+    int num_slots = QUIState::ui_state.scene.measure_cur_num_slots + 1; 
+    if (num_slots > QUIState::ui_state.scene.measure_max_num_slots){
+      num_slots = QUIState::ui_state.scene.measure_min_num_slots;
+    }
+    QUIState::ui_state.scene.measure_cur_num_slots = num_slots;
+    char val_str[6];
+    sprintf(val_str, "%1d", num_slots);
+    Params().put("MeasureNumSlots", val_str, strlen(val_str));
+    return;
+  }
 
   // Handle sidebar collapsing
   else if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {

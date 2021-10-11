@@ -84,6 +84,9 @@ const int header_h = 420;
 const int footer_h = 280;
 const int laneless_btn_touch_pad = 80;
 
+const int brake_size = 96;
+const int face_wheel_radius = 88;
+
 const int speed_sgn_r = 96;
 const int speed_sgn_touch_pad = 60;
 
@@ -136,15 +139,49 @@ typedef struct UIScene {
 
   cereal::PandaState::PandaType pandaType;
   
+// measures
+  int measure_min_num_slots = 0;
+  int measure_max_num_slots = 5;
+  int measure_cur_num_slots = 3;
+  int measure_slots[5];
+  Rect measure_slot_touch_rects[5];
+  int num_measures = 10; // the number of cases handled in ui_draw_measures() in paint.cc
+  Rect speed_rect;
+  
+  // actual measures
+  float angleSteers;
+  float angleSteersDes;
+  float gpsAccuracyUblox;
+  float altitudeUblox;
+  int engineRPM;
+  bool steerOverride;
+  float steeringTorqueEps;
+  float aEgo;
+  float cpuTemp;
+  int cpuPerc;
+
+  int lead_status;
+  float lead_d_rel, lead_v_rel;
+
+  // gps
+  int satelliteCount;
+  bool gpsOK;
+  
+  // brake indicator
+  
   int brake_percent;
   float brake_indicator_alpha;
   
   int laneless_mode;
   Rect laneless_btn_touch_rect;
 
+  cereal::DeviceState::Reader deviceState;
+  cereal::RadarState::LeadData::Reader lead_data[2];
   cereal::CarState::Reader car_state;
   cereal::ControlsState::Reader controls_state;
   cereal::LateralPlan::Reader lateral_plan;
+  cereal::DriverState::Reader driver_state;
+  cereal::DriverMonitoringState::Reader dmonitoring_state;
 
   // modelV2
   float lane_line_probs[4];
@@ -203,6 +240,8 @@ typedef struct UIState {
   mat4 rear_frame_mat;
 
   bool awake;
+  
+  bool is_metric;
 
   float car_space_transform[6];
   bool wide_camera;

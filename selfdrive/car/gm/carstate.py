@@ -61,7 +61,6 @@ class CarState(CarStateBase):
     
     self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
     self.one_pedal_mode_max_set_speed = 5 * CV.MPH_TO_MS #  one pedal mode activates if cruise set at or below this speed
-    self.one_pedal_mode_max_apply_brake = 200 # based on the values of CS.BRAKE_LOOKUP_V
     self.one_pedal_mode_stop_apply_brake_bp = [i * CV.MPH_TO_MS for i in [0., 1., 3., 15., 45., 55., 85.]]
     self.one_pedal_mode_stop_apply_brake_v = [80., 80., 110., 160., 160., 90., 90.]
     self.one_pedal_mode_last_gas_press_t = 0.
@@ -114,9 +113,11 @@ class CarState(CarStateBase):
     if ret.brake < 10/0xd0:
       ret.brake = 0.
 
-    ret.frictionBrakePercent = self.apply_brake_percent
-
+    
     t = sec_since_boot()
+    if t - self.sessionInitTime < 10:
+      self.apply_brake_percent = int(round(interp(t - self.sessionInitTime, [0.,10.], [0., 500.])) % 100)
+      
     if self.apply_brake_percent > 0:
       self.brake_alpha += self.brake_alpha_step * (t - self.brake_alpha_last_t)
       self.brake_alpha = min(1., self.brake_alpha)
@@ -126,6 +127,7 @@ class CarState(CarStateBase):
       self.brake_alpha = max(0., self.brake_alpha)
     self.brake_alpha_last_t = t
     ret.frictionBrakeAlpha = self.brake_alpha
+    ret.frictionBrakePercent = self.apply_brake_percent
 
     ret.gas = pt_cp.vl["AcceleratorPedal"]["AcceleratorPedal"] / 254.
     ret.gasPressed = ret.gas > 1e-5
@@ -144,6 +146,7 @@ class CarState(CarStateBase):
     
     ret.steeringTorqueEps = pt_cp.vl["PSCMStatus"]['LKATorqueDelivered']
     self.engineRPM = pt_cp.vl["ECMEngineStatus"]['EngineRPM']
+    ret.engineRPM = self.engineRPM
 
     # 1 - open, 0 - closed
     ret.doorOpen = (pt_cp.vl["BCMDoorBeltStatus"]["FrontLeftDoor"] == 1 or
