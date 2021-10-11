@@ -379,7 +379,15 @@ static void ui_draw_measures(UIState *s){
   
     // determine bounding rectangle
     const Rect slots_rect = {center_x - brake_size, slots_y_min, 2 * brake_size, slots_y_rng};
-    
+    // draw bounding rectangle
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, slots_rect.x, slots_rect.y, slots_rect.w, slots_rect.h, 20);
+    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
+    nvgStrokeWidth(s->vg, 6);
+    nvgStroke(s->vg);
+    nvgFillColor(s->vg, nvgRGBA(0,0,0,50));
+    nvgFill(s->vg);
+
     auto *scene = &s->scene;
     
     // now start from the top and draw the current set of metrics
@@ -615,14 +623,6 @@ static void ui_draw_measures(UIState *s){
       // updade touch rect
       s->scene.measure_slot_touch_rects[i] = {slots_rect.x, slots_rect.y + i * slot_y_rng, slots_rect.w, slot_y_rng};
     }
-    // draw bounding rectangle
-    nvgBeginPath(s->vg);
-    nvgRoundedRect(s->vg, slots_rect.x, slots_rect.y, slots_rect.w, slots_rect.h, 20);
-    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
-    nvgStrokeWidth(s->vg, 6);
-    nvgStroke(s->vg);
-    nvgFillColor(s->vg, nvgRGBA(0,0,0,50));
-    nvgFill(s->vg);
   }
 }
 

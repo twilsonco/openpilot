@@ -60,8 +60,7 @@ class CarController():
         if CS.coasting_long_plan in ['cruise', 'limit']:
           apply_brake = interp(CS.vEgo, CS.one_pedal_mode_stop_apply_brake_bp, CS.one_pedal_mode_stop_apply_brake_v)
           time_since_brake = sec_since_boot() - CS.one_pedal_mode_last_gas_press_t
-          time_offset = CS.one_pedal_mode_low_speed_time_offset if CS.vEgo < CS.one_pedal_mode_max_low_speed else 0.
-          apply_brake *= interp(time_since_brake + time_offset, CS.one_pedal_mode_ramp_time_bp, CS.one_pedal_mode_ramp_time_v)
+          apply_brake *= interp(time_since_brake, CS.one_pedal_mode_ramp_time_bp, CS.one_pedal_mode_ramp_time_v)
       elif CS.coasting_enabled and (CS.coasting_lead_d < 0. or ((CS.coasting_lead_d >= CS.coasting_lead_min_abs_dist or CS.vEgo > CS.coasting_lead_abs_dist_max_check_speed) and CS.vEgo > 0.2 and CS.coasting_lead_d / CS.vEgo >= CS.coasting_lead_min_rel_dist_s and CS.coasting_lead_v > CS.coasting_lead_min_v)):
         if CS.coasting_long_plan in ['cruise', 'limit'] and apply_brake > 0.:
           apply_gas = P.MAX_ACC_REGEN
