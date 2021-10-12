@@ -76,6 +76,7 @@ See openpilot's official release notes here: https://github.com/commaai/openpilo
 - Colored lanes in the UI.
 - re-introduced battery management for EON battery longevity - honors kegman.json BattMin and BattMax values
 - cameraOffset in kegman.json fixed and live tunable by using tune.sh
+- silence on engage / disengage
 - more to come.
 
 #### v0.8.2
