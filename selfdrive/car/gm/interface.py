@@ -75,6 +75,8 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
       ret.steerRateCost = 1.0
       ret.steerActuatorDelay = 0.2
+    
+      ret.steerFunctionForm = car.CarParams.SteerFunctionForm.sigmoid
 
       # Only tuned to reduce oscillations. TODO.
       ret.longitudinalTuning.kpV = [1.7, 1.3]

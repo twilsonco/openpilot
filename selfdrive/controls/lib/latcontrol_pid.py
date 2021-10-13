@@ -2,7 +2,7 @@ import math
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.pid import PIController
 from selfdrive.controls.lib.drive_helpers import get_steer_max
-from cereal import log
+from cereal import log, car
 
 
 class LatControlPID():
@@ -35,11 +35,15 @@ class LatControlPID():
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
 
-      # offset does not contribute to resistive torque
-      # !!! VOLT ONLY SIGMOID !!! Solve your car's f(speed, angle) -> command.
-      x = 0.02904609 * angle_steers_ff
-      sigmoid = x / (1 + math.fabs(x))
-      steer_feedforward = 0.10006696 * sigmoid * (CS.vEgo + 3.12485927)
+      if CP.steerFunctionForm == car.CarParams.SteerFunctionForm.sigmoid:
+        # offset does not contribute to resistive torque
+        # !!! VOLT ONLY SIGMOID !!! Solve your car's f(speed, angle) -> command.
+        x = 0.02904609 * angle_steers_ff
+        sigmoid = x / (1 + math.fabs(x))
+        steer_feedforward = 0.10006696 * sigmoid * (CS.vEgo + 3.12485927)
+      elif CP.steerFunctionForm == car.CarParams.SteerFunctionForm.quad:
+        steer_feedforward = angle_steers_des_no_offset  # offset does not contribute to resistive torque
+        steer_feedforward *= CS.vEgo**2
 
       deadzone = 0.0
 

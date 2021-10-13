@@ -105,6 +105,8 @@ class CarInterfaceBase():
     ret.steerMaxBP = [0.]
     ret.steerMaxV = [1.]
     ret.minSteerSpeed = 0.
+    
+    ret.steerFunctionForm = car.CarParams.SteerFunctionForm.quad
 
     ret.pcmCruise = True     # openpilot's state is tied to the PCM's cruise state on most cars
     ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this
