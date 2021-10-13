@@ -81,22 +81,10 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0.
       ret.centerToFront = 0.45 * ret.wheelbase # from Volt Gen 1
 
-      ret.lateralTuning.pid.kpBP = [10. * CV.MPH_TO_MS,
-                                    20. * CV.MPH_TO_MS,
-                                    25. * CV.MPH_TO_MS,
-                                    30. * CV.MPH_TO_MS,
-                                    55. * CV.MPH_TO_MS,
-                                    65. * CV.MPH_TO_MS,
-                                    85. * CV.MPH_TO_MS]
-      ret.lateralTuning.pid.kpV = [0.025,
-                                   0.03,
-                                   0.04,
-                                   0.055,
-                                   0.14,
-                                   0.18,
-                                   0.25]
+      ret.lateralTuning.pid.kpBP = [0., 40.]
+      ret.lateralTuning.pid.kpV = [0., 0.16]
       ret.lateralTuning.pid.kiBP = [0.]
-      ret.lateralTuning.pid.kiV = [0.01]
+      ret.lateralTuning.pid.kiV = [0.1]
       ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
       ret.steerActuatorDelay = 0.2
 
@@ -231,6 +219,7 @@ class CarInterface(CarInterfaceBase):
 
     events = self.create_common_events(ret, pcm_enable=False)
 
+    t = sec_since_boot()
     if ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
     if self.CS.pause_long_on_gas_press:
@@ -238,11 +227,10 @@ class CarInterface(CarInterfaceBase):
     if self.CS.park_brake:
       events.add(EventName.parkBrake)
     if ret.vEgo < self.CP.minSteerSpeed:
-      if ret.vEgo < 0.1 and cruiseEnabled and not ret.brakePressed:
+      if ret.vEgo < 0.1 and cruiseEnabled and not ret.brakePressed and not self.CS.pause_long_on_gas_press and not self.CS.autoHoldActivated and not self.CS.disengage_on_gas:
         events.add(car.CarEvent.EventName.stoppedWaitForGas)
       else:
         events.add(car.CarEvent.EventName.belowSteerSpeed)
-    t = sec_since_boot()
     if cruiseEnabled:
       if t - self.CS.last_pause_long_on_gas_press_t < 0.5 and t - self.CS.sessionInitTime > 10.:
         events.add(car.CarEvent.EventName.pauseLongOnGasPress)
