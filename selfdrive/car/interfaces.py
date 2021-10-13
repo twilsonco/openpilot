@@ -94,6 +94,12 @@ class CarInterfaceBase():
   def init(CP, logcan, sendcan):
     pass
 
+  @staticmethod
+  def get_steer_feedforward(desired_angle, v_ego):
+    # Proportional to realigning tire momentum: lateral acceleration.
+    # TODO: something with lateralPlan.curvatureRates
+    return desired_angle * (v_ego**2)
+
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
   def get_std_params(candidate, fingerprint):
@@ -105,8 +111,6 @@ class CarInterfaceBase():
     ret.steerMaxBP = [0.]
     ret.steerMaxV = [1.]
     ret.minSteerSpeed = 0.
-    
-    ret.steerFunctionForm = car.CarParams.SteerFunctionForm.quad
 
     ret.pcmCruise = True     # openpilot's state is tied to the PCM's cruise state on most cars
     ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this

@@ -6,11 +6,12 @@ from cereal import log, car
 
 
 class LatControlPID():
-  def __init__(self, CP):
+  def __init__(self, CP, CI):
     self.pid = PIController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
                             k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, neg_limit=-1.0,
                             sat_limit=CP.steerLimitTimer)
+    self.get_steer_feedforward = CI.get_steer_feedforward
 
   def reset(self):
     self.pid.reset()
@@ -34,16 +35,8 @@ class LatControlPID():
       steers_max = get_steer_max(CP, CS.vEgo)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
-
-      if CP.steerFunctionForm == car.CarParams.SteerFunctionForm.sigmoid:
-        # offset does not contribute to resistive torque
-        # !!! VOLT ONLY SIGMOID !!! Solve your car's f(speed, angle) -> command.
-        x = 0.02904609 * angle_steers_ff
-        sigmoid = x / (1 + math.fabs(x))
-        steer_feedforward = 0.10006696 * sigmoid * (CS.vEgo + 3.12485927)
-      elif CP.steerFunctionForm == car.CarParams.SteerFunctionForm.quad:
-        steer_feedforward = angle_steers_des_no_offset  # offset does not contribute to resistive torque
-        steer_feedforward *= CS.vEgo**2
+      
+      steer_feedforward = self.get_steer_feedforward(angle_steers_des_no_offset, CS.vEgo)
 
       deadzone = 0.0
 

@@ -21,6 +21,18 @@ class CarInterface(CarInterfaceBase):
     params = CarControllerParams()
     return params.ACCEL_MIN, params.ACCEL_MAX
 
+  # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
+  def get_steer_feedforward(self, desired_angle, v_ego):
+    if self.CP.carFingerprint in [CAR.VOLT]:
+      # Sigmoid maps [-inf,inf] to [-1,1].
+      # This scalar gives sigmoid(34.4 deg) = sigmoid(1) = 0.5.
+      # 1 / 0.02904609 = 34.4 deg ~= 36 deg ~= 1/10 circle? Arbitrary scaling?
+      desired_angle *= 0.02904609
+      sigmoid = desired_angle / (1 + fabs(desired_angle))
+      return 0.10006696 * sigmoid * (v_ego + 3.12485927)
+    else:
+      return CarInterfaceBase.get_steer_feedforward(desired_angle, v_ego)
+
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
@@ -68,15 +80,24 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0.
       ret.centerToFront = 0.45 * ret.wheelbase # from Volt Gen 1
 
-      ret.lateralTuning.pid.kpBP = [0., 40.]
-      ret.lateralTuning.pid.kpV = [0., 0.16]
+      ret.lateralTuning.pid.kpBP = [10. * CV.MPH_TO_MS,
+                                    20. * CV.MPH_TO_MS,
+                                    25. * CV.MPH_TO_MS,
+                                    30. * CV.MPH_TO_MS,
+                                    55. * CV.MPH_TO_MS,
+                                    65. * CV.MPH_TO_MS,
+                                    85. * CV.MPH_TO_MS]
+      ret.lateralTuning.pid.kpV = [0.025,
+                                   0.03,
+                                   0.04,
+                                   0.055,
+                                   0.14,
+                                   0.18,
+                                   0.25]
       ret.lateralTuning.pid.kiBP = [0.]
-      ret.lateralTuning.pid.kiV = [0.1]
+      ret.lateralTuning.pid.kiV = [0.01]
       ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
-      ret.steerRateCost = 1.0
       ret.steerActuatorDelay = 0.2
-    
-      ret.steerFunctionForm = car.CarParams.SteerFunctionForm.sigmoid
 
       # Only tuned to reduce oscillations. TODO.
       ret.longitudinalTuning.kpV = [1.7, 1.3]
