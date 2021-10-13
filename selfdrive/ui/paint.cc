@@ -860,6 +860,9 @@ static void ui_draw_vision(UIState *s) {
       draw_laneless_button(s);
     }
   }
+  if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL) {
+    ui_draw_measures(s);
+  }
 }
 
 void ui_draw(UIState *s, int w, int h) {

@@ -299,6 +299,7 @@ static void update_status(UIState *s) {
     } else {
       s->status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
+    s->scene.speed_limit_control_enabled = Params().getBool("SpeedLimitControl");
   }
 
   // Handle onroad/offroad transition
