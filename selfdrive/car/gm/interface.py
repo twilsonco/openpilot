@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from math import fabs
 from cereal import car
 from common.numpy_fast import interp
 from common.realtime import sec_since_boot
