@@ -1,24 +1,25 @@
 ![](https://user-images.githubusercontent.com/37757984/127420744-89ca219c-8f8e-46d3-bccf-c1cb53b81bb1.png)
 
-Appreciate my work? 
+### Appreciate my work? 
 ------
 
 **[Buy me a beer/coffee](https://www.patreon.com/twilsonco)***
 
-Fork description
+# Fork description
 ------
 
 This fork exists to improve OP performance and convenience for GM cars, specifically the Chevy Volt, because the kegman fork wouldn't run on Comma Three.
 The basic plan is to import all the features Volt OP users (on Discord) desire.
 
-Running on move-fast fork of openpilot 0.8.8, which adds:
+Running on move-fast fork of openpilot, which adds:
 
 * Vision and/or map-based slowing down for curves
 * Map-based automatic changing of speed limit (with optional offset)
 * Hands on wheel monitoring
 * Disable disengage when gas pressed
 
-Current and planned fork features [✅ = optional via toggle]:
+#### Current fork features [✅ = optional via toggle]:
+-----
 
 - [x] [Chevy Volt] Sigmoidal steering responce (thanks Qadmus)
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
@@ -33,7 +34,14 @@ Current and planned fork features [✅ = optional via toggle]:
 - [x] [✅] Brake when 10mph+ over set speed when downhill coasting enabled
 - [x] [✅] Nudgeless lane change: OP will start lane change automatically in direction of blinker after blinker on for 2s
 - [x] [✅] Friction braking indicator
-- [x] **"Auto-on steering lite" for Chevy Volt**: You control accel/decel with gas pedal in "L-mode" and OP keeps steering (down to 7mph)
+- [x] **Customizable, dynamic vehicle/device metrics**
+    * To use:
+        * Tap the current speed on the openpilot display to cycle the number of metrics
+        * Tap any metric to cycle its content (sorry for all the god-forsaken tapping!)
+    * Metrics:
+        * Device: CPU Temperature (and percent used), GPS accuracy (and number of satelites), altitude
+        * Vehicle: Engine RPM, steering torque, steering angle, desired steering angle, lead distance [length], relative lead velocity, vehicle acceleration
+- [x] [GM] **"Auto-on steering lite"**: You control accel/decel with gas pedal in "L-mode" and OP keeps steering (down to 7mph)
     * To use:
 
     1. Enable the following toggles: Disable disengage on gas, Downhill coasting
@@ -42,17 +50,42 @@ Current and planned fork features [✅ = optional via toggle]:
     4. Now drive around; OP will steer while you control accel/decel with the gas pedal with the Volt's regen in "L-mode"
     * OP will pause steering if <30mph and blinker is on while in this mode
         * won't pause steering for low speed blinker if a) both toggles in (1) are disabled, or b) cruise set speed >10mph and the gas pedal isn't pressed (i.e. under normal OP control)
-- [ ] [Modified assistive driving system](https://github.com/sunnyhaibin/openpilot#new-modified-assistive-driving-safety-mads) (MADS)
-- [ ] Remember last follow mode
-- [ ] 0.5 second delay before activating newly selected follow mode so user can switch around without OP slightly jerking in response
+- [x] [GM] [✅] One-pedal driving: When in "auto-on steering lite" mode, OP will apply light-moderate braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
+- [x] [GM] JShuler panda-based GM steering fault fix
 
-Supported Hardware
+#### Planned fork features:
+-----
+
+- [ ] [✅] [Modified assistive driving system](https://github.com/sunnyhaibin/openpilot#new-modified-assistive-driving-safety-mads) (MADS)
+- [ ] Remember last follow mode
+- [ ] [✅] 0.5 second delay before activating newly selected follow mode so user can switch around without OP slightly jerking in response
+- [ ] [✅] Auto screen brightness (or at least a way to dim a bit at night)
+- [ ] [Chevy Volt] [✅] Road trip mode: automatically put car into Mountain Mode if sustained speed 55mph+
+- [ ] [GM] Use physical drive mode button to switch between normal/sport acceleration profiles
+- [ ] [GM] [✅] Dynamic follow mode: point-based
+    * Follow distance "earns points" the longer you're behind the same lead car, moving from close to medium after about 5 minutes 
+    * When on highway, continue to increase from medium to far follow distance after about 20 minutes behind the same car
+    * If someone cuts in, the follow distance "takes a penalty" down to a closer follow distance proportional to the distance and relative speed of the car that cut in
+    * The penalties can "go negative", that is, repeated cut-ins can result in close follow being use for longer than normal
+* Matrics to add:
+    - [ ] follow distance in seconds
+    - [ ] current percent grade of road
+    - [ ] vehicle jerk
+
+### Supported Hardware
 ------
 
 This fork is developed and used on a Comma Three, and is also known to work on Comma Two.
 
-Installation Instructions
+### Installation Instructions
 ------
+
+#### Easy: using sshane's [openpilot-installer-generator](https://github.com/sshane/openpilot-installer-generator)
+
+Use [these instructions](https://github.com/sshane/openpilot-installer-generator#usage) and the following url:
+`https://smiskol.com/fork/twilsonco`
+
+#### Less easy
 
 With a stock installation of OpenPilot confirmed working, SSH into device and run the following:
 
@@ -60,7 +93,7 @@ With a stock installation of OpenPilot confirmed working, SSH into device and ru
 
 ---
 
-What is openpilot?
+# What is openpilot?
 ------
 
 [openpilot](http://github.com/commaai/openpilot) is an open source driver assistance system. Currently, openpilot performs the functions of Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW) and Lane Departure Warning (LDW) for a growing variety of supported [car makes, models and model years](#supported-cars). In addition, while openpilot is engaged, a camera based Driver Monitoring (DM) feature alerts distracted and asleep drivers.
