@@ -21,7 +21,7 @@ Running on move-fast fork of openpilot, which adds:
 #### Current fork features [✅ = optional via toggle]:
 -----
 
-- [x] [Chevy Volt] Sigmoidal steering responce (thanks Qadmus)
+- [x] [Chevy Volt] Sigmoidal steering response (thanks Qadmus)
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
 - [x] [✅] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#new-dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only. must enable "Disable use of lanelines" for button to appear* (ported from sunnyhaibin)
@@ -56,10 +56,16 @@ Running on move-fast fork of openpilot, which adds:
 #### Planned fork features:
 -----
 
+- [ ] Grey panda support
+- [ ] Chevy Bolt support
+- [ ] Record screen button
 - [ ] [✅] [Modified assistive driving system](https://github.com/sunnyhaibin/openpilot#new-modified-assistive-driving-safety-mads) (MADS)
 - [ ] Remember last follow mode
 - [ ] [✅] 0.5 second delay before activating newly selected follow mode so user can switch around without OP slightly jerking in response
 - [ ] [✅] Auto screen brightness (or at least a way to dim a bit at night)
+- [ ] [✅] Lane Speed alerts ([sshane](https://github.com/sshane/openpilot#lane-speed-alerts))
+- [ ] [✅] Dynamic camera offset (based on oncoming traffic) ([sshane)](https://github.com/sshane/openpilot#dynamic-camera-offset-based-on-oncoming-traffic)
+- [ ] [Chevy Volt] Steering control below 7mph using parking commands
 - [ ] [Chevy Volt] [✅] Road trip mode: automatically put car into Mountain Mode if sustained speed 55mph+
 - [ ] [GM] Use physical drive mode button to switch between normal/sport acceleration profiles
 - [ ] [GM] [✅] Dynamic follow mode: point-based
@@ -67,10 +73,13 @@ Running on move-fast fork of openpilot, which adds:
     * When on highway, continue to increase from medium to far follow distance after about 20 minutes behind the same car
     * If someone cuts in, the follow distance "takes a penalty" down to a closer follow distance proportional to the distance and relative speed of the car that cut in
     * The penalties can "go negative", that is, repeated cut-ins can result in close follow being use for longer than normal
-* Matrics to add:
+* Metrics to add:
     - [ ] follow distance in seconds
+    - [ ] lead car absolute velocity
+    - [ ] device fan speed
     - [ ] current percent grade of road
     - [ ] vehicle jerk
+    - [ ] *could do session metrics to, like number of interventions, number of cut-ins,...*
 
 ### Supported Hardware
 ------
