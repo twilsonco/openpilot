@@ -61,6 +61,7 @@ def set_v_cruise_offset(do_offset):
 def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed,decel_pressed,accel_pressed_last,decel_pressed_last, fastMode, fast_mode_enabled, vEgo_kph, v_cruise_last_changed, long_plan, speed_limit_last_deactivated):
   
   if cur_time - speed_limit_last_deactivated > 0.5:
+    params = Params()
     if fast_mode_enabled:
       if enabled:
         if accel_pressed:
@@ -88,7 +89,6 @@ def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed
                       v_cruise_kph -= 1
         v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
     else:
-      params = Params()
       for b in buttonEvents:
         if enabled and not b.pressed:
           if b.type in [car.CarState.ButtonEvent.Type.accelCruise, car.CarState.ButtonEvent.Type.decelCruise] and params.get_bool("SpeedLimitControl") and long_plan in ['limit']:
