@@ -52,20 +52,20 @@ class CarState(CarStateBase):
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -1.
     self.coasting_lead_min_v = 5. * CV.MPH_TO_MS
-    self.coasting_lead_min_rel_dist_s = 1.8 # [s] coasting logic isn't used at less than this follow distance
-    self.coasting_lead_min_abs_dist = 40. # [m] coasting logic isn't used at less than this absolute follow distance
-    self.coasting_lead_abs_dist_max_check_speed = 40. * CV.MPH_TO_MS
+    self.coasting_lead_min_rel_dist_s = 0.8 # [s] coasting logic isn't used at less than this follow distance
+    self.coasting_lead_min_abs_dist = 15 # [m] coasting logic isn't used at less than this absolute follow distance
+    self.coasting_lead_abs_dist_max_check_speed = 25. * CV.MPH_TO_MS
     self.pause_long_on_gas_press = False
     self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False
     
     self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
     self.one_pedal_mode_max_set_speed = 5 * CV.MPH_TO_MS #  one pedal mode activates if cruise set at or below this speed
-    self.one_pedal_mode_stop_apply_brake_bp = [i * CV.MPH_TO_MS for i in [0., 1., 2., 55., 85.]]
-    self.one_pedal_mode_stop_apply_brake_v = [60., 80., 120., 90., 90.]
+    self.one_pedal_mode_stop_apply_brake_bp = [i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]]
+    self.one_pedal_mode_stop_apply_brake_v = [80., 80., 140., 140., 90.]
     self.one_pedal_mode_last_gas_press_t = 0.
-    self.one_pedal_mode_ramp_time_bp = [0., 0.75]
-    self.one_pedal_mode_ramp_time_v = [0.15, 1.0]
+    self.one_pedal_mode_ramp_time_bp = [0., 0.5]
+    self.one_pedal_mode_ramp_time_v = [0.2, 1.0]
     
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui

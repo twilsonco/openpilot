@@ -227,7 +227,7 @@ class CarInterface(CarInterfaceBase):
     if self.CS.park_brake:
       events.add(EventName.parkBrake)
     if ret.vEgo < self.CP.minSteerSpeed:
-      if ret.vEgo < 0.1 and cruiseEnabled and not ret.brakePressed and not self.CS.pause_long_on_gas_press and not self.CS.autoHoldActivated and not self.CS.disengage_on_gas:
+      if ret.standstill and cruiseEnabled and not ret.brakePressed and not self.CS.pause_long_on_gas_press and not self.CS.autoHoldActivated and not self.CS.disengage_on_gas:
         events.add(car.CarEvent.EventName.stoppedWaitForGas)
       else:
         events.add(car.CarEvent.EventName.belowSteerSpeed)
