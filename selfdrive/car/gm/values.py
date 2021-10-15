@@ -43,6 +43,22 @@ class CarControllerParams:
 
 STEER_THRESHOLD = 1.0
 
+  # Volt traction force lookups
+  # Regen paddle at 15 m/s is -1.44 m/s^2, -1 m/s^3
+  # Regen paddle at 12 m/s hit -2.5 m/s^2
+  # accel seems to be 437 per m/s^2, decel 543 m/s^2
+  # 617 * a + 5.44 * v + 6106
+  # 589 * a + 5.63 * v + 6105
+
+  # FORCE_MIN = 5616 # Full regen slightly less than regen paddle, 1.46 m/s^2?
+  # FORCE_ZERO = 6260 # Perfect coasting
+  # FORCE_MAX = 7284 # Safety limit, 1.91 m/s^2?
+  # FORCE_LOOKUP_BP = [-0.25, 0., 0.5]
+  # FORCE_LOOKUP_V = [FORCE_MIN, FORCE_ZERO, FORCE_MAX]
+
+  # MAX_BRAKE = 350 # Should be around 3.5m/s^2, including regen
+  # BRAKE_LOOKUP_BP = [-1., -0.25]
+  # BRAKE_LOOKUP_V = [MAX_BRAKE, 0]
 
 class CAR:
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"

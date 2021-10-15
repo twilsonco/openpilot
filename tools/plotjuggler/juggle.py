@@ -73,7 +73,7 @@ def start_juggler(fn=None, dbc=None, layout=None):
   subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 
 
-def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=None):
+def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, path, dbc=None):
   segment_start = 0
   if 'cabana' in route_or_segment_name:
     query = parse_qs(urlparse(route_or_segment_name).query)
@@ -88,19 +88,23 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
     if route_or_segment_name.segment_num != -1 and segment_count is None:
       segment_count = 1
 
-    r = Route(route_or_segment_name.route_name.canonical_name)
+    r = Route(route_or_segment_name.route_name.canonical_name, data_dir=path)
     logs = r.qlog_paths() if qlog else r.log_paths()
 
   segment_end = segment_start + segment_count if segment_count else None
   logs = logs[segment_start:segment_end]
 
+
   if None in logs:
-    ans = input(f"{logs.count(None)}/{len(logs)} of the rlogs in this segment are missing, would you like to fall back to the qlogs? (y/n) ")
-    if ans == 'y':
-      logs = r.qlog_paths()[segment_start:segment_end]
-    else:
-      print("Please try a different route or segment")
-      return
+    # ans = input(f"{logs.count(None)}/{len(logs)} of the rlogs in this segment are missing, would you like to fall back to the qlogs? (y/n) ")
+    # if ans == 'y':
+    #   logs = r.qlog_paths()[segment_start:segment_end]
+    # else:
+    #   print("Please try a different route or segment")
+    #   return
+    print("Missing rlogs")
+    print(logs)
+    logs = [l for l in logs if l is not None]
 
   all_data = []
   with multiprocessing.Pool(24) as pool:
@@ -131,6 +135,7 @@ if __name__ == "__main__":
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
+  parser.add_argument("--path", help="Path to local segments")
   parser.add_argument("--qlog", action="store_true", help="Use qlogs")
   parser.add_argument("--can", action="store_true", help="Parse CAN data")
   parser.add_argument("--stream", action="store_true", help="Start PlotJuggler in streaming mode")
@@ -157,4 +162,4 @@ if __name__ == "__main__":
     start_juggler(layout=args.layout)
   else:
     route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
-    juggle_route(route_or_segment_name, args.segment_count, args.qlog, args.can, args.layout, args.dbc)
+    juggle_route(route_or_segment_name, args.segment_count, args.qlog, args.can, args.layout, args.path, args.dbc)
