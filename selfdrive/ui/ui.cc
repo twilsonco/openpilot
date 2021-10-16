@@ -7,6 +7,8 @@
 #include <cmath>
 #include <cstdio>
 
+#include <QDateTime>
+
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/visionimg.h"
@@ -19,6 +21,8 @@
 #define BACKLIGHT_TS 10.00
 #define BACKLIGHT_OFFROAD 75
 
+static const float brake_indicator_alpha_fade_dur = 0.3; // [s] time it takes for the brake indicator to fade in/out
+static const float brake_indicator_alpha_step = 1. / brake_indicator_alpha_fade_dur; // will step in the transparent or opaque direction
 
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
@@ -144,8 +148,21 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("carState")){
     scene.car_state = sm["carState"].getCarState();
+    
     scene.brake_percent = scene.car_state.getFrictionBrakePercent();
-    scene.brake_indicator_alpha = scene.car_state.getFrictionBrakeAlpha();
+    float t = seconds_since_boot();
+    if (scene.brake_percent > 0){
+      scene.brake_indicator_alpha += brake_indicator_alpha_step * (t - scene.brake_indicator_last_t);
+      if (scene.brake_indicator_alpha > 1.)
+        scene.brake_indicator_alpha = 1.;
+    }
+    else if (scene.brake_indicator_alpha > 0.){
+      scene.brake_indicator_alpha -= brake_indicator_alpha_step * (t - scene.brake_indicator_last_t);
+      if (scene.brake_indicator_alpha < 0.)
+        scene.brake_indicator_alpha = 0.;
+    }
+    scene.brake_indicator_last_t = t;
+    
     scene.steerOverride= scene.car_state.getSteeringPressed();
     scene.angleSteers = scene.car_state.getSteeringAngleDeg();
     scene.engineRPM = scene.car_state.getEngineRPM();

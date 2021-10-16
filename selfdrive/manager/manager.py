@@ -55,7 +55,6 @@ def manager_init():
     ("OnePedalMode", "0"),
     ("CoastingBrakeOverSpeed", "0"),
     ("FrictionBrakePercent", "0"),
-    ("FrictionBrakeAlpha", "0"),
     ("BrakeIndicator", "1"),
     ("MeasureNumSlots", "0"),
     ("MeasureSlot00", "0"),

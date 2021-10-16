@@ -408,7 +408,8 @@ static void ui_draw_measures(UIState *s){
       // switch to get metric strings 
       switch (s->scene.measure_slots[i]){
 
-        case 0: {// CPU temperature
+        case 0: // CPU temperature
+          {
           g = 255; 
           b = 255;
           p = 0.02 * (s->scene.cpuTemp - 50.); // white until 50, then fade through orange to red by 100°C
@@ -422,7 +423,8 @@ static void ui_draw_measures(UIState *s){
           snprintf(name, sizeof(name), "CPU TEMP");}
           break;
 
-        case 1: {// Ublox GPS accuracy
+        case 1: // Ublox GPS accuracy
+          {
           snprintf(name, sizeof(name), "GPS PREC");
           if (scene->gpsAccuracyUblox != 0.00) {
             //show red/orange if gps accuracy is low
@@ -445,7 +447,8 @@ static void ui_draw_measures(UIState *s){
           }}
           break;
 
-        case 2: {// Altitude
+        case 2: // Altitude
+          {
           snprintf(name, sizeof(name), "ALTITUDE");
           if (scene->gpsAccuracyUblox != 0.00) {
             float tmp_val;
@@ -464,20 +467,23 @@ static void ui_draw_measures(UIState *s){
           }}
           break;
 
-        case 3: {// EPS motor torque
+        case 3: // EPS motor torque
+          {
           snprintf(name, sizeof(name), "EPS TRQ");
           //TODO: Add orange/red color depending on torque intensity. <1x limit = white, btwn 1x-2x limit = orange, >2x limit = red
           snprintf(val, sizeof(val), "%.0f", (s->scene.steeringTorqueEps));
           snprintf(unit, sizeof(unit), "Nm");
           break;}
 
-        case 4:{ // aEgo
+        case 4: // aEgo
+          {
           snprintf(name, sizeof(name), "ACCEL");
           snprintf(val, sizeof(val), "%.1f", (s->scene.aEgo));
           snprintf(unit, sizeof(unit), "m/s²");
           break;}
 
-        case 5: {// lead distance
+        case 5: // lead distance
+          {
           snprintf(name, sizeof(name), "REL DIST");
           if (s->scene.lead_status) {
             if (s->is_metric) {
@@ -511,7 +517,8 @@ static void ui_draw_measures(UIState *s){
           }}
           break;
 
-        case 6: {// REL SPEED
+        case 6: // REL SPEED
+          {
           snprintf(name, sizeof(name), "REL SPEED");
           if (s->scene.lead_status) {
             g = 255; 
@@ -538,7 +545,8 @@ static void ui_draw_measures(UIState *s){
           }}
           break;
 
-        case 7: {// steering angle
+        case 7: // steering angle
+          {
           snprintf(name, sizeof(name), "REAL STEER");
           float angleSteers = s->scene.angleSteers > 0. ? s->scene.angleSteers : -s->scene.angleSteers;
           g = 255;
@@ -554,7 +562,8 @@ static void ui_draw_measures(UIState *s){
           snprintf(unit, sizeof(unit), "");}
           break;
 
-        case 8: {// desired steering angle
+        case 8: // desired steering angle
+          {
           snprintf(name, sizeof(name), "DESIRE STR.");
           if (scene->controls_state.getEnabled()) {
             float angleSteers = s->scene.angleSteersDes > 0. ? s->scene.angleSteersDes : -s->scene.angleSteersDes;
@@ -574,7 +583,8 @@ static void ui_draw_measures(UIState *s){
           snprintf(unit, sizeof(unit), "");}
           break;
 
-        case 9: {// engine RPM
+        case 9: // engine RPM
+          {
           snprintf(name, sizeof(name), "ENG RPM");
           if(s->scene.engineRPM == 0) {
             snprintf(val, sizeof(val), "OFF");

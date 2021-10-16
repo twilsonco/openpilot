@@ -171,6 +171,7 @@ typedef struct UIScene {
   
   int brake_percent;
   float brake_indicator_alpha;
+  float brake_indicator_last_t;
   
   int laneless_mode;
   Rect laneless_btn_touch_rect;

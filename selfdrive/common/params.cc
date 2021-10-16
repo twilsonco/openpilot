@@ -147,7 +147,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DoUninstall", CLEAR_ON_MANAGER_START},
     {"DongleId", PERSISTENT},
     {"FrictionBrakePercent", PERSISTENT},
-    {"FrictionBrakeAlpha", PERSISTENT},
     {"GitDiff", PERSISTENT},
     {"GitBranch", PERSISTENT},
     {"GitCommit", PERSISTENT},
