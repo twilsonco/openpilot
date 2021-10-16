@@ -234,7 +234,7 @@ class CarInterface(CarInterfaceBase):
     if cruiseEnabled:
       if t - self.CS.last_pause_long_on_gas_press_t < 0.5 and t - self.CS.sessionInitTime > 10.:
         events.add(car.CarEvent.EventName.pauseLongOnGasPress)
-      if self.CS.lane_change_steer_factor < 1.:
+      if not ret.standstill and self.CS.lane_change_steer_factor < 1.:
         events.add(car.CarEvent.EventName.blinkerSteeringPaused)
     if self.CS.autoHoldActivated:
       self.CS.lastAutoHoldTime = t
