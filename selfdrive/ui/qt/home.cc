@@ -117,6 +117,9 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     if (num_slots > QUIState::ui_state.scene.measure_max_num_slots){
       num_slots = QUIState::ui_state.scene.measure_min_num_slots;
     }
+    else if (num_slots > QUIState::ui_state.scene.measure_max_num_slots / 2){
+      num_slots = QUIState::ui_state.scene.measure_max_num_slots;
+    }
     QUIState::ui_state.scene.measure_cur_num_slots = num_slots;
     char val_str[6];
     sprintf(val_str, "%1d", num_slots);

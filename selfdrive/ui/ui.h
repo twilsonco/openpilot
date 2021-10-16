@@ -167,10 +167,10 @@ typedef struct UIScene {
   
 // measures
   int measure_min_num_slots = 0;
-  int measure_max_num_slots = 5;
+  int measure_max_num_slots = 10;
   int measure_cur_num_slots = 3;
-  int measure_slots[5];
-  Rect measure_slot_touch_rects[5];
+  int measure_slots[10];
+  Rect measure_slot_touch_rects[10];
   int num_measures = UIMeasure::NUM_MEASURES; // the number of cases handled in ui_draw_measures() in paint.cc
   Rect speed_rect;
   

@@ -352,11 +352,11 @@ static void update_status(UIState *s) {
       s->scene.brake_percent = std::stoi(Params().get("FrictionBrakePercent"));
 
       s->scene.measure_cur_num_slots = std::stoi(Params().get("MeasureNumSlots"));
-      s->scene.measure_slots[0] = std::stoi(Params().get("MeasureSlot00"));
-      s->scene.measure_slots[1] = std::stoi(Params().get("MeasureSlot01"));
-      s->scene.measure_slots[2] = std::stoi(Params().get("MeasureSlot02"));
-      s->scene.measure_slots[3] = std::stoi(Params().get("MeasureSlot03"));
-      s->scene.measure_slots[4] = std::stoi(Params().get("MeasureSlot04"));
+      for (int i = 0; i < QUIState::ui_state.scene.measure_cur_num_slots; ++i){
+        char slotName[16];
+        snprintf(slotName, sizeof(slotName), "MeasureSlot%.2d", i);
+        s->scene.measure_slots[i] = std::stoi(Params().get(slotName));
+      }
 
       s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
 

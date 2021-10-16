@@ -374,27 +374,30 @@ static void ui_draw_measures(UIState *s){
     const int y_min = maxspeed_rect.bottom() + bdr_s / 2;
     const int y_max = brake_y - brake_size - bdr_s / 2;
     const int y_rng = y_max - y_min;
-    const int slot_y_rng = y_rng / s->scene.measure_max_num_slots;
+    const int slot_y_rng = y_rng / s->scene.measure_max_num_slots * 2; // two columns
     const int y_mid = (y_max + y_min) / 2;
-    const int slots_y_rng = slot_y_rng * s->scene.measure_cur_num_slots;
+    const int slots_y_rng = slot_y_rng * (s->scene.measure_cur_num_slots <= 5 ? s->scene.measure_cur_num_slots : 5);
     const int slots_y_min = y_mid - (slots_y_rng / 2);
   
     NVGcolor default_name_color = nvgRGBA(255, 255, 255, 200);
     NVGcolor default_unit_color = nvgRGBA(255, 255, 255, 200);
     NVGcolor default_val_color = nvgRGBA(255, 255, 255, 200);
-    int default_val_font_size = 74;
+    int default_val_font_size = 78;
     int default_name_font_size = 32;
     int default_unit_font_size = 38;
   
     // determine bounding rectangle
-    const Rect slots_rect = {center_x - brake_size, slots_y_min, 2 * brake_size, slots_y_rng};
+    const int slots_r = brake_size + 4;
+    const int slots_w = (s->scene.measure_cur_num_slots <= 5 ? 2 : 4) * slots_r;
+    const int slots_x = (s->scene.measure_cur_num_slots <= 5 ? center_x - slots_r : center_x - 3 * slots_r);
+    const Rect slots_rect = {slots_x, slots_y_min, slots_w, slots_y_rng};
     // draw bounding rectangle
     nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, slots_rect.x, slots_rect.y, slots_rect.w, slots_rect.h, 20);
     nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
     nvgStrokeWidth(s->vg, 6);
     nvgStroke(s->vg);
-    nvgFillColor(s->vg, nvgRGBA(0,0,0,50));
+    nvgFillColor(s->vg, nvgRGBA(0,0,0,100));
     nvgFill(s->vg);
 
     UIScene &scene = s->scene;
@@ -766,8 +769,14 @@ static void ui_draw_measures(UIState *s){
       nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
       // now print the metric
       // first value
-      int x = slots_rect.centerX() - unit_font_size / 4;
-      int slot_y_mid = slots_rect.y + i * slot_y_rng + slot_y_rng / 2;
+      
+      int slot_x = slots_rect.x + (scene.measure_cur_num_slots <= 5 ? 0 : (i < 5 ? slots_r * 2 : 0));
+      int x = slot_x + slots_r - unit_font_size / 4;
+      if (i >= 5){
+        x = slot_x + slots_r + unit_font_size / 4;
+      }
+      int slot_y = slots_rect.y + (i % 5) * slot_y_rng;
+      int slot_y_mid = slot_y + slot_y_rng / 2;
       int y = slot_y_mid + slot_y_rng / 2 - 8 - label_font_size;
       nvgFontFace(s->vg, "sans-semibold");
       nvgFontSize(s->vg, val_font_size);
@@ -775,6 +784,7 @@ static void ui_draw_measures(UIState *s){
       nvgText(s->vg, x, y, val, NULL);
     
       // now label
+      x = slot_x + slots_r - unit_font_size / 4;
       y = slot_y_mid + slot_y_rng / 2 - 11;
       nvgFontFace(s->vg, "sans-regular");
       nvgFontSize(s->vg, label_font_size);
@@ -784,9 +794,16 @@ static void ui_draw_measures(UIState *s){
       // now unit
       if (strlen(unit) > 0){
         nvgSave(s->vg);
-        int rx = slots_rect.right();
-        nvgTranslate(s->vg, rx - 8, slot_y_mid);
-        nvgRotate(s->vg, -1.5708); //-90deg in radians
+        int rx = slot_x + slots_r * 2;
+        if (i >= 5){
+          rx = slot_x;
+          nvgTranslate(s->vg, rx + 10, slot_y_mid);
+          nvgRotate(s->vg, 1.5708); //-90deg in radians
+        }
+        else{
+          nvgTranslate(s->vg, rx - 10, slot_y_mid);
+          nvgRotate(s->vg, -1.5708); //-90deg in radians
+        }
         nvgFontFace(s->vg, "sans-regular");
         nvgFontSize(s->vg, unit_font_size);
         nvgFillColor(s->vg, unit_color);
@@ -795,7 +812,7 @@ static void ui_draw_measures(UIState *s){
       }
     
       // update touch rect
-      scene.measure_slot_touch_rects[i] = {slots_rect.x, slots_rect.y + i * slot_y_rng, slots_rect.w, slot_y_rng};
+      scene.measure_slot_touch_rects[i] = {slot_x, slot_y, slots_r * 2, slot_y_rng};
     }
   }
 }

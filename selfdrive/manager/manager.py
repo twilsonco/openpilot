@@ -57,11 +57,16 @@ def manager_init():
     ("FrictionBrakePercent", "0"),
     ("BrakeIndicator", "1"),
     ("MeasureNumSlots", "0"),
-    ("MeasureSlot00", "0"),
-    ("MeasureSlot01", "1"),
-    ("MeasureSlot02", "2"),
-    ("MeasureSlot03", "3"),
-    ("MeasureSlot04", "4"),
+    ("MeasureSlot00", "6"),
+    ("MeasureSlot01", "7"),
+    ("MeasureSlot02", "8"),
+    ("MeasureSlot03", "9"),
+    ("MeasureSlot04", "3"),
+    ("MeasureSlot00", "13"),
+    ("MeasureSlot01", "16"),
+    ("MeasureSlot02", "19"),
+    ("MeasureSlot03", "20"),
+    ("MeasureSlot04", "18"),
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
