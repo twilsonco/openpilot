@@ -150,7 +150,6 @@ static void update_state(UIState *s) {
     scene.car_state = sm["carState"].getCarState();
     
     scene.brake_percent = scene.car_state.getFrictionBrakePercent();
-    float t = seconds_since_boot();
     if (scene.brake_percent > 0){
       scene.brake_indicator_alpha += brake_indicator_alpha_step * (t - scene.brake_indicator_last_t);
       if (scene.brake_indicator_alpha > 1.)
@@ -165,9 +164,20 @@ static void update_state(UIState *s) {
     
     scene.steerOverride= scene.car_state.getSteeringPressed();
     scene.angleSteers = scene.car_state.getSteeringAngleDeg();
-    scene.engineRPM = scene.car_state.getEngineRPM();
+    scene.engineRPM = static_cast<int>((scene.car_state.getEngineRPM() / (100.0)) + 0.5) * 100;
     scene.aEgo = scene.car_state.getAEgo();
     scene.steeringTorqueEps = scene.car_state.getSteeringTorqueEps();
+    
+    float t = seconds_since_boot();
+    scene.percentGradeCurDist += scene.car_state.getVEgo() * (t - scene.percentGradeLastTime);
+    if (scene.percentGradeCurDist > scene.percentGradeLenStep){ // record position/elevation at even length intervals
+      scene.percentGradeRollingIter++;
+      if (scene.percentGradeRollingIter >= 5){
+        scene.percentGradeRollingIter = 0;
+      }
+      scene.percentGradePositions[scene.percentGradeRollingIter] = scene.percentGradeCurDist;
+    }
+    scene.percentGradeLastTime = t;
   }
   if (sm.updated("radarState")) {
     auto radar_state = sm["radarState"].getRadarState();
@@ -240,7 +250,7 @@ static void update_state(UIState *s) {
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
   if (sm.updated("deviceState")) {
     scene.deviceState = sm["deviceState"].getDeviceState();
-    s->scene.cpuTemp = scene.deviceState.getCpuTempC()[0];
+    scene.cpuTemp = scene.deviceState.getCpuTempC()[0];
     auto cpus = scene.deviceState.getCpuUsagePercent();
     float cpu = 0.;
     int num_cpu = 0;
@@ -251,17 +261,18 @@ static void update_state(UIState *s) {
     if (num_cpu > 1){
       cpu /= num_cpu;
     }
-    s->scene.cpuPerc = cpu;
+    scene.cpuPerc = cpu;
   }
   if (sm.updated("ubloxGnss")) {
     auto data = sm["ubloxGnss"].getUbloxGnss();
     if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
       scene.satelliteCount = data.getMeasurementReport().getNumMeas();
-      s->scene.satelliteCount = scene.satelliteCount;
+      scene.satelliteCount = scene.satelliteCount;
     }
     auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
-    s->scene.gpsAccuracyUblox = data2.getAccuracy();
-    s->scene.altitudeUblox = data2.getAltitude();
+    scene.gpsAccuracyUblox = data2.getAccuracy();
+    scene.altitudeUblox = data2.getAltitude();
+    scene.percentGradeAltitudes[scene.percentGradeRollingIter] = scene.altitudeUblox;
   }
   if (sm.updated("liveLocationKalman")) {
     scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();

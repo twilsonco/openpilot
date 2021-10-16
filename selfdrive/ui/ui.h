@@ -123,6 +123,22 @@ typedef struct {
   int cnt;
 } line_vertices_data;
 
+typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
+  STEERING_ANGLE = 0,
+  DESIRED_STEERING_ANGLE,
+  STEERING_TORQUE_EPS,
+  ENGINE_RPM,
+  ACCELERATION,
+  ALTITUDE,
+  PERCENT_GRADE,
+  LEAD_DISTANCE_LENGTH,
+  LEAD_VELOCITY_RELATIVE,
+  GPS_ACCURACY,
+  CPU,
+  
+  NUM_MEASURES
+} UIMeasure;
+
 typedef struct UIScene {
 
   mat3 view_from_calib;
@@ -145,7 +161,7 @@ typedef struct UIScene {
   int measure_cur_num_slots = 3;
   int measure_slots[5];
   Rect measure_slot_touch_rects[5];
-  int num_measures = 10; // the number of cases handled in ui_draw_measures() in paint.cc
+  int num_measures = UIMeasure::NUM_MEASURES; // the number of cases handled in ui_draw_measures() in paint.cc
   Rect speed_rect;
   
   // actual measures
@@ -159,6 +175,8 @@ typedef struct UIScene {
   float aEgo;
   float cpuTemp;
   int cpuPerc;
+  int percentGrade = 0, percentGradeAltitudes[5], percentGradePositions[5], percentGradeRollingIter = 0;
+  float percentGradeCurDist = 0., percentGradeLenStep = 10., percentGradeLastTime;
 
   int lead_status;
   float lead_d_rel, lead_v_rel;

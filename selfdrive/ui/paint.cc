@@ -408,7 +408,7 @@ static void ui_draw_measures(UIState *s){
       // switch to get metric strings 
       switch (s->scene.measure_slots[i]){
 
-        case 0: // CPU temperature
+        case UIMeasure::CPU: // CPU temperature
           {
           g = 255; 
           b = 255;
@@ -423,7 +423,7 @@ static void ui_draw_measures(UIState *s){
           snprintf(name, sizeof(name), "CPU TEMP");}
           break;
 
-        case 1: // Ublox GPS accuracy
+        case UIMeasure::GPS_ACCURACY: // Ublox GPS accuracy
           {
           snprintf(name, sizeof(name), "GPS PREC");
           if (scene->gpsAccuracyUblox != 0.00) {
@@ -447,7 +447,7 @@ static void ui_draw_measures(UIState *s){
           }}
           break;
 
-        case 2: // Altitude
+        case UIMeasure::ALTITUDE: // Altitude
           {
           snprintf(name, sizeof(name), "ALTITUDE");
           if (scene->gpsAccuracyUblox != 0.00) {
@@ -467,7 +467,7 @@ static void ui_draw_measures(UIState *s){
           }}
           break;
 
-        case 3: // EPS motor torque
+        case UIMeasure::STEERING_TORQUE_EPS: // EPS motor torque
           {
           snprintf(name, sizeof(name), "EPS TRQ");
           //TODO: Add orange/red color depending on torque intensity. <1x limit = white, btwn 1x-2x limit = orange, >2x limit = red
@@ -475,14 +475,14 @@ static void ui_draw_measures(UIState *s){
           snprintf(unit, sizeof(unit), "Nm");
           break;}
 
-        case 4: // aEgo
+        case UIMeasure::ACCELERATION: // aEgo
           {
           snprintf(name, sizeof(name), "ACCEL");
           snprintf(val, sizeof(val), "%.1f", (s->scene.aEgo));
           snprintf(unit, sizeof(unit), "m/s²");
           break;}
 
-        case 5: // lead distance
+        case UIMeasure::LEAD_DISTANCE_LENGTH: // lead distance
           {
           snprintf(name, sizeof(name), "REL DIST");
           if (s->scene.lead_status) {
@@ -517,7 +517,7 @@ static void ui_draw_measures(UIState *s){
           }}
           break;
 
-        case 6: // REL SPEED
+        case UIMeasure::LEAD_VELOCITY_RELATIVE: // REL SPEED
           {
           snprintf(name, sizeof(name), "REL SPEED");
           if (s->scene.lead_status) {
@@ -545,7 +545,7 @@ static void ui_draw_measures(UIState *s){
           }}
           break;
 
-        case 7: // steering angle
+        case UIMeasure::STEERING_ANGLE: // steering angle
           {
           snprintf(name, sizeof(name), "REAL STEER");
           float angleSteers = s->scene.angleSteers > 0. ? s->scene.angleSteers : -s->scene.angleSteers;
@@ -562,7 +562,7 @@ static void ui_draw_measures(UIState *s){
           snprintf(unit, sizeof(unit), "");}
           break;
 
-        case 8: // desired steering angle
+        case UIMeasure::DESIRED_STEERING_ANGLE: // desired steering angle
           {
           snprintf(name, sizeof(name), "DESIRE STR.");
           if (scene->controls_state.getEnabled()) {
@@ -583,13 +583,34 @@ static void ui_draw_measures(UIState *s){
           snprintf(unit, sizeof(unit), "");}
           break;
 
-        case 9: // engine RPM
+        case UIMeasure::ENGINE_RPM: // engine RPM
           {
           snprintf(name, sizeof(name), "ENG RPM");
           if(s->scene.engineRPM == 0) {
             snprintf(val, sizeof(val), "OFF");
           }
           else {snprintf(val, sizeof(val), "%d", (s->scene.engineRPM));}
+          snprintf(unit, sizeof(unit), "");}
+          break;
+        
+        case UIMeasure::PERCENT_GRADE: // percent grade
+          {
+          snprintf(name, sizeof(name), "GRADE");
+          // use stored values of length and altitude (in meters)
+          float rise = s->scene.percentGradeAltitudes[s->scene.percentGradeRollingIter] - s->scene.percentGradeAltitudes[(s->scene.percentGradeRollingIter+1)%5];
+          float run = s->scene.percentGradePositions[s->scene.percentGradeRollingIter] - s->scene.percentGradePositions[(s->scene.percentGradeRollingIter+1)%5];
+          if (run > 0.01){
+            s->scene.percentGrade = int(round(rise/run * 100.));
+          }
+          g = 255;
+          b = 255;
+          p = 0.05 * s->scene.percentGrade; // red by 20% grade
+          g -= int(0.5 * p * 255.);
+          b -= int(p * 255.);
+          g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+          b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+          val_color = nvgRGBA(255, g, b, 200);
+          snprintf(val, sizeof(val), "%d%%", (s->scene.percentGrade));
           snprintf(unit, sizeof(unit), "");}
           break;
 
