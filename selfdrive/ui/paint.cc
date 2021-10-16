@@ -5,6 +5,8 @@
 #include <string>
 #include <cmath>
 
+#include <QDateTime>
+
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #define NANOVG_GL3_IMPLEMENTATION
@@ -742,20 +744,20 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::PERCENT_GRADE:
           {
           snprintf(name, sizeof(name), "GRADE");
-          // use stored values of length and altitude (in meters)
-          float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%5];
-          float run = scene.percentGradePositions[scene.percentGradeRollingIter] - scene.percentGradePositions[(scene.percentGradeRollingIter+1)%5];
-          if (run > 0.01){
+          if (scene.percentGradeIterRolled && scene.gpsAccuracyUblox != 0.00){
+            // use stored values of length and altitude (in meters)
+            float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%5];
+            float run = scene.percentGradeLenStep * 5.;
             scene.percentGrade = int(round(rise/run * 100.));
+            g = 255;
+            b = 255;
+            p = 0.05 * scene.percentGrade; // red by 20% grade
+            g -= int(0.5 * p * 255.);
+            b -= int(p * 255.);
+            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+            val_color = nvgRGBA(255, g, b, 200);
           }
-          g = 255;
-          b = 255;
-          p = 0.05 * scene.percentGrade; // red by 20% grade
-          g -= int(0.5 * p * 255.);
-          b -= int(p * 255.);
-          g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-          b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-          val_color = nvgRGBA(255, g, b, 200);
           snprintf(val, sizeof(val), "%d%%", scene.percentGrade);
           snprintf(unit, sizeof(unit), "");}
           break;

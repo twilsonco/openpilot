@@ -178,7 +178,7 @@ typedef struct UIScene {
   float angleSteers;
   float angleSteersDes;
   float gpsAccuracyUblox;
-  float altitudeUblox;
+  float altitudeUblox = 0.;
   int engineRPM;
   bool steerOverride;
   float steeringTorqueEps;
@@ -187,8 +187,9 @@ typedef struct UIScene {
   float cpuTemp;
   int cpuPerc;
   int thermalStatus;
-  int percentGrade = 0, percentGradeAltitudes[5], percentGradePositions[5], percentGradeRollingIter = 0;
-  float percentGradeCurDist = 0., percentGradeLenStep = 10., percentGradeLastTime;
+  int percentGrade = 0, percentGradeAltitudes[5], percentGradeRollingIter = 0;
+  float percentGradeCurDist = 0., percentGradeLenStep = 5., percentGradeLastTime;
+  bool percentGradeIterRolled = false;
   float lastTime = 0.;
 
   int lead_status;
