@@ -148,6 +148,7 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("carState")){
     scene.car_state = sm["carState"].getCarState();
+    float t = seconds_since_boot();
     
     scene.brake_percent = scene.car_state.getFrictionBrakePercent();
     if (scene.brake_percent > 0){
@@ -168,7 +169,6 @@ static void update_state(UIState *s) {
     scene.aEgo = scene.car_state.getAEgo();
     scene.steeringTorqueEps = scene.car_state.getSteeringTorqueEps();
     
-    float t = seconds_since_boot();
     scene.percentGradeCurDist += scene.car_state.getVEgo() * (t - scene.percentGradeLastTime);
     if (scene.percentGradeCurDist > scene.percentGradeLenStep){ // record position/elevation at even length intervals
       scene.percentGradeRollingIter++;
