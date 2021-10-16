@@ -129,12 +129,22 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   STEERING_TORQUE_EPS,
   ENGINE_RPM,
   ACCELERATION,
+  JERK,
   ALTITUDE,
   PERCENT_GRADE,
   LEAD_DISTANCE_LENGTH,
+  LEAD_DISTANCE_TIME,
   LEAD_VELOCITY_RELATIVE,
+  LEAD_VELOCITY_ABS,
   GPS_ACCURACY,
-  CPU,
+  CPU_TEMP_AND_PERCENT,
+  CPU_TEMP,
+  CPU_PERCENT,
+  MEMORY_TEMP,
+  AMBIENT_TEMP,
+  FANSPEED_PERCENT,
+  MEMORY_USAGE_PERCENT,
+  FREESPACE_STORAGE,
   
   NUM_MEASURES
 } UIMeasure;
@@ -173,13 +183,16 @@ typedef struct UIScene {
   bool steerOverride;
   float steeringTorqueEps;
   float aEgo;
+  float jEgo, lastAEgo;
   float cpuTemp;
   int cpuPerc;
+  int thermalStatus;
   int percentGrade = 0, percentGradeAltitudes[5], percentGradePositions[5], percentGradeRollingIter = 0;
   float percentGradeCurDist = 0., percentGradeLenStep = 10., percentGradeLastTime;
+  float lastTime = 0.;
 
   int lead_status;
-  float lead_d_rel, lead_v_rel;
+  float lead_d_rel, lead_v_rel, lead_v;
 
   // gps
   int satelliteCount;

@@ -74,11 +74,11 @@ Running on move-fast fork of openpilot, which adds:
     * If someone cuts in, the follow distance "takes a penalty" down to a closer follow distance proportional to the distance and relative speed of the car that cut in
     * The penalties can "go negative", that is, repeated cut-ins can result in close follow being use for longer than normal
 * Metrics to add:
-    - [ ] follow distance in seconds
-    - [ ] lead car absolute velocity
+    - [x] follow distance in seconds
+    - [x] lead car absolute velocity
     - [ ] device fan speed
-    - [ ] current percent grade of road
-    - [ ] vehicle jerk
+    - [x] current percent grade of road
+    - [x] vehicle jerk
     - [ ] *could do session metrics to, like number of interventions, number of cut-ins,...*
 
 ### Supported Hardware

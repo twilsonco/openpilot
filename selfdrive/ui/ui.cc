@@ -136,6 +136,7 @@ static void update_sockets(UIState *s) {
 static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
+  float t = seconds_since_boot();
 
   // update engageability and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
@@ -148,7 +149,6 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("carState")){
     scene.car_state = sm["carState"].getCarState();
-    float t = seconds_since_boot();
     
     scene.brake_percent = scene.car_state.getFrictionBrakePercent();
     if (scene.brake_percent > 0){
@@ -167,6 +167,14 @@ static void update_state(UIState *s) {
     scene.angleSteers = scene.car_state.getSteeringAngleDeg();
     scene.engineRPM = static_cast<int>((scene.car_state.getEngineRPM() / (100.0)) + 0.5) * 100;
     scene.aEgo = scene.car_state.getAEgo();
+    float dt = t - scene.lastTime;
+    if (dt > 0.){
+      scene.jEgo = (scene.aEgo - scene.lastAEgo) / dt;
+    }
+    else{
+      scene.jEgo = 0.;
+    }
+    scene.lastAEgo = scene.aEgo;
     scene.steeringTorqueEps = scene.car_state.getSteeringTorqueEps();
     
     scene.percentGradeCurDist += scene.car_state.getVEgo() * (t - scene.percentGradeLastTime);
@@ -183,6 +191,7 @@ static void update_state(UIState *s) {
     auto radar_state = sm["radarState"].getRadarState();
     scene.lead_v_rel = radar_state.getLeadOne().getVRel();
     scene.lead_d_rel = radar_state.getLeadOne().getDRel();
+    scene.lead_v = radar_state.getLeadOne().getVLead();
     scene.lead_status = radar_state.getLeadOne().getStatus();
   }
   if (sm.updated("modelV2") && s->vg) {
@@ -287,6 +296,7 @@ static void update_state(UIState *s) {
     scene.lateralPlan.rProb = data.getRProb();
     scene.lateralPlan.lanelessModeStatus = data.getLanelessMode();
   }
+  scene.lastTime = t;
 }
 
 static void update_params(UIState *s) {
