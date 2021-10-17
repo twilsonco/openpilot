@@ -62,7 +62,7 @@ class CarState(CarStateBase):
     self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
     self.one_pedal_mode_max_set_speed = 5 * CV.MPH_TO_MS #  one pedal mode activates if cruise set at or below this speed
     self.one_pedal_mode_stop_apply_brake_bp = [i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]]
-    self.one_pedal_mode_stop_apply_brake_v = [80., 80., 140., 140., 90.]
+    self.one_pedal_mode_stop_apply_brake_v = [60., 70., 110., 125., 90.]
     self.one_pedal_mode_last_gas_press_t = 0.
     self.one_pedal_mode_ramp_time_bp = [0., 0.5]
     self.one_pedal_mode_ramp_time_v = [0.2, 1.0]
