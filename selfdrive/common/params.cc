@@ -212,6 +212,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SportAccel", PERSISTENT},
     {"Coasting", PERSISTENT},
     {"OnePedalMode", PERSISTENT},
+    {"OnePedalBrakeMode", PERSISTENT},
+    {"FollowLevel", PERSISTENT},
     {"CoastingBrakeOverSpeed", PERSISTENT},
     {"CruiseSpeedOffset", PERSISTENT},
     {"NudgelessLaneChange", PERSISTENT},

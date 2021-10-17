@@ -33,7 +33,7 @@ class CarState(CarStateBase):
     self.lka_button = 0
     self.distance_button = 0
     self.distance_button_last_press_t = 0.
-    self.follow_level = 2
+    self.follow_level = int(self._params.get("FollowLevel", encoding="utf8"))
     self.lkMode = True
     set_v_cruise_offset(self._params.get_bool("CruiseSpeedOffset"))
     self.autoHold = self._params.get_bool("GMAutoHold")
@@ -68,7 +68,7 @@ class CarState(CarStateBase):
     self.one_pedal_mode_ramp_time_bp = [0., 0.5]
     self.one_pedal_mode_ramp_time_v = [0.1, 1.0]
     self.one_pedal_mode_active = False
-    self.one_pedal_brake_mode = 0 # 0, 1, or 2 selecting the brake profiles above. 2 is activated by pressing and holding the follow distance button for > 0.3s
+    self.one_pedal_brake_mode = int(self._params.get("OnePedalBrakeMode", encoding="utf8")) # 0, 1, or 2 selecting the brake profiles above. 2 is activated by pressing and holding the follow distance button for > 0.3s
     self.one_pedal_last_brake_mode = 0 # for saving brake mode when not in one-pedal-mode
     self.one_pedal_last_follow_level = 0 # for saving follow distance when in one-pedal mode
     

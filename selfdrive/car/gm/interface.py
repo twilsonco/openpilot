@@ -3,6 +3,7 @@ from math import fabs
 from cereal import car
 from common.numpy_fast import interp
 from common.realtime import sec_since_boot
+from common.params import Params
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.car.gm.values import CAR, CruiseButtons, \
@@ -220,6 +221,7 @@ class CarInterface(CarInterfaceBase):
             self.CS.one_pedal_brake_mode = self.one_pedal_last_brake_mode
           else:
             self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
+            params.put("OnePedalBrakeMode", str(self.CS.follow_level))
           self.CS.follow_level = self.CS.one_pedal_brake_mode + 1
       elif self.CS.distance_button and t - self.CS.distance_button_last_press_t > 0.3:
         if self.CS.one_pedal_brake_mode < 2:
@@ -231,6 +233,8 @@ class CarInterface(CarInterfaceBase):
          self.CS.follow_level -= 1
          if self.CS.follow_level < 1:
            self.CS.follow_level = 3
+         tmp_params = Params()
+         params.put("FollowLevel", str(self.CS.follow_level))
          cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
 
     ret.readdistancelines = self.CS.follow_level
