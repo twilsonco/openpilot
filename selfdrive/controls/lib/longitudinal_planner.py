@@ -129,6 +129,7 @@ class Planner():
       self.coasting_lead_d = -1.
       self.coasting_lead_v = -1.
     
+    
     if not enabled or sm['carState'].gasPressed:
       self.v_desired = v_ego
       self.a_desired = a_ego
@@ -167,6 +168,8 @@ class Planner():
         self.a_desired_trajectory = self.mpcs[key].a_solution[:CONTROL_N]
         self.j_desired_trajectory = self.mpcs[key].j_solution[:CONTROL_N]
         next_a = self.mpcs[key].a_solution[5]
+    
+    
 
     # determine fcw
     if self.mpcs['lead0'].new_lead:
@@ -202,6 +205,8 @@ class Planner():
     longitudinalPlan.hasLead = self.mpcs['lead0'].status
     longitudinalPlan.leadDist = self.coasting_lead_d
     longitudinalPlan.leadV = self.coasting_lead_v
+    longitudinalPlan.desiredFollowDistance = self.mpcs['lead0'].tr
+    longitudinalPlan.leadDistCost = self.mpcs['lead0'].dist_cost
     longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
     longitudinalPlan.fcw = self.fcw
 

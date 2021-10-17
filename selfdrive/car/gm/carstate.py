@@ -63,10 +63,10 @@ class CarState(CarStateBase):
     self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
     self.one_pedal_mode_max_set_speed = 5 * CV.MPH_TO_MS #  one pedal mode activates if cruise set at or below this speed
     self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]], [i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]], [1.]]
-    self.one_pedal_mode_stop_apply_brake_v = [[60., 70., 110., 125., 90.], [90., 100., 160., 180., 120.], [220.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
+    self.one_pedal_mode_stop_apply_brake_v = [[60., 70., 110., 125., 90.], [100., 100., 160., 180., 120.], [250.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
     self.one_pedal_mode_last_gas_press_t = 0.
     self.one_pedal_mode_ramp_time_bp = [0., 0.5]
-    self.one_pedal_mode_ramp_time_v = [0.2, 1.0]
+    self.one_pedal_mode_ramp_time_v = [0.1, 1.0]
     self.one_pedal_mode_active = False
     self.one_pedal_brake_mode = 0 # 0, 1, or 2 selecting the brake profiles above. 2 is activated by pressing and holding the follow distance button for > 0.3s
     self.one_pedal_last_brake_mode = 0 # for saving brake mode when not in one-pedal-mode
@@ -195,6 +195,7 @@ class CarState(CarStateBase):
 
     self.one_pedal_mode_active = one_pedal_mode_active
     ret.onePedalModeActive = self.one_pedal_mode_active
+    ret.onePedalBrakeMode = self.one_pedal_brake_mode
 
     ret.autoHoldActivated = self.autoHoldActivated
 

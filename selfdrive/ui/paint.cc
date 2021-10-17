@@ -301,23 +301,25 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   const int SET_SPEED_NA = 255;
   float maxspeed = (*s->sm)["controlsState"].getControlsState().getVCruise();
   const Rect rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
-  if (true || s->scene.car_state.getOnePedalModeActive()){
-    ui_draw_circle_image(s, rect.centerX(), rect.centerY(), rect.w, "one_pedal_mode", COLOR_WHITE_ALPHA(200), 1.0f);
+  if (s->scene.one_pedal_fade > 0.){
+    const QColor &color = bg_colors[s->scene.car_state.getOnePedalBrakeMode() + 1];
+    NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
+    ui_draw_circle_image(s, rect.centerX(), rect.centerY(), brake_size, "one_pedal_mode", nvg_color, s->scene.one_pedal_fade);
   }
   else{
     const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
     if (is_cruise_set && !s->scene.is_metric) { maxspeed *= 0.6225; }
 
-    ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 30.);
-    ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 10, 20.);
+    ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(int(-s->scene.one_pedal_fade * 100.)), 30.);
+    ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(int(-s->scene.one_pedal_fade * 100.)), 10, 20.);
 
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-    ui_draw_text(s, rect.centerX(), 118, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), "sans-regular");
+    ui_draw_text(s, rect.centerX(), 118, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? int(-s->scene.one_pedal_fade * 200.) : int(-s->scene.one_pedal_fade * 100.)), "sans-regular");
     if (is_cruise_set) {
       const std::string maxspeed_str = std::to_string((int)std::nearbyint(maxspeed));
       ui_draw_text(s, rect.centerX(), 212, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE, "sans-bold");
     } else {
-      ui_draw_text(s, rect.centerX(), 212, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), "sans-semibold");
+      ui_draw_text(s, rect.centerX(), 212, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(int(-s->scene.one_pedal_fade * 100.)), "sans-semibold");
     }
   }
 }
@@ -597,37 +599,63 @@ static void ui_draw_measures(UIState *s){
 
         case UIMeasure::LEAD_DISTANCE_LENGTH:
           {
-          snprintf(name, sizeof(name), "REL DIST");
-          if (scene.lead_status) {
+            snprintf(name, sizeof(name), "REL DIST");
+            if (scene.lead_status) {
+              if (s->is_metric) {
+                g = 0;
+                b = 0;
+                p = 0.0333 * scene.lead_d_rel;
+                g += int((0.5+p) * 255.);
+                b += int(p * 255.);
+                g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+                b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+                val_color = nvgRGBA(255, g, b, 200);
+                snprintf(val, sizeof(val), "%d", (int)scene.lead_d_rel);
+              }
+              else{
+                g = 0;
+                b = 0;
+                p = 0.01 * scene.lead_d_rel;
+                g += int((0.5+p) * 255.);
+                b += int(p * 255.);
+                g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+                b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+                val_color = nvgRGBA(255, g, b, 200);
+                snprintf(val, sizeof(val), "%d", (int)(scene.lead_d_rel * 3.281));
+              }
+            } else {
+               snprintf(val, sizeof(val), "-");
+            }
             if (s->is_metric) {
-              g = 0;
-              b = 0;
-              p = 0.0333 * scene.lead_d_rel;
-              g += int((0.5+p) * 255.);
-              b += int(p * 255.);
-              g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-              b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-              val_color = nvgRGBA(255, g, b, 200);
-              // lead car relative distance is always in meters
-              snprintf(val, sizeof(val), "%d", (int)scene.lead_d_rel);
               snprintf(unit, sizeof(unit), "m");
             }
             else{
-              g = 0;
-              b = 0;
-              p = 0.01 * scene.lead_d_rel;
-              g += int((0.5+p) * 255.);
-              b += int(p * 255.);
-              g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-              b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-              val_color = nvgRGBA(255, g, b, 200);
-              // lead car relative distance is always in meters
-              snprintf(val, sizeof(val), "%d", (int)(scene.lead_d_rel * 3.281));
               snprintf(unit, sizeof(unit), "ft");
             }
-          } else {
-             snprintf(val, sizeof(val), "-");
-          }}
+          }
+          break;
+          
+        case UIMeasure::LEAD_DESIRED_DISTANCE_LENGTH:
+          {
+            snprintf(name, sizeof(name), "DES DIST");
+            if (scene.lead_status) {
+              auto follow_d = scene.desiredFollowDistance * scene.car_state.getVEgo();
+              if (s->is_metric) {
+                snprintf(val, sizeof(val), "%d", (int)follow_d);
+              }
+              else{
+                snprintf(val, sizeof(val), "%d", (int)(follow_d * 3.281));
+              }
+            } else {
+               snprintf(val, sizeof(val), "-");
+            }
+            if (s->is_metric) {
+              snprintf(unit, sizeof(unit), "m");
+            }
+            else{
+              snprintf(unit, sizeof(unit), "ft");
+            }
+          }
           break;
           
         case UIMeasure::LEAD_DISTANCE_TIME:
@@ -643,12 +671,33 @@ static void ui_draw_measures(UIState *s){
             g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
             b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
             val_color = nvgRGBA(255, g, b, 200);
-            // lead car relative distance is always in meters
             snprintf(val, sizeof(val), "%.1f", follow_t);
           } else {
              snprintf(val, sizeof(val), "-");
           }
           snprintf(unit, sizeof(unit), "s");}
+          break;
+          
+        case UIMeasure::LEAD_DESIRED_DISTANCE_TIME:
+          {
+          snprintf(name, sizeof(name), "DES DIST");
+          if (scene.lead_status && scene.car_state.getVEgo() > 0.1) {
+            snprintf(val, sizeof(val), "%.1f", scene.desiredFollowDistance);
+          } else {
+             snprintf(val, sizeof(val), "-");
+          }
+          snprintf(unit, sizeof(unit), "s");}
+          break;
+        
+        case UIMeasure::LEAD_DISTANCE_COST:
+          {
+            snprintf(name, sizeof(name), "DIST COST");
+            if (scene.lead_status && scene.car_state.getVEgo() > 0.1) {
+              snprintf(val, sizeof(val), "%.1f", scene.followDistanceCost);
+            } else {
+               snprintf(val, sizeof(val), "-");
+            }
+          }
           break;
 
         case UIMeasure::LEAD_VELOCITY_RELATIVE:
@@ -778,9 +827,9 @@ static void ui_draw_measures(UIState *s){
       // first value
       
       int slot_x = slots_rect.x + (scene.measure_cur_num_slots <= 5 ? 0 : (i < 5 ? slots_r * 2 : 0));
-      int x = slot_x + slots_r - unit_font_size / 4;
+      int x = slot_x + slots_r - unit_font_size / 2;
       if (i >= 5){
-        x = slot_x + slots_r + unit_font_size / 4;
+        x = slot_x + slots_r + unit_font_size / 2;
       }
       int slot_y = slots_rect.y + (i % 5) * slot_y_rng;
       int slot_y_mid = slot_y + slot_y_rng / 2;
@@ -791,8 +840,7 @@ static void ui_draw_measures(UIState *s){
       nvgText(s->vg, x, y, val, NULL);
     
       // now label
-      x = slot_x + slots_r - unit_font_size / 4;
-      y = slot_y_mid + slot_y_rng / 2 - 11;
+      y = slot_y_mid + slot_y_rng / 2 - 9;
       nvgFontFace(s->vg, "sans-regular");
       nvgFontSize(s->vg, label_font_size);
       nvgFillColor(s->vg, label_color);
@@ -804,11 +852,11 @@ static void ui_draw_measures(UIState *s){
         int rx = slot_x + slots_r * 2;
         if (i >= 5){
           rx = slot_x;
-          nvgTranslate(s->vg, rx + 10, slot_y_mid);
+          nvgTranslate(s->vg, rx + 12, slot_y_mid);
           nvgRotate(s->vg, 1.5708); //-90deg in radians
         }
         else{
-          nvgTranslate(s->vg, rx - 10, slot_y_mid);
+          nvgTranslate(s->vg, rx - 12, slot_y_mid);
           nvgRotate(s->vg, -1.5708); //-90deg in radians
         }
         nvgFontFace(s->vg, "sans-regular");

@@ -134,6 +134,9 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   PERCENT_GRADE,
   LEAD_DISTANCE_LENGTH,
   LEAD_DISTANCE_TIME,
+  LEAD_DESIRED_DISTANCE_LENGTH,
+  LEAD_DESIRED_DISTANCE_TIME,
+  LEAD_DISTANCE_COST,
   LEAD_VELOCITY_RELATIVE,
   LEAD_VELOCITY_ABS,
   GPS_ACCURACY,
@@ -190,6 +193,8 @@ typedef struct UIScene {
   int percentGrade = 0, percentGradeAltitudes[5], percentGradeRollingIter = 0;
   float percentGradeCurDist = 0., percentGradeLenStep = 5., percentGradeLastTime;
   bool percentGradeIterRolled = false;
+  float desiredFollowDistance, followDistanceCost;
+  
   float lastTime = 0.;
 
   int lead_status;
@@ -200,10 +205,12 @@ typedef struct UIScene {
   bool gpsOK;
   
   // brake indicator
-  
   int brake_percent;
   float brake_indicator_alpha;
   float brake_indicator_last_t;
+  
+  // one-pedal mode fading. maxspeed rect at -1, fades away by 0, and one-pedal icon fades in by 1
+  float one_pedal_fade = -1., one_pedal_fade_last_t = 0.;
   
   int laneless_mode;
   Rect laneless_btn_touch_rect;
@@ -213,6 +220,7 @@ typedef struct UIScene {
   cereal::CarState::Reader car_state;
   cereal::ControlsState::Reader controls_state;
   cereal::LateralPlan::Reader lateral_plan;
+  cereal::LongitudinalPlan::Reader longitudinal_plan;
   cereal::DriverState::Reader driver_state;
   cereal::DriverMonitoringState::Reader dmonitoring_state;
 

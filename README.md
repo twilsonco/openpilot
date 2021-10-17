@@ -37,11 +37,11 @@ Running on move-fast fork of openpilot, which adds:
 - [x] **Customizable, dynamic vehicle/device metrics**
     * To use:
         * Tap the current speed on the openpilot display to cycle the number of metrics
-        * Tap any metric to cycle its content (sorry for all the god-forsaken tapping!)
-    * Metrics:
-        * Device: CPU temperature, CPU percent, CPU temp + percent, memory temperature, memory used, free storage, ambient temperature, fanspeed (as percent of max), GPS accuracy (and number of satelites), altitude
-        * Vehicle: Engine RPM, steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road
-        * Lead car: lead distance [length], lead distance [time], relative lead velocity, absolute lead velocity
+        * Tap any metric to cycle its content (sorry for all the god-forsaken tapping, a better metric display with vehicle, following, position, and device widgets is a WIP)
+    * Metrics (24 to choose from):
+        * Device info: CPU temperature, CPU percent, CPU temp + percent, memory temperature, memory used, free storage, ambient temperature, fanspeed (as percent of max), GPS accuracy (and number of satelites), altitude
+        * Vehicle info: Engine RPM, steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road
+        * Lead-following info: lead distance [length], desired lead distance [length], lead distance [time], desired lead distance [time], follow distance cost [in units of the stock OP distance cost; i.e. 2.5 meand 2.5× the stock OP value], relative lead velocity, absolute lead velocity
 - [x] [GM] **"Auto-on steering lite"**: You control accel/decel with gas pedal in "L-mode" and OP keeps steering (down to 7mph)
     * To use:
 
@@ -51,10 +51,10 @@ Running on move-fast fork of openpilot, which adds:
     4. Now drive around; OP will steer while you control accel/decel with the gas pedal with the Volt's regen in "L-mode"
     * OP will pause steering if <30mph and blinker is on while in this mode
         * won't pause steering for low speed blinker if a) both toggles in (1) are disabled, or b) cruise set speed >10mph and the gas pedal isn't pressed (i.e. under normal OP control)
-- [x] [GM] [✅] One-pedal driving: When in "auto-on steering lite" mode, OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
+- [x] [GM] [✅] **One-pedal driving**: When in "auto-on steering lite" mode, OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
     * When in one-pedal mode, the max speed indicator in openpilot will be replaced with a one-pedal mode indicator
-    * Press the follow distance button to cycle between light and moderate braking
-    * Hold the follow distance button to apply temporary hard braking (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
+    * Press the follow distance button to cycle between persistent light or moderate braking (respecitvely indicated by follow level 1 or 2 on the vehicle cluster, and by green/orange one-pedal icon in OP)
+    * Hold the follow distance button to apply temporary hard braking (indicated by follow level 3 on vehicle cluster and red one-pedal icon) (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
 - [x] [GM] JShuler panda-based GM steering fault fix
 
 #### Planned fork features:

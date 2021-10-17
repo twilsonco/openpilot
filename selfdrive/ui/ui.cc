@@ -21,8 +21,8 @@
 #define BACKLIGHT_TS 10.00
 #define BACKLIGHT_OFFROAD 75
 
-static const float brake_indicator_alpha_fade_dur = 0.3; // [s] time it takes for the brake indicator to fade in/out
-static const float brake_indicator_alpha_step = 1. / brake_indicator_alpha_fade_dur; // will step in the transparent or opaque direction
+static const float fade_duration = 0.3; // [s] time it takes for the brake indicator to fade in/out
+static const float fade_time_step = 1. / fade_duration; // will step in the transparent or opaque direction
 
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
@@ -152,16 +152,29 @@ static void update_state(UIState *s) {
     
     scene.brake_percent = scene.car_state.getFrictionBrakePercent();
     if (scene.brake_percent > 0){
-      scene.brake_indicator_alpha += brake_indicator_alpha_step * (t - scene.brake_indicator_last_t);
+      scene.brake_indicator_alpha += fade_time_step * (t - scene.brake_indicator_last_t);
       if (scene.brake_indicator_alpha > 1.)
         scene.brake_indicator_alpha = 1.;
     }
     else if (scene.brake_indicator_alpha > 0.){
-      scene.brake_indicator_alpha -= brake_indicator_alpha_step * (t - scene.brake_indicator_last_t);
+      scene.brake_indicator_alpha -= fade_time_step * (t - scene.brake_indicator_last_t);
       if (scene.brake_indicator_alpha < 0.)
         scene.brake_indicator_alpha = 0.;
     }
     scene.brake_indicator_last_t = t;
+    
+    if (scene.car_state.getOnePedalModeActive()){
+      scene.one_pedal_fade += fade_time_step * (t - scene.one_pedal_fade_last_t);
+      if (scene.one_pedal_fade > 1.)
+        scene.one_pedal_fade = 1.;
+    }
+    else if (scene.one_pedal_fade > -1.){
+      scene.one_pedal_fade -= fade_time_step * (t - scene.one_pedal_fade_last_t);
+      if (scene.one_pedal_fade < -1.)
+        scene.one_pedal_fade = -1.;
+    }
+    scene.one_pedal_fade_last_t = t;
+  
     
     scene.steerOverride= scene.car_state.getSteeringPressed();
     scene.angleSteers = scene.car_state.getSteeringAngleDeg();
@@ -296,6 +309,12 @@ static void update_state(UIState *s) {
     scene.lateralPlan.lProb = data.getLProb();
     scene.lateralPlan.rProb = data.getRProb();
     scene.lateralPlan.lanelessModeStatus = data.getLanelessMode();
+  }
+  if (sm.updated("longitudinalPlan")) {
+    auto data = sm["longitudinalPlan"].getLongitudinalPlan();
+
+    scene.desiredFollowDistance = data.getDesiredFollowDistance();
+    scene.followDistanceCost = data.getLeadDistCost();
   }
   scene.lastTime = t;
 }

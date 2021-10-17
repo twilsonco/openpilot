@@ -102,6 +102,9 @@ class LeadMpc():
     self.n_its = 0
     self.duration = 0
     self.status = False
+    
+    self.tr = 1.8
+    self.dist_cost = 1.
 
     self.v_solution = np.zeros(CONTROL_N)
     self.a_solution = np.zeros(CONTROL_N)
@@ -196,6 +199,9 @@ class LeadMpc():
       self.a_lead_tau = _LEAD_ACCEL_TAU
       tr = TR_DEFAULT
       dist_cost = MPC_COST_LONG.DISTANCE
+    
+    self.tr = tr
+    self.dist_cost = dist_cost / MPC_COST_LONG.DISTANCE
       
     t = sec_since_boot()
     self.n_its = 0

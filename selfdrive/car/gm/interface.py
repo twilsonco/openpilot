@@ -212,7 +212,7 @@ class CarInterface(CarInterfaceBase):
       cloudlog.info("button press event: LKA button. new value: %i" % self.CS.lkMode)
       
     # distance button is also used to toggle braking modes when in one-pedal-mode
-    if CS.one_pedal_mode_active:
+    if self.CS.one_pedal_mode_active:
       if self.CS.distance_button != self.CS.prev_distance_button:
         self.CS.distance_button_last_press_t = t
         if not self.CS.distance_button: # only make changes when user lifts press
