@@ -39,8 +39,9 @@ Running on move-fast fork of openpilot, which adds:
         * Tap the current speed on the openpilot display to cycle the number of metrics
         * Tap any metric to cycle its content (sorry for all the god-forsaken tapping!)
     * Metrics:
-        * Device: CPU Temperature (and percent used), GPS accuracy (and number of satelites), altitude
-        * Vehicle: Engine RPM, steering torque, steering angle, desired steering angle, lead distance [length], relative lead velocity, vehicle acceleration
+        * Device: CPU temperature, CPU percent, CPU temp + percent, memory temperature, memory used, free storage, ambient temperature, fanspeed (as percent of max), GPS accuracy (and number of satelites), altitude
+        * Vehicle: Engine RPM, steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road
+        * Lead car: lead distance [length], lead distance [time], relative lead velocity, absolute lead velocity
 - [x] [GM] **"Auto-on steering lite"**: You control accel/decel with gas pedal in "L-mode" and OP keeps steering (down to 7mph)
     * To use:
 
@@ -74,11 +75,6 @@ Running on move-fast fork of openpilot, which adds:
     * If someone cuts in, the follow distance "takes a penalty" down to a closer follow distance proportional to the distance and relative speed of the car that cut in
     * The penalties can "go negative", that is, repeated cut-ins can result in close follow being use for longer than normal
 * Metrics to add:
-    - [x] follow distance in seconds
-    - [x] lead car absolute velocity
-    - [ ] device fan speed
-    - [x] current percent grade of road
-    - [x] vehicle jerk
     - [ ] *could do session metrics to, like number of interventions, number of cut-ins,...*
 
 ### Supported Hardware
