@@ -32,6 +32,7 @@ class CarState(CarStateBase):
     self.prev_lka_button = 0
     self.lka_button = 0
     self.distance_button = 0
+    self.distance_button_last_press_t = 0.
     self.follow_level = 2
     self.lkMode = True
     set_v_cruise_offset(self._params.get_bool("CruiseSpeedOffset"))
@@ -61,12 +62,15 @@ class CarState(CarStateBase):
     
     self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
     self.one_pedal_mode_max_set_speed = 5 * CV.MPH_TO_MS #  one pedal mode activates if cruise set at or below this speed
-    self.one_pedal_mode_stop_apply_brake_bp = [i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]]
-    self.one_pedal_mode_stop_apply_brake_v = [60., 70., 110., 125., 90.]
+    self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]], [i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]], [1.]]
+    self.one_pedal_mode_stop_apply_brake_v = [[60., 70., 110., 125., 90.], [90., 100., 160., 180., 120.], [220.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
     self.one_pedal_mode_last_gas_press_t = 0.
     self.one_pedal_mode_ramp_time_bp = [0., 0.5]
     self.one_pedal_mode_ramp_time_v = [0.2, 1.0]
     self.one_pedal_mode_active = False
+    self.one_pedal_brake_mode = 0 # 0, 1, or 2 selecting the brake profiles above. 2 is activated by pressing and holding the follow distance button for > 0.3s
+    self.one_pedal_last_brake_mode = 0 # for saving brake mode when not in one-pedal-mode
+    self.one_pedal_last_follow_level = 0 # for saving follow distance when in one-pedal mode
     
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
@@ -89,6 +93,7 @@ class CarState(CarStateBase):
     self.lka_button = pt_cp.vl["ASCMSteeringButton"]["LKAButton"]
     self.prev_distance_button = self.distance_button
     self.distance_button = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"]
+    
 
     ret.wheelSpeeds.fl = pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"] * CV.KPH_TO_MS
     ret.wheelSpeeds.fr = pt_cp.vl["EBCMWheelSpdFront"]["FRWheelSpd"] * CV.KPH_TO_MS
@@ -178,7 +183,17 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = self.pcm_acc_status != AccState.OFF
     ret.cruiseState.standstill = False
     
-    self.one_pedal_mode_active = (self.one_pedal_mode_enabled and ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
+    one_pedal_mode_active = (self.one_pedal_mode_enabled and ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
+    if one_pedal_mode_active and not self.one_pedal_mode_active:
+      if one_pedal_mode_active:
+        self.one_pedal_last_follow_level = self.follow_level
+        self.follow_level = self.one_pedal_brake_mode
+      else:
+        self.one_pedal_last_brake_mode = max(self.one_pedal_brake_mode, 1)
+        self.follow_level = self.one_pedal_last_follow_level
+        
+
+    self.one_pedal_mode_active = one_pedal_mode_active
     ret.onePedalModeActive = self.one_pedal_mode_active
 
     ret.autoHoldActivated = self.autoHoldActivated

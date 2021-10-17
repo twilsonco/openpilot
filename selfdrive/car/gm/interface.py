@@ -170,6 +170,8 @@ class CarInterface(CarInterfaceBase):
 
     ret = self.CS.update(self.cp)
 
+    t = sec_since_boot()
+
     cruiseEnabled = self.CS.pcm_acc_status != AccState.OFF
     ret.cruiseState.enabled = cruiseEnabled
 
@@ -208,18 +210,33 @@ class CarInterface(CarInterfaceBase):
     if cruiseEnabled and self.CS.lka_button and self.CS.lka_button != self.CS.prev_lka_button:
       self.CS.lkMode = not self.CS.lkMode
       cloudlog.info("button press event: LKA button. new value: %i" % self.CS.lkMode)
-
-    if self.CS.distance_button and self.CS.distance_button != self.CS.prev_distance_button:
-       self.CS.follow_level -= 1
-       if self.CS.follow_level < 1:
-         self.CS.follow_level = 3
-       cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
+      
+    # distance button is also used to toggle braking modes when in one-pedal-mode
+    if CS.one_pedal_mode_active:
+      if self.CS.distance_button != self.CS.prev_distance_button:
+        self.CS.distance_button_last_press_t = t
+        if not self.CS.distance_button: # only make changes when user lifts press
+          if self.CS.one_pedal_brake_mode == 2:
+            self.CS.one_pedal_brake_mode = self.one_pedal_last_brake_mode
+          else:
+            self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
+          self.CS.follow_level = self.CS.one_pedal_brake_mode + 1
+      elif self.CS.distance_button and t - self.CS.distance_button_last_press_t > 0.3:
+        if self.CS.one_pedal_brake_mode < 2:
+          self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
+        self.CS.one_pedal_brake_mode = 2
+        self.CS.follow_level = self.CS.one_pedal_brake_mode + 1
+    else:
+      if self.CS.distance_button and self.CS.distance_button != self.CS.prev_distance_button:
+         self.CS.follow_level -= 1
+         if self.CS.follow_level < 1:
+           self.CS.follow_level = 3
+         cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
 
     ret.readdistancelines = self.CS.follow_level
 
     events = self.create_common_events(ret, pcm_enable=False)
 
-    t = sec_since_boot()
     if ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
     if self.CS.pause_long_on_gas_press:
