@@ -852,11 +852,11 @@ static void ui_draw_measures(UIState *s){
         int rx = slot_x + slots_r * 2;
         if (i >= 5){
           rx = slot_x;
-          nvgTranslate(s->vg, rx + 12, slot_y_mid);
+          nvgTranslate(s->vg, rx + 13, slot_y_mid);
           nvgRotate(s->vg, 1.5708); //-90deg in radians
         }
         else{
-          nvgTranslate(s->vg, rx - 12, slot_y_mid);
+          nvgTranslate(s->vg, rx - 13, slot_y_mid);
           nvgRotate(s->vg, -1.5708); //-90deg in radians
         }
         nvgFontFace(s->vg, "sans-regular");
