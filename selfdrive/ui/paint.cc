@@ -300,20 +300,25 @@ static void ui_draw_world(UIState *s) {
 static void ui_draw_vision_maxspeed(UIState *s) {
   const int SET_SPEED_NA = 255;
   float maxspeed = (*s->sm)["controlsState"].getControlsState().getVCruise();
-  const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
-  if (is_cruise_set && !s->scene.is_metric) { maxspeed *= 0.6225; }
-
   const Rect rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
-  ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 30.);
-  ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 10, 20.);
+  if (true || s->scene.car_state.getOnePedalModeActive()){
+    ui_draw_circle_image(s, rect.centerX(), rect.centerY(), rect.w, "one_pedal_mode", COLOR_WHITE_ALPHA(200), 1.0f);
+  }
+  else{
+    const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
+    if (is_cruise_set && !s->scene.is_metric) { maxspeed *= 0.6225; }
 
-  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s, rect.centerX(), 118, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), "sans-regular");
-  if (is_cruise_set) {
-    const std::string maxspeed_str = std::to_string((int)std::nearbyint(maxspeed));
-    ui_draw_text(s, rect.centerX(), 212, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE, "sans-bold");
-  } else {
-    ui_draw_text(s, rect.centerX(), 212, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), "sans-semibold");
+    ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 30.);
+    ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 10, 20.);
+
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+    ui_draw_text(s, rect.centerX(), 118, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), "sans-regular");
+    if (is_cruise_set) {
+      const std::string maxspeed_str = std::to_string((int)std::nearbyint(maxspeed));
+      ui_draw_text(s, rect.centerX(), 212, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE, "sans-bold");
+    } else {
+      ui_draw_text(s, rect.centerX(), 212, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), "sans-semibold");
+    }
   }
 }
 
@@ -1172,7 +1177,8 @@ void ui_nvg_init(UIState *s) {
     {"turn_left_icon", "../assets/img_turn_left_icon.png"},
     {"turn_right_icon", "../assets/img_turn_right_icon.png"},
     {"map_source_icon", "../assets/img_world_icon.png"},
-    {"brake_disk", "../assets/img_brake.png"}
+    {"brake_disk", "../assets/img_brake.png"},
+    {"one_pedal_mode", "../assets/offroad/icon_car_pedal.png"}
   };
   for (auto [name, file] : images) {
     s->images[name] = nvgCreateImage(s->vg, file, 1);

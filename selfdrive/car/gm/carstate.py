@@ -66,6 +66,7 @@ class CarState(CarStateBase):
     self.one_pedal_mode_last_gas_press_t = 0.
     self.one_pedal_mode_ramp_time_bp = [0., 0.5]
     self.one_pedal_mode_ramp_time_v = [0.2, 1.0]
+    self.one_pedal_mode_active = False
     
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
@@ -111,6 +112,7 @@ class CarState(CarStateBase):
     if t - self.sessionInitTime < 10:
       self.apply_brake_percent = int(round(interp(t - self.sessionInitTime, [0.,10.], [0., 500.])) % 100)
     ret.frictionBrakePercent = self.apply_brake_percent
+    
 
     ret.gas = pt_cp.vl["AcceleratorPedal"]["AcceleratorPedal"] / 254.
     ret.gasPressed = ret.gas > 1e-5
@@ -175,6 +177,9 @@ class CarState(CarStateBase):
 
     ret.cruiseState.enabled = self.pcm_acc_status != AccState.OFF
     ret.cruiseState.standstill = False
+    
+    self.one_pedal_mode_active = (self.one_pedal_mode_enabled and ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
+    ret.onePedalModeActive = self.one_pedal_mode_active
 
     ret.autoHoldActivated = self.autoHoldActivated
 

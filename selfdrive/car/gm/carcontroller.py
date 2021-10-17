@@ -56,7 +56,7 @@ class CarController():
     else:
       apply_gas = int(round(interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)))
       apply_brake = interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
-      if CS.one_pedal_mode_enabled and CS.v_cruise_kph * CV.KPH_TO_MS <= CS.one_pedal_mode_max_set_speed:
+      if CS.one_pedal_mode_active:
         if CS.coasting_long_plan in ['cruise', 'limit']:
           apply_brake = interp(CS.vEgo, CS.one_pedal_mode_stop_apply_brake_bp, CS.one_pedal_mode_stop_apply_brake_v)
           time_since_brake = sec_since_boot() - CS.one_pedal_mode_last_gas_press_t
