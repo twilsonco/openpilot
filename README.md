@@ -51,7 +51,7 @@ Running on move-fast fork of openpilot, which adds:
     4. Now drive around; OP will steer while you control accel/decel with the gas pedal with the Volt's regen in "L-mode"
     * OP will pause steering if <30mph and blinker is on while in this mode
         * won't pause steering for low speed blinker if a) both toggles in (1) are disabled, or b) cruise set speed >10mph and the gas pedal isn't pressed (i.e. under normal OP control)
-- [x] [GM] [✅] **One-pedal driving**: When in "auto-on steering lite" mode, OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
+- [x] [GM] [✅] **One-pedal driving**: When in "auto-on steering lite" mode (i.e. with cruise speed set to 1), OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
     * When in one-pedal mode, the max speed indicator in openpilot will be replaced with a one-pedal mode indicator
     * Press the follow distance button to cycle between persistent light or moderate braking (respecitvely indicated by follow level 1 or 2 on the vehicle cluster, and by green/orange one-pedal icon in OP)
     * Hold the follow distance button to apply temporary hard braking (indicated by follow level 3 on vehicle cluster and red one-pedal icon) (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
