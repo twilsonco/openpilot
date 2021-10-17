@@ -34,6 +34,7 @@ class ET:
   SOFT_DISABLE = 'softDisable'
   IMMEDIATE_DISABLE = 'immediateDisable'
   PERMANENT = 'permanent'
+  RESET_V_CRUISE = 'resetVCruise'
 
 
 # get event name from enum
@@ -593,6 +594,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.buttonCancel: {
     ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
+  },
+
+  EventName.buttonMainCancel: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
+    ET.RESET_V_CRUISE: EngagementAlert(AudibleAlert.none),
   },
 
   EventName.brakeHold: {

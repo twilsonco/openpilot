@@ -420,6 +420,9 @@ class Controls:
     elif self.CP.pcmCruise and CS.cruiseState.enabled:
       self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
 
+    if self.events.any(ET.RESET_V_CRUISE):
+      v_cruise_kph = 0
+      
     self.CI.CS.v_cruise_kph = self.v_cruise_kph
 
     # decrease the soft disable timer at every step, as it's reset on

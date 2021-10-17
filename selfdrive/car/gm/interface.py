@@ -221,7 +221,8 @@ class CarInterface(CarInterfaceBase):
             self.CS.one_pedal_brake_mode = self.one_pedal_last_brake_mode
           else:
             self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
-            params.put("OnePedalBrakeMode", str(self.CS.follow_level))
+            tmp_params = Params()
+            tmp_params.put("OnePedalBrakeMode", str(self.CS.follow_level))
           self.CS.follow_level = self.CS.one_pedal_brake_mode + 1
       elif self.CS.distance_button and t - self.CS.distance_button_last_press_t > 0.3:
         if self.CS.one_pedal_brake_mode < 2:
@@ -234,7 +235,7 @@ class CarInterface(CarInterfaceBase):
          if self.CS.follow_level < 1:
            self.CS.follow_level = 3
          tmp_params = Params()
-         params.put("FollowLevel", str(self.CS.follow_level))
+         tmp_params.put("FollowLevel", str(self.CS.follow_level))
          cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
 
     ret.readdistancelines = self.CS.follow_level
@@ -266,11 +267,18 @@ class CarInterface(CarInterfaceBase):
     # handle button presses
     for b in ret.buttonEvents:
       # do enable on both accel and decel buttons
-      if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
+      # The ECM will fault if resume triggers an enable while speed is set to 0
+      if b.type == ButtonType.accelCruise and c.hudControl.setSpeed > 0 and c.hudControl.setSpeed < 70 and not b.pressed:
+        events.add(EventName.buttonEnable)
+      if b.type == ButtonType.decelCruise and not b.pressed:
         events.add(EventName.buttonEnable)
       # do disable on button down
       if b.type == ButtonType.cancel and b.pressed:
         events.add(EventName.buttonCancel)
+      # The ECM independently tracks a ‘speed is set’ state that is reset on main off.
+      # To keep controlsd in sync with the ECM state, generate a RESET_V_CRUISE event on main cruise presses.
+      if b.type == ButtonType.altButton3 and b.pressed:
+        events.add(EventName.buttonMainCancel)
 
     ret.events = events.to_msg()
 
