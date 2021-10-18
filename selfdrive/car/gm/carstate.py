@@ -56,6 +56,7 @@ class CarState(CarStateBase):
     self.coasting_lead_min_rel_dist_s = 0.8 # [s] coasting logic isn't used at less than this follow distance
     self.coasting_lead_min_abs_dist = 15 # [m] coasting logic isn't used at less than this absolute follow distance
     self.coasting_lead_abs_dist_max_check_speed = 25. * CV.MPH_TO_MS
+    self.coast_one_pedal_mode_active = False
     self.pause_long_on_gas_press = False
     self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False
@@ -184,6 +185,7 @@ class CarState(CarStateBase):
     ret.cruiseState.standstill = False
     
     one_pedal_mode_active = (self.one_pedal_mode_enabled and ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
+    self.coast_one_pedal_mode_active = (self.coasting_enabled and ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
     if one_pedal_mode_active != self.one_pedal_mode_active:
       if one_pedal_mode_active:
         self.one_pedal_last_follow_level = self.follow_level
@@ -192,7 +194,7 @@ class CarState(CarStateBase):
         self.one_pedal_last_brake_mode = max(self.one_pedal_brake_mode, 1)
         self.follow_level = self.one_pedal_last_follow_level
         
-
+    ret.coastOnePedalModeActive = self.coast_one_pedal_mode_active
     self.one_pedal_mode_active = one_pedal_mode_active
     ret.onePedalModeActive = self.one_pedal_mode_active
     ret.onePedalBrakeMode = self.one_pedal_brake_mode

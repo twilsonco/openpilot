@@ -302,7 +302,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   float maxspeed = (*s->sm)["controlsState"].getControlsState().getVCruise();
   const Rect rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
   if (s->scene.one_pedal_fade > 0.){
-    const QColor &color = bg_colors[s->scene.car_state.getOnePedalBrakeMode() + 1];
+    const QColor &color = bg_colors[(s->scene.car_state.getOnePedalModeActive() ? s->scene.car_state.getOnePedalBrakeMode() + 1 : 0)];
     NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
     ui_draw_circle_image(s, rect.centerX(), rect.centerY(), brake_size, "one_pedal_mode", nvg_color, s->scene.one_pedal_fade);
   }

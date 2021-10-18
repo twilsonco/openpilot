@@ -195,7 +195,7 @@ typedef struct UIScene {
   bool percentGradeIterRolled = false;
   float desiredFollowDistance, followDistanceCost;
   
-  float lastTime = 0.;
+  float lastTime = 0., sessionInitTime = 0.;
 
   int lead_status;
   float lead_d_rel, lead_v_rel, lead_v;

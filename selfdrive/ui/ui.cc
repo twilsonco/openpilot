@@ -163,15 +163,17 @@ static void update_state(UIState *s) {
     }
     scene.brake_indicator_last_t = t;
     
-    if (scene.car_state.getOnePedalModeActive()){
-      scene.one_pedal_fade += fade_time_step * (t - scene.one_pedal_fade_last_t);
-      if (scene.one_pedal_fade > 1.)
-        scene.one_pedal_fade = 1.;
-    }
-    else if (scene.one_pedal_fade > -1.){
-      scene.one_pedal_fade -= fade_time_step * (t - scene.one_pedal_fade_last_t);
-      if (scene.one_pedal_fade < -1.)
-        scene.one_pedal_fade = -1.;
+    if (t - scene.sessionInitTime > 10.){
+      if (scene.car_state.getOnePedalModeActive() || scene.car_state.getCoastOnePedalModeActive()){
+        scene.one_pedal_fade += fade_time_step * (t - scene.one_pedal_fade_last_t);
+        if (scene.one_pedal_fade > 1.)
+          scene.one_pedal_fade = 1.;
+      }
+      else if (scene.one_pedal_fade > -1.){
+        scene.one_pedal_fade -= fade_time_step * (t - scene.one_pedal_fade_last_t);
+        if (scene.one_pedal_fade < -1.)
+          scene.one_pedal_fade = -1.;
+      }
     }
     scene.one_pedal_fade_last_t = t;
   
@@ -370,6 +372,8 @@ static void update_status(UIState *s) {
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->scene.laneless_mode = std::stoi(Params().get("LanelessMode"));
       s->scene.brake_percent = std::stoi(Params().get("FrictionBrakePercent"));
+      
+      s->scene.sessionInitTime = seconds_since_boot();
 
       s->scene.measure_cur_num_slots = std::stoi(Params().get("MeasureNumSlots"));
       for (int i = 0; i < QUIState::ui_state.scene.measure_cur_num_slots; ++i){
