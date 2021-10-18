@@ -218,7 +218,7 @@ class CarInterface(CarInterfaceBase):
         self.CS.distance_button_last_press_t = t
         if not self.CS.distance_button: # only make changes when user lifts press
           if self.CS.one_pedal_brake_mode == 2:
-            self.CS.one_pedal_brake_mode = self.one_pedal_last_brake_mode
+            self.CS.one_pedal_brake_mode = self.CS.one_pedal_last_brake_mode
           else:
             self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
             tmp_params = Params()
