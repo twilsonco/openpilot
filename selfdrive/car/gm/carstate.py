@@ -189,9 +189,10 @@ class CarState(CarStateBase):
     if one_pedal_mode_active != self.one_pedal_mode_active:
       if one_pedal_mode_active:
         self.one_pedal_last_follow_level = self.follow_level
-        self.follow_level = self.one_pedal_last_brake_mode + 1
+        self.one_pedal_brake_mode = min(1, self.one_pedal_last_brake_mode)
+        self.follow_level = self.one_pedal_brake_mode + 1
       else:
-        self.one_pedal_last_brake_mode = max(self.one_pedal_brake_mode, 1)
+        self.one_pedal_last_brake_mode = min(self.one_pedal_brake_mode, 1)
         self.follow_level = self.one_pedal_last_follow_level
         
     ret.coastOnePedalModeActive = self.coast_one_pedal_mode_active
