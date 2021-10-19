@@ -32,7 +32,7 @@ Running on move-fast fork of openpilot, which adds:
 - [x] [✅] Mute engage and disengage sounds
 - [x] [✅] Downhill (max-regen) coasting: OP will still brake behind a lead car and to slow down for curves, but friction brakes won't be used in order to keep the set speed (by user or map speed limit)
 - [x] [✅] Brake when 10mph+ over set speed when downhill coasting enabled
-- [x] [✅] Nudgeless lane change: OP will start lane change automatically in direction of blinker after blinker on for 2s
+- [x] [✅] Nudgeless lane change: OP will start lane change automatically in direction of blinker after blinker on for 3s
 - [x] [✅] Friction braking indicator
 - [x] **Customizable, dynamic vehicle/device metrics**
     * To use:
@@ -44,7 +44,6 @@ Running on move-fast fork of openpilot, which adds:
         * Lead-following info: lead distance [length], desired lead distance [length], lead distance [time], desired lead distance [time], follow distance cost [in units of the stock OP distance cost; i.e. 2.5 meand 2.5× the stock OP value], relative lead velocity, absolute lead velocity
 - [x] [GM] **"Auto-on steering lite"**: You control accel/decel with gas pedal in "L-mode" and OP keeps steering (down to 7mph)
     * To use:
-
     1. Enable the following toggles: Disable disengage on gas, Downhill coasting
     2. Put your volt in "L-mode"
     3. Engage OP and set the cruise speed to 1 (with or without gas pedal pressed)
@@ -53,8 +52,12 @@ Running on move-fast fork of openpilot, which adds:
         * won't pause steering for low speed blinker if a) both toggles in (1) are disabled, or b) cruise set speed >10mph and the gas pedal isn't pressed (i.e. under normal OP control)
 - [x] [GM] [✅] **One-pedal driving**: When in "auto-on steering lite" mode (i.e. with cruise speed set to 1), OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
     * When in one-pedal mode, the max speed indicator in openpilot will be replaced with a one-pedal mode indicator
-    * Press the follow distance button to cycle between persistent light or moderate braking (respecitvely indicated by follow level 1 or 2 on the vehicle cluster, and by green/orange one-pedal icon in OP)
+    * ehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = 🟢/🟠/🔴 = light/moderate/heavy braking
+    * Press the follow distance button to cycle between persistent light or moderate braking
     * Hold the follow distance button to apply temporary hard braking (indicated by follow level 3 on vehicle cluster and red one-pedal icon) (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
+- [x] [GM] [✅] One-pedal pro braking: Completely disable cruise/speed limit/curve/follow braking when in one-pedal mode. You are soley responsible for slowing the car using the adjustable one-pedal braking (by pressing/holding the follow distance button) or with the physical brakes/regen paddle
+- [x] [GM] [✅] One-pedal/always-on-steering engage on gas: When cruising at speed and the driver presses the gas (i.e. not when resuming from a stop), engage one-pedal/always-on-steering mode
+    * Increase or reset speed to return to normal cruise.
 - [x] [GM] JShuler panda-based GM steering fault fix
 
 #### Planned fork features:

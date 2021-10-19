@@ -56,7 +56,7 @@ class CarController():
     else:
       apply_gas = int(round(interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)))
       apply_brake = interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
-      if CS.one_pedal_mode_active
+      if CS.one_pedal_mode_active:
         one_pedal_apply_brake = interp(CS.vEgo, CS.one_pedal_mode_stop_apply_brake_bp[CS.one_pedal_brake_mode], CS.one_pedal_mode_stop_apply_brake_v[CS.one_pedal_brake_mode])
         time_since_brake = sec_since_boot() - CS.one_pedal_mode_last_gas_press_t
         one_pedal_apply_brake *= interp(time_since_brake, CS.one_pedal_mode_ramp_time_bp, CS.one_pedal_mode_ramp_time_v) if CS.one_pedal_brake_mode < 2 else 1.
