@@ -53,6 +53,7 @@ def manager_init():
     ("NudgelessLaneChange", "0"),
     ("Coasting", "0"),
     ("OnePedalMode", "0"),
+    ("OnePedalModeSimple", "0"),
     ("OnePedalBrakeMode", "0"),
     ("FollowLevel", "2"),
     ("CoastingBrakeOverSpeed", "0"),

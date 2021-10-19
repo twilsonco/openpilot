@@ -120,7 +120,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_rocket.png",
                                   this));
   toggles.append(new ParamControl("NudgelessLaneChange",
-                                  "\U000026A0 Nudgeless lane change (1s delay) \U000026A0",
+                                  "⚠️ Nudgeless lane change (1s delay) ⚠️",
                                   "Perform lane change without requiring nudge from driver",
                                   "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
@@ -130,23 +130,28 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_gm_autohold.png",
                                   this));
   toggles.append(new ParamControl("Coasting",
-                                  "[GM] Coast downhill (take a brake!)",
-                                  "COMPLETELY disable normal cruise braking; still brake when following/curves/etc.",
+                                  "[GM] Coasting/\"Auto-on steering light\" (tap me)",
+                                  "COMPLETELY disable cruise/speed limit braking; still brake for following/curves/etc. This also enables \"Auto-on steering light\", where you control speed with gas pedal with car in \"L\" mode while OP continues to steer. To activate, ① enage and set cruise speed to 1 and pedal icon will replace max speed indicator. ② Tap pedal icon to toggle one-pedal mode (see below).",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("CoastingBrakeOverSpeed",
                                   "[GM] Coast: brake 10mph+ over set speed",
-                                  "When coasting, start applying desired cruise braking when [10,15]mph over set speed.",
+                                  "When coasting, start applying desired cruise braking when [10,15] mph over set speed.",
                                   "../assets/offroad/icon_speed_offset.png",
                                   this));
   toggles.append(new ParamControl("OnePedalMode",
-                                  "[GM] One pedal driving",
-                                  "Drive with one pedal; OP will brake all the way to a stop without disengaging. (To activate, enage OP and set cruise speed to 1, then drive!)",
+                                  "[GM] One-pedal driving (tap me)",
+                                  "Drive with one pedal; beyond \"Auto-on steering light,\" OP will brake all the way to a stop without disengaging, in addition to braking for following/curves. To activate, ① activate \"Auto-on steering light\" mode (see above). ② Vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = 🟢/🟠/🔴 = light/moderate/heavy braking. ③ Press follow distance button to toggle persistent light/moderate braking; hold for temporary heavy braking. ④ Tap pedal icon to toggle one-pedal mode while driving (grey ⚫️ pedal icon indicates one-pedal mode disabled).",
+                                  "../assets/offroad/icon_car_pedal.png",
+                                  this));
+  toggles.append(new ParamControl("OnePedalModeSimple",
+                                  "[GM] ⚠️ One-pedal driving pro (tap me) ⚠️",
+                                  "Same as one-pedal mode, but COMPLETELY DISABLES ALL OTHER FORMS OF OPENPILOT BRAKING. No additional braking will be automatically applied to slow/stop you behind a lead car, or to slow for a curve. You are solely responsible for applying brakes using adjustable one-pedal braking with the follow button or using the actual brakes.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("BrakeIndicator",
                                   "[GM] Brake indicator",
-                                  "Binary brake indicator",
+                                  "Brake indicator at bottom-right when driving. Circle at indicator center grows and turns red to indicate the level of braking. Pulses immediately after starting car to let you know it's on.",
                                   "../assets/offroad/icon_brake_disc.png",
                                   this));
   toggles.append(new ParamControl("CustomSounds",
