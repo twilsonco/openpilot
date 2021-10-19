@@ -61,7 +61,7 @@ class CarState(CarStateBase):
     self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False
     
-    self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
+    self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode") and not self.disengage_on_gas
     self.one_pedal_mode_op_braking_allowed = not self._params.get_bool("OnePedalModeSimple")
     self.one_pedal_mode_max_set_speed = 5 * CV.MPH_TO_MS #  one pedal mode activates if cruise set at or below this speed
     self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]], [i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]], [1.]]
@@ -117,7 +117,7 @@ class CarState(CarStateBase):
     
     t = sec_since_boot()
     if t - self.sessionInitTime < 10:
-      self.apply_brake_percent = int(round(interp(t - self.sessionInitTime, [0.,10.], [0., 500.])) % 100)
+      self.apply_brake_percent = int(round(interp(t - self.sessionInitTime, [0.,1.,2.,3.,4.,5.,6.,7.,8.,9.], ([100,0]*5))) % 100)
     ret.frictionBrakePercent = self.apply_brake_percent
     
 

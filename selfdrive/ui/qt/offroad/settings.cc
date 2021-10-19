@@ -131,7 +131,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   this));
   toggles.append(new ParamControl("Coasting",
                                   "[GM] Coasting/\"Auto-on steering light\" (tap me)",
-                                  "COMPLETELY disable cruise/speed limit braking; still brake for following/curves/etc. This also enables \"Auto-on steering light\", where you control speed with gas pedal with car in \"L\" mode while OP continues to steer. To activate, ① enage and set cruise speed to 1 and pedal icon will replace max speed indicator. ② Tap pedal icon to toggle one-pedal mode (see below).",
+                                  "COMPLETELY disable cruise/speed limit braking; still brake for following/curves/etc. In combination with the \"Disable disengage on gas\" option, this enables \"Auto-on steering light\", where you control speed with gas pedal with car in \"L\" mode while OP continues to steer. To activate, ① enage and set cruise speed to 1 and pedal icon will replace max speed indicator. ② Tap pedal icon to toggle one-pedal mode (see below).",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("CoastingBrakeOverSpeed",
@@ -141,12 +141,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   this));
   toggles.append(new ParamControl("OnePedalMode",
                                   "[GM] One-pedal driving (tap me)",
-                                  "Drive with one pedal; beyond \"Auto-on steering light,\" OP will brake all the way to a stop without disengaging, in addition to braking for following/curves. To activate, ① activate \"Auto-on steering light\" mode (see above). ② Vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = 🟢/🟠/🔴 = light/moderate/heavy braking. ③ Press follow distance button to toggle persistent light/moderate braking; hold for temporary heavy braking. ④ Tap pedal icon to toggle one-pedal mode while driving (grey ⚫️ pedal icon indicates one-pedal mode disabled).",
+                                  "Drive with one pedal; beyond \"Auto-on steering light,\" OP will brake all the way to a stop without disengaging, in addition to braking for following/curves. To activate, ① activate \"Auto-on steering light\" mode (see above). ② Vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = 🟢/🟠/🔴 = light/moderate/heavy braking. ③ Press follow distance button to toggle persistent light/moderate braking; hold for temporary heavy braking. ④ Tap pedal icon to toggle one-pedal mode while driving (grey pedal icon indicates one-pedal mode disabled).",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("OnePedalModeSimple",
-                                  "[GM] ⚠️ One-pedal driving pro (tap me) ⚠️",
-                                  "Same as one-pedal mode, but COMPLETELY DISABLES ALL OTHER FORMS OF OPENPILOT BRAKING. No additional braking will be automatically applied to slow/stop you behind a lead car, or to slow for a curve. You are solely responsible for applying brakes using adjustable one-pedal braking with the follow button or using the actual brakes.",
+                                  "[GM] ⚠️ One-pedal pro brakes (tap me) ⚠️",
+                                  "When using one-pedal mode, COMPLETELY DISABLE ALL OTHER FORMS OF OPENPILOT BRAKING. No additional braking will be automatically applied to slow/stop you behind a lead car, or to slow for a curve. You are solely responsible for applying brakes using adjustable one-pedal braking with the follow button or using the actual brakes.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("BrakeIndicator",
