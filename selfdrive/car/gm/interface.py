@@ -226,7 +226,10 @@ class CarInterface(CarInterfaceBase):
       elif self.CS.distance_button and t - self.CS.distance_button_last_press_t > 0.3:
         if self.CS.one_pedal_brake_mode < 2:
           self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
-        self.CS.one_pedal_brake_mode = 2
+        if self.CS.vEgo > 0.05:
+          self.CS.one_pedal_brake_mode = 2
+        else:
+          self.CS.one_pedal_brake_mode = 1
       elif not self.CS.distance_button:
         self.CS.one_pedal_brake_mode = min(self.CS.one_pedal_brake_mode, 1)
       self.CS.follow_level = self.CS.one_pedal_brake_mode + 1
