@@ -301,14 +301,16 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   const int SET_SPEED_NA = 255;
   float maxspeed = (*s->sm)["controlsState"].getControlsState().getVCruise();
   const Rect rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
-  if (s->scene.one_pedal_fade > 0. || true){
+  if (s->scene.one_pedal_fade > 0.){
     const QColor &color = bg_colors[(s->scene.car_state.getOnePedalModeActive() ? s->scene.car_state.getOnePedalBrakeMode() + 1 : 0)];
     NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
     const Rect pedal_rect = {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2};
     ui_fill_rect(s->vg, pedal_rect, nvg_color, brake_size);
     ui_draw_image(s, {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2}, "one_pedal_mode", s->scene.one_pedal_fade);
+    s->scene.one_pedal_touch_rect = pedal_rect;
   }
   else{
+    s->scene.one_pedal_touch_rect = {1,1,1,1};
     const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
     if (is_cruise_set && !s->scene.is_metric) { maxspeed *= 0.6225; }
 
@@ -940,23 +942,16 @@ static void ui_draw_vision_event(UIState *s) {
     const int center_y = radius  + (bdr_s * 1.5);
     const QColor &color = bg_colors[s->status];
     NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), color.alpha());
-    
-    nvgBeginPath(s->vg);
-    nvgCircle(s->vg, center_x, center_y, radius);
-    nvgFillColor(s->vg, nvg_color);
-    nvgFill(s->vg);
-    
+  
+    // draw circle behind wheel
+    ui_fill_rect(s->vg, {center_x - radius, center_y - radius, 2 * radius, 2 * radius}, nvg_color, radius);
+
+    // now rotate and draw the wheel
     nvgSave(s->vg);
     nvgTranslate(s->vg, center_x, center_y);
     nvgRotate(s->vg, rot_angle);
-    nvgBeginPath(s->vg);
-    NVGpaint imgPaint = nvgImagePattern(s->vg, -radius, -radius, 2*radius, 2*radius, 0, s->images.at("wheel"), 1.0f);
-    nvgRect(s->vg, -radius, -radius, 2*radius, 2*radius);
-    nvgFillPaint(s->vg, imgPaint);
-    nvgFill(s->vg);
+    ui_draw_image(s, {-radius, -radius, 2*radius, 2*radius}, "wheel", 1.0f);
     nvgRestore(s->vg);
-        
-    // ui_draw_circle_image(s, center_x, center_y, radius, "wheel", nvg_color, 1.0f);
     
     // draw hands on wheel pictogram under wheel pictogram.
     auto handsOnWheelState = (*s->sm)["driverMonitoringState"].getDriverMonitoringState().getHandsOnWheelState();

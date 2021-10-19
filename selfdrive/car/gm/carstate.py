@@ -184,6 +184,7 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = self.pcm_acc_status != AccState.OFF
     ret.cruiseState.standstill = False
     
+    self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
     one_pedal_mode_active = (self.one_pedal_mode_enabled and ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
     self.coast_one_pedal_mode_active = (self.coasting_enabled and ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
     if one_pedal_mode_active != self.one_pedal_mode_active:

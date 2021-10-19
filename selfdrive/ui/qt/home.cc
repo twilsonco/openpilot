@@ -70,7 +70,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // Toggle speed limit control enabled
   Rect touch_rect = QUIState::ui_state.scene.speed_limit_sign_touch_rect;
   SubMaster &sm = *(QUIState::ui_state.sm);
-  if (sm["longitudinalPlan"].getLongitudinalPlan().getSpeedLimit() > 0.0 &&
+  if (QUIState::ui_state.scene.started && sm["longitudinalPlan"].getLongitudinalPlan().getSpeedLimit() > 0.0 &&
       touch_rect.ptInRect(e->x(), e->y())) {
     // If touching the speed limit sign area when visible
     QUIState::ui_state.scene.last_speed_limit_sign_tap = seconds_since_boot();
@@ -98,7 +98,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   
   // presses of measure boxes
   for (int i = 0; i < QUIState::ui_state.scene.measure_cur_num_slots; ++i){
-    if (QUIState::ui_state.scene.measure_slot_touch_rects[i].ptInRect(e->x(), e->y())){
+    if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.measure_slot_touch_rects[i].ptInRect(e->x(), e->y())){
       // user pressed one of the measure boxes. Need to increment the data shown.
       char slotName[16];
       snprintf(slotName, sizeof(slotName), "MeasureSlot%.2d", i);
@@ -112,7 +112,9 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   }
   
   // presses of vehicle speed to increment number of measure boxes
-  if (QUIState::ui_state.scene.speed_rect.ptInRect(e->x(), e->y())){
+  if (QUIState::ui_state.scene.started 
+    && QUIState::ui_state.scene.speed_rect.ptInRect(e->x(), e->y())){
+      
     int num_slots = QUIState::ui_state.scene.measure_cur_num_slots + 1; 
     if (num_slots > QUIState::ui_state.scene.measure_max_num_slots){
       num_slots = QUIState::ui_state.scene.measure_min_num_slots;
@@ -125,6 +127,11 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     sprintf(val_str, "%1d", num_slots);
     Params().put("MeasureNumSlots", val_str, strlen(val_str));
     return;
+  }
+  
+  // one-pedal mode button
+  if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.one_pedal_touch_rect.ptInRect(e->x(), e->y())){
+    Params().putBool("OnePedalMode", !QUIState::ui_state.scene.car_state.getOnePedalModeActive());
   }
 
   // Handle sidebar collapsing
