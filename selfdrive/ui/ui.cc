@@ -198,6 +198,12 @@ static void update_state(UIState *s) {
       if (scene.percentGradeRollingIter >= 5){
         scene.percentGradeIterRolled = true;
         scene.percentGradeRollingIter = 0;
+      }    
+      scene.percentGradeAltitudes[scene.percentGradeRollingIter] = scene.altitudeUblox;
+      if (scene.percentGradeIterRolled){
+        float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%5];
+        float run = 4 * scene.percentGradeLenStep;
+        scene.percentGrade = int(round(rise/run * 100.));
       }
       scene.percentGradeCurDist = 0.;
     }
@@ -297,7 +303,6 @@ static void update_state(UIState *s) {
     auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
     scene.gpsAccuracyUblox = data2.getAccuracy();
     scene.altitudeUblox = data2.getAltitude();
-    scene.percentGradeAltitudes[scene.percentGradeRollingIter] = scene.altitudeUblox;
   }
   if (sm.updated("liveLocationKalman")) {
     scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();

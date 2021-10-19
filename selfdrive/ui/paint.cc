@@ -803,10 +803,6 @@ static void ui_draw_measures(UIState *s){
           {
           snprintf(name, sizeof(name), "GRADE");
           if (scene.percentGradeIterRolled && scene.gpsAccuracyUblox != 0.00){
-            // use stored values of length and altitude (in meters)
-            float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%5];
-            float run = scene.percentGradeLenStep * 5.;
-            scene.percentGrade = int(round(rise/run * 100.));
             g = 255;
             b = 255;
             p = 0.05 * scene.percentGrade; // red by 20% grade
