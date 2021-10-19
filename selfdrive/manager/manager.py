@@ -54,6 +54,7 @@ def manager_init():
     ("Coasting", "0"),
     ("OnePedalMode", "0"),
     ("OnePedalModeSimple", "0"),
+    ("OnePedalModeEngageOnGas", "0"),
     ("OnePedalBrakeMode", "0"),
     ("FollowLevel", "2"),
     ("CoastingBrakeOverSpeed", "0"),

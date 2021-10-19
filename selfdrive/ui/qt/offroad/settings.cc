@@ -131,7 +131,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   this));
   toggles.append(new ParamControl("Coasting",
                                   "[GM] Coasting/\"Auto-on steering light\" (tap me)",
-                                  "COMPLETELY disable cruise/speed limit braking; still brake for following/curves/etc. In combination with the \"Disable disengage on gas\" option, this enables \"Auto-on steering light\", where you control speed with gas pedal with car in \"L\" mode while OP continues to steer. To activate, ① enage and set cruise speed to 1 and pedal icon will replace max speed indicator. ② Tap pedal icon to toggle one-pedal mode (see below).",
+                                  "COMPLETELY disable cruise/speed limit braking; still brake for following/curves/etc. In combination with the \"Disable disengage on gas\" option, this enables \"Auto-on steering light\", where you control speed with gas pedal with car in \"L\" mode while OP continues to steer. To activate, ① enage and set cruise speed to 1 and pedal icon will replace max speed indicator; increase or reset speed to return to normal cruise. ② Tap pedal icon to toggle one-pedal mode (see below).",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("CoastingBrakeOverSpeed",
@@ -147,6 +147,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   toggles.append(new ParamControl("OnePedalModeSimple",
                                   "[GM] ⚠️ One-pedal pro brakes (tap me) ⚠️",
                                   "When using one-pedal mode, COMPLETELY DISABLE ALL OTHER FORMS OF OPENPILOT BRAKING. No additional braking will be automatically applied to slow/stop you behind a lead car, or to slow for a curve. You are solely responsible for applying brakes using adjustable one-pedal braking with the follow button or using the actual brakes.",
+                                  "../assets/offroad/icon_car_pedal.png",
+                                  this));
+  toggles.append(new ParamControl("OnePedalModeEngageOnGas",
+                                  "[GM] One-pedal/Always-on-steering engage on gas",
+                                  "When you press the gas in cruise mode at speed (i.e. not when resuming from a stop), enter one-pedal/always-on-steering mode. Increase or reset speed to return to normal cruise.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("BrakeIndicator",
