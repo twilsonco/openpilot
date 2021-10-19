@@ -301,10 +301,12 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   const int SET_SPEED_NA = 255;
   float maxspeed = (*s->sm)["controlsState"].getControlsState().getVCruise();
   const Rect rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
-  if (s->scene.one_pedal_fade > 0.){
+  if (s->scene.one_pedal_fade > 0. || true){
     const QColor &color = bg_colors[(s->scene.car_state.getOnePedalModeActive() ? s->scene.car_state.getOnePedalBrakeMode() + 1 : 0)];
     NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
-    ui_draw_circle_image(s, rect.centerX(), rect.centerY(), brake_size, "one_pedal_mode", nvg_color, s->scene.one_pedal_fade);
+    const Rect pedal_rect = {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2};
+    ui_fill_rect(s->vg, pedal_rect, nvg_color, brake_size);
+    ui_draw_image(s, {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2}, "one_pedal_mode", s->scene.one_pedal_fade);
   }
   else{
     const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
