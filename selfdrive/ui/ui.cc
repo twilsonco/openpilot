@@ -194,7 +194,7 @@ static void update_state(UIState *s) {
     scene.lastAEgo = scene.aEgo;
     scene.steeringTorqueEps = scene.car_state.getSteeringTorqueEps();
     
-    if (scene.car_state.getVEgo() > 0.1){
+    if (scene.car_state.getVEgo() > 0.0){
       scene.percentGradeCurDist += scene.car_state.getVEgo() * (t - scene.percentGradeLastTime);
       if (scene.percentGradeCurDist > scene.percentGradeLenStep){ // record position/elevation at even length intervals
         float prevDist = scene.percentGradePositions[scene.percentGradeRollingIter];
@@ -208,7 +208,7 @@ static void update_state(UIState *s) {
         if (scene.percentGradeIterRolled){
           float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%5];
           float run = scene.percentGradePositions[scene.percentGradeRollingIter] - scene.percentGradePositions[(scene.percentGradeRollingIter+1)%5];
-          if (run > 0.){
+          if (run > 0. && scene.percentGradePositions[scene.percentGradeRollingIter] > scene.percentGradeMinDist){
             scene.percentGrade = int(round(rise/run * 100.));
           }
         }
