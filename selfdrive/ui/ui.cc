@@ -192,19 +192,28 @@ static void update_state(UIState *s) {
     scene.lastAEgo = scene.aEgo;
     scene.steeringTorqueEps = scene.car_state.getSteeringTorqueEps();
     
-    scene.percentGradeCurDist += scene.car_state.getVEgo() * (t - scene.percentGradeLastTime);
-    if (scene.percentGradeCurDist > scene.percentGradeLenStep){ // record position/elevation at even length intervals
-      scene.percentGradeRollingIter++;
-      if (scene.percentGradeRollingIter >= 5){
-        scene.percentGradeIterRolled = true;
-        scene.percentGradeRollingIter = 0;
-      }    
-      scene.percentGradeAltitudes[scene.percentGradeRollingIter] = scene.altitudeUblox;
-      if (scene.percentGradeIterRolled){
-        float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%5];
-        float run = 4 * scene.percentGradeLenStep;
-        scene.percentGrade = int(round(rise/run * 100.));
+    if (scene.car_state.getVEgo() > 0.1){
+      scene.percentGradeCurDist += scene.car_state.getVEgo() * (t - scene.percentGradeLastTime);
+      if (scene.percentGradeCurDist > scene.percentGradeLenStep){ // record position/elevation at even length intervals
+        float prevDist = scene.percentGradePositions[scene.percentGradeRollingIter];
+        scene.percentGradeRollingIter++;
+        if (scene.percentGradeRollingIter >= 5){
+          scene.percentGradeIterRolled = true;
+          scene.percentGradeRollingIter = 0;
+        }    
+        scene.percentGradeAltitudes[scene.percentGradeRollingIter] = scene.altitudeUblox;
+        scene.percentGradePositions[scene.percentGradeRollingIter] = prevDist + scene.percentGradeCurDist;
+        if (scene.percentGradeIterRolled){
+          float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%5];
+          float run = scene.percentGradePositions[scene.percentGradeRollingIter] - scene.percentGradePositions[(scene.percentGradeRollingIter+1)%5];
+          if (run > 0.){
+            scene.percentGrade = int(round(rise/run * 100.));
+          }
+        }
+        scene.percentGradeCurDist = 0.;
       }
+    }
+    else{
       scene.percentGradeCurDist = 0.;
     }
     scene.percentGradeLastTime = t;
@@ -379,6 +388,10 @@ static void update_status(UIState *s) {
       s->scene.brake_percent = std::stoi(Params().get("FrictionBrakePercent"));
       
       s->scene.sessionInitTime = seconds_since_boot();
+      for (int i = 0; i < 5; ++i){
+        s->scene.percentGradeAltitudes[i] = 0.;
+        s->scene.percentGradePositions[i] = 0.;
+      }
 
       s->scene.measure_cur_num_slots = std::stoi(Params().get("MeasureNumSlots"));
       for (int i = 0; i < QUIState::ui_state.scene.measure_cur_num_slots; ++i){
