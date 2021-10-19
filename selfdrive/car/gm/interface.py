@@ -249,16 +249,18 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.gasPressed)
     if self.CS.park_brake:
       events.add(EventName.parkBrake)
-    if ret.vEgo < self.CP.minSteerSpeed:
-      if ret.standstill and cruiseEnabled and not ret.brakePressed and not self.CS.pause_long_on_gas_press and not self.CS.autoHoldActivated and not self.CS.disengage_on_gas and t - self.CS.sessionInitTime > 10.:
-        events.add(car.CarEvent.EventName.stoppedWaitForGas)
-      else:
-        events.add(car.CarEvent.EventName.belowSteerSpeed)
+    steer_paused = False
     if cruiseEnabled:
       if t - self.CS.last_pause_long_on_gas_press_t < 0.5 and t - self.CS.sessionInitTime > 10.:
         events.add(car.CarEvent.EventName.pauseLongOnGasPress)
       if not ret.standstill and self.CS.lane_change_steer_factor < 1.:
         events.add(car.CarEvent.EventName.blinkerSteeringPaused)
+        steer_paused = True
+    if ret.vEgo < self.CP.minSteerSpeed:
+      if ret.standstill and cruiseEnabled and not ret.brakePressed and not self.CS.pause_long_on_gas_press and not self.CS.autoHoldActivated and not self.CS.disengage_on_gas and t - self.CS.sessionInitTime > 10.:
+        events.add(car.CarEvent.EventName.stoppedWaitForGas)
+      elif not steer_paused:
+        events.add(car.CarEvent.EventName.belowSteerSpeed)
     if self.CS.autoHoldActivated:
       self.CS.lastAutoHoldTime = t
       events.add(car.CarEvent.EventName.autoHoldActivated)
