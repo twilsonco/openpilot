@@ -995,14 +995,13 @@ static void ui_draw_vision_brake(UIState *s) {
     ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", color, img_alpha);
     if (s->scene.brake_percent > 0 && s->scene.brake_percent <= 100){
       const int brake_r1 = 1;
-      const int brake_r2 = brake_size / 3 + 4;
+      const int brake_r2 = brake_size / 3 + 2;
       const float brake_r_range = brake_r2 - brake_r1;
       float p = s->scene.brake_percent;
       const int brake_r = brake_r1 + int(brake_r_range * p * 0.01);
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, brake_x - brake_r, brake_y - brake_r, 2 * brake_r, 2 * brake_r, brake_r);
       nvgStrokeWidth(s->vg, 6);
-      nvgFontSize(s->vg, s->scene.brake_percent < 100 ? 72 : 64);
       int r = 255, g = 255, b = 255, a = 200;
       p *= 0.01;
       g -= int(p * 255.);

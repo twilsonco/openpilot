@@ -301,7 +301,7 @@ class CarInterface(CarInterfaceBase):
     t = sec_since_boot()
     self.CS.one_pedal_mode_engage_on_gas = False
     if pause_long_on_gas_press and not self.CS.pause_long_on_gas_press:
-      self.CS.one_pedal_mode_engage_on_gas = (self.CS.one_pedal_mode_engage_on_gas_enabled and self.CS.vEgo >= self.CS.one_pedal_mode_engage_on_gas_min_speed)
+      self.CS.one_pedal_mode_engage_on_gas = (self.CS.one_pedal_mode_engage_on_gas_enabled and self.CS.vEgo >= self.CS.one_pedal_mode_engage_on_gas_min_speed and not self.CS.one_pedal_mode_active and not self.CS.coast_one_pedal_mode_active)
       if t - self.CS.last_pause_long_on_gas_press_t > 300.:
         self.CS.last_pause_long_on_gas_press_t = t
     if self.CS.gasPressed:

@@ -119,8 +119,8 @@ class CarState(CarStateBase):
       ret.brake = 0.
     
     t = sec_since_boot()
-    if t - self.sessionInitTime < 10:
-      self.apply_brake_percent = int(round(interp(t - self.sessionInitTime, [0.,1.,2.,3.,4.,5.,6.,7.,8.,9.], ([100,0]*5))) % 100)
+    if t - self.sessionInitTime < 15.:
+      self.apply_brake_percent = int(round(interp(t - self.sessionInitTime - 5., [0.,1.,2.,3.,4.,5.,6.,7.,8.,9.], ([100,0]*5))) % 100)
     ret.frictionBrakePercent = self.apply_brake_percent
     
 
