@@ -307,7 +307,11 @@ static void ui_draw_vision_maxspeed(UIState *s) {
       const QColor &color = bg_colors[s->scene.car_state.getOnePedalBrakeMode() + 1];
       nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
     }
-    else{
+    else if(s->status == UIStatus::STATUS_DISENGAGED){
+      const QColor &color = bg_colors[UIStatus::STATUS_DISENGAGED];
+      nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
+    }
+    else {
       nvg_color = nvgRGBA(0, 0, 0, int(s->scene.one_pedal_fade * 100.));
     }
     const Rect pedal_rect = {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2};
