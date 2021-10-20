@@ -216,7 +216,7 @@ class CarInterface(CarInterfaceBase):
     if self.CS.one_pedal_mode_active or self.CS.coast_one_pedal_mode_active:
       if self.CS.distance_button != self.CS.prev_distance_button:
         tmp_params = Params()
-        if not tmp_params.get_bool("OnePedalMode") and not self.CS.distance_button: # user lifted press of distance button while in coast-one-pedal mode, so turn on braking
+        if not tmp_params.get_bool("OnePedalMode") and self.CS.distance_button: # user lifted press of distance button while in coast-one-pedal mode, so turn on braking
           self.CS.one_pedal_brake_mode = 0
           self.CS.one_pedal_mode_enabled = True
           self.CS.one_pedal_mode_active = True
