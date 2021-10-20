@@ -61,16 +61,16 @@ def manager_init():
     ("FrictionBrakePercent", "0"),
     ("BrakeIndicator", "1"),
     ("MeasureNumSlots", "0"),
-    ("MeasureSlot00", "7"),
-    ("MeasureSlot01", "9"),
-    ("MeasureSlot02", "8"),
-    ("MeasureSlot03", "16"),
-    ("MeasureSlot04", "3"),
-    ("MeasureSlot05", "6"),
-    ("MeasureSlot06", "11"),
-    ("MeasureSlot07", "10"),
-    ("MeasureSlot08", "12"),
-    ("MeasureSlot09", "21"),
+    ("MeasureSlot00", "7"), # right column: percent grade
+    ("MeasureSlot01", "6"), # altitude
+    ("MeasureSlot02", "4"), # acceleration
+    ("MeasureSlot03", "2"), # steering torque
+    ("MeasureSlot04", "3"), # engine rpm
+    ("MeasureSlot05", "9"), # lead dist [s]
+    ("MeasureSlot06", "11"),# lead dist des [s]
+    ("MeasureSlot07", "8"), # lead dist [m]
+    ("MeasureSlot08", "10"),# lead dist des [m]
+    ("MeasureSlot09", "12"),# dist cost
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
