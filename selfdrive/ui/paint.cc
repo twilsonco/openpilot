@@ -410,7 +410,7 @@ static void ui_draw_measures(UIState *s){
     int default_unit_font_size = 38;
   
     // determine bounding rectangle
-    const int slots_r = brake_size + 4;
+    const int slots_r = brake_size + 4 + (s->scene.measure_cur_num_slots <= 5 ? 6 : 0);
     const int slots_w = (s->scene.measure_cur_num_slots <= 5 ? 2 : 4) * slots_r;
     const int slots_x = (s->scene.measure_cur_num_slots <= 5 ? center_x - slots_r : center_x - 3 * slots_r);
     const Rect slots_rect = {slots_x, slots_y_min, slots_w, slots_y_rng};

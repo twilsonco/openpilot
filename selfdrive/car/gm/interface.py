@@ -213,16 +213,33 @@ class CarInterface(CarInterfaceBase):
       cloudlog.info("button press event: LKA button. new value: %i" % self.CS.lkMode)
       
     # distance button is also used to toggle braking modes when in one-pedal-mode
-    if self.CS.one_pedal_mode_active:
+    if self.CS.one_pedal_mode_active or self.CS.coast_one_pedal_mode_active:
       if self.CS.distance_button != self.CS.prev_distance_button:
-        self.CS.distance_button_last_press_t = t
-        if not self.CS.distance_button: # only make changes when user lifts press
-          if self.CS.one_pedal_brake_mode == 2:
-            self.CS.one_pedal_brake_mode = self.CS.one_pedal_last_brake_mode
-          else:
-            self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
-            tmp_params = Params()
-            tmp_params.put("OnePedalBrakeMode", str(self.CS.follow_level))
+        if not self.CS.one_pedal_mode_active and not self.CS.distance_button: # user lifted press of distance button while in coast-one-pedal mode, so turn on braking
+          self.CS.one_pedal_brake_mode = 0
+          self.CS.one_pedal_mode_enabled = True
+          self.CS.one_pedal_mode_active = True
+          tmp_params = Params()
+          tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
+          tmp_params.put("OnePedalMode", str(self.CS.one_pedal_mode_enabled))
+        elif self.CS.distance_button and self.CS.pause_long_on_gas_press and t - self.CS.distance_button_last_press_t < 0.4: # on the second press of a double tap while the gas is pressed, turn off one-pedal braking
+          # cycle the brake mode back to nullify the first press
+          self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
+          self.CS.one_pedal_mode_enabled = False
+          self.CS.one_pedal_mode_active = False
+          self.CS.coast_one_pedal_mode_active = True
+          tmp_params = Params()
+          tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
+          tmp_params.put("OnePedalMode", str(self.CS.one_pedal_mode_enabled))
+        else:
+          self.CS.distance_button_last_press_t = t
+          if not self.CS.distance_button: # only make changes when user lifts press
+            if self.CS.one_pedal_brake_mode == 2:
+              self.CS.one_pedal_brake_mode = self.CS.one_pedal_last_brake_mode
+            else:
+              self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
+              tmp_params = Params()
+              tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
       elif self.CS.distance_button and t - self.CS.distance_button_last_press_t > 0.3:
         if self.CS.one_pedal_brake_mode < 2:
           self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
