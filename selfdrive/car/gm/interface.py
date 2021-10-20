@@ -24,16 +24,19 @@ class CarInterface(CarInterfaceBase):
     return params.ACCEL_MIN, params.ACCEL_MAX
 
   # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
-  def get_steer_feedforward(self, desired_angle, v_ego):
+  @staticmethod
+  def get_steer_feedforward_volt(desired_angle, v_ego):
+    # maps [-inf,inf] to [-1,1]: sigmoid(34.4 deg) = sigmoid(1) = 0.5
+    # 1 / 0.02904609 = 34.4 deg ~= 36 deg ~= 1/10 circle? Arbitrary?
+    desired_angle *= 0.02904609
+    sigmoid = desired_angle / (1 + fabs(desired_angle))
+    return 0.10006696 * sigmoid * (v_ego + 3.12485927)
+
+  def get_steer_feedforward_function(self):
     if self.CP.carFingerprint in [CAR.VOLT]:
-      # Sigmoid maps [-inf,inf] to [-1,1].
-      # This scalar gives sigmoid(34.4 deg) = sigmoid(1) = 0.5.
-      # 1 / 0.02904609 = 34.4 deg ~= 36 deg ~= 1/10 circle? Arbitrary scaling?
-      desired_angle *= 0.02904609
-      sigmoid = desired_angle / (1 + fabs(desired_angle))
-      return 0.10006696 * sigmoid * (v_ego + 3.12485927)
+      return self.get_steer_feedforward_volt
     else:
-      return CarInterfaceBase.get_steer_feedforward(desired_angle, v_ego)
+      return CarInterfaceBase.get_steer_feedforward_default
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
