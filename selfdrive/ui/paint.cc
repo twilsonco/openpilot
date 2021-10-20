@@ -629,7 +629,7 @@ static void ui_draw_measures(UIState *s){
               else{
                 g = 0;
                 b = 0;
-                p = 0.01 * scene.lead_d_rel;
+                p = 0.01 * scene.lead_d_rel * 3.281;
                 g += int((0.5+p) * 255.);
                 b += int(p * 255.);
                 g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
