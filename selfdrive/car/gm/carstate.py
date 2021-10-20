@@ -206,6 +206,8 @@ class CarState(CarStateBase):
     ret.onePedalBrakeMode = self.one_pedal_brake_mode
 
     ret.autoHoldActivated = self.autoHoldActivated
+    
+    ret.lkMode = self.lkMode
 
     return ret
 
