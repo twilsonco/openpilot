@@ -922,6 +922,7 @@ static void ui_draw_vision_speed(UIState *s) {
 static void ui_draw_vision_event(UIState *s) {
   auto longitudinal_plan = (*s->sm)["longitudinalPlan"].getLongitudinalPlan();
   auto visionTurnControllerState = longitudinal_plan.getVisionTurnControllerState();
+  s->scene.wheel_touch_rect = {1,1,1,1};
   if (s->scene.show_debug_ui && 
       visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::DISABLED && 
       s->scene.engageable) {
@@ -950,12 +951,15 @@ static void ui_draw_vision_event(UIState *s) {
     NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), color.alpha());
   
     // draw circle behind wheel
-    ui_fill_rect(s->vg, {center_x - radius, center_y - radius, 2 * radius, 2 * radius}, nvg_color, radius);
+    s->scene.wheel_touch_rect = {center_x - radius, center_y - radius, 2 * radius, 2 * radius};
+    ui_fill_rect(s->vg, s->scene.wheel_touch_rect, nvg_color, radius);
 
     // now rotate and draw the wheel
     nvgSave(s->vg);
     nvgTranslate(s->vg, center_x, center_y);
-    nvgRotate(s->vg, rot_angle);
+    if (s->scene.wheel_rotates){
+      nvgRotate(s->vg, rot_angle);
+    }
     ui_draw_image(s, {-radius, -radius, 2*radius, 2*radius}, "wheel", 1.0f);
     nvgRestore(s->vg);
     

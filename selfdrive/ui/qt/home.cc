@@ -129,6 +129,14 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     return;
   }
   
+  // presses of wheen to toggle rotation
+  if (QUIState::ui_state.scene.started 
+    && QUIState::ui_state.scene.wheel_touch_rect.ptInRect(e->x(), e->y())){
+    
+    QUIState::ui_state.scene.wheel_rotates = !QUIState::ui_state.scene.wheel_rotates;
+    return;
+  }
+  
   // one-pedal mode button
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.one_pedal_touch_rect.ptInRect(e->x(), e->y())){
     Params().putBool("OnePedalMode", !QUIState::ui_state.scene.car_state.getOnePedalModeActive());

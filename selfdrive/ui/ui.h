@@ -165,6 +165,9 @@ typedef struct UIScene {
   bool speed_limit_perc_offset;
   Rect speed_limit_sign_touch_rect;
   double last_speed_limit_sign_tap;
+  
+  Rect wheel_touch_rect;
+  bool wheel_rotates = true;
 
   cereal::PandaState::PandaType pandaType;
   
