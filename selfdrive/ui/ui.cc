@@ -333,6 +333,7 @@ static void update_state(UIState *s) {
 
     scene.desiredFollowDistance = data.getDesiredFollowDistance();
     scene.followDistanceCost = data.getLeadDistCost();
+    scene.stoppingDistance = data.getStoppingDistance();
   }
   scene.lastTime = t;
 }
@@ -390,6 +391,7 @@ static void update_status(UIState *s) {
       s->scene.brake_percent = std::stoi(Params().get("FrictionBrakePercent"));
       
       s->scene.sessionInitTime = seconds_since_boot();
+      s->scene.percentGrade = 0;
       for (int i = 0; i < 5; ++i){
         s->scene.percentGradeAltitudes[i] = 0.;
         s->scene.percentGradePositions[i] = 0.;

@@ -105,6 +105,7 @@ class LeadMpc():
     
     self.tr = 1.8
     self.dist_cost = 1.
+    self.stopping_distance = 0.
 
     self.v_solution = np.zeros(CONTROL_N)
     self.a_solution = np.zeros(CONTROL_N)
@@ -202,6 +203,7 @@ class LeadMpc():
     
     self.tr = tr
     self.dist_cost = dist_cost / MPC_COST_LONG.DISTANCE
+    self.stopping_distance = stopping_distance
       
     t = sec_since_boot()
     self.n_its = 0

@@ -197,6 +197,7 @@ typedef struct UIScene {
   float percentGradeAltitudes[5], percentGradePositions[5], percentGradeCurDist = 0., percentGradeLenStep = 10., percentGradeLastTime = 0., percentGradeMinDist = 200.;
   bool percentGradeIterRolled = false;
   float desiredFollowDistance, followDistanceCost;
+  float stoppingDistance;
   
   float lastTime = 0., sessionInitTime = 0.;
 

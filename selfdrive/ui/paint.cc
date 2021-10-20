@@ -653,7 +653,7 @@ static void ui_draw_measures(UIState *s){
           {
             snprintf(name, sizeof(name), "DES DIST");
             if (scene.lead_status) {
-              auto follow_d = scene.desiredFollowDistance * scene.car_state.getVEgo();
+              auto follow_d = scene.desiredFollowDistance * scene.car_state.getVEgo() + scene.stoppingDistance;
               if (s->is_metric) {
                 snprintf(val, sizeof(val), "%d", (int)follow_d);
               }
@@ -696,7 +696,7 @@ static void ui_draw_measures(UIState *s){
           {
           snprintf(name, sizeof(name), "DES DIST");
           if (scene.lead_status && scene.car_state.getVEgo() > 0.1) {
-            snprintf(val, sizeof(val), "%.1f", scene.desiredFollowDistance);
+            snprintf(val, sizeof(val), "%.1f", scene.desiredFollowDistance + scene.stoppingDistance / scene.car_state.getVEgo());
           } else {
              snprintf(val, sizeof(val), "-");
           }
