@@ -396,7 +396,7 @@ static void update_status(UIState *s) {
       }
 
       s->scene.measure_cur_num_slots = std::stoi(Params().get("MeasureNumSlots"));
-      for (int i = 0; i < QUIState::ui_state.scene.measure_cur_num_slots; ++i){
+      for (int i = 0; i < QUIState::ui_state.scene.measure_max_num_slots; ++i){
         char slotName[16];
         snprintf(slotName, sizeof(slotName), "MeasureSlot%.2d", i);
         s->scene.measure_slots[i] = std::stoi(Params().get(slotName));
