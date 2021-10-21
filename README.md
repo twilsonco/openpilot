@@ -107,6 +107,12 @@ With a stock installation of OpenPilot confirmed working, SSH into device and ru
 
 `cd /data;mv openpilot openpilot_stock;git clone --recurse-submodules https://github.com/twilsonco/openpilot;sudo reboot`
 
+### Updating
+------
+
+This fork will auto-update while your device has internet access, and changes are automatically applied the next time the device restarts.
+If you're device stays connected to your car all the time, you'll be presented with a message to update when your car is off.
+
 ---
 
 # What is openpilot?
