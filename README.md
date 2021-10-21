@@ -24,6 +24,8 @@ Running on move-fast fork of openpilot, which adds:
 - [x] [Chevy Volt] Sigmoidal steering response (thanks Qadmus)
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
+- [x] [GM] Toggle steering with LKAS button (wheel color changes to indicate disengagement)
+- [x] [GM] One-pedal driving: using regen (volt) and/or light/moderate/heavy braking, control OP all the way to a stop, without a lead, and without disengaging, with just the gas pedal (see below)
 - [x] [✅] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#new-dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only. must enable "Disable use of lanelines" for button to appear* (ported from sunnyhaibin)
 - [x] [✅] Normal/sport acceleration modes with improved acceleration/braking profiles (ported from kegman)
 - [x] [✅] 1/5 mph changes for tap/hold of the inc/dec buttons (ported from Spector56)
@@ -51,10 +53,13 @@ Running on move-fast fork of openpilot, which adds:
     * OP will pause steering if <30mph and blinker is on while in this mode
         * won't pause steering for low speed blinker if a) both toggles in (1) are disabled, or b) cruise set speed >10mph and the gas pedal isn't pressed (i.e. under normal OP control)
 - [x] [GM] [✅] **One-pedal driving**: When in "auto-on steering lite" mode (i.e. with cruise speed set to 1), OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
-    * When in one-pedal mode, the max speed indicator in openpilot will be replaced with a one-pedal mode indicator
-    * ehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = 🟢/🟠/🔴 = light/moderate/heavy braking
-    * Press the follow distance button to cycle between persistent light or moderate braking
-    * Hold the follow distance button to apply temporary hard braking (indicated by follow level 3 on vehicle cluster and red one-pedal icon) (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
+    * When in one-pedal mode, the max speed indicator in openpilot will be replaced with a one-pedal mode indicator. Tap the one-pedal icon (or use follow distance button, see below) to toggle coasting/braking
+    * Vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = 🟢/🟠/🔴 = light/moderate/heavy braking
+    * Follow distance button:
+      * Press: cycle between persistent light or moderate braking
+      * Hold: apply temporary hard braking (indicated by follow level 3 on vehicle cluster and red one-pedal icon) (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
+      * Press when coasting: activating braking
+      * Double-press when gas is press and braking is active: deactivate braking (you'll get used to it...)
 - [x] [GM] [✅] One-pedal pro braking: Completely disable cruise/speed limit/curve/follow braking when in one-pedal mode. You are soley responsible for slowing the car using the adjustable one-pedal braking (by pressing/holding the follow distance button) or with the physical brakes/regen paddle
 - [x] [GM] [✅] One-pedal/always-on-steering engage on gas: When cruising at speed and the driver presses the gas (i.e. not when resuming from a stop), engage one-pedal/always-on-steering mode
     * Increase or reset speed to return to normal cruise.
@@ -86,7 +91,7 @@ Running on move-fast fork of openpilot, which adds:
 ### Supported Hardware
 ------
 
-This fork is developed and used on a Comma Three, and is also known to work on Comma Two.
+This fork is developed and used on a Comma Three in a 2018 Chevy Volt, and is also *known* to work on Comma Two and Comma Zero, and in 2017 Volt and 2018 Acadia.
 
 ### Installation Instructions
 ------
