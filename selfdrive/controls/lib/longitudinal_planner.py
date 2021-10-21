@@ -89,7 +89,7 @@ class Planner():
     self.v_desired = 0.0
     self.a_desired = 0.0
     self.longitudinalPlanSource = 'cruise'
-    self.alpha = np.exp(-DT_MDL/2.0)
+    self.alpha = np.exp(-CP.radarTimeStep/2.0)
     self.lead_0 = log.ModelDataV2.LeadDataV3.new_message()
     self.lead_1 = log.ModelDataV2.LeadDataV3.new_message()
 
@@ -186,8 +186,8 @@ class Planner():
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
-    self.a_desired = float(interp(DT_MDL, T_IDXS[:CONTROL_N], self.a_desired_trajectory))
-    self.v_desired = self.v_desired + DT_MDL * (self.a_desired + a_prev)/2.0
+    self.a_desired = float(interp(CP.radarTimeStep, T_IDXS[:CONTROL_N], self.a_desired_trajectory))
+    self.v_desired = self.v_desired + CP.radarTimeStep * (self.a_desired + a_prev)/2.0
 
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
