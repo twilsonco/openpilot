@@ -64,6 +64,7 @@ Running on move-fast fork of openpilot, which adds:
 - [x] [GM] [✅] One-pedal/always-on-steering engage on gas: When cruising at speed and the driver presses the gas (i.e. not when resuming from a stop), engage one-pedal/always-on-steering mode
     * Increase or reset speed to return to normal cruise.
 - [x] [GM] JShuler panda-based GM steering fault fix
+- [x] Remember last follow mode
 
 #### Planned fork features:
 -----
@@ -72,7 +73,6 @@ Running on move-fast fork of openpilot, which adds:
 - [ ] Chevy Bolt support
 - [ ] Record screen button
 - [ ] [✅] [Modified assistive driving system](https://github.com/sunnyhaibin/openpilot#new-modified-assistive-driving-safety-mads) (MADS)
-- [ ] Remember last follow mode
 - [ ] [✅] 0.5 second delay before activating newly selected follow mode so user can switch around without OP slightly jerking in response
 - [ ] [✅] Auto screen brightness (or at least a way to dim a bit at night)
 - [ ] [✅] Lane Speed alerts ([sshane](https://github.com/sshane/openpilot#lane-speed-alerts))
