@@ -1,3 +1,24 @@
+Version 0.8.9-tw1 (2021-10-20)
+========================
+Lots of features and improvements over stock openpilot 0.8.9. See the readme for a fuller list [✅ = optional via toggle]:
+- Vastly improved steering tune for Chevy Volt (thanks qadmus!)
+- Autohold
+- Adjustable follow distance (remembers follow mode from last drive)
+- Toggle steering with LKAS button
+- Friction braking indicator
+- Customizable, dynamic device/vehicle/follow metrics (tap current speed indicator to cycle number of metrics shown; tap each metric to change what's shown in that slot)
+- [✅] Dynamic lane profile (autoswitch between lanelines and laneless)
+- [✅] Normal/sport acceleration
+- [✅] Downhill coasting (with optional braking when 10+mph over set speed)
+- [✅] Auto-on-steering lite (enable "disable disengage on gas" and "downhill coasting")
+- [✅] One-pedal driving (control amount of braking with follow-distance button)
+- [✅] Engage auto-on-steering/one-pedal mode with gas pedal
+- [✅] One-pedal "pro brakes" mode
+- [✅] Choose between 1mph/5mph button press/hold speed change or 5mph taps
+- [✅] 3mph cruise speed offset
+- [✅] Alternate sound set
+- [✅] Mute engage/disengage sounds
+
 Version 0.8.9 (2021-09-14)
 ========================
  * Improved fan control on comma three
