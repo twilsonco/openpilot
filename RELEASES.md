@@ -1,23 +1,38 @@
-Version 0.8.9-tw1 (2021-10-20)
+Version 0.8.9-tw-2 (2021-10-22)
+========================
+ * TESTERS: The big changes are for follow profiles.
+   * Please test out following with all three profiles and make observations.
+   * My goal with follow profiles is that it feels like having three different people drive the car; all competent and skilled, but with different styles.
+   * I want you to think up a character for each follow profile and put yourself in their shoes.
+   * That in mind, do the profiles feel right? 
+     * Is far follow using it's extra room to smooth out the ride but also comfortably braking in time for a much slower lead?
+     * Is close follow close enough to make you a bit uncomfortable but confidently glued to the lead such that you're not uncomfortable?
+     * Is medium follow driving the way you picture people driving in Neutropolis, the capital city of the Neutral Planet, home of the Neutrals?
+ 1. When in one-pedal mode, press resume to resume cruise at the speed you were going before entering one-pedal mode
+ 2. Smoother follow response thanks to reimplemented dynamic follow distance cost (thanks doug!)
+ 3. For medium/far follow profiles, proper long-distance braking for rapidly approaching (i.e. stopped or very slow) lead
+ 4. Smoother following close to lead using any follow profile
+
+Version 0.8.9-tw-1 (2021-10-20)
 ========================
 Lots of features and improvements over stock openpilot 0.8.9. See the readme for a fuller list [✅ = optional via toggle]:
-- Vastly improved steering tune for Chevy Volt (thanks qadmus!)
-- Autohold
-- Adjustable follow distance (remembers follow mode from last drive)
-- Toggle steering with LKAS button
-- Friction braking indicator
-- Customizable, dynamic device/vehicle/follow metrics (tap current speed indicator to cycle number of metrics shown; tap each metric to change what's shown in that slot)
-- [✅] Dynamic lane profile (autoswitch between lanelines and laneless)
-- [✅] Normal/sport acceleration
-- [✅] Downhill coasting (with optional braking when 10+mph over set speed)
-- [✅] Auto-on-steering lite (enable "disable disengage on gas" and "downhill coasting")
-- [✅] One-pedal driving (control amount of braking with follow-distance button)
-- [✅] Engage auto-on-steering/one-pedal mode with gas pedal
-- [✅] One-pedal "pro brakes" mode
-- [✅] Choose between 1mph/5mph button press/hold speed change or 5mph taps
-- [✅] 3mph cruise speed offset
-- [✅] Alternate sound set
-- [✅] Mute engage/disengage sounds
+ * Vastly improved steering tune for Chevy Volt (thanks qadmus!)
+ * Autohold
+ * Adjustable follow distance (remembers follow mode from last drive)
+ * Toggle steering with LKAS button
+ * Friction braking indicator
+ * Customizable, dynamic device/vehicle/follow metrics (tap current speed indicator to cycle number of metrics shown; tap each metric to change what's shown in that slot)
+ * [✅] Dynamic lane profile (autoswitch between lanelines and laneless)
+ * [✅] Normal/sport acceleration
+ * [✅] Downhill coasting (with optional braking when 10+mph over set speed)
+ * [✅] Auto-on-steering lite (enable "disable disengage on gas" and "downhill coasting")
+ * [✅] One-pedal driving (control amount of braking with follow-distance button)
+ * [✅] Engage auto-on-steering/one-pedal mode with gas pedal
+ * [✅] One-pedal "pro brakes" mode
+ * [✅] Choose between 1mph/5mph button press/hold speed change or 5mph taps
+ * [✅] 3mph cruise speed offset
+ * [✅] Alternate sound set
+ * [✅] Mute engage/disengage sounds
 
 Version 0.8.9 (2021-09-14)
 ========================
