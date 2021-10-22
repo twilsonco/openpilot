@@ -76,6 +76,7 @@ class CarState(CarStateBase):
     self.one_pedal_brake_mode = int(self._params.get("OnePedalBrakeMode", encoding="utf8")) # 0, 1, or 2 selecting the brake profiles above. 2 is activated by pressing and holding the follow distance button for > 0.3s
     self.one_pedal_last_brake_mode = 0 # for saving brake mode when not in one-pedal-mode
     self.one_pedal_last_follow_level = 0 # for saving follow distance when in one-pedal mode
+    self.one_pedal_v_cruise_kph_last = 0
     
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
