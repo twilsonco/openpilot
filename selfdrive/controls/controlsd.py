@@ -402,12 +402,18 @@ class Controls:
       
       if self.CI.CS.one_pedal_mode_engage_on_gas:
         self.CI.CS.one_pedal_mode_engage_on_gas = False
+        self.CI.CS.one_pedal_v_cruise_kph_last = self.v_cruise_kph
         self.v_cruise_kph = V_CRUISE_MIN
+      elif not self.accel_pressed and cur_time - self.accel_pressed_last < 0.3 and (self.CI.CS.one_pedal_mode_active or self.CI.CS.coast_one_pedal_mode_active) and self.CI.CS.one_pedal_v_cruise_kph_last > 0:
+        self.v_cruise_kph = self.CI.CS.one_pedal_v_cruise_kph_last
       else:
         self.v_cruise_kph = update_v_cruise(v_cruise, CS.buttonEvents, self.enabled and CS.cruiseState.enabled, cur_time, self.accel_pressed,self.decel_pressed, self.accel_pressed_last, self.decel_pressed_last, self.fastMode, self.fast_mode_enabled, vEgo, self.v_cruise_last_changed, self.LoC.longPlan, self.speed_limit_last_deactivated)
       
         self.v_cruise_kph = self.v_cruise_kph if self.is_metric else int(round((float(round(self.v_cruise_kph))-0.0995)/0.6233))
-      
+        
+        if self.v_cruise_kph < self.v_cruise_kph_last and cur_time - self.v_cruise_last_changed > 1.0:
+          self.CI.CS.one_pedal_v_cruise_kph_last = self.v_cruise_kph
+        
         if self.v_cruise_kph != self.v_cruise_kph_last:
           self.v_cruise_last_changed = cur_time
       
