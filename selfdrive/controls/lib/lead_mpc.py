@@ -13,7 +13,7 @@ MPC_T = list(np.arange(0,1.,.2)) + list(np.arange(1.,10.6,.6))
 
 TR_DEFAULT = 1.8
 SNG_SPEED = 18 * CV.MPH_TO_MS
-SNG_DIST_COST = MPC_COST_LONG.DISTANCE * 1.5
+SNG_DIST_COST = MPC_COST_LONG.DISTANCE
 
 FOLLOW_PROFILES = [
   [ # one-bar
@@ -24,10 +24,11 @@ FOLLOW_PROFILES = [
     3.2, # stopping distance behind stopped lead car [m]
     # now variable distance cost. Defined in two ways; one according to abs follow distance [m] and one in relative follow distance [s]. Larger distance cost wins. First the time-based:
     [1.0, 1.5, 2.3], # seconds behind lead car
-    [MPC_COST_LONG.DISTANCE * 15.0, MPC_COST_LONG.DISTANCE * 10.0, MPC_COST_LONG.DISTANCE], # mpc distance costs lookup table based on follow distance behind lead (higher value means harder accel/braking to make up distance) (recommended to use factors of MPC_COST_LONG.DISTANCE) (It's ok to only have one value, ie static distance cost )
+    [MPC_COST_LONG.DISTANCE * 10., MPC_COST_LONG.DISTANCE * 7., MPC_COST_LONG.DISTANCE], # mpc distance costs lookup table based on follow distance behind lead (higher value means harder accel/braking to make up distance) (recommended to use factors of MPC_COST_LONG.DISTANCE) (It's ok to only have one value, ie static distance cost )
     [10., 33., 100.], # meters behind lead car
-    [MPC_COST_LONG.DISTANCE * 15.0, MPC_COST_LONG.DISTANCE * 10.0, MPC_COST_LONG.DISTANCE], # distance costs for the absolute follow distances
-    1.0 # [units of MPC_COST_LONG.DISTANCE] lead car pull-away distance cost shift factor "d" (when lead car is pulling away, ie v_lead < 0, distance cost will be increased by |v_lead| * d)
+    [MPC_COST_LONG.DISTANCE * 10., MPC_COST_LONG.DISTANCE * 7., MPC_COST_LONG.DISTANCE], # distance costs for the absolute follow distances
+    0., # [units of MPC_COST_LONG.DISTANCE / (m/s)] lead car pull-away speed cost shift factor "d" (when lead car is pulling away, ie v_lead < 0, distance cost will be increased by |v_lead| * d)
+    0., # [units of MPC_COST_LONG.DISTANCE / (m/s)] lead car pull-away speed cost shift factor "d" (when lead car is pulling away, ie v_lead < 0, distance cost will be increased by |v_lead| * d)
   ],
   [ # two-bar
     [-2.0, -0.15],
@@ -36,10 +37,11 @@ FOLLOW_PROFILES = [
     [0.0, 0.0034975, 0.008495, 0.015, 0.025, 0.03945, 0.06195, 0.0745, 0.08895, 0.1005, 0.10495, 0.11045, 0.11845],
     2.8,
     [0.8, 1.8, 2.1],
-    [MPC_COST_LONG.DISTANCE * 4., MPC_COST_LONG.DISTANCE * 2., MPC_COST_LONG.DISTANCE * 0.5],
+    [MPC_COST_LONG.DISTANCE * 1.5, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.DISTANCE * 0.5],
     [10., 33., 100.],
-    [MPC_COST_LONG.DISTANCE * 4., MPC_COST_LONG.DISTANCE * 2., MPC_COST_LONG.DISTANCE * 0.5],
-    1.5
+    [MPC_COST_LONG.DISTANCE * 1.5, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.DISTANCE * 0.5],
+    0.5 * CV.MPH_TO_MS,
+    0.1 * CV.MPH_TO_MS,
   ],
   [ # three-bar
     [-3.0, -0.2],
@@ -48,14 +50,16 @@ FOLLOW_PROFILES = [
     [0.0, 0.006995, 0.01699, 0.03, 0.05, 0.0789, 0.1239, 0.149, 0.1779, 0.201, 0.2099, 0.2209, 0.2369],
     2.6,
     [0.8, 1.8, 2.1, 3.5],
-    [MPC_COST_LONG.DISTANCE * 3., MPC_COST_LONG.DISTANCE, MPC_COST_LONG.DISTANCE * 0.25, MPC_COST_LONG.DISTANCE * 0.1],
+    [MPC_COST_LONG.DISTANCE * 1.5, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.DISTANCE * 0.25, MPC_COST_LONG.DISTANCE * 0.1],
     [10., 33., 66., 100.], # meters behind lead car
-    [MPC_COST_LONG.DISTANCE * 3., MPC_COST_LONG.DISTANCE * 2., MPC_COST_LONG.DISTANCE * 0.25, MPC_COST_LONG.DISTANCE * 0.1],
-    3.0
+    [MPC_COST_LONG.DISTANCE * 1.5, MPC_COST_LONG.DISTANCE * 2., MPC_COST_LONG.DISTANCE * 0.25, MPC_COST_LONG.DISTANCE * 0.1],
+    0.5 * CV.MPH_TO_MS,
+    0.2 * CV.MPH_TO_MS,
   ]
 ]
 
-D = -0.1 # [m/s] lead car pull-away distance cost shift factor cutoff! Lead car has to be pulling away faster than this before it starts increasing the mpc distance cost (must be negative)
+LEAD_PULLAWAY_V_REL = -0.5 * CV.MPH_TO_MS # [m/s] lead car pull-away speed cost shift factor cutoff! Lead car has to be pulling away faster than this before it starts increasing the mpc distance cost (must be negative)
+LEAD_APPROACHING_V_REL = 10. * CV.MPH_TO_MS # [m/s] lead car approaching cost shift factor cutoff! Lead car has to be approaching faster than this before it starts increasing the mpc distance cost (must be positive)
 
 # In order to have a dynamic distance cost, so that far following can be more relaxed, but not at the expense of braking response when close, we'll maintain three mpcs with the low, stock, and high distance costs, then interpolate the solution each iteration from the solutions of those three
 DIST_COSTS = [f([f(p[6] + [MPC_COST_LONG.DISTANCE]) for p in FOLLOW_PROFILES]) for f in [min,max]]
@@ -69,12 +73,14 @@ def calc_follow_profile(v_ego, v_lead, x_lead, fp):
   d_lead = (x_lead / v_ego) if v_ego > 0.1 else 0.0 # distance to lead car in seconds
   dist_cost = max(interp(d_lead, fp[5], fp[6]), interp(x_lead, fp[7], fp[8]))
   # now adjust based on speed for sng smooth stopping
-  sng_factor = interp(v_ego, [SNG_SPEED * 0.5, SNG_SPEED], [1., 0.])
+  sng_factor = interp(v_ego, [SNG_SPEED * 0.8, SNG_SPEED], [1., 0.])
   
   tr = TR_DEFAULT * sng_factor + tr * (1.0 - sng_factor)
   dist_cost = SNG_DIST_COST * sng_factor + dist_cost * (1.0 - sng_factor)
-  if v_rel < D:
-    dist_cost += MPC_COST_LONG.DISTANCE * (D - v_rel) * fp[9]
+  if v_rel < LEAD_PULLAWAY_V_REL:
+    dist_cost += MPC_COST_LONG.DISTANCE * (LEAD_PULLAWAY_V_REL - v_rel) * fp[9]
+  elif v_rel > LEAD_APPROACHING_V_REL:
+    dist_cost += MPC_COST_LONG.DISTANCE * (v_rel - LEAD_APPROACHING_V_REL) * fp[10]
     
   return tr, dist_cost
 
