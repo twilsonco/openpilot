@@ -412,7 +412,7 @@ class Controls:
         self.v_cruise_kph = self.v_cruise_kph if self.is_metric else int(round((float(round(self.v_cruise_kph))-0.0995)/0.6233))
         
         if self.v_cruise_kph < self.v_cruise_kph_last and cur_time - self.v_cruise_last_changed > 1.0:
-          self.CI.CS.one_pedal_v_cruise_kph_last = self.v_cruise_kph
+          self.CI.CS.one_pedal_v_cruise_kph_last = self.v_cruise_kph + (self.v_cruise_kph_last - self.v_cruise_kph)
         
         if self.v_cruise_kph != self.v_cruise_kph_last:
           self.v_cruise_last_changed = cur_time
