@@ -303,12 +303,12 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   const Rect rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
   if (s->scene.one_pedal_fade > 0.){
     NVGcolor nvg_color;
-    if (s->scene.car_state.getOnePedalModeActive()){
+    if(s->status == UIStatus::STATUS_DISENGAGED){
+          const QColor &color = bg_colors[UIStatus::STATUS_DISENGAGED];
+          nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
+        }
+    else if (s->scene.car_state.getOnePedalModeActive()){
       const QColor &color = bg_colors[s->scene.car_state.getOnePedalBrakeMode() + 1];
-      nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
-    }
-    else if(s->status == UIStatus::STATUS_DISENGAGED){
-      const QColor &color = bg_colors[UIStatus::STATUS_DISENGAGED];
       nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
     }
     else {
@@ -675,7 +675,7 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::LEAD_DISTANCE_TIME:
           {
           snprintf(name, sizeof(name), "REL DIST");
-          if (scene.lead_status && scene.car_state.getVEgo() > 0.1) {
+          if (scene.lead_status && scene.car_state.getVEgo() > 0.5) {
             float follow_t = scene.lead_d_rel / scene.car_state.getVEgo();
             g = 0;
             b = 0;
@@ -695,7 +695,7 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::LEAD_DESIRED_DISTANCE_TIME:
           {
           snprintf(name, sizeof(name), "DES DIST");
-          if (scene.lead_status && scene.car_state.getVEgo() > 0.1) {
+          if (scene.lead_status && scene.car_state.getVEgo() > 0.5) {
             snprintf(val, sizeof(val), "%.1f", scene.desiredFollowDistance + scene.stoppingDistance / scene.car_state.getVEgo());
           } else {
              snprintf(val, sizeof(val), "-");
@@ -706,7 +706,7 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::LEAD_DISTANCE_COST:
           {
             snprintf(name, sizeof(name), "DIST COST");
-            if (scene.lead_status && scene.car_state.getVEgo() > 0.1) {
+            if (scene.lead_status && scene.car_state.getVEgo() > 0.5) {
               snprintf(val, sizeof(val), "%.1f", scene.followDistanceCost);
             } else {
                snprintf(val, sizeof(val), "-");

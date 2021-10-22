@@ -932,7 +932,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.stoppedWaitForGas: {
     ET.PERMANENT: Alert(
-      "Stopped: Press gas to resume",
+      "Press gas to resume",
       "You can rest your foot now.",
       AlertStatus.normal, AlertSize.small,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3),
