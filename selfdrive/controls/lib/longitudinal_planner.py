@@ -79,7 +79,7 @@ class Planner():
     self.CP = CP
     self.mpcs = {}
     self.mpcs['lead0'] = LeadMpc(0)
-    self.mpcs['lead1'] = LeadMpc(self.mpcs['lead0'].lead_id + 3)
+    self.mpcs['lead1'] = LeadMpc(1)
     self.mpcs['cruise'] = LongitudinalMpc()
     self.mpcs['custom'] = LimitsLongitudinalMpc()
 

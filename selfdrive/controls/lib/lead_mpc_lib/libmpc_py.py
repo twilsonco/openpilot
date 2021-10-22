@@ -28,6 +28,7 @@ def _get_libmpc(mpc_id):
     } log_t;
 
     void init(double ttcCost, double distanceCost, double accelerationCost, double jerkCost);
+    void change_costs(double ttcCost, double distanceCost, double accelerationCost, double jerkCost);
     void init_with_simulation(double v_ego, double x_l, double v_l, double a_l, double l);
     int run_mpc(state_t * x0, log_t * solution,
                 double l, double a_l_0, double TR);

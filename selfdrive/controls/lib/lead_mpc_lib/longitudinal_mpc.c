@@ -34,22 +34,10 @@ typedef struct {
   double cost;
 } log_t;
 
-void init(double ttcCost, double distanceCost, double accelerationCost, double jerkCost){
-  acado_initializeSolver();
+
+void change_costs(double ttcCost, double distanceCost, double accelerationCost, double jerkCost){
   int    i;
   const int STEP_MULTIPLIER = 3;
-
-  /* Initialize the states and controls. */
-  for (i = 0; i < NX * (N + 1); ++i)  acadoVariables.x[ i ] = 0.0;
-  for (i = 0; i < NU * N; ++i)  acadoVariables.u[ i ] = 0.0;
-
-  /* Initialize the measurements/reference. */
-  for (i = 0; i < NY * N; ++i)  acadoVariables.y[ i ] = 0.0;
-  for (i = 0; i < NYN; ++i)  acadoVariables.yN[ i ] = 0.0;
-
-  /* MPC: initialize the current state feedback. */
-  for (i = 0; i < NX; ++i) acadoVariables.x0[ i ] = 0.0;
-  // Set weights
 
   for (i = 0; i < N; i++) {
     int f = 1;
@@ -65,8 +53,27 @@ void init(double ttcCost, double distanceCost, double accelerationCost, double j
   acadoVariables.WN[(NYN+1)*0] = ttcCost * STEP_MULTIPLIER; // exponential cost for danger zone
   acadoVariables.WN[(NYN+1)*1] = distanceCost * STEP_MULTIPLIER; // desired distance
   acadoVariables.WN[(NYN+1)*2] = accelerationCost * STEP_MULTIPLIER; // acceleration
-
 }
+
+void init(double ttcCost, double distanceCost, double accelerationCost, double jerkCost){
+  acado_initializeSolver();
+  int    i;
+
+  /* Initialize the states and controls. */
+  for (i = 0; i < NX * (N + 1); ++i)  acadoVariables.x[ i ] = 0.0;
+  for (i = 0; i < NU * N; ++i)  acadoVariables.u[ i ] = 0.0;
+
+  /* Initialize the measurements/reference. */
+  for (i = 0; i < NY * N; ++i)  acadoVariables.y[ i ] = 0.0;
+  for (i = 0; i < NYN; ++i)  acadoVariables.yN[ i ] = 0.0;
+
+  /* MPC: initialize the current state feedback. */
+  for (i = 0; i < NX; ++i) acadoVariables.x0[ i ] = 0.0;
+  // Set weights
+
+  change_costs(ttcCost, distanceCost, accelerationCost, jerkCost);
+}
+
 
 void init_with_simulation(double v_ego, double x_l_0, double v_l_0, double a_l_0, double l){
   int i;

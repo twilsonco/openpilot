@@ -59,11 +59,7 @@ FOLLOW_PROFILES = [
 ]
 
 LEAD_PULLAWAY_V_REL = -0.5 * CV.MPH_TO_MS # [m/s] lead car pull-away speed cost shift factor cutoff! Lead car has to be pulling away faster than this before it starts increasing the mpc distance cost (must be negative)
-LEAD_APPROACHING_V_REL = 10. * CV.MPH_TO_MS # [m/s] lead car approaching cost shift factor cutoff! Lead car has to be approaching faster than this before it starts increasing the mpc distance cost (must be positive)
-
-# In order to have a dynamic distance cost, so that far following can be more relaxed, but not at the expense of braking response when close, we'll maintain three mpcs with the low, stock, and high distance costs, then interpolate the solution each iteration from the solutions of those three
-DIST_COSTS = [f([f(p[6] + [MPC_COST_LONG.DISTANCE]) for p in FOLLOW_PROFILES]) for f in [min,max]]
-DIST_COSTS.insert(1, MPC_COST_LONG.DISTANCE)
+LEAD_APPROACHING_V_REL = 8. * CV.MPH_TO_MS # [m/s] lead car approaching cost shift factor cutoff! Lead car has to be approaching faster than this before it starts increasing the mpc distance cost (must be positive)
 
 # calculate the desired follow distance and mcp distance cost from current state
 def calc_follow_profile(v_ego, v_lead, x_lead, fp):
@@ -83,16 +79,6 @@ def calc_follow_profile(v_ego, v_lead, x_lead, fp):
     dist_cost += MPC_COST_LONG.DISTANCE * (v_rel - LEAD_APPROACHING_V_REL) * fp[10]
     
   return tr, dist_cost
-
-# like interp, but for the self.mpc_solution ie the log_t struct of ./lead_mpc_lib/longitudinal_mpc.c, so y_vals is 
-# Probably not the fastest way to do this, but isn't Python awesome...
-def interp_mpc_solution(x, x_vals, y_vals):
-  out = y_vals[0]
-  for prop in ['x_ego','v_ego','a_ego','j_ego','x_l','v_l','a_l','t']:
-    y_prop = [interp(x, x_vals, [getattr(y, prop)[i] for y in y_vals]) for i in range(len(getattr(y_vals[0], prop)))]
-    setattr(out, prop, y_prop)
-  out.cost = interp(x, x_vals, [y.cost for y in y_vals])
-  return out
   
 
 class LeadMpc():
@@ -110,7 +96,8 @@ class LeadMpc():
     self.status = False
     
     self.tr = 1.8
-    self.dist_cost = 1.
+    self.dist_cost = 1. # this is normalized and displayed to the driver in a UI metric
+    self.dist_cost_last = MPC_COST_LONG.DISTANCE
     self.stopping_distance = 0.
 
     self.v_solution = np.zeros(CONTROL_N)
@@ -127,32 +114,11 @@ class LeadMpc():
     self.cur_state[0].a_ego = 0
     self.a_lead_tau = _LEAD_ACCEL_TAU
 
-    self.libmpcs = [None] * 3
-    self.mpc_solutions = [None] * 3
-    self.cur_states = [None] * 3
-    mpci = 1
-    for i in range(3):
-      if i == 1:
-        self.libmpcs[i] = self.libmpc # since DIST_COSTS[1] == MPC_COST_LONG.DISTANCE
-        self.mpc_solutions[i] = self.mpc_solution
-        self.cur_states[i] = self.cur_state
-      else:
-        ffi, self.libmpcs[i] = libmpc_py.get_libmpc(self.lead_id + mpci)
-        self.libmpcs[i].init(MPC_COST_LONG.TTC, DIST_COSTS[i],
-                         MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-        mpci += 1
-        self.mpc_solutions[i] = ffi.new("log_t *")
-        self.cur_states[i] = ffi.new("state_t *")
-        self.cur_states[i][0].v_ego = 0
-        self.cur_states[i][0].a_ego = 0
-
   def set_cur_state(self, v, a):
     v_safe = max(v, 1e-3)
     a_safe = a
-    for i in range(3):
-      self.cur_states[i][0].v_ego = v_safe
-      self.cur_states[i][0].a_ego = a_safe
-    self.cur_state = self.cur_states[1]
+    self.cur_state.v_ego = v_safe
+    self.cur_state.a_ego = a_safe
 
   def update(self, CS, radarstate, v_cruise, a_target, active):
     v_ego = CS.vEgo
@@ -163,8 +129,7 @@ class LeadMpc():
     self.status = lead.status
 
     # Setup current mpc state
-    for i in range(3):
-      self.cur_states[i][0].x_ego = 0.0
+    self.cur_state[0].x_ego = 0.0
 
     follow_level = int(CS.readdistancelines) - 1 # use base 0
     if follow_level < 0 or follow_level > 2:
@@ -184,28 +149,29 @@ class LeadMpc():
       self.a_lead_tau = max(lead.aLeadTau, (a_lead ** 2 * math.pi) / (2 * (v_lead + 0.01) ** 2))
       self.new_lead = False
       if not self.prev_lead_status or abs(x_lead - self.prev_lead_x) > 2.5:
-        for i in range(3):
-          self.libmpcs[i].init_with_simulation(v_ego, x_lead, v_lead, a_lead, self.a_lead_tau)
+        self.libmpc.init_with_simulation(v_ego, x_lead, v_lead, a_lead, self.a_lead_tau)
         self.new_lead = True
 
       self.prev_lead_status = True
       self.prev_lead_x = x_lead
-      for i in range(3):
-        self.cur_states[i][0].x_l = x_lead
-        self.cur_states[i][0].v_l = v_lead
+      self.cur_state[0].x_l = x_lead
+      self.cur_state[0].v_l = v_lead
       
       # Setup mpc
       tr, dist_cost = calc_follow_profile(v_ego, v_lead, lead.dRel, fp)
     else:
       self.prev_lead_status = False
       # Fake a fast lead car, so mpc keeps running
-      for i in range(3):
-        self.cur_states[i][0].x_l = max(v_ego * 8.0, 50.0) # put lead 8 seconds ahead
-        self.cur_states[i][0].v_l = v_ego + 20.0
+      self.cur_state[0].x_l = max(v_ego * 8.0, 50.0) # put lead 8 seconds ahead
+      self.cur_state[0].v_l = v_ego + 20.0
       a_lead = 0.0
       self.a_lead_tau = _LEAD_ACCEL_TAU
       tr = TR_DEFAULT
       dist_cost = MPC_COST_LONG.DISTANCE
+    
+    if dist_cost != self.dist_cost_last:
+      self.libmpc.change_costs(MPC_COST_LONG.TTC, dist_cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+      self.dist_cost_last = dist_cost
     
     self.tr = tr
     self.dist_cost = dist_cost / MPC_COST_LONG.DISTANCE
@@ -213,11 +179,7 @@ class LeadMpc():
       
     t = sec_since_boot()
     self.n_its = 0
-    for i in range(3):
-      self.n_its += self.libmpcs[i].run_mpc(self.cur_states[i], self.mpc_solutions[i], self.a_lead_tau, a_lead, tr)
-    self.libmpc = self.libmpcs[1]
-    self.cur_state = self.cur_states[1]
-    self.mpc_solution = interp_mpc_solution(dist_cost, DIST_COSTS, self.mpc_solutions)
+    self.n_its += self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, tr)
     
     self.v_solution = interp(T_IDXS[:CONTROL_N], MPC_T, self.mpc_solution.v_ego)
     self.a_solution = interp(T_IDXS[:CONTROL_N], MPC_T, self.mpc_solution.a_ego)
@@ -236,10 +198,7 @@ class LeadMpc():
                           self.lead_id, backwards, crashing, nans))
       self.a_mpc = CS.aEgo
       self.prev_lead_status = False
-      for i in range(3):
-        self.cur_states[i][0].v_ego = v_ego
-        self.cur_states[i][0].a_ego = 0.0
-        self.libmpcs[i].init(MPC_COST_LONG.TTC, DIST_COSTS[i],
+      self.cur_state[0].v_ego = v_ego
+      self.cur_state[0].a_ego = 0.0
+      self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
                          MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-      self.libmpc = self.libmpcs[1]
-      self.cur_state = self.cur_states[1]
