@@ -66,7 +66,7 @@ Running on move-fast fork of openpilot, which adds:
 - [x] [GM] JShuler panda-based GM steering fault fix
 - [x] Remember last follow mode
 
-#### Planned fork features:
+#### Planned fork features (in no particular order):
 -----
 
 - [ ] Stop-and-go for 2018 Volt
@@ -96,6 +96,7 @@ Running on move-fast fork of openpilot, which adds:
 * Metrics to add:
     - [ ] number of interventions/cut-ins during drive session
     - [ ] time since last intervention/cut-in
+    - [ ] apply gas/apply brake
 
 ### Supported Hardware
 ------
