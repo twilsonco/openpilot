@@ -257,7 +257,7 @@ class CarInterface(CarInterfaceBase):
          tmp_params.put("FollowLevel", str(self.CS.follow_level))
          cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
 
-    ret.readdistancelines = self.CS.follow_level
+    ret.readdistancelines = self.CS.follow_level if (not self.CS.coast_one_pedal_mode_active and not self.CS.one_pedal_mode_active) else 1
 
     events = self.create_common_events(ret, pcm_enable=False)
 

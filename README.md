@@ -69,9 +69,17 @@ Running on move-fast fork of openpilot, which adds:
 #### Planned fork features:
 -----
 
+- [ ] Stop-and-go for 2018 Volt
 - [ ] Grey panda support
 - [ ] Chevy Bolt support
 - [ ] Record screen button
+- [ ] Redo UI metrics as themed "widgets" instead that can be activated independently and stack against the right (and left if necessary) side of the screen
+  * Follow widget: a colored vertical bar indicating follow distance with lines indicating the actual and desired (length/time) follow distances. Tap to include more info items like current distance cost
+  * Openpilot widget: a similar vertical bar (or maybe something like a circular progress bar or a speedometer--looking thing) showing the gas/braking being requested by OP. Also include Driver monitoring info.
+  * Car widget: Acceleration/jerk, tire pressures, low voltage battery info, ...
+  * Geo widget: GPS signal/coords/#satellites, altitude, percent grade of current road, ...
+  * Device widget: CPU/memory/temps/fans/...
+  * EV widget: high voltage battery info similar to that shown in the LeafSpyPro app
 - [ ] [✅] [Modified assistive driving system](https://github.com/sunnyhaibin/openpilot#new-modified-assistive-driving-safety-mads) (MADS)
 - [ ] [✅] 0.5 second delay before activating newly selected follow mode so user can switch around without OP slightly jerking in response
 - [ ] [✅] Auto screen brightness (or at least a way to dim a bit at night)
@@ -86,7 +94,8 @@ Running on move-fast fork of openpilot, which adds:
     * If someone cuts in, the follow distance "takes a penalty" down to a closer follow distance proportional to the distance and relative speed of the car that cut in
     * The penalties can "go negative", that is, repeated cut-ins can result in close follow being use for longer than normal
 * Metrics to add:
-    - [ ] *could do session metrics to, like number of interventions, number of cut-ins,...*
+    - [ ] number of interventions/cut-ins during drive session
+    - [ ] time since last intervention/cut-in
 
 ### Supported Hardware
 ------
@@ -107,7 +116,7 @@ With a stock installation of OpenPilot confirmed working, SSH into device and ru
 
 `cd /data;mv openpilot openpilot_stock;git clone --recurse-submodules https://github.com/twilsonco/openpilot;sudo reboot`
 
-### Updating
+### Automatic Updates
 ------
 
 This fork will auto-update while your device has internet access, and changes are automatically applied the next time the device restarts.
