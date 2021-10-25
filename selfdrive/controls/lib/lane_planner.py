@@ -47,7 +47,7 @@ class LanePlanner:
       # only offset left and right lane lines; offsetting path does not make sense
       
       self.mpc_frame += 1
-      if self.mpc_frame % 200 == 0:
+      if self.mpc_frame % 1000 == 0:
         # live tuning through /data/openpilot/tune.py for camera
         self.kegman = kegman_conf()
         self.mpc_frame = 0
