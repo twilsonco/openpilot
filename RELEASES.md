@@ -1,3 +1,7 @@
+Version 0.8.9-tw-3 (2021-10-25)
+========================
+ 1. Smoother following when at med/far distance behind lead car, despite the follow profile but especially smoother for far follow
+
 Version 0.8.9-tw-2 (2021-10-22)
 ========================
  * TESTERS: The big changes are for follow profiles.
