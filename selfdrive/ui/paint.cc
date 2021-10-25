@@ -648,17 +648,33 @@ static void ui_draw_measures(UIState *s){
             }
           }
           break;
-          
+      
         case UIMeasure::LEAD_DESIRED_DISTANCE_LENGTH:
           {
-            snprintf(name, sizeof(name), "DES DIST");
+            snprintf(name, sizeof(name), "REL:DES DIST");
+            auto follow_d = scene.desiredFollowDistance * scene.car_state.getVEgo() + scene.stoppingDistance;
             if (scene.lead_status) {
-              auto follow_d = scene.desiredFollowDistance * scene.car_state.getVEgo() + scene.stoppingDistance;
               if (s->is_metric) {
-                snprintf(val, sizeof(val), "%d", (int)follow_d);
+                g = 0;
+                b = 0;
+                p = 0.0333 * scene.lead_d_rel;
+                g += int((0.5+p) * 255.);
+                b += int(p * 255.);
+                g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+                b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+                val_color = nvgRGBA(255, g, b, 200);
+                snprintf(val, sizeof(val), "%d:%d", (int)scene.lead_d_rel, (int)follow_d);
               }
               else{
-                snprintf(val, sizeof(val), "%d", (int)(follow_d * 3.281));
+                g = 0;
+                b = 0;
+                p = 0.01 * scene.lead_d_rel * 3.281;
+                g += int((0.5+p) * 255.);
+                b += int(p * 255.);
+                g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+                b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+                val_color = nvgRGBA(255, g, b, 200);
+                snprintf(val, sizeof(val), "%d:%d", (int)(scene.lead_d_rel * 3.281), (int)(follow_d * 3.281));
               }
             } else {
                snprintf(val, sizeof(val), "-");
@@ -691,23 +707,33 @@ static void ui_draw_measures(UIState *s){
           }
           snprintf(unit, sizeof(unit), "s");}
           break;
-          
+        
         case UIMeasure::LEAD_DESIRED_DISTANCE_TIME:
           {
-          snprintf(name, sizeof(name), "DES DIST");
+          snprintf(name, sizeof(name), "REL:DES DIST");
           if (scene.lead_status && scene.car_state.getVEgo() > 0.5) {
-            snprintf(val, sizeof(val), "%.1f", scene.desiredFollowDistance + scene.stoppingDistance / scene.car_state.getVEgo());
+            float follow_t = scene.lead_d_rel / scene.car_state.getVEgo();
+            float des_follow_t = scene.desiredFollowDistance + scene.stoppingDistance / scene.car_state.getVEgo();
+            g = 0;
+            b = 0;
+            p = 0.6667 * follow_t;
+            g += int((0.5+p) * 255.);
+            b += int(p * 255.);
+            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+            val_color = nvgRGBA(255, g, b, 200);
+            snprintf(val, sizeof(val), "%.1f:%.1f", follow_t, des_follow_t);
           } else {
              snprintf(val, sizeof(val), "-");
           }
           snprintf(unit, sizeof(unit), "s");}
           break;
         
-        case UIMeasure::LEAD_DISTANCE_COST:
+        case UIMeasure::LEAD_COSTS:
           {
-            snprintf(name, sizeof(name), "DIST COST");
+            snprintf(name, sizeof(name), "D:A COST");
             if (scene.lead_status && scene.car_state.getVEgo() > 0.5) {
-              snprintf(val, sizeof(val), "%.1f", scene.followDistanceCost);
+              snprintf(val, sizeof(val), "%.1f:%.1f", scene.followDistanceCost, scene.followAccelCost);
             } else {
                snprintf(val, sizeof(val), "-");
             }
@@ -775,28 +801,28 @@ static void ui_draw_measures(UIState *s){
           val_color = nvgRGBA(255, g, b, 200);
           // steering is in degrees
           snprintf(val, sizeof(val), "%.0f°", scene.angleSteers);
-          snprintf(unit, sizeof(unit), "");}
+          }
           break;
 
         case UIMeasure::DESIRED_STEERING_ANGLE: 
           {
-          snprintf(name, sizeof(name), "DESIRE STR.");
+          snprintf(name, sizeof(name), "REL:DES STR.");
+          float angleSteers = scene.angleSteers > 0. ? scene.angleSteers : -scene.angleSteers;
+          g = 255;
+          b = 255;
+          p = 0.0333 * angleSteers;
+          g -= int(0.5 * p * 255.);
+          b -= int(p * 255.);
+          g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+          b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+          val_color = nvgRGBA(255, g, b, 200);
           if (scene.controls_state.getEnabled()) {
-            float angleSteers = scene.angleSteersDes > 0. ? scene.angleSteersDes : -scene.angleSteersDes;
-            g = 255;
-            b = 255;
-            p = 0.0333 * angleSteers;
-            g -= int(0.5 * p * 255.);
-            b -= int(p * 255.);
-            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-            val_color = nvgRGBA(255, g, b, 200);
             // steering is in degrees
-            snprintf(val, sizeof(val), "%.0f°", scene.angleSteersDes);
-          } else {
-             snprintf(val, sizeof(val), "-");
+            snprintf(val, sizeof(val), "%.0f°:%.0f°", scene.angleSteers, scene.angleSteersDes);
+          }else{
+            snprintf(val, sizeof(val), "%.0f°", scene.angleSteers);
           }
-          snprintf(unit, sizeof(unit), "");}
+          }
           break;
 
         case UIMeasure::ENGINE_RPM: 
@@ -806,7 +832,7 @@ static void ui_draw_measures(UIState *s){
             snprintf(val, sizeof(val), "OFF");
           }
           else {snprintf(val, sizeof(val), "%d", scene.engineRPM);}
-          snprintf(unit, sizeof(unit), "");}
+          }
           break;
         
         case UIMeasure::PERCENT_GRADE:
@@ -815,7 +841,7 @@ static void ui_draw_measures(UIState *s){
           if (scene.percentGradeIterRolled && scene.gpsAccuracyUblox != 0.00){
             g = 255;
             b = 255;
-            p = 0.05 * scene.percentGrade; // red by 20% grade
+            p = 0.10 * scene.percentGrade; // red by 10% grade
             g -= int(0.5 * p * 255.);
             b -= int(p * 255.);
             g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
@@ -823,7 +849,7 @@ static void ui_draw_measures(UIState *s){
             val_color = nvgRGBA(255, g, b, 200);
           }
           snprintf(val, sizeof(val), "%d%%", scene.percentGrade);
-          snprintf(unit, sizeof(unit), "");}
+          }
           break;
 
         default: {// invalid number
@@ -836,6 +862,10 @@ static void ui_draw_measures(UIState *s){
       // now print the metric
       // first value
       
+      int vallen = strlen(val);
+      if (vallen > 4){
+        val_font_size -= (vallen - 4) * 3;
+      }
       int slot_x = slots_rect.x + (scene.measure_cur_num_slots <= 5 ? 0 : (i < 5 ? slots_r * 2 : 0));
       int x = slot_x + slots_r - unit_font_size / 2;
       if (i >= 5){

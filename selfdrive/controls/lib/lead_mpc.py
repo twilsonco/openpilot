@@ -31,9 +31,9 @@ FOLLOW_PROFILES = [
     0., # [units of MPC_COST_LONG.DISTANCE / (m/s)] lead car pull-away speed cost shift factor "d" (when lead car is pulling away, ie v_lead < 0, distance cost will be increased by |v_lead| * d)
     0., # [units of MPC_COST_LONG.DISTANCE / (m/s)] lead car pull-away speed cost shift factor "d" (when lead car is pulling away, ie v_lead < 0, distance cost will be increased by |v_lead| * d)
     [1.5, 1.8, 2.8], # seconds behind lead car
-    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 1.5, MPC_COST_LONG.ACCELERATION * 2.], # values of accel cost 
+    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 1.2, MPC_COST_LONG.ACCELERATION * 1.4], # values of accel cost 
     [10., 20., 40.], # meters behind lead car
-    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 1.5, MPC_COST_LONG.ACCELERATION * 2.], # values of accel cost
+    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 1.2, MPC_COST_LONG.ACCELERATION * 1.4], # values of accel cost
     0.1 * CV.MPH_TO_MS # amount to decrease accel cost by per mph over the max approaching lead velocity
   ],
   [ # two-bar
@@ -49,9 +49,9 @@ FOLLOW_PROFILES = [
     0.5 * CV.MPH_TO_MS,
     0.05 * CV.MPH_TO_MS, 
     [1.5, 1.8, 2.8], 
-    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 1.5, MPC_COST_LONG.ACCELERATION * 2.], 
+    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 1.2, MPC_COST_LONG.ACCELERATION * 1.4], 
     [10., 20., 40.],
-    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 1.5, MPC_COST_LONG.ACCELERATION * 2.], 
+    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 1.2, MPC_COST_LONG.ACCELERATION * 1.4], 
     0.1 * CV.MPH_TO_MS
   ],
   [ # three-bar
@@ -67,9 +67,9 @@ FOLLOW_PROFILES = [
     0.5 * CV.MPH_TO_MS,
     0.1 * CV.MPH_TO_MS,
     [1.5, 1.8, 2.8], 
-    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 2., MPC_COST_LONG.ACCELERATION * 4.], 
+    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 2., MPC_COST_LONG.ACCELERATION * 3.], 
     [10., 20., 40.],
-    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 2., MPC_COST_LONG.ACCELERATION * 4.], 
+    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 2., MPC_COST_LONG.ACCELERATION * 3.], 
     0.3 * CV.MPH_TO_MS
   ]
 ]
@@ -128,6 +128,7 @@ class LeadMpc():
     
     self.tr = 1.8
     self.dist_cost = 1. # this is normalized and displayed to the driver in a UI metric
+    self.accel_cost = 1. # this is normalized and displayed to the driver in a UI metric
     self.dist_cost_last = MPC_COST_LONG.DISTANCE
     self.accel_cost_last = MPC_COST_LONG.ACCELERATION
     self.stopping_distance = 0.
@@ -209,6 +210,7 @@ class LeadMpc():
     
     self.tr = tr
     self.dist_cost = dist_cost / MPC_COST_LONG.DISTANCE
+    self.accel_cost = accel_cost / MPC_COST_LONG.ACCELERATION
     self.stopping_distance = stopping_distance
       
     t = sec_since_boot()

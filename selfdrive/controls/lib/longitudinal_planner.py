@@ -207,6 +207,7 @@ class Planner():
     longitudinalPlan.leadV = self.coasting_lead_v
     longitudinalPlan.desiredFollowDistance = self.mpcs['lead0'].tr
     longitudinalPlan.leadDistCost = self.mpcs['lead0'].dist_cost
+    longitudinalPlan.leadAccelCost = self.mpcs['lead0'].accel_cost
     longitudinalPlan.stoppingDistance = self.mpcs['lead0'].stopping_distance
     longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
     longitudinalPlan.fcw = self.fcw

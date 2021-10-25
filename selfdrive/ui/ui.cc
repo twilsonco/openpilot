@@ -333,6 +333,7 @@ static void update_state(UIState *s) {
 
     scene.desiredFollowDistance = data.getDesiredFollowDistance();
     scene.followDistanceCost = data.getLeadDistCost();
+    scene.followAccelCost = data.getLeadAccelCost();
     scene.stoppingDistance = data.getStoppingDistance();
   }
   scene.lastTime = t;
