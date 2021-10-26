@@ -841,7 +841,7 @@ static void ui_draw_measures(UIState *s){
           if (scene.percentGradeIterRolled && scene.gpsAccuracyUblox != 0.00){
             g = 255;
             b = 255;
-            p = 0.10 * (scene.percentGrade > 0 ? scene.percentGrade : -scene.percentGrade); // red by 10% grade
+            p = 0.125 * (scene.percentGrade > 0 ? scene.percentGrade : -scene.percentGrade); // red by 8% grade
             g -= int(0.5 * p * 255.);
             b -= int(p * 255.);
             g = (g >= 0 ? (g <= 255 ? g : 255) : 0);

@@ -200,15 +200,15 @@ static void update_state(UIState *s) {
       if (scene.percentGradeCurDist > scene.percentGradeLenStep){ // record position/elevation at even length intervals
         float prevDist = scene.percentGradePositions[scene.percentGradeRollingIter];
         scene.percentGradeRollingIter++;
-        if (scene.percentGradeRollingIter >= 5){
+        if (scene.percentGradeRollingIter >= scene.percentGradeNumSamples){
           scene.percentGradeIterRolled = true;
           scene.percentGradeRollingIter = 0;
         }    
         scene.percentGradeAltitudes[scene.percentGradeRollingIter] = scene.altitudeUblox;
         scene.percentGradePositions[scene.percentGradeRollingIter] = prevDist + scene.percentGradeCurDist;
         if (scene.percentGradeIterRolled){
-          float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%5];
-          float run = scene.percentGradePositions[scene.percentGradeRollingIter] - scene.percentGradePositions[(scene.percentGradeRollingIter+1)%5];
+          float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
+          float run = scene.percentGradePositions[scene.percentGradeRollingIter] - scene.percentGradePositions[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
           if (run > 0. && scene.percentGradePositions[scene.percentGradeRollingIter] > scene.percentGradeMinDist){
             scene.percentGrade = rise/run * 100.;
           }
