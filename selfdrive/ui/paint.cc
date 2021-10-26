@@ -864,7 +864,7 @@ static void ui_draw_measures(UIState *s){
       
       int vallen = strlen(val);
       if (vallen > 4){
-        val_font_size -= (vallen - 4) * 3;
+        val_font_size -= (vallen - 4) * 4;
       }
       int slot_x = slots_rect.x + (scene.measure_cur_num_slots <= 5 ? 0 : (i < 5 ? slots_r * 2 : 0));
       int x = slot_x + slots_r - unit_font_size / 2;
