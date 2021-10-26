@@ -146,7 +146,8 @@ static void update_state(UIState *s) {
   }
   if (scene.started && sm.updated("controlsState")) {
     scene.controls_state = sm["controlsState"].getControlsState();
-    scene.angleSteersDes = scene.controls_state.getLateralControlState().getAngleState().getSteeringAngleDeg();
+    scene.car_state = sm["carState"].getCarState();
+    scene.angleSteersDes = scene.controls_state.getLateralControlState().getPidState().getAngleError() + scene.car_state.getSteeringAngleDeg();
   }
   if (sm.updated("carState")){
     scene.car_state = sm["carState"].getCarState();
@@ -209,7 +210,7 @@ static void update_state(UIState *s) {
           float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%5];
           float run = scene.percentGradePositions[scene.percentGradeRollingIter] - scene.percentGradePositions[(scene.percentGradeRollingIter+1)%5];
           if (run > 0. && scene.percentGradePositions[scene.percentGradeRollingIter] > scene.percentGradeMinDist){
-            scene.percentGrade = int(round(rise/run * 100.));
+            scene.percentGrade = rise/run * 100.;
           }
         }
         scene.percentGradeCurDist = 0.;

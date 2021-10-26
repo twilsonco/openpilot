@@ -848,7 +848,7 @@ static void ui_draw_measures(UIState *s){
             b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
             val_color = nvgRGBA(255, g, b, 200);
           }
-          snprintf(val, sizeof(val), "%d%%", scene.percentGrade);
+          snprintf(val, sizeof(val), "%.1f%%", scene.percentGrade);
           }
           break;
 
