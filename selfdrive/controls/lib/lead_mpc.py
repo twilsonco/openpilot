@@ -38,7 +38,7 @@ FOLLOW_PROFILES = [
   ],
   [ # two-bar
     [-2.0, -0.15],
-    [0.5, 1.3],
+    [0.5, 1.5],
     [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336],
     [0.0, 0.0034975, 0.008495, 0.015, 0.025, 0.03945, 0.06195, 0.0745, 0.08895, 0.1005, 0.10495, 0.11045, 0.11845],
     2.2,
@@ -67,10 +67,10 @@ FOLLOW_PROFILES = [
     0.5 * CV.MPH_TO_MS,
     0.1 * CV.MPH_TO_MS,
     [1.5, 1.8, 2.8], 
-    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 2., MPC_COST_LONG.ACCELERATION * 3.], 
+    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 1.5, MPC_COST_LONG.ACCELERATION * 2.], 
     [10., 20., 40.],
-    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 2., MPC_COST_LONG.ACCELERATION * 3.], 
-    0.3 * CV.MPH_TO_MS
+    [MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.ACCELERATION * 1.5, MPC_COST_LONG.ACCELERATION * 2.], 
+    0.1 * CV.MPH_TO_MS
   ]
 ]
 
@@ -78,7 +78,7 @@ FP_MIN_MAX_DIST_COSTS = [[f(f(fp[6]),f(fp[8])) for f in [min,max]] for fp in FOL
 FP_MIN_MAX_ACCEL_COSTS = [[f(f(fp[12]),f(fp[14])) for f in [min,max]] for fp in FOLLOW_PROFILES]
 
 LEAD_PULLAWAY_V_REL = -0.5 * CV.MPH_TO_MS # [m/s] lead car pull-away speed cost shift factor cutoff! Lead car has to be pulling away faster than this before it starts increasing the mpc distance cost (must be negative)
-LEAD_APPROACHING_V_REL = 8. * CV.MPH_TO_MS # [m/s] lead car approaching cost shift factor cutoff! Lead car has to be approaching faster than this before it starts increasing/decreasing the mpc distance/acceleration costs (must be positive)
+LEAD_APPROACHING_V_REL = 5. * CV.MPH_TO_MS # [m/s] lead car approaching cost shift factor cutoff! Lead car has to be approaching faster than this before it starts increasing/decreasing the mpc distance/acceleration costs (must be positive)
 
 # calculate the desired follow distance and mcp distance cost from current state
 def calc_follow_profile(v_ego, v_lead, x_lead, fpi):
