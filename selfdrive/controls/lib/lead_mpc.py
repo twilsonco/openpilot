@@ -26,13 +26,13 @@ FOLLOW_PROFILES = [
     # now variable distance cost. Defined in two ways; one according to abs follow distance [m] and one in relative follow distance [s]. Larger distance cost wins. First the time-based:
     [1.0, 1.5, 2.3], # seconds behind lead car
     [MPC_COST_LONG.DISTANCE * 10., MPC_COST_LONG.DISTANCE * 7., MPC_COST_LONG.DISTANCE], # mpc distance costs lookup table based on follow distance behind lead (higher value means harder accel/braking to make up distance) (recommended to use factors of MPC_COST_LONG.DISTANCE) (It's ok to only have one value, ie static distance cost )
-    [10., 33., 100.], # meters behind lead car
+    [15., 33., 100.], # meters behind lead car
     [MPC_COST_LONG.DISTANCE * 10., MPC_COST_LONG.DISTANCE * 7., MPC_COST_LONG.DISTANCE], # distance costs for the absolute follow distances
     0., # [units of MPC_COST_LONG.DISTANCE / (m/s)] lead car pull-away speed cost shift factor "d" (when lead car is pulling away, ie v_lead < 0, distance cost will be increased by |v_lead| * d)
     0., # [units of MPC_COST_LONG.DISTANCE / (m/s)] lead car pull-away speed cost shift factor "d" (when lead car is pulling away, ie v_lead < 0, distance cost will be increased by |v_lead| * d)
     [1.5, 1.8, 2.8], # seconds behind lead car
     [MPC_COST_LONG.ACCELERATION * 0.7, MPC_COST_LONG.ACCELERATION * 1.2, MPC_COST_LONG.ACCELERATION * 1.4], # values of accel cost 
-    [10., 20., 40.], # meters behind lead car
+    [15., 20., 40.], # meters behind lead car
     [MPC_COST_LONG.ACCELERATION * 0.7, MPC_COST_LONG.ACCELERATION * 1.2, MPC_COST_LONG.ACCELERATION * 1.4], # values of accel cost
     0.1 * CV.MPH_TO_MS # amount to decrease accel cost by per mph over the max approaching lead velocity
   ],
@@ -50,7 +50,7 @@ FOLLOW_PROFILES = [
     0.05 * CV.MPH_TO_MS, 
     [1.5, 1.8, 2.8], 
     [MPC_COST_LONG.ACCELERATION * 0.8, MPC_COST_LONG.ACCELERATION * 1.2, MPC_COST_LONG.ACCELERATION * 1.4], 
-    [10., 20., 40.],
+    [15., 20., 40.],
     [MPC_COST_LONG.ACCELERATION * 0.8, MPC_COST_LONG.ACCELERATION * 1.2, MPC_COST_LONG.ACCELERATION * 1.4], 
     0.1 * CV.MPH_TO_MS
   ],
@@ -62,7 +62,7 @@ FOLLOW_PROFILES = [
     2.2,
     [0.8, 1.4, 1.8, 3.5],
     [MPC_COST_LONG.DISTANCE * 1.5, MPC_COST_LONG.DISTANCE * 0.7, MPC_COST_LONG.DISTANCE * 0.25, MPC_COST_LONG.DISTANCE * 0.1],
-    [10., 20., 30., 40.], # meters behind lead car
+    [15., 25., 35., 45.], # meters behind lead car
     [MPC_COST_LONG.DISTANCE * 1.5, MPC_COST_LONG.DISTANCE * 0.8, MPC_COST_LONG.DISTANCE * 0.25, MPC_COST_LONG.DISTANCE * 0.1],
     0.5 * CV.MPH_TO_MS,
     0.1 * CV.MPH_TO_MS,

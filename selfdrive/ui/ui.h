@@ -194,7 +194,7 @@ typedef struct UIScene {
   int cpuPerc;
   int thermalStatus;
   int percentGradeRollingIter = 0;
-  float percentGradeAltitudes[5], percentGradePositions[5], percentGradeCurDist = 0., percentGradeLenStep = 10., percentGradeLastTime = 0., percentGradeMinDist = 200., percentGrade = 0.;
+  float percentGradeAltitudes[5], percentGradePositions[5], percentGradeCurDist = 0., percentGradeLenStep = 12., percentGradeLastTime = 0., percentGradeMinDist = 200., percentGrade = 0.;
   bool percentGradeIterRolled = false;
   float desiredFollowDistance, followDistanceCost, followAccelCost;
   float stoppingDistance;
