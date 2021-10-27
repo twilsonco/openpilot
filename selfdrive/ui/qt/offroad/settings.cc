@@ -130,8 +130,8 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_gm_autohold.png",
                                   this));
   toggles.append(new ParamControl("Coasting",
-                                  "[GM] Coasting/\"Auto-on steering light\" (tap me)",
-                                  "COMPLETELY disable cruise/speed limit braking; still brake for following/curves/etc. In combination with the \"Disable disengage on gas\" option, this enables \"Auto-on steering light\", where you control speed with gas pedal with car in \"L\" mode while OP continues to steer. To activate, ① enage and set cruise speed to 1 and pedal icon will replace max speed indicator; increase or reset speed to return to normal cruise. ② Tap pedal icon to toggle one-pedal mode (see below).",
+                                  "[GM] Coasting (tap me)",
+                                  "OP will allow the car to coast above the set speed rather than use engine/regen/friction braking. If you also have the \"Brake indicator\" toggle enabled, you can toggle coasting while driving by tapping the brake indicator, but you can only disable coasting while driving if you're traveling below your set speed (or at any speed if you have the \"Engine/regen braking\" toggle enabled).",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("CoastingBrakeOverSpeed",
@@ -139,9 +139,14 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "When coasting, start applying desired cruise braking when [10,15] mph over set speed.",
                                   "../assets/offroad/icon_speed_offset.png",
                                   this));
+  toggles.append(new ParamControl("RegenBraking",
+                                  "[GM] Engine/regen braking (tap me)",
+                                  "Disable friction braking when OP is slowing to maintain cruise/speed limit; still brake for following/curves",
+                                  "../assets/img_brake.png",
+                                  this));
   toggles.append(new ParamControl("OnePedalMode",
-                                  "[GM] One-pedal driving (tap me)",
-                                  "Drive with one pedal; beyond \"Auto-on steering light,\" OP will brake all the way to a stop without disengaging, in addition to braking for following/curves. To activate, ① activate \"Auto-on steering light\" mode (see above). ② Vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = 🟢/🟠/🔴 = light/moderate/heavy braking. ③ Press follow distance button to toggle persistent light/moderate braking; hold for temporary heavy braking. ④ Toggle between one-pedal braking and regen/engine braking only by tapping the pedal icon (grey pedal icon indicates one-pedal mode disabled) or by using the follow distance button; one press will activating braking if not active, and a double press while the gas is pressed will deactivate braking.",
+                                  "[GM] One-pedal mode (tap me)",
+                                  "In combination with the \"Disable disengage on gas\" option, you control speed with gas pedal (with optional, adjustable braking) while OP continues to steer and brake for curves and lead car following. To activate, ① (see \"One-pedal/Always-on-steering engage on gas\" below) set cruise speed to 1 and pedal icon will replace max speed indicator; set/resume button to return to normal cruise. ② Tap pedal icon to toggle one-pedal mode (see below). If one-pedal mode is active, then vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = 🟢/🟠/🔴 = light/moderate/heavy braking. ③ Press follow distance button to toggle persistent light/moderate braking; hold for temporary heavy braking. ④ Toggle between one-pedal braking and regen/engine braking only by tapping the pedal icon (grey pedal icon indicates engine/regen braking only) or by using the follow distance button; one press will activating braking if not active, and a double press while the gas pedal is pressed will deactivate braking.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("OnePedalModeSimple",
