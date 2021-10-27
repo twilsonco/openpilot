@@ -102,7 +102,7 @@ def calc_follow_profile(v_ego, v_lead, x_lead, fpi):
     dist_cost += MPC_COST_LONG.DISTANCE * (v_rel - LEAD_APPROACHING_V_REL) * fp[10]
   dist_cost = clip(dist_cost, FP_MIN_MAX_DIST_COSTS[fpi][0], FP_MIN_MAX_DIST_COSTS[fpi][1])
   
-  #then accel cost
+  # then accel cost
   accel_cost = min(interp(d_lead, fp[11], fp[12]), interp(x_lead, fp[13], fp[14]))
   accel_cost = SNG_ACCEL_COST * sng_factor + accel_cost * (1.0 - sng_factor)
   if v_rel > LEAD_APPROACHING_V_REL:
