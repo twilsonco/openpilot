@@ -195,9 +195,9 @@ class CarState(CarStateBase):
     
     self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
     one_pedal_mode_active = (self.one_pedal_mode_enabled and ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
-    self.coast_one_pedal_mode_active = (self.coasting_enabled and ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
-    if one_pedal_mode_active != self.one_pedal_mode_active:
-      if one_pedal_mode_active:
+    coast_one_pedal_mode_active = (ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
+    if one_pedal_mode_active != self.one_pedal_mode_active or coast_one_pedal_mode_active != self.coast_one_pedal_mode_active:
+      if one_pedal_mode_active or coast_one_pedal_mode_active:
         self.one_pedal_last_follow_level = self.follow_level
         self.one_pedal_brake_mode = min(1, self.one_pedal_last_brake_mode)
         self.follow_level = self.one_pedal_brake_mode + 1
@@ -205,6 +205,7 @@ class CarState(CarStateBase):
         self.one_pedal_last_brake_mode = min(self.one_pedal_brake_mode, 1)
         self.follow_level = self.one_pedal_last_follow_level
         
+    self.coast_one_pedal_mode_active = coast_one_pedal_mode_active
     ret.coastOnePedalModeActive = self.coast_one_pedal_mode_active
     self.one_pedal_mode_active = one_pedal_mode_active
     ret.onePedalModeActive = self.one_pedal_mode_active
