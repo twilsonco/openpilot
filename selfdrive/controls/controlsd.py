@@ -403,9 +403,12 @@ class Controls:
       if self.CI.CS.one_pedal_mode_engage_on_gas:
         self.CI.CS.one_pedal_mode_engage_on_gas = False
         self.CI.CS.one_pedal_v_cruise_kph_last = self.v_cruise_kph
+        self.CI.CS.one_pedal_last_follow_level = self.CI.CS.follow_level
         self.v_cruise_kph = V_CRUISE_MIN
       elif not self.accel_pressed and cur_time - self.accel_pressed_last < 0.3 and self.enabled and CS.cruiseState.enabled and (self.CI.CS.one_pedal_mode_active or self.CI.CS.coast_one_pedal_mode_active) and self.CI.CS.one_pedal_v_cruise_kph_last > 0:
         self.v_cruise_kph = self.CI.CS.one_pedal_v_cruise_kph_last
+        self.CI.CS.one_pedal_brake_mode = min(1, self.CI.CS.one_pedal_last_brake_mode)
+        self.CI.CS.follow_level = self.CI.CS.one_pedal_brake_mode + 1
       else:
         self.v_cruise_kph = update_v_cruise(v_cruise, CS.buttonEvents, self.enabled and CS.cruiseState.enabled, cur_time, self.accel_pressed,self.decel_pressed, self.accel_pressed_last, self.decel_pressed_last, self.fastMode, self.fast_mode_enabled, vEgo, self.v_cruise_last_changed, self.LoC.longPlan, self.speed_limit_last_deactivated)
       
