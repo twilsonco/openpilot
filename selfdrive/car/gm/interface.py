@@ -32,9 +32,17 @@ class CarInterface(CarInterfaceBase):
     sigmoid = desired_angle / (1 + fabs(desired_angle))
     return 0.10006696 * sigmoid * (v_ego + 3.12485927)
 
+  @staticmethod
+  def get_steer_feedforward_acadia(desired_angle, v_ego):
+    desired_angle *= 0.09760208
+    sigmoid = desired_angle / (1 + fabs(desired_angle))
+    return 0.04689655 * sigmoid * (v_ego + 10.028217)
+
   def get_steer_feedforward_function(self):
     if self.CP.carFingerprint == CAR.VOLT:
       return self.get_steer_feedforward_volt
+    elif self.CP.carFingerprint == CAR.ACADIA:
+      return self.get_steer_feedforward_acadia
     else:
       return CarInterfaceBase.get_steer_feedforward_default
 
@@ -121,8 +129,12 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.5  # end to end is 13.46 - seems to be undocumented, using JYoung value
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.5], [0.1]] # using JYoung overrides
-      ret.lateralTuning.pid.kf = 0.00004   # Using JYoung value - full torque for 20 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.kpBP = [0., 40.]
+      ret.lateralTuning.pid.kpV = [0., 0.08]
+      ret.lateralTuning.pid.kiBP = [0.]
+      ret.lateralTuning.pid.kiV = [0.]
+      ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
+      ret.steerActuatorDelay = 0.2
 
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
@@ -147,6 +159,10 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 17.3  # end to end is 13.46
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
+      ret.lateralTuning.pid.kf = 0.000045
+      tire_stiffness_factor = 1.0
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase

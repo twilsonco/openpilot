@@ -69,6 +69,7 @@ Running on move-fast fork of openpilot, which adds:
 #### Planned fork features (in no particular order):
 -----
 
+- [ ] Intellibeam (auto-bright headlights based on oncoming cars)
 - [ ] Stop-and-go for 2018 Volt
 - [ ] Grey panda support
 - [ ] Chevy Bolt support
