@@ -33,7 +33,7 @@ class CarInterface(CarInterfaceBase):
     return 0.10006696 * sigmoid * (v_ego + 3.12485927)
 
   def get_steer_feedforward_function(self):
-    if self.CP.carFingerprint in [CAR.VOLT]:
+    if self.CP.carFingerprint == CAR.VOLT:
       return self.get_steer_feedforward_volt
     else:
       return CarInterfaceBase.get_steer_feedforward_default
@@ -249,13 +249,20 @@ class CarInterface(CarInterfaceBase):
         self.CS.one_pedal_brake_mode = min(self.CS.one_pedal_brake_mode, 1)
       self.CS.follow_level = self.CS.one_pedal_brake_mode + 1
     else:
-      if self.CS.distance_button and self.CS.distance_button != self.CS.prev_distance_button:
-         self.CS.follow_level -= 1
-         if self.CS.follow_level < 1:
-           self.CS.follow_level = 3
-         tmp_params = Params()
-         tmp_params.put("FollowLevel", str(self.CS.follow_level))
-         cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
+      if self.CS.distance_button != self.CS.prev_distance_button:
+        if self.CS.distance_button:
+          self.CS.distance_button_last_press_t = t
+        else: # apply change on button lift
+          self.CS.follow_level -= 1
+          if self.CS.follow_level < 1:
+            self.CS.follow_level = 3
+          tmp_params = Params()
+          tmp_params.put("FollowLevel", str(self.CS.follow_level))
+          cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
+      elif self.CS.distance_button and t - self.CS.distance_button_last_press_t > 0.5 and not (self.CS.one_pedal_mode_active or self.CS.coast_one_pedal_mode_active):
+          # user held follow button while in normal cruise, so engage one-pedal mode
+          self.CS.one_pedal_mode_engage_on_gas = True
+          self.CS.distance_button_last_press_t = t + 0.2 # gives the user X+0.3 seconds to release the distance button before hard braking is applied (which they may want, so don't want too long of a delay)
 
     ret.readdistancelines = self.CS.follow_level
 

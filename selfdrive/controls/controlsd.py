@@ -436,7 +436,7 @@ class Controls:
     
 
     if self.events.any(ET.RESET_V_CRUISE):
-      v_cruise_kph = 0
+      self.v_cruise_kph = 0
       
     self.CI.CS.v_cruise_kph = self.v_cruise_kph
 

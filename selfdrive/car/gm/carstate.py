@@ -56,11 +56,11 @@ class CarState(CarStateBase):
     self.coasting_lead_v = -1.
     self.coasting_lead_min_v = 5. * CV.MPH_TO_MS
     self.coasting_lead_min_rel_dist_s = 0.8 # [s] coasting logic isn't used at less than this follow distance
-    self.coasting_lead_min_abs_dist = 15 # [m] coasting logic isn't used at less than this absolute follow distance
+    self.coasting_lead_min_abs_dist = 10 # [m] coasting logic isn't used at less than this absolute follow distance
     self.coasting_last_non_cruise_brake_t = 0.
-    self.coasting_last_non_cruise_timeout_bp = [0., 1., 2.5]
+    self.coasting_last_non_cruise_timeout_bp = [0., 0.5, 1.5]
     self.coasting_last_non_cruise_timeout_v = [1., 1., 0.]
-    self.coasting_lead_abs_dist_max_check_speed = 25. * CV.MPH_TO_MS
+    self.coasting_lead_abs_dist_max_check_speed = 40 * CV.MPH_TO_MS
     self.coast_one_pedal_mode_active = False
     self.pause_long_on_gas_press = False
     self.last_pause_long_on_gas_press_t = 0.
@@ -86,7 +86,7 @@ class CarState(CarStateBase):
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
     self.vEgo = 0.
-    self.v_cruise_kph = 0
+    self.v_cruise_kph = 1
     self.min_lane_change_speed = 30. * CV.MPH_TO_MS
     self.blinker = False
     self.prev_blinker = self.blinker
