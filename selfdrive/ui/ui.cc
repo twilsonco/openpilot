@@ -146,7 +146,8 @@ static void update_state(UIState *s) {
   }
   if (scene.started && sm.updated("controlsState")) {
     scene.controls_state = sm["controlsState"].getControlsState();
-    scene.angleSteersDes = scene.controls_state.getLateralControlState().getAngleState().getSteeringAngleDeg();
+    scene.car_state = sm["carState"].getCarState();
+    scene.angleSteersDes = scene.controls_state.getLateralControlState().getPidState().getAngleError() + scene.car_state.getSteeringAngleDeg();
   }
   if (sm.updated("carState")){
     scene.car_state = sm["carState"].getCarState();
@@ -166,7 +167,7 @@ static void update_state(UIState *s) {
     
     if (t - scene.sessionInitTime > 10.){
       if ((scene.car_state.getOnePedalModeActive() || scene.car_state.getCoastOnePedalModeActive())
-        || (s->status == UIStatus::STATUS_DISENGAGED && scene.controls_state.getVCruise() < 5 && (Params().getBool("OnePedalMode") || (Params().getBool("Coasting") && Params().getBool("DisableDisengageOnGas"))))){
+        || (s->status == UIStatus::STATUS_DISENGAGED && scene.controls_state.getVCruise() < 5 && (Params().getBool("OnePedalMode") || Params().getBool("DisableDisengageOnGas")))){
         scene.one_pedal_fade += fade_time_step * (t - scene.one_pedal_fade_last_t);
         if (scene.one_pedal_fade > 1.)
           scene.one_pedal_fade = 1.;
@@ -199,17 +200,17 @@ static void update_state(UIState *s) {
       if (scene.percentGradeCurDist > scene.percentGradeLenStep){ // record position/elevation at even length intervals
         float prevDist = scene.percentGradePositions[scene.percentGradeRollingIter];
         scene.percentGradeRollingIter++;
-        if (scene.percentGradeRollingIter >= 5){
+        if (scene.percentGradeRollingIter >= scene.percentGradeNumSamples){
           scene.percentGradeIterRolled = true;
           scene.percentGradeRollingIter = 0;
         }    
         scene.percentGradeAltitudes[scene.percentGradeRollingIter] = scene.altitudeUblox;
         scene.percentGradePositions[scene.percentGradeRollingIter] = prevDist + scene.percentGradeCurDist;
         if (scene.percentGradeIterRolled){
-          float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%5];
-          float run = scene.percentGradePositions[scene.percentGradeRollingIter] - scene.percentGradePositions[(scene.percentGradeRollingIter+1)%5];
+          float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
+          float run = scene.percentGradePositions[scene.percentGradeRollingIter] - scene.percentGradePositions[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
           if (run > 0. && scene.percentGradePositions[scene.percentGradeRollingIter] > scene.percentGradeMinDist){
-            scene.percentGrade = int(round(rise/run * 100.));
+            scene.percentGrade = rise/run * 100.;
           }
         }
         scene.percentGradeCurDist = 0.;
@@ -333,6 +334,7 @@ static void update_state(UIState *s) {
 
     scene.desiredFollowDistance = data.getDesiredFollowDistance();
     scene.followDistanceCost = data.getLeadDistCost();
+    scene.followAccelCost = data.getLeadAccelCost();
     scene.stoppingDistance = data.getStoppingDistance();
   }
   scene.lastTime = t;

@@ -84,7 +84,7 @@ const int header_h = 420;
 const int footer_h = 280;
 const int laneless_btn_touch_pad = 80;
 
-const int brake_size = 96;
+const int brake_size = 90;
 const int face_wheel_radius = 88;
 
 const int speed_sgn_r = 96;
@@ -136,7 +136,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   LEAD_DISTANCE_TIME,
   LEAD_DESIRED_DISTANCE_LENGTH,
   LEAD_DESIRED_DISTANCE_TIME,
-  LEAD_DISTANCE_COST,
+  LEAD_COSTS,
   LEAD_VELOCITY_RELATIVE,
   LEAD_VELOCITY_ABS,
   GPS_ACCURACY,
@@ -193,10 +193,10 @@ typedef struct UIScene {
   float cpuTemp;
   int cpuPerc;
   int thermalStatus;
-  int percentGrade = 0, percentGradeRollingIter = 0;
-  float percentGradeAltitudes[5], percentGradePositions[5], percentGradeCurDist = 0., percentGradeLenStep = 10., percentGradeLastTime = 0., percentGradeMinDist = 200.;
+  int percentGradeRollingIter = 0, percentGradeNumSamples = 10;
+  float percentGradeAltitudes[10], percentGradePositions[10], percentGradeCurDist = 0., percentGradeLenStep = 5., percentGradeLastTime = 0., percentGradeMinDist = 200., percentGrade = 0.;
   bool percentGradeIterRolled = false;
-  float desiredFollowDistance, followDistanceCost;
+  float desiredFollowDistance, followDistanceCost, followAccelCost;
   float stoppingDistance;
   
   float lastTime = 0., sessionInitTime = 0.;
@@ -216,6 +216,7 @@ typedef struct UIScene {
   // one-pedal mode fading. maxspeed rect at -1, fades away by 0, and one-pedal icon fades in by 1
   float one_pedal_fade = -1., one_pedal_fade_last_t = 0.;
   Rect one_pedal_touch_rect;
+  Rect brake_touch_rect;
   
   int laneless_mode;
   Rect laneless_btn_touch_rect;

@@ -47,29 +47,35 @@ class CarState(CarStateBase):
     self.sessionInitTime = sec_since_boot()
     
     self.coasting_enabled = self._params.get_bool("Coasting")
+    self.no_friction_braking = self._params.get_bool("RegenBraking")
     self.coasting_brake_over_speed_enabled = self._params.get_bool("CoastingBrakeOverSpeed")
-    self.coasting_over_speed_vEgo_BP = [i * CV.MPH_TO_MS for i in [10., 15.]]
+    self.coasting_over_speed_vEgo_BP = [i * CV.MPH_TO_MS for i in [12., 15.]]
+    self.coasting_over_speed_regen_vEgo_BP = [i * CV.MPH_TO_MS for i in [9., 11.]]
     self.coasting_long_plan = ""
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -1.
     self.coasting_lead_min_v = 5. * CV.MPH_TO_MS
     self.coasting_lead_min_rel_dist_s = 0.8 # [s] coasting logic isn't used at less than this follow distance
-    self.coasting_lead_min_abs_dist = 15 # [m] coasting logic isn't used at less than this absolute follow distance
-    self.coasting_lead_abs_dist_max_check_speed = 25. * CV.MPH_TO_MS
+    self.coasting_lead_min_abs_dist = 10 # [m] coasting logic isn't used at less than this absolute follow distance
+    self.coasting_last_non_cruise_brake_t = 0.
+    self.coasting_last_non_cruise_timeout_bp = [0., 0.5, 1.5]
+    self.coasting_last_non_cruise_timeout_v = [1., 1., 0.]
+    self.coasting_lead_abs_dist_max_check_speed = 40 * CV.MPH_TO_MS
     self.coast_one_pedal_mode_active = False
     self.pause_long_on_gas_press = False
     self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False
     
-    self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode") and not self.disengage_on_gas and self.coasting_enabled
+    self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode") and not self.disengage_on_gas
     self.one_pedal_mode_op_braking_allowed = not self._params.get_bool("OnePedalModeSimple")
-    self.one_pedal_mode_engage_on_gas_enabled = self._params.get_bool("OnePedalModeEngageOnGas") and (self.one_pedal_mode_enabled or (not self.disengage_on_gas and self.coasting_enabled))
+    self.one_pedal_mode_engage_on_gas_enabled = self._params.get_bool("OnePedalModeEngageOnGas") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
     self.one_pedal_mode_engage_on_gas = False
     self.one_pedal_mode_engage_on_gas_min_speed = 1. * CV.MPH_TO_MS
     self.one_pedal_mode_max_set_speed = 5 * CV.MPH_TO_MS #  one pedal mode activates if cruise set at or below this speed
     self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]], [i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]], [1.]]
     self.one_pedal_mode_stop_apply_brake_v = [[70., 70., 95., 115., 90.], [100., 100., 160., 180., 120.], [250.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
     self.one_pedal_mode_last_gas_press_t = 0.
+    self.one_pedal_mode_last_engage_t = 0.
     self.one_pedal_mode_ramp_time_bp = [0., 0.5]
     self.one_pedal_mode_ramp_time_v = [0.1, 1.0]
     self.one_pedal_mode_active = False
@@ -81,7 +87,7 @@ class CarState(CarStateBase):
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
     self.vEgo = 0.
-    self.v_cruise_kph = 0
+    self.v_cruise_kph = 1
     self.min_lane_change_speed = 30. * CV.MPH_TO_MS
     self.blinker = False
     self.prev_blinker = self.blinker
@@ -109,6 +115,14 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     self.vEgo = ret.vEgo
     ret.standstill = ret.vEgoRaw < 0.01
+    
+    coasting_enabled = self._params.get_bool("Coasting")
+    if coasting_enabled != self.coasting_enabled:
+      if not coasting_enabled and self.vEgo > self.v_cruise_kph * CV.KPH_TO_MS and not self.no_friction_braking:
+        self._params.set_bool("Coasting", True)
+        coasting_enabled = True
+    self.coasting_enabled = coasting_enabled
+    ret.coastingActive = self.coasting_enabled
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
     self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
@@ -156,7 +170,7 @@ class CarState(CarStateBase):
     ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
 
     self.blinker = (ret.leftBlinker or ret.rightBlinker)
-    if (self.coasting_enabled or not self.disengage_on_gas) and (self.pause_long_on_gas_press or self.v_cruise_kph * CV.KPH_TO_MPH <= 10.):
+    if not self.disengage_on_gas and (self.pause_long_on_gas_press or self.v_cruise_kph * CV.KPH_TO_MPH <= 10.):
       cur_time = sec_since_boot()
       if self.blinker and not self.prev_blinker:
         self.lang_change_ramp_down_steer_start_t = cur_time
@@ -191,9 +205,10 @@ class CarState(CarStateBase):
     
     self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
     one_pedal_mode_active = (self.one_pedal_mode_enabled and ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
-    self.coast_one_pedal_mode_active = (self.coasting_enabled and ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
-    if one_pedal_mode_active != self.one_pedal_mode_active:
-      if one_pedal_mode_active:
+    coast_one_pedal_mode_active = (ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
+    if one_pedal_mode_active != self.one_pedal_mode_active or coast_one_pedal_mode_active != self.coast_one_pedal_mode_active:
+      if one_pedal_mode_active or coast_one_pedal_mode_active:
+        self.one_pedal_mode_last_engage_t = t
         self.one_pedal_last_follow_level = self.follow_level
         self.one_pedal_brake_mode = min(1, self.one_pedal_last_brake_mode)
         self.follow_level = self.one_pedal_brake_mode + 1
@@ -201,6 +216,7 @@ class CarState(CarStateBase):
         self.one_pedal_last_brake_mode = min(self.one_pedal_brake_mode, 1)
         self.follow_level = self.one_pedal_last_follow_level
         
+    self.coast_one_pedal_mode_active = coast_one_pedal_mode_active
     ret.coastOnePedalModeActive = self.coast_one_pedal_mode_active
     self.one_pedal_mode_active = one_pedal_mode_active
     ret.onePedalModeActive = self.one_pedal_mode_active

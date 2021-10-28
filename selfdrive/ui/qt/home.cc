@@ -137,6 +137,13 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     return;
   }
   
+  // presses of brake to toggle coasting
+  if (QUIState::ui_state.scene.started 
+    && QUIState::ui_state.scene.brake_touch_rect.ptInRect(e->x(), e->y())){
+    Params().putBool("Coasting", !Params().getBool("Coasting"));
+    return;
+  }
+  
   // one-pedal mode button
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.one_pedal_touch_rect.ptInRect(e->x(), e->y())){
     Params().putBool("OnePedalMode", !QUIState::ui_state.scene.car_state.getOnePedalModeActive());

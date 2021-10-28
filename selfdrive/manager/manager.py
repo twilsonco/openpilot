@@ -52,6 +52,7 @@ def manager_init():
     ("LanelessMode", "2"),
     ("NudgelessLaneChange", "0"),
     ("Coasting", "0"),
+    ("RegenBraking", "0"),
     ("OnePedalMode", "0"),
     ("OnePedalModeSimple", "0"),
     ("OnePedalModeEngageOnGas", "0"),

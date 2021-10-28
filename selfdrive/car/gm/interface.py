@@ -33,7 +33,7 @@ class CarInterface(CarInterfaceBase):
     return 0.10006696 * sigmoid * (v_ego + 3.12485927)
 
   def get_steer_feedforward_function(self):
-    if self.CP.carFingerprint in [CAR.VOLT]:
+    if self.CP.carFingerprint == CAR.VOLT:
       return self.get_steer_feedforward_volt
     else:
       return CarInterfaceBase.get_steer_feedforward_default
@@ -218,15 +218,7 @@ class CarInterface(CarInterfaceBase):
     # distance button is also used to toggle braking modes when in one-pedal-mode
     if self.CS.one_pedal_mode_active or self.CS.coast_one_pedal_mode_active:
       if self.CS.distance_button != self.CS.prev_distance_button:
-        tmp_params = Params()
-        if not tmp_params.get_bool("OnePedalMode") and self.CS.distance_button: # user lifted press of distance button while in coast-one-pedal mode, so turn on braking
-          self.CS.one_pedal_brake_mode = 0
-          self.CS.one_pedal_mode_enabled = True
-          self.CS.one_pedal_mode_active = True
-          tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
-          tmp_params.put_bool("OnePedalMode", self.CS.one_pedal_mode_enabled)
-        elif self.CS.distance_button and self.CS.pause_long_on_gas_press and t - self.CS.distance_button_last_press_t < 0.4: # on the second press of a double tap while the gas is pressed, turn off one-pedal braking
-          # cycle the brake mode back to nullify the first press
+        if not self.CS.distance_button and t - self.CS.distance_button_last_press_t >= 0.5 and t - self.CS.one_pedal_mode_last_engage_t < 0.5: #user just engaged one-pedal with distance button hold and immediately let off the button, so default to regen/engine braking. If they keep holding, it does hard braking
           self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
           self.CS.one_pedal_mode_enabled = False
           self.CS.one_pedal_mode_active = False
@@ -234,13 +226,29 @@ class CarInterface(CarInterfaceBase):
           tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
           tmp_params.put_bool("OnePedalMode", self.CS.one_pedal_mode_enabled)
         else:
-          self.CS.distance_button_last_press_t = t
-          if not self.CS.distance_button: # only make changes when user lifts press
-            if self.CS.one_pedal_brake_mode == 2:
-              self.CS.one_pedal_brake_mode = self.CS.one_pedal_last_brake_mode
-            else:
-              self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
-              tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
+          tmp_params = Params()
+          if not tmp_params.get_bool("OnePedalMode") and self.CS.distance_button: # user lifted press of distance button while in coast-one-pedal mode, so turn on braking
+            self.CS.one_pedal_brake_mode = 0
+            self.CS.one_pedal_mode_enabled = True
+            self.CS.one_pedal_mode_active = True
+            tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
+            tmp_params.put_bool("OnePedalMode", self.CS.one_pedal_mode_enabled)
+          elif self.CS.distance_button and self.CS.pause_long_on_gas_press and t - self.CS.distance_button_last_press_t < 0.4: # on the second press of a double tap while the gas is pressed, turn off one-pedal braking
+            # cycle the brake mode back to nullify the first press
+            self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
+            self.CS.one_pedal_mode_enabled = False
+            self.CS.one_pedal_mode_active = False
+            self.CS.coast_one_pedal_mode_active = True
+            tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
+            tmp_params.put_bool("OnePedalMode", self.CS.one_pedal_mode_enabled)
+          else:
+            self.CS.distance_button_last_press_t = t
+            if not self.CS.distance_button: # only make changes when user lifts press
+              if self.CS.one_pedal_brake_mode == 2:
+                self.CS.one_pedal_brake_mode = self.CS.one_pedal_last_brake_mode
+              else:
+                self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
+                tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
       elif self.CS.distance_button and t - self.CS.distance_button_last_press_t > 0.3:
         if self.CS.one_pedal_brake_mode < 2:
           self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
@@ -248,16 +256,23 @@ class CarInterface(CarInterfaceBase):
       elif not self.CS.distance_button:
         self.CS.one_pedal_brake_mode = min(self.CS.one_pedal_brake_mode, 1)
       self.CS.follow_level = self.CS.one_pedal_brake_mode + 1
-    else:
-      if self.CS.distance_button and self.CS.distance_button != self.CS.prev_distance_button:
-         self.CS.follow_level -= 1
-         if self.CS.follow_level < 1:
-           self.CS.follow_level = 3
-         tmp_params = Params()
-         tmp_params.put("FollowLevel", str(self.CS.follow_level))
-         cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
+    else: # cruis is active, so just modify follow distance
+      if self.CS.distance_button != self.CS.prev_distance_button:
+        if self.CS.distance_button:
+          self.CS.distance_button_last_press_t = t
+        else: # apply change on button lift
+          self.CS.follow_level -= 1
+          if self.CS.follow_level < 1:
+            self.CS.follow_level = 3
+          tmp_params = Params()
+          tmp_params.put("FollowLevel", str(self.CS.follow_level))
+          cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
+      elif self.CS.distance_button and t - self.CS.distance_button_last_press_t > 0.5 and not (self.CS.one_pedal_mode_active or self.CS.coast_one_pedal_mode_active):
+          # user held follow button while in normal cruise, so engage one-pedal mode
+          self.CS.one_pedal_mode_engage_on_gas = True
+          self.CS.distance_button_last_press_t = t + 0.2 # gives the user X+0.3 seconds to release the distance button before hard braking is applied (which they may want, so don't want too long of a delay)
 
-    ret.readdistancelines = self.CS.follow_level if (not self.CS.coast_one_pedal_mode_active and not self.CS.one_pedal_mode_active) else 1
+    ret.readdistancelines = self.CS.follow_level
 
     events = self.create_common_events(ret, pcm_enable=False)
 

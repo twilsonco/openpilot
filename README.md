@@ -32,8 +32,10 @@ Running on move-fast fork of openpilot, which adds:
 - [x] [✅] 3mph cruise speed offset: speed will be 23/28/33/38/etc.
 - [x] [✅] Alternate sound effect set
 - [x] [✅] Mute engage and disengage sounds
-- [x] [✅] Downhill (max-regen) coasting: OP will still brake behind a lead car and to slow down for curves, but friction brakes won't be used in order to keep the set speed (by user or map speed limit)
-- [x] [✅] Brake when 10mph+ over set speed when downhill coasting enabled
+- [x] [✅] Coasting: OP will still brake behind a lead car and to slow down for curves, but will not apply engine/regen/friction brakes in order to keep the set speed (by user or map speed limit)
+    * Toggle coasting while driving by tapping the brake indicator (if enabled)
+    * A circle around the brake indicator indicates that coasting is enabled
+- [x] [✅] Brake when 10mph+ over set speed when coasting enabled
 - [x] [✅] Nudgeless lane change: OP will start lane change automatically in direction of blinker after blinker on for 3s
 - [x] [✅] Friction braking indicator
 - [x] **Customizable, dynamic vehicle/device metrics**
@@ -44,24 +46,22 @@ Running on move-fast fork of openpilot, which adds:
         * Device info: CPU temperature, CPU percent, CPU temp + percent, memory temperature, memory used, free storage, ambient temperature, fanspeed (as percent of max), GPS accuracy (and number of satelites), altitude
         * Vehicle info: Engine RPM, steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road
         * Lead-following info: lead distance [length], desired lead distance [length], lead distance [time], desired lead distance [time], follow distance cost [in units of the stock OP distance cost; i.e. 2.5 meand 2.5× the stock OP value], relative lead velocity, absolute lead velocity
-- [x] [GM] **"Auto-on steering lite"**: You control accel/decel with gas pedal in "L-mode" and OP keeps steering (down to 7mph)
-    * To use:
-    1. Enable the following toggles: Disable disengage on gas, Downhill coasting
-    2. Put your volt in "L-mode"
-    3. Engage OP and set the cruise speed to 1 (with or without gas pedal pressed)
-    4. Now drive around; OP will steer while you control accel/decel with the gas pedal with the Volt's regen in "L-mode"
-    * OP will pause steering if <30mph and blinker is on while in this mode
-        * won't pause steering for low speed blinker if a) both toggles in (1) are disabled, or b) cruise set speed >10mph and the gas pedal isn't pressed (i.e. under normal OP control)
-- [x] [GM] [✅] **One-pedal driving**: When in "auto-on steering lite" mode (i.e. with cruise speed set to 1), OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
+- [x] [GM] [✅] **One-pedal driving**: OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
+    * Must have disable disengage on gas enabled
+    * **Not necessary to enable the one-pedal toggle; you engage while driving**
+    * Engage in three ways
+      1. While cruise is set, press and hold the follow distance button for 0.5s (continue to hold for immediate hard braking if necessary)
+      2. If one-pedal engage on gas toggle is enabled, press gas while cruise is set and traveling above 1mph
+      3. While cruise is set, lower cruise speed to 1
     * When in one-pedal mode, the max speed indicator in openpilot will be replaced with a one-pedal mode indicator. Tap the one-pedal icon (or use follow distance button, see below) to toggle coasting/braking
     * Vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = 🟢/🟠/🔴 = light/moderate/heavy braking
-    * Follow distance button:
+    * Control braking with follow distance button:
       * Press: cycle between persistent light or moderate braking
       * Hold: apply temporary hard braking (indicated by follow level 3 on vehicle cluster and red one-pedal icon) (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
-      * Press when coasting: activating braking
-      * Double-press when gas is press and braking is active: deactivate braking (you'll get used to it...)
+      * Press when engine/regen braking: activating friction braking
+      * Double-press when gas is press and friction braking is active: deactivate friction braking
 - [x] [GM] [✅] One-pedal pro braking: Completely disable cruise/speed limit/curve/follow braking when in one-pedal mode. You are soley responsible for slowing the car using the adjustable one-pedal braking (by pressing/holding the follow distance button) or with the physical brakes/regen paddle
-- [x] [GM] [✅] One-pedal/always-on-steering engage on gas: When cruising at speed and the driver presses the gas (i.e. not when resuming from a stop), engage one-pedal/always-on-steering mode
+- [x] [GM] [✅] One-pedal engage on gas: When cruising at speed and the driver presses the gas (i.e. not when resuming from a stop), engage one-pedal/always-on-steering mode
     * Increase or reset speed to return to normal cruise.
 - [x] [GM] JShuler panda-based GM steering fault fix
 - [x] Remember last follow mode
@@ -110,6 +110,10 @@ This fork is developed and used on a Comma Three in a 2018 Chevy Volt, and is al
 
 Use [these instructions](https://github.com/sshane/openpilot-installer-generator#usage) and the following url:
 `https://smiskol.com/fork/twilsonco`
+
+To ride the bleeding edge, try the staging branch where new features are tested before they go to regular users:
+(Be extra diligent and attentive when using the staging branch; it is considered experimental moreso than the regular branch!)
+`https://smiskol.com/fork/twilsonco/tw-0.8.9-staging`
 
 #### Less easy
 
