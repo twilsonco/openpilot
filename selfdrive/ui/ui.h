@@ -84,7 +84,7 @@ const int header_h = 420;
 const int footer_h = 280;
 const int laneless_btn_touch_pad = 80;
 
-const int brake_size = 96;
+const int brake_size = 90;
 const int face_wheel_radius = 88;
 
 const int speed_sgn_r = 96;

@@ -331,7 +331,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     ui_draw_text(s, rect.centerX(), 118, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? int(-s->scene.one_pedal_fade * 200.) : int(-s->scene.one_pedal_fade * 100.)), "sans-regular");
     if (is_cruise_set) {
       const std::string maxspeed_str = std::to_string((int)std::nearbyint(maxspeed));
-      ui_draw_text(s, rect.centerX(), 212, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE, "sans-bold");
+      ui_draw_text(s, rect.centerX(), 212, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? int(-s->scene.one_pedal_fade * 200.) : int(-s->scene.one_pedal_fade * 100.)), "sans-bold");
     } else {
       ui_draw_text(s, rect.centerX(), 212, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(int(-s->scene.one_pedal_fade * 100.)), "sans-semibold");
     }
@@ -1053,7 +1053,7 @@ static void ui_draw_vision_brake(UIState *s) {
     }
     if (s->scene.car_state.getCoastingActive()){
       nvgBeginPath(s->vg);
-      const int r = int(float(brake_size) * 1.0);
+      const int r = int(float(brake_size) * 0.95);
       nvgRoundedRect(s->vg, brake_x - r, brake_y - r, 2 * r, 2 * r, r);
       nvgStrokeColor(s->vg, nvgRGBA(200,200,200,100));
       nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
