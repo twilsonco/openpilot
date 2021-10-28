@@ -15,6 +15,7 @@ class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.start_time = 0.
     self.apply_steer_last = 0
+    self.lka_steering_cmd_counter_last = -1
     self.lka_icon_status_last = (False, False)
     self.steer_rate_limited = False
     self.fcw_count = 0
@@ -59,8 +60,12 @@ class CarController():
     # Send CAN commands.
     can_sends = []
 
-    # STEER
-    if (frame % P.STEER_STEP) == 0:
+    # Steering (50Hz)
+    # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
+    # next Panda loopback confirmation in the current CS frame.
+    if CS.lka_steering_cmd_counter != self.lka_steering_cmd_counter_last:
+      self.lka_steering_cmd_counter_last = CS.lka_steering_cmd_counter
+    elif (frame % P.STEER_STEP) == 0:
       lkas_enabled = (enabled or CS.pause_long_on_gas_press) and CS.lkMode and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > P.MIN_STEER_SPEED and CS.lane_change_steer_factor > 0.
       if lkas_enabled:
         new_steer = int(round(actuators.steer * P.STEER_MAX * CS.lane_change_steer_factor))
@@ -70,7 +75,9 @@ class CarController():
         apply_steer = 0
 
       self.apply_steer_last = apply_steer
-      idx = (frame // P.STEER_STEP) % 4
+      # GM EPS faults on any gap in received message counters. To handle transient OP/Panda safety sync issues at the
+      # moment of disengaging, increment the counter based on the last message known to pass Panda safety checks.
+      idx = (CS.lka_steering_cmd_counter + 1) % 4
 
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))
 

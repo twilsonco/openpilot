@@ -154,8 +154,10 @@ class CarState(CarStateBase):
     self.lang_change_ramp_up_steer_start_t = 0.
     self.lang_change_ramp_down_steer_start_t = 0.
     self.lang_change_ramp_steer_dur = .5 # [s]
+    
+    self.lka_steering_cmd_counter = 0
 
-  def update(self, pt_cp):
+  def update(self, pt_cp, loopback_cp):
     ret = car.CarState.new_message()
     
     t = sec_since_boot()
@@ -221,6 +223,7 @@ class CarState(CarStateBase):
     ret.steeringTorque = pt_cp.vl["PSCMStatus"]["LKADriverAppldTrq"]
     ret.steeringTorqueEps = pt_cp.vl["PSCMStatus"]["LKATorqueDelivered"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
+    self.lka_steering_cmd_counter = loopback_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
 
     # 0 inactive, 1 active, 2 temporarily limited, 3 failed
     self.lkas_status = pt_cp.vl["PSCMStatus"]["LKATorqueDeliveredStatus"]
@@ -438,3 +441,15 @@ class CarState(CarStateBase):
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.POWERTRAIN)
+
+  @staticmethod
+  def get_loopback_can_parser(CP):
+    signals = [
+      ("RollingCounter", "ASCMLKASteeringCmd", 0),
+    ]
+
+    checks = [
+      ("ASCMLKASteeringCmd", 50),
+    ]
+
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.LOOPBACK)
