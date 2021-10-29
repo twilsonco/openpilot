@@ -61,7 +61,7 @@ class CarController():
       if apply_brake > 0. and CS.coasting_long_plan not in ['cruise', 'limit']:
         CS.coasting_last_non_cruise_brake_t = t
         
-      no_pause_coast_for_lead = (CS.coasting_lead_d < 0. or ((CS.coasting_lead_d >= CS.coasting_lead_min_abs_dist or CS.vEgo > CS.coasting_lead_abs_dist_max_check_speed) and CS.vEgo > 0.2 and CS.coasting_lead_d / CS.vEgo >= CS.coasting_lead_min_rel_dist_s and CS.coasting_lead_v > CS.coasting_lead_min_v))
+      no_pause_coast_for_lead = True #(CS.coasting_lead_d < 0. or ((CS.coasting_lead_d >= CS.coasting_lead_min_abs_dist or CS.vEgo > CS.coasting_lead_abs_dist_max_check_speed) and CS.vEgo > 0.2 and CS.coasting_lead_d / CS.vEgo >= CS.coasting_lead_min_rel_dist_s and CS.coasting_lead_v > CS.coasting_lead_min_v))
       
       if (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active) and no_pause_coast_for_lead:
         apply_gas = P.MAX_ACC_REGEN

@@ -1,3 +1,7 @@
+Version 0.8.9-tw-3.2 (2021-10-28)
+========================
+ * disabling lockout of coasting logic after non-cruise braking is used. Was resulting in oscillations when over set speed. Please try following over set speed with coasting enabled to see what the behavior is. Concerned it may be too jerky and that the lead mpc braking will be too quickly applied/removed.
+
 Version 0.8.9-tw-3.1 (2021-10-28)
 ========================
  * + fixing one-pedal distance-button engagement behavior to alwasy use regen/engine braking when you first engage
