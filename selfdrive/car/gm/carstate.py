@@ -72,8 +72,8 @@ class CarState(CarStateBase):
     self.one_pedal_mode_engage_on_gas = False
     self.one_pedal_mode_engage_on_gas_min_speed = 1. * CV.MPH_TO_MS
     self.one_pedal_mode_max_set_speed = 5 * CV.MPH_TO_MS #  one pedal mode activates if cruise set at or below this speed
-    self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]], [i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]], [1.]]
-    self.one_pedal_mode_stop_apply_brake_v = [[70., 70., 95., 115., 90.], [100., 100., 160., 180., 120.], [250.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
+    self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [1., 4., 45., 85.]], [i * CV.MPH_TO_MS for i in [1., 4., 45., 85.]], [1.]]
+    self.one_pedal_mode_stop_apply_brake_v = [[80., 95., 115., 90.], [100., 160., 180., 120.], [250.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
     self.one_pedal_mode_last_gas_press_t = 0.
     self.one_pedal_mode_engaged_with_button = False
     self.one_pedal_mode_ramp_time_bp = [0., 0.5]
@@ -83,6 +83,9 @@ class CarState(CarStateBase):
     self.one_pedal_last_brake_mode = 0 # for saving brake mode when not in one-pedal-mode
     self.one_pedal_last_follow_level = 0 # for saving follow distance when in one-pedal mode
     self.one_pedal_v_cruise_kph_last = 0
+    
+    self.lead_v_rel_long_lockout_bp, self.lead_v_rel_long_lockout_v = [[-12 * CV.MPH_TO_MS, -5 * CV.MPH_TO_MS], [1., 0.]] # pass-through all braking for v_rel < -15mph
+    self.lead_v_long_lockout_bp, self.lead_v_long_lockout_v = [[4. * CV.MPH_TO_MS, 8. * CV.MPH_TO_MS], [1., 0.]] # pass-through all braking for v_lead < 4mph
     
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
