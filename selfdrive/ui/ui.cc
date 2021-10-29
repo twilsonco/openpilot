@@ -201,23 +201,38 @@ static void update_state(UIState *s) {
         float prevDist = scene.percentGradePositions[scene.percentGradeRollingIter];
         scene.percentGradeRollingIter++;
         if (scene.percentGradeRollingIter >= scene.percentGradeNumSamples){
-          scene.percentGradeIterRolled = true;
+          if (!scene.percentGradeIterRolled){
+            scene.percentGradeIterRolled = true;
+            // Calculate initial mean percent grade
+            float u = 0.;
+            for (int i = 0; i < scene.percentGradeNumSamples; ++i){
+              float rise = scene.percentGradeAltitudes[i] - scene.percentGradeAltitudes[(i+1)%scene.percentGradeNumSamples];
+              float run = scene.percentGradePositions[i] - scene.percentGradePositions[(i+1)%scene.percentGradeNumSamples];
+              if (run != 0.){
+                scene.percentGrades[i] = rise/run * 100.;
+                u += scene.percentGrades[i];
+              }
+            }
+            u /= float(scene.percentGradeNumSamples);
+            scene.percentGrade = u;
+          }
           scene.percentGradeRollingIter = 0;
-        }    
+        }
         scene.percentGradeAltitudes[scene.percentGradeRollingIter] = scene.altitudeUblox;
         scene.percentGradePositions[scene.percentGradeRollingIter] = prevDist + scene.percentGradeCurDist;
         if (scene.percentGradeIterRolled){
           float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
           float run = scene.percentGradePositions[scene.percentGradeRollingIter] - scene.percentGradePositions[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
-          if (run > 0. && scene.percentGradePositions[scene.percentGradeRollingIter] > scene.percentGradeMinDist){
-            scene.percentGrade = rise/run * 100.;
+          if (run != 0.){
+            // update rolling average
+            float newGrade = rise/run * 100.;
+            scene.percentGrade -= scene.percentGrades[scene.percentGradeRollingIter] / float(scene.percentGradeNumSamples);
+            scene.percentGrade += newGrade / float(scene.percentGradeNumSamples);
+            scene.percentGrades[scene.percentGradeRollingIter] = newGrade;
           }
         }
         scene.percentGradeCurDist = 0.;
       }
-    }
-    else{
-      scene.percentGradeCurDist = 0.;
     }
     scene.percentGradeLastTime = t;
   }
@@ -397,6 +412,9 @@ static void update_status(UIState *s) {
       for (int i = 0; i < 5; ++i){
         s->scene.percentGradeAltitudes[i] = 0.;
         s->scene.percentGradePositions[i] = 0.;
+        s->scene.percentGrades[i] = 0.;
+        s->scene.percentGradeIterRolled = false;
+        s->scene.percentGradeRollingIter = 0;
       }
 
       s->scene.measure_cur_num_slots = std::stoi(Params().get("MeasureNumSlots"));

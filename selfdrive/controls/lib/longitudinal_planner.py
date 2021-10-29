@@ -104,6 +104,7 @@ class Planner():
     self.accel_mode = int(Params().get_bool("SportAccel")) # 0 = normal, 1 = sport;
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -1. # lead "absolute"" velocity
+    self.tr = 1.8
 
   def update(self, sm, CP):
     cur_time = sec_since_boot()
@@ -122,12 +123,13 @@ class Planner():
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = self.lead_1.status and self.lead_1.dRel < 45.0 and self.lead_1.vLeadK > v_ego and self.lead_1.aLeadK > 0.0
-    if following:
+    if self.lead_1.status:
       self.coasting_lead_d = self.lead_1.dRel
       self.coasting_lead_v = self.lead_1.vLead
     else:
       self.coasting_lead_d = -1.
       self.coasting_lead_v = -1.
+    self.tr = self.mpcs['lead0'].tr
     
     
     if not enabled or sm['carState'].gasPressed:

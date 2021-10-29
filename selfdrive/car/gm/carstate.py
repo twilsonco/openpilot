@@ -54,13 +54,7 @@ class CarState(CarStateBase):
     self.coasting_long_plan = ""
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -1.
-    self.coasting_lead_min_v = 5. * CV.MPH_TO_MS
-    self.coasting_lead_min_rel_dist_s = 0.8 # [s] coasting logic isn't used at less than this follow distance
-    self.coasting_lead_min_abs_dist = 10 # [m] coasting logic isn't used at less than this absolute follow distance
-    self.coasting_last_non_cruise_brake_t = 0.
-    self.coasting_last_non_cruise_timeout_bp = [0.] # temporarily disabling the lockout of coast logic.
-    self.coasting_last_non_cruise_timeout_v = [0.]
-    self.coasting_lead_abs_dist_max_check_speed = 40 * CV.MPH_TO_MS
+    self.tr = 1.8
     self.coast_one_pedal_mode_active = False
     self.pause_long_on_gas_press = False
     self.last_pause_long_on_gas_press_t = 0.
@@ -84,8 +78,12 @@ class CarState(CarStateBase):
     self.one_pedal_last_follow_level = 0 # for saving follow distance when in one-pedal mode
     self.one_pedal_v_cruise_kph_last = 0
     
+
     self.lead_v_rel_long_lockout_bp, self.lead_v_rel_long_lockout_v = [[-12 * CV.MPH_TO_MS, -5 * CV.MPH_TO_MS], [1., 0.]] # pass-through all braking for v_rel < -15mph
     self.lead_v_long_lockout_bp, self.lead_v_long_lockout_v = [[4. * CV.MPH_TO_MS, 8. * CV.MPH_TO_MS], [1., 0.]] # pass-through all braking for v_lead < 4mph
+    self.lead_ttc_long_lockout_bp, self.lead_ttc_long_lockout_v = [[4., 8.], [1., 0.]] # pass through all cruise braking for time-to-collision < 4s
+    self.lead_tr_long_lockout_bp, self.lead_tr_long_lockout_v = [[0.7, 1.0], [1., 0.]] # pass through all cruise braking if follow distance < tr * 0.8
+    self.lead_d_long_lockout_bp, self.lead_d_long_lockout_v = [[6, 10], [1., 0.]] # pass through all cruise braking if follow distance < 6m
     
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
