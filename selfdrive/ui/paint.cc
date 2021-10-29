@@ -1055,7 +1055,7 @@ static void ui_draw_vision_brake(UIState *s) {
       nvgBeginPath(s->vg);
       const int r = int(float(brake_size) * 0.95);
       nvgRoundedRect(s->vg, brake_x - r, brake_y - r, 2 * r, 2 * r, r);
-      nvgStrokeColor(s->vg, nvgRGBA(200,200,200,100));
+      nvgStrokeColor(s->vg, nvgRGBA(200,200,200,200));
       nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
       nvgFill(s->vg);
       nvgStrokeWidth(s->vg, 6);

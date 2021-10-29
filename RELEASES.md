@@ -1,5 +1,7 @@
-Version 0.8.9-tw-3 (2021-10-28)
+Version 0.8.9-tw-3.1 (2021-10-28)
 ========================
+ * + fixing one-pedal distance-button engagement behavior to alwasy use regen/engine braking when you first engage
+ * + coasting ring around brake indicator is more apparent
  * TESTERS: Lots of changes here in behavior and user interface.
    * I'd like more feedback on follow profiles; my driving doesn't include enough weird situations
    * The revamped coasting (with over-speed braking enabled) is a really cool feature, but only if it feels ok once OP starts applying brakes. I need feedback on how this actually performs. If it's dangerous I'll remove the feature from the fork until a proper mpc-based solution is complete

@@ -75,7 +75,7 @@ class CarState(CarStateBase):
     self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]], [i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]], [1.]]
     self.one_pedal_mode_stop_apply_brake_v = [[70., 70., 95., 115., 90.], [100., 100., 160., 180., 120.], [250.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
     self.one_pedal_mode_last_gas_press_t = 0.
-    self.one_pedal_mode_last_engage_t = 0.
+    self.one_pedal_mode_engaged_with_button = False
     self.one_pedal_mode_ramp_time_bp = [0., 0.5]
     self.one_pedal_mode_ramp_time_v = [0.1, 1.0]
     self.one_pedal_mode_active = False
@@ -208,7 +208,6 @@ class CarState(CarStateBase):
     coast_one_pedal_mode_active = (ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
     if one_pedal_mode_active != self.one_pedal_mode_active or coast_one_pedal_mode_active != self.coast_one_pedal_mode_active:
       if one_pedal_mode_active or coast_one_pedal_mode_active:
-        self.one_pedal_mode_last_engage_t = t
         self.one_pedal_last_follow_level = self.follow_level
         self.one_pedal_brake_mode = min(1, self.one_pedal_last_brake_mode)
         self.follow_level = self.one_pedal_brake_mode + 1
