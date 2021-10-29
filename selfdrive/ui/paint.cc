@@ -819,6 +819,7 @@ static void ui_draw_measures(UIState *s){
           if (scene.controls_state.getEnabled()) {
             // steering is in degrees
             snprintf(val, sizeof(val), "%.0f°:%.0f°", scene.angleSteers, scene.angleSteersDes);
+            val_font_size += 12;
           }else{
             snprintf(val, sizeof(val), "%.0f°", scene.angleSteers);
           }
