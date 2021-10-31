@@ -1,4 +1,27 @@
-Version 0.8.9-tw-3.2 (2021-10-28)
+Version 0.8.9-tw-3.4 (2021-10-31)
+========================
+ Happy Halloween!
+ * Revamped safety layer for avoiding collisions between coasting/one-pedal mode and braking when following lead, that reverts to stock longitidunal behavior for/when:
+   1. Repidly approaching lead
+   2. Slow/stopped lead
+   3. Very close lead
+   4. Low time to collision (i.e. rapidly approaching close lead)
+   5. Following at less than target follow distance
+ * Add time to collision (ttc) ui metric
+ * Use moving average percent grade for smoother reading
+
+Version 0.8.9-tw-3.3 (2021-10-29)
+========================
+ * lockout of coasting logic is now based on absolute and relative lead velocity. 
+   * Start phasing out my coasting/one-pedal logic for lead approaching at 5mph+, completely returning to stock logic by 12mph+ (i.e. for a lead approaching at more than 12mph, coasting/one-pedal logic is entirely skipped over). 
+   * Similar for absolute lead v, phasing out coast/one-pedal for lead driving less than 8mph, and completely locked out for lead speed less than 4mph. So when approaching a stopped lead, stock logic is in use. 
+   * However, with one-pedal mode, the greater of one-pedal or cruise braking is applied, and if pro-braking is enabled, this continues to block ALL OP other braking.
+ * TESTERS:
+   * Please continue to play around with coasting and lead following.
+   * Like to know if this is shippable to main branch with followup tuning or if problems need to be resolved beforehand.
+
+
+Version 0.8.9-tw-3.2 (2021-10-29)
 ========================
  * disabling lockout of coasting logic after non-cruise braking is used. Was resulting in oscillations when over set speed. Please try following over set speed with coasting enabled to see what the behavior is. Concerned it may be too jerky and that the lead mpc braking will be too quickly applied/removed.
 

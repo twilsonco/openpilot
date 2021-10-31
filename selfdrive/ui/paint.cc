@@ -610,6 +610,34 @@ static void ui_draw_measures(UIState *s){
           snprintf(val, sizeof(val), "%.1f", scene.jEgo);
           snprintf(unit, sizeof(unit), "m/s³");
           break;}
+        
+        case UIMeasure::LEAD_TTC:
+          {
+          snprintf(name, sizeof(name), "TTC");
+          if (scene.lead_status && scene.lead_v_rel < 0.) {
+            float ttc = -scene.lead_d_rel / scene.lead_v_rel;
+            g = 0;
+            b = 0;
+            p = 0.333 * ttc; // red for <= 3s
+            g += int((0.5+p) * 255.);
+            b += int(p * 255.);
+            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+            val_color = nvgRGBA(255, g, b, 200);
+            if (ttc > 99.){
+              snprintf(val, sizeof(val), "99+");
+            }
+            else if (ttc >= 10.){
+              snprintf(val, sizeof(val), "%.0f", ttc);
+            }
+            else{
+              snprintf(val, sizeof(val), "%.1f", ttc);
+            }
+          } else {
+             snprintf(val, sizeof(val), "-");
+          }
+          snprintf(unit, sizeof(unit), "s");}
+          break;
 
         case UIMeasure::LEAD_DISTANCE_LENGTH:
           {
@@ -819,6 +847,7 @@ static void ui_draw_measures(UIState *s){
           if (scene.controls_state.getEnabled()) {
             // steering is in degrees
             snprintf(val, sizeof(val), "%.0f°:%.0f°", scene.angleSteers, scene.angleSteersDes);
+            val_font_size += 12;
           }else{
             snprintf(val, sizeof(val), "%.0f°", scene.angleSteers);
           }

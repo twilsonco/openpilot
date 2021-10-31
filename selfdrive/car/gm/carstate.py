@@ -54,13 +54,7 @@ class CarState(CarStateBase):
     self.coasting_long_plan = ""
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -1.
-    self.coasting_lead_min_v = 5. * CV.MPH_TO_MS
-    self.coasting_lead_min_rel_dist_s = 0.8 # [s] coasting logic isn't used at less than this follow distance
-    self.coasting_lead_min_abs_dist = 10 # [m] coasting logic isn't used at less than this absolute follow distance
-    self.coasting_last_non_cruise_brake_t = 0.
-    self.coasting_last_non_cruise_timeout_bp = [0.] # temporarily disabling the lockout of coast logic.
-    self.coasting_last_non_cruise_timeout_v = [0.]
-    self.coasting_lead_abs_dist_max_check_speed = 40 * CV.MPH_TO_MS
+    self.tr = 1.8
     self.coast_one_pedal_mode_active = False
     self.pause_long_on_gas_press = False
     self.last_pause_long_on_gas_press_t = 0.
@@ -72,8 +66,8 @@ class CarState(CarStateBase):
     self.one_pedal_mode_engage_on_gas = False
     self.one_pedal_mode_engage_on_gas_min_speed = 1. * CV.MPH_TO_MS
     self.one_pedal_mode_max_set_speed = 5 * CV.MPH_TO_MS #  one pedal mode activates if cruise set at or below this speed
-    self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]], [i * CV.MPH_TO_MS for i in [0., 1., 4., 45., 85.]], [1.]]
-    self.one_pedal_mode_stop_apply_brake_v = [[70., 70., 95., 115., 90.], [100., 100., 160., 180., 120.], [250.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
+    self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [1., 4., 45., 85.]], [i * CV.MPH_TO_MS for i in [1., 4., 45., 85.]], [1.]]
+    self.one_pedal_mode_stop_apply_brake_v = [[80., 95., 115., 90.], [100., 160., 180., 120.], [250.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
     self.one_pedal_mode_last_gas_press_t = 0.
     self.one_pedal_mode_engaged_with_button = False
     self.one_pedal_mode_ramp_time_bp = [0., 0.5]
@@ -83,6 +77,13 @@ class CarState(CarStateBase):
     self.one_pedal_last_brake_mode = 0 # for saving brake mode when not in one-pedal-mode
     self.one_pedal_last_follow_level = 0 # for saving follow distance when in one-pedal mode
     self.one_pedal_v_cruise_kph_last = 0
+    
+
+    self.lead_v_rel_long_lockout_bp, self.lead_v_rel_long_lockout_v = [[-12 * CV.MPH_TO_MS, -5 * CV.MPH_TO_MS], [1., 0.]] # pass-through all braking for v_rel < -15mph
+    self.lead_v_long_lockout_bp, self.lead_v_long_lockout_v = [[4. * CV.MPH_TO_MS, 8. * CV.MPH_TO_MS], [1., 0.]] # pass-through all braking for v_lead < 4mph
+    self.lead_ttc_long_lockout_bp, self.lead_ttc_long_lockout_v = [[4., 8.], [1., 0.]] # pass through all cruise braking for time-to-collision < 4s
+    self.lead_tr_long_lockout_bp, self.lead_tr_long_lockout_v = [[0.7, 1.0], [1., 0.]] # pass through all cruise braking if follow distance < tr * 0.8
+    self.lead_d_long_lockout_bp, self.lead_d_long_lockout_v = [[6, 10], [1., 0.]] # pass through all cruise braking if follow distance < 6m
     
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
