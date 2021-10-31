@@ -1,3 +1,15 @@
+Version 0.8.9-tw-3.4 (2021-10-31)
+========================
+ Happy Halloween!
+ * Revamped safety layer for avoiding collisions between coasting/one-pedal mode and braking when following lead, that reverts to stock longitidunal behavior for/when:
+   1. Repidly approaching lead
+   2. Slow/stopped lead
+   3. Very close lead
+   4. Low time to collision (i.e. rapidly approaching close lead)
+   5. Following at less than target follow distance
+ * Add time to collision (ttc) ui metric
+ * Use moving average percent grade for smoother reading
+
 Version 0.8.9-tw-3.3 (2021-10-29)
 ========================
  * lockout of coasting logic is now based on absolute and relative lead velocity. 

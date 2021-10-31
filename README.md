@@ -9,7 +9,9 @@
 ------
 
 This fork exists to improve OP performance and convenience for GM cars, specifically the Chevy Volt, because the kegman fork wouldn't run on Comma Three.
-The basic plan is to import all the features Volt OP users (on Discord) desire.
+The result is the best volt driving experience there's ever been.
+
+Most of the features in this fork are my original implementations, often inspired and always informed by the work of others in the community. Pleae provide any positive/negative feedback on the comma/openpilot/retropilot Discord servers, especially if you'd like your issues addressed.
 
 Running on move-fast fork of openpilot, which adds:
 
@@ -25,7 +27,7 @@ Running on move-fast fork of openpilot, which adds:
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
 - [x] [GM] Toggle steering with LKAS button (wheel color changes to indicate disengagement)
-- [x] [GM] One-pedal driving: using regen (volt) and/or light/moderate/heavy braking, control OP all the way to a stop, without a lead, and without disengaging, with just the gas pedal (see below)
+- [x] [GM] One-pedal driving a.k.a. autosteering only a.k.a. toggle longitudinal control: using regen (volt) and/or light/moderate/heavy braking, control OP all the way to a stop, without a lead, and without disengaging, with just the gas pedal (see below)
 - [x] [✅] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#new-dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only. must enable "Disable use of lanelines" for button to appear* (ported from sunnyhaibin)
 - [x] [✅] Normal/sport acceleration modes with improved acceleration/braking profiles (ported from kegman)
 - [x] [✅] 1/5 mph changes for tap/hold of the inc/dec buttons (ported from Spector56)
@@ -35,6 +37,7 @@ Running on move-fast fork of openpilot, which adds:
 - [x] [✅] Coasting: OP will still brake behind a lead car and to slow down for curves, but will not apply engine/regen/friction brakes in order to keep the set speed (by user or map speed limit)
     * Toggle coasting while driving by tapping the brake indicator (if enabled)
     * A circle around the brake indicator indicates that coasting is enabled
+    * *Can be a bit rough on the brakes when following downhill over set speed; recommend to disable if constantly following downhill*
 - [x] [✅] Brake when 10mph+ over set speed when coasting enabled
 - [x] [✅] Nudgeless lane change: OP will start lane change automatically in direction of blinker after blinker on for 3s
 - [x] [✅] Friction braking indicator
