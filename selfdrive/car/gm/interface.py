@@ -153,11 +153,11 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.49
 
     elif candidate == CAR.ESCALADE:
-      ret.minEnableSpeed = -1.  # engage speed is decided by pcm
-      ret.mass = 2739. + STD_CARGO_KG
-      ret.wheelbase = 3.302
-      ret.steerRatio = 17.3
-      ret.centerToFront = ret.wheelbase * 0.49
+      ret.mass = 2645. + STD_CARGO_KG
+      ret.wheelbase = 2.95
+      ret.steerRatio = 17.3  # end to end is 13.46
+      ret.steerRatioRear = 0.
+      ret.centerToFront = ret.wheelbase * 0.4
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
       ret.lateralTuning.pid.kf = 0.000045
