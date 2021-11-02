@@ -152,13 +152,12 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.49
 
-    elif candidate == CAR.ESCALADE:
+    elif candidate == CAR.ESCALADE_ESV:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
-      ret.mass = 2645. + STD_CARGO_KG
-      ret.wheelbase = 2.95
-      ret.steerRatio = 17.3  # end to end is 13.46
-      ret.steerRatioRear = 0.
-      ret.centerToFront = ret.wheelbase * 0.4
+      ret.mass = 2739. + STD_CARGO_KG
+      ret.wheelbase = 3.302
+      ret.steerRatio = 17.3
+      ret.centerToFront = ret.wheelbase * 0.49
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
       ret.lateralTuning.pid.kf = 0.000045
@@ -230,7 +229,7 @@ class CarInterface(CarInterfaceBase):
     if cruiseEnabled and self.CS.lka_button and self.CS.lka_button != self.CS.prev_lka_button:
       self.CS.lkMode = not self.CS.lkMode
       cloudlog.info("button press event: LKA button. new value: %i" % self.CS.lkMode)
-      
+
     # distance button is also used to toggle braking modes when in one-pedal-mode
     if self.CS.one_pedal_mode_active or self.CS.coast_one_pedal_mode_active:
       if self.CS.distance_button != self.CS.prev_distance_button:
@@ -359,7 +358,7 @@ class CarInterface(CarInterfaceBase):
         self.CS.last_pause_long_on_gas_press_t = t
     if self.CS.gasPressed:
       self.CS.one_pedal_mode_last_gas_press_t = t
-      
+
     self.CS.pause_long_on_gas_press = pause_long_on_gas_press
     enabled = c.enabled or self.CS.pause_long_on_gas_press
 
