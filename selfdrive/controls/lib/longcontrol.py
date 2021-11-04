@@ -18,7 +18,7 @@ RATE = 100.0
 
 # As per ISO 15622:2018 for all speeds
 ACCEL_MIN_ISO = -3.5 # m/s^2
-ACCEL_MAX_ISO = 2.0 # m/s^2
+ACCEL_MAX_ISO = 3.5 # m/s^2
 
 
 # TODO this logic isn't really car independent, does not belong here
@@ -70,6 +70,7 @@ class LongControl():
     self.longPlan = ""
     self.coasting_lead_d = -1.
     self.coasting_lead_v = -1.
+    self.tr = 1.8
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
@@ -114,6 +115,7 @@ class LongControl():
       self.longPlan = long_plan.longitudinalPlanSource
       self.coasting_lead_d = long_plan.leadDist
       self.coasting_lead_v = long_plan.leadV
+      self.tr = long_plan.desiredFollowDistance
 
       # Toyota starts braking more when it thinks you want to stop
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration

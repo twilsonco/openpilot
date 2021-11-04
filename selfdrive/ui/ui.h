@@ -84,7 +84,7 @@ const int header_h = 420;
 const int footer_h = 280;
 const int laneless_btn_touch_pad = 80;
 
-const int brake_size = 96;
+const int brake_size = 90;
 const int face_wheel_radius = 88;
 
 const int speed_sgn_r = 96;
@@ -123,6 +123,36 @@ typedef struct {
   int cnt;
 } line_vertices_data;
 
+typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
+  STEERING_ANGLE = 0,
+  DESIRED_STEERING_ANGLE,
+  STEERING_TORQUE_EPS,
+  ENGINE_RPM,
+  ACCELERATION,
+  JERK,
+  ALTITUDE,
+  PERCENT_GRADE,
+  LEAD_TTC,
+  LEAD_DISTANCE_LENGTH,
+  LEAD_DISTANCE_TIME,
+  LEAD_DESIRED_DISTANCE_LENGTH,
+  LEAD_DESIRED_DISTANCE_TIME,
+  LEAD_COSTS,
+  LEAD_VELOCITY_RELATIVE,
+  LEAD_VELOCITY_ABS,
+  GPS_ACCURACY,
+  CPU_TEMP_AND_PERCENT,
+  CPU_TEMP,
+  CPU_PERCENT,
+  MEMORY_TEMP,
+  AMBIENT_TEMP,
+  FANSPEED_PERCENT,
+  MEMORY_USAGE_PERCENT,
+  FREESPACE_STORAGE,
+  
+  NUM_MEASURES
+} UIMeasure;
+
 typedef struct UIScene {
 
   mat3 view_from_calib;
@@ -136,41 +166,58 @@ typedef struct UIScene {
   bool speed_limit_perc_offset;
   Rect speed_limit_sign_touch_rect;
   double last_speed_limit_sign_tap;
+  
+  Rect wheel_touch_rect;
+  bool wheel_rotates = true;
 
   cereal::PandaState::PandaType pandaType;
   
 // measures
   int measure_min_num_slots = 0;
-  int measure_max_num_slots = 5;
+  int measure_max_num_slots = 10;
   int measure_cur_num_slots = 3;
-  int measure_slots[5];
-  Rect measure_slot_touch_rects[5];
-  int num_measures = 10; // the number of cases handled in ui_draw_measures() in paint.cc
+  int measure_slots[10];
+  Rect measure_slot_touch_rects[10];
+  int num_measures = UIMeasure::NUM_MEASURES; // the number of cases handled in ui_draw_measures() in paint.cc
   Rect speed_rect;
   
   // actual measures
   float angleSteers;
   float angleSteersDes;
   float gpsAccuracyUblox;
-  float altitudeUblox;
+  float altitudeUblox = 0.;
   int engineRPM;
   bool steerOverride;
   float steeringTorqueEps;
   float aEgo;
+  float jEgo, lastAEgo;
   float cpuTemp;
   int cpuPerc;
+  int thermalStatus;
+  int percentGradeRollingIter = 0, percentGradeNumSamples = 10;
+  float percentGradeAltitudes[10], percentGradePositions[10], percentGrades[10], percentGradeCurDist = 0., percentGradeLenStep = 5., percentGradeLastTime = 0., percentGrade = 0., percentGradeMinDist = 200.;
+  bool percentGradeIterRolled = false;
+  float desiredFollowDistance, followDistanceCost, followAccelCost;
+  float stoppingDistance;
+  
+  float lastTime = 0., sessionInitTime = 0.;
 
   int lead_status;
-  float lead_d_rel, lead_v_rel;
+  float lead_d_rel, lead_v_rel, lead_v;
 
   // gps
   int satelliteCount;
   bool gpsOK;
   
   // brake indicator
-  
   int brake_percent;
   float brake_indicator_alpha;
+  float brake_indicator_last_t;
+  
+  // one-pedal mode fading. maxspeed rect at -1, fades away by 0, and one-pedal icon fades in by 1
+  float one_pedal_fade = -1., one_pedal_fade_last_t = 0.;
+  Rect one_pedal_touch_rect;
+  Rect brake_touch_rect;
   
   int laneless_mode;
   Rect laneless_btn_touch_rect;
@@ -180,6 +227,7 @@ typedef struct UIScene {
   cereal::CarState::Reader car_state;
   cereal::ControlsState::Reader controls_state;
   cereal::LateralPlan::Reader lateral_plan;
+  cereal::LongitudinalPlan::Reader longitudinal_plan;
   cereal::DriverState::Reader driver_state;
   cereal::DriverMonitoringState::Reader dmonitoring_state;
 

@@ -14,7 +14,7 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
-from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_cruise
+from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_cruise, V_CRUISE_MIN
 from selfdrive.controls.lib.drive_helpers import get_lag_adjusted_curvature
 from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEED
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -400,26 +400,44 @@ class Controls:
       params = Params()
       speed_limit_active = params.get_bool("SpeedLimitControl")
       
-      self.v_cruise_kph = update_v_cruise(v_cruise, CS.buttonEvents, self.enabled and CS.cruiseState.enabled, cur_time, self.accel_pressed,self.decel_pressed, self.accel_pressed_last, self.decel_pressed_last, self.fastMode, self.fast_mode_enabled, vEgo, self.v_cruise_last_changed, self.LoC.longPlan, self.speed_limit_last_deactivated)
-      
-      self.v_cruise_kph = self.v_cruise_kph if self.is_metric else int(round((float(round(self.v_cruise_kph))-0.0995)/0.6233))
-      
-      if self.v_cruise_kph != self.v_cruise_kph_last:
-        self.v_cruise_last_changed = cur_time
-      
-      if speed_limit_active and not params.get_bool("SpeedLimitControl"):
-        self.speed_limit_last_deactivated = cur_time
-
-      if(self.accel_pressed or self.decel_pressed):
-        if self.v_cruise_kph_last != self.v_cruise_kph:
-          self.accel_pressed_last = cur_time
-          self.decel_pressed_last = cur_time
-          self.fastMode = True
+      if self.CI.CS.one_pedal_mode_engage_on_gas:
+        self.CI.CS.one_pedal_mode_engage_on_gas = False
+        self.CI.CS.one_pedal_v_cruise_kph_last = self.v_cruise_kph
+        self.CI.CS.one_pedal_last_follow_level = self.CI.CS.follow_level
+        self.v_cruise_kph = V_CRUISE_MIN
+      elif not self.accel_pressed and cur_time - self.accel_pressed_last < 0.3 and self.enabled and CS.cruiseState.enabled and (self.CI.CS.one_pedal_mode_active or self.CI.CS.coast_one_pedal_mode_active) and self.CI.CS.one_pedal_v_cruise_kph_last > 0: # user resuming speed from one-pedal mode
+        self.v_cruise_kph = self.CI.CS.one_pedal_v_cruise_kph_last
+        self.CI.CS.one_pedal_brake_mode = min(1, self.CI.CS.one_pedal_last_brake_mode)
+        self.CI.CS.follow_level = self.CI.CS.one_pedal_last_follow_level
       else:
-        self.fastMode = False  
+        self.v_cruise_kph = update_v_cruise(v_cruise, CS.buttonEvents, self.enabled and CS.cruiseState.enabled, cur_time, self.accel_pressed,self.decel_pressed, self.accel_pressed_last, self.decel_pressed_last, self.fastMode, self.fast_mode_enabled, vEgo, self.v_cruise_last_changed, self.LoC.longPlan, self.speed_limit_last_deactivated)
+      
+        self.v_cruise_kph = self.v_cruise_kph if self.is_metric else int(round((float(round(self.v_cruise_kph))-0.0995)/0.6233))
+        
+        if self.v_cruise_kph < self.v_cruise_kph_last and cur_time - self.v_cruise_last_changed > 1.0:
+          self.CI.CS.one_pedal_v_cruise_kph_last = self.v_cruise_kph + (self.v_cruise_kph_last - self.v_cruise_kph)
+        
+        if self.v_cruise_kph != self.v_cruise_kph_last:
+          self.v_cruise_last_changed = cur_time
+      
+        if speed_limit_active and not params.get_bool("SpeedLimitControl"):
+          self.speed_limit_last_deactivated = cur_time
+
+        if(self.accel_pressed or self.decel_pressed):
+          if self.v_cruise_kph_last != self.v_cruise_kph:
+            self.accel_pressed_last = cur_time
+            self.decel_pressed_last = cur_time
+            self.fastMode = True
+        else:
+          self.fastMode = False  
     elif self.CP.pcmCruise and CS.cruiseState.enabled:
       self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
+    
+    
 
+    if self.events.any(ET.RESET_V_CRUISE):
+      self.v_cruise_kph = 0
+      
     self.CI.CS.v_cruise_kph = self.v_cruise_kph
 
     # decrease the soft disable timer at every step, as it's reset on
@@ -518,11 +536,10 @@ class Controls:
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS)
       actuators.accel, self.v_target, self.a_target = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits)
       
-      coasting_enabled = getattr(self.CI.CS, "coasting_enabled", False)
-      if coasting_enabled:
-        self.CI.CS.coasting_long_plan = self.LoC.longPlan
-        self.CI.CS.coasting_lead_d = self.LoC.coasting_lead_d
-        self.CI.CS.coasting_lead_v = self.LoC.coasting_lead_v
+      self.CI.CS.coasting_long_plan = self.LoC.longPlan
+      self.CI.CS.coasting_lead_d = self.LoC.coasting_lead_d
+      self.CI.CS.coasting_lead_v = self.LoC.coasting_lead_v
+      self.CI.CS.tr = self.LoC.tr
           
 
       # Steering PID loop and lateral MPC

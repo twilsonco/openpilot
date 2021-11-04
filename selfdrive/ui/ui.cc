@@ -7,6 +7,9 @@
 #include <cmath>
 #include <cstdio>
 
+#include <QDateTime>
+
+#include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/visionimg.h"
@@ -19,6 +22,8 @@
 #define BACKLIGHT_TS 10.00
 #define BACKLIGHT_OFFROAD 75
 
+static const float fade_duration = 0.3; // [s] time it takes for the brake indicator to fade in/out
+static const float fade_time_step = 1. / fade_duration; // will step in the transparent or opaque direction
 
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
@@ -132,6 +137,7 @@ static void update_sockets(UIState *s) {
 static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
+  float t = seconds_since_boot();
 
   // update engageability and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
@@ -140,22 +146,101 @@ static void update_state(UIState *s) {
   }
   if (scene.started && sm.updated("controlsState")) {
     scene.controls_state = sm["controlsState"].getControlsState();
-    scene.angleSteersDes = scene.controls_state.getLateralControlState().getAngleState().getSteeringAngleDeg();
+    scene.car_state = sm["carState"].getCarState();
+    scene.angleSteersDes = scene.controls_state.getLateralControlState().getPidState().getAngleError() + scene.car_state.getSteeringAngleDeg();
   }
   if (sm.updated("carState")){
     scene.car_state = sm["carState"].getCarState();
+    
     scene.brake_percent = scene.car_state.getFrictionBrakePercent();
-    scene.brake_indicator_alpha = scene.car_state.getFrictionBrakeAlpha();
+    if (scene.brake_percent > 0){
+      scene.brake_indicator_alpha += fade_time_step * (t - scene.brake_indicator_last_t);
+      if (scene.brake_indicator_alpha > 1.)
+        scene.brake_indicator_alpha = 1.;
+    }
+    else if (scene.brake_indicator_alpha > 0.){
+      scene.brake_indicator_alpha -= fade_time_step * (t - scene.brake_indicator_last_t);
+      if (scene.brake_indicator_alpha < 0.)
+        scene.brake_indicator_alpha = 0.;
+    }
+    scene.brake_indicator_last_t = t;
+    
+    if (t - scene.sessionInitTime > 10.){
+      if ((scene.car_state.getOnePedalModeActive() || scene.car_state.getCoastOnePedalModeActive())
+        || (s->status == UIStatus::STATUS_DISENGAGED && scene.controls_state.getVCruise() < 5 && (Params().getBool("OnePedalMode") || Params().getBool("DisableDisengageOnGas")))){
+        scene.one_pedal_fade += fade_time_step * (t - scene.one_pedal_fade_last_t);
+        if (scene.one_pedal_fade > 1.)
+          scene.one_pedal_fade = 1.;
+      }
+      else if (scene.one_pedal_fade > -1.){
+        scene.one_pedal_fade -= fade_time_step * (t - scene.one_pedal_fade_last_t);
+        if (scene.one_pedal_fade < -1.)
+          scene.one_pedal_fade = -1.;
+      }
+    }
+    scene.one_pedal_fade_last_t = t;
+  
+    
     scene.steerOverride= scene.car_state.getSteeringPressed();
     scene.angleSteers = scene.car_state.getSteeringAngleDeg();
-    scene.engineRPM = scene.car_state.getEngineRPM();
+    scene.engineRPM = static_cast<int>((scene.car_state.getEngineRPM() / (100.0)) + 0.5) * 100;
     scene.aEgo = scene.car_state.getAEgo();
+    float dt = t - scene.lastTime;
+    if (dt > 0.){
+      scene.jEgo = (scene.aEgo - scene.lastAEgo) / dt;
+    }
+    else{
+      scene.jEgo = 0.;
+    }
+    scene.lastAEgo = scene.aEgo;
     scene.steeringTorqueEps = scene.car_state.getSteeringTorqueEps();
+    
+    if (scene.car_state.getVEgo() > 0.0){
+      scene.percentGradeCurDist += scene.car_state.getVEgo() * (t - scene.percentGradeLastTime);
+      if (scene.percentGradeCurDist > scene.percentGradeLenStep){ // record position/elevation at even length intervals
+        float prevDist = scene.percentGradePositions[scene.percentGradeRollingIter];
+        scene.percentGradeRollingIter++;
+        if (scene.percentGradeRollingIter >= scene.percentGradeNumSamples){
+          if (!scene.percentGradeIterRolled){
+            scene.percentGradeIterRolled = true;
+            // Calculate initial mean percent grade
+            float u = 0.;
+            for (int i = 0; i < scene.percentGradeNumSamples; ++i){
+              float rise = scene.percentGradeAltitudes[i] - scene.percentGradeAltitudes[(i+1)%scene.percentGradeNumSamples];
+              float run = scene.percentGradePositions[i] - scene.percentGradePositions[(i+1)%scene.percentGradeNumSamples];
+              if (run != 0.){
+                scene.percentGrades[i] = rise/run * 100.;
+                u += scene.percentGrades[i];
+              }
+            }
+            u /= float(scene.percentGradeNumSamples);
+            scene.percentGrade = u;
+          }
+          scene.percentGradeRollingIter = 0;
+        }
+        scene.percentGradeAltitudes[scene.percentGradeRollingIter] = scene.altitudeUblox;
+        scene.percentGradePositions[scene.percentGradeRollingIter] = prevDist + scene.percentGradeCurDist;
+        if (scene.percentGradeIterRolled){
+          float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
+          float run = scene.percentGradePositions[scene.percentGradeRollingIter] - scene.percentGradePositions[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
+          if (run != 0.){
+            // update rolling average
+            float newGrade = rise/run * 100.;
+            scene.percentGrade -= scene.percentGrades[scene.percentGradeRollingIter] / float(scene.percentGradeNumSamples);
+            scene.percentGrade += newGrade / float(scene.percentGradeNumSamples);
+            scene.percentGrades[scene.percentGradeRollingIter] = newGrade;
+          }
+        }
+        scene.percentGradeCurDist = 0.;
+      }
+    }
+    scene.percentGradeLastTime = t;
   }
   if (sm.updated("radarState")) {
     auto radar_state = sm["radarState"].getRadarState();
     scene.lead_v_rel = radar_state.getLeadOne().getVRel();
     scene.lead_d_rel = radar_state.getLeadOne().getDRel();
+    scene.lead_v = radar_state.getLeadOne().getVLead();
     scene.lead_status = radar_state.getLeadOne().getStatus();
   }
   if (sm.updated("modelV2") && s->vg) {
@@ -223,7 +308,7 @@ static void update_state(UIState *s) {
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
   if (sm.updated("deviceState")) {
     scene.deviceState = sm["deviceState"].getDeviceState();
-    s->scene.cpuTemp = scene.deviceState.getCpuTempC()[0];
+    scene.cpuTemp = scene.deviceState.getCpuTempC()[0];
     auto cpus = scene.deviceState.getCpuUsagePercent();
     float cpu = 0.;
     int num_cpu = 0;
@@ -234,17 +319,17 @@ static void update_state(UIState *s) {
     if (num_cpu > 1){
       cpu /= num_cpu;
     }
-    s->scene.cpuPerc = cpu;
+    scene.cpuPerc = cpu;
   }
   if (sm.updated("ubloxGnss")) {
     auto data = sm["ubloxGnss"].getUbloxGnss();
     if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
       scene.satelliteCount = data.getMeasurementReport().getNumMeas();
-      s->scene.satelliteCount = scene.satelliteCount;
+      scene.satelliteCount = scene.satelliteCount;
     }
     auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
-    s->scene.gpsAccuracyUblox = data2.getAccuracy();
-    s->scene.altitudeUblox = data2.getAltitude();
+    scene.gpsAccuracyUblox = data2.getAccuracy();
+    scene.altitudeUblox = data2.getAltitude();
   }
   if (sm.updated("liveLocationKalman")) {
     scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();
@@ -259,6 +344,15 @@ static void update_state(UIState *s) {
     scene.lateralPlan.rProb = data.getRProb();
     scene.lateralPlan.lanelessModeStatus = data.getLanelessMode();
   }
+  if (sm.updated("longitudinalPlan")) {
+    auto data = sm["longitudinalPlan"].getLongitudinalPlan();
+
+    scene.desiredFollowDistance = data.getDesiredFollowDistance();
+    scene.followDistanceCost = data.getLeadDistCost();
+    scene.followAccelCost = data.getLeadAccelCost();
+    scene.stoppingDistance = data.getStoppingDistance();
+  }
+  scene.lastTime = t;
 }
 
 static void update_params(UIState *s) {
@@ -312,13 +406,23 @@ static void update_status(UIState *s) {
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->scene.laneless_mode = std::stoi(Params().get("LanelessMode"));
       s->scene.brake_percent = std::stoi(Params().get("FrictionBrakePercent"));
+      
+      s->scene.sessionInitTime = seconds_since_boot();
+      s->scene.percentGrade = 0;
+      for (int i = 0; i < 5; ++i){
+        s->scene.percentGradeAltitudes[i] = 0.;
+        s->scene.percentGradePositions[i] = 0.;
+        s->scene.percentGrades[i] = 0.;
+        s->scene.percentGradeIterRolled = false;
+        s->scene.percentGradeRollingIter = 0;
+      }
 
       s->scene.measure_cur_num_slots = std::stoi(Params().get("MeasureNumSlots"));
-      s->scene.measure_slots[0] = std::stoi(Params().get("MeasureSlot00"));
-      s->scene.measure_slots[1] = std::stoi(Params().get("MeasureSlot01"));
-      s->scene.measure_slots[2] = std::stoi(Params().get("MeasureSlot02"));
-      s->scene.measure_slots[3] = std::stoi(Params().get("MeasureSlot03"));
-      s->scene.measure_slots[4] = std::stoi(Params().get("MeasureSlot04"));
+      for (int i = 0; i < QUIState::ui_state.scene.measure_max_num_slots; ++i){
+        char slotName[16];
+        snprintf(slotName, sizeof(slotName), "MeasureSlot%.2d", i);
+        s->scene.measure_slots[i] = std::stoi(Params().get(slotName));
+      }
 
       s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
 

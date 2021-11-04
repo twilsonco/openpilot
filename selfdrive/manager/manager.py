@@ -52,17 +52,26 @@ def manager_init():
     ("LanelessMode", "2"),
     ("NudgelessLaneChange", "0"),
     ("Coasting", "0"),
+    ("RegenBraking", "0"),
     ("OnePedalMode", "0"),
+    ("OnePedalModeSimple", "0"),
+    ("OnePedalModeEngageOnGas", "0"),
+    ("OnePedalBrakeMode", "0"),
+    ("FollowLevel", "2"),
     ("CoastingBrakeOverSpeed", "0"),
     ("FrictionBrakePercent", "0"),
-    ("FrictionBrakeAlpha", "0"),
     ("BrakeIndicator", "1"),
     ("MeasureNumSlots", "0"),
-    ("MeasureSlot00", "0"),
-    ("MeasureSlot01", "1"),
-    ("MeasureSlot02", "2"),
-    ("MeasureSlot03", "3"),
-    ("MeasureSlot04", "4"),
+    ("MeasureSlot00", "7"), # right column: percent grade
+    ("MeasureSlot01", "6"), # altitude
+    ("MeasureSlot02", "4"), # acceleration
+    ("MeasureSlot03", "2"), # steering torque
+    ("MeasureSlot04", "3"), # engine rpm
+    ("MeasureSlot05", "9"), # lead dist [s]
+    ("MeasureSlot06", "11"),# lead dist des [s]
+    ("MeasureSlot07", "8"), # lead dist [m]
+    ("MeasureSlot08", "10"),# lead dist des [m]
+    ("MeasureSlot09", "12"),# dist cost
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))

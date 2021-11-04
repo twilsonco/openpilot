@@ -14,7 +14,7 @@ class LongitudinalMpc():
     self.last_cloudlog_t = 0.0
     self.ts = list(range(10))
     self.status = True
-    self.min_a = -3.2
+    self.min_a = -2.0
     self.max_a = 3.2
 
 

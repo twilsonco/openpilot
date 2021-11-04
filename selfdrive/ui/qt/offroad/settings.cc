@@ -120,7 +120,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_rocket.png",
                                   this));
   toggles.append(new ParamControl("NudgelessLaneChange",
-                                  "\U000026A0 Nudgeless lane change (1s delay) \U000026A0",
+                                  "⚠️ Nudgeless lane change (1s delay) ⚠️",
                                   "Perform lane change without requiring nudge from driver",
                                   "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
@@ -130,23 +130,38 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_gm_autohold.png",
                                   this));
   toggles.append(new ParamControl("Coasting",
-                                  "[GM] Coast downhill (take a brake!)",
-                                  "COMPLETELY disable normal cruise braking; still brake when following/curves/etc.",
+                                  "[GM] Coasting (tap me)",
+                                  "OP will allow the car to coast above the set speed rather than use engine/regen/friction braking. If you also have the \"Brake indicator\" toggle enabled, you can toggle coasting while driving by tapping the brake indicator, but you can only disable coasting while driving if you're traveling below your set speed (or at any speed if you have the \"Engine/regen braking\" toggle enabled).",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("CoastingBrakeOverSpeed",
                                   "[GM] Coast: brake 10mph+ over set speed",
-                                  "When coasting, start applying desired cruise braking when [10,15]mph over set speed.",
+                                  "When coasting, start applying desired cruise braking when [10,15] mph over set speed.",
                                   "../assets/offroad/icon_speed_offset.png",
                                   this));
+  toggles.append(new ParamControl("RegenBraking",
+                                  "[GM] Engine/regen braking (tap me)",
+                                  "Disable friction braking when OP is slowing to maintain cruise/speed limit; still brake for following/curves",
+                                  "../assets/img_brake.png",
+                                  this));
   toggles.append(new ParamControl("OnePedalMode",
-                                  "[GM] One pedal driving",
-                                  "Drive with one pedal; OP will brake all the way to a stop without disengaging. (To activate, enage OP and set cruise speed to 1, then drive!)",
+                                  "[GM] One-pedal mode (tap me)",
+                                  "In combination with the \"Disable disengage on gas\" option, you control speed with gas pedal (with optional, adjustable braking) while OP continues to steer and brake for curves and lead car following. To activate, ① (see \"One-pedal/Always-on-steering engage on gas\" below) set cruise speed to 1 and pedal icon will replace max speed indicator; set/resume button to return to normal cruise. ② Tap pedal icon to toggle one-pedal mode (see below). If one-pedal mode is active, then vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = 🟢/🟠/🔴 = light/moderate/heavy braking. ③ Press follow distance button to toggle persistent light/moderate braking; hold for temporary heavy braking. ④ Toggle between one-pedal braking and regen/engine braking only by tapping the pedal icon (grey pedal icon indicates engine/regen braking only) or by using the follow distance button; one press will activating braking if not active, and a double press while the gas pedal is pressed will deactivate braking.",
+                                  "../assets/offroad/icon_car_pedal.png",
+                                  this));
+  toggles.append(new ParamControl("OnePedalModeSimple",
+                                  "[GM] ⚠️ One-pedal pro brakes (tap me) ⚠️",
+                                  "When using one-pedal mode, COMPLETELY DISABLE ALL OTHER FORMS OF OPENPILOT BRAKING. No additional braking will be automatically applied to slow/stop you behind a lead car, or to slow for a curve. You are solely responsible for applying brakes using adjustable one-pedal braking with the follow button or using the actual brakes.",
+                                  "../assets/offroad/icon_car_pedal.png",
+                                  this));
+  toggles.append(new ParamControl("OnePedalModeEngageOnGas",
+                                  "[GM] One-pedal/Always-on-steering engage on gas",
+                                  "When you press the gas in cruise mode at speed (i.e. not when resuming from a stop), enter one-pedal/always-on-steering mode. Increase or reset speed to return to normal cruise.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("BrakeIndicator",
                                   "[GM] Brake indicator",
-                                  "Binary brake indicator",
+                                  "Brake indicator at bottom-right when driving. Circle at indicator center grows and turns red to indicate the level of braking. Pulses immediately after starting car to let you know it's on.",
                                   "../assets/offroad/icon_brake_disc.png",
                                   this));
   toggles.append(new ParamControl("CustomSounds",
