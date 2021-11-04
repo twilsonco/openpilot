@@ -1,3 +1,24 @@
+Version tw-0.8.9-3.4 (2021-11-04)
+========================
+ 1. Coasting means coasting! Before, the coasting toggle was merely disabling OP friction braking for maintaining set cruise speed. Now coasting really means coasting. If brake indicator enabled, then when coasting is enabled a circle will show around the brake indicator icon.
+   1. Enable the over-speed braking toggle so that OP will start applying regen/engine braking when 9-11mph over set speed, and friction braking 12+ over
+   2. Toggle coasting while driving by tapping the brake indicator icon
+   3. You cannot disable coasting while driving above set speed unless engine/regen braking toggle is enabled
+ 2. Engine/regen braking toggle does what the coasting toggle used to do, disables OP friction braking for maintaining set cruise speed
+ 3. One-pedal mode changes
+   1. Now only requires the "Disable disengage on gas" toggle be enabled
+   2. One-pedal mode toggle does not need to be on! You toggle it while driving.
+   3. One-pedal mode can now be engaged in three ways:
+     1. While cruise is set, press and hold the follow distance button for 0.5s (continue to hold for immediate hard braking if necessary)
+     2. If one-pedal engage on gas toggle is enabled, press gas while cruise is set and traveling above 1mph
+     3. While cruise is set, lower cruise speed to 1
+     * When in one-pedal mode, press resume to resume cruise at the speed you were going before entering one-pedal mode
+   4. Adjust braking intensity while one-pedal mode is active by pressing follow distance button to toggle light/moderate braking, or holding for heavy braking
+   5. Toggle friction/engine/regen braking in two ways:
+     1. Double-press follow distance button while gas is pressed to disable friction braking, or single press it while friction braking is disabled to reenable it
+     2. Tap the pedal icon on your device screen
+ 4. Reimplemented follow profiles. Smoother followig at close distances and low speeds. Smoother stops, but still long smooth following when on far-follow.
+
 Version 0.8.9-tw-3.4 (2021-10-31)
 ========================
  Happy Halloween!
