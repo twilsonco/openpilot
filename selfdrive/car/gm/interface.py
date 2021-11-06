@@ -294,9 +294,7 @@ class CarInterface(CarInterfaceBase):
         if self.CS.one_pedal_brake_mode < 2:
           cloudlog.info("button press event: Engaging one-pedal hard braking.")
           self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
-          self.CS.one_pedal_brake_mode = 2
-          tmp_params = Params()
-          tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
+        self.CS.one_pedal_brake_mode = 2
       self.CS.follow_level = self.CS.one_pedal_brake_mode + 1
     else: # cruis is active, so just modify follow distance
       if self.CS.distance_button != self.CS.prev_distance_button:
