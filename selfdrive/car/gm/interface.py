@@ -247,8 +247,9 @@ class CarInterface(CarInterfaceBase):
       if self.CS.distance_button != self.CS.prev_distance_button:
         tmp_params = Params()
         if not self.CS.distance_button and self.CS.one_pedal_mode_engaged_with_button and t - self.CS.distance_button_last_press_t < 0.8: #user just engaged one-pedal with distance button hold and immediately let off the button, so default to regen/engine braking. If they keep holding, it does hard braking
-          cloudlog.info("Engaging one-pedal mode with distace button.")
+          cloudlog.info("button press event: Engaging one-pedal mode with distance button.")
           self.CS.one_pedal_brake_mode = 0
+          self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
           self.CS.one_pedal_mode_enabled = False
           self.CS.one_pedal_mode_active = False
           self.CS.coast_one_pedal_mode_active = True
@@ -256,39 +257,52 @@ class CarInterface(CarInterfaceBase):
           tmp_params.put_bool("OnePedalMode", self.CS.one_pedal_mode_enabled)
         else:
           if not tmp_params.get_bool("OnePedalMode") and self.CS.distance_button: # user lifted press of distance button while in coast-one-pedal mode, so turn on braking
+            cloudlog.info("button press event: Engaging one-pedal braking.")
+            self.CS.distance_button_last_press_t = t + 0.5
             self.CS.one_pedal_brake_mode = 0
+            self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
             self.CS.one_pedal_mode_enabled = True
             self.CS.one_pedal_mode_active = True
             tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
             tmp_params.put_bool("OnePedalMode", self.CS.one_pedal_mode_enabled)
           elif self.CS.distance_button and self.CS.pause_long_on_gas_press and t - self.CS.distance_button_last_press_t < 0.4: # on the second press of a double tap while the gas is pressed, turn off one-pedal braking
             # cycle the brake mode back to nullify the first press
-            self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
+            cloudlog.info("button press event: Disengaging one-pedal mode with distace button double-press.")
+            self.CS.distance_button_last_press_t = t + 0.5
+            self.CS.one_pedal_brake_mode = 0
+            self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
             self.CS.one_pedal_mode_enabled = False
             self.CS.one_pedal_mode_active = False
             self.CS.coast_one_pedal_mode_active = True
             tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
             tmp_params.put_bool("OnePedalMode", self.CS.one_pedal_mode_enabled)
           else:
-            self.CS.distance_button_last_press_t = t
-            if not self.CS.distance_button: # only make changes when user lifts press
+            if self.CS.distance_button:
+              self.CS.distance_button_last_press_t = t
+              cloudlog.info("button press event: Distance button pressed in one-pedal mode.")
+            else: # only make changes when user lifts press
               if self.CS.one_pedal_brake_mode == 2:
+                cloudlog.info(f"button press event: Disengaging one-pedal hard braking. Returning to {self.CS.one_pedal_last_brake_mode}")
                 self.CS.one_pedal_brake_mode = self.CS.one_pedal_last_brake_mode
-              else:
+                tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
+              elif t - self.CS.distance_button_last_press_t > 0. and t - self.CS.distance_button_last_press_t < 0.4: # only switch braking on a single tap (also allows for ignoring presses by setting last_press_t to be greater than t)
                 self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
+                cloudlog.info(f"button press event: one-pedal braking. New value: {self.CS.one_pedal_brake_mode}")
                 tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
           self.CS.one_pedal_mode_engaged_with_button = False
       elif self.CS.distance_button and t - self.CS.distance_button_last_press_t > 0.3:
         if self.CS.one_pedal_brake_mode < 2:
+          cloudlog.info("button press event: Engaging one-pedal hard braking.")
           self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
-        self.CS.one_pedal_brake_mode = 2
-      elif not self.CS.distance_button:
-        self.CS.one_pedal_brake_mode = min(self.CS.one_pedal_brake_mode, 1)
+          self.CS.one_pedal_brake_mode = 2
+          tmp_params = Params()
+          tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
       self.CS.follow_level = self.CS.one_pedal_brake_mode + 1
     else: # cruis is active, so just modify follow distance
       if self.CS.distance_button != self.CS.prev_distance_button:
         if self.CS.distance_button:
           self.CS.distance_button_last_press_t = t
+          cloudlog.info("button press event: Distance button pressed in cruise mode.")
         else: # apply change on button lift
           self.CS.follow_level -= 1
           if self.CS.follow_level < 1:

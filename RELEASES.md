@@ -1,3 +1,10 @@
+Version tw-0.8.9-3.5 (2021-11-06)
+========================
+ * Latest 0.8.10 supercombo (laneless + laneful) model
+ * Latest 0.8.10 driver monitoring model
+ * Update to AGNOS2 for Comma3 users
+ * BUGFIX: After using one-pedal hard braking during a driving session, it no longer defaults to moderate braking for future one-pedal braking engagements
+
 Version 0.8.9-tw-3.4 (2021-10-31)
 ========================
  Happy Halloween!

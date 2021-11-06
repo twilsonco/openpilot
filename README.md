@@ -23,6 +23,8 @@ Running on move-fast fork of openpilot, which adds:
 #### Current fork features [✅ = optional via toggle]:
 -----
 
+- [x] Latest openpilot 0.8.10 lateral and driver monitoring models
+- [x] [Comma3] Latest AGNOS2 OS
 - [x] [Chevy Volt] Sigmoidal steering response (thanks Qadmus)
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
