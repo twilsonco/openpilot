@@ -330,8 +330,13 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
     ui_draw_text(s, rect.centerX(), 118, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? int(-s->scene.one_pedal_fade * 200.) : int(-s->scene.one_pedal_fade * 100.)), "sans-regular");
     if (is_cruise_set) {
-      const std::string maxspeed_str = std::to_string((int)std::nearbyint(maxspeed));
-      ui_draw_text(s, rect.centerX(), 212, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? int(-s->scene.one_pedal_fade * 200.) : int(-s->scene.one_pedal_fade * 100.)), "sans-bold");
+      std::string maxspeed_str = std::to_string((int)std::nearbyint(maxspeed));
+      float font_size = 48 * 2.5;
+      if (s->scene.car_state.getCoastingActive()){
+        maxspeed_str += "+";
+        font_size *= 0.9;
+      }
+      ui_draw_text(s, rect.centerX(), 212, maxspeed_str.c_str(), font_size, COLOR_WHITE_ALPHA(is_cruise_set ? int(-s->scene.one_pedal_fade * 200.) : int(-s->scene.one_pedal_fade * 100.)), "sans-bold");
     } else {
       ui_draw_text(s, rect.centerX(), 212, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(int(-s->scene.one_pedal_fade * 100.)), "sans-semibold");
     }
