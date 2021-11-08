@@ -1,10 +1,13 @@
-Version tw-0.8.9-3.5 (2021-11-06)
+Version tw-0.8.9-3.5 (2021-11-08)
 ========================
- * Latest 0.8.10 supercombo (laneless + laneful) model
- * Latest 0.8.10 driver monitoring model
- * Update to AGNOS2 for Comma3 users
- * BUGFIX: After using one-pedal hard braking during a driving session, it no longer defaults to moderate braking for future one-pedal braking engagements
- * (actually add jshuler panda gm steering fix)
+ * NEW: Latest 0.8.10 supercombo (laneless + laneful) model
+ * NEW: Latest 0.8.10 driver monitoring model
+ * NEW: Update to AGNOS2 for Comma3 users
+ * NEW: Added follow level UI metric
+ * IMPROVED: Add "+" after max speed to indicate that coasting is enabled (ring around brake indicator also shown)
+ * IMPROVED: Better (but still hackey) follow braking when coasting behind lead downhill
+ * FIXED: After using one-pedal hard braking during a driving session, it no longer defaults to moderate braking for future one-pedal braking engagements
+ * FIXED: JShuler panda gm steering fix
 
 Version 0.8.9-tw-3.4 (2021-10-31)
 ========================
