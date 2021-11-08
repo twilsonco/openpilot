@@ -78,12 +78,20 @@ class CarState(CarStateBase):
     self.one_pedal_last_follow_level = 0 # for saving follow distance when in one-pedal mode
     self.one_pedal_v_cruise_kph_last = 0
     
-
-    self.lead_v_rel_long_lockout_bp, self.lead_v_rel_long_lockout_v = [[-12 * CV.MPH_TO_MS, -5 * CV.MPH_TO_MS], [1., 0.]] # pass-through all braking for v_rel < -15mph
-    self.lead_v_long_lockout_bp, self.lead_v_long_lockout_v = [[4. * CV.MPH_TO_MS, 8. * CV.MPH_TO_MS], [1., 0.]] # pass-through all braking for v_lead < 4mph
-    self.lead_ttc_long_lockout_bp, self.lead_ttc_long_lockout_v = [[4., 8.], [1., 0.]] # pass through all cruise braking for time-to-collision < 4s
-    self.lead_tr_long_lockout_bp, self.lead_tr_long_lockout_v = [[0.7, 1.0], [1., 0.]] # pass through all cruise braking if follow distance < tr * 0.8
-    self.lead_d_long_lockout_bp, self.lead_d_long_lockout_v = [[6, 10], [1., 0.]] # pass through all cruise braking if follow distance < 6m
+    # similar to over-speed coast braking, lockout coast/one-pedal logic first for engine/regen braking, and then for actual brakes.
+    # gas lockout lookup tables:
+    self.lead_v_rel_long_gas_lockout_bp, self.lead_v_rel_long_gas_lockout_v = [[-12 * CV.MPH_TO_MS, -8 * CV.MPH_TO_MS], [1., 0.]] # pass-through all engine/regen braking for v_rel < -15mph
+    self.lead_v_long_gas_lockout_bp, self.lead_v_long_gas_lockout_v = [[6. * CV.MPH_TO_MS, 12. * CV.MPH_TO_MS], [1., 0.]] # pass-through all engine/regen braking for v_lead < 4mph
+    self.lead_ttc_long_gas_lockout_bp, self.lead_ttc_long_gas_lockout_v = [[4., 8.], [1., 0.]] # pass through all cruise engine/regen braking for time-to-collision < 4s
+    self.lead_tr_long_gas_lockout_bp, self.lead_tr_long_gas_lockout_v = [[1.4, 1.7], [1., 0.]] # pass through all cruise engine/regen braking if follow distance < tr * 0.8
+    self.lead_d_long_gas_lockout_bp, self.lead_d_long_gas_lockout_v = [[12, 20], [1., 0.]] # pass through all cruise engine/regen braking if follow distance < 6m
+    
+    # brake lockout lookup tables:
+    self.lead_v_rel_long_brake_lockout_bp, self.lead_v_rel_long_brake_lockout_v = [[-20 * CV.MPH_TO_MS, -15 * CV.MPH_TO_MS], [1., 0.]] # pass-through all braking for v_rel < -15mph
+    self.lead_v_long_brake_lockout_bp, self.lead_v_long_brake_lockout_v = [[2. * CV.MPH_TO_MS, 5. * CV.MPH_TO_MS], [1., 0.]] # pass-through all braking for v_lead < 4mph
+    self.lead_ttc_long_brake_lockout_bp, self.lead_ttc_long_brake_lockout_v = [[2., 3.], [1., 0.]] # pass through all cruise braking for time-to-collision < 4s
+    self.lead_tr_long_brake_lockout_bp, self.lead_tr_long_brake_lockout_v = [[1.0, 1.2], [1., 0.]] # pass through all cruise braking if follow distance < tr * 0.8
+    self.lead_d_long_brake_lockout_bp, self.lead_d_long_brake_lockout_v = [[6, 10], [1., 0.]] # pass through all cruise braking if follow distance < 6m
     
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
