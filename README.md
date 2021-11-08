@@ -41,8 +41,8 @@ Running on move-fast fork of openpilot, which adds:
 - [x] [✅] Mute engage and disengage sounds
 - [x] [✅] Coasting: OP will still brake behind a lead car and to slow down for curves, but will not apply engine/regen/friction brakes in order to keep the set speed (by user or map speed limit)
     * Toggle coasting while driving by tapping the brake indicator (if enabled)
-    * A circle around the brake indicator indicates that coasting is enabled
-    * *Can be a bit rough on the brakes when following downhill over set speed; recommend to disable if constantly following downhill*
+    * A "+" after the max speed (and/or a white circle around the brake indicator) indicates that coasting is enabled
+    * *Can be a bit rough on the brakes when following downhill over set speed; recommend to disable if uncomfortable when constantly following downhill*
 - [x] [✅] Brake when 10mph+ over set speed when coasting enabled
 - [x] [✅] Nudgeless lane change: OP will start lane change automatically in direction of blinker after blinker on for 3s
 - [x] [✅] Friction braking indicator
@@ -53,7 +53,7 @@ Running on move-fast fork of openpilot, which adds:
     * Metrics (24 to choose from):
         * Device info: CPU temperature, CPU percent, CPU temp + percent, memory temperature, memory used, free storage, ambient temperature, fanspeed (as percent of max), GPS accuracy (and number of satelites), altitude
         * Vehicle info: Engine RPM, steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road
-        * Lead-following info: lead distance [length], desired lead distance [length], lead distance [time], desired lead distance [time], follow distance cost [in units of the stock OP distance cost; i.e. 2.5 meand 2.5× the stock OP value], relative lead velocity, absolute lead velocity
+        * Lead-following info: follow distance level, lead distance [length], desired lead distance [length], lead distance [time], desired lead distance [time], follow distance and acceleration mpc costs [in units of the stock OP costs; i.e. 2.5 means 2.5× the stock OP value], relative lead velocity, absolute lead velocity
 - [x] [GM] [✅] **One-pedal driving**: OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
     * Must have disable disengage on gas enabled
     * **Not necessary to enable the one-pedal toggle; you engage while driving**
