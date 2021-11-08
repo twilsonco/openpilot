@@ -415,7 +415,7 @@ static void ui_draw_measures(UIState *s){
     int default_unit_font_size = 38;
   
     // determine bounding rectangle
-    const int slots_r = brake_size + 10 + (s->scene.measure_cur_num_slots <= 5 ? 6 : 0);
+    const int slots_r = brake_size + 6 + (s->scene.measure_cur_num_slots <= 5 ? 6 : 0);
     const int slots_w = (s->scene.measure_cur_num_slots <= 5 ? 2 : 4) * slots_r;
     const int slots_x = (s->scene.measure_cur_num_slots <= 5 ? center_x - slots_r : center_x - 3 * slots_r);
     const Rect slots_rect = {slots_x, slots_y_min, slots_w, slots_y_rng};
@@ -888,6 +888,31 @@ static void ui_draw_measures(UIState *s){
           }}
           break;
 
+        case UIMeasure::FOLLOW_LEVEL: 
+          {
+            std::string gap;
+            snprintf(name, sizeof(name), "GAP");
+            switch (int(scene.car_state.getReaddistancelines())){
+              case 1:
+              gap =  "I";
+              break;
+              
+              case 2:
+              gap =  "I I";
+              break;
+              
+              case 3:
+              gap =  "I I I";
+              break;
+              
+              default:
+              gap =  "";
+              break;
+            }
+            snprintf(val, sizeof(val), "%s", gap.c_str());
+          }
+          break;
+
         default: {// invalid number
           snprintf(name, sizeof(name), "INVALID");
           snprintf(val, sizeof(val), "⚠️");}
@@ -910,6 +935,9 @@ static void ui_draw_measures(UIState *s){
       int slot_y = slots_rect.y + (i % 5) * slot_y_rng;
       int slot_y_mid = slot_y + slot_y_rng / 2;
       int y = slot_y_mid + slot_y_rng / 2 - 8 - label_font_size;
+      if (strlen(name) == 0){
+        y += label_font_size / 2;
+      }
       nvgFontFace(s->vg, "sans-semibold");
       nvgFontSize(s->vg, val_font_size);
       nvgFillColor(s->vg, val_color);
