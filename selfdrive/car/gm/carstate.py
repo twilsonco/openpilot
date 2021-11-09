@@ -49,8 +49,8 @@ class CarState(CarStateBase):
     self.coasting_enabled = self._params.get_bool("Coasting")
     self.no_friction_braking = self._params.get_bool("RegenBraking")
     self.coasting_brake_over_speed_enabled = self._params.get_bool("CoastingBrakeOverSpeed")
-    self.coasting_over_speed_vEgo_BP = [i * CV.MPH_TO_MS for i in [12., 15.]]
-    self.coasting_over_speed_regen_vEgo_BP = [i * CV.MPH_TO_MS for i in [9., 11.]]
+    self.coasting_over_speed_vEgo_BP = [1.25, 1.3]
+    self.coasting_over_speed_regen_vEgo_BP = [1.15, 1.2]
     self.coasting_long_plan = ""
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -1.

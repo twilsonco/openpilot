@@ -87,6 +87,7 @@ class CarController():
       v_rel = CS.coasting_lead_v - CS.vEgo
       ttc = min(-CS.coasting_lead_d / v_rel if (CS.coasting_lead_d > 0. and v_rel < 0.) else 100.,100.)
       d_time = CS.coasting_lead_d / CS.vEgo if (CS.coasting_lead_d > 0. and CS.vEgo > 0. and CS.tr > 0.) else 10.
+      
       if CS.coasting_lead_d > 0. and (ttc < CS.lead_ttc_long_gas_lockout_bp[-1] \
         or v_rel < CS.lead_v_rel_long_gas_lockout_bp[-1] \
         or CS.coasting_lead_v < CS.lead_v_long_gas_lockout_bp[-1] \
@@ -98,6 +99,7 @@ class CarController():
           interp(ttc, CS.lead_ttc_long_gas_lockout_bp, CS.lead_ttc_long_gas_lockout_v),
           interp(d_time / CS.tr, CS.lead_tr_long_gas_lockout_bp, CS.lead_tr_long_gas_lockout_v),
           interp(CS.coasting_lead_d, CS.lead_d_long_gas_lockout_bp, CS.lead_d_long_gas_lockout_v)])
+          
         if CS.coasting_lead_d > 0. and (ttc < CS.lead_ttc_long_brake_lockout_bp[-1] \
           or v_rel < CS.lead_v_rel_long_brake_lockout_bp[-1] \
           or CS.coasting_lead_v < CS.lead_v_long_brake_lockout_bp[-1] \
@@ -155,11 +157,11 @@ class CarController():
       elif CS.coasting_enabled and lead_long_brake_lockout_factor < 1.:
         if CS.coasting_long_plan in ['cruise', 'limit'] and apply_gas < P.ZERO_GAS or apply_brake > 0.:
           if apply_brake > 0.:
-            over_speed_factor = interp(CS.vEgo - CS.v_cruise_kph * CV.KPH_TO_MS, CS.coasting_over_speed_vEgo_BP, [0., 1.]) if CS.coasting_brake_over_speed_enabled else 0.
+            over_speed_factor = interp(CS.vEgo / (CS.v_cruise_kph * CV.KPH_TO_MS), CS.coasting_over_speed_vEgo_BP, [0., 1.]) if CS.coasting_brake_over_speed_enabled else 0.
             over_speed_brake = apply_brake * over_speed_factor
             apply_brake = max([apply_brake * lead_long_brake_lockout_factor, over_speed_brake])
           if apply_gas < P.ZERO_GAS and lead_long_gas_lockout_factor < 1.:
-            over_speed_factor = interp(CS.vEgo - CS.v_cruise_kph * CV.KPH_TO_MS, CS.coasting_over_speed_regen_vEgo_BP, [0., 1.]) if CS.coasting_brake_over_speed_enabled else 0.
+            over_speed_factor = interp(CS.vEgo / (CS.v_cruise_kph * CV.KPH_TO_MS), CS.coasting_over_speed_regen_vEgo_BP, [0., 1.]) if CS.coasting_brake_over_speed_enabled else 0.
             coast_apply_gas = int(round(float(P.ZERO_GAS) - over_speed_factor * (P.ZERO_GAS - apply_gas)))
             apply_gas = apply_gas * lead_long_gas_lockout_factor + coast_apply_gas * (1. - lead_long_gas_lockout_factor)
           
