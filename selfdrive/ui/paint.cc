@@ -321,6 +321,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   }
   else{
     s->scene.one_pedal_touch_rect = {1,1,1,1};
+    s->scene.maxspeed_touch_rect = rect;
     const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
     if (is_cruise_set && !s->scene.is_metric) { maxspeed *= 0.6225; }
 
@@ -1115,17 +1116,7 @@ static void ui_draw_vision_brake(UIState *s) {
       nvgFill(s->vg);
       nvgStroke(s->vg);
     }
-    if (s->scene.car_state.getCoastingActive()){
-      nvgBeginPath(s->vg);
-      const int r = int(float(brake_size) * 0.95);
-      nvgRoundedRect(s->vg, brake_x - r, brake_y - r, 2 * r, 2 * r, r);
-      nvgStrokeColor(s->vg, nvgRGBA(200,200,200,200));
-      nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
-      nvgFill(s->vg);
-      nvgStrokeWidth(s->vg, 6);
-      nvgStroke(s->vg);
-    }
-    s->scene.brake_touch_rect = {brake_x - brake_size, brake_y - brake_size, 2 * brake_size, 2 * brake_size};
+    // s->scene.brake_touch_rect = {1,1,1,1};
   }
 }
 

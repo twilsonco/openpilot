@@ -137,9 +137,9 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     return;
   }
   
-  // presses of brake to toggle coasting
+  // presses of maxspeed to toggle coasting
   if (QUIState::ui_state.scene.started 
-    && QUIState::ui_state.scene.brake_touch_rect.ptInRect(e->x(), e->y())){
+    && QUIState::ui_state.scene.maxspeed_touch_rect.ptInRect(e->x(), e->y())){
     Params().putBool("Coasting", !Params().getBool("Coasting"));
     return;
   }
