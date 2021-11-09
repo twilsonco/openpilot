@@ -43,7 +43,7 @@ Running on move-fast fork of openpilot, which adds:
     * Toggle coasting while driving by tapping the brake indicator (if enabled)
     * A "+" after the max speed (and/or a white circle around the brake indicator) indicates that coasting is enabled
     * *Can be a bit rough on the brakes when following downhill over set speed; recommend to disable if uncomfortable when constantly following downhill*
-- [x] [✅] Brake when 10mph+ over set speed when coasting enabled
+- [x] [✅] Brake when 15% over set speed when coasting enabled
 - [x] [✅] Nudgeless lane change: OP will start lane change automatically in direction of blinker after blinker on for 3s
 - [x] [✅] Friction braking indicator
 - [x] **Customizable, dynamic vehicle/device metrics**
