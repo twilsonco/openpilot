@@ -40,8 +40,8 @@ Running on move-fast fork of openpilot, which adds:
 - [x] [✅] Alternate sound effect set
 - [x] [✅] Mute engage and disengage sounds
 - [x] [✅] Coasting: OP will still brake behind a lead car and to slow down for curves, but will not apply engine/regen/friction brakes in order to keep the set speed (by user or map speed limit)
-    * Toggle coasting while driving by tapping the brake indicator (if enabled)
-    * A "+" after the max speed (and/or a white circle around the brake indicator) indicates that coasting is enabled
+    * Toggle coasting while driving by tapping the max speed indicator
+    * A "+" after the max speed indicates that coasting is enabled
     * *Can be a bit rough on the brakes when following downhill over set speed; recommend to disable if uncomfortable when constantly following downhill*
 - [x] [✅] Brake when 15% over set speed when coasting enabled
 - [x] [✅] Nudgeless lane change: OP will start lane change automatically in direction of blinker after blinker on for 3s
@@ -55,8 +55,9 @@ Running on move-fast fork of openpilot, which adds:
         * Vehicle info: Engine RPM, steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road
         * Lead-following info: follow distance level, lead distance [length], desired lead distance [length], lead distance [time], desired lead distance [time], follow distance and acceleration mpc costs [in units of the stock OP costs; i.e. 2.5 means 2.5× the stock OP value], relative lead velocity, absolute lead velocity
 - [x] [GM] [✅] **One-pedal driving**: OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
-    * Must have disable disengage on gas enabled
-    * **Not necessary to enable the one-pedal toggle; you engage while driving**
+    * Must have disable disengage on gas toggle enabled
+    * **Not necessary to enable the one-pedal toggle; you engage/disengage while driving**
+    * When blinker is on below 30mph, autosteer will automatically pause [optional; tap wheel icon to toggle while in one-pedal mode; a second white circle around the wheel icon indicates autosteer pause is enabled]
     * Engage in three ways
       1. While cruise is set, press and hold the follow distance button for 0.5s (continue to hold for immediate hard braking if necessary)
       2. If one-pedal engage on gas toggle is enabled, press gas while cruise is set and traveling above 1mph
@@ -70,7 +71,7 @@ Running on move-fast fork of openpilot, which adds:
       * Double-press when gas is press and friction braking is active: deactivate friction braking
 - [x] [GM] [✅] One-pedal pro braking: Completely disable cruise/speed limit/curve/follow braking when in one-pedal mode. You are soley responsible for slowing the car using the adjustable one-pedal braking (by pressing/holding the follow distance button) or with the physical brakes/regen paddle
 - [x] [GM] [✅] One-pedal engage on gas: When cruising at speed and the driver presses the gas (i.e. not when resuming from a stop), engage one-pedal/always-on-steering mode
-    * Increase or reset speed to return to normal cruise.
+    * Toggle while driving by tapping the pedal icon
 - [x] [GM] JShuler panda-based GM steering fault fix
 - [x] Remember last follow mode
 

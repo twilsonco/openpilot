@@ -21,6 +21,7 @@
 #include <nanovg_gl.h>
 #include <nanovg_gl_utils.h>
 
+#include "selfdrive/common/params.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
@@ -318,9 +319,23 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     ui_fill_rect(s->vg, pedal_rect, nvg_color, brake_size);
     ui_draw_image(s, {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2}, "one_pedal_mode", s->scene.one_pedal_fade);
     s->scene.one_pedal_touch_rect = pedal_rect;
+    s->scene.maxspeed_touch_rect = {1,1,1,1};
+    
+    // draw extra circle to indiate one-pedal engage on gas is enabled
+    if (Params().getBool("OnePedalModeEngageOnGas")){
+      nvgBeginPath(s->vg);
+      const int r = int(float(brake_size) * 1.15);
+      nvgRoundedRect(s->vg, rect.centerX() - r, rect.centerY() - r, 2 * r, 2 * r, r);
+      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(int(s->scene.one_pedal_fade * 255.)));
+      nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
+      nvgFill(s->vg);
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+    }
   }
   else{
     s->scene.one_pedal_touch_rect = {1,1,1,1};
+    s->scene.maxspeed_touch_rect = rect;
     const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
     if (is_cruise_set && !s->scene.is_metric) { maxspeed *= 0.6225; }
 
@@ -1057,6 +1072,18 @@ static void ui_draw_vision_event(UIState *s) {
     ui_draw_image(s, {-radius, -radius, 2*radius, 2*radius}, "wheel", 1.0f);
     nvgRestore(s->vg);
     
+    // draw extra circle to indiate paused low-speed one-pedal blinker steering is enabled
+    if (s->scene.one_pedal_fade > 0. && Params().getBool("OnePedalPauseBlinkerSteering")){
+      nvgBeginPath(s->vg);
+      const int r = int(float(radius) * 1.15);
+      nvgRoundedRect(s->vg, center_x - r, center_y - r, 2 * r, 2 * r, r);
+      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(int(s->scene.one_pedal_fade * 255.)));
+      nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
+      nvgFill(s->vg);
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+    }
+    
     // draw hands on wheel pictogram under wheel pictogram.
     auto handsOnWheelState = (*s->sm)["driverMonitoringState"].getDriverMonitoringState().getHandsOnWheelState();
     if (handsOnWheelState >= cereal::DriverMonitoringState::HandsOnWheelState::WARNING) {
@@ -1115,17 +1142,7 @@ static void ui_draw_vision_brake(UIState *s) {
       nvgFill(s->vg);
       nvgStroke(s->vg);
     }
-    if (s->scene.car_state.getCoastingActive()){
-      nvgBeginPath(s->vg);
-      const int r = int(float(brake_size) * 0.95);
-      nvgRoundedRect(s->vg, brake_x - r, brake_y - r, 2 * r, 2 * r, r);
-      nvgStrokeColor(s->vg, nvgRGBA(200,200,200,200));
-      nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
-      nvgFill(s->vg);
-      nvgStrokeWidth(s->vg, 6);
-      nvgStroke(s->vg);
-    }
-    s->scene.brake_touch_rect = {brake_x - brake_size, brake_y - brake_size, 2 * brake_size, 2 * brake_size};
+    // s->scene.brake_touch_rect = {1,1,1,1};
   }
 }
 

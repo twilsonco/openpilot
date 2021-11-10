@@ -129,24 +129,23 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     return;
   }
   
-  // presses of wheen to toggle rotation
+  // presses of wheel to toggle steering pause for one-pedal low-speed blinker
   if (QUIState::ui_state.scene.started 
     && QUIState::ui_state.scene.wheel_touch_rect.ptInRect(e->x(), e->y())){
-    
-    QUIState::ui_state.scene.wheel_rotates = !QUIState::ui_state.scene.wheel_rotates;
+    Params().putBool("OnePedalPauseBlinkerSteering", !Params().getBool("OnePedalPauseBlinkerSteering"));
     return;
   }
   
-  // presses of brake to toggle coasting
+  // presses of maxspeed to toggle coasting
   if (QUIState::ui_state.scene.started 
-    && QUIState::ui_state.scene.brake_touch_rect.ptInRect(e->x(), e->y())){
+    && QUIState::ui_state.scene.maxspeed_touch_rect.ptInRect(e->x(), e->y())){
     Params().putBool("Coasting", !Params().getBool("Coasting"));
     return;
   }
   
   // one-pedal mode button
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.one_pedal_touch_rect.ptInRect(e->x(), e->y())){
-    Params().putBool("OnePedalMode", !QUIState::ui_state.scene.car_state.getOnePedalModeActive());
+    Params().putBool("OnePedalModeEngageOnGas", !Params().getBool("OnePedalModeEngageOnGas"));
   }
 
   // Handle sidebar collapsing
