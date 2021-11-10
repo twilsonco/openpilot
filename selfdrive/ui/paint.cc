@@ -21,6 +21,7 @@
 #include <nanovg_gl.h>
 #include <nanovg_gl_utils.h>
 
+#include "selfdrive/common/params.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
@@ -318,6 +319,19 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     ui_fill_rect(s->vg, pedal_rect, nvg_color, brake_size);
     ui_draw_image(s, {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2}, "one_pedal_mode", s->scene.one_pedal_fade);
     s->scene.one_pedal_touch_rect = pedal_rect;
+    s->scene.maxspeed_touch_rect = {1,1,1,1};
+    
+    // draw extra circle to indiate one-pedal engage on gas is enabled
+    if (Params().getBool("OnePedalModeEngageOnGas")){
+      nvgBeginPath(s->vg);
+      const int r = int(float(brake_size) * 1.15);
+      nvgRoundedRect(s->vg, rect.centerX() - r, rect.centerY() - r, 2 * r, 2 * r, r);
+      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(int(s->scene.one_pedal_fade * 255.)));
+      nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
+      nvgFill(s->vg);
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+    }
   }
   else{
     s->scene.one_pedal_touch_rect = {1,1,1,1};
