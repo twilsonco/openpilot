@@ -179,7 +179,7 @@ class CarState(CarStateBase):
     ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
 
     self.blinker = (ret.leftBlinker or ret.rightBlinker)
-    if not self.disengage_on_gas and (self.pause_long_on_gas_press or self.v_cruise_kph * CV.KPH_TO_MPH <= 10.):
+    if not self.disengage_on_gas and (self.pause_long_on_gas_press or self.v_cruise_kph * CV.KPH_TO_MPH <= 10.) and self._params.get_bool("OnePedalPauseBlinkerSteering"):
       cur_time = sec_since_boot()
       if self.blinker and not self.prev_blinker:
         self.lang_change_ramp_down_steer_start_t = cur_time

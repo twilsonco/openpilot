@@ -129,11 +129,10 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     return;
   }
   
-  // presses of wheen to toggle rotation
+  // presses of wheel to toggle steering pause for one-pedal low-speed blinker
   if (QUIState::ui_state.scene.started 
     && QUIState::ui_state.scene.wheel_touch_rect.ptInRect(e->x(), e->y())){
-    
-    QUIState::ui_state.scene.wheel_rotates = !QUIState::ui_state.scene.wheel_rotates;
+    Params().putBool("OnePedalPauseBlinkerSteering", !Params().getBool("OnePedalPauseBlinkerSteering"));
     return;
   }
   

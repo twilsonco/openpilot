@@ -1072,6 +1072,18 @@ static void ui_draw_vision_event(UIState *s) {
     ui_draw_image(s, {-radius, -radius, 2*radius, 2*radius}, "wheel", 1.0f);
     nvgRestore(s->vg);
     
+    // draw extra circle to indiate paused low-speed one-pedal blinker steering is enabled
+    if (s->scene.one_pedal_fade > 0. && Params().getBool("OnePedalPauseBlinkerSteering")){
+      nvgBeginPath(s->vg);
+      const int r = int(float(radius) * 1.15);
+      nvgRoundedRect(s->vg, center_x - r, center_y - r, 2 * r, 2 * r, r);
+      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(int(s->scene.one_pedal_fade * 255.)));
+      nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
+      nvgFill(s->vg);
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+    }
+    
     // draw hands on wheel pictogram under wheel pictogram.
     auto handsOnWheelState = (*s->sm)["driverMonitoringState"].getDriverMonitoringState().getHandsOnWheelState();
     if (handsOnWheelState >= cereal::DriverMonitoringState::HandsOnWheelState::WARNING) {
