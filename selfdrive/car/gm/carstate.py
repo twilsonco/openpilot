@@ -77,6 +77,7 @@ class CarState(CarStateBase):
     self.one_pedal_last_brake_mode = 0 # for saving brake mode when not in one-pedal-mode
     self.one_pedal_last_follow_level = 0 # for saving follow distance when in one-pedal mode
     self.one_pedal_v_cruise_kph_last = 0
+    self.one_pedal_last_switch_to_friction_braking_t = 0.
     
     # similar to over-speed coast braking, lockout coast/one-pedal logic first for engine/regen braking, and then for actual brakes.
     # gas lockout lookup tables:
