@@ -103,7 +103,7 @@ class Planner():
     
     self.accel_mode = int(Params().get_bool("SportAccel")) # 0 = normal, 1 = sport;
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
-    self.coasting_lead_v = -1. # lead "absolute"" velocity
+    self.coasting_lead_v = -10. # lead "absolute"" velocity
     self.tr = 1.8
 
   def update(self, sm, CP):
@@ -128,7 +128,7 @@ class Planner():
       self.coasting_lead_v = self.lead_1.vLead
     else:
       self.coasting_lead_d = -1.
-      self.coasting_lead_v = -1.
+      self.coasting_lead_v = -10.
     self.tr = self.mpcs['lead0'].tr
     
     
