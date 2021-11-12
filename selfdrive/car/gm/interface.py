@@ -258,6 +258,7 @@ class CarInterface(CarInterfaceBase):
         else:
           if not tmp_params.get_bool("OnePedalMode") and self.CS.distance_button: # user lifted press of distance button while in coast-one-pedal mode, so turn on braking
             cloudlog.info("button press event: Engaging one-pedal braking.")
+            self.CS.one_pedal_last_switch_to_friction_braking_t = t
             self.CS.distance_button_last_press_t = t + 0.5
             self.CS.one_pedal_brake_mode = 0
             self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
@@ -265,7 +266,7 @@ class CarInterface(CarInterfaceBase):
             self.CS.one_pedal_mode_active = True
             tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
             tmp_params.put_bool("OnePedalMode", self.CS.one_pedal_mode_enabled)
-          elif self.CS.distance_button and self.CS.pause_long_on_gas_press and t - self.CS.distance_button_last_press_t < 0.4: # on the second press of a double tap while the gas is pressed, turn off one-pedal braking
+          elif self.CS.distance_button and self.CS.pause_long_on_gas_press and t - self.CS.distance_button_last_press_t < 0.4 and t - self.CS.one_pedal_last_switch_to_friction_braking_t > 1.: # on the second press of a double tap while the gas is pressed, turn off one-pedal braking
             # cycle the brake mode back to nullify the first press
             cloudlog.info("button press event: Disengaging one-pedal mode with distace button double-press.")
             self.CS.distance_button_last_press_t = t + 0.5
@@ -282,8 +283,8 @@ class CarInterface(CarInterfaceBase):
               cloudlog.info("button press event: Distance button pressed in one-pedal mode.")
             else: # only make changes when user lifts press
               if self.CS.one_pedal_brake_mode == 2:
-                cloudlog.info(f"button press event: Disengaging one-pedal hard braking. Returning to {self.CS.one_pedal_last_brake_mode}")
-                self.CS.one_pedal_brake_mode = self.CS.one_pedal_last_brake_mode
+                cloudlog.info("button press event: Disengaging one-pedal hard braking. Switching to moderate braking")
+                self.CS.one_pedal_brake_mode = 1
                 tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
               elif t - self.CS.distance_button_last_press_t > 0. and t - self.CS.distance_button_last_press_t < 0.4: # only switch braking on a single tap (also allows for ignoring presses by setting last_press_t to be greater than t)
                 self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
