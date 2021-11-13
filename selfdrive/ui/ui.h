@@ -202,6 +202,8 @@ typedef struct UIScene {
   float stoppingDistance;
   
   float lastTime = 0., sessionInitTime = 0.;
+  float paramsCheckLast = 0., paramsCheckFreq = 0.1; // check params at 10Hz
+  bool onePedalModeActive, disableDisengageOnGasEnabled, onePedalEngageOnGasEnabled, onePedalPauseSteering;
 
   int lead_status;
   float lead_d_rel, lead_v_rel, lead_v;

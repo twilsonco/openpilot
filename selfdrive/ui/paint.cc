@@ -21,7 +21,6 @@
 #include <nanovg_gl.h>
 #include <nanovg_gl_utils.h>
 
-#include "selfdrive/common/params.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
@@ -322,7 +321,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     s->scene.maxspeed_touch_rect = {1,1,1,1};
     
     // draw extra circle to indiate one-pedal engage on gas is enabled
-    if (Params().getBool("OnePedalModeEngageOnGas")){
+    if (s->scene.onePedalEngageOnGasEnabled){
       nvgBeginPath(s->vg);
       const int r = int(float(brake_size) * 1.15);
       nvgRoundedRect(s->vg, rect.centerX() - r, rect.centerY() - r, 2 * r, 2 * r, r);
@@ -1073,7 +1072,7 @@ static void ui_draw_vision_event(UIState *s) {
     nvgRestore(s->vg);
     
     // draw extra circle to indiate paused low-speed one-pedal blinker steering is enabled
-    if (s->scene.one_pedal_fade > 0. && Params().getBool("OnePedalPauseBlinkerSteering")){
+    if (s->scene.one_pedal_fade > 0. && s->scene.onePedalPauseSteering){
       nvgBeginPath(s->vg);
       const int r = int(float(radius) * 1.15);
       nvgRoundedRect(s->vg, center_x - r, center_y - r, 2 * r, 2 * r, r);

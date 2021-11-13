@@ -114,9 +114,7 @@ class Planner():
       with open("/data/openpilot/long_debug.csv","w") as f:
         f.write(",".join([
           "t",
-          "v_cruise",
           "vEgo", 
-          "v_cruise (mph)",
           "vEgo (mph)",
           "a lim low",
           "a lim high",
@@ -196,10 +194,8 @@ class Planner():
       f = open("/data/openpilot/coast_debug.csv","a")
       f.write(",".join([f"{i:.1f}" if i == float else str(i) for i in [
         t - self.sessionInitTime,
-        CS.v_cruise_kph * CV.KPH_TO_MS,
-        CS.vEgo, 
-        CS.v_cruise_kph * CV.KPH_TO_MPH,
-        CS.vEgo * CV.MS_TO_MPH, 
+        v_ego, 
+        v_ego * CV.MS_TO_MPH, 
         accel_limits[0],
         accel_limits[1],
         next_a,
