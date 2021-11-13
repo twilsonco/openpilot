@@ -107,11 +107,12 @@ class Planner():
     self.tr = 1.8
     
     self.sessionInitTime = sec_since_boot()
-    self.debug_logging = True
+    self.debug_logging = False
     self.debug_log_time_step = 0.333
     self.last_debug_log_t = 0.
+    self.debug_log_path = "/data/openpilot/long_debug.csv"
     if self.debug_logging:
-      with open("/data/openpilot/long_debug.csv","w") as f:
+      with open(self.debug_log_path,"w") as f:
         f.write(",".join([
           "t",
           "vEgo", 
@@ -191,7 +192,7 @@ class Planner():
     do_log = self.debug_logging and (t - self.last_debug_log_t > self.debug_log_time_step)
     if do_log:
       self.last_debug_log_t = t
-      f = open("/data/openpilot/coast_debug.csv","a")
+      f = open(self.debug_log_path,"a")
       f.write(",".join([f"{i:.1f}" if i == float else str(i) for i in [
         t - self.sessionInitTime,
         v_ego, 
