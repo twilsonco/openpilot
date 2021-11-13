@@ -374,7 +374,7 @@ class CarInterface(CarInterfaceBase):
 
     # For Openpilot, "enabled" includes pre-enable.
     # In GM, PCM faults out if ACC command overlaps user gas, so keep that from happening inside CC.update().
-    pause_long_on_gas_press = c.enabled and self.CS.gasPressed and not self.disengage_on_gas
+    pause_long_on_gas_press = c.enabled and self.CS.gasPressed and not self.CS.out.brake > 0. and not self.disengage_on_gas
     t = sec_since_boot()
     self.CS.one_pedal_mode_engage_on_gas = False
     if pause_long_on_gas_press and not self.CS.pause_long_on_gas_press:
