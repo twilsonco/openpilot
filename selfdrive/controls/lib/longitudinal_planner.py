@@ -105,6 +105,23 @@ class Planner():
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -10. # lead "absolute"" velocity
     self.tr = 1.8
+    
+    self.sessionInitTime = sec_since_boot()
+    self.debug_logging = True
+    self.debug_log_time_step = 0.333
+    self.last_debug_log_t = 0.
+    if self.debug_logging:
+      with open("/data/openpilot/long_debug.csv","w") as f:
+        f.write(",".join([
+          "t",
+          "v_cruise",
+          "vEgo", 
+          "v_cruise (mph)",
+          "vEgo (mph)",
+          "a lim low",
+          "a lim high",
+          "out a",
+          "out long plan"]) + "\n")
 
   def update(self, sm, CP):
     cur_time = sec_since_boot()
@@ -171,6 +188,24 @@ class Planner():
         self.j_desired_trajectory = self.mpcs[key].j_solution[:CONTROL_N]
         next_a = self.mpcs[key].a_solution[5]
     
+    # debug logging
+    t = sec_since_boot()
+    do_log = self.debug_logging and (t - self.last_debug_log_t > self.debug_log_time_step)
+    if do_log:
+      self.last_debug_log_t = t
+      f = open("/data/openpilot/coast_debug.csv","a")
+      f.write(",".join([f"{i:.1f}" if i == float else str(i) for i in [
+        t - self.sessionInitTime,
+        CS.v_cruise_kph * CV.KPH_TO_MS,
+        CS.vEgo, 
+        CS.v_cruise_kph * CV.KPH_TO_MPH,
+        CS.vEgo * CV.MS_TO_MPH, 
+        accel_limits[0],
+        accel_limits[1],
+        next_a,
+        self.longitudinalPlanSource]]) + "\n")
+      f.close()
+        
     
 
     # determine fcw
