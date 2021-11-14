@@ -120,7 +120,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_rocket.png",
                                   this));
   toggles.append(new ParamControl("NudgelessLaneChange",
-                                  "⚠️ Nudgeless lane change (1s delay) ⚠️",
+                                  "Nudgeless lane change (1s delay) ⚠️",
                                   "Perform lane change without requiring nudge from driver",
                                   "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
