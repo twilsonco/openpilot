@@ -125,7 +125,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
   toggles.append(new ParamControl("GMAutoHold",
-                                  "[GM] Enable AutoHold on GM vehicles",
+                                  "[GM] Enable AutoHold",
                                   "Holds brakes automatically after coming to a complete stop, even when OP is disengaged.",
                                   "../assets/offroad/icon_gm_autohold.png",
                                   this));
