@@ -33,18 +33,18 @@ class CarController():
         f.write(",".join([
           "t",
           "long plan",
-          "d (m/s)", 
-          "v", 
-          "vEgo", 
+          "d (m/s)",
+          "v",
+          "vEgo",
           "v_cruise",
-          "v (mph)", 
-          "vEgo (mph)", 
+          "v (mph)",
+          "vEgo (mph)",
           "v_cruise (mph)",
-          "ttc", 
-          "coast gas lockout", 
-          "coast brake lockout", 
-          "gas in", 
-          "brake in", 
+          "ttc",
+          "coast gas lockout",
+          "coast brake lockout",
+          "gas in",
+          "brake in",
           "one-pedal",
           "coasting enabled",
           "no f brakes",
@@ -83,30 +83,30 @@ class CarController():
       apply_gas = interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
       apply_brake = interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
       t = sec_since_boot()
-      
+
       v_rel = CS.coasting_lead_v - CS.vEgo
       ttc = min(-CS.coasting_lead_d / v_rel if (CS.coasting_lead_d > 0. and v_rel < 0.) else 100.,100.)
       d_time = CS.coasting_lead_d / CS.vEgo if (CS.coasting_lead_d > 0. and CS.vEgo > 0. and CS.tr > 0.) else 10.
-      
+
       if CS.coasting_lead_d > 0. and (ttc < CS.lead_ttc_long_gas_lockout_bp[-1] \
         or v_rel < CS.lead_v_rel_long_gas_lockout_bp[-1] \
         or CS.coasting_lead_v < CS.lead_v_long_gas_lockout_bp[-1] \
         or d_time < CS.tr * CS.lead_tr_long_gas_lockout_bp[-1]\
         or CS.coasting_lead_d < CS.lead_d_long_gas_lockout_bp[-1]):
         lead_long_gas_lockout_factor = max([
-          interp(v_rel, CS.lead_v_rel_long_gas_lockout_bp, CS.lead_v_rel_long_gas_lockout_v), 
+          interp(v_rel, CS.lead_v_rel_long_gas_lockout_bp, CS.lead_v_rel_long_gas_lockout_v),
           interp(CS.coasting_lead_v, CS.lead_v_long_gas_lockout_bp, CS.lead_v_long_gas_lockout_v),
           interp(ttc, CS.lead_ttc_long_gas_lockout_bp, CS.lead_ttc_long_gas_lockout_v),
           interp(d_time / CS.tr, CS.lead_tr_long_gas_lockout_bp, CS.lead_tr_long_gas_lockout_v),
           interp(CS.coasting_lead_d, CS.lead_d_long_gas_lockout_bp, CS.lead_d_long_gas_lockout_v)])
-          
+
         if CS.coasting_lead_d > 0. and (ttc < CS.lead_ttc_long_brake_lockout_bp[-1] \
           or v_rel < CS.lead_v_rel_long_brake_lockout_bp[-1] \
           or CS.coasting_lead_v < CS.lead_v_long_brake_lockout_bp[-1] \
           or d_time < CS.tr * CS.lead_tr_long_brake_lockout_bp[-1]\
           or CS.coasting_lead_d < CS.lead_d_long_brake_lockout_bp[-1]):
           lead_long_brake_lockout_factor = max([
-            interp(v_rel, CS.lead_v_rel_long_brake_lockout_bp, CS.lead_v_rel_long_brake_lockout_v), 
+            interp(v_rel, CS.lead_v_rel_long_brake_lockout_bp, CS.lead_v_rel_long_brake_lockout_v),
             interp(CS.coasting_lead_v, CS.lead_v_long_brake_lockout_bp, CS.lead_v_long_brake_lockout_v),
             interp(ttc, CS.lead_ttc_long_brake_lockout_bp, CS.lead_ttc_long_brake_lockout_v),
             interp(d_time / CS.tr, CS.lead_tr_long_brake_lockout_bp, CS.lead_tr_long_brake_lockout_v),
@@ -116,7 +116,7 @@ class CarController():
       else:
         lead_long_gas_lockout_factor =  0. # 1.0 means regular braking logic is completely unaltered, 0.0 means no cruise braking
         lead_long_brake_lockout_factor =  0. # 1.0 means regular braking logic is completely unaltered, 0.0 means no cruise braking
-        
+
       # debug logging
       do_log = self.debug_logging and (t - self.last_debug_log_t > self.debug_log_time_step)
       if do_log:
@@ -125,22 +125,22 @@ class CarController():
         f.write(",".join([f"{i:.1f}" if i == float else str(i) for i in [
           t - CS.sessionInitTime,
           CS.coasting_long_plan,
-          CS.coasting_lead_d, 
-          CS.coasting_lead_v, 
-          CS.vEgo, 
+          CS.coasting_lead_d,
+          CS.coasting_lead_v,
+          CS.vEgo,
           CS.v_cruise_kph * CV.KPH_TO_MS,
-          CS.coasting_lead_v * CV.MS_TO_MPH, 
-          CS.vEgo * CV.MS_TO_MPH, 
+          CS.coasting_lead_v * CV.MS_TO_MPH,
+          CS.vEgo * CV.MS_TO_MPH,
           CS.v_cruise_kph * CV.KPH_TO_MPH,
-          ttc, 
-          lead_long_gas_lockout_factor, 
+          ttc,
+          lead_long_gas_lockout_factor,
           lead_long_brake_lockout_factor,
-          int(apply_gas), 
-          int(apply_brake), 
+          int(apply_gas),
+          int(apply_brake),
           (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active),
           CS.coasting_enabled,
           CS.no_friction_braking]]) + ",")
-      
+
       if (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active):
         apply_gas = apply_gas * lead_long_gas_lockout_factor + float(P.MAX_ACC_REGEN) * (1. - lead_long_gas_lockout_factor)
         if CS.one_pedal_mode_active:
@@ -153,34 +153,34 @@ class CarController():
           apply_brake = max(one_pedal_apply_brake, apply_brake * lead_long_brake_lockout_factor)
         else:
           apply_brake = one_pedal_apply_brake
-        
+
       elif CS.coasting_enabled and lead_long_brake_lockout_factor < 1.:
         if CS.coasting_long_plan in ['cruise', 'limit'] and apply_gas < P.ZERO_GAS or apply_brake > 0.:
           if apply_brake > 0.:
             over_speed_factor = interp(CS.vEgo / (CS.v_cruise_kph * CV.KPH_TO_MS), CS.coasting_over_speed_vEgo_BP, [0., 1.]) if CS.coasting_brake_over_speed_enabled else 0.
             over_speed_brake = apply_brake * over_speed_factor
             apply_brake = max([apply_brake * lead_long_brake_lockout_factor, over_speed_brake])
-          if apply_gas < P.ZERO_GAS and lead_long_gas_lockout_factor < 1.:
+          if apply_gas < P.ZERO_GAS and lead_long_gas_lockout_factor < 1. and CS.v_cruise_kph > 0.:
             over_speed_factor = interp(CS.vEgo / (CS.v_cruise_kph * CV.KPH_TO_MS), CS.coasting_over_speed_regen_vEgo_BP, [0., 1.]) if CS.coasting_brake_over_speed_enabled else 0.
             coast_apply_gas = int(round(float(P.ZERO_GAS) - over_speed_factor * (P.ZERO_GAS - apply_gas)))
             apply_gas = apply_gas * lead_long_gas_lockout_factor + coast_apply_gas * (1. - lead_long_gas_lockout_factor)
-          
+
       elif CS.no_friction_braking and lead_long_brake_lockout_factor < 1.:
         if CS.coasting_long_plan in ['cruise', 'limit'] and apply_brake > 0.:
           apply_brake *= lead_long_brake_lockout_factor
       apply_gas = int(round(apply_gas))
       apply_brake = int(round(apply_brake))
-      
+
 
       if do_log:
         f.write(",".join([str(i) for i in [
-          apply_gas, 
+          apply_gas,
           apply_brake]]) + "\n")
         f.close()
-    
+
     if CS.showBrakeIndicator:
       CS.apply_brake_percent = int(interp(apply_brake, [float(P.BRAKE_LOOKUP_V[-1]), float(P.BRAKE_LOOKUP_V[0])], [0., 100.])) if CS.vEgo > 0.1 else 0
-    
+
     # Gas/regen and brakes - all at 25Hz
     if (frame % 4) == 0:
       idx = (frame // 4) % 4
@@ -212,10 +212,10 @@ class CarController():
 
         # Auto-resume from full stop by resetting ACC control
         acc_enabled = enabled
-      
+
         if standstill and not car_stopping:
           acc_enabled = False
-      
+
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, acc_enabled, at_full_stop))
 
 
@@ -223,7 +223,7 @@ class CarController():
     if (frame % 4) == 0:
       send_fcw = hud_alert == VisualAlert.fcw
       follow_level = CS.get_follow_level()
-      can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, enabled, 
+      can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, enabled,
                                                                  hud_v_cruise * CV.MS_TO_KPH, hud_show_car, follow_level, send_fcw))
 
     # Radar needs to know current speed and yaw rate (50hz),
