@@ -138,6 +138,13 @@ static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
   float t = seconds_since_boot();
+  
+  if (t - scene.paramsCheckLast > scene.paramsCheckFreq){
+    scene.onePedalModeActive = Params().getBool("OnePedalMode");
+    scene.disableDisengageOnGasEnabled = Params().getBool("DisableDisengageOnGas");
+    scene.onePedalEngageOnGasEnabled = Params().getBool("OnePedalModeEngageOnGas");
+    scene.onePedalPauseSteering = Params().getBool("OnePedalPauseBlinkerSteering");
+  }
 
   // update engageability and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
@@ -167,7 +174,7 @@ static void update_state(UIState *s) {
     
     if (t - scene.sessionInitTime > 10.){
       if ((scene.car_state.getOnePedalModeActive() || scene.car_state.getCoastOnePedalModeActive())
-        || (s->status == UIStatus::STATUS_DISENGAGED && scene.controls_state.getVCruise() < 5 && (Params().getBool("OnePedalMode") || Params().getBool("DisableDisengageOnGas")))){
+        || (s->status == UIStatus::STATUS_DISENGAGED && scene.controls_state.getVCruise() < 5 && (scene.onePedalModeActive || scene.disableDisengageOnGasEnabled))){
         scene.one_pedal_fade += fade_time_step * (t - scene.one_pedal_fade_last_t);
         if (scene.one_pedal_fade > 1.)
           scene.one_pedal_fade = 1.;

@@ -34,9 +34,9 @@ _A_CRUISE_MIN_BP = [0., 5., 10., 20., 55.]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V = [1.2, 1.4, 1.2, .6, .4]
-_A_CRUISE_MAX_V_SPORT = [2.6, 2.8, 2.6, 2.0, 2.0]
-_A_CRUISE_MAX_V_FOLLOWING = [1.4, 1.8, 1.6, .8, .6]
+_A_CRUISE_MAX_V = [1.2, 1.4, 1.2, 0.9, 0.7]
+_A_CRUISE_MAX_V_SPORT = [2.5, 2.9, 2.5, 1.4, 1.2]
+_A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.8, 1.6, .9, .7]
 _A_CRUISE_MAX_BP = [0., 5., 10., 20., 55.]
 
 _A_CRUISE_MIN_V_MODE_LIST = [_A_CRUISE_MIN_V, _A_CRUISE_MIN_V_SPORT]
@@ -103,8 +103,24 @@ class Planner():
     
     self.accel_mode = int(Params().get_bool("SportAccel")) # 0 = normal, 1 = sport;
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
-    self.coasting_lead_v = -1. # lead "absolute"" velocity
+    self.coasting_lead_v = -10. # lead "absolute"" velocity
     self.tr = 1.8
+    
+    self.sessionInitTime = sec_since_boot()
+    self.debug_logging = False
+    self.debug_log_time_step = 0.333
+    self.last_debug_log_t = 0.
+    self.debug_log_path = "/data/openpilot/long_debug.csv"
+    if self.debug_logging:
+      with open(self.debug_log_path,"w") as f:
+        f.write(",".join([
+          "t",
+          "vEgo", 
+          "vEgo (mph)",
+          "a lim low",
+          "a lim high",
+          "out a",
+          "out long plan"]) + "\n")
 
   def update(self, sm, CP):
     cur_time = sec_since_boot()
@@ -128,7 +144,7 @@ class Planner():
       self.coasting_lead_v = self.lead_1.vLead
     else:
       self.coasting_lead_d = -1.
-      self.coasting_lead_v = -1.
+      self.coasting_lead_v = -10.
     self.tr = self.mpcs['lead0'].tr
     
     
@@ -171,6 +187,22 @@ class Planner():
         self.j_desired_trajectory = self.mpcs[key].j_solution[:CONTROL_N]
         next_a = self.mpcs[key].a_solution[5]
     
+    # debug logging
+    t = sec_since_boot()
+    do_log = self.debug_logging and (t - self.last_debug_log_t > self.debug_log_time_step)
+    if do_log:
+      self.last_debug_log_t = t
+      f = open(self.debug_log_path,"a")
+      f.write(",".join([f"{i:.1f}" if i == float else str(i) for i in [
+        t - self.sessionInitTime,
+        v_ego, 
+        v_ego * CV.MS_TO_MPH, 
+        accel_limits[0],
+        accel_limits[1],
+        next_a,
+        self.longitudinalPlanSource]]) + "\n")
+      f.close()
+        
     
 
     # determine fcw

@@ -58,7 +58,7 @@ def set_v_cruise_offset(do_offset):
   else:
     V_CRUISE_OFFSET = 0
 
-def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed,decel_pressed,accel_pressed_last,decel_pressed_last, fastMode, fast_mode_enabled, vEgo_kph, v_cruise_last_changed, long_plan, speed_limit_last_deactivated):
+def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed,decel_pressed,accel_pressed_last,decel_pressed_last, fastMode, fast_mode_enabled, vEgo_kph, v_cruise_last_changed, long_plan, speed_limit_last_deactivated, speed_limit_active):
   
   if cur_time - speed_limit_last_deactivated > 0.5:
     params = Params()
@@ -73,9 +73,9 @@ def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed
         else:
           for b in buttonEvents:
             if not b.pressed:
-              if b.type in [car.CarState.ButtonEvent.Type.accelCruise, car.CarState.ButtonEvent.Type.decelCruise] and params.get_bool("SpeedLimitControl") and long_plan in ['limit']:
+              if b.type in [car.CarState.ButtonEvent.Type.accelCruise, car.CarState.ButtonEvent.Type.decelCruise] and speed_limit_active and long_plan in ['limit']:
                 # deactivate move-fast speed limit control without changing set speed
-                params.put("SpeedLimitControl", "0")
+                speed_limit_active = False
                 return v_cruise_kph
               elif not long_plan in ['limit']:
                 if b.type == car.CarState.ButtonEvent.Type.accelCruise:
@@ -91,9 +91,9 @@ def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed
     else:
       for b in buttonEvents:
         if enabled and not b.pressed:
-          if b.type in [car.CarState.ButtonEvent.Type.accelCruise, car.CarState.ButtonEvent.Type.decelCruise] and params.get_bool("SpeedLimitControl") and long_plan in ['limit']:
+          if b.type in [car.CarState.ButtonEvent.Type.accelCruise, car.CarState.ButtonEvent.Type.decelCruise] and speed_limit_active and long_plan in ['limit']:
             # deactivate move-fast speed limit control without changing set speed
-            params.put("SpeedLimitControl", "0")
+            speed_limit_active = False
             return v_cruise_kph
           elif not long_plan in ['limit']:
             if b.type == car.CarState.ButtonEvent.Type.accelCruise:
