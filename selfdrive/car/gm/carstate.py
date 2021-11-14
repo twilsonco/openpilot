@@ -48,6 +48,8 @@ class CarState(CarStateBase):
     self.params_check_last_t = 0.
     self.params_check_freq = 0.1 # check params at 10Hz
     
+    self.accel_mode = int(Params().get_bool("SportAccel")) # 0 = normal, 1 = sport;
+    
     self.coasting_enabled = self._params.get_bool("Coasting")
     self.coasting_enabled_last = self.coasting_enabled
     self.no_friction_braking = self._params.get_bool("RegenBraking")

@@ -22,7 +22,7 @@ class CarControllerParams():
     self.CAMERA_KEEPALIVE_STEP = 100
 
     # pedal lookups, only for Volt
-    MAX_GAS = 3200              # Only a safety limit
+    MAX_GAS = 3968              # Only a safety limit
     self.ZERO_GAS = 2048
     MAX_BRAKE = 350             # Should be around 3.5m/s^2, including regen
 

@@ -13,6 +13,32 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 FOLLOW_AGGRESSION = 0.15 # (Acceleration/Decel aggression) Lower is more aggressive
 
+# lookup tables VS speed to determine min and max accels in cruise
+# make sure these accelerations are smaller than mpc limits
+_A_CRUISE_MIN_V_SPORT = [-2.0, -2.2, -2.0, -1.5, -1.0]
+_A_CRUISE_MIN_V_FOLLOWING = [-3.0, -2.5, -2.0, -1.5, -1.0]
+_A_CRUISE_MIN_V = [-1.0, -1.2, -1.0, -0.7, -0.5]
+_A_CRUISE_MIN_BP = [0., 5., 10., 20., 55.]
+
+# need fast accel at very low speed for stop and go
+# make sure these accelerations are smaller than mpc limits
+_A_CRUISE_MAX_V = [1.2, 1.4, 1.2, 0.9, 0.7]
+_A_CRUISE_MAX_V_SPORT = [2.2, 2.4, 2.2, 1.2, 1.0]
+_A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.8, 1.6, .9, .7]
+_A_CRUISE_MAX_BP = [0., 5., 10., 20., 55.]
+
+_A_CRUISE_MIN_V_MODE_LIST = [_A_CRUISE_MIN_V, _A_CRUISE_MIN_V_SPORT]
+_A_CRUISE_MAX_V_MODE_LIST = [_A_CRUISE_MAX_V, _A_CRUISE_MAX_V_SPORT]
+
+def calc_cruise_accel_limits(v_ego, following, accelMode):
+  if following:
+    a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V_FOLLOWING)
+    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
+  else:
+    a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V_MODE_LIST[accelMode])
+    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_MODE_LIST[accelMode])
+  return [a_cruise_min, a_cruise_max]
+
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -20,11 +46,13 @@ EventName = car.CarEvent.EventName
 class CarInterface(CarInterfaceBase):
   params_check_last_t = 0.
   params_check_freq = 0.1 # check params at 10Hz
+  params = CarControllerParams()
   
   @staticmethod
-  def get_pid_accel_limits(CP, current_speed, cruise_speed):
-    params = CarControllerParams()
-    return params.ACCEL_MIN, params.ACCEL_MAX
+  def get_pid_accel_limits(CP, current_speed, cruise_speed, CI = None):
+    following = CI.CS.coasting_lead_d > 0. and CI.CS.coasting_lead_d < 45.0 and CI.CS.coasting_lead_v > current_speed
+    accel_limits = calc_cruise_accel_limits(current_speed, following, CI.CS.accel_mode)
+    return [max(CI.params.ACCEL_MIN, accel_limits[0]), min(accel_limits[1], CI.params.ACCEL_MAX)]
 
   # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
   @staticmethod
