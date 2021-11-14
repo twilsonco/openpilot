@@ -189,9 +189,9 @@ class CarInterface(CarInterfaceBase):
       #ret.lateralTuning.pid.kf = 0.000045
       ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_escalade_esv()
       tire_stiffness_factor = 3.0
-      ret.startAccel = 1.8  # Accelerate from 0 faster
-      ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
-      ret.startingAccelRate = 6.0  # release brakes fast
+      #ret.startAccel = 1.8  # Accelerate from 0 faster
+      #ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
+      #ret.startingAccelRate = 6.0  # release brakes fast
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
