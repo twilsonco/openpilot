@@ -73,7 +73,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
                                   "../assets/offroad/icon_road.png",
                                   this));
-  
+
   toggles.append(new ParamControl("HandsOnWheelMonitoring",
                                   "Enable Hands on Wheel Monitoring",
                                   "Monitor and alert when driver is not keeping the hands on the steering wheel.",
@@ -100,7 +100,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_speed_limit_percent.png",
                                   this));
   toggles.append(new ParamControl("StockSpeedAdjust",
-                                  "Press/hold for 1mph/5mph cruise speed adjustment",
+                                  "Like stock ACC speed adjustment",
                                   "Like stock ACC, press/hold the cruise accel/decel buttons for 1mph/5mph.",
                                   "../assets/offroad/icon_stock_adjust_speed.png",
                                   this));
@@ -120,12 +120,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_rocket.png",
                                   this));
   toggles.append(new ParamControl("NudgelessLaneChange",
-                                  "⚠️ Nudgeless lane change (1s delay) ⚠️",
+                                  "Nudgeless lane change (1s delay) ⚠️",
                                   "Perform lane change without requiring nudge from driver",
                                   "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
   toggles.append(new ParamControl("GMAutoHold",
-                                  "[GM] Enable AutoHold on GM vehicles",
+                                  "[GM] Enable AutoHold",
                                   "Holds brakes automatically after coming to a complete stop, even when OP is disengaged.",
                                   "../assets/offroad/icon_gm_autohold.png",
                                   this));
@@ -150,12 +150,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("OnePedalModeSimple",
-                                  "[GM] ⚠️ One-pedal pro brakes (tap me) ⚠️",
+                                  "[GM] One-pedal pro brakes (tap me) ⚠️",
                                   "When using one-pedal mode, COMPLETELY DISABLE ALL OTHER FORMS OF OPENPILOT BRAKING. No additional braking will be automatically applied to slow/stop you behind a lead car, or to slow for a curve. You are solely responsible for applying brakes using adjustable one-pedal braking with the follow button or using the actual brakes.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("OnePedalModeEngageOnGas",
-                                  "[GM] One-pedal/Always-on-steering engage on gas",
+                                  "[GM] One-pedal/Steer engage on gas",
                                   "When you press the gas in cruise mode at speed (i.e. not when resuming from a stop), enter one-pedal/always-on-steering mode. Increase or reset speed to return to normal cruise.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
@@ -165,13 +165,13 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_brake_disc.png",
                                   this));
   toggles.append(new ParamControl("CustomSounds",
-                                  "Alternative sounds (2x restart car to apply)",
-                                  "Uses alternative set of sound effects.",
+                                  "Alternative sounds (Tap Me)",
+                                  "Uses alternative set of sound effects. (2x restart car to apply)",
                                   "../assets/offroad/icon_custom_sounds.png",
                                   this));
   toggles.append(new ParamControl("SilentEngageDisengage",
-                                  "Silent engage/disengage (2x restart car to apply)",
-                                  "Mute engage and disengage sounds.",
+                                  "Silent engage/disengage (Tap Me)",
+                                  "Mute engage and disengage sounds. (2x restart car to apply)",
                                   "../assets/offroad/icon_mute.png",
                                   this));
   toggles.append(new ParamControl("ShowDebugUI",
