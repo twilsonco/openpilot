@@ -73,7 +73,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
                                   "../assets/offroad/icon_road.png",
                                   this));
-  
+
   toggles.append(new ParamControl("HandsOnWheelMonitoring",
                                   "Enable Hands on Wheel Monitoring",
                                   "Monitor and alert when driver is not keeping the hands on the steering wheel.",
@@ -100,7 +100,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_speed_limit_percent.png",
                                   this));
   toggles.append(new ParamControl("StockSpeedAdjust",
-                                  "Press/hold for 1mph/5mph cruise speed adjustment",
+                                  "Like stock ACC speed adjustment",
                                   "Like stock ACC, press/hold the cruise accel/decel buttons for 1mph/5mph.",
                                   "../assets/offroad/icon_stock_adjust_speed.png",
                                   this));
@@ -155,7 +155,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("OnePedalModeEngageOnGas",
-                                  "[GM] One-pedal/Always-on-steering engage on gas",
+                                  "[GM] One-pedal/Steer engage on gas",
                                   "When you press the gas in cruise mode at speed (i.e. not when resuming from a stop), enter one-pedal/always-on-steering mode. Increase or reset speed to return to normal cruise.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
