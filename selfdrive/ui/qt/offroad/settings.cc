@@ -150,7 +150,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("OnePedalModeSimple",
-                                  "[GM] ⚠️ One-pedal pro brakes (tap me) ⚠️",
+                                  "[GM] One-pedal pro brakes (tap me) ⚠️",
                                   "When using one-pedal mode, COMPLETELY DISABLE ALL OTHER FORMS OF OPENPILOT BRAKING. No additional braking will be automatically applied to slow/stop you behind a lead car, or to slow for a curve. You are solely responsible for applying brakes using adjustable one-pedal braking with the follow button or using the actual brakes.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
