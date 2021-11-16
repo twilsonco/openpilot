@@ -65,10 +65,10 @@ Running on move-fast fork of openpilot, which adds:
     * When in one-pedal mode, the max speed indicator in openpilot will be replaced with a one-pedal mode indicator. Tap the one-pedal icon (or use follow distance button, see below) to toggle coasting/braking
     * Vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = 🟢/🟠/🔴 = light/moderate/heavy braking
     * Control braking with follow distance button:
-      * Press: cycle between persistent light or moderate braking
-      * Hold: apply temporary hard braking (indicated by follow level 3 on vehicle cluster and red one-pedal icon) (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
-      * Press when engine/regen braking: activating friction braking
-      * Double-press when gas is press and friction braking is active: deactivate friction braking
+      * *Single press*: alternate between persistent light or moderate braking
+      * *Press and hold*: apply temporary hard braking (indicated by follow level 3 on vehicle cluster and red one-pedal icon) (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
+      * *Press when friction braking disabled*: activating friction braking
+      * *Double-press when stopped or when gas is pressed and friction braking is active*: deactivate friction braking
 - [x] [GM] [✅] One-pedal pro braking: Completely disable cruise/speed limit/curve/follow braking when in one-pedal mode. You are soley responsible for slowing the car using the adjustable one-pedal braking (by pressing/holding the follow distance button) or with the physical brakes/regen paddle
 - [x] [GM] [✅] One-pedal engage on gas: When cruising at speed and the driver presses the gas (i.e. not when resuming from a stop), engage one-pedal/always-on-steering mode
     * Toggle while driving by tapping the pedal icon
