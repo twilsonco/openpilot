@@ -952,6 +952,9 @@ static void ui_draw_measures(UIState *s){
       if (strlen(name) == 0){
         y += label_font_size / 2;
       }
+      if (strlen(unit) == 0){
+        x = slot_x + slots_r;
+      }
       nvgFontFace(s->vg, "sans-semibold");
       nvgFontSize(s->vg, val_font_size);
       nvgFillColor(s->vg, val_color);
