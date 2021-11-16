@@ -139,7 +139,6 @@ class CarInterface(CarInterfaceBase):
 
       # Only tuned to reduce oscillations. TODO.
       ret.longitudinalTuning.kpV = [1.7, 1.3]
-      ret.longitudinalTuning.kiV = [0.36]
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -161,17 +160,13 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.ACADIA:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
-      ret.mass = 3956. * CV.LB_TO_KG + STD_CARGO_KG # from vin decoder
+      ret.mass = 4353 * CV.LB_TO_KG + STD_CARGO_KG # from vin decoder
       ret.wheelbase = 2.86 # Confirmed from vin decoder
-      ret.steerRatio = 16.5  # end to end is 13.46 - seems to be undocumented, using JYoung value
+      ret.steerRatio = 14.4  # end to end is 13.46 - seems to be undocumented, using JYoung value
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
-      ret.lateralTuning.pid.kpBP = [0.]
-      ret.lateralTuning.pid.kpV = [0.2]
-      ret.lateralTuning.pid.kiBP = [0.]
-      ret.lateralTuning.pid.kiV = [0.]
       ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
-      ret.steerActuatorDelay = 0.1
+      ret.longitudinalTuning.kpV = [1.9, 1.5]
 
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
