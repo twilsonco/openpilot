@@ -45,12 +45,17 @@ class CarState(CarStateBase):
     self.engineRPM = 0
     self.lastAutoHoldTime = 0.0
     self.sessionInitTime = sec_since_boot()
+    self.params_check_last_t = 0.
+    self.params_check_freq = 0.1 # check params at 10Hz
+    
+    self.accel_mode = int(Params().get_bool("SportAccel")) # 0 = normal, 1 = sport;
     
     self.coasting_enabled = self._params.get_bool("Coasting")
+    self.coasting_enabled_last = self.coasting_enabled
     self.no_friction_braking = self._params.get_bool("RegenBraking")
     self.coasting_brake_over_speed_enabled = self._params.get_bool("CoastingBrakeOverSpeed")
-    self.coasting_over_speed_vEgo_BP = [i * CV.MPH_TO_MS for i in [12., 15.]]
-    self.coasting_over_speed_regen_vEgo_BP = [i * CV.MPH_TO_MS for i in [9., 11.]]
+    self.coasting_over_speed_vEgo_BP = [1.25, 1.3]
+    self.coasting_over_speed_regen_vEgo_BP = [1.15, 1.2]
     self.coasting_long_plan = ""
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -1.
@@ -77,13 +82,23 @@ class CarState(CarStateBase):
     self.one_pedal_last_brake_mode = 0 # for saving brake mode when not in one-pedal-mode
     self.one_pedal_last_follow_level = 0 # for saving follow distance when in one-pedal mode
     self.one_pedal_v_cruise_kph_last = 0
+    self.one_pedal_last_switch_to_friction_braking_t = 0.
+    self.one_pedal_pause_steering_enabled = self._params.get_bool("OnePedalPauseBlinkerSteering")
     
-
-    self.lead_v_rel_long_lockout_bp, self.lead_v_rel_long_lockout_v = [[-12 * CV.MPH_TO_MS, -5 * CV.MPH_TO_MS], [1., 0.]] # pass-through all braking for v_rel < -15mph
-    self.lead_v_long_lockout_bp, self.lead_v_long_lockout_v = [[4. * CV.MPH_TO_MS, 8. * CV.MPH_TO_MS], [1., 0.]] # pass-through all braking for v_lead < 4mph
-    self.lead_ttc_long_lockout_bp, self.lead_ttc_long_lockout_v = [[4., 8.], [1., 0.]] # pass through all cruise braking for time-to-collision < 4s
-    self.lead_tr_long_lockout_bp, self.lead_tr_long_lockout_v = [[0.7, 1.0], [1., 0.]] # pass through all cruise braking if follow distance < tr * 0.8
-    self.lead_d_long_lockout_bp, self.lead_d_long_lockout_v = [[6, 10], [1., 0.]] # pass through all cruise braking if follow distance < 6m
+    # similar to over-speed coast braking, lockout coast/one-pedal logic first for engine/regen braking, and then for actual brakes.
+    # gas lockout lookup tables:
+    self.lead_v_rel_long_gas_lockout_bp, self.lead_v_rel_long_gas_lockout_v = [[-12 * CV.MPH_TO_MS, -8 * CV.MPH_TO_MS], [1., 0.]] # pass-through all engine/regen braking for v_rel < -15mph
+    self.lead_v_long_gas_lockout_bp, self.lead_v_long_gas_lockout_v = [[6. * CV.MPH_TO_MS, 12. * CV.MPH_TO_MS], [1., 0.]] # pass-through all engine/regen braking for v_lead < 4mph
+    self.lead_ttc_long_gas_lockout_bp, self.lead_ttc_long_gas_lockout_v = [[4., 8.], [1., 0.]] # pass through all cruise engine/regen braking for time-to-collision < 4s
+    self.lead_tr_long_gas_lockout_bp, self.lead_tr_long_gas_lockout_v = [[1.8, 2.5], [1., 0.]] # pass through all cruise engine/regen braking if follow distance < tr * 0.8
+    self.lead_d_long_gas_lockout_bp, self.lead_d_long_gas_lockout_v = [[12, 20], [1., 0.]] # pass through all cruise engine/regen braking if follow distance < 6m
+    
+    # brake lockout lookup tables:
+    self.lead_v_rel_long_brake_lockout_bp, self.lead_v_rel_long_brake_lockout_v = [[-20 * CV.MPH_TO_MS, -15 * CV.MPH_TO_MS], [1., 0.]] # pass-through all braking for v_rel < -15mph
+    self.lead_v_long_brake_lockout_bp, self.lead_v_long_brake_lockout_v = [[2. * CV.MPH_TO_MS, 5. * CV.MPH_TO_MS], [1., 0.]] # pass-through all braking for v_lead < 4mph
+    self.lead_ttc_long_brake_lockout_bp, self.lead_ttc_long_brake_lockout_v = [[2., 3.], [1., 0.]] # pass through all cruise braking for time-to-collision < 4s
+    self.lead_tr_long_brake_lockout_bp, self.lead_tr_long_brake_lockout_v = [[1.2, 1.6], [1., 0.]] # pass through all cruise braking if follow distance < tr * 0.8
+    self.lead_d_long_brake_lockout_bp, self.lead_d_long_brake_lockout_v = [[6, 10], [1., 0.]] # pass through all cruise braking if follow distance < 6m
     
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
@@ -99,6 +114,8 @@ class CarState(CarStateBase):
 
   def update(self, pt_cp):
     ret = car.CarState.new_message()
+    
+    t = sec_since_boot()
 
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
@@ -116,13 +133,19 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     self.vEgo = ret.vEgo
     ret.standstill = ret.vEgoRaw < 0.01
-    
-    coasting_enabled = self._params.get_bool("Coasting")
-    if coasting_enabled != self.coasting_enabled:
-      if not coasting_enabled and self.vEgo > self.v_cruise_kph * CV.KPH_TO_MS and not self.no_friction_braking:
+
+    self.coasting_enabled_last = self.coasting_enabled
+    if t - self.params_check_last_t >= self.params_check_freq:
+      self.params_check_last_t = t
+      self.coasting_enabled = self._params.get_bool("Coasting")
+      self.one_pedal_pause_steering_enabled = self._params.get_bool("OnePedalPauseBlinkerSteering")
+      self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
+      self.one_pedal_mode_engage_on_gas_enabled = self._params.get_bool("OnePedalModeEngageOnGas") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
+      
+    if self.coasting_enabled != self.coasting_enabled_last:
+      if not self.coasting_enabled and self.vEgo > self.v_cruise_kph * CV.KPH_TO_MS and not self.no_friction_braking:
         self._params.set_bool("Coasting", True)
-        coasting_enabled = True
-    self.coasting_enabled = coasting_enabled
+        self.coasting_enabled = True
     ret.coastingActive = self.coasting_enabled
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
@@ -134,9 +157,8 @@ class CarState(CarStateBase):
     if ret.brake < 10/0xd0:
       ret.brake = 0.
     
-    t = sec_since_boot()
     if t - self.sessionInitTime < 15.:
-      self.apply_brake_percent = int(round(interp(t - self.sessionInitTime - 5., [0.,1.,2.,3.,4.,5.,6.,7.,8.,9.], ([100,0]*5))) % 100)
+      self.apply_brake_percent = int(round(interp(t - self.sessionInitTime - 5., [0.,2.,4.,6.,8.,10.], ([100,0]*3))) % 100)
     ret.frictionBrakePercent = self.apply_brake_percent
     
 
@@ -171,7 +193,7 @@ class CarState(CarStateBase):
     ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
 
     self.blinker = (ret.leftBlinker or ret.rightBlinker)
-    if not self.disengage_on_gas and (self.pause_long_on_gas_press or self.v_cruise_kph * CV.KPH_TO_MPH <= 10.):
+    if not self.disengage_on_gas and (self.pause_long_on_gas_press or self.v_cruise_kph * CV.KPH_TO_MPH <= 10.) and self.one_pedal_pause_steering_enabled:
       cur_time = sec_since_boot()
       if self.blinker and not self.prev_blinker:
         self.lang_change_ramp_down_steer_start_t = cur_time
@@ -204,7 +226,6 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = self.pcm_acc_status != AccState.OFF
     ret.cruiseState.standstill = False
     
-    self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
     one_pedal_mode_active = (self.one_pedal_mode_enabled and ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
     coast_one_pedal_mode_active = (ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
     if one_pedal_mode_active != self.one_pedal_mode_active or coast_one_pedal_mode_active != self.coast_one_pedal_mode_active:
@@ -221,6 +242,7 @@ class CarState(CarStateBase):
     self.one_pedal_mode_active = one_pedal_mode_active
     ret.onePedalModeActive = self.one_pedal_mode_active
     ret.onePedalBrakeMode = self.one_pedal_brake_mode
+    
 
     ret.autoHoldActivated = self.autoHoldActivated
     

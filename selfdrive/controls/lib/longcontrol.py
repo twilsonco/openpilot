@@ -3,7 +3,6 @@ from common.numpy_fast import clip, interp
 from selfdrive.controls.lib.pid import PIController
 from selfdrive.controls.lib.drive_helpers import CONTROL_N
 from selfdrive.modeld.constants import T_IDXS
-from common.params import Params
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
@@ -16,7 +15,7 @@ DECEL_STOPPING_TARGET = 0.25  # apply at least this amount of brake to maintain 
 
 RATE = 100.0
 
-# As per ISO 15622:2018 for all speeds
+# As NOT per ISO 15622:2018 for all speeds
 ACCEL_MIN_ISO = -3.5 # m/s^2
 ACCEL_MAX_ISO = 3.5 # m/s^2
 

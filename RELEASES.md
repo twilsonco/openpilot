@@ -1,3 +1,19 @@
+Version tw-0.8.9-3.5 (2021-11-10)
+========================
+The Thanksgiving road trip edition
+ * NEW: Latest 0.8.10 supercombo (laneless + laneful) model
+ * NEW: Latest 0.8.10 driver monitoring model
+ * NEW: Update to AGNOS2 for Comma3 users
+ * NEW: Added follow level UI metric
+ * IMPROVED: Regular/sport acceleration modes now work.
+ * IMPROVED: Toggle coast mode while driving by tapping max speed (indicated by "+" after max speed; ring around brake indicator no longer shown)
+ * IMPROVED: Disable one-pedal friction braking with double press of follow distance button when stopped or when gas pedal pressed
+ * IMPROVED: Toggle one-pedal engage on gas feature while driving by tapping pedal icon (indicated by ring around pedal icon)
+ * IMPROVED: Toggle auto-pause of auto-steer (when in one-pedal mode below 30mph with blinker) while driving by tapping wheel icon (indicated by ring around wheel icon while one-pedal mode active)
+ * IMPROVED: Better (but still hackey) follow braking when coasting behind lead downhill
+ * FIXED: After using one-pedal hard braking during a driving session, it no longer defaults to moderate braking for future one-pedal braking engagements
+ * FIXED: JShuler panda gm steering fix
+
 Version tw-0.8.9-3.4 (2021-11-04)
 ========================
  1. Coasting means coasting! Before, the coasting toggle was merely disabling OP friction braking for maintaining set cruise speed. Now coasting really means coasting. If brake indicator enabled, then when coasting is enabled a circle will show around the brake indicator icon.

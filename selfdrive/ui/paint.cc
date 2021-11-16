@@ -318,9 +318,23 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     ui_fill_rect(s->vg, pedal_rect, nvg_color, brake_size);
     ui_draw_image(s, {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2}, "one_pedal_mode", s->scene.one_pedal_fade);
     s->scene.one_pedal_touch_rect = pedal_rect;
+    s->scene.maxspeed_touch_rect = {1,1,1,1};
+    
+    // draw extra circle to indiate one-pedal engage on gas is enabled
+    if (s->scene.onePedalEngageOnGasEnabled){
+      nvgBeginPath(s->vg);
+      const int r = int(float(brake_size) * 1.15);
+      nvgRoundedRect(s->vg, rect.centerX() - r, rect.centerY() - r, 2 * r, 2 * r, r);
+      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(int(s->scene.one_pedal_fade * 255.)));
+      nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
+      nvgFill(s->vg);
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+    }
   }
   else{
     s->scene.one_pedal_touch_rect = {1,1,1,1};
+    s->scene.maxspeed_touch_rect = rect;
     const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
     if (is_cruise_set && !s->scene.is_metric) { maxspeed *= 0.6225; }
 
@@ -330,8 +344,13 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
     ui_draw_text(s, rect.centerX(), 118, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? int(-s->scene.one_pedal_fade * 200.) : int(-s->scene.one_pedal_fade * 100.)), "sans-regular");
     if (is_cruise_set) {
-      const std::string maxspeed_str = std::to_string((int)std::nearbyint(maxspeed));
-      ui_draw_text(s, rect.centerX(), 212, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? int(-s->scene.one_pedal_fade * 200.) : int(-s->scene.one_pedal_fade * 100.)), "sans-bold");
+      std::string maxspeed_str = std::to_string((int)std::nearbyint(maxspeed));
+      float font_size = 48 * 2.5;
+      if (s->scene.car_state.getCoastingActive()){
+        maxspeed_str += "+";
+        font_size *= 0.9;
+      }
+      ui_draw_text(s, rect.centerX(), 212, maxspeed_str.c_str(), font_size, COLOR_WHITE_ALPHA(is_cruise_set ? int(-s->scene.one_pedal_fade * 200.) : int(-s->scene.one_pedal_fade * 100.)), "sans-bold");
     } else {
       ui_draw_text(s, rect.centerX(), 212, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(int(-s->scene.one_pedal_fade * 100.)), "sans-semibold");
     }
@@ -410,7 +429,7 @@ static void ui_draw_measures(UIState *s){
     int default_unit_font_size = 38;
   
     // determine bounding rectangle
-    const int slots_r = brake_size + 4 + (s->scene.measure_cur_num_slots <= 5 ? 6 : 0);
+    const int slots_r = brake_size + 6 + (s->scene.measure_cur_num_slots <= 5 ? 6 : 0);
     const int slots_w = (s->scene.measure_cur_num_slots <= 5 ? 2 : 4) * slots_r;
     const int slots_x = (s->scene.measure_cur_num_slots <= 5 ? center_x - slots_r : center_x - 3 * slots_r);
     const Rect slots_rect = {slots_x, slots_y_min, slots_w, slots_y_rng};
@@ -883,6 +902,31 @@ static void ui_draw_measures(UIState *s){
           }}
           break;
 
+        case UIMeasure::FOLLOW_LEVEL: 
+          {
+            std::string gap;
+            snprintf(name, sizeof(name), "GAP");
+            switch (int(scene.car_state.getReaddistancelines())){
+              case 1:
+              gap =  "I";
+              break;
+              
+              case 2:
+              gap =  "I I";
+              break;
+              
+              case 3:
+              gap =  "I I I";
+              break;
+              
+              default:
+              gap =  "";
+              break;
+            }
+            snprintf(val, sizeof(val), "%s", gap.c_str());
+          }
+          break;
+
         default: {// invalid number
           snprintf(name, sizeof(name), "INVALID");
           snprintf(val, sizeof(val), "⚠️");}
@@ -905,6 +949,9 @@ static void ui_draw_measures(UIState *s){
       int slot_y = slots_rect.y + (i % 5) * slot_y_rng;
       int slot_y_mid = slot_y + slot_y_rng / 2;
       int y = slot_y_mid + slot_y_rng / 2 - 8 - label_font_size;
+      if (strlen(name) == 0){
+        y += label_font_size / 2;
+      }
       nvgFontFace(s->vg, "sans-semibold");
       nvgFontSize(s->vg, val_font_size);
       nvgFillColor(s->vg, val_color);
@@ -1024,6 +1071,18 @@ static void ui_draw_vision_event(UIState *s) {
     ui_draw_image(s, {-radius, -radius, 2*radius, 2*radius}, "wheel", 1.0f);
     nvgRestore(s->vg);
     
+    // draw extra circle to indiate paused low-speed one-pedal blinker steering is enabled
+    if (s->scene.one_pedal_fade > 0. && s->scene.onePedalPauseSteering){
+      nvgBeginPath(s->vg);
+      const int r = int(float(radius) * 1.15);
+      nvgRoundedRect(s->vg, center_x - r, center_y - r, 2 * r, 2 * r, r);
+      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(int(s->scene.one_pedal_fade * 255.)));
+      nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
+      nvgFill(s->vg);
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+    }
+    
     // draw hands on wheel pictogram under wheel pictogram.
     auto handsOnWheelState = (*s->sm)["driverMonitoringState"].getDriverMonitoringState().getHandsOnWheelState();
     if (handsOnWheelState >= cereal::DriverMonitoringState::HandsOnWheelState::WARNING) {
@@ -1082,17 +1141,7 @@ static void ui_draw_vision_brake(UIState *s) {
       nvgFill(s->vg);
       nvgStroke(s->vg);
     }
-    if (s->scene.car_state.getCoastingActive()){
-      nvgBeginPath(s->vg);
-      const int r = int(float(brake_size) * 0.95);
-      nvgRoundedRect(s->vg, brake_x - r, brake_y - r, 2 * r, 2 * r, r);
-      nvgStrokeColor(s->vg, nvgRGBA(200,200,200,200));
-      nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
-      nvgFill(s->vg);
-      nvgStrokeWidth(s->vg, 6);
-      nvgStroke(s->vg);
-    }
-    s->scene.brake_touch_rect = {brake_x - brake_size, brake_y - brake_size, 2 * brake_size, 2 * brake_size};
+    // s->scene.brake_touch_rect = {1,1,1,1};
   }
 }
 

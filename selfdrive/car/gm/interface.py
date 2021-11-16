@@ -13,15 +13,52 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 FOLLOW_AGGRESSION = 0.15 # (Acceleration/Decel aggression) Lower is more aggressive
 
+# lookup tables VS speed to determine min and max accels in cruise
+# make sure these accelerations are smaller than mpc limits
+_A_CRUISE_MIN_V_SPORT = [-2.0, -2.2, -2.0, -1.5, -1.0]
+_A_CRUISE_MIN_V_FOLLOWING = [-3.0, -2.5, -2.0, -1.5, -1.0]
+_A_CRUISE_MIN_V = [-1.0, -1.2, -1.0, -0.7, -0.5]
+_A_CRUISE_MIN_BP = [0., 5., 10., 20., 55.]
+
+# need fast accel at very low speed for stop and go
+# make sure these accelerations are smaller than mpc limits
+_A_CRUISE_MAX_V = [1.2, 1.4, 1.2, 0.9, 0.7]
+_A_CRUISE_MAX_V_SPORT = [2.2, 2.4, 2.2, 1.1, 0.9]
+_A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.8, 1.6, .9, .7]
+_A_CRUISE_MAX_BP = [0., 5., 10., 20., 55.]
+
+_A_CRUISE_MIN_V_MODE_LIST = [_A_CRUISE_MIN_V, _A_CRUISE_MIN_V_SPORT]
+_A_CRUISE_MAX_V_MODE_LIST = [_A_CRUISE_MAX_V, _A_CRUISE_MAX_V_SPORT]
+
+# revert to stock max negative accel based on relative lead velocity
+_A_MIN_V_STOCK_FACTOR_BP = [-5. * CV.MPH_TO_MS, 1. * CV.MPH_TO_MS]
+_A_MIN_V_STOCK_FACTOR_V = [0., 1.]
+
+def calc_cruise_accel_limits(v_ego, following, accelMode):
+  if following:
+    a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V_FOLLOWING)
+    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
+  else:
+    a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V_MODE_LIST[accelMode])
+    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_MODE_LIST[accelMode])
+  return [a_cruise_min, a_cruise_max]
+
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
+  params_check_last_t = 0.
+  params_check_freq = 0.1 # check params at 10Hz
+  params = CarControllerParams()
+  
   @staticmethod
-  def get_pid_accel_limits(CP, current_speed, cruise_speed):
-    params = CarControllerParams()
-    return params.ACCEL_MIN, params.ACCEL_MAX
+  def get_pid_accel_limits(CP, current_speed, cruise_speed, CI = None):
+    following = CI.CS.coasting_lead_d > 0. and CI.CS.coasting_lead_d < 45.0 and CI.CS.coasting_lead_v > current_speed
+    accel_limits = calc_cruise_accel_limits(current_speed, following, CI.CS.accel_mode)
+    stock_min_factor = interp(current_speed - CI.CS.coasting_lead_v, _A_MIN_V_STOCK_FACTOR_BP, _A_MIN_V_STOCK_FACTOR_V) if CI.CS.coasting_lead_d > 0. else 0.
+    accel_limits[0] = stock_min_factor * CI.params.ACCEL_MIN + (1. - stock_min_factor) * accel_limits[0]
+    return [max(CI.params.ACCEL_MIN, accel_limits[0]), min(accel_limits[1], CI.params.ACCEL_MAX)]
 
   # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
   @staticmethod
@@ -101,8 +138,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
 
       # Only tuned to reduce oscillations. TODO.
-      ret.longitudinalTuning.kpV = [1.3, 1.0]
-      ret.longitudinalTuning.kiV = [0.28]
+      ret.longitudinalTuning.kpV = [1.7, 1.3]
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -124,17 +160,13 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.ACADIA:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
-      ret.mass = 3956. * CV.LB_TO_KG + STD_CARGO_KG # from vin decoder
+      ret.mass = 4353 * CV.LB_TO_KG + STD_CARGO_KG # from vin decoder
       ret.wheelbase = 2.86 # Confirmed from vin decoder
-      ret.steerRatio = 16.5  # end to end is 13.46 - seems to be undocumented, using JYoung value
+      ret.steerRatio = 14.4  # end to end is 13.46 - seems to be undocumented, using JYoung value
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
-      ret.lateralTuning.pid.kpBP = [0.]
-      ret.lateralTuning.pid.kpV = [0.2]
-      ret.lateralTuning.pid.kiBP = [0.]
-      ret.lateralTuning.pid.kiV = [0.]
       ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
-      ret.steerActuatorDelay = 0.1
+      ret.longitudinalTuning.kpV = [1.9, 1.5]
 
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
@@ -164,6 +196,17 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
 
+    elif candidate == CAR.ESCALADE_ESV:
+      ret.minEnableSpeed = -1.  # engage speed is decided by pcm
+      ret.mass = 2739. + STD_CARGO_KG
+      ret.wheelbase = 3.302
+      ret.steerRatio = 17.3
+      ret.centerToFront = ret.wheelbase * 0.49
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
+      ret.lateralTuning.pid.kf = 0.000045
+      tire_stiffness_factor = 1.0
+
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
@@ -171,17 +214,7 @@ class CarInterface(CarInterfaceBase):
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront, tire_stiffness_factor=tire_stiffness_factor)
-
-    ret.longitudinalTuning.kpBP = [5., 35.]
-    ret.longitudinalTuning.kpV = [2.4, 1.5]
-    ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.36]
-
-    ret.startAccel = 0.8
-
-    ret.steerLimitTimer = 0.4
-    ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
-
+    
     return ret
 
   # returns a car.CarState
@@ -230,54 +263,75 @@ class CarInterface(CarInterfaceBase):
     if cruiseEnabled and self.CS.lka_button and self.CS.lka_button != self.CS.prev_lka_button:
       self.CS.lkMode = not self.CS.lkMode
       cloudlog.info("button press event: LKA button. new value: %i" % self.CS.lkMode)
-      
+    
+    if t - self.params_check_last_t >= self.params_check_freq:
+      self.params_check_last_t = t
+      self.one_pedal_mode = self.CS._params.get_bool("OnePedalMode")
+
     # distance button is also used to toggle braking modes when in one-pedal-mode
     if self.CS.one_pedal_mode_active or self.CS.coast_one_pedal_mode_active:
       if self.CS.distance_button != self.CS.prev_distance_button:
-        tmp_params = Params()
         if not self.CS.distance_button and self.CS.one_pedal_mode_engaged_with_button and t - self.CS.distance_button_last_press_t < 0.8: #user just engaged one-pedal with distance button hold and immediately let off the button, so default to regen/engine braking. If they keep holding, it does hard braking
-          cloudlog.info("Engaging one-pedal mode with distace button.")
+          cloudlog.info("button press event: Engaging one-pedal mode with distance button.")
           self.CS.one_pedal_brake_mode = 0
+          self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
           self.CS.one_pedal_mode_enabled = False
           self.CS.one_pedal_mode_active = False
           self.CS.coast_one_pedal_mode_active = True
+          tmp_params = Params()
           tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
           tmp_params.put_bool("OnePedalMode", self.CS.one_pedal_mode_enabled)
         else:
-          if not tmp_params.get_bool("OnePedalMode") and self.CS.distance_button: # user lifted press of distance button while in coast-one-pedal mode, so turn on braking
+          if not self.one_pedal_mode and self.CS.distance_button: # user lifted press of distance button while in coast-one-pedal mode, so turn on braking
+            cloudlog.info("button press event: Engaging one-pedal braking.")
+            self.CS.one_pedal_last_switch_to_friction_braking_t = t
+            self.CS.distance_button_last_press_t = t + 0.5
             self.CS.one_pedal_brake_mode = 0
+            self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
             self.CS.one_pedal_mode_enabled = True
             self.CS.one_pedal_mode_active = True
+            tmp_params = Params()
             tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
             tmp_params.put_bool("OnePedalMode", self.CS.one_pedal_mode_enabled)
-          elif self.CS.distance_button and self.CS.pause_long_on_gas_press and t - self.CS.distance_button_last_press_t < 0.4: # on the second press of a double tap while the gas is pressed, turn off one-pedal braking
+          elif self.CS.distance_button and (self.CS.pause_long_on_gas_press or self.CS.out.standstill) and t - self.CS.distance_button_last_press_t < 0.4 and t - self.CS.one_pedal_last_switch_to_friction_braking_t > 1.: # on the second press of a double tap while the gas is pressed, turn off one-pedal braking
             # cycle the brake mode back to nullify the first press
-            self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
+            cloudlog.info("button press event: Disengaging one-pedal mode with distace button double-press.")
+            self.CS.distance_button_last_press_t = t + 0.5
+            self.CS.one_pedal_brake_mode = 0
+            self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
             self.CS.one_pedal_mode_enabled = False
             self.CS.one_pedal_mode_active = False
             self.CS.coast_one_pedal_mode_active = True
+            tmp_params = Params()
             tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
             tmp_params.put_bool("OnePedalMode", self.CS.one_pedal_mode_enabled)
           else:
-            self.CS.distance_button_last_press_t = t
-            if not self.CS.distance_button: # only make changes when user lifts press
+            if self.CS.distance_button:
+              self.CS.distance_button_last_press_t = t
+              cloudlog.info("button press event: Distance button pressed in one-pedal mode.")
+            else: # only make changes when user lifts press
               if self.CS.one_pedal_brake_mode == 2:
-                self.CS.one_pedal_brake_mode = self.CS.one_pedal_last_brake_mode
-              else:
+                cloudlog.info("button press event: Disengaging one-pedal hard braking. Switching to moderate braking")
+                self.CS.one_pedal_brake_mode = 1
+                tmp_params = Params()
+                tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
+              elif t - self.CS.distance_button_last_press_t > 0. and t - self.CS.distance_button_last_press_t < 0.4: # only switch braking on a single tap (also allows for ignoring presses by setting last_press_t to be greater than t)
                 self.CS.one_pedal_brake_mode = (self.CS.one_pedal_brake_mode + 1) % 2
+                cloudlog.info(f"button press event: one-pedal braking. New value: {self.CS.one_pedal_brake_mode}")
+                tmp_params = Params()
                 tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
           self.CS.one_pedal_mode_engaged_with_button = False
       elif self.CS.distance_button and t - self.CS.distance_button_last_press_t > 0.3:
         if self.CS.one_pedal_brake_mode < 2:
+          cloudlog.info("button press event: Engaging one-pedal hard braking.")
           self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
         self.CS.one_pedal_brake_mode = 2
-      elif not self.CS.distance_button:
-        self.CS.one_pedal_brake_mode = min(self.CS.one_pedal_brake_mode, 1)
       self.CS.follow_level = self.CS.one_pedal_brake_mode + 1
     else: # cruis is active, so just modify follow distance
       if self.CS.distance_button != self.CS.prev_distance_button:
         if self.CS.distance_button:
           self.CS.distance_button_last_press_t = t
+          cloudlog.info("button press event: Distance button pressed in cruise mode.")
         else: # apply change on button lift
           self.CS.follow_level -= 1
           if self.CS.follow_level < 1:
@@ -350,7 +404,7 @@ class CarInterface(CarInterfaceBase):
 
     # For Openpilot, "enabled" includes pre-enable.
     # In GM, PCM faults out if ACC command overlaps user gas, so keep that from happening inside CC.update().
-    pause_long_on_gas_press = c.enabled and self.CS.gasPressed and not self.disengage_on_gas
+    pause_long_on_gas_press = c.enabled and self.CS.gasPressed and not self.CS.out.brake > 0. and not self.disengage_on_gas
     t = sec_since_boot()
     self.CS.one_pedal_mode_engage_on_gas = False
     if pause_long_on_gas_press and not self.CS.pause_long_on_gas_press:
@@ -359,7 +413,7 @@ class CarInterface(CarInterfaceBase):
         self.CS.last_pause_long_on_gas_press_t = t
     if self.CS.gasPressed:
       self.CS.one_pedal_mode_last_gas_press_t = t
-      
+
     self.CS.pause_long_on_gas_press = pause_long_on_gas_press
     enabled = c.enabled or self.CS.pause_long_on_gas_press
 

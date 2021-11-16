@@ -149,6 +149,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   FANSPEED_PERCENT,
   MEMORY_USAGE_PERCENT,
   FREESPACE_STORAGE,
+  FOLLOW_LEVEL,
   
   NUM_MEASURES
 } UIMeasure;
@@ -201,6 +202,8 @@ typedef struct UIScene {
   float stoppingDistance;
   
   float lastTime = 0., sessionInitTime = 0.;
+  float paramsCheckLast = 0., paramsCheckFreq = 0.1; // check params at 10Hz
+  bool onePedalModeActive, disableDisengageOnGasEnabled, onePedalEngageOnGasEnabled, onePedalPauseSteering;
 
   int lead_status;
   float lead_d_rel, lead_v_rel, lead_v;
@@ -217,6 +220,7 @@ typedef struct UIScene {
   // one-pedal mode fading. maxspeed rect at -1, fades away by 0, and one-pedal icon fades in by 1
   float one_pedal_fade = -1., one_pedal_fade_last_t = 0.;
   Rect one_pedal_touch_rect;
+  Rect maxspeed_touch_rect;
   Rect brake_touch_rect;
   
   int laneless_mode;
