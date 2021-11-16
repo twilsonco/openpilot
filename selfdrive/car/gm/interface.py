@@ -294,7 +294,7 @@ class CarInterface(CarInterfaceBase):
             tmp_params = Params()
             tmp_params.put("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
             tmp_params.put_bool("OnePedalMode", self.CS.one_pedal_mode_enabled)
-          elif self.CS.distance_button and self.CS.pause_long_on_gas_press and t - self.CS.distance_button_last_press_t < 0.4 and t - self.CS.one_pedal_last_switch_to_friction_braking_t > 1.: # on the second press of a double tap while the gas is pressed, turn off one-pedal braking
+          elif self.CS.distance_button and (self.CS.pause_long_on_gas_press or self.CS.out.standstill) and t - self.CS.distance_button_last_press_t < 0.4 and t - self.CS.one_pedal_last_switch_to_friction_braking_t > 1.: # on the second press of a double tap while the gas is pressed, turn off one-pedal braking
             # cycle the brake mode back to nullify the first press
             cloudlog.info("button press event: Disengaging one-pedal mode with distace button double-press.")
             self.CS.distance_button_last_press_t = t + 0.5
