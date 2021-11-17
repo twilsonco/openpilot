@@ -465,45 +465,68 @@ static void ui_draw_measures(UIState *s){
       // switch to get metric strings/colors 
       switch (scene.measure_slots[i]){
 
-        case UIMeasure::CPU_TEMP_AND_PERCENT: 
+        case UIMeasure::CPU_TEMP_AND_PERCENTF: 
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          if (s->is_metric) {
-            snprintf(val, sizeof(val), "%.0f°C", scene.cpuTemp);
-          }
-          else{
-            snprintf(val, sizeof(val), "%.0f°F", scene.cpuTemp * 1.8 + 32.);
-          }
+          snprintf(val, sizeof(val), "%.0f°F", scene.cpuTemp * 1.8 + 32.);
           snprintf(unit, sizeof(unit), "%d%%", scene.cpuPerc);
           snprintf(name, sizeof(name), "CPU");}
           break;
         
-        case UIMeasure::CPU_TEMP: 
+        case UIMeasure::CPU_TEMPF: 
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          if (s->is_metric) {
-            snprintf(val, sizeof(val), "%.0f", scene.cpuTemp);
-            snprintf(unit, sizeof(unit), "°C");
-          }
-          else{
-            snprintf(val, sizeof(val), "%.0f", scene.cpuTemp * 1.8 + 32.);
-            snprintf(unit, sizeof(unit), "°F");
-          }
+          snprintf(val, sizeof(val), "%.0f", scene.cpuTemp * 1.8 + 32.);
+          snprintf(unit, sizeof(unit), "°F");
           snprintf(name, sizeof(name), "CPU TEMP");}
           break;
         
-        case UIMeasure::MEMORY_TEMP: 
+        case UIMeasure::MEMORY_TEMPF: 
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          if (s->is_metric) {
-            snprintf(val, sizeof(val), "%.0f", scene.deviceState.getMemoryTempC());
-            snprintf(unit, sizeof(unit), "°C");
-          }
-          else{
-            snprintf(val, sizeof(val), "%.0f", scene.deviceState.getMemoryTempC() * 1.8 + 32.);
-            snprintf(unit, sizeof(unit), "°F");
-          }
+          snprintf(val, sizeof(val), "%.0f", scene.deviceState.getMemoryTempC() * 1.8 + 32.);
+          snprintf(unit, sizeof(unit), "°F");
           snprintf(name, sizeof(name), "MEM TEMP");}
+          break;
+        
+        case UIMeasure::AMBIENT_TEMPF: 
+          {
+          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+          snprintf(val, sizeof(val), "%.0f", scene.deviceState.getAmbientTempC() * 1.8 + 32.);
+          snprintf(unit, sizeof(unit), "°F");
+          snprintf(name, sizeof(name), "AMB TEMP");}
+          break;
+          
+        case UIMeasure::CPU_TEMP_AND_PERCENTC: 
+          {
+          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+            snprintf(val, sizeof(val), "%.0f°C", scene.cpuTemp);
+          snprintf(unit, sizeof(unit), "%d%%", scene.cpuPerc);
+          snprintf(name, sizeof(name), "CPU");}
+          break;
+        
+        case UIMeasure::CPU_TEMPC: 
+          {
+          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+          snprintf(val, sizeof(val), "%.0f", scene.cpuTemp);
+          snprintf(unit, sizeof(unit), "°C");
+          snprintf(name, sizeof(name), "CPU TEMP");}
+          break;
+        
+        case UIMeasure::MEMORY_TEMPC: 
+          {
+          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+          snprintf(val, sizeof(val), "%.0f", scene.deviceState.getMemoryTempC());
+          snprintf(unit, sizeof(unit), "°C");
+          snprintf(name, sizeof(name), "MEM TEMP");}
+          break;
+        
+        case UIMeasure::AMBIENT_TEMPC: 
+          {
+          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+          snprintf(val, sizeof(val), "%.0f", scene.deviceState.getAmbientTempC());
+          snprintf(unit, sizeof(unit), "°C");
+          snprintf(name, sizeof(name), "AMB TEMP");}
           break;
         
         case UIMeasure::CPU_PERCENT: 
@@ -512,21 +535,7 @@ static void ui_draw_measures(UIState *s){
           snprintf(val, sizeof(val), "%d%%", scene.cpuPerc);
           snprintf(name, sizeof(name), "CPU PERC");}
           break;
-        
-        case UIMeasure::AMBIENT_TEMP: 
-          {
-          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          if (s->is_metric) {
-            snprintf(val, sizeof(val), "%.0f", scene.deviceState.getAmbientTempC());
-            snprintf(unit, sizeof(unit), "°C");
-          }
-          else{
-            snprintf(val, sizeof(val), "%.0f", scene.deviceState.getAmbientTempC() * 1.8 + 32.);
-            snprintf(unit, sizeof(unit), "°F");
-          }
-          snprintf(name, sizeof(name), "AMB TEMP");}
-          break;
-        
+          
         case UIMeasure::FANSPEED_PERCENT: 
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
@@ -951,6 +960,9 @@ static void ui_draw_measures(UIState *s){
       int y = slot_y_mid + slot_y_rng / 2 - 8 - label_font_size;
       if (strlen(name) == 0){
         y += label_font_size / 2;
+      }
+      if (strlen(unit) == 0){
+        x = slot_x + slots_r;
       }
       nvgFontFace(s->vg, "sans-semibold");
       nvgFontSize(s->vg, val_font_size);
