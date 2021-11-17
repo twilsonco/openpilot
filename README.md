@@ -157,7 +157,8 @@ If you're device stays connected to your car all the time, you'll be presented w
 ### Tuning
 ------
 
-Remember to make small adjustments to 1 value at a time and then test.
+* Remember to make small adjustments to 1 value at a time and then test.
+* Use [PlotJugger](https://github.com/commaai/openpilot/tree/master/tools/plotjuggler) to make sure you are going in the right direction.
 
 #### Lateral Tuning
 ------
