@@ -62,6 +62,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_network.png",
                                   this));
 
+  toggles.append(new ParamControl("DisableOnroadUploads",
+                                  "Disable onroad uploads",
+                                  "Completely disable uploads when onroad. Necessary to avoid high data use when connected to wifi hotspot.",
+                                  "../assets/offroad/icon_network.png",
+                                  this));
+
   ParamControl *record_toggle = new ParamControl("RecordFront",
                                                  "Record and Upload Driver Camera",
                                                  "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
