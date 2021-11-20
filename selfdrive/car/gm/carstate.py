@@ -85,6 +85,10 @@ class CarState(CarStateBase):
     self.one_pedal_last_switch_to_friction_braking_t = 0.
     self.one_pedal_pause_steering_enabled = self._params.get_bool("OnePedalPauseBlinkerSteering")
     
+    self.drive_mode_button = False
+    self.drive_mode_button_last = False
+    self.gear_shifter_raw = None
+    
     # similar to over-speed coast braking, lockout coast/one-pedal logic first for engine/regen braking, and then for actual brakes.
     # gas lockout lookup tables:
     self.lead_v_rel_long_gas_lockout_bp, self.lead_v_rel_long_gas_lockout_v = [[-12 * CV.MPH_TO_MS, -8 * CV.MPH_TO_MS], [1., 0.]] # pass-through all engine/regen braking for v_rel < -15mph
@@ -124,6 +128,11 @@ class CarState(CarStateBase):
     self.prev_distance_button = self.distance_button
     self.distance_button = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"]
     
+    self.drive_mode_button_last = self.drive_mode_button
+    self.drive_mode_button = pt_cp.vl["ASCMSteeringButton"]["DriveModeButton"]
+    
+    if (self.drive_mode_button != self.drive_mode_button_last):
+        cloudlog.info(f"{t} Drive mode button event: new value = {self.drive_mode_button}")
 
     ret.wheelSpeeds.fl = pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"] * CV.KPH_TO_MS
     ret.wheelSpeeds.fr = pt_cp.vl["EBCMWheelSpdFront"]["FRWheelSpd"] * CV.KPH_TO_MS
@@ -149,6 +158,12 @@ class CarState(CarStateBase):
     ret.coastingActive = self.coasting_enabled
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
+    
+    gear_shifter_raw = pt_cp.vl["ECMPRDNL"]['PRNDL']
+    if (self.gear_shifter_raw != gear_shifter_raw):
+      cloudlog.info(f"{t} Gear shifted to: {gear_shifter_raw = }, {self.shifter_values.get(gear_shifter_raw, None) = }, {self.parse_gear_shifter(self.shifter_values.get(gear_shifter_raw, None)) = }")
+    self.gear_shifter_raw = gear_shifter_raw
+      
     self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
     self.user_brake = pt_cp.vl["EBCMBrakePedalPosition"]['BrakePedalPosition']
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]["PRNDL"], None))
@@ -269,6 +284,7 @@ class CarState(CarStateBase):
       ("AcceleratorPedal", "AcceleratorPedal", 0),
       ("CruiseState", "AcceleratorPedal2", 0),
       ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
+      ("DriveModeButton", "ASCMSteeringButton", 0),
       ("LKAButton", "ASCMSteeringButton", 0),
       ("SteeringWheelAngle", "PSCMSteeringAngle", 0),
       ("SteeringWheelRate", "PSCMSteeringAngle", 0),

@@ -73,6 +73,7 @@ class Uploader():
     self.immediate_folders = ["crash/", "boot/"]
     self.immediate_priority = {"qlog.bz2": 0, "qcamera.ts": 1}
     self.high_priority = {"rlog.bz2": 0, "fcamera.hevc": 1, "dcamera.hevc": 2, "ecamera.hevc": 3}
+    
 
   def get_upload_sort(self, name):
     if name in self.immediate_priority:
@@ -262,7 +263,13 @@ def uploader_fn(exit_event):
 
     on_wifi = network_type == NetworkType.wifi
     allow_raw_upload = params.get_bool("UploadRaw")
-
+    
+    if not offroad and Params().get_bool("DisableOnroadUploads"):
+      cloudlog.info("not uploading: onroad uploads disabled")
+      if allow_sleep:
+        time.sleep(60)
+      continue
+      
     d = uploader.next_file_to_upload(with_raw=allow_raw_upload and on_wifi and offroad)
     if d is None:  # Nothing to upload
       if allow_sleep:

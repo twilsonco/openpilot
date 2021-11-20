@@ -62,6 +62,7 @@ def manager_init():
     ("CoastingBrakeOverSpeed", "0"),
     ("FrictionBrakePercent", "0"),
     ("BrakeIndicator", "1"),
+    ("DisableOnroadUploads", "0"),
     ("MeasureNumSlots", "0"),
     ("MeasureSlot00", "7"), # right column: percent grade
     ("MeasureSlot01", "6"), # altitude

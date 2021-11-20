@@ -1,3 +1,7 @@
+Version tw-0.8.9-3.6 (2021-11-20)
+========================
+ * NEW: added toggle to disable uploads when on-road. Save that hotspot data!
+
 Version tw-0.8.9-3.5 (2021-11-10)
 ========================
  * NEW: Latest 0.8.10 supercombo (laneless + laneful) model
