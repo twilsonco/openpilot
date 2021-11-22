@@ -436,7 +436,7 @@ static void ui_draw_measures(UIState *s){
     // draw bounding rectangle
     nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, slots_rect.x, slots_rect.y, slots_rect.w, slots_rect.h, 20);
-    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
+    nvgStrokeColor(s->vg, nvgRGBA(200,200,200,200));
     nvgStrokeWidth(s->vg, 6);
     nvgStroke(s->vg);
     nvgFillColor(s->vg, nvgRGBA(0,0,0,100));
@@ -1157,6 +1157,68 @@ static void ui_draw_vision_brake(UIState *s) {
   }
 }
 
+static void draw_accel_mode_button(UIState *s) {
+  if (s->vipc_client->connected) {
+    const int radius = 72;
+    int center_x = s->fb_w - face_wheel_radius - bdr_s * 2;
+    if (s->scene.brake_percent >= 0){
+      center_x -= brake_size + 3 * bdr_s + radius;
+    }
+    const int center_y = s->fb_h - footer_h / 2 - radius / 2;
+    int btn_w = radius * 2;
+    int btn_h = radius * 2;
+    int btn_x1 = center_x - 0.5 * radius;
+    int btn_y = center_y - 0.5 * radius;
+    int btn_xc1 = btn_x1 + radius;
+    int btn_yc = btn_y + radius;
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, radius);
+    // nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, 100);
+    nvgStrokeColor(s->vg, nvgRGBA(0,0,0,80));
+    nvgStrokeWidth(s->vg, 6);
+    nvgStroke(s->vg);
+    nvgFontSize(s->vg, 52);
+
+    if (s->scene.accel_mode == 0) {
+      nvgStrokeColor(s->vg, nvgRGBA(200,200,200,200));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+      NVGcolor fillColor = nvgRGBA(0,0,0,80);
+      nvgFillColor(s->vg, fillColor);
+      nvgFill(s->vg);
+      nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
+      nvgText(s->vg,btn_xc1,btn_yc-20,"Stock",NULL);
+      nvgText(s->vg,btn_xc1,btn_yc+20,"accel",NULL);
+    } else if (s->scene.accel_mode == 1) {
+      nvgStrokeColor(s->vg, nvgRGBA(142,0,11,255));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+      NVGcolor fillColor = nvgRGBA(142,0,11,80);
+      nvgFillColor(s->vg, fillColor);
+      nvgFill(s->vg);
+      nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
+      nvgText(s->vg,btn_xc1,btn_yc-20,"Sport",NULL);
+      nvgText(s->vg,btn_xc1,btn_yc+20,"accel",NULL);
+    } else if (s->scene.accel_mode == 2) {
+      nvgStrokeColor(s->vg, nvgRGBA(74,132,23,255));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+      NVGcolor fillColor = nvgRGBA(74,132,23,80);
+      nvgFillColor(s->vg, fillColor);
+      nvgFill(s->vg);
+      nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
+      nvgText(s->vg,btn_xc1,btn_yc-20,"Eco",NULL);
+      nvgText(s->vg,btn_xc1,btn_yc+20,"accel",NULL);
+    }
+    
+    s->scene.accel_mode_touch_rect = Rect{center_x - laneless_btn_touch_pad, 
+                                                center_y - laneless_btn_touch_pad,
+                                                radius + 2 * laneless_btn_touch_pad, 
+                                                radius + 2 * laneless_btn_touch_pad}; 
+  }
+}
+
 static void draw_laneless_button(UIState *s) {
   if (s->vipc_client->connected) {
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
@@ -1172,7 +1234,7 @@ static void draw_laneless_button(UIState *s) {
     int btn_yc = btn_y + radius;
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
     nvgBeginPath(s->vg);
-    nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, 100);
+    nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, radius);
     // nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, 100);
     nvgStrokeColor(s->vg, nvgRGBA(0,0,0,80));
     nvgStrokeWidth(s->vg, 6);
@@ -1243,6 +1305,9 @@ static void ui_draw_vision(UIState *s) {
     ui_draw_measures(s);
     if (s->scene.end_to_end) {
       draw_laneless_button(s);
+    }
+    if (s->scene.accel_mode_button_enabled){
+      draw_accel_mode_button(s);
     }
   }
   if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL) {

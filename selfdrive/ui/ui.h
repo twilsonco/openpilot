@@ -221,6 +221,11 @@ typedef struct UIScene {
   float brake_indicator_alpha;
   float brake_indicator_last_t;
   
+  // accel mode button
+  bool accel_mode_button_enabled;
+  Rect accel_mode_touch_rect;
+  int accel_mode;
+  
   // one-pedal mode fading. maxspeed rect at -1, fades away by 0, and one-pedal icon fades in by 1
   float one_pedal_fade = -1., one_pedal_fade_last_t = 0.;
   Rect one_pedal_touch_rect;

@@ -140,10 +140,16 @@ static void update_state(UIState *s) {
   float t = seconds_since_boot();
   
   if (t - scene.paramsCheckLast > scene.paramsCheckFreq){
-    scene.onePedalModeActive = Params().getBool("OnePedalMode");
+    scene.paramsCheckLast = t;
     scene.disableDisengageOnGasEnabled = Params().getBool("DisableDisengageOnGas");
-    scene.onePedalEngageOnGasEnabled = Params().getBool("OnePedalModeEngageOnGas");
-    scene.onePedalPauseSteering = Params().getBool("OnePedalPauseBlinkerSteering");
+    if (scene.disableDisengageOnGasEnabled){
+      scene.onePedalModeActive = Params().getBool("OnePedalMode");
+      scene.onePedalEngageOnGasEnabled = Params().getBool("OnePedalModeEngageOnGas");
+      scene.onePedalPauseSteering = Params().getBool("OnePedalPauseBlinkerSteering");
+    }
+    if (scene.accel_mode_button_enabled){
+      scene.accel_mode = std::stoi(Params().get("AccelMode"));
+    }
   }
 
   // update engageability and DM icons at 2Hz
@@ -413,7 +419,9 @@ static void update_status(UIState *s) {
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->scene.laneless_mode = std::stoi(Params().get("LanelessMode"));
       s->scene.brake_percent = std::stoi(Params().get("FrictionBrakePercent"));
-      
+
+      s->scene.accel_mode_button_enabled = Params().getBool("AccelModeButton");
+
       s->scene.sessionInitTime = seconds_since_boot();
       s->scene.percentGrade = 0;
       for (int i = 0; i < 5; ++i){

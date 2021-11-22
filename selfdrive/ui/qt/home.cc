@@ -147,6 +147,11 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.one_pedal_touch_rect.ptInRect(e->x(), e->y())){
     Params().putBool("OnePedalModeEngageOnGas", !Params().getBool("OnePedalModeEngageOnGas"));
   }
+  
+  // accel_mode button
+  if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.accel_mode_touch_rect.ptInRect(e->x(), e->y())){
+    Params().put("AccelMode", std::to_string((std::stoi(Params().get("AccelMode")) + 1) % 3).c_str(), 1);
+  }
 
   // Handle sidebar collapsing
   else if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {

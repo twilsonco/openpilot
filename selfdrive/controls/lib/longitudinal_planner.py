@@ -30,17 +30,19 @@ AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distract
 _A_CRUISE_MIN_V_SPORT = [-2.0, -2.2, -2.0, -1.5, -1.0]
 _A_CRUISE_MIN_V_FOLLOWING = [-3.0, -2.5, -2.0, -1.5, -1.0]
 _A_CRUISE_MIN_V = [-1.0, -1.2, -1.0, -0.7, -0.5]
+_A_CRUISE_MIN_V_ECO = [-0.7, -0.8, -0.7, -0.6, -0.5]
 _A_CRUISE_MIN_BP = [0., 5., 10., 20., 55.]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
+_A_CRUISE_MAX_V_ECO = [0.7, 0.8, 0.7, 0.6, 0.4]
 _A_CRUISE_MAX_V = [1.2, 1.4, 1.2, 0.9, 0.7]
 _A_CRUISE_MAX_V_SPORT = [2.2, 2.4, 2.2, 1.1, 0.9]
 _A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.8, 1.6, .9, .7]
 _A_CRUISE_MAX_BP = [0., 5., 10., 20., 55.]
 
-_A_CRUISE_MIN_V_MODE_LIST = [_A_CRUISE_MIN_V, _A_CRUISE_MIN_V_SPORT]
-_A_CRUISE_MAX_V_MODE_LIST = [_A_CRUISE_MAX_V, _A_CRUISE_MAX_V_SPORT]
+_A_CRUISE_MIN_V_MODE_LIST = [_A_CRUISE_MIN_V, _A_CRUISE_MIN_V_SPORT, _A_CRUISE_MIN_V_ECO]
+_A_CRUISE_MAX_V_MODE_LIST = [_A_CRUISE_MAX_V, _A_CRUISE_MAX_V_SPORT, _A_CRUISE_MAX_V_ECO]
 
 # Lookup table for turns - fast accel
 _A_TOTAL_MAX_V = [3.5, 4.0, 5.0]
@@ -51,7 +53,7 @@ _A_TOTAL_MAX_V_SOC = [1.7, 3.2]
 _A_TOTAL_MAX_BP_SOC = [20., 40.]
 
 def calc_cruise_accel_limits(v_ego, following, accelMode):
-  if following:
+  if following and accelMode < 2:
     a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V_FOLLOWING)
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
   else:
@@ -100,12 +102,16 @@ class Planner():
     self.speed_limit_controller = SpeedLimitController()
     self.events = Events()
     self.turn_speed_controller = TurnSpeedController()
+
+    self._params = Params()
+    self.params_check_last_t = 0.
+    self.params_check_freq = 0.1 # check params at 10Hz
     
-    self.accel_mode = int(Params().get_bool("SportAccel")) # 0 = normal, 1 = sport;
+    self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -10. # lead "absolute"" velocity
     self.tr = 1.8
-    
+
     self.sessionInitTime = sec_since_boot()
     self.debug_logging = False
     self.debug_log_time_step = 0.333
@@ -124,6 +130,7 @@ class Planner():
 
   def update(self, sm, CP):
     cur_time = sec_since_boot()
+    t = cur_time
     v_ego = sm['carState'].vEgo
     a_ego = sm['carState'].aEgo
 
@@ -158,7 +165,14 @@ class Planner():
 
     # Get acceleration and active solutions for custom long mpc.
     a_mpc, active_mpc, c_source = self.mpc_solutions(enabled, self.v_desired, self.a_desired, v_cruise, sm)
-
+    
+    if t - self.params_check_last_t >= self.params_check_freq:
+      self.params_check_last_t = t
+      accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco
+      if accel_mode != self.accel_mode:
+          cloudlog.info(f"Acceleration mode changed, new value: {accel_mode} = {['normal','sport','eco'][accel_mode]}")
+          self.accel_mode = accel_mode
+    
     accel_limits = calc_cruise_accel_limits(v_ego, following, self.accel_mode)
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     if force_slow_decel:
@@ -188,7 +202,6 @@ class Planner():
         next_a = self.mpcs[key].a_solution[5]
     
     # debug logging
-    t = sec_since_boot()
     do_log = self.debug_logging and (t - self.last_debug_log_t > self.debug_log_time_step)
     if do_log:
       self.last_debug_log_t = t
