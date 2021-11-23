@@ -196,7 +196,7 @@ static void update_state(UIState *s) {
     
     scene.steerOverride= scene.car_state.getSteeringPressed();
     scene.angleSteers = scene.car_state.getSteeringAngleDeg();
-    scene.engineRPM = static_cast<int>((scene.car_state.getEngineRPM() / (100.0)) + 0.5) * 100;
+    scene.engineRPM = static_cast<int>((scene.car_state.getEngineRPM() / (10.0)) + 0.5) * 10;
     scene.aEgo = scene.car_state.getAEgo();
     float dt = t - scene.lastTime;
     if (dt > 0.){
