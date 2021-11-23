@@ -279,7 +279,13 @@ def uploader_fn(exit_event):
         if not offroad:
           cloudlog.info("not uploading: onroad uploads disabled")
         else:
-          cloudlog.info(f"not uploading: waiting until offroad for another {disable_onroad_upload_offroad_transition_timeout - (t - transition_to_offroad_last)} second(s)")
+          wait_minutes = int(disable_onroad_upload_offroad_transition_timeout / 60)
+          time_left = disable_onroad_upload_offroad_transition_timeout - (t - transition_to_offroad_last)
+          if (time_left / 60. > 2.):
+            time_left_str = f"{int(time_left / 60)} minute(s)"
+          else:
+            time_left_str = f"{int(time_left)} seconds(s)"
+          cloudlog.info(f"not uploading: waiting until offroad for {wait_minutes} minutes; {time_left_str} left")
         if allow_sleep:
           time.sleep(60)
       continue
