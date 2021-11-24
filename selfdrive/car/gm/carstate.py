@@ -195,7 +195,11 @@ class CarState(CarStateBase):
     ret.steerError = self.lkas_status == 3
     
     ret.steeringTorqueEps = pt_cp.vl["PSCMStatus"]['LKATorqueDelivered']
-    self.engineRPM = pt_cp.vl["ECMEngineStatus"]['EngineRPM']
+    engineRPM = pt_cp.vl["ECMEngineStatus"]['EngineRPM']
+    if self.engineRPM - engineRPM > 3000:
+      self.engineRPM = engineRPM + 4096 # values above 4096 roll over to zero, so shift them
+    else:
+      self.engineRPM = engineRPM
     ret.engineRPM = self.engineRPM
 
     # 1 - open, 0 - closed
