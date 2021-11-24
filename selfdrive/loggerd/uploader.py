@@ -260,7 +260,8 @@ def uploader_fn(exit_event):
     sm.update(0)
     
     offroad = params.get_bool("IsOffroad")
-    if offroad and not offroad_last:
+    t = sec_since_boot()
+    if offroad and not offroad_last and t > 60.:
       transition_to_offroad_last = sec_since_boot()
     offroad_last = offroad
     
@@ -274,8 +275,7 @@ def uploader_fn(exit_event):
     allow_raw_upload = params.get_bool("UploadRaw")
     
     if Params().get_bool("DisableOnroadUploads"):
-      t = sec_since_boot()
-      if not offroad or t - transition_to_offroad_last < disable_onroad_upload_offroad_transition_timeout:
+      if not offroad or (transition_to_offroad_last > 0. and t - transition_to_offroad_last < disable_onroad_upload_offroad_transition_timeout):
         if not offroad:
           cloudlog.info("not uploading: onroad uploads disabled")
         else:
