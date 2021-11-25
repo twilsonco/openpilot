@@ -23,21 +23,22 @@ _A_CRUISE_MIN_BP = [0., 5., 10., 20., 55.]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
+_A_CRUISE_MAX_V_CREEP = [0.1, 0.1, 0.1, 0.1, 0.1]
 _A_CRUISE_MAX_V_ECO = [0.7, 0.8, 0.7, 0.6, 0.4]
 _A_CRUISE_MAX_V = [1.2, 1.4, 1.2, 0.9, 0.7]
 _A_CRUISE_MAX_V_SPORT = [2.2, 2.4, 2.2, 1.1, 0.9]
 _A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.8, 1.6, .9, .7]
 _A_CRUISE_MAX_BP = [0., 5., 10., 20., 55.]
 
-_A_CRUISE_MIN_V_MODE_LIST = [_A_CRUISE_MIN_V, _A_CRUISE_MIN_V_SPORT, _A_CRUISE_MIN_V_ECO]
-_A_CRUISE_MAX_V_MODE_LIST = [_A_CRUISE_MAX_V, _A_CRUISE_MAX_V_SPORT, _A_CRUISE_MAX_V_ECO]
+_A_CRUISE_MIN_V_MODE_LIST = [_A_CRUISE_MIN_V, _A_CRUISE_MIN_V_SPORT, _A_CRUISE_MIN_V_ECO, _A_CRUISE_MIN_V_ECO]
+_A_CRUISE_MAX_V_MODE_LIST = [_A_CRUISE_MAX_V, _A_CRUISE_MAX_V_SPORT, _A_CRUISE_MAX_V_ECO, _A_CRUISE_MAX_V_CREEP]
 
 # revert to stock max negative accel based on relative lead velocity
 _A_MIN_V_STOCK_FACTOR_BP = [-5. * CV.MPH_TO_MS, 1. * CV.MPH_TO_MS]
 _A_MIN_V_STOCK_FACTOR_V = [0., 1.]
 
 def calc_cruise_accel_limits(v_ego, following, accelMode):
-  if following and accelMode < 2:
+  if following:
     a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V_FOLLOWING)
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
   else:
@@ -57,7 +58,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed, CI = None):
     following = CI.CS.coasting_lead_d > 0. and CI.CS.coasting_lead_d < 45.0 and CI.CS.coasting_lead_v > current_speed
-    accel_limits = calc_cruise_accel_limits(current_speed, following, CI.CS.accel_mode)
+    accel_limits = calc_cruise_accel_limits(current_speed, following and CI.CS.accel_mode <= 1, CI.CS.accel_mode)
     stock_min_factor = interp(current_speed - CI.CS.coasting_lead_v, _A_MIN_V_STOCK_FACTOR_BP, _A_MIN_V_STOCK_FACTOR_V) if CI.CS.coasting_lead_d > 0. else 0.
     accel_limits[0] = stock_min_factor * CI.params.ACCEL_MIN + (1. - stock_min_factor) * accel_limits[0]
     return [max(CI.params.ACCEL_MIN, accel_limits[0]), min(accel_limits[1], CI.params.ACCEL_MAX)]
