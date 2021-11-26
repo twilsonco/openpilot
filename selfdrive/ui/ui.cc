@@ -142,6 +142,7 @@ static void update_state(UIState *s) {
   if (t - scene.paramsCheckLast > scene.paramsCheckFreq){
     scene.paramsCheckLast = t;
     scene.disableDisengageOnGasEnabled = Params().getBool("DisableDisengageOnGas");
+    scene.speed_limit_control_enabled = Params().getBool("SpeedLimitControl");
     if (scene.disableDisengageOnGasEnabled){
       scene.onePedalModeActive = Params().getBool("OnePedalMode");
       scene.onePedalEngageOnGasEnabled = Params().getBool("OnePedalModeEngageOnGas");
@@ -406,7 +407,6 @@ static void update_status(UIState *s) {
     } else {
       s->status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
-    s->scene.speed_limit_control_enabled = Params().getBool("SpeedLimitControl");
   }
 
   // Handle onroad/offroad transition
