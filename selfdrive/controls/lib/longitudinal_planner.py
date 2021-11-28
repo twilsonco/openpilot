@@ -108,7 +108,7 @@ class Planner():
     self.params_check_last_t = 0.
     self.params_check_freq = 0.1 # check params at 10Hz
     
-    self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco
+    self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco; 3 = creep
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -10. # lead "absolute"" velocity
     self.tr = 1.8

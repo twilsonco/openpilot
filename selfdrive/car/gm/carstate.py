@@ -48,7 +48,7 @@ class CarState(CarStateBase):
     self.params_check_last_t = 0.
     self.params_check_freq = 0.1 # check params at 10Hz
     
-    self.accel_mode = int(Params().get_bool("AccelMode")) # 0 = normal, 1 = sport; 2 = eco
+    self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco; 3 = creep
     
     self.coasting_enabled = self._params.get_bool("Coasting")
     self.coasting_enabled_last = self.coasting_enabled
@@ -147,6 +147,7 @@ class CarState(CarStateBase):
     if t - self.params_check_last_t >= self.params_check_freq:
       self.params_check_last_t = t
       self.coasting_enabled = self._params.get_bool("Coasting")
+      self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco; 3 = creep
       if not self.disengage_on_gas:
         self.one_pedal_pause_steering_enabled = self._params.get_bool("OnePedalPauseBlinkerSteering")
         self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
