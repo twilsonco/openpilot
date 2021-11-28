@@ -38,7 +38,7 @@ _A_MIN_V_STOCK_FACTOR_BP = [-5. * CV.MPH_TO_MS, 1. * CV.MPH_TO_MS]
 _A_MIN_V_STOCK_FACTOR_V = [0., 1.]
 
 def calc_cruise_accel_limits(v_ego, following, accelMode):
-  if following:
+  if following and accelMode < 2:
     a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V_FOLLOWING)
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
   else:
@@ -58,7 +58,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed, CI = None):
     following = CI.CS.coasting_lead_d > 0. and CI.CS.coasting_lead_d < 45.0 and CI.CS.coasting_lead_v > current_speed
-    accel_limits = calc_cruise_accel_limits(current_speed, following and CI.CS.accel_mode <= 1, CI.CS.accel_mode)
+    accel_limits = calc_cruise_accel_limits(current_speed, following, CI.CS.accel_mode)
     stock_min_factor = interp(current_speed - CI.CS.coasting_lead_v, _A_MIN_V_STOCK_FACTOR_BP, _A_MIN_V_STOCK_FACTOR_V) if CI.CS.coasting_lead_d > 0. else 0.
     accel_limits[0] = stock_min_factor * CI.params.ACCEL_MIN + (1. - stock_min_factor) * accel_limits[0]
     return [max(CI.params.ACCEL_MIN, accel_limits[0]), min(accel_limits[1], CI.params.ACCEL_MAX)]

@@ -54,7 +54,7 @@ _A_TOTAL_MAX_V_SOC = [1.7, 3.2]
 _A_TOTAL_MAX_BP_SOC = [20., 40.]
 
 def calc_cruise_accel_limits(v_ego, following, accelMode):
-  if following:
+  if following and accelMode < 2:
     a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V_FOLLOWING)
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
   else:
@@ -174,7 +174,7 @@ class Planner():
           cloudlog.info(f"Acceleration mode changed, new value: {accel_mode} = {['normal','sport','eco','creep'][accel_mode]}")
           self.accel_mode = accel_mode
 
-    accel_limits = calc_cruise_accel_limits(v_ego, following and self.accel_mode <= 1, self.accel_mode)
+    accel_limits = calc_cruise_accel_limits(v_ego, following, self.accel_mode)
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     if force_slow_decel:
       # if required so, force a smooth deceleration
