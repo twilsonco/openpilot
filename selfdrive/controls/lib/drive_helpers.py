@@ -60,7 +60,7 @@ def set_v_cruise_offset(do_offset):
 
 def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed,decel_pressed,accel_pressed_last,decel_pressed_last, fastMode, fast_mode_enabled, vEgo_kph, v_cruise_last_changed, long_plan, speed_limit_last_deactivated, speed_limit_active):
   
-  if cur_time - speed_limit_last_deactivated > 0.5:
+  if cur_time - speed_limit_last_deactivated > 0.5 or speed_limit_active:
     params = Params()
     if fast_mode_enabled:
       if enabled:

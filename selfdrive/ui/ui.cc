@@ -140,10 +140,17 @@ static void update_state(UIState *s) {
   float t = seconds_since_boot();
   
   if (t - scene.paramsCheckLast > scene.paramsCheckFreq){
-    scene.onePedalModeActive = Params().getBool("OnePedalMode");
+    scene.paramsCheckLast = t;
     scene.disableDisengageOnGasEnabled = Params().getBool("DisableDisengageOnGas");
-    scene.onePedalEngageOnGasEnabled = Params().getBool("OnePedalModeEngageOnGas");
-    scene.onePedalPauseSteering = Params().getBool("OnePedalPauseBlinkerSteering");
+    scene.speed_limit_control_enabled = Params().getBool("SpeedLimitControl");
+    if (scene.disableDisengageOnGasEnabled){
+      scene.onePedalModeActive = Params().getBool("OnePedalMode");
+      scene.onePedalEngageOnGasEnabled = Params().getBool("OnePedalModeEngageOnGas");
+      scene.onePedalPauseSteering = Params().getBool("OnePedalPauseBlinkerSteering");
+    }
+    if (scene.accel_mode_button_enabled){
+      scene.accel_mode = std::stoi(Params().get("AccelMode"));
+    }
   }
 
   // update engageability and DM icons at 2Hz
@@ -190,7 +197,7 @@ static void update_state(UIState *s) {
     
     scene.steerOverride= scene.car_state.getSteeringPressed();
     scene.angleSteers = scene.car_state.getSteeringAngleDeg();
-    scene.engineRPM = static_cast<int>((scene.car_state.getEngineRPM() / (100.0)) + 0.5) * 100;
+    scene.engineRPM = static_cast<int>((scene.car_state.getEngineRPM() / (10.0)) + 0.5) * 10;
     scene.aEgo = scene.car_state.getAEgo();
     float dt = t - scene.lastTime;
     if (dt > 0.){
@@ -400,7 +407,6 @@ static void update_status(UIState *s) {
     } else {
       s->status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
-    s->scene.speed_limit_control_enabled = Params().getBool("SpeedLimitControl");
   }
 
   // Handle onroad/offroad transition
@@ -413,7 +419,9 @@ static void update_status(UIState *s) {
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->scene.laneless_mode = std::stoi(Params().get("LanelessMode"));
       s->scene.brake_percent = std::stoi(Params().get("FrictionBrakePercent"));
-      
+
+      s->scene.accel_mode_button_enabled = Params().getBool("AccelModeButton");
+
       s->scene.sessionInitTime = seconds_since_boot();
       s->scene.percentGrade = 0;
       for (int i = 0; i < 5; ++i){

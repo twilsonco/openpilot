@@ -48,7 +48,7 @@ class CarState(CarStateBase):
     self.params_check_last_t = 0.
     self.params_check_freq = 0.1 # check params at 10Hz
     
-    self.accel_mode = int(Params().get_bool("SportAccel")) # 0 = normal, 1 = sport;
+    self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco; 3 = creep
     
     self.coasting_enabled = self._params.get_bool("Coasting")
     self.coasting_enabled_last = self.coasting_enabled
@@ -147,9 +147,11 @@ class CarState(CarStateBase):
     if t - self.params_check_last_t >= self.params_check_freq:
       self.params_check_last_t = t
       self.coasting_enabled = self._params.get_bool("Coasting")
-      self.one_pedal_pause_steering_enabled = self._params.get_bool("OnePedalPauseBlinkerSteering")
-      self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
-      self.one_pedal_mode_engage_on_gas_enabled = self._params.get_bool("OnePedalModeEngageOnGas") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
+      self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco; 3 = creep
+      if not self.disengage_on_gas:
+        self.one_pedal_pause_steering_enabled = self._params.get_bool("OnePedalPauseBlinkerSteering")
+        self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
+        self.one_pedal_mode_engage_on_gas_enabled = self._params.get_bool("OnePedalModeEngageOnGas") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
       
     if self.coasting_enabled != self.coasting_enabled_last:
       if not self.coasting_enabled and self.vEgo > self.v_cruise_kph * CV.KPH_TO_MS and not self.no_friction_braking:
@@ -172,8 +174,9 @@ class CarState(CarStateBase):
     if ret.brake < 10/0xd0:
       ret.brake = 0.
     
-    if t - self.sessionInitTime < 15.:
-      self.apply_brake_percent = int(round(interp(t - self.sessionInitTime - 5., [0.,2.,4.,6.,8.,10.], ([100,0]*3))) % 100)
+    if self.showBrakeIndicator:
+      if t - self.sessionInitTime < 15.:
+        self.apply_brake_percent = int(round(interp(t - self.sessionInitTime - 5., [0.,2.,4.,6.,8.,10.], ([100,0]*3))) % 100)
     ret.frictionBrakePercent = self.apply_brake_percent
     
 
@@ -193,7 +196,11 @@ class CarState(CarStateBase):
     ret.steerError = self.lkas_status == 3
     
     ret.steeringTorqueEps = pt_cp.vl["PSCMStatus"]['LKATorqueDelivered']
-    self.engineRPM = pt_cp.vl["ECMEngineStatus"]['EngineRPM']
+    engineRPM = pt_cp.vl["ECMEngineStatus"]['EngineRPM']
+    if self.engineRPM - engineRPM > 3000:
+      self.engineRPM = engineRPM + 4096 # values above 4096 roll over to zero, so shift them
+    else:
+      self.engineRPM = engineRPM
     ret.engineRPM = self.engineRPM
 
     # 1 - open, 0 - closed
