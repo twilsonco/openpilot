@@ -62,15 +62,15 @@ Running on move-fast fork of openpilot, which adds:
       1. While cruise is set, press and hold the follow distance button for 0.5s (continue to hold for immediate hard braking if necessary)
       2. If one-pedal engage on gas toggle is enabled, press gas while cruise is set and traveling above 1mph
       3. While cruise is set, lower cruise speed to 1
-    * When in one-pedal mode, the max speed indicator in openpilot will be replaced with a one-pedal mode indicator. Tap the one-pedal icon (or use follow distance button, see below) to toggle coasting/braking
+    * When in one-pedal mode, the max speed indicator in openpilot will be replaced with a one-pedal mode indicator. Tap the one-pedal icon to toggle one-pedal engage on gas mode
     * Vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = 🟢/🟠/🔴 = light/moderate/heavy braking
     * Control braking with follow distance button:
       * *Single press*: alternate between persistent light or moderate braking
       * *Press and hold*: apply temporary hard braking (indicated by follow level 3 on vehicle cluster and red one-pedal icon) (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
-      * *Press when friction braking disabled*: activating friction braking
+      * *Press when friction braking disabled*: activate friction braking
       * *Double-press when stopped or when gas is pressed and friction braking is active*: deactivate friction braking
 - [x] [GM] [✅] One-pedal pro braking: Completely disable cruise/speed limit/curve/follow braking when in one-pedal mode. You are soley responsible for slowing the car using the adjustable one-pedal braking (by pressing/holding the follow distance button) or with the physical brakes/regen paddle
-- [x] [GM] [✅] One-pedal engage on gas: When cruising at speed and the driver presses the gas (i.e. not when resuming from a stop), engage one-pedal/always-on-steering mode
+- [x] [GM] [✅] One-pedal engage on gas: When cruising at speed and the driver presses the gas (i.e. not when resuming from a stop), engage one-pedal mode
     * Toggle while driving by tapping the pedal icon
 - [x] [GM] JShuler panda-based GM steering fault fix
 - [x] Remember last follow mode
@@ -78,7 +78,6 @@ Running on move-fast fork of openpilot, which adds:
 #### Planned fork features (in no particular order):
 -----
 
-- [ ] Intellibeam (auto-bright headlights based on oncoming cars)
 - [ ] Stop-and-go for 2018 Volt
 - [ ] Grey panda support
 - [ ] Chevy Bolt support
@@ -90,7 +89,7 @@ Running on move-fast fork of openpilot, which adds:
   * Geo widget: GPS signal/coords/#satellites, altitude, percent grade of current road, ...
   * Device widget: CPU/memory/temps/fans/...
   * EV widget: high voltage battery info similar to that shown in the LeafSpyPro app
-- [ ] [✅] [Modified assistive driving system](https://github.com/sunnyhaibin/openpilot#new-modified-assistive-driving-safety-mads) (MADS)
+- [ ] [✅] [Modified assistive driving system](https://github.com/sunnyhaibin/openpilot#new-modified-assistive-driving-safety-mads) (MADS) style auto-engagement of steering
 - [ ] [✅] 0.5 second delay before activating newly selected follow mode so user can switch around without OP slightly jerking in response
 - [ ] [✅] Auto screen brightness (or at least a way to dim a bit at night)
 - [ ] [✅] Lane Speed alerts ([sshane](https://github.com/sshane/openpilot#lane-speed-alerts))
