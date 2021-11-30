@@ -524,6 +524,8 @@ class Controls:
 
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
+    
+    self.CI.CS.orientations = [getattr(self.sm['liveLocationKalman'], i) for i in ["orientationECEF", "calibratedOrientationECEF", "orientationNED", "calibratedOrientationNED"]]
 
     actuators = car.CarControl.Actuators.new_message()
     actuators.longControlState = self.LoC.long_control_state

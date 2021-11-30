@@ -89,6 +89,20 @@ class CarState(CarStateBase):
     self.drive_mode_button_last = False
     self.gear_shifter_raw = None
     
+    self.orientations = []
+
+    self.debug_logging = False
+    self.debug_log_time_step = 0.333
+    self.last_debug_log_t = 0.
+    self.debug_log_path = "/data/openpilot/carstate_debug.csv"
+    if self.debug_logging:
+      with open(self.debug_log_path,"w") as f:
+        f.write(",".join([
+          "t",
+          "vEgo", 
+          "vEgo (mph)",
+          ",".join([",".join([f"{s}:{v}" for v in ["value","std","valid"]]) for s in ["orientationECEF", "calibratedOrientationECEF", "orientationNED", "calibratedOrientationNED"]])]) + "\n")
+    
     # similar to over-speed coast braking, lockout coast/one-pedal logic first for engine/regen braking, and then for actual brakes.
     # gas lockout lookup tables:
     self.lead_v_rel_long_gas_lockout_bp, self.lead_v_rel_long_gas_lockout_v = [[-12 * CV.MPH_TO_MS, -8 * CV.MPH_TO_MS], [1., 0.]] # pass-through all engine/regen braking for v_rel < -15mph
@@ -269,6 +283,17 @@ class CarState(CarStateBase):
     ret.autoHoldActivated = self.autoHoldActivated
     
     ret.lkMode = self.lkMode
+    
+    # debug logging
+    do_log = self.debug_logging and (t - self.last_debug_log_t > self.debug_log_time_step)
+    if do_log:
+      self.last_debug_log_t = t
+      f = open(self.debug_log_path,"a")
+      f.write(",".join([f"{i:.1f}" if i == float else str(i).replace(',',';') for i in ([
+        t - self.sessionInitTime,
+        v_ego, 
+        v_ego * CV.MS_TO_MPH] + [getattr(s,v) for s in self.orientations for v in ["value","std","valid"]])]) + "\n")
+      f.close()
 
     return ret
 
