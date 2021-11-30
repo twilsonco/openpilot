@@ -288,7 +288,7 @@ def uploader_fn(exit_event):
           cloudlog.info(f"not uploading: waiting until offroad for {wait_minutes} minutes; {time_left_str} left")
         if allow_sleep:
           time.sleep(60)
-      continue
+        continue
       
     d = uploader.next_file_to_upload(with_raw=allow_raw_upload and on_wifi and offroad)
     if d is None:  # Nothing to upload
