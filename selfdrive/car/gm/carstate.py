@@ -88,10 +88,8 @@ class CarState(CarStateBase):
     self.drive_mode_button = False
     self.drive_mode_button_last = False
     self.gear_shifter_raw = None
-    
-    self.orientations = []
 
-    self.debug_logging = False
+    self.debug_logging = True
     self.debug_log_time_step = 0.333
     self.last_debug_log_t = 0.
     self.debug_log_path = "/data/openpilot/carstate_debug.csv"
@@ -101,7 +99,18 @@ class CarState(CarStateBase):
           "t",
           "vEgo", 
           "vEgo (mph)",
-          ",".join([",".join([f"{s}:{v}" for v in ["value","std","valid"]]) for s in ["orientationECEF", "calibratedOrientationECEF", "orientationNED", "calibratedOrientationNED"]])]) + "\n")
+          "pitch",
+          "pitch_raw"]) + "\n")
+          
+    self.pitch_rolling_iter = 0
+    self.pitch_rolling_period = 2. # 2-second moving average
+    self.pitch_check_freq = 0.1 # checked at 10Hz
+    self.pitch_num_vals = int(self.pitch_rolling_period / self.pitch_check_freq)
+    self.pitch_num_vals_recip = 1. / float(self.pitch_num_vals)
+    self.pitch_check_last = 0.
+    self.pitch_vals = [0. for i in range(self.pitch_num_vals)]
+    self.pitch = 0.
+    self.pitch_raw = 0.
     
     # similar to over-speed coast braking, lockout coast/one-pedal logic first for engine/regen braking, and then for actual brakes.
     # gas lockout lookup tables:
@@ -279,6 +288,14 @@ class CarState(CarStateBase):
     ret.onePedalModeActive = self.one_pedal_mode_active
     ret.onePedalBrakeMode = self.one_pedal_brake_mode
     
+    if t - self.pitch_check_last > self.pitch_check_freq:
+      self.pitch_check_last = t
+      self.pitch_rolling_iter += 1
+      if (self.pitch_rolling_iter >= self.pitch_num_vals):
+        self.pitch_rolling_iter = 0
+      self.pitch -= self.pitch_vals[self.pitch_rolling_iter] * self.pitch_num_vals_recip
+      self.pitch += self.pitch_raw * self.pitch_num_vals_recip
+      self.pitch_vals[self.pitch_rolling_iter] = self.pitch_raw
 
     ret.autoHoldActivated = self.autoHoldActivated
     
@@ -289,10 +306,12 @@ class CarState(CarStateBase):
     if do_log:
       self.last_debug_log_t = t
       f = open(self.debug_log_path,"a")
-      f.write(",".join([f"{i:.1f}" if i == float else str(i).replace(',',';') for i in ([
+      f.write(",".join([f"{i:.3f}" if isinstance(i, float) else str(i).replace(',',';') for i in [
         t - self.sessionInitTime,
-        v_ego, 
-        v_ego * CV.MS_TO_MPH] + [getattr(s,v) for s in self.orientations for v in ["value","std","valid"]])]) + "\n")
+        self.vEgo, 
+        self.vEgo * CV.MS_TO_MPH,
+        self.pitch,
+        self.pitch_raw]]) + "\n")
       f.close()
 
     return ret
