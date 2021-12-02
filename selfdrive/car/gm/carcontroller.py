@@ -146,6 +146,7 @@ class CarController():
         if CS.one_pedal_mode_active:
           one_pedal_apply_brake = interp(CS.vEgo, CS.one_pedal_mode_stop_apply_brake_bp[CS.one_pedal_brake_mode], CS.one_pedal_mode_stop_apply_brake_v[CS.one_pedal_brake_mode])
           one_pedal_apply_brake *= interp(CS.pitch, CS.one_pedal_pitch_brake_adjust_bp, CS.one_pedal_pitch_brake_adjust_v)
+          one_pedal_apply_brake = min(one_pedal_apply_brake, float(P.BRAKE_LOOKUP_V[0]))
           time_since_brake = t - CS.one_pedal_mode_last_gas_press_t
           one_pedal_apply_brake *= interp(time_since_brake, CS.one_pedal_mode_ramp_time_bp, CS.one_pedal_mode_ramp_time_v) if CS.one_pedal_brake_mode < 2 else 1.
         else:
