@@ -88,19 +88,6 @@ class CarState(CarStateBase):
     self.drive_mode_button = False
     self.drive_mode_button_last = False
     self.gear_shifter_raw = None
-
-    self.debug_logging = True
-    self.debug_log_time_step = 0.333
-    self.last_debug_log_t = 0.
-    self.debug_log_path = "/data/openpilot/carstate_debug.csv"
-    if self.debug_logging:
-      with open(self.debug_log_path,"w") as f:
-        f.write(",".join([
-          "t",
-          "vEgo", 
-          "vEgo (mph)",
-          "pitch",
-          "pitch_raw"]) + "\n")
           
     self.pitch_rolling_iter = 0
     self.pitch_rolling_period = 2. # 2-second moving average
@@ -301,18 +288,6 @@ class CarState(CarStateBase):
     
     ret.lkMode = self.lkMode
     
-    # debug logging
-    do_log = self.debug_logging and (t - self.last_debug_log_t > self.debug_log_time_step)
-    if do_log:
-      self.last_debug_log_t = t
-      f = open(self.debug_log_path,"a")
-      f.write(",".join([f"{i:.3f}" if isinstance(i, float) else str(i).replace(',',';') for i in [
-        t - self.sessionInitTime,
-        self.vEgo, 
-        self.vEgo * CV.MS_TO_MPH,
-        self.pitch,
-        self.pitch_raw]]) + "\n")
-      f.close()
 
     return ret
 
