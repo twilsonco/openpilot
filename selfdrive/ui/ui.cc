@@ -166,6 +166,8 @@ static void update_state(UIState *s) {
   if (sm.updated("carState")){
     scene.car_state = sm["carState"].getCarState();
     
+    scene.percentGradeDevice = tan(scene.car_state.getPitch()) * 100.;
+    
     scene.brake_percent = scene.car_state.getFrictionBrakePercent();
     if (scene.brake_percent > 0){
       scene.brake_indicator_alpha += fade_time_step * (t - scene.brake_indicator_last_t);
@@ -347,9 +349,6 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("liveLocationKalman")) {
     scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();
-    if (sm["liveLocationKalman"].getLiveLocationKalman().getCalibratedOrientationNED().getValid()){
-      scene.percentGradeDevice = tan(sm["liveLocationKalman"].getLiveLocationKalman().getCalibratedOrientationNED().getValue()[1]) * 100.;
-    }
   }
   if (sm.updated("lateralPlan")) {
     scene.lateral_plan = sm["lateralPlan"].getLateralPlan();

@@ -285,6 +285,7 @@ class CarState(CarStateBase):
       self.pitch -= self.pitch_vals[self.pitch_rolling_iter] * self.pitch_num_vals_recip
       self.pitch += self.pitch_raw * self.pitch_num_vals_recip
       self.pitch_vals[self.pitch_rolling_iter] = self.pitch_raw
+    ret.pitch = self.pitch
 
     ret.autoHoldActivated = self.autoHoldActivated
     
