@@ -23,8 +23,8 @@ _A_CRUISE_MIN_BP = [0., 5., 10., 20., 55.]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V_CREEP = [0.22, .22, .2, .15, .15]
-_A_CRUISE_MAX_V_ECO = [0.6, 0.7, 0.6, 0.5, 0.4]
+_A_CRUISE_MAX_V_CREEP = [0.22, .22, .2, .2, .2]
+_A_CRUISE_MAX_V_ECO = [0.7, 0.8, 0.7, 0.5, 0.4]
 _A_CRUISE_MAX_V = [1.2, 1.4, 1.2, 0.9, 0.7]
 _A_CRUISE_MAX_V_SPORT = [2.2, 2.4, 2.2, 1.1, 0.9]
 _A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.8, 1.6, .9, .7]
@@ -38,7 +38,7 @@ _A_MIN_V_STOCK_FACTOR_BP = [-5. * CV.MPH_TO_MS, 1. * CV.MPH_TO_MS]
 _A_MIN_V_STOCK_FACTOR_V = [0., 1.]
 
 # increase/decrease max accel based on vehicle pitch
-INCLINE_ACCEL_OFFSET = 0.15 # [m/s^2] desired acceleration must be at least this much more than g acceleration
+INCLINE_ACCEL_OFFSET = 0.22 # [m/s^2] desired acceleration must be at least this much more than g acceleration
 DECLINE_ACCEL_FACTOR = 0.5 # this factor of g accel is used to lower max accel limit so you don't floor it downhill
 DECLINE_ACCEL_MIN = 0.2 # [m/s^2] don't decrease acceleration limit due to decline below this total value
 
