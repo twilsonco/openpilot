@@ -261,7 +261,7 @@ def uploader_fn(exit_event):
     
     offroad = params.get_bool("IsOffroad")
     t = sec_since_boot()
-    if offroad and not offroad_last and t > 60.:
+    if offroad and not offroad_last and t > 300.:
       transition_to_offroad_last = sec_since_boot()
     offroad_last = offroad
     
