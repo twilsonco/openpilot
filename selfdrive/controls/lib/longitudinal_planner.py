@@ -35,8 +35,8 @@ _A_CRUISE_MIN_BP = [0., 5., 10., 20., 55.]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V_CREEP = [0.2] * 5
-_A_CRUISE_MAX_V_ECO = [0.7, 0.8, 0.7, 0.6, 0.4]
+_A_CRUISE_MAX_V_CREEP = [0.22, .22, .2, .2, .2]
+_A_CRUISE_MAX_V_ECO = [0.7, 0.8, 0.7, 0.5, 0.4]
 _A_CRUISE_MAX_V = [1.2, 1.4, 1.2, 0.9, 0.7]
 _A_CRUISE_MAX_V_SPORT = [2.2, 2.4, 2.2, 1.1, 0.9]
 _A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.8, 1.6, .9, .7]
@@ -48,10 +48,6 @@ _A_CRUISE_MAX_V_MODE_LIST = [_A_CRUISE_MAX_V, _A_CRUISE_MAX_V_SPORT, _A_CRUISE_M
 # Lookup table for turns - fast accel
 _A_TOTAL_MAX_V = [3.5, 4.0, 5.0]
 _A_TOTAL_MAX_BP = [0., 25., 55.]
-
-# Lookup table for turns original - used when slowOnCurves = 1 from kegman.json
-_A_TOTAL_MAX_V_SOC = [1.7, 3.2]
-_A_TOTAL_MAX_BP_SOC = [20., 40.]
 
 def calc_cruise_accel_limits(v_ego, following, accelMode):
   if following and accelMode < 2:

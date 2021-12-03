@@ -70,11 +70,11 @@ def manager_init():
     ("MeasureSlot02", "4"), # acceleration
     ("MeasureSlot03", "1"), # steering torque
     ("MeasureSlot04", "3"), # engine rpm
-    ("MeasureSlot05", "10"), # lead dist [s]
-    ("MeasureSlot06", "9"), # lead dist [m]
-    ("MeasureSlot07", "14"), # lead rel spd [mph]
-    ("MeasureSlot08", "15"),# lead spd [mph]
-    ("MeasureSlot09", "8"),# dist cost
+    ("MeasureSlot05", "11"), # lead dist [s]
+    ("MeasureSlot06", "10"), # lead dist [m]
+    ("MeasureSlot07", "15"), # lead rel spd [mph]
+    ("MeasureSlot08", "16"),# lead spd [mph]
+    ("MeasureSlot09", "9"),# dist cost
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))

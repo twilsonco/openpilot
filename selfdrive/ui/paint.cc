@@ -894,7 +894,7 @@ static void ui_draw_measures(UIState *s){
         
         case UIMeasure::PERCENT_GRADE:
           {
-          snprintf(name, sizeof(name), "GRADE");
+          snprintf(name, sizeof(name), "GRADE (GPS)");
           if (scene.percentGradeIterRolled && scene.percentGradePositions[scene.percentGradeRollingIter] >= scene.percentGradeMinDist && scene.gpsAccuracyUblox != 0.00){
             g = 255;
             b = 255;
@@ -909,6 +909,21 @@ static void ui_draw_measures(UIState *s){
           else{
             snprintf(val, sizeof(val), "-");
           }}
+          break;
+        
+        case UIMeasure::PERCENT_GRADE_DEVICE:
+          {
+          snprintf(name, sizeof(name), "GRADE");
+          g = 255;
+          b = 255;
+          p = 0.125 * (scene.percentGradeDevice > 0 ? scene.percentGradeDevice : -scene.percentGradeDevice); // red by 8% grade
+          g -= int(0.5 * p * 255.);
+          b -= int(p * 255.);
+          g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+          b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+          val_color = nvgRGBA(255, g, b, 200);
+          snprintf(val, sizeof(val), "%.1f%%", scene.percentGradeDevice);
+          }
           break;
 
         case UIMeasure::FOLLOW_LEVEL: 

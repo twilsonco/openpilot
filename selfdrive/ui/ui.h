@@ -132,6 +132,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   JERK,
   ALTITUDE,
   PERCENT_GRADE,
+  PERCENT_GRADE_DEVICE,
   LEAD_TTC,
   LEAD_DISTANCE_LENGTH,
   LEAD_DISTANCE_TIME,
@@ -204,6 +205,7 @@ typedef struct UIScene {
   bool percentGradeIterRolled = false;
   float desiredFollowDistance, followDistanceCost, followAccelCost;
   float stoppingDistance;
+  float percentGradeDevice;
   
   float lastTime = 0., sessionInitTime = 0.;
   float paramsCheckLast = 0., paramsCheckFreq = 0.1; // check params at 10Hz
