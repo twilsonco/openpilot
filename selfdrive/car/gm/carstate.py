@@ -84,8 +84,8 @@ class CarState(CarStateBase):
     self.one_pedal_v_cruise_kph_last = 0
     self.one_pedal_last_switch_to_friction_braking_t = 0.
     self.one_pedal_pause_steering_enabled = self._params.get_bool("OnePedalPauseBlinkerSteering")
-    self.one_pedal_pitch_brake_adjust_bp = [-0.15, -0.015, 0.015, 0.12] # [radians] 0.12 radians of pitch ≈ 12% grade. No change within ±0.02
-    self.one_pedal_pitch_brake_adjust_v = [.7, 1., 1., 1.3] # used to scale the value of apply_gas
+    self.one_pedal_pitch_brake_adjust_bp = [-0.08, -0.005, 0.005, 0.10] # [radians] 0.12 radians of pitch ≈ 12% grade. No change within ±0.02
+    self.one_pedal_pitch_brake_adjust_v = [.6, 1., 1., 1.5] # used to scale the value of apply_gas
     
     self.drive_mode_button = False
     self.drive_mode_button_last = False
