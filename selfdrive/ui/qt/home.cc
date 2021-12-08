@@ -146,6 +146,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // one-pedal mode button
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.one_pedal_touch_rect.ptInRect(e->x(), e->y())){
     Params().putBool("OnePedalModeEngageOnGas", !Params().getBool("OnePedalModeEngageOnGas"));
+    return;
   }
 
   // Handle sidebar collapsing
