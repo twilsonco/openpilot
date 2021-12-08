@@ -120,7 +120,7 @@ class CarState(CarStateBase):
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
     self.vEgo = 0.
     self.v_cruise_kph = 1
-    self.min_lane_change_speed = 30. * CV.MPH_TO_MS
+    self.min_lane_change_speed = 20. * CV.MPH_TO_MS
     self.blinker = False
     self.prev_blinker = self.blinker
     self.lane_change_steer_factor = 1.
