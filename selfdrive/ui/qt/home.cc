@@ -146,11 +146,13 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // one-pedal mode button
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.one_pedal_touch_rect.ptInRect(e->x(), e->y())){
     Params().putBool("OnePedalModeEngageOnGas", !Params().getBool("OnePedalModeEngageOnGas"));
+    return;
   }
   
   // accel_mode button
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.accel_mode_touch_rect.ptInRect(e->x(), e->y())){
     Params().put("AccelMode", std::to_string((std::stoi(Params().get("AccelMode")) + 1) % 4).c_str(), 1);
+    return;
   }
 
   // Handle sidebar collapsing
