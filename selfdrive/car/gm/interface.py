@@ -40,7 +40,7 @@ _A_MIN_V_STOCK_FACTOR_V = [0., 1.]
 # increase/decrease max accel based on vehicle pitch
 INCLINE_ACCEL_OFFSET = 0.22 # [m/s^2] desired acceleration must be at least this much more than g acceleration
 INCLINE_ACCEL_SPEED_OFFSET_BP = [i * CV.MPH_TO_MS for i in [25., 45]] # [mph] lookup speeds for additional offset
-INCLINE_ACCEL_SPEED_OFFSET_V = [0., 0.3] # [m/s^2] additional offset based on speed
+INCLINE_ACCEL_SPEED_OFFSET_V = [0., 0.2] # [m/s^2] additional offset based on speed
 DECLINE_ACCEL_FACTOR = 0.5 # this factor of g accel is used to lower max accel limit so you don't floor it downhill
 DECLINE_ACCEL_MIN = 0.2 # [m/s^2] don't decrease acceleration limit due to decline below this total value
 
