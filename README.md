@@ -56,9 +56,9 @@ Running on move-fast fork of openpilot, which adds:
     * To use:
         * Tap the current speed on the openpilot display to cycle the number of metrics
         * Tap any metric to cycle its content (sorry for all the god-forsaken tapping, a better metric display with vehicle, following, position, and device widgets is a WIP)
-    * Metrics (24 to choose from):
-        * Device info: CPU temperature, CPU percent, CPU temp + percent, memory temperature, memory used, free storage, ambient temperature, fanspeed (as percent of max), GPS accuracy (and number of satelites), altitude
-        * Vehicle info: Engine RPM, steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road
+    * Metrics (35 to choose from):
+        * Device info: CPU temperature (°C and °F), CPU percent, CPU temp + percent (°C and °F), memory temperature (°C and °F), memory used, free storage, ambient temperature (°C and °F), fanspeed (as percent of max), GPS accuracy (and number of satelites), altitude
+        * Vehicle info: Engine RPM, engine coolant temperature (°C and °F), engine RPM + coolant temperature (°C and °F), steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road (one based on GPS, one based on device accelerometer)
         * Lead-following info: follow distance level, lead distance [length], desired lead distance [length], lead distance [time], desired lead distance [time], follow distance and acceleration mpc costs [in units of the stock OP costs; i.e. 2.5 means 2.5× the stock OP value], relative lead velocity, absolute lead velocity
 - [x] [GM] [✅] **One-pedal driving**: OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
     * Must have disable disengage on gas toggle enabled
