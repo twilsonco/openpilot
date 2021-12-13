@@ -128,11 +128,16 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   DESIRED_STEERING_ANGLE,
   STEERING_TORQUE_EPS,
   ENGINE_RPM,
+  ENGINE_RPM_TEMPC,
+  ENGINE_RPM_TEMPF,
+  COOLANT_TEMPC,
+  COOLANT_TEMPF,
   ACCELERATION,
   JERK,
   ALTITUDE,
   PERCENT_GRADE,
   PERCENT_GRADE_DEVICE,
+  FOLLOW_LEVEL,
   LEAD_TTC,
   LEAD_DISTANCE_LENGTH,
   LEAD_DISTANCE_TIME,
@@ -154,7 +159,6 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   FANSPEED_PERCENT,
   MEMORY_USAGE_PERCENT,
   FREESPACE_STORAGE,
-  FOLLOW_LEVEL,
   
   NUM_MEASURES
 } UIMeasure;

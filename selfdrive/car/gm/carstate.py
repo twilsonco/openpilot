@@ -214,6 +214,8 @@ class CarState(CarStateBase):
     else:
       self.engineRPM = engineRPM
     ret.engineRPM = self.engineRPM
+    
+    ret.engineCoolantTemp = pt_cp.vl["ECMEngineCoolantTemp"]['EngineCoolantTemp']
 
     # 1 - open, 0 - closed
     ret.doorOpen = (pt_cp.vl["BCMDoorBeltStatus"]["FrontLeftDoor"] == 1 or
@@ -328,6 +330,7 @@ class CarState(CarStateBase):
       ("DistanceButton", "ASCMSteeringButton", 0),
       ("LKATorqueDelivered", "PSCMStatus", 0),
       ("EngineRPM", "ECMEngineStatus", 0),
+      ("EngineCoolantTemp", "ECMEngineCoolantTemp", 0),
       ("TractionControlOn", "ESPStatus", 0),
       ("EPBClosed", "EPBStatus", 0),
       ("CruiseMainOn", "ECMEngineStatus", 0),
@@ -348,6 +351,7 @@ class CarState(CarStateBase):
       ("ECMEngineStatus", 100),
       ("PSCMSteeringAngle", 100),
       ("EBCMBrakePedalPosition", 100),
+      ("ECMEngineCoolantTemp", 1),
     ]
 
     if CP.carFingerprint == CAR.VOLT:

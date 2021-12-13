@@ -2,7 +2,9 @@ Version tw-0.8.9-3.6 (2021-11-20)
 ========================
  * NEW: acceleration mode button on-screen cycles between normal/sport/eco/creep acceleration profiles
  * NEW: added toggle to disable uploads when on-road (and waits for 15 minutes after entering offroad state before starting uploads). Save that hotspot data!
- * NEW: added instantaneous percent grade UI metric (the old one is now "GRADE (GPS)")
+ * NEW UI METRIC: instantaneous percent grade UI metric (the old one is now "GRADE (GPS)")
+ * NEW UI METRIC: Engine coolant temperature (one for °C and one for °F)
+ * NEW UI METRIC: Engine RPM with coolant temperature on the side (one for °C and one for °F)
  * FIXED: Engine RPM UI metric no longer rolls over to zero at 4095 rpms
  * IMPROVED: Engine RPM UI metric rounds to 10 rpms now instead of 100
  * IMPROVED: one-pedal mode braking is more consistent on incline/decline

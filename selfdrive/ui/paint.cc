@@ -446,7 +446,7 @@ static void ui_draw_measures(UIState *s){
     
     // now start from the top and draw the current set of metrics
     for (int i = 0; i < scene.measure_cur_num_slots; ++i){
-      char name[16], val[16], unit[6];
+      char name[16], val[16], unit[8];
       snprintf(name, sizeof(name), "");
       snprintf(val, sizeof(val), "");
       snprintf(unit, sizeof(unit), "");
@@ -907,11 +907,99 @@ static void ui_draw_measures(UIState *s){
 
         case UIMeasure::ENGINE_RPM: 
           {
-          snprintf(name, sizeof(name), "ENG RPM");
-          if(scene.engineRPM == 0) {
-            snprintf(val, sizeof(val), "OFF");
+            snprintf(name, sizeof(name), "ENG RPM");
+            if(scene.engineRPM == 0) {
+              snprintf(val, sizeof(val), "OFF");
+            }
+            else {
+              snprintf(val, sizeof(val), "%d", scene.engineRPM);
+            }
           }
-          else {snprintf(val, sizeof(val), "%d", scene.engineRPM);}
+          break;
+          
+        case UIMeasure::ENGINE_RPM_TEMPC: 
+          {
+            snprintf(name, sizeof(name), "ENGINE");
+            int temp = scene.car_state.getEngineCoolantTemp();
+            snprintf(unit, sizeof(unit), "%d°C", temp);
+            if(scene.engineRPM == 0) {
+              snprintf(val, sizeof(val), "OFF");
+            }
+            else {
+              snprintf(val, sizeof(val), "%d", scene.engineRPM);
+              if (temp < 71){
+                unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+              }
+              else if (temp > 93){
+                unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+              }
+              else if (temp > 87){
+                unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+              }
+            }
+          }
+          break;
+
+        case UIMeasure::ENGINE_RPM_TEMPF: 
+          {
+            snprintf(name, sizeof(name), "ENGINE");
+            int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
+            snprintf(unit, sizeof(unit), "%d°F", temp);
+            if(scene.engineRPM == 0) {
+              snprintf(val, sizeof(val), "OFF");
+            }
+            else {
+              snprintf(val, sizeof(val), "%d", scene.engineRPM);
+              if (temp < 160){
+                unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+              }
+              else if (temp > 200){
+                unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+              }
+              else if (temp > 190){
+                unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+              }
+            }
+          }
+          break;
+          
+        case UIMeasure::COOLANT_TEMPC: 
+          {
+            snprintf(name, sizeof(name), "ENG TEMP");
+            snprintf(unit, sizeof(unit), "°C");
+            int temp = scene.car_state.getEngineCoolantTemp();
+            snprintf(val, sizeof(val), "%d", temp);
+            if(scene.engineRPM > 0) {
+              if (temp < 71){
+                val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+              }
+              else if (temp > 93){
+                val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+              }
+              else if (temp > 87){
+                val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+              }
+            }
+          }
+          break;
+        
+        case UIMeasure::COOLANT_TEMPF: 
+          {
+            snprintf(name, sizeof(name), "ENG TEMP");
+            snprintf(unit, sizeof(unit), "°F");
+            int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
+            snprintf(val, sizeof(val), "%d", temp);
+            if(scene.engineRPM > 0) {
+              if (temp < 160){
+                val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+              }
+              else if (temp > 200){
+                val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+              }
+              else if (temp > 190){
+                val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+              }
+            }
           }
           break;
         
