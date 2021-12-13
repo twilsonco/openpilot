@@ -446,7 +446,7 @@ static void ui_draw_measures(UIState *s){
     
     // now start from the top and draw the current set of metrics
     for (int i = 0; i < scene.measure_cur_num_slots; ++i){
-      char name[16], val[16], unit[6];
+      char name[16], val[16], unit[8];
       snprintf(name, sizeof(name), "");
       snprintf(val, sizeof(val), "");
       snprintf(unit, sizeof(unit), "");
@@ -621,7 +621,7 @@ static void ui_draw_measures(UIState *s){
           {
           snprintf(name, sizeof(name), "EPS TRQ");
           //TODO: Add orange/red color depending on torque intensity. <1x limit = white, btwn 1x-2x limit = orange, >2x limit = red
-          snprintf(val, sizeof(val), "%.0f", scene.steeringTorqueEps);
+          snprintf(val, sizeof(val), "%.1f", scene.steeringTorqueEps);
           snprintf(unit, sizeof(unit), "Nm");
           break;}
 
@@ -680,7 +680,12 @@ static void ui_draw_measures(UIState *s){
                 g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
                 b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
                 val_color = nvgRGBA(255, g, b, 200);
-                snprintf(val, sizeof(val), "%d", (int)scene.lead_d_rel);
+                if (scene.lead_d_rel < 100.){
+                  snprintf(val, sizeof(val), "%.1f", scene.lead_d_rel);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.0f", scene.lead_d_rel);
+                }
               }
               else{
                 g = 0;
@@ -691,7 +696,13 @@ static void ui_draw_measures(UIState *s){
                 g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
                 b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
                 val_color = nvgRGBA(255, g, b, 200);
-                snprintf(val, sizeof(val), "%d", (int)(scene.lead_d_rel * 3.281));
+                float d_ft = scene.lead_d_rel * 3.281;
+                if (d_ft){
+                  snprintf(val, sizeof(val), "%.1f", d_ft);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.0f", d_ft);
+                }
               }
             } else {
                snprintf(val, sizeof(val), "-");
@@ -810,9 +821,9 @@ static void ui_draw_measures(UIState *s){
             val_color = nvgRGBA(255, g, b, 200);
             // lead car relative speed is always in meters
             if (s->is_metric) {
-               snprintf(val, sizeof(val), "%d", (int)(scene.lead_v_rel * 3.6 + 0.5));
+               snprintf(val, sizeof(val), "%.1f", (scene.lead_v_rel * 3.6));
             } else {
-               snprintf(val, sizeof(val), "%d", (int)(scene.lead_v_rel * 2.2374144 + 0.5));
+               snprintf(val, sizeof(val), "%.1f", (scene.lead_v_rel * 2.2374144));
             }
           } else {
              snprintf(val, sizeof(val), "-");
@@ -829,9 +840,21 @@ static void ui_draw_measures(UIState *s){
           snprintf(name, sizeof(name), "LEAD SPD");
           if (scene.lead_status) {
             if (s->is_metric) {
-               snprintf(val, sizeof(val), "%d", (int)(scene.lead_v * 3.6 + 0.5));
+              float v = (scene.lead_v * 3.6);
+              if (v < 100.){
+                snprintf(val, sizeof(val), "%.1f", v);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.0f", v);
+              }
             } else {
-               snprintf(val, sizeof(val), "%d", (int)(scene.lead_v * 2.2374144 + 0.5));
+              float v = (scene.lead_v * 2.2374144);
+              if (v < 100.){
+                snprintf(val, sizeof(val), "%.1f", v);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.0f", v);
+              }
             }
           } else {
              snprintf(val, sizeof(val), "-");
@@ -884,11 +907,99 @@ static void ui_draw_measures(UIState *s){
 
         case UIMeasure::ENGINE_RPM: 
           {
-          snprintf(name, sizeof(name), "ENG RPM");
-          if(scene.engineRPM == 0) {
-            snprintf(val, sizeof(val), "OFF");
+            snprintf(name, sizeof(name), "ENG RPM");
+            if(scene.engineRPM == 0) {
+              snprintf(val, sizeof(val), "OFF");
+            }
+            else {
+              snprintf(val, sizeof(val), "%d", scene.engineRPM);
+            }
           }
-          else {snprintf(val, sizeof(val), "%d", scene.engineRPM);}
+          break;
+          
+        case UIMeasure::ENGINE_RPM_TEMPC: 
+          {
+            snprintf(name, sizeof(name), "ENGINE");
+            int temp = scene.car_state.getEngineCoolantTemp();
+            snprintf(unit, sizeof(unit), "%d°C", temp);
+            if(scene.engineRPM == 0) {
+              snprintf(val, sizeof(val), "OFF");
+            }
+            else {
+              snprintf(val, sizeof(val), "%d", scene.engineRPM);
+              if (temp < 71){
+                unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+              }
+              else if (temp > 93){
+                unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+              }
+              else if (temp > 87){
+                unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+              }
+            }
+          }
+          break;
+
+        case UIMeasure::ENGINE_RPM_TEMPF: 
+          {
+            snprintf(name, sizeof(name), "ENGINE");
+            int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
+            snprintf(unit, sizeof(unit), "%d°F", temp);
+            if(scene.engineRPM == 0) {
+              snprintf(val, sizeof(val), "OFF");
+            }
+            else {
+              snprintf(val, sizeof(val), "%d", scene.engineRPM);
+              if (temp < 160){
+                unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+              }
+              else if (temp > 200){
+                unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+              }
+              else if (temp > 190){
+                unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+              }
+            }
+          }
+          break;
+          
+        case UIMeasure::COOLANT_TEMPC: 
+          {
+            snprintf(name, sizeof(name), "ENG TEMP");
+            snprintf(unit, sizeof(unit), "°C");
+            int temp = scene.car_state.getEngineCoolantTemp();
+            snprintf(val, sizeof(val), "%d", temp);
+            if(scene.engineRPM > 0) {
+              if (temp < 71){
+                val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+              }
+              else if (temp > 93){
+                val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+              }
+              else if (temp > 87){
+                val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+              }
+            }
+          }
+          break;
+        
+        case UIMeasure::COOLANT_TEMPF: 
+          {
+            snprintf(name, sizeof(name), "ENG TEMP");
+            snprintf(unit, sizeof(unit), "°F");
+            int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
+            snprintf(val, sizeof(val), "%d", temp);
+            if(scene.engineRPM > 0) {
+              if (temp < 160){
+                val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+              }
+              else if (temp > 200){
+                val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+              }
+              else if (temp > 190){
+                val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+              }
+            }
           }
           break;
         
