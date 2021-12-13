@@ -621,7 +621,7 @@ static void ui_draw_measures(UIState *s){
           {
           snprintf(name, sizeof(name), "EPS TRQ");
           //TODO: Add orange/red color depending on torque intensity. <1x limit = white, btwn 1x-2x limit = orange, >2x limit = red
-          snprintf(val, sizeof(val), "%.0f", scene.steeringTorqueEps);
+          snprintf(val, sizeof(val), "%.1f", scene.steeringTorqueEps);
           snprintf(unit, sizeof(unit), "Nm");
           break;}
 
@@ -680,7 +680,12 @@ static void ui_draw_measures(UIState *s){
                 g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
                 b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
                 val_color = nvgRGBA(255, g, b, 200);
-                snprintf(val, sizeof(val), "%d", (int)scene.lead_d_rel);
+                if (scene.lead_d_rel < 100.){
+                  snprintf(val, sizeof(val), "%.1f", scene.lead_d_rel);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.0f", scene.lead_d_rel);
+                }
               }
               else{
                 g = 0;
@@ -691,7 +696,13 @@ static void ui_draw_measures(UIState *s){
                 g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
                 b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
                 val_color = nvgRGBA(255, g, b, 200);
-                snprintf(val, sizeof(val), "%d", (int)(scene.lead_d_rel * 3.281));
+                float d_ft = scene.lead_d_rel * 3.281;
+                if (d_ft){
+                  snprintf(val, sizeof(val), "%.1f", d_ft);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.0f", d_ft);
+                }
               }
             } else {
                snprintf(val, sizeof(val), "-");
@@ -810,9 +821,9 @@ static void ui_draw_measures(UIState *s){
             val_color = nvgRGBA(255, g, b, 200);
             // lead car relative speed is always in meters
             if (s->is_metric) {
-               snprintf(val, sizeof(val), "%d", (int)(scene.lead_v_rel * 3.6 + 0.5));
+               snprintf(val, sizeof(val), "%.1f", (scene.lead_v_rel * 3.6));
             } else {
-               snprintf(val, sizeof(val), "%d", (int)(scene.lead_v_rel * 2.2374144 + 0.5));
+               snprintf(val, sizeof(val), "%.1f", (scene.lead_v_rel * 2.2374144));
             }
           } else {
              snprintf(val, sizeof(val), "-");
@@ -829,9 +840,21 @@ static void ui_draw_measures(UIState *s){
           snprintf(name, sizeof(name), "LEAD SPD");
           if (scene.lead_status) {
             if (s->is_metric) {
-               snprintf(val, sizeof(val), "%d", (int)(scene.lead_v * 3.6 + 0.5));
+              float v = (scene.lead_v * 3.6);
+              if (v < 100.){
+                snprintf(val, sizeof(val), "%.1f", v);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.0f", v);
+              }
             } else {
-               snprintf(val, sizeof(val), "%d", (int)(scene.lead_v * 2.2374144 + 0.5));
+              float v = (scene.lead_v * 2.2374144);
+              if (v < 100.){
+                snprintf(val, sizeof(val), "%.1f", v);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.0f", v);
+              }
             }
           } else {
              snprintf(val, sizeof(val), "-");
