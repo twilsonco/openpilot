@@ -697,7 +697,7 @@ static void ui_draw_measures(UIState *s){
                 b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
                 val_color = nvgRGBA(255, g, b, 200);
                 float d_ft = scene.lead_d_rel * 3.281;
-                if (d_ft){
+                if (d_ft < 100.){
                   snprintf(val, sizeof(val), "%.1f", d_ft);
                 }
                 else{
