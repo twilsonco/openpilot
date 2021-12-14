@@ -955,7 +955,7 @@ static void ui_draw_measures(UIState *s){
           
         case UIMeasure::COOLANT_TEMPC: 
           {
-            snprintf(name, sizeof(name), "ENG TEMP");
+            snprintf(name, sizeof(name), "COOLANT");
             snprintf(unit, sizeof(unit), "°C");
             int temp = scene.car_state.getEngineCoolantTemp();
             snprintf(val, sizeof(val), "%d", temp);
@@ -975,7 +975,7 @@ static void ui_draw_measures(UIState *s){
         
         case UIMeasure::COOLANT_TEMPF: 
           {
-            snprintf(name, sizeof(name), "ENG TEMP");
+            snprintf(name, sizeof(name), "COOLANT");
             snprintf(unit, sizeof(unit), "°F");
             int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
             snprintf(val, sizeof(val), "%d", temp);
