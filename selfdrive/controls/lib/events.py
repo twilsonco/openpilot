@@ -188,9 +188,9 @@ def below_steer_speed_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: 
   speed = int(round(CP.minSteerSpeed * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)))
   unit = "km/h" if metric else "mph"
   return Alert(
-    "TAKE CONTROL",
+    "TAKE CONTROL: No autosteer Below %d %s" % (speed, unit),
     "Steer Unavailable Below %d %s" % (speed, unit),
-    AlertStatus.userPrompt, AlertSize.mid,
+    AlertStatus.userPrompt, AlertSize.small,
     Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 0., 0.4, .3)
 
 
@@ -270,8 +270,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.PERMANENT: Alert(
       "WARNING: This branch is not tested",
       "Always keep hands on wheel and eyes on road",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 2.),
   },
 
   # Car is recognized, but marked as dashcam only
@@ -924,7 +924,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.autoHoldActivated: {
     ET.PERMANENT: Alert(
-      "AutoHold Activated",
+      "AutoHold Activated: gas to resume",
       "You can rest your foot now.",
       AlertStatus.normal, AlertSize.small,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3),
@@ -932,7 +932,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.stoppedWaitForGas: {
     ET.PERMANENT: Alert(
-      "Press gas to resume",
+      "Stopped: press gas to resume",
       "You can rest your foot now.",
       AlertStatus.normal, AlertSize.small,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3),
@@ -940,9 +940,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.blinkerSteeringPaused: {
     ET.WARNING: Alert(
-      "Autosteer paused",
+      "Autosteer paused for low-speed blinker",
       "Low-speed blinker",
-      AlertStatus.normal, AlertSize.mid,
+      AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3),
   },
 

@@ -680,12 +680,7 @@ static void ui_draw_measures(UIState *s){
                 g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
                 b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
                 val_color = nvgRGBA(255, g, b, 200);
-                if (scene.lead_d_rel < 100.){
-                  snprintf(val, sizeof(val), "%.1f", scene.lead_d_rel);
-                }
-                else{
-                  snprintf(val, sizeof(val), "%.0f", scene.lead_d_rel);
-                }
+                snprintf(val, sizeof(val), "%.0f", scene.lead_d_rel);
               }
               else{
                 g = 0;
@@ -697,12 +692,7 @@ static void ui_draw_measures(UIState *s){
                 b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
                 val_color = nvgRGBA(255, g, b, 200);
                 float d_ft = scene.lead_d_rel * 3.281;
-                if (d_ft){
-                  snprintf(val, sizeof(val), "%.1f", d_ft);
-                }
-                else{
-                  snprintf(val, sizeof(val), "%.0f", d_ft);
-                }
+                snprintf(val, sizeof(val), "%.0f", d_ft);
               }
             } else {
                snprintf(val, sizeof(val), "-");
@@ -965,7 +955,7 @@ static void ui_draw_measures(UIState *s){
           
         case UIMeasure::COOLANT_TEMPC: 
           {
-            snprintf(name, sizeof(name), "ENG TEMP");
+            snprintf(name, sizeof(name), "COOLANT");
             snprintf(unit, sizeof(unit), "°C");
             int temp = scene.car_state.getEngineCoolantTemp();
             snprintf(val, sizeof(val), "%d", temp);
@@ -985,7 +975,7 @@ static void ui_draw_measures(UIState *s){
         
         case UIMeasure::COOLANT_TEMPF: 
           {
-            snprintf(name, sizeof(name), "ENG TEMP");
+            snprintf(name, sizeof(name), "COOLANT");
             snprintf(unit, sizeof(unit), "°F");
             int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
             snprintf(val, sizeof(val), "%d", temp);
