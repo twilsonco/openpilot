@@ -28,15 +28,15 @@ Running on move-fast fork of openpilot, which adds:
 #### Current fork features [✅ = optional via toggle]:
 -----
 
-- [x] Latest openpilot 0.8.10 lateral and driver monitoring models
-- [x] [Comma3] Latest AGNOS2 OS
+- [x] Latest openpilot 0.8.12 lateral and 0.8.10 driver monitoring models
+- [x] [Comma3] Latest AGNOS3 OS
 - [x] [Chevy Volt] Sigmoidal steering response (thanks Qadmus)
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
 - [x] [GM] Toggle steering with LKAS button (wheel color changes to indicate disengagement)
 - [x] [GM] One-pedal driving a.k.a. autosteering only a.k.a. toggle longitudinal control: using regen (volt) and/or light/moderate/heavy braking, control OP all the way to a stop, without a lead, and without disengaging, with just the gas pedal (see below)
 - [x] [✅] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#new-dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only. must enable "Disable use of lanelines" for button to appear* (ported from sunnyhaibin)
-- [x] [✅] Normal/sport/eco/creep acceleration modes [cycle with on-screen button]
+- [x] [✅] Normal/sport/eco/creep acceleration modes [cycle with on-screen button] (Think of creep mode as, for example, *mountain highway construction traffic* mode)
 - [x] [✅] 1/5 mph changes for tap/hold of the inc/dec buttons (ported from Spector56)
 - [x] [✅] 3mph cruise speed offset: speed will be 23/28/33/38/etc.
 - [x] [✅] Alternate sound effect set
