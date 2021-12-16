@@ -48,7 +48,7 @@ class CarState(CarStateBase):
     self.params_check_last_t = 0.
     self.params_check_freq = 0.1 # check params at 10Hz
     
-    self.accel_mode = int(Params().get_bool("SportAccel")) # 0 = normal, 1 = sport;
+    self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco; 3 = creep
     
     self.coasting_enabled = self._params.get_bool("Coasting")
     self.coasting_enabled_last = self.coasting_enabled
@@ -84,6 +84,22 @@ class CarState(CarStateBase):
     self.one_pedal_v_cruise_kph_last = 0
     self.one_pedal_last_switch_to_friction_braking_t = 0.
     self.one_pedal_pause_steering_enabled = self._params.get_bool("OnePedalPauseBlinkerSteering")
+    self.one_pedal_pitch_brake_adjust_bp = [-0.08, -0.005, 0.005, 0.10] # [radians] 0.12 radians of pitch ≈ 12% grade. No change within ±0.02
+    self.one_pedal_pitch_brake_adjust_v = [.6, 1., 1., 1.5] # used to scale the value of apply_gas
+    
+    self.drive_mode_button = False
+    self.drive_mode_button_last = False
+    self.gear_shifter_raw = None
+          
+    self.pitch_rolling_iter = 0
+    self.pitch_rolling_period = 2. # 2-second moving average
+    self.pitch_check_freq = 0.1 # checked at 10Hz
+    self.pitch_num_vals = int(self.pitch_rolling_period / self.pitch_check_freq)
+    self.pitch_num_vals_recip = 1. / float(self.pitch_num_vals)
+    self.pitch_check_last = 0.
+    self.pitch_vals = [0. for i in range(self.pitch_num_vals)]
+    self.pitch = 0.
+    self.pitch_raw = 0.
     
     # similar to over-speed coast braking, lockout coast/one-pedal logic first for engine/regen braking, and then for actual brakes.
     # gas lockout lookup tables:
@@ -104,7 +120,7 @@ class CarState(CarStateBase):
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
     self.vEgo = 0.
     self.v_cruise_kph = 1
-    self.min_lane_change_speed = 30. * CV.MPH_TO_MS
+    self.min_lane_change_speed = 20. * CV.MPH_TO_MS
     self.blinker = False
     self.prev_blinker = self.blinker
     self.lane_change_steer_factor = 1.
@@ -124,6 +140,11 @@ class CarState(CarStateBase):
     self.prev_distance_button = self.distance_button
     self.distance_button = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"]
     
+    self.drive_mode_button_last = self.drive_mode_button
+    self.drive_mode_button = pt_cp.vl["ASCMSteeringButton"]["DriveModeButton"]
+    
+    if (self.drive_mode_button != self.drive_mode_button_last):
+        cloudlog.info(f"{t} Drive mode button event: new value = {self.drive_mode_button}")
 
     ret.wheelSpeeds.fl = pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"] * CV.KPH_TO_MS
     ret.wheelSpeeds.fr = pt_cp.vl["EBCMWheelSpdFront"]["FRWheelSpd"] * CV.KPH_TO_MS
@@ -138,9 +159,11 @@ class CarState(CarStateBase):
     if t - self.params_check_last_t >= self.params_check_freq:
       self.params_check_last_t = t
       self.coasting_enabled = self._params.get_bool("Coasting")
-      self.one_pedal_pause_steering_enabled = self._params.get_bool("OnePedalPauseBlinkerSteering")
-      self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
-      self.one_pedal_mode_engage_on_gas_enabled = self._params.get_bool("OnePedalModeEngageOnGas") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
+      self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco; 3 = creep
+      if not self.disengage_on_gas:
+        self.one_pedal_pause_steering_enabled = self._params.get_bool("OnePedalPauseBlinkerSteering")
+        self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
+        self.one_pedal_mode_engage_on_gas_enabled = self._params.get_bool("OnePedalModeEngageOnGas") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
       
     if self.coasting_enabled != self.coasting_enabled_last:
       if not self.coasting_enabled and self.vEgo > self.v_cruise_kph * CV.KPH_TO_MS and not self.no_friction_braking:
@@ -149,6 +172,12 @@ class CarState(CarStateBase):
     ret.coastingActive = self.coasting_enabled
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
+    
+    gear_shifter_raw = pt_cp.vl["ECMPRDNL"]['PRNDL']
+    if (self.gear_shifter_raw != gear_shifter_raw):
+      cloudlog.info(f"{t} Gear shifted to: {gear_shifter_raw = }, {self.shifter_values.get(gear_shifter_raw, None) = }, {self.parse_gear_shifter(self.shifter_values.get(gear_shifter_raw, None)) = }")
+    self.gear_shifter_raw = gear_shifter_raw
+      
     self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
     self.user_brake = pt_cp.vl["EBCMBrakePedalPosition"]['BrakePedalPosition']
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]["PRNDL"], None))
@@ -157,8 +186,9 @@ class CarState(CarStateBase):
     if ret.brake < 10/0xd0:
       ret.brake = 0.
     
-    if t - self.sessionInitTime < 15.:
-      self.apply_brake_percent = int(round(interp(t - self.sessionInitTime - 5., [0.,2.,4.,6.,8.,10.], ([100,0]*3))) % 100)
+    if self.showBrakeIndicator:
+      if t - self.sessionInitTime < 15.:
+        self.apply_brake_percent = int(round(interp(t - self.sessionInitTime - 5., [0.,2.,4.,6.,8.,10.], ([100,0]*3))) % 100)
     ret.frictionBrakePercent = self.apply_brake_percent
     
 
@@ -178,8 +208,14 @@ class CarState(CarStateBase):
     ret.steerError = self.lkas_status == 3
     
     ret.steeringTorqueEps = pt_cp.vl["PSCMStatus"]['LKATorqueDelivered']
-    self.engineRPM = pt_cp.vl["ECMEngineStatus"]['EngineRPM']
+    engineRPM = pt_cp.vl["ECMEngineStatus"]['EngineRPM']
+    if self.engineRPM - engineRPM > 3000:
+      self.engineRPM = engineRPM + 4096 # values above 4096 roll over to zero, so shift them
+    else:
+      self.engineRPM = engineRPM
     ret.engineRPM = self.engineRPM
+    
+    ret.engineCoolantTemp = pt_cp.vl["ECMEngineCoolantTemp"]['EngineCoolantTemp']
 
     # 1 - open, 0 - closed
     ret.doorOpen = (pt_cp.vl["BCMDoorBeltStatus"]["FrontLeftDoor"] == 1 or
@@ -243,10 +279,20 @@ class CarState(CarStateBase):
     ret.onePedalModeActive = self.one_pedal_mode_active
     ret.onePedalBrakeMode = self.one_pedal_brake_mode
     
+    if t - self.pitch_check_last > self.pitch_check_freq:
+      self.pitch_check_last = t
+      self.pitch_rolling_iter += 1
+      if (self.pitch_rolling_iter >= self.pitch_num_vals):
+        self.pitch_rolling_iter = 0
+      self.pitch -= self.pitch_vals[self.pitch_rolling_iter] * self.pitch_num_vals_recip
+      self.pitch += self.pitch_raw * self.pitch_num_vals_recip
+      self.pitch_vals[self.pitch_rolling_iter] = self.pitch_raw
+    ret.pitch = self.pitch
 
     ret.autoHoldActivated = self.autoHoldActivated
     
     ret.lkMode = self.lkMode
+    
 
     return ret
 
@@ -269,6 +315,7 @@ class CarState(CarStateBase):
       ("AcceleratorPedal", "AcceleratorPedal", 0),
       ("CruiseState", "AcceleratorPedal2", 0),
       ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
+      ("DriveModeButton", "ASCMSteeringButton", 0),
       ("LKAButton", "ASCMSteeringButton", 0),
       ("SteeringWheelAngle", "PSCMSteeringAngle", 0),
       ("SteeringWheelRate", "PSCMSteeringAngle", 0),
@@ -283,6 +330,7 @@ class CarState(CarStateBase):
       ("DistanceButton", "ASCMSteeringButton", 0),
       ("LKATorqueDelivered", "PSCMStatus", 0),
       ("EngineRPM", "ECMEngineStatus", 0),
+      ("EngineCoolantTemp", "ECMEngineCoolantTemp", 0),
       ("TractionControlOn", "ESPStatus", 0),
       ("EPBClosed", "EPBStatus", 0),
       ("CruiseMainOn", "ECMEngineStatus", 0),
@@ -303,6 +351,7 @@ class CarState(CarStateBase):
       ("ECMEngineStatus", 100),
       ("PSCMSteeringAngle", 100),
       ("EBCMBrakePedalPosition", 100),
+      ("ECMEngineCoolantTemp", 1),
     ]
 
     if CP.carFingerprint == CAR.VOLT:

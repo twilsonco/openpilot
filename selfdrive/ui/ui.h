@@ -128,10 +128,16 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   DESIRED_STEERING_ANGLE,
   STEERING_TORQUE_EPS,
   ENGINE_RPM,
+  ENGINE_RPM_TEMPC,
+  ENGINE_RPM_TEMPF,
+  COOLANT_TEMPC,
+  COOLANT_TEMPF,
   ACCELERATION,
   JERK,
   ALTITUDE,
   PERCENT_GRADE,
+  PERCENT_GRADE_DEVICE,
+  FOLLOW_LEVEL,
   LEAD_TTC,
   LEAD_DISTANCE_LENGTH,
   LEAD_DISTANCE_TIME,
@@ -153,7 +159,6 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   FANSPEED_PERCENT,
   MEMORY_USAGE_PERCENT,
   FREESPACE_STORAGE,
-  FOLLOW_LEVEL,
   
   NUM_MEASURES
 } UIMeasure;
@@ -204,6 +209,7 @@ typedef struct UIScene {
   bool percentGradeIterRolled = false;
   float desiredFollowDistance, followDistanceCost, followAccelCost;
   float stoppingDistance;
+  float percentGradeDevice;
   
   float lastTime = 0., sessionInitTime = 0.;
   float paramsCheckLast = 0., paramsCheckFreq = 0.1; // check params at 10Hz
@@ -220,6 +226,11 @@ typedef struct UIScene {
   int brake_percent;
   float brake_indicator_alpha;
   float brake_indicator_last_t;
+  
+  // accel mode button
+  bool accel_mode_button_enabled;
+  Rect accel_mode_touch_rect;
+  int accel_mode;
   
   // one-pedal mode fading. maxspeed rect at -1, fades away by 0, and one-pedal icon fades in by 1
   float one_pedal_fade = -1., one_pedal_fade_last_t = 0.;

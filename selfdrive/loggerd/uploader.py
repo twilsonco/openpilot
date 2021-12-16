@@ -12,6 +12,7 @@ from cereal import log
 import cereal.messaging as messaging
 from common.api import Api
 from common.params import Params
+from common.realtime import sec_since_boot
 from selfdrive.hardware import TICI
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.loggerd.config import ROOT
@@ -24,7 +25,6 @@ UPLOAD_ATTR_VALUE = b'1'
 allow_sleep = bool(os.getenv("UPLOADER_SLEEP", "1"))
 force_wifi = os.getenv("FORCEWIFI") is not None
 fake_upload = os.getenv("FAKEUPLOAD") is not None
-
 
 def get_directory_sort(d):
   return list(map(lambda s: s.rjust(10, '0'), d.rsplit('--', 1)))
@@ -73,6 +73,7 @@ class Uploader():
     self.immediate_folders = ["crash/", "boot/"]
     self.immediate_priority = {"qlog.bz2": 0, "qcamera.ts": 1}
     self.high_priority = {"rlog.bz2": 0, "fcamera.hevc": 1, "dcamera.hevc": 2, "ecamera.hevc": 3}
+    
 
   def get_upload_sort(self, name):
     if name in self.immediate_priority:
@@ -239,6 +240,10 @@ def uploader_fn(exit_event):
   params = Params()
   dongle_id = params.get("DongleId", encoding='utf8')
 
+  transition_to_offroad_last = 0.
+  disable_onroad_upload_offroad_transition_timeout = 900. # wait until offroad for 15 minutes before starting uploads
+  offroad_last = params.get_bool("IsOffroad")
+
   if dongle_id is None:
     cloudlog.info("uploader missing dongle_id")
     raise Exception("uploader can't start without dongle id")
@@ -253,7 +258,13 @@ def uploader_fn(exit_event):
   backoff = 0.1
   while not exit_event.is_set():
     sm.update(0)
+    
     offroad = params.get_bool("IsOffroad")
+    t = sec_since_boot()
+    if offroad and not offroad_last and t > 300.:
+      transition_to_offroad_last = sec_since_boot()
+    offroad_last = offroad
+    
     network_type = sm['deviceState'].networkType if not force_wifi else NetworkType.wifi
     if network_type == NetworkType.none:
       if allow_sleep:
@@ -262,7 +273,23 @@ def uploader_fn(exit_event):
 
     on_wifi = network_type == NetworkType.wifi
     allow_raw_upload = params.get_bool("UploadRaw")
-
+    
+    if Params().get_bool("DisableOnroadUploads"):
+      if not offroad or (transition_to_offroad_last > 0. and t - transition_to_offroad_last < disable_onroad_upload_offroad_transition_timeout):
+        if not offroad:
+          cloudlog.info("not uploading: onroad uploads disabled")
+        else:
+          wait_minutes = int(disable_onroad_upload_offroad_transition_timeout / 60)
+          time_left = disable_onroad_upload_offroad_transition_timeout - (t - transition_to_offroad_last)
+          if (time_left / 60. > 2.):
+            time_left_str = f"{int(time_left / 60)} minute(s)"
+          else:
+            time_left_str = f"{int(time_left)} seconds(s)"
+          cloudlog.info(f"not uploading: waiting until offroad for {wait_minutes} minutes; {time_left_str} left")
+        if allow_sleep:
+          time.sleep(60)
+        continue
+      
     d = uploader.next_file_to_upload(with_raw=allow_raw_upload and on_wifi and offroad)
     if d is None:  # Nothing to upload
       if allow_sleep:

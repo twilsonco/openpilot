@@ -436,7 +436,7 @@ static void ui_draw_measures(UIState *s){
     // draw bounding rectangle
     nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, slots_rect.x, slots_rect.y, slots_rect.w, slots_rect.h, 20);
-    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
+    nvgStrokeColor(s->vg, nvgRGBA(200,200,200,200));
     nvgStrokeWidth(s->vg, 6);
     nvgStroke(s->vg);
     nvgFillColor(s->vg, nvgRGBA(0,0,0,100));
@@ -446,7 +446,7 @@ static void ui_draw_measures(UIState *s){
     
     // now start from the top and draw the current set of metrics
     for (int i = 0; i < scene.measure_cur_num_slots; ++i){
-      char name[16], val[16], unit[6];
+      char name[16], val[16], unit[8];
       snprintf(name, sizeof(name), "");
       snprintf(val, sizeof(val), "");
       snprintf(unit, sizeof(unit), "");
@@ -621,7 +621,7 @@ static void ui_draw_measures(UIState *s){
           {
           snprintf(name, sizeof(name), "EPS TRQ");
           //TODO: Add orange/red color depending on torque intensity. <1x limit = white, btwn 1x-2x limit = orange, >2x limit = red
-          snprintf(val, sizeof(val), "%.0f", scene.steeringTorqueEps);
+          snprintf(val, sizeof(val), "%.1f", scene.steeringTorqueEps);
           snprintf(unit, sizeof(unit), "Nm");
           break;}
 
@@ -680,7 +680,7 @@ static void ui_draw_measures(UIState *s){
                 g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
                 b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
                 val_color = nvgRGBA(255, g, b, 200);
-                snprintf(val, sizeof(val), "%d", (int)scene.lead_d_rel);
+                snprintf(val, sizeof(val), "%.0f", scene.lead_d_rel);
               }
               else{
                 g = 0;
@@ -691,7 +691,8 @@ static void ui_draw_measures(UIState *s){
                 g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
                 b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
                 val_color = nvgRGBA(255, g, b, 200);
-                snprintf(val, sizeof(val), "%d", (int)(scene.lead_d_rel * 3.281));
+                float d_ft = scene.lead_d_rel * 3.281;
+                snprintf(val, sizeof(val), "%.0f", d_ft);
               }
             } else {
                snprintf(val, sizeof(val), "-");
@@ -810,9 +811,9 @@ static void ui_draw_measures(UIState *s){
             val_color = nvgRGBA(255, g, b, 200);
             // lead car relative speed is always in meters
             if (s->is_metric) {
-               snprintf(val, sizeof(val), "%d", (int)(scene.lead_v_rel * 3.6 + 0.5));
+               snprintf(val, sizeof(val), "%.1f", (scene.lead_v_rel * 3.6));
             } else {
-               snprintf(val, sizeof(val), "%d", (int)(scene.lead_v_rel * 2.2374144 + 0.5));
+               snprintf(val, sizeof(val), "%.1f", (scene.lead_v_rel * 2.2374144));
             }
           } else {
              snprintf(val, sizeof(val), "-");
@@ -829,9 +830,21 @@ static void ui_draw_measures(UIState *s){
           snprintf(name, sizeof(name), "LEAD SPD");
           if (scene.lead_status) {
             if (s->is_metric) {
-               snprintf(val, sizeof(val), "%d", (int)(scene.lead_v * 3.6 + 0.5));
+              float v = (scene.lead_v * 3.6);
+              if (v < 100.){
+                snprintf(val, sizeof(val), "%.1f", v);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.0f", v);
+              }
             } else {
-               snprintf(val, sizeof(val), "%d", (int)(scene.lead_v * 2.2374144 + 0.5));
+              float v = (scene.lead_v * 2.2374144);
+              if (v < 100.){
+                snprintf(val, sizeof(val), "%.1f", v);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.0f", v);
+              }
             }
           } else {
              snprintf(val, sizeof(val), "-");
@@ -884,17 +897,105 @@ static void ui_draw_measures(UIState *s){
 
         case UIMeasure::ENGINE_RPM: 
           {
-          snprintf(name, sizeof(name), "ENG RPM");
-          if(scene.engineRPM == 0) {
-            snprintf(val, sizeof(val), "OFF");
+            snprintf(name, sizeof(name), "ENG RPM");
+            if(scene.engineRPM == 0) {
+              snprintf(val, sizeof(val), "OFF");
+            }
+            else {
+              snprintf(val, sizeof(val), "%d", scene.engineRPM);
+            }
           }
-          else {snprintf(val, sizeof(val), "%d", scene.engineRPM);}
+          break;
+          
+        case UIMeasure::ENGINE_RPM_TEMPC: 
+          {
+            snprintf(name, sizeof(name), "ENGINE");
+            int temp = scene.car_state.getEngineCoolantTemp();
+            snprintf(unit, sizeof(unit), "%d°C", temp);
+            if(scene.engineRPM == 0) {
+              snprintf(val, sizeof(val), "OFF");
+            }
+            else {
+              snprintf(val, sizeof(val), "%d", scene.engineRPM);
+              if (temp < 71){
+                unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+              }
+              else if (temp > 93){
+                unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+              }
+              else if (temp > 87){
+                unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+              }
+            }
+          }
+          break;
+
+        case UIMeasure::ENGINE_RPM_TEMPF: 
+          {
+            snprintf(name, sizeof(name), "ENGINE");
+            int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
+            snprintf(unit, sizeof(unit), "%d°F", temp);
+            if(scene.engineRPM == 0) {
+              snprintf(val, sizeof(val), "OFF");
+            }
+            else {
+              snprintf(val, sizeof(val), "%d", scene.engineRPM);
+              if (temp < 160){
+                unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+              }
+              else if (temp > 200){
+                unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+              }
+              else if (temp > 190){
+                unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+              }
+            }
+          }
+          break;
+          
+        case UIMeasure::COOLANT_TEMPC: 
+          {
+            snprintf(name, sizeof(name), "COOLANT");
+            snprintf(unit, sizeof(unit), "°C");
+            int temp = scene.car_state.getEngineCoolantTemp();
+            snprintf(val, sizeof(val), "%d", temp);
+            if(scene.engineRPM > 0) {
+              if (temp < 71){
+                val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+              }
+              else if (temp > 93){
+                val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+              }
+              else if (temp > 87){
+                val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+              }
+            }
+          }
+          break;
+        
+        case UIMeasure::COOLANT_TEMPF: 
+          {
+            snprintf(name, sizeof(name), "COOLANT");
+            snprintf(unit, sizeof(unit), "°F");
+            int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
+            snprintf(val, sizeof(val), "%d", temp);
+            if(scene.engineRPM > 0) {
+              if (temp < 160){
+                val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+              }
+              else if (temp > 200){
+                val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+              }
+              else if (temp > 190){
+                val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+              }
+            }
           }
           break;
         
         case UIMeasure::PERCENT_GRADE:
           {
-          snprintf(name, sizeof(name), "GRADE");
+          snprintf(name, sizeof(name), "GRADE (GPS)");
           if (scene.percentGradeIterRolled && scene.percentGradePositions[scene.percentGradeRollingIter] >= scene.percentGradeMinDist && scene.gpsAccuracyUblox != 0.00){
             g = 255;
             b = 255;
@@ -909,6 +1010,21 @@ static void ui_draw_measures(UIState *s){
           else{
             snprintf(val, sizeof(val), "-");
           }}
+          break;
+        
+        case UIMeasure::PERCENT_GRADE_DEVICE:
+          {
+          snprintf(name, sizeof(name), "GRADE");
+          g = 255;
+          b = 255;
+          p = 0.125 * (scene.percentGradeDevice > 0 ? scene.percentGradeDevice : -scene.percentGradeDevice); // red by 8% grade
+          g -= int(0.5 * p * 255.);
+          b -= int(p * 255.);
+          g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+          b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+          val_color = nvgRGBA(255, g, b, 200);
+          snprintf(val, sizeof(val), "%.1f%%", scene.percentGradeDevice);
+          }
           break;
 
         case UIMeasure::FOLLOW_LEVEL: 
@@ -1157,6 +1273,79 @@ static void ui_draw_vision_brake(UIState *s) {
   }
 }
 
+static void draw_accel_mode_button(UIState *s) {
+  if (s->vipc_client->connected) {
+    const int radius = 72;
+    int center_x = s->fb_w - face_wheel_radius - bdr_s * 2;
+    if (s->scene.brake_percent >= 0){
+      center_x -= brake_size + 3 * bdr_s + radius;
+    }
+    const int center_y = s->fb_h - footer_h / 2 - radius / 2;
+    int btn_w = radius * 2;
+    int btn_h = radius * 2;
+    int btn_x1 = center_x - 0.5 * radius;
+    int btn_y = center_y - 0.5 * radius;
+    int btn_xc1 = btn_x1 + radius;
+    int btn_yc = btn_y + radius;
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, radius);
+    // nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, 100);
+    nvgStrokeColor(s->vg, nvgRGBA(0,0,0,80));
+    nvgStrokeWidth(s->vg, 6);
+    nvgStroke(s->vg);
+    nvgFontSize(s->vg, 52);
+
+    if (s->scene.accel_mode == 0) { // normal
+      nvgStrokeColor(s->vg, nvgRGBA(200,200,200,200));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+      NVGcolor fillColor = nvgRGBA(0,0,0,80);
+      nvgFillColor(s->vg, fillColor);
+      nvgFill(s->vg);
+      nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
+      nvgText(s->vg,btn_xc1,btn_yc-20,"Stock",NULL);
+      nvgText(s->vg,btn_xc1,btn_yc+20,"accel",NULL);
+    } else if (s->scene.accel_mode == 1) { // sport
+      nvgStrokeColor(s->vg, nvgRGBA(142,0,11,255));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+      NVGcolor fillColor = nvgRGBA(142,0,11,80);
+      nvgFillColor(s->vg, fillColor);
+      nvgFill(s->vg);
+      nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
+      nvgText(s->vg,btn_xc1,btn_yc-20,"Sport",NULL);
+      nvgText(s->vg,btn_xc1,btn_yc+20,"accel",NULL);
+    } else if (s->scene.accel_mode == 2) { // eco
+      nvgStrokeColor(s->vg, nvgRGBA(74,132,23,255));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+      NVGcolor fillColor = nvgRGBA(74,132,23,80);
+      nvgFillColor(s->vg, fillColor);
+      nvgFill(s->vg);
+      nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
+      nvgText(s->vg,btn_xc1,btn_yc-20,"Eco",NULL);
+      nvgText(s->vg,btn_xc1,btn_yc+20,"accel",NULL);
+    } else if (s->scene.accel_mode == 3) { // creep
+      nvgStrokeColor(s->vg, nvgRGBA(24,82,200,255));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+      NVGcolor fillColor = nvgRGBA(24,82,200,80);
+      nvgFillColor(s->vg, fillColor);
+      nvgFill(s->vg);
+      nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
+      nvgText(s->vg,btn_xc1,btn_yc-20,"Creep",NULL);
+      nvgText(s->vg,btn_xc1,btn_yc+20,"accel",NULL);
+    }
+    
+    
+    s->scene.accel_mode_touch_rect = Rect{center_x - laneless_btn_touch_pad, 
+                                                center_y - laneless_btn_touch_pad,
+                                                radius + 2 * laneless_btn_touch_pad, 
+                                                radius + 2 * laneless_btn_touch_pad}; 
+  }
+}
+
 static void draw_laneless_button(UIState *s) {
   if (s->vipc_client->connected) {
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
@@ -1172,7 +1361,7 @@ static void draw_laneless_button(UIState *s) {
     int btn_yc = btn_y + radius;
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
     nvgBeginPath(s->vg);
-    nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, 100);
+    nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, radius);
     // nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, 100);
     nvgStrokeColor(s->vg, nvgRGBA(0,0,0,80));
     nvgStrokeWidth(s->vg, 6);
@@ -1243,6 +1432,9 @@ static void ui_draw_vision(UIState *s) {
     ui_draw_measures(s);
     if (s->scene.end_to_end) {
       draw_laneless_button(s);
+    }
+    if (s->scene.accel_mode_button_enabled){
+      draw_accel_mode_button(s);
     }
   }
   if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL) {

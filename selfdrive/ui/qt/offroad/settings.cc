@@ -62,6 +62,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_network.png",
                                   this));
 
+  toggles.append(new ParamControl("DisableOnroadUploads",
+                                  "Disable onroad uploads",
+                                  "Completely disable uploads when onroad. Necessary to avoid high data use when connected to wifi hotspot.",
+                                  "../assets/offroad/icon_network.png",
+                                  this));
+
   ParamControl *record_toggle = new ParamControl("RecordFront",
                                                  "Record and Upload Driver Camera",
                                                  "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
@@ -114,9 +120,9 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Disable default comma stock disengage on gas feature",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
-  toggles.append(new ParamControl("SportAccel",
-                                  "Sport acceleration mode",
-                                  "Stronger acceleration under most conditions.",
+  toggles.append(new ParamControl("AccelModeButton",
+                                  "Acceleration mode button",
+                                  "Enable a button that will let you cycle between normal, sport, and eco acceleration profiles.",
                                   "../assets/offroad/icon_rocket.png",
                                   this));
   toggles.append(new ParamControl("NudgelessLaneChange",

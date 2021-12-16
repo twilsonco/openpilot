@@ -20,6 +20,8 @@ Running on move-fast fork of openpilot, which adds:
 
 * Vision and/or map-based slowing down for curves
 * Map-based automatic changing of speed limit (with optional offset)
+  * **Map-based slowing for curves and automatic setting of speed requires a data connection**
+  * You can subscribe to [comma Prime](https://comma.ai/prime), which is a great service and is totally worth the cost, or you can use your own hotspot and enable the "disable onroad uploads" toggle (see below) to only use data for these features
 * Hands on wheel monitoring
 * Disable disengage when gas pressed
 
@@ -34,11 +36,15 @@ Running on move-fast fork of openpilot, which adds:
 - [x] [GM] Toggle steering with LKAS button (wheel color changes to indicate disengagement)
 - [x] [GM] One-pedal driving a.k.a. autosteering only a.k.a. toggle longitudinal control: using regen (volt) and/or light/moderate/heavy braking, control OP all the way to a stop, without a lead, and without disengaging, with just the gas pedal (see below)
 - [x] [✅] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#new-dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only. must enable "Disable use of lanelines" for button to appear* (ported from sunnyhaibin)
-- [x] [✅] Normal/sport acceleration modes with improved acceleration/braking profiles (ported from kegman)
+- [x] [✅] Normal/sport/eco/creep acceleration modes [cycle with on-screen button]
 - [x] [✅] 1/5 mph changes for tap/hold of the inc/dec buttons (ported from Spector56)
 - [x] [✅] 3mph cruise speed offset: speed will be 23/28/33/38/etc.
 - [x] [✅] Alternate sound effect set
 - [x] [✅] Mute engage and disengage sounds
+- [x] [✅] Disable onroad uploads: for use with data-limited wifi hotspots. Reduces data use from 400MB/hour or 22MB/mile (based on 30 minute low-speed trip) down to 25MB/hour or 0.4MB/mile (based on 5 hour trip at 84mph; i.e. not a perfect comparison to the other trip)
+    * iPhone users can use [this shortcut](https://www.icloud.com/shortcuts/7f3c7e98f95d4f85a9bad939aa069fcd) to instantly open the personal hotspot page in the Settings app in order to enable personal hotspot for your comma device to connect.
+      * Combined with an Automation to run the shortcut when you enter CarPlay, or when you connect to your car's Bluetooth, can make this quite convenient.
+    * Android users could try the [Hot Spot Starter](https://play.google.com/store/apps/details?id=de.thjunge11.autohotspot) app, but I can't recommend it as I haven't tried it, so maybe [look for something else if it doesn't work](https://forum.xda-developers.com/t/enable-hotspot-automatically-when-i-enter-the-car.3915107/)
 - [x] [✅] Coasting: OP will still brake behind a lead car and to slow down for curves, but will not apply engine/regen/friction brakes in order to keep the set speed (by user or map speed limit)
     * Toggle coasting while driving by tapping the max speed indicator
     * A "+" after the max speed indicates that coasting is enabled
@@ -50,9 +56,9 @@ Running on move-fast fork of openpilot, which adds:
     * To use:
         * Tap the current speed on the openpilot display to cycle the number of metrics
         * Tap any metric to cycle its content (sorry for all the god-forsaken tapping, a better metric display with vehicle, following, position, and device widgets is a WIP)
-    * Metrics (24 to choose from):
-        * Device info: CPU temperature, CPU percent, CPU temp + percent, memory temperature, memory used, free storage, ambient temperature, fanspeed (as percent of max), GPS accuracy (and number of satelites), altitude
-        * Vehicle info: Engine RPM, steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road
+    * Metrics (35 to choose from):
+        * Device info: CPU temperature (°C and °F), CPU percent, CPU temp + percent (°C and °F), memory temperature (°C and °F), memory used, free storage, ambient temperature (°C and °F), fanspeed (as percent of max), GPS accuracy (and number of satelites), altitude
+        * Vehicle info: Engine RPM, engine coolant temperature (°C and °F), engine RPM + coolant temperature (°C and °F), steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road (one based on GPS, one based on device accelerometer)
         * Lead-following info: follow distance level, lead distance [length], desired lead distance [length], lead distance [time], desired lead distance [time], follow distance and acceleration mpc costs [in units of the stock OP costs; i.e. 2.5 means 2.5× the stock OP value], relative lead velocity, absolute lead velocity
 - [x] [GM] [✅] **One-pedal driving**: OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
     * Must have disable disengage on gas toggle enabled
@@ -62,15 +68,15 @@ Running on move-fast fork of openpilot, which adds:
       1. While cruise is set, press and hold the follow distance button for 0.5s (continue to hold for immediate hard braking if necessary)
       2. If one-pedal engage on gas toggle is enabled, press gas while cruise is set and traveling above 1mph
       3. While cruise is set, lower cruise speed to 1
-    * When in one-pedal mode, the max speed indicator in openpilot will be replaced with a one-pedal mode indicator. Tap the one-pedal icon (or use follow distance button, see below) to toggle coasting/braking
+    * When in one-pedal mode, the max speed indicator in openpilot will be replaced with a one-pedal mode indicator. Tap the one-pedal icon to toggle one-pedal engage on gas mode
     * Vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = 🟢/🟠/🔴 = light/moderate/heavy braking
     * Control braking with follow distance button:
       * *Single press*: alternate between persistent light or moderate braking
       * *Press and hold*: apply temporary hard braking (indicated by follow level 3 on vehicle cluster and red one-pedal icon) (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
-      * *Press when friction braking disabled*: activating friction braking
+      * *Press when friction braking disabled*: activate friction braking
       * *Double-press when stopped or when gas is pressed and friction braking is active*: deactivate friction braking
 - [x] [GM] [✅] One-pedal pro braking: Completely disable cruise/speed limit/curve/follow braking when in one-pedal mode. You are soley responsible for slowing the car using the adjustable one-pedal braking (by pressing/holding the follow distance button) or with the physical brakes/regen paddle
-- [x] [GM] [✅] One-pedal engage on gas: When cruising at speed and the driver presses the gas (i.e. not when resuming from a stop), engage one-pedal/always-on-steering mode
+- [x] [GM] [✅] One-pedal engage on gas: When cruising at speed and the driver presses the gas (i.e. not when resuming from a stop), engage one-pedal mode
     * Toggle while driving by tapping the pedal icon
 - [x] [GM] JShuler panda-based GM steering fault fix
 - [x] Remember last follow mode
@@ -78,7 +84,6 @@ Running on move-fast fork of openpilot, which adds:
 #### Planned fork features (in no particular order):
 -----
 
-- [ ] Intellibeam (auto-bright headlights based on oncoming cars)
 - [ ] Stop-and-go for 2018 Volt
 - [ ] Grey panda support
 - [ ] Chevy Bolt support
@@ -90,7 +95,7 @@ Running on move-fast fork of openpilot, which adds:
   * Geo widget: GPS signal/coords/#satellites, altitude, percent grade of current road, ...
   * Device widget: CPU/memory/temps/fans/...
   * EV widget: high voltage battery info similar to that shown in the LeafSpyPro app
-- [ ] [✅] [Modified assistive driving system](https://github.com/sunnyhaibin/openpilot#new-modified-assistive-driving-safety-mads) (MADS)
+- [ ] [✅] [Modified assistive driving system](https://github.com/sunnyhaibin/openpilot#new-modified-assistive-driving-safety-mads) (MADS) style auto-engagement of steering
 - [ ] [✅] 0.5 second delay before activating newly selected follow mode so user can switch around without OP slightly jerking in response
 - [ ] [✅] Auto screen brightness (or at least a way to dim a bit at night)
 - [ ] [✅] Lane Speed alerts ([sshane](https://github.com/sshane/openpilot#lane-speed-alerts))

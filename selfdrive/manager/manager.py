@@ -47,7 +47,8 @@ def manager_init():
     ("StockSpeedAdjust", "1"),
     ("CustomSounds", "0"),
     ("SilentEngageDisengage", "0"),
-    ("SportAccel", "0"),
+    ("AccelModeButton", "0"),
+    ("AccelMode", "0"),
     ("EndToEndToggle", "1"),
     ("LanelessMode", "2"),
     ("NudgelessLaneChange", "0"),
@@ -62,17 +63,18 @@ def manager_init():
     ("CoastingBrakeOverSpeed", "0"),
     ("FrictionBrakePercent", "0"),
     ("BrakeIndicator", "1"),
+    ("DisableOnroadUploads", "0"),
     ("MeasureNumSlots", "0"),
     ("MeasureSlot00", "7"), # right column: percent grade
     ("MeasureSlot01", "6"), # altitude
     ("MeasureSlot02", "4"), # acceleration
     ("MeasureSlot03", "1"), # steering torque
     ("MeasureSlot04", "3"), # engine rpm
-    ("MeasureSlot05", "10"), # lead dist [s]
-    ("MeasureSlot06", "9"), # lead dist [m]
-    ("MeasureSlot07", "14"), # lead rel spd [mph]
-    ("MeasureSlot08", "15"),# lead spd [mph]
-    ("MeasureSlot09", "8"),# dist cost
+    ("MeasureSlot05", "11"), # lead dist [s]
+    ("MeasureSlot06", "10"), # lead dist [m]
+    ("MeasureSlot07", "15"), # lead rel spd [mph]
+    ("MeasureSlot08", "16"),# lead spd [mph]
+    ("MeasureSlot09", "9"),# dist cost
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
