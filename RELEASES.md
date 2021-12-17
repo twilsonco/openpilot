@@ -1,6 +1,6 @@
 Version tw-0.8.9-3.6 (2021-12-16)
 ========================
- * NEW: 0.8.12 new driving model (with fully integrated C3 training data!) and AGNOS 3
+ * NEW: 0.8.12 new driving model (with higher max speed and fully integrated C3 training data!) and AGNOS 3
  * NEW: Acceleration mode button on-screen cycles between normal/sport/eco/creep acceleration profiles
  * NEW: Added toggle to disable uploads when on-road (and waits for 15 minutes after entering offroad state before starting uploads). Save that hotspot data!
  * NEW UI METRIC: instantaneous percent grade UI metric (the old one is now "GRADE (GPS)")
