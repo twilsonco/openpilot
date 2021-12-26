@@ -6,6 +6,7 @@
 #include <QString>
 #include <QSoundEffect>
 
+#include "selfdrive/common/params.h"
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
@@ -18,22 +19,43 @@ class Sound : public QObject {
 public:
   explicit Sound(QObject *parent = 0) {
     // TODO: merge again and add EQ in the amp config
-    const QString sound_asset_path = Hardware::TICI() ? "../assets/sounds_tici/" : "../assets/sounds/";
-    std::tuple<AudibleAlert, QString, bool> sound_list[] = {
-      {AudibleAlert::CHIME_DISENGAGE, sound_asset_path + "disengaged.wav", false},
-      {AudibleAlert::CHIME_ENGAGE, sound_asset_path + "engaged.wav", false},
-      {AudibleAlert::CHIME_WARNING1, sound_asset_path + "warning_1.wav", false},
-      {AudibleAlert::CHIME_WARNING2, sound_asset_path + "warning_2.wav", false},
-      {AudibleAlert::CHIME_WARNING2_REPEAT, sound_asset_path + "warning_2.wav", true},
-      {AudibleAlert::CHIME_WARNING_REPEAT, sound_asset_path + "warning_repeat.wav", true},
-      {AudibleAlert::CHIME_ERROR, sound_asset_path + "error.wav", false},
-      {AudibleAlert::CHIME_PROMPT, sound_asset_path + "error.wav", false}
-    };
-    for (auto &[alert, fn, loops] : sound_list) {
-      QSoundEffect *s = new QSoundEffect(this);
-      QObject::connect(s, &QSoundEffect::statusChanged, this, &Sound::checkStatus);
-      s->setSource(QUrl::fromLocalFile(fn));
-      sounds[alert] = {s, loops ? QSoundEffect::Infinite : 0};
+    {
+      const QString sound_asset_path = Hardware::TICI() ? "../assets/sounds_tici/" : "../assets/sounds/";
+      std::tuple<AudibleAlert, QString, bool> sound_list[] = {
+        {AudibleAlert::CHIME_DISENGAGE, sound_asset_path + "disengaged.wav", false},
+        {AudibleAlert::CHIME_ENGAGE, sound_asset_path + "engaged.wav", false},
+        {AudibleAlert::CHIME_WARNING1, sound_asset_path + "warning_1.wav", false},
+        {AudibleAlert::CHIME_WARNING2, sound_asset_path + "warning_2.wav", false},
+        {AudibleAlert::CHIME_WARNING2_REPEAT, sound_asset_path + "warning_2.wav", true},
+        {AudibleAlert::CHIME_WARNING_REPEAT, sound_asset_path + "warning_repeat.wav", true},
+        {AudibleAlert::CHIME_ERROR, sound_asset_path + "error.wav", false},
+        {AudibleAlert::CHIME_PROMPT, sound_asset_path + "error.wav", false}
+      };
+      for (auto &[alert, fn, loops] : sound_list) {
+        QSoundEffect *s = new QSoundEffect(this);
+        QObject::connect(s, &QSoundEffect::statusChanged, this, &Sound::checkStatus);
+        s->setSource(QUrl::fromLocalFile(fn));
+        sounds[alert] = {s, loops ? QSoundEffect::Infinite : 0};
+      }
+    }
+    { // again for custom sounds
+      const QString sound_asset_path = Hardware::TICI() ? "../assets/sounds_tici/" : "../assets/sounds/";
+      std::tuple<AudibleAlert, QString, bool> sound_list[] = {
+        {AudibleAlert::CHIME_DISENGAGE, sound_asset_path + "disengaged_cust.wav", false},
+        {AudibleAlert::CHIME_ENGAGE, sound_asset_path + "engaged_cust.wav", false},
+        {AudibleAlert::CHIME_WARNING1, sound_asset_path + "warning_1_cust.wav", false},
+        {AudibleAlert::CHIME_WARNING2, sound_asset_path + "warning_2_cust.wav", false},
+        {AudibleAlert::CHIME_WARNING2_REPEAT, sound_asset_path + "warning_2_cust.wav", true},
+        {AudibleAlert::CHIME_WARNING_REPEAT, sound_asset_path + "warning_repeat_cust.wav", true},
+        {AudibleAlert::CHIME_ERROR, sound_asset_path + "error_cust.wav", false},
+        {AudibleAlert::CHIME_PROMPT, sound_asset_path + "error_cust.wav", false}
+      };
+      for (auto &[alert, fn, loops] : sound_list) {
+        QSoundEffect *s = new QSoundEffect(this);
+        QObject::connect(s, &QSoundEffect::statusChanged, this, &Sound::checkStatus);
+        s->setSource(QUrl::fromLocalFile(fn));
+        customSounds[alert] = {s, loops ? QSoundEffect::Infinite : 0};
+      }
     }
 
     sm = new SubMaster({"carState", "controlsState"});
@@ -81,21 +103,41 @@ private slots:
           s->stop();
         }
       }
+      
+      for (auto &[s, loops] : customSounds) {
+        // Only stop repeating sounds
+        if (s->loopsRemaining() == QSoundEffect::Infinite) {
+          s->stop();
+        }
+      }
 
       // play sound
-      if (alert.sound != AudibleAlert::NONE) {
-        auto &[s, loops] = sounds[alert.sound];
-        s->setLoopCount(loops);
-        s->setVolume(volume);
-        s->play();
+      if (alert.sound != AudibleAlert::NONE && shouldPlaySound(a)) {
+        if (Params().getBool("CustomSounds")){
+          auto &[s, loops] = customSounds[alert.sound];
+          s->setLoopCount(loops);
+          s->setVolume(volume);
+          s->play();
+        }
+        else{
+          auto &[s, loops] = sounds[alert.sound];
+          s->setLoopCount(loops);
+          s->setVolume(volume);
+          s->play();
+        }
       }
     }
+  }
+  
+  bool shouldPlaySound(Alert a) {
+    bool silentEngageDisengage = Params().getBool("SilentEngageDisengage");
+    return !silentEngageDisengage || (a.sound != AudibleAlert::CHIME_ENGAGE && a.sound != AudibleAlert::CHIME_DISENGAGE);
   }
 
 private:
   Alert alert;
   float volume = Hardware::MIN_VOLUME;
-  QMap<AudibleAlert, QPair<QSoundEffect*, int>> sounds;
+  QMap<AudibleAlert, QPair<QSoundEffect*, int>> sounds, customSounds;
   SubMaster *sm;
 };
 

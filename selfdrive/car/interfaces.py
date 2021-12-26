@@ -25,41 +25,10 @@ ACCEL_MIN = -3.5
 
 # generic car and radar interfaces
 
-
-def set_sounds(sound_set):
-  dir_list = ["/data/openpilot/selfdrive/assets/sounds/", "/data/openpilot/selfdrive/assets/sounds_tici/"]
-  sound_sets = {
-    '_stock':["engaged", "disengaged", "warning_1", "warning_2", "error"],
-    '_cust':["engaged", "disengaged", "warning_1", "warning_2", "error"],
-    '_silent':["engaged","disengaged"]
-  }
-  ext = ".wav"
-  ss = sound_sets.get(sound_set)
-  if ss:
-    for d in dir_list:
-      for f in ss:
-        old_file = os.path.join(d,f) + sound_set + ext
-        new_file = os.path.join(d,f) + ext
-        if not os.path.exists(old_file):
-          continue
-        if os.path.exists(new_file):
-          if os.path.samefile(old_file, new_file):
-            continue
-          os.remove(new_file)
-        shutil.copy(old_file, new_file)
-
 class CarInterfaceBase():
   def __init__(self, CP, CarController, CarState):
     self.CP = CP
     self.VM = VehicleModel(CP)
-    
-    params = Params()
-    if params.get_bool("CustomSounds"):
-      set_sounds('_cust')
-    else:
-      set_sounds('_stock')
-    if params.get_bool("SilentEngageDisengage"):
-      set_sounds('_silent')
 
     self.frame = 0
     self.steer_warning = 0

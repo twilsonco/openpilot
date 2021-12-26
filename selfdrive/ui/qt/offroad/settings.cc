@@ -171,13 +171,13 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_brake_disc.png",
                                   this));
   toggles.append(new ParamControl("CustomSounds",
-                                  "Alternative sounds (tap me)",
-                                  "Uses alternative set of sound effects. Restart car twice for changes to apply.",
+                                  "Alternative sounds",
+                                  "Uses alternative set of sound effects.",
                                   "../assets/offroad/icon_custom_sounds.png",
                                   this));
   toggles.append(new ParamControl("SilentEngageDisengage",
-                                  "Silent engage/disengage (tap me)",
-                                  "Mute engage and disengage sounds. Restart car twice for changes to apply.",
+                                  "Silent engage/disengage",
+                                  "Mute engage and disengage sounds.",
                                   "../assets/offroad/icon_mute.png",
                                   this));
   toggles.append(new ParamControl("ShowDebugUI",
