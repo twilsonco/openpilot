@@ -194,6 +194,9 @@ class CarStateBase:
     self.right_blinker_cnt = 0
     self.left_blinker_prev = False
     self.right_blinker_prev = False
+    
+    self.speed_limit_active = False
+    self.speed_limit = 0.
 
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
     # R = 1e3

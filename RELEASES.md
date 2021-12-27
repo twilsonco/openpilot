@@ -1,3 +1,11 @@
+Version tw-0.8.9-3.6
+========================
+ * NEW: 0.8.12 new OP sounds as default sound set
+ * NEW: Alternate sounds now includes alternate sound for repeat warning (a.k.a. RSOD sound)
+ * IMPROVED: Custom sounds and silencing engage/disengage sound no longer requires restarting car
+ * IMPROVED: Suppress move-fast map-based speed limit notifications when pressing/depressing gas in one-pedal mode
+ * IMPROVED: Over-speed coasting properly uses move-fast speed limit
+
 Version tw-0.8.9-3.6 (2021-12-16)
 ========================
  * NEW: 0.8.12 new driving model (with higher max speed and fully integrated C3 training data!) and AGNOS 3
