@@ -404,6 +404,10 @@ class Controls:
         self.speed_limit_active = self.CI.CS._params.get_bool("SpeedLimitControl")
       
       speed_limit_active = self.speed_limit_active
+      self.CI.CS.speed_limit_active = (self.sm['longitudinalPlan'].speedLimitControlState == log.LongitudinalPlan.SpeedLimitControlState.active)
+      if self.CI.CS.speed_limit_active:
+        self.CI.CS.speed_limit = (self.sm['longitudinalPlan'].speedLimit + self.sm['longitudinalPlan'].speedLimitOffset) * 3.6 # convert to kph
+        
       if self.CI.CS.one_pedal_mode_engage_on_gas:
         self.CI.CS.one_pedal_mode_engage_on_gas = False
         self.CI.CS.one_pedal_v_cruise_kph_last = self.v_cruise_kph

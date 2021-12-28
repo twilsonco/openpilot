@@ -72,7 +72,7 @@ class CarState(CarStateBase):
     self.one_pedal_mode_engage_on_gas_min_speed = 1. * CV.MPH_TO_MS
     self.one_pedal_mode_max_set_speed = 5 * CV.MPH_TO_MS #  one pedal mode activates if cruise set at or below this speed
     self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [1., 4., 45., 85.]], [i * CV.MPH_TO_MS for i in [1., 4., 45., 85.]], [1.]]
-    self.one_pedal_mode_stop_apply_brake_v = [[80., 95., 115., 90.], [100., 160., 180., 120.], [250.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
+    self.one_pedal_mode_stop_apply_brake_v = [[80., 95., 115., 90.], [110., 170., 200., 140.], [280.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
     self.one_pedal_mode_last_gas_press_t = 0.
     self.one_pedal_mode_engaged_with_button = False
     self.one_pedal_mode_ramp_time_bp = [0., 0.5]
@@ -86,6 +86,7 @@ class CarState(CarStateBase):
     self.one_pedal_pause_steering_enabled = self._params.get_bool("OnePedalPauseBlinkerSteering")
     self.one_pedal_pitch_brake_adjust_bp = [-0.08, -0.005, 0.005, 0.10] # [radians] 0.12 radians of pitch ≈ 12% grade. No change within ±0.02
     self.one_pedal_pitch_brake_adjust_v = [.6, 1., 1., 1.5] # used to scale the value of apply_gas
+    self.one_pedal_angle_steers_cutoff_bp = [60., 270.] # [degrees] one pedal braking goes down one "level" as steering wheel is turned more than this angle
     
     self.drive_mode_button = False
     self.drive_mode_button_last = False

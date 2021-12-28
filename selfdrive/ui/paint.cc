@@ -1430,15 +1430,15 @@ static void ui_draw_vision(UIState *s) {
     ui_draw_vision_face(s);
     ui_draw_vision_brake(s);
     ui_draw_measures(s);
-    if (s->scene.end_to_end) {
-      draw_laneless_button(s);
-    }
-    if (s->scene.accel_mode_button_enabled){
-      draw_accel_mode_button(s);
-    }
   }
   if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL) {
     ui_draw_measures(s);
+  }
+  if (s->scene.end_to_end) {
+    draw_laneless_button(s);
+  }
+  if (s->scene.accel_mode_button_enabled){
+    draw_accel_mode_button(s);
   }
 }
 
