@@ -1,10 +1,12 @@
-Version tw-0.8.9-3.6
+Version tw-0.8.9-3.7 (2021-12-27)
 ========================
  * NEW: 0.8.12 new OP sounds as default sound set
  * NEW: Alternate sounds now includes alternate sound for repeat warning (a.k.a. RSOD sound)
- * IMPROVED: Custom sounds and silencing engage/disengage sound no longer requires restarting car
+ * IMPROVED: Draw acceleration mode and laneless mode buttons even if there's an alert, since you can change them while alerts are shown
+ * IMPROVED: Custom sounds and silencing engage/disengage take immediate effect
  * IMPROVED: Suppress move-fast map-based speed limit notifications when pressing/depressing gas in one-pedal mode
  * IMPROVED: Over-speed coasting properly uses move-fast speed limit
+ * IMPROVED: 0.8.12 comma3 volume limits
 
 Version tw-0.8.9-3.6 (2021-12-16)
 ========================
