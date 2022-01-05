@@ -163,22 +163,23 @@ class CarController():
         
       elif CS.coasting_enabled and lead_long_brake_lockout_factor < 1.:
         if CS.coasting_long_plan in ['cruise', 'limit'] and apply_gas < P.ZERO_GAS or apply_brake > 0.:
+          check_speed_ms = (CS.speed_limit if CS.speed_limit_active and CS.speed_limit < CS.v_cruise_kph else CS.v_cruise_kph) * CV.KPH_TO_MS
           if apply_brake > 0.:
-            if CS.speed_limit_active and CS.speed_limit < CS.v_cruise_kph:
-              over_speed_factor = interp(CS.vEgo / (CS.speed_limit * CV.KPH_TO_MS), CS.coasting_over_speed_vEgo_BP, [0., 1.]) if (CS.speed_limit > 0 and CS.coasting_brake_over_speed_enabled) else 0.
-            else:
-              over_speed_factor = interp(CS.vEgo / (CS.v_cruise_kph * CV.KPH_TO_MS), CS.coasting_over_speed_vEgo_BP, [0., 1.]) if (CS.v_cruise_kph > 0 and CS.coasting_brake_over_speed_enabled) else 0.
+            coasting_over_speed_vEgo_BP = [
+              interp(CS.vEgo, CS.coasting_over_speed_vEgo_BP_BP, CS.coasting_over_speed_vEgo_BP[0]),
+              interp(CS.vEgo, CS.coasting_over_speed_vEgo_BP_BP, CS.coasting_over_speed_vEgo_BP[1])
+            ]
+            over_speed_factor = interp(CS.vEgo / check_speed_ms, coasting_over_speed_vEgo_BP, [0., 1.]) if (check_speed_ms > 0. and CS.coasting_brake_over_speed_enabled) else 0.
             over_speed_brake = apply_brake * over_speed_factor
             apply_brake = max([apply_brake * lead_long_brake_lockout_factor, over_speed_brake])
           if apply_gas < P.ZERO_GAS and lead_long_gas_lockout_factor < 1.:
-            if CS.speed_limit_active and CS.speed_limit < CS.v_cruise_kph:
-              over_speed_factor = interp(CS.vEgo / (CS.speed_limit * CV.KPH_TO_MS), CS.coasting_over_speed_regen_vEgo_BP, [0., 1.]) if (CS.speed_limit > 0 and CS.coasting_brake_over_speed_enabled) else 0.
-            else:
-              over_speed_factor = interp(CS.vEgo / (CS.v_cruise_kph * CV.KPH_TO_MS), CS.coasting_over_speed_regen_vEgo_BP, [0., 1.]) if (CS.v_cruise_kph > 0 and CS.coasting_brake_over_speed_enabled) else 0.
-            
+            coasting_over_speed_vEgo_BP = [
+              interp(CS.vEgo, CS.coasting_over_speed_vEgo_BP_BP, CS.coasting_over_speed_regen_vEgo_BP[0]),
+              interp(CS.vEgo, CS.coasting_over_speed_vEgo_BP_BP, CS.coasting_over_speed_regen_vEgo_BP[1])
+            ]
+            over_speed_factor = interp(CS.vEgo / check_speed_ms, coasting_over_speed_vEgo_BP, [0., 1.]) if (check_speed_ms > 0 and CS.coasting_brake_over_speed_enabled) else 0.
             coast_apply_gas = int(round(float(P.ZERO_GAS) - over_speed_factor * (P.ZERO_GAS - apply_gas)))
             apply_gas = apply_gas * lead_long_gas_lockout_factor + coast_apply_gas * (1. - lead_long_gas_lockout_factor)
-          
       elif CS.no_friction_braking and lead_long_brake_lockout_factor < 1.:
         if CS.coasting_long_plan in ['cruise', 'limit'] and apply_brake > 0.:
           apply_brake *= lead_long_brake_lockout_factor
