@@ -65,16 +65,16 @@ def manager_init():
     ("BrakeIndicator", "1"),
     ("DisableOnroadUploads", "0"),
     ("MeasureNumSlots", "0"),
-    ("MeasureSlot00", "7"), # right column: percent grade
-    ("MeasureSlot01", "6"), # altitude
-    ("MeasureSlot02", "4"), # acceleration
-    ("MeasureSlot03", "1"), # steering torque
-    ("MeasureSlot04", "3"), # engine rpm
-    ("MeasureSlot05", "11"), # lead dist [s]
-    ("MeasureSlot06", "10"), # lead dist [m]
-    ("MeasureSlot07", "15"), # lead rel spd [mph]
-    ("MeasureSlot08", "16"),# lead spd [mph]
-    ("MeasureSlot09", "9"),# dist cost
+    ("MeasureSlot00", "12"), # right column: percent grade
+    ("MeasureSlot01", "10"), # altitude
+    ("MeasureSlot02", "2"), # steering torque
+    ("MeasureSlot03", "3"), # engine rpm
+    ("MeasureSlot04", "7"), # engine coolant temperature
+    ("MeasureSlot05", "16"), # lead dist [s]
+    ("MeasureSlot06", "15"), # lead dist [m]
+    ("MeasureSlot07", "20"), # lead rel spd [mph]
+    ("MeasureSlot08", "21"),# lead spd [mph]
+    ("MeasureSlot09", "23"),# device cpu percent and temp
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
