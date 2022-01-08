@@ -41,11 +41,10 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpV = [0.1]
     ret.longitudinalTuning.kiV = [0.0]
     ret.stopAccel = 0.0
-    ret.startAccel = 0.0
 
     ret.longitudinalActuatorDelayUpperBound = 1.0 # s
 
-    if candidate in [CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022]:
+    if candidate in [CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022]:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3982. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.766
@@ -347,8 +346,9 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
-                               c.cruiseControl.cancel, c.hudControl.visualAlert, c.hudControl.setSpeed, c.hudControl.leftLaneVisible,
-                               c.hudControl.rightLaneVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
+    hud_control = c.hudControl
+    ret = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
+                         c.cruiseControl.cancel, hud_control.visualAlert, hud_control.setSpeed, hud_control.leftLaneVisible,
+                         hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart)
     self.frame += 1
-    return can_sends
+    return ret

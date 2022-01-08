@@ -25,7 +25,6 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kiBP = [0]
     ret.longitudinalTuning.kiV = [0]
     ret.stopAccel = 0.0
-    ret.startAccel = 0.0
     ret.longitudinalActuatorDelayUpperBound = 0.5 # s
     ret.radarTimeStep = (1.0 / 8) # 8Hz
 
@@ -71,6 +70,6 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators, c.cruiseControl.cancel)
+    ret = self.CC.update(c.enabled, self.CS, self.frame, c.actuators, c.cruiseControl.cancel)
     self.frame += 1
-    return can_sends
+    return ret

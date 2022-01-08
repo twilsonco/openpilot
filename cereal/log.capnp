@@ -1321,6 +1321,7 @@ struct LiveParametersData {
   angleOffsetAverageStd @11 :Float32;
   stiffnessFactorStd @12 :Float32;
   steerRatioStd @13 :Float32;
+  roll @14 :Float32;
 }
 
 struct LiveMapDataDEPRECATED {
@@ -1481,6 +1482,7 @@ struct Event {
     clocks @35 :Clocks;
     deviceState @6 :DeviceState;
     logMessage @18 :Text;
+    errorLogMessage @85 :Text;
 
     # navigation
     navInstruction @82 :NavInstruction;

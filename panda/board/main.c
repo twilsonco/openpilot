@@ -159,7 +159,7 @@ bool is_car_safety_mode(uint16_t mode) {
 // ***************************** USB port *****************************
 
 int get_health_pkt(void *dat) {
-  COMPILE_TIME_ASSERT(sizeof(struct health_t) <= MAX_RESP_LEN);
+  COMPILE_TIME_ASSERT(sizeof(struct health_t) <= USBPACKET_MAX_SIZE);
   struct health_t * health = (struct health_t*)dat;
 
   health->uptime_pkt = uptime_cnt;
@@ -198,8 +198,7 @@ int get_rtc_pkt(void *dat) {
 
 
 // send on serial, first byte to select the ring
-void usb_cb_ep2_out(void *usbdata, int len, bool hardwired) {
-  UNUSED(hardwired);
+void usb_cb_ep2_out(void *usbdata, int len) {
   uint8_t *usbdata8 = (uint8_t *)usbdata;
   uart_ring *ur = get_ring_by_number(usbdata8[0]);
   if ((len != 0) && (ur != NULL)) {
@@ -224,7 +223,7 @@ void usb_cb_enumeration_complete(void) {
   is_enumerated = 1;
 }
 
-int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) {
+int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp) {
   unsigned int resp_len = 0;
   uart_ring *ur = NULL;
   timestamp_t t;
@@ -320,16 +319,13 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
     // **** 0xd1: enter bootloader mode
     case 0xd1:
       // this allows reflashing of the bootstub
-      // so it's blocked over wifi
       switch (setup->b.wValue.w) {
         case 0:
           // only allow bootloader entry on debug builds
           #ifdef ALLOW_DEBUG
-            if (hardwired) {
-              puts("-> entering bootloader\n");
-              enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
-              NVIC_SystemReset();
-            }
+            puts("-> entering bootloader\n");
+            enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
+            NVIC_SystemReset();
           #endif
           break;
         case 1:
@@ -366,7 +362,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
       break;
     // **** 0xd6: get version
     case 0xd6:
-      COMPILE_TIME_ASSERT(sizeof(gitversion) <= MAX_RESP_LEN);
+      COMPILE_TIME_ASSERT(sizeof(gitversion) <= USBPACKET_MAX_SIZE);
       (void)memcpy(resp, gitversion, sizeof(gitversion));
       resp_len = sizeof(gitversion) - 1U;
       break;
@@ -424,13 +420,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
 
     // **** 0xdc: set safety mode
     case 0xdc:
-      // Blocked over WiFi.
-      // Allow SILENT, NOOUTPUT and ELM security mode to be set over wifi.
-      if (hardwired || (setup->b.wValue.w == SAFETY_SILENT) ||
-                       (setup->b.wValue.w == SAFETY_NOOUTPUT) ||
-                       (setup->b.wValue.w == SAFETY_ELM327)) {
-        set_safety_mode(setup->b.wValue.w, (uint16_t) setup->b.wIndex.w);
-      }
+      set_safety_mode(setup->b.wValue.w, (uint16_t) setup->b.wIndex.w);
       break;
     // **** 0xdd: get healthpacket and CANPacket versions
     case 0xdd:
@@ -440,7 +430,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
       break;
     // **** 0xde: set can bitrate
     case 0xde:
-      if (setup->b.wValue.w < BUS_MAX) {
+      if (setup->b.wValue.w < BUS_CNT) {
         // TODO: add sanity check, ideally check if value is correct(from array of correct values)
         bus_config[setup->b.wValue.w].can_speed = setup->b.wIndex.w;
         bool ret = can_init(CAN_NUM_FROM_BUS_NUM(setup->b.wValue.w));
@@ -467,7 +457,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
       }
 
       // read
-      while ((resp_len < MIN(setup->b.wLength.w, MAX_RESP_LEN)) &&
+      while ((resp_len < MIN(setup->b.wLength.w, USBPACKET_MAX_SIZE)) &&
                          getc(ur, (char*)&resp[resp_len])) {
         ++resp_len;
       }
@@ -541,7 +531,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
       if (setup->b.wValue.w == 0xFFFFU) {
         puts("Clearing CAN Rx queue\n");
         can_clear(&can_rx_q);
-      } else if (setup->b.wValue.w < BUS_MAX) {
+      } else if (setup->b.wValue.w < BUS_CNT) {
         puts("Clearing CAN Tx queue\n");
         can_clear(can_queues[setup->b.wValue.w]);
       } else {
@@ -564,6 +554,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
         heartbeat_counter = 0U;
         heartbeat_lost = false;
         heartbeat_disabled = false;
+        heartbeat_engaged = (setup->b.wValue.w == 1U);
         break;
       }
     // **** 0xf4: k-line/l-line 5 baud initialization
@@ -597,7 +588,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
 #endif
     // **** 0xde: set CAN FD data bitrate
     case 0xf9:
-      if (setup->b.wValue.w < CAN_MAX) {
+      if (setup->b.wValue.w < CAN_CNT) {
         // TODO: add sanity check, ideally check if value is correct(from array of correct values)
         bus_config[setup->b.wValue.w].can_data_speed = setup->b.wIndex.w;
         bus_config[setup->b.wValue.w].canfd_enabled = (setup->b.wIndex.w >= bus_config[setup->b.wValue.w].can_speed) ? true : false;
@@ -608,7 +599,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
       break;
     // **** 0xfa: check if CAN FD and BRS are enabled
     case 0xfa:
-      if (setup->b.wValue.w < CAN_MAX) {
+      if (setup->b.wValue.w < CAN_CNT) {
         resp[0] =  bus_config[setup->b.wValue.w].canfd_enabled;
         resp[1] = bus_config[setup->b.wValue.w].brs_enabled;
         resp_len = 2;
@@ -691,6 +682,16 @@ void tick_handler(void) {
         controls_allowed_countdown -= 1U;
       } else {
 
+      }
+
+      // exit controls allowed if unused by openpilot for a few seconds
+      if (controls_allowed && !heartbeat_engaged) {
+        heartbeat_engaged_mismatches += 1U;
+        if (heartbeat_engaged_mismatches >= 3U) {
+          controls_allowed = 0U;
+        }
+      } else {
+        heartbeat_engaged_mismatches = 0U;
       }
 
       if (!heartbeat_disabled) {
