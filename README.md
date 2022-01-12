@@ -26,12 +26,19 @@
 # Fork Details
 ------
 
-This fork exists to improve OP performance and convenience for GM cars, specifically the Chevy Volt, because the kegman fork wouldn't run on Comma Three.
-The result is the best volt driving experience there's ever been.
+> This fork exists to improve OP performance and convenience for GM cars, specifically the Chevy Volt.
+> I started because the kegman fork wouldn't run on Comma Three, and the result is the best Volt driving experience in the known universe.
 
-Most of the features in this fork are my original implementations, often inspired and always informed by the work of others in the community. Pleae provide any positive/negative feedback on the comma/openpilot/retropilot Discord servers, especially if you'd like your issues addressed.
+> While most of the features in this fork are my original implementations, none of it would have been possible without the work of others in the community, which is often my starting point or inspiration, and nearly always a reference.
+> I reference code/concepts to their original authors to the best of my knowledge.
+> Feel free to let me know if I have missed or mistaken a reference.
 
-Running on move-fast fork of openpilot, which adds:
+> **Pleae provide any positive/negative feedback on Patreon or the comma/openpilot/retropilot Discord servers, especially if you'd like your issues addressed.**
+
+#### Current Fork Features [✅ = optional via toggle]:
+-----
+
+**Running on move-fast fork of openpilot v0.8.9**, which adds:
 
 * Vision and/or map-based slowing down for curves
 * Map-based automatic changing of speed limit (with optional offset)
@@ -40,8 +47,7 @@ Running on move-fast fork of openpilot, which adds:
 * Hands on wheel monitoring
 * Disable disengage when gas pressed
 
-#### Current Fork Features [✅ = optional via toggle]:
------
+**Additional fork features:**
 
 - [x] Latest openpilot 0.8.12 lateral and 0.8.10 driver monitoring models
 - [x] [Comma3] Latest AGNOS3 OS
@@ -51,14 +57,15 @@ Running on move-fast fork of openpilot, which adds:
 - [x] [GM] Toggle steering with LKAS button (wheel color changes to indicate disengagement)
 - [x] [GM] One-pedal driving a.k.a. autosteering only a.k.a. toggle longitudinal control: using regen (volt) and/or light/moderate/heavy braking, control OP all the way to a stop, without a lead, and without disengaging, with just the gas pedal (see below)
 - [x] [✅] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#new-dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only. must enable "Disable use of lanelines" for button to appear* (ported from sunnyhaibin)
-- [x] [✅] Normal/sport/eco/creep acceleration modes [cycle with on-screen button] (Think of creep mode as, for example, *mountain highway construction traffic* mode)
+- [x] [✅] Normal/sport/eco/creep acceleration modes [cycle with on-screen button] (Think of creep mode as, for example, *mountain highway construction traffic* mode) (adapted from kegman implementation)
 - [x] [✅] 1/5 mph changes for tap/hold of the inc/dec buttons (ported from Spector56)
 - [x] [✅] 3mph cruise speed offset: speed will be 23/28/33/38/etc.
 - [x] [✅] Alternate sound effect set
 - [x] [✅] Mute engage and disengage sounds
 - [x] [✅] Disable onroad uploads: for use with data-limited wifi hotspots. Reduces data use from 400MB/hour or 22MB/mile (based on 30 minute low-speed trip) down to 25MB/hour or 0.4MB/mile (based on 5 hour trip at 84mph; i.e. not a perfect comparison to the other trip)
+    * Don't bother if you subscribe to [comma Prime](https://comma.ai/prime), which has unlimited data, and a host of other benefits! Don't delay; subscribe today!!
     * iPhone users can use [this shortcut](https://www.icloud.com/shortcuts/7f3c7e98f95d4f85a9bad939aa069fcd) to instantly open the personal hotspot page in the Settings app in order to enable personal hotspot for your comma device to connect.
-      * Combined with an Automation to run the shortcut when you enter CarPlay, or when you connect to your car's Bluetooth, can make this quite convenient.
+      * Combined with an Automation to run the shortcut when you enter CarPlay, or when you connect to your car's Bluetooth, this can be a pretty convenience setup.
     * Android users could try the [Hot Spot Starter](https://play.google.com/store/apps/details?id=de.thjunge11.autohotspot) app, but I can't recommend it as I haven't tried it, so maybe [look for something else if it doesn't work](https://forum.xda-developers.com/t/enable-hotspot-automatically-when-i-enter-the-car.3915107/)
 - [x] [✅] Coasting: OP will still brake behind a lead car and to slow down for curves, but will not apply engine/regen/friction brakes in order to keep the set speed (by user or map speed limit)
     * Toggle coasting while driving by tapping the max speed indicator
@@ -67,7 +74,7 @@ Running on move-fast fork of openpilot, which adds:
 - [x] [✅] Brake when 15% over set speed when coasting enabled
 - [x] [✅] Nudgeless lane change: OP will start lane change automatically in direction of blinker after blinker on for 3s
 - [x] [✅] Friction braking indicator
-- [x] **Customizable, dynamic vehicle/device metrics**
+- [x] **Customizable, dynamic vehicle/device metrics** (adapted from kegman)
     * To use:
         * Tap the current speed on the openpilot display to cycle the number of metrics
         * Tap any metric to cycle its content (sorry for all the god-forsaken tapping, a better metric display with vehicle, following, position, and device widgets is a WIP)
@@ -133,7 +140,7 @@ Running on move-fast fork of openpilot, which adds:
 ### Supported Hardware
 ------
 
-This fork is developed and used on a Comma Three in a 2018 Chevy Volt, and is also *known* to work on Comma Two and Comma Zero, and in 2017 Volt and 2018 Acadia.
+This fork is developed and used on a Comma Three in a 2018 Chevy Volt, and is also *known* to work on Comma Two and Comma Zero, and in 2017 Volt, 2018 Acadia, and supported Escalades.
 
 ### Installation Instructions
 ------
