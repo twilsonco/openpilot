@@ -26,10 +26,17 @@
 # Fork Details
 ------
 
-This fork exists to improve OP performance and convenience for GM cars, specifically the Chevy Volt, because the kegman fork wouldn't run on Comma Three.
-The result is the best volt driving experience there's ever been.
+> This fork exists to improve OP performance and convenience for GM cars, specifically the Chevy Volt.
+> I started because the kegman fork wouldn't run on Comma Three, and the result is the best Volt driving experience in the known universe.
 
-Most of the features in this fork are my original implementations, often inspired and always informed by the work of others in the community. Pleae provide any positive/negative feedback on the comma/openpilot/retropilot Discord servers, especially if you'd like your issues addressed.
+> While most of the features in this fork are my original implementations, none of it would have been possible without the work of others in the community, which is often my starting point or inspiration, and nearly always a reference.
+> I reference code/concepts to their original authors to the best of my knowledge.
+> Feel free to let me know if I have missed or mistaken a reference.
+
+> **Pleae provide any positive/negative feedback on Patreon or the comma/openpilot/retropilot Discord servers, especially if you'd like your issues addressed.**
+
+#### Current Fork Features [✅ = optional via toggle]:
+-----
 
 **Running on move-fast fork of openpilot v0.8.9**, which adds:
 
@@ -40,8 +47,7 @@ Most of the features in this fork are my original implementations, often inspire
 * Hands on wheel monitoring
 * Disable disengage when gas pressed
 
-#### Current Fork Features [✅ = optional via toggle]:
------
+**Additional fork features:**
 
 - [x] Latest openpilot 0.8.12 lateral and 0.8.10 driver monitoring models
 - [x] [Comma3] Latest AGNOS3 OS
