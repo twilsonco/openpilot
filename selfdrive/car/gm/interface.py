@@ -203,7 +203,7 @@ class CarInterface(CarInterfaceBase):
       
     if self.CS.autohold_activated:
       self.CS.autohold_last_t = self.CS._t
-    if self.CS.pcm_acc_status == AccState.FAULTED and t - self.CS.sessionInitTime > 10.0 and self.CS._t - self.CS.autohold_last_t > 1.0:
+    if self.CS.pcm_acc_status == AccState.FAULTED and self.CS._t - self.CS.autohold_last_t > 1.0:
       events.add(EventName.accFaulted)
 
     # handle button presses
