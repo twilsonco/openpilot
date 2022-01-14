@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from math import fabs
+from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.car.gm.values import CAR, CruiseButtons, \
                                     AccState, CarControllerParams
@@ -199,6 +200,11 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.accFaulted)
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
+      
+    if self.CS.autohold_activated:
+      self.CS.autohold_last_t = self.CS._t
+    if self.CS.pcm_acc_status == AccState.FAULTED and t - self.CS.sessionInitTime > 10.0 and self.CS._t - self.CS.autohold_last_t > 1.0:
+      events.add(EventName.accFaulted)
 
     # handle button presses
     for b in ret.buttonEvents:
@@ -234,13 +240,13 @@ class CarInterface(CarInterfaceBase):
     self.frame += 1
     
     # Release Auto Hold and creep smoothly when regenpaddle pressed
-    if self.CS.regenPaddlePressed and self.CS.autoHold:
-      self.CS.autoHoldActive = False
+    if self.CS.regen_paddle_pressed and self.CS.autohold_enabled:
+      self.CS.autohold_active = False
 
-    if self.CS.autoHold and not self.CS.autoHoldActive and not self.CS.regenPaddlePressed:
+    if self.CS.autohold_enabled and not self.CS.autohold_active and not self.CS.regen_paddle_pressed:
       if self.CS.out.vEgo > 0.02:
-        self.CS.autoHoldActive = True
+        self.CS.autohold_active = True
       elif self.CS.out.vEgo < 0.01 and self.CS.out.brakePressed:
-        self.CS.autoHoldActive = True
+        self.CS.autohold_active = True
     
     return ret
