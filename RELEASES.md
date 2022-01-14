@@ -2,6 +2,8 @@ Version tw-0.8.9-3.8 (2022-01-05)
 ========================
  * UNIMPROVED: Revert to "stock" behavior for disengaging move-fast speed limit control using cruise +/- buttons
  * IMPROVED: Only reset speed while OP engaged using "set" button if 10+ mph over current set speed
+ * IMPROVED: Slightly chiller eco acceleration profile
+ * IMPROVED: [Volt] reintroduce integral gain to lateral controller; better centering under constant force (e.g. slanted road or prevailing crosswind) and significantly better following of planned path on unmarked/covered roads
 
 Version tw-0.8.9-3.7 (2021-12-27)
 ========================
