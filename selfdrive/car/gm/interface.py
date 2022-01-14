@@ -38,9 +38,9 @@ _A_MIN_V_STOCK_FACTOR_BP = [-5. * CV.MPH_TO_MS, 1. * CV.MPH_TO_MS]
 _A_MIN_V_STOCK_FACTOR_V = [0., 1.]
 
 # increase/decrease max accel based on vehicle pitch
-INCLINE_ACCEL_OFFSET = 0.18 # [m/s^2] desired acceleration must be at least this much more than g acceleration
-INCLINE_ACCEL_SPEED_OFFSET_BP = [i * CV.MPH_TO_MS for i in [25., 45]] # [mph] lookup speeds for additional offset
-INCLINE_ACCEL_SPEED_OFFSET_V = [0., 0.1] # [m/s^2] additional offset based on speed
+INCLINE_ACCEL_OFFSET = 0.1 # [m/s^2] desired acceleration must be at least this much more than g acceleration
+INCLINE_ACCEL_SCALE_BP = [i * CV.MPH_TO_MS for i in [25., 45]] # [mph] lookup speeds for additional offset
+INCLINE_ACCEL_SCALE_V = [0.2, 0.05] # [m/s^2] additional scale factor to change how incline affects accel based on speed
 DECLINE_ACCEL_FACTOR = 0.5 # this factor of g accel is used to lower max accel limit so you don't floor it downhill
 DECLINE_ACCEL_MIN = 0.2 # [m/s^2] don't decrease acceleration limit due to decline below this total value
 
@@ -73,7 +73,7 @@ class CarInterface(CarInterfaceBase):
     # decrease/increase max accel based on vehicle pitch
     g_accel = 9.81 * sin(CI.CS.pitch)
     if g_accel > 0.:
-      accel_limits[1] = max(accel_limits[1], g_accel + INCLINE_ACCEL_OFFSET + interp(current_speed, INCLINE_ACCEL_SPEED_OFFSET_BP, INCLINE_ACCEL_SPEED_OFFSET_V))
+      accel_limits[1] = max(accel_limits[1], INCLINE_ACCEL_OFFSET + g_accel * (1. + interp(current_speed, INCLINE_ACCEL_SCALE_BP, INCLINE_ACCEL_SCALE_V)))
     else:
       accel_limits[1] = max(DECLINE_ACCEL_MIN, accel_limits[1] + g_accel * DECLINE_ACCEL_FACTOR)
       
@@ -151,8 +151,8 @@ class CarInterface(CarInterfaceBase):
 
       ret.lateralTuning.pid.kpBP = [0., 40.]
       ret.lateralTuning.pid.kpV = [0., 0.17]
-      ret.lateralTuning.pid.kiBP = [0.]
-      ret.lateralTuning.pid.kiV = [0.]
+      ret.lateralTuning.pid.kiBP = [i * CV.MPH_TO_MS for i in [0., 15., 55., 90.]]
+      ret.lateralTuning.pid.kiV = [0., .02, .01, .005]
       ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
       ret.steerActuatorDelay = 0.2
 

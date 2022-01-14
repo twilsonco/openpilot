@@ -26,14 +26,14 @@ class CarControllerParams():
     self.ZERO_GAS = 2048
     MAX_BRAKE = 350             # Should be around 3.5m/s^2, including regen
 
-    self.ACCEL_MAX = 2.9 # m/s^2 (max accel of sport profile in longitudinal_planner.py)
+    self.ACCEL_MAX = 2.4 # m/s^2 (max accel of sport profile in longitudinal_planner.py)
 
     # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
     # perform the closed loop control, and might need some
     # to apply some more braking if we're on a downhill slope.
     # Our controller should still keep the 2 second average above
     # -3.5 m/s^2 as per planner limits
-    self.ACCEL_MIN = -4.0 # m/s^2
+    self.ACCEL_MIN = -3.5 # m/s^2
 
     self.MAX_ACC_REGEN = 1404  # ACC Regen braking is slightly less powerful than max regen paddle
     self.GAS_LOOKUP_BP = [-1.0, 0., self.ACCEL_MAX]
