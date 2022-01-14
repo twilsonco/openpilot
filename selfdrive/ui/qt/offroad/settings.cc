@@ -71,6 +71,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
       "../assets/offroad/icon_road.png",
     },
+    {
+      "GMAutoHold",
+      "[GM] Enable AutoHold",
+      "Holds brakes (\"Brake hold\") automatically after coming to a complete stop, even when OP is disengaged.",
+      "../assets/offroad/icon_gm_autohold.png",
+    },
 #ifdef ENABLE_MAPS
     {
       "NavSettingTime24h",

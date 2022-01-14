@@ -1,5 +1,6 @@
 from cereal import car
 from common.numpy_fast import mean
+from common.params import Params
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
@@ -13,6 +14,11 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
     self.lka_steering_cmd_counter = 0
+
+    self.autoHold = Params().get_bool("GMAutoHold")
+    self.autoHoldActive = False
+    self.autoHoldActivated = False
+    self.regenPaddlePressed = False
 
   def update(self, pt_cp, loopback_cp):
     ret = car.CarState.new_message()
@@ -35,6 +41,7 @@ class CarState(CarStateBase):
     # Brake pedal's potentiometer returns near-zero reading even when pedal is not pressed.
     if ret.brake < 10/0xd0:
       ret.brake = 0.
+    ret.brakeHoldActive = self.autoHoldActivated
 
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
     ret.gasPressed = ret.gas > 1e-5
@@ -70,7 +77,8 @@ class CarState(CarStateBase):
     ret.brakePressed = ret.brake > 1e-5
     # Regen braking is braking
     if self.car_fingerprint == CAR.VOLT:
-      ret.brakePressed = ret.brakePressed or bool(pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"])
+      self.regenPaddlePressed = bool(pt_cp.vl["EBCMRegenPaddle"]['RegenPaddle'])
+      ret.brakePressed = ret.brakePressed or self.regenPaddlePressed
 
     ret.cruiseState.enabled = self.pcm_acc_status != AccState.OFF
     ret.cruiseState.standstill = self.pcm_acc_status == AccState.STANDSTILL
