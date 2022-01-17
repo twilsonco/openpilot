@@ -163,7 +163,7 @@ class CarController():
             if CS.one_pedal_mode_ramp_mode_last != CS.one_pedal_brake_mode:
               # brake mode changed, so need to calculate new step based on the old and new modes
               old_apply_brake = interp(CS.vEgo, CS.one_pedal_mode_stop_apply_brake_bp[CS.one_pedal_mode_ramp_mode_last], CS.one_pedal_mode_stop_apply_brake_v[CS.one_pedal_mode_ramp_mode_last])
-              CS.one_pedal_mode_ramp_time_step = (one_pedal_apply_brake - old_apply_brake) / self.one_pedal_mode_ramp_duration
+              CS.one_pedal_mode_ramp_time_step = (one_pedal_apply_brake - old_apply_brake) / CS.one_pedal_mode_ramp_duration
             if CS.one_pedal_mode_apply_brake < one_pedal_apply_brake:
               if CS.one_pedal_mode_ramp_time_step < 0.:
                 CS.one_pedal_mode_ramp_time_step *= -1.
