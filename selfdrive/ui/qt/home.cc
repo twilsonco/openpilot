@@ -138,13 +138,18 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   
   // presses of maxspeed to toggle coasting
   if (QUIState::ui_state.scene.started 
-    && QUIState::ui_state.scene.maxspeed_touch_rect.ptInRect(e->x(), e->y())){
+    && QUIState::ui_state.scene.maxspeed_touch_rect.ptInRect(e->x(), e->y())
+    && QUIState::ui_state.scene.one_pedal_fade <= 0.)
+  {
     Params().putBool("Coasting", !Params().getBool("Coasting"));
     return;
   }
   
   // one-pedal mode button
-  if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.one_pedal_touch_rect.ptInRect(e->x(), e->y())){
+  if (QUIState::ui_state.scene.started 
+    && QUIState::ui_state.scene.one_pedal_touch_rect.ptInRect(e->x(), e->y())
+    && QUIState::ui_state.scene.one_pedal_fade > 0.)
+  {
     Params().putBool("OnePedalModeEngageOnGas", !Params().getBool("OnePedalModeEngageOnGas"));
     return;
   }
