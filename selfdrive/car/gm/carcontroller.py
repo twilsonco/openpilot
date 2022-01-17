@@ -156,6 +156,29 @@ class CarController():
           one_pedal_apply_brake *= interp(time_since_brake, CS.one_pedal_mode_ramp_time_bp, CS.one_pedal_mode_ramp_time_v) if CS.one_pedal_brake_mode < 2 else 1.
         else:
           one_pedal_apply_brake = 0.
+        
+        # ramp braking
+        if CS.one_pedal_mode_active_last and time_since_brake > CS.one_pedal_mode_ramp_time_bp[-1]:
+          if CS.one_pedal_mode_apply_brake != one_pedal_apply_brake:
+            if CS.one_pedal_mode_ramp_mode_last != CS.one_pedal_brake_mode:
+              # brake mode changed, so need to calculate new step based on the old and new modes
+              old_apply_brake = interp(CS.vEgo, CS.one_pedal_mode_stop_apply_brake_bp[CS.one_pedal_mode_ramp_mode_last], CS.one_pedal_mode_stop_apply_brake_v[CS.one_pedal_mode_ramp_mode_last])
+              CS.one_pedal_mode_ramp_time_step = (one_pedal_apply_brake - old_apply_brake) / self.one_pedal_mode_ramp_duration
+            if CS.one_pedal_mode_apply_brake < one_pedal_apply_brake:
+              if CS.one_pedal_mode_ramp_time_step < 0.:
+                CS.one_pedal_mode_ramp_time_step *= -1.
+              CS.one_pedal_mode_apply_brake = max(one_pedal_apply_brake, CS.one_pedal_mode_apply_brake + CS.one_pedal_mode_ramp_time_step * (t - CS.one_pedal_mode_ramp_t_last))
+            else:
+              if CS.one_pedal_mode_ramp_time_step > 0.:
+                CS.one_pedal_mode_ramp_time_step *= -1.
+              CS.one_pedal_mode_apply_brake = min(one_pedal_apply_brake, CS.one_pedal_mode_apply_brake + CS.one_pedal_mode_ramp_time_step * (t - CS.one_pedal_mode_ramp_t_last))
+            one_pedal_apply_brake = CS.one_pedal_mode_apply_brake
+        else:
+          CS.one_pedal_mode_apply_brake = one_pedal_apply_brake
+          CS.one_pedal_mode_active_last = True
+        CS.one_pedal_mode_ramp_t_last = t
+        CS.one_pedal_mode_ramp_mode_last = CS.one_pedal_brake_mode
+        
         if CS.one_pedal_mode_op_braking_allowed and CS.coasting_long_plan not in ['cruise', 'limit']:
           apply_brake = max(one_pedal_apply_brake, apply_brake * lead_long_brake_lockout_factor)
         else:
@@ -185,7 +208,8 @@ class CarController():
           apply_brake *= lead_long_brake_lockout_factor
       apply_gas = int(round(apply_gas))
       apply_brake = int(round(apply_brake))
-      
+
+      CS.one_pedal_mode_active_last = CS.one_pedal_mode_active
 
       if do_log:
         f.write(",".join([str(i) for i in [
