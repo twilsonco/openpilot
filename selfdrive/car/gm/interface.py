@@ -145,6 +145,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
+      ret.steerRateCost = 0.7
       tire_stiffness_factor = 0.469 # Stock Michelin Energy Saver A/S, LiveParameters
       ret.steerRatioRear = 0.
       ret.centerToFront = 0.45 * ret.wheelbase # from Volt Gen 1
@@ -157,7 +158,8 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
 
       # Only tuned to reduce oscillations. TODO.
-      ret.longitudinalTuning.kpV = [1.7, 1.3]
+      ret.longitudinalTuning.kpV = [1.6, 1.25]
+      ret.longitudinalTuning.kiV = [0.25]
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
