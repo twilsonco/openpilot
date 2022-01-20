@@ -143,6 +143,7 @@ class CarController():
       
       if (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active):
         apply_gas = apply_gas * lead_long_gas_lockout_factor + float(P.MAX_ACC_REGEN) * (1. - lead_long_gas_lockout_factor)
+        time_since_brake = t - CS.one_pedal_mode_last_gas_press_t
         if CS.one_pedal_mode_active:
           if abs(CS.angle_steers) > CS.one_pedal_angle_steers_cutoff_bp[0]:
             one_pedal_apply_brake = interp(CS.vEgo, CS.one_pedal_mode_stop_apply_brake_bp[CS.one_pedal_brake_mode], CS.one_pedal_mode_stop_apply_brake_v[CS.one_pedal_brake_mode])
@@ -152,10 +153,10 @@ class CarController():
             one_pedal_apply_brake = interp(CS.vEgo, CS.one_pedal_mode_stop_apply_brake_bp[CS.one_pedal_brake_mode], CS.one_pedal_mode_stop_apply_brake_v[CS.one_pedal_brake_mode])
           one_pedal_apply_brake *= interp(CS.pitch, CS.one_pedal_pitch_brake_adjust_bp, CS.one_pedal_pitch_brake_adjust_v[CS.one_pedal_brake_mode])
           one_pedal_apply_brake = min(one_pedal_apply_brake, float(P.BRAKE_LOOKUP_V[0]))
-          time_since_brake = t - CS.one_pedal_mode_last_gas_press_t
           one_pedal_apply_brake *= interp(time_since_brake, CS.one_pedal_mode_ramp_time_bp, CS.one_pedal_mode_ramp_time_v) if CS.one_pedal_brake_mode < 2 else 1.
         else:
           one_pedal_apply_brake = 0.
+          
         
         # ramp braking
         if CS.one_pedal_mode_active_last and time_since_brake > CS.one_pedal_mode_ramp_time_bp[-1]:
