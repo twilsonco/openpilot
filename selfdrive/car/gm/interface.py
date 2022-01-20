@@ -24,7 +24,7 @@ _A_CRUISE_MIN_BP = [0., 5., 10., 20., 55.]
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
 _A_CRUISE_MAX_V_CREEP = [0.22, .22, .2, .2, .2]
-_A_CRUISE_MAX_V_ECO = [0.8, 0.7, 0.5, 0.4, 0.3]
+_A_CRUISE_MAX_V_ECO = [0.8, 0.7, 0.55, 0.4, 0.3]
 _A_CRUISE_MAX_V = [1.2, 1.4, 1.2, 0.9, 0.7]
 _A_CRUISE_MAX_V_SPORT = [2.2, 2.4, 2.2, 1.1, 0.9]
 _A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.8, 1.6, .9, .7]
