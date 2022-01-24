@@ -10,48 +10,33 @@ from selfdrive.car.gm.values import CAR, CruiseButtons, \
                                     AccState, CarControllerParams
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.controls.lib.longitudinal_planner import _A_CRUISE_MIN_V_SPORT, \
+                                                        _A_CRUISE_MIN_V_FOLLOWING, \
+                                                        _A_CRUISE_MIN_V, \
+                                                        _A_CRUISE_MIN_V_ECO, \
+                                                        _A_CRUISE_MIN_BP, \
+                                                        _A_CRUISE_MAX_V_CREEP, \
+                                                        _A_CRUISE_MAX_V_ECO, \
+                                                        _A_CRUISE_MAX_V, \
+                                                        _A_CRUISE_MAX_V_SPORT, \
+                                                        _A_CRUISE_MAX_V_FOLLOWING, \
+                                                        _A_CRUISE_MAX_BP, \
+                                                        _A_CRUISE_MIN_V_MODE_LIST, \
+                                                        _A_CRUISE_MAX_V_MODE_LIST, \
+                                                        calc_cruise_accel_limits
 
 FOLLOW_AGGRESSION = 0.15 # (Acceleration/Decel aggression) Lower is more aggressive
-
-# lookup tables VS speed to determine min and max accels in cruise
-# make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MIN_V_SPORT = [-2.0, -2.2, -2.0, -1.5, -1.0]
-_A_CRUISE_MIN_V_FOLLOWING = [-3.0, -2.5, -2.0, -1.5, -1.0]
-_A_CRUISE_MIN_V = [-1.0, -1.2, -1.0, -0.7, -0.5]
-_A_CRUISE_MIN_V_ECO = [-0.7, -0.8, -0.7, -0.6, -0.5]
-_A_CRUISE_MIN_BP = [0., 5., 10., 20., 55.]
-
-# need fast accel at very low speed for stop and go
-# make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V_CREEP = [0.22, .22, .2, .2, .2]
-_A_CRUISE_MAX_V_ECO = [0.6, 0.6, 0.6, 0.4, 0.3]
-_A_CRUISE_MAX_V = [1.2, 1.4, 1.2, 0.9, 0.7]
-_A_CRUISE_MAX_V_SPORT = [2.2, 2.4, 2.2, 1.1, 0.9]
-_A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.8, 1.6, .9, .7]
-_A_CRUISE_MAX_BP = [0., 5., 10., 20., 55.]
-
-_A_CRUISE_MIN_V_MODE_LIST = [_A_CRUISE_MIN_V, _A_CRUISE_MIN_V_SPORT, _A_CRUISE_MIN_V_ECO, _A_CRUISE_MIN_V_ECO]
-_A_CRUISE_MAX_V_MODE_LIST = [_A_CRUISE_MAX_V, _A_CRUISE_MAX_V_SPORT, _A_CRUISE_MAX_V_ECO, _A_CRUISE_MAX_V_CREEP]
 
 # revert to stock max negative accel based on relative lead velocity
 _A_MIN_V_STOCK_FACTOR_BP = [-5. * CV.MPH_TO_MS, 1. * CV.MPH_TO_MS]
 _A_MIN_V_STOCK_FACTOR_V = [0., 1.]
 
 # increase/decrease max accel based on vehicle pitch
-INCLINE_ACCEL_OFFSET = 0.1 # [m/s^2] desired acceleration must be at least this much more than g acceleration
 INCLINE_ACCEL_SCALE_BP = [i * CV.MPH_TO_MS for i in [25., 45]] # [mph] lookup speeds for additional offset
-INCLINE_ACCEL_SCALE_V = [0.2, 0.05] # [m/s^2] additional scale factor to change how incline affects accel based on speed
+INCLINE_ACCEL_SCALE_V = [1.2, 1.05] # [m/s^2] additional scale factor to change how incline affects accel based on speed
+INCLINE_ACCEL_MAX_STOCK_FACTOR = 0.8 # acceleration will never be increased to more than this factor of the "stock" acceleration at the current speed
 DECLINE_ACCEL_FACTOR = 0.5 # this factor of g accel is used to lower max accel limit so you don't floor it downhill
 DECLINE_ACCEL_MIN = 0.2 # [m/s^2] don't decrease acceleration limit due to decline below this total value
-
-def calc_cruise_accel_limits(v_ego, following, accelMode):
-  if following and accelMode < 2:
-    a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V_FOLLOWING)
-    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
-  else:
-    a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V_MODE_LIST[accelMode])
-    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_MODE_LIST[accelMode])
-  return [a_cruise_min, a_cruise_max]
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -73,7 +58,7 @@ class CarInterface(CarInterfaceBase):
     # decrease/increase max accel based on vehicle pitch
     g_accel = 9.81 * sin(CI.CS.pitch)
     if g_accel > 0.:
-      accel_limits[1] = max(accel_limits[1], INCLINE_ACCEL_OFFSET + g_accel * (1. + interp(current_speed, INCLINE_ACCEL_SCALE_BP, INCLINE_ACCEL_SCALE_V)))
+      accel_limits[1] = max(accel_limits[1], min(INCLINE_ACCEL_MAX_STOCK_FACTOR * interp(current_speed, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V), g_accel * interp(current_speed, INCLINE_ACCEL_SCALE_BP, INCLINE_ACCEL_SCALE_V)))
     else:
       accel_limits[1] = max(DECLINE_ACCEL_MIN, accel_limits[1] + g_accel * DECLINE_ACCEL_FACTOR)
       
@@ -145,19 +130,21 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
+      ret.steerRateCost = 0.7
       tire_stiffness_factor = 0.469 # Stock Michelin Energy Saver A/S, LiveParameters
       ret.steerRatioRear = 0.
       ret.centerToFront = 0.45 * ret.wheelbase # from Volt Gen 1
 
       ret.lateralTuning.pid.kpBP = [0., 40.]
       ret.lateralTuning.pid.kpV = [0., 0.17]
-      ret.lateralTuning.pid.kiBP = [i * CV.MPH_TO_MS for i in [0., 15., 55., 90.]]
-      ret.lateralTuning.pid.kiV = [0., .02, .01, .005]
+      ret.lateralTuning.pid.kiBP = [i * CV.MPH_TO_MS for i in [0., 15., 55., 80.]]
+      ret.lateralTuning.pid.kiV = [0., .02, .01, .002]
       ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
       ret.steerActuatorDelay = 0.2
 
       # Only tuned to reduce oscillations. TODO.
-      ret.longitudinalTuning.kpV = [1.7, 1.3]
+      ret.longitudinalTuning.kpV = [1.6, 1.25]
+      ret.longitudinalTuning.kiV = [0.25]
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
