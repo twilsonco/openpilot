@@ -1,8 +1,9 @@
-Version tw-0.8.9-3.8 (2022-01-05)
+Version tw-0.8.9-3.8 (2022-01-24)
 ========================
+ * FIXED: Now works with rev2 (shipped "with" 0.8.11) Comma Three units (sensor error resolved)
  * UNIMPROVED: Revert to "stock" behavior for disengaging move-fast speed limit control using cruise +/- buttons
  * IMPROVED: Reset speed while OP engaged using "set" button if 10+ mph over current set speed
- * IMPROVED: Slightly chiller eco acceleration profile
+ * IMPROVED: Retuned eco acceleration profile
  * IMPROVED: [Volt] reintroduce integral gain to lateral controller; better centering under constant force (e.g. slanted road or prevailing crosswind) and significantly better following of planned path on unmarked/covered roads
  * IMPROVED: Silky smooth transitions when switching between one-pedal brake modes
 
