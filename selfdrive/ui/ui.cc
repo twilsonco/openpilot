@@ -183,7 +183,7 @@ static void update_state(UIState *s) {
     
     if (t - scene.sessionInitTime > 10.){
       if ((scene.car_state.getOnePedalModeActive() || scene.car_state.getCoastOnePedalModeActive())
-        || (s->status == UIStatus::STATUS_DISENGAGED && scene.controls_state.getVCruise() < 5 && (scene.onePedalModeActive || scene.disableDisengageOnGasEnabled))){
+        || (s->status == UIStatus::STATUS_DISENGAGED && scene.controls_state.getVCruise() <= 3 && (scene.onePedalModeActive || scene.disableDisengageOnGasEnabled))){
         scene.one_pedal_fade += fade_time_step * (t - scene.one_pedal_fade_last_t);
         if (scene.one_pedal_fade > 1.)
           scene.one_pedal_fade = 1.;
