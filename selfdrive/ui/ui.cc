@@ -169,10 +169,12 @@ static void update_state(UIState *s) {
     scene.percentGradeDevice = tan(scene.car_state.getPitch()) * 100.;
     
     scene.brake_percent = scene.car_state.getFrictionBrakePercent();
-    if (scene.brake_percent > 0){
-      scene.brake_indicator_alpha += fade_time_step * (t - scene.brake_indicator_last_t);
-      if (scene.brake_indicator_alpha > 1.)
-        scene.brake_indicator_alpha = 1.;
+    if (scene.brake_percent > 50){
+      if (scene.brake_indicator_alpha < 1.){
+        scene.brake_indicator_alpha += fade_time_step * (t - scene.brake_indicator_last_t);
+        if (scene.brake_indicator_alpha > 1.)
+          scene.brake_indicator_alpha = 1.;
+      }
     }
     else if (scene.brake_indicator_alpha > 0.){
       scene.brake_indicator_alpha -= fade_time_step * (t - scene.brake_indicator_last_t);

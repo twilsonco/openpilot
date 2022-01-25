@@ -51,17 +51,24 @@
 
 - [x] Latest openpilot 0.8.12 lateral and 0.8.10 driver monitoring models
 - [x] [Comma3] Latest AGNOS3 OS
-- [x] [Chevy Volt] Sigmoidal steering response (thanks Qadmus)
+- [x] [Chevy Volt 2017] Auto-resume behind stopped lead car as they pull away; a.k.a. stop and go (ported from kegman)
+- [x] [Chevy Volt] Sigmoidal steering response (thanks qadmus)
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
 - [x] [GM] Toggle steering with LKAS button (wheel color changes to indicate disengagement)
-- [x] [GM] One-pedal driving a.k.a. autosteering only a.k.a. toggle longitudinal control: using regen (volt) and/or light/moderate/heavy braking, control OP all the way to a stop, without a lead, and without disengaging, with just the gas pedal (see below)
-- [x] [✅] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#new-dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only. must enable "Disable use of lanelines" for button to appear* (ported from sunnyhaibin)
-- [x] [✅] Normal/sport/eco/creep acceleration modes [cycle with on-screen button] (Think of creep mode as, for example, *mountain highway construction traffic* mode) (adapted from kegman implementation)
-- [x] [✅] 1/5 mph changes for tap/hold of the inc/dec buttons (ported from Spector56)
+- [x] [GM] One-pedal driving a.k.a. autosteering only a.k.a. toggle longitudinal control: using regen (volt) and/or light/moderate/heavy braking, control OP all the way to a stop, without a lead, and without disengaging, with just the gas pedal (see below) (application of friction brakes originally suggested by cybertronicify — 10/06/2021)
+- [x] [✅] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only. must enable "Disable use of lanelines" for button to appear* (ported from sunnyhaibin)
+- [x] [✅] Normal/sport/eco/creep acceleration modes [cycle with on-screen button] (adapted from kegman implementation)
+    * Eco mode is great for
+      * the environment (you pig),
+      * not over-accelerating behind a jumpy lead in traffic, and 
+      * softer acceleration when exiting curves (if curve braking is enabled).
+    * Think of creep mode as, for example, *mountain highway construction traffic* mode
+    * Eco/creep also lower engine/regen/friction braking intensitity (only for maintaining set speed, not for following behind lead)
+- [x] [✅] 1/5 mph changes for tap/hold of the inc/dec buttons (ported from Spector56; different from that of newer stock OP)
 - [x] [✅] 3mph cruise speed offset: speed will be 23/28/33/38/etc.
-- [x] [✅] Alternate sound effect set
-- [x] [✅] Mute engage and disengage sounds
+- [x] [✅] Alternate sound effect set (inspired by sunnyhaibin implementation of mute sounds)
+- [x] [✅] Mute engage and disengage sounds (inspired by sunnyhaibin implementation)
 - [x] [✅] Disable onroad uploads: for use with data-limited wifi hotspots. Reduces data use from 400MB/hour or 22MB/mile (based on 30 minute low-speed trip) down to 25MB/hour or 0.4MB/mile (based on 5 hour trip at 84mph; i.e. not a perfect comparison to the other trip)
     * Don't bother if you subscribe to [comma Prime](https://comma.ai/prime), which has unlimited data, and a host of other benefits! Don't delay; subscribe today!!
     * iPhone users can use [this shortcut](https://www.icloud.com/shortcuts/7f3c7e98f95d4f85a9bad939aa069fcd) to instantly open the personal hotspot page in the Settings app in order to enable personal hotspot for your comma device to connect.
@@ -71,6 +78,7 @@
     * Toggle coasting while driving by tapping the max speed indicator
     * A "+" after the max speed indicates that coasting is enabled
     * *Can be a bit rough on the brakes when following downhill over set speed; recommend to disable if uncomfortable when constantly following downhill*
+    * (Inspired by the implementation in sunnyhaibin's fork)
 - [x] [✅] Brake when 15% over set speed when coasting enabled
 - [x] [✅] Nudgeless lane change: OP will start lane change automatically in direction of blinker after blinker on for 3s
 - [x] [✅] Friction braking indicator
@@ -83,25 +91,28 @@
         * Vehicle info: Engine RPM, engine coolant temperature (°C and °F), engine RPM + coolant temperature (°C and °F), steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road (one based on GPS, one based on device accelerometer)
         * Lead-following info: follow distance level, lead distance [length], desired lead distance [length], lead distance [time], desired lead distance [time], follow distance and acceleration mpc costs [in units of the stock OP costs; i.e. 2.5 means 2.5× the stock OP value], relative lead velocity, absolute lead velocity
 - [x] [GM] [✅] **One-pedal driving**: OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
-    * Must have disable disengage on gas toggle enabled
     * **Not necessary to enable the one-pedal toggle; you engage/disengage while driving**
-    * When blinker is on below 30mph, autosteer will automatically pause [optional; tap wheel icon to toggle while in one-pedal mode; a second white circle around the wheel icon indicates autosteer pause is enabled]
     * Engage in three ways
       1. While cruise is set, press and hold the follow distance button for 0.5s (continue to hold for immediate hard braking if necessary)
       2. If one-pedal engage on gas toggle is enabled, press gas while cruise is set and traveling above 1mph
       3. While cruise is set, lower cruise speed to 1
     * When in one-pedal mode, the max speed indicator in openpilot will be replaced with a one-pedal mode indicator. Tap the one-pedal icon to toggle one-pedal engage on gas mode
-    * Vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = 🟢/🟠/🔴 = light/moderate/heavy braking
+    * Vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1 bar/2 bar/3 bar = 🟢/🟠/🔴 = light/moderate/heavy braking
     * Control braking with follow distance button:
       * *Single press*: alternate between persistent light or moderate braking
       * *Press and hold*: apply temporary hard braking (indicated by follow level 3 on vehicle cluster and red one-pedal icon) (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
       * *Press when friction braking disabled*: activate friction braking
       * *Double-press when stopped or when gas is pressed and friction braking is active*: deactivate friction braking
+    * When one-pedal mode active and blinker is on below 20mph, autosteer will automatically pause
+      * [Optional; tap wheel icon to toggle while in one-pedal mode]
+      * A second white circle around the wheel icon indicates autosteer pause is enabled
+    * *Must have disable disengage on gas toggle enabled*
 - [x] [GM] [✅] One-pedal pro braking: Completely disable cruise/speed limit/curve/follow braking when in one-pedal mode. You are soley responsible for slowing the car using the adjustable one-pedal braking (by pressing/holding the follow distance button) or with the physical brakes/regen paddle
 - [x] [GM] [✅] One-pedal engage on gas: When cruising at speed and the driver presses the gas (i.e. not when resuming from a stop), engage one-pedal mode
-    * Toggle while driving by tapping the pedal icon
-- [x] [GM] JShuler panda-based GM steering fault fix
-- [x] Remember last follow mode
+    * Toggle while one-pedal mode enabled by tapping the pedal icon
+    * Indiated by an extra circle around one-pedal icon
+- [x] [GM] panda-based GM steering fault fix (thanks jshuler)
+- [x] Remember last follow mode (ported from kegman)
 
 #### Planned Fork Features (in no particular order):
 -----
@@ -119,13 +130,13 @@
   * Geo widget: GPS signal/coords/#satellites, altitude, percent grade of current road, ...
   * Device widget: CPU/memory/temps/fans/...
   * EV widget: high voltage battery info similar to that shown in the LeafSpyPro app
-- [ ] [✅] [Modified assistive driving system](https://github.com/sunnyhaibin/openpilot#new-modified-assistive-driving-safety-mads) (MADS) style auto-engagement of steering
+- [ ] [✅] [Modified assistive driving system](https://github.com/sunnyhaibin/openpilot#modified-assistive-driving-safety-mads) (MADS) style auto-engagement of steering
 - [ ] [✅] 0.5 second delay before activating newly selected follow mode so user can switch around without OP slightly jerking in response
 - [ ] [✅] Auto screen brightness (or at least a way to dim a bit at night)
 - [ ] [✅] Lane Speed alerts ([sshane](https://github.com/sshane/openpilot#lane-speed-alerts))
 - [ ] [✅] Dynamic camera offset (based on oncoming traffic) ([sshane)](https://github.com/sshane/openpilot#dynamic-camera-offset-based-on-oncoming-traffic)
 - [ ] [Chevy Volt] Steering control below 7mph using parking commands
-- [ ] [Chevy Volt] [✅] Road trip mode: automatically put car into Mountain Mode if sustained speed 55mph+
+- [ ] [Chevy Volt] [✅] Road trip mode: automatically put car into Mountain Mode (i.e. hold at 20% battery charge) if sustained speed 55mph+
 - [ ] [GM] Use physical drive mode button to switch between normal/sport acceleration profiles
 - [ ] [GM] [✅] Dynamic follow mode: point-based
     * Follow distance "earns points" the longer you're behind the same lead car, moving from close to medium after about 5 minutes
@@ -158,7 +169,9 @@ To ride the bleeding edge, try the staging branch where new features are tested 
 
 With a stock installation of OpenPilot confirmed working, SSH into device and run the following:
 
-`cd /data;mv openpilot openpilot_stock;git clone --recurse-submodules https://github.com/twilsonco/openpilot;sudo reboot`
+`cd /data;mv openpilot openpilot_stock;git clone --recurse-submodules https://github.com/twilsonco/openpilot`
+
+Then, `sudo reboot`
 
 ### Automatic Updates
 ------
@@ -323,7 +336,7 @@ Any user of this software shall indemnify and hold harmless Comma.ai, Inc. and i
 YOU ARE RESPONSIBLE FOR COMPLYING WITH LOCAL LAWS AND REGULATIONS.
 NO WARRANTY EXPRESSED OR IMPLIED.**
 
----
+=======
 
 <img src="https://d1qb2nb5cznatu.cloudfront.net/startups/i/1061157-bc7e9bf3b246ece7322e6ffe653f6af8-medium_jpg.jpg?buster=1458363130" width="75"></img> <img src="https://cdn-images-1.medium.com/max/1600/1*C87EjxGeMPrkTuVRVWVg4w.png" width="225"></img>
 

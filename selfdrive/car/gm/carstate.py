@@ -28,6 +28,8 @@ class CarState(CarStateBase):
     self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
     self._params = Params()
     
+    self.is_ev = (self.car_fingerprint == CAR.VOLT)
+    
     self.prev_distance_button = 0
     self.prev_lka_button = 0
     self.lka_button = 0
@@ -125,6 +127,8 @@ class CarState(CarStateBase):
     self.lead_d_long_brake_lockout_bp, self.lead_d_long_brake_lockout_v = [[6, 10], [1., 0.]] # pass through all cruise braking if follow distance < 6m
     
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
+    self.hvb_wattage = 0. # [kW]
+    self.hvb_wattage_bp = [0., 53.] # [kW], based on the banned user BZZT's testimony at https://www.gm-volt.com/threads/using-regen-paddle-and-l-drive-mode-summary.222289/
     self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
     self.vEgo = 0.
     self.v_cruise_kph = 1
@@ -195,8 +199,8 @@ class CarState(CarStateBase):
       ret.brake = 0.
     
     if self.showBrakeIndicator:
-      if t - self.sessionInitTime < 15.:
-        self.apply_brake_percent = int(round(interp(t - self.sessionInitTime - 5., [0.,2.,4.,6.,8.,10.], ([100,0]*3))) % 100)
+      if t - self.sessionInitTime < 12.:
+        self.apply_brake_percent = int(round(interp(t - self.sessionInitTime - 3., [i * 4. for i in range(6)], ([100,0]*3))))
     ret.frictionBrakePercent = self.apply_brake_percent
     
 
@@ -263,9 +267,12 @@ class CarState(CarStateBase):
 
     ret.brakePressed = ret.brake > 1e-5
     # Regen braking is braking
-    if self.car_fingerprint == CAR.VOLT:
+    if self.is_ev:
       self.regenPaddlePressed = bool(pt_cp.vl["EBCMRegenPaddle"]['RegenPaddle'])
       ret.brakePressed = ret.brakePressed or self.regenPaddlePressed
+      hvb_current = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryCurrent']
+      hvb_voltage = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryVoltage']
+      self.hvb_wattage = hvb_current * hvb_voltage * 0.001
 
     ret.cruiseState.enabled = self.pcm_acc_status != AccState.OFF
     ret.cruiseState.standstill = False
@@ -365,9 +372,12 @@ class CarState(CarStateBase):
     if CP.carFingerprint == CAR.VOLT:
       signals += [
         ("RegenPaddle", "EBCMRegenPaddle", 0),
+        ("HVBatteryVoltage", "BECMBatteryVoltageCurrent", 0),
+        ("HVBatteryCurrent", "BECMBatteryVoltageCurrent", 0),
       ]
       checks += [
         ("EBCMRegenPaddle", 50),
+        ("BECMBatteryVoltageCurrent", 10),
       ]
       
     signals += [
