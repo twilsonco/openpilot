@@ -1234,40 +1234,89 @@ static void ui_draw_vision_face(UIState *s) {
 
 static void ui_draw_vision_brake(UIState *s) {
   if (s->scene.brake_percent >= 0){
+    // scene.brake_percent in [0,50] is engine/regen
+    // scene.brake_percent in [51,100] is friction
     const int brake_x = s->fb_w - face_wheel_radius - bdr_s * 2;
     const int brake_y = s->fb_h - footer_h / 2;
-    float bg_alpha = 0.1 + 0.2 * s->scene.brake_indicator_alpha;
+    const int brake_r1 = 1;
+    const int brake_r2 = brake_size / 3 + 2;
+    const float brake_r_range = brake_r2 - brake_r1;
+    const int circ_offset = 1;
+    float bg_alpha = 0.1 + 0.3 * s->scene.brake_indicator_alpha;
     float img_alpha = 0.15 + 0.85 * s->scene.brake_indicator_alpha;
-    NVGcolor color = nvgRGBA(0, 0, 0, (255 * bg_alpha));
-    if (s->scene.brake_percent > 0 && s->scene.brake_percent <= 100){
-      int r = 0;
-      if (s->scene.brake_percent >= 50){
-        float p = 0.01 * float(s->scene.brake_percent - 50);
-        bg_alpha += 0.3 * p;
-        r = 200. * p;
-      }
-      color = nvgRGBA(r, 0, 0, (255 * bg_alpha));
-    }
-    ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", color, img_alpha);
-    if (s->scene.brake_percent > 0 && s->scene.brake_percent <= 100){
-      const int brake_r1 = 1;
-      const int brake_r2 = brake_size / 3 + 2;
-      const float brake_r_range = brake_r2 - brake_r1;
-      float p = s->scene.brake_percent;
+    if (s->scene.brake_percent > 0 && s->scene.brake_percent <= 50){
+      // engine/regen braking indicator only
+      int bp = s->scene.brake_percent * 2;
+      float p = bp;
       const int brake_r = brake_r1 + int(brake_r_range * p * 0.01);
+      bg_alpha = (0.1 + (p * 0.004));
+      if (bg_alpha > 0.3){
+        bg_alpha = 0.3;
+      }
+      ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", nvgRGBA(0, 0, 0, int(bg_alpha * 255.)), img_alpha);
       nvgBeginPath(s->vg);
-      nvgRoundedRect(s->vg, brake_x - brake_r, brake_y - brake_r, 2 * brake_r, 2 * brake_r, brake_r);
-      nvgStrokeWidth(s->vg, 6);
-      int r = 255, g = 255, b = 255, a = 200;
-      p *= 0.01;
-      g -= int(p * 255.);
-      g = (g > 0 ? g : 0);
-      b -= int((.6 + p) * 255.);
-      b = (b > 0 ? b : 0); // goes from white to orange to red at p goes from 0 to 100
-      nvgFillColor(s->vg, nvgRGBA(r,g,b,a));
-      nvgStrokeColor(s->vg, nvgRGBA(r,g,b,255));
+      nvgRoundedRect(s->vg, brake_x - brake_r + circ_offset, brake_y - brake_r + circ_offset, 2 * brake_r, 2 * brake_r, brake_r);
+      nvgStrokeWidth(s->vg, 9);
+      NVGcolor nvg_color = nvgRGBA(131,232,42, 200);
+      nvgFillColor(s->vg, nvg_color);
+      nvgStrokeColor(s->vg, nvg_color);
       nvgFill(s->vg);
       nvgStroke(s->vg);
+    }
+    else if (s->scene.brake_percent > 50){
+      int bp = (s->scene.brake_percent - 50) * 2;
+      bg_alpha = 0.3 + 0.1 * s->scene.brake_indicator_alpha;
+      NVGcolor color = nvgRGBA(0, 0, 0, (255 * bg_alpha));
+      if (bp > 0 && bp <= 100){
+        int r = 0;
+        if (bp >= 50){
+          float p = 0.01 * float(bp - 50);
+          bg_alpha += 0.3 * p;
+          r = 200. * p;
+        }
+        color = nvgRGBA(r, 0, 0, (255 * bg_alpha));
+      }
+      ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", color, img_alpha);
+      if (bp <= 100){
+        float p = bp;
+        
+        // friction braking indicator starts at outside of regen indicator and grows from there 
+        // do this by increasing radius while decreasing stroke width.
+        nvgBeginPath(s->vg);
+        const int start_r = brake_r2 + 3;
+        const int end_r = brake_size;
+        const int brake_r = start_r + float(end_r - start_r) * p * 0.01;
+        const int stroke_width = brake_r - brake_r2;
+        const int path_r = stroke_width / 2 + brake_r2;
+        nvgRoundedRect(s->vg, brake_x - path_r + circ_offset, brake_y - path_r + circ_offset, 2 * path_r, 2 * path_r, path_r);
+        nvgStrokeWidth(s->vg, stroke_width);
+        int r = 255, g = 255, b = 255, a = 200;
+        p *= 0.01;
+        g -= int(p * 255.);
+        g = (g > 0 ? g : 0);
+        b -= int((.4 + p) * 255.);
+        b = (b > 0 ? b : 0); // goes from white to orange to red as p goes from 0 to 100
+        nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
+        nvgStrokeColor(s->vg, nvgRGBA(r,g,b,a));
+        nvgFill(s->vg);
+        nvgStroke(s->vg);
+        
+        // another brake image (this way the regen is on top of the background, while the brake disc itself occludes the other indicator)
+        ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", nvgRGBA(0,0,0,0), img_alpha);
+        
+        // engine/regen braking indicator
+        nvgBeginPath(s->vg);
+        nvgRoundedRect(s->vg, brake_x - brake_r2 + circ_offset, brake_y - brake_r2 + circ_offset, 2 * brake_r2, 2 * brake_r2, brake_r2);
+        nvgStrokeWidth(s->vg, 9);
+        NVGcolor nvg_color = nvgRGBA(131,232,42, 200);
+        nvgFillColor(s->vg, nvg_color);
+        nvgStrokeColor(s->vg, nvg_color);
+        nvgFill(s->vg);
+        nvgStroke(s->vg);
+      }
+    }
+    else{
+      ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", nvgRGBA(0, 0, 0, bg_alpha), img_alpha);
     }
     // s->scene.brake_touch_rect = {1,1,1,1};
   }

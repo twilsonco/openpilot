@@ -219,7 +219,17 @@ class CarController():
         f.close()
     
     if CS.showBrakeIndicator:
-      CS.apply_brake_percent = int(interp(apply_brake, [float(P.BRAKE_LOOKUP_V[-1]), float(P.BRAKE_LOOKUP_V[0])], [0., 100.])) if CS.vEgo > 0.1 else 0
+      CS.apply_brake_percent = 0
+      if CS.vEgo > 0.1 and CS.out.cruiseState.enabled:
+        if not CS.pause_long_on_gas_press:
+          if (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active):
+            CS.apply_brake_percent = int(interp(CS.hvb_wattage, CS.hvb_wattage_bp, [0., 50.]))
+          elif apply_brake > 0:
+            CS.apply_brake_percent = 50 + int(interp(apply_brake, [float(P.BRAKE_LOOKUP_V[-1]), float(P.BRAKE_LOOKUP_V[0])], [0., 50.]))
+          else:
+            CS.apply_brake_percent = int(interp(apply_gas, [float(P.GAS_LOOKUP_V[0]), float(P.GAS_LOOKUP_V[1])], [50., 0.]))
+        else:
+          CS.apply_brake_percent = int(interp(CS.hvb_wattage, CS.hvb_wattage_bp, [0., 50.]))
     
     # Gas/regen and brakes - all at 25Hz
     if (frame % 4) == 0:
