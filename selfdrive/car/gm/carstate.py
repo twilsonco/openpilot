@@ -28,6 +28,9 @@ class CarState(CarStateBase):
     self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
     self._params = Params()
     
+    with open("/data/fp_log.txt",'a') as f:
+      f.write(f"{self.car_fingerprint}\n")
+    
     self.is_ev = (self.car_fingerprint == CAR.VOLT)
     
     self.prev_distance_button = 0
@@ -199,8 +202,8 @@ class CarState(CarStateBase):
       ret.brake = 0.
     
     if self.showBrakeIndicator:
-      if t - self.sessionInitTime < 12.:
-        self.apply_brake_percent = int(round(interp(t - self.sessionInitTime - 3., [i * 4. for i in range(6)], ([100,0]*3))))
+      if t - self.sessionInitTime < 22.:
+        self.apply_brake_percent = int(round(interp(t - self.sessionInitTime - 10., [i * 3. for i in range(6)], ([100,0]*3))))
     ret.frictionBrakePercent = self.apply_brake_percent
     
 
