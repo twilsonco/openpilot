@@ -190,7 +190,7 @@ def get_car(logcan, sendcan):
     else:
       num_matches = 0
     old_fp = candidate
-    if candidate and candidate not in RECHECK_CANDIDATES:
+    if candidate and exact_match and candidate not in RECHECK_CANDIDATES:
       break
   
   if old_fp != candidate:
