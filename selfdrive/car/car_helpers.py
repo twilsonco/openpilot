@@ -176,7 +176,23 @@ def fingerprint(logcan, sendcan):
 
 
 def get_car(logcan, sendcan):
-  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan)
+  
+  old_fp = ''
+  candidate = ' '
+  num_matches = 0
+  num_matches_min = 1
+  iter_max = 4
+  iter_cur = 0
+  while iter_cur < iter_max and num_matches < num_matches_min:
+    candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan)
+    if candidate == old_fp:
+      num_matches += 1
+    else:
+      num_matches = 0
+    old_fp = candidate
+  
+  if old_fp != candidate:
+    candidate = None
 
   if candidate is None:
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
