@@ -265,21 +265,17 @@ class CarState(CarStateBase):
       hvb_current = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryCurrent']
       hvb_voltage = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryVoltage']
       self.hvb_wattage = hvb_current * hvb_voltage * 0.001
-      gear_shifter_ev = pt_cp.vl["ECMPRDNL2"]['PRNDL2']
-      if gear_shifter_ev != self.gear_shifter_ev:
-        cloudlog.info(f"{t} EV gear shift event: new value = {self.gear_shifter_ev}")
       self.gear_shifter_ev = pt_cp.vl["ECMPRDNL2"]['PRNDL2']
       if not self.coasting_enabled and self.gear_shifter_ev == 4:
-        cloudlog.info(f"{t} Activating coasting from ev gearshift: new value = {self.gear_shifter_ev}")
         self.coasting_enabled = True
         self._params.put_bool("Coasting", True)
       elif self.coasting_enabled and self.gear_shifter_ev == 6 and (self.vEgo <= self.v_cruise_kph * CV.KPH_TO_MS or self.no_friction_braking):
-        cloudlog.info(f"{t} Deactivating coasting from ev gearshift = {self.gear_shifter_ev}")
         self.coasting_enabled = False
         self._params.put_bool("Coasting", False)
     else:
       if self.coasting_enabled != self.coasting_enabled_last:
         if not self.coasting_enabled and self.vEgo > self.v_cruise_kph * CV.KPH_TO_MS and not self.no_friction_braking:
+          # prevent disable of coasting if over set speed and friction brakes not disabled.
           self._params.put_bool("Coasting", True)
           self.coasting_enabled = True
     ret.coastingActive = self.coasting_enabled

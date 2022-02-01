@@ -142,7 +142,7 @@ class CarController():
           CS.no_friction_braking]]) + ",")
       
       if (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active):
-        if not CS.one_pedal_mode_active and CS.is_ev and CS.gear_shifter_ev == 4:
+        if not CS.one_pedal_mode_active and CS.is_ev and CS.gear_shifter_ev == 4 and CS.vEgo > 0.05:
           apply_gas = apply_gas * lead_long_gas_lockout_factor + float(P.ZERO_GAS ) * (1. - lead_long_gas_lockout_factor)
         else:
           apply_gas = apply_gas * lead_long_gas_lockout_factor + float(P.MAX_ACC_REGEN) * (1. - lead_long_gas_lockout_factor)
@@ -167,7 +167,7 @@ class CarController():
             if CS.one_pedal_mode_ramp_mode_last != CS.one_pedal_brake_mode:
               # brake mode changed, so need to calculate new step based on the old and new modes
               old_apply_brake = interp(CS.vEgo, CS.one_pedal_mode_stop_apply_brake_bp[CS.one_pedal_mode_ramp_mode_last], CS.one_pedal_mode_stop_apply_brake_v[CS.one_pedal_mode_ramp_mode_last])
-              CS.one_pedal_mode_ramp_time_step = (one_pedal_apply_brake - old_apply_brake) / CS.one_pedal_mode_ramp_duration
+              CS.one_pedal_mode_ramp_time_step = (one_pedal_apply_brake - old_apply_brake) / (CS.one_pedal_mode_ramp_duration * (2. if CS.one_pedal_mode_apply_brake > one_pedal_apply_brake else 1.))
             if CS.one_pedal_mode_apply_brake < one_pedal_apply_brake:
               if CS.one_pedal_mode_ramp_time_step < 0.:
                 CS.one_pedal_mode_ramp_time_step *= -1.
