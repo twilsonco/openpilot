@@ -4,7 +4,7 @@
 	branch = tw-0.8.9-dev
 [submodule "opendbc"]
 	path = opendbc
-	url = ../../commaai/opendbc.git
+	url = ../../twilsonco/opendbc.git
 [submodule "laika_repo"]
 	path = laika_repo
 	url = ../../commaai/laika.git

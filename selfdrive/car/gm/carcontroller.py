@@ -142,7 +142,10 @@ class CarController():
           CS.no_friction_braking]]) + ",")
       
       if (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active):
-        apply_gas = apply_gas * lead_long_gas_lockout_factor + float(P.MAX_ACC_REGEN) * (1. - lead_long_gas_lockout_factor)
+        if not CS.one_pedal_mode_active and CS.is_ev and CS.gear_shifter_ev == 4:
+          apply_gas = apply_gas * lead_long_gas_lockout_factor + float(P.ZERO_GAS ) * (1. - lead_long_gas_lockout_factor)
+        else:
+          apply_gas = apply_gas * lead_long_gas_lockout_factor + float(P.MAX_ACC_REGEN) * (1. - lead_long_gas_lockout_factor)
         time_since_brake = t - CS.one_pedal_mode_last_gas_press_t
         if CS.one_pedal_mode_active:
           if abs(CS.angle_steers) > CS.one_pedal_angle_steers_cutoff_bp[0]:
@@ -235,7 +238,7 @@ class CarController():
     if (frame % 4) == 0:
       idx = (frame // 4) % 4
 
-      if CS.cruiseMain and not enabled and CS.autoHold and CS.autoHoldActive and not CS.out.gasPressed and CS.out.gearShifter == 'drive' and CS.out.vEgo < 0.02 and not CS.regenPaddlePressed:
+      if CS.cruiseMain and not enabled and CS.autoHold and CS.autoHoldActive and not CS.out.gasPressed and CS.out.gearShifter in ['drive','low'] and CS.out.vEgo < 0.02 and not CS.regenPaddlePressed:
         # Auto Hold State
         car_stopping = apply_gas < P.ZERO_GAS
         standstill = CS.pcm_acc_status == AccState.STANDSTILL

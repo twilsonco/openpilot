@@ -102,7 +102,7 @@ class CarState(CarStateBase):
     
     self.drive_mode_button = False
     self.drive_mode_button_last = False
-    self.gear_shifter_raw = None
+    self.gear_shifter_ev = None
           
     self.pitch_rolling_iter = 0
     self.pitch_rolling_period = 2. # 2-second moving average
@@ -159,7 +159,7 @@ class CarState(CarStateBase):
     self.drive_mode_button = pt_cp.vl["ASCMSteeringButton"]["DriveModeButton"]
     
     if (self.drive_mode_button != self.drive_mode_button_last):
-        cloudlog.info(f"{t} Drive mode button event: new value = {self.drive_mode_button}")
+      cloudlog.info(f"{t} Drive mode button event: new value = {self.drive_mode_button}")
 
     ret.wheelSpeeds.fl = pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"] * CV.KPH_TO_MS
     ret.wheelSpeeds.fr = pt_cp.vl["EBCMWheelSpdFront"]["FRWheelSpd"] * CV.KPH_TO_MS
@@ -179,23 +179,12 @@ class CarState(CarStateBase):
         self.one_pedal_pause_steering_enabled = self._params.get_bool("OnePedalPauseBlinkerSteering")
         self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
         self.one_pedal_mode_engage_on_gas_enabled = self._params.get_bool("OnePedalModeEngageOnGas") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
-      
-    if self.coasting_enabled != self.coasting_enabled_last:
-      if not self.coasting_enabled and self.vEgo > self.v_cruise_kph * CV.KPH_TO_MS and not self.no_friction_braking:
-        self._params.set_bool("Coasting", True)
-        self.coasting_enabled = True
-    ret.coastingActive = self.coasting_enabled
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
-    
-    gear_shifter_raw = pt_cp.vl["ECMPRDNL"]['PRNDL']
-    if (self.gear_shifter_raw != gear_shifter_raw):
-      cloudlog.info(f"{t} Gear shifted to: {gear_shifter_raw = }, {self.shifter_values.get(gear_shifter_raw, None) = }, {self.parse_gear_shifter(self.shifter_values.get(gear_shifter_raw, None)) = }")
-    self.gear_shifter_raw = gear_shifter_raw
       
     self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
+    ret.gearShifter = self.gear_shifter
     self.user_brake = pt_cp.vl["EBCMBrakePedalPosition"]['BrakePedalPosition']
-    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]["PRNDL"], None))
     ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
     # Brake pedal's potentiometer returns near-zero reading even when pedal is not pressed.
     if ret.brake < 10/0xd0:
@@ -276,6 +265,24 @@ class CarState(CarStateBase):
       hvb_current = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryCurrent']
       hvb_voltage = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryVoltage']
       self.hvb_wattage = hvb_current * hvb_voltage * 0.001
+      gear_shifter_ev = pt_cp.vl["ECMPRDNL2"]['PRNDL2']
+      if gear_shifter_ev != self.gear_shifter_ev:
+        cloudlog.info(f"{t} EV gear shift event: new value = {self.gear_shifter_ev}")
+      self.gear_shifter_ev = pt_cp.vl["ECMPRDNL2"]['PRNDL2']
+      if not self.coasting_enabled and self.gear_shifter_ev == 4:
+        cloudlog.info(f"{t} Activating coasting from ev gearshift: new value = {self.gear_shifter_ev}")
+        self.coasting_enabled = True
+        self._params.put_bool("Coasting", True)
+      elif self.coasting_enabled and self.gear_shifter_ev == 6 and (self.vEgo <= self.v_cruise_kph * CV.KPH_TO_MS or self.no_friction_braking):
+        cloudlog.info(f"{t} Deactivating coasting from ev gearshift = {self.gear_shifter_ev}")
+        self.coasting_enabled = False
+        self._params.put_bool("Coasting", False)
+    else:
+      if self.coasting_enabled != self.coasting_enabled_last:
+        if not self.coasting_enabled and self.vEgo > self.v_cruise_kph * CV.KPH_TO_MS and not self.no_friction_braking:
+          self._params.put_bool("Coasting", True)
+          self.coasting_enabled = True
+    ret.coastingActive = self.coasting_enabled
 
     ret.cruiseState.enabled = self.pcm_acc_status != AccState.OFF
     ret.cruiseState.standstill = False
@@ -375,12 +382,14 @@ class CarState(CarStateBase):
     if CP.carFingerprint == CAR.VOLT:
       signals += [
         ("RegenPaddle", "EBCMRegenPaddle", 0),
+        ("PRNDL2", "ECMPRDNL2", 0),
         ("HVBatteryVoltage", "BECMBatteryVoltageCurrent", 0),
         ("HVBatteryCurrent", "BECMBatteryVoltageCurrent", 0),
       ]
       checks += [
         ("EBCMRegenPaddle", 50),
         ("BECMBatteryVoltageCurrent", 10),
+        ("ECMPRDNL2", 10),
       ]
       
     signals += [
