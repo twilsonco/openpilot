@@ -75,13 +75,15 @@
       * Combined with an Automation to run the shortcut when you enter CarPlay, or when you connect to your car's Bluetooth, this can be a pretty convenience setup.
     * Android users could try the [Hot Spot Starter](https://play.google.com/store/apps/details?id=de.thjunge11.autohotspot) app, but I can't recommend it as I haven't tried it, so maybe [look for something else if it doesn't work](https://forum.xda-developers.com/t/enable-hotspot-automatically-when-i-enter-the-car.3915107/)
 - [x] [✅] Coasting: OP will still brake behind a lead car and to slow down for curves, but will not apply engine/regen/friction brakes in order to keep the set speed (by user or map speed limit)
-    * Toggle coasting while driving by tapping the max speed indicator
+    * Toggle coasting while driving 
+      * in Volt using gear shifter: D for coasting, L for regen (thanks to jshuler for discovering the CAN message of extra gear shifter values)
+      * in other cars by tapping the max speed indicator
     * A "+" after the max speed indicates that coasting is enabled
     * *Can be a bit rough on the brakes when following downhill over set speed; recommend to disable if uncomfortable when constantly following downhill*
     * (Inspired by the implementation in sunnyhaibin's fork)
 - [x] [✅] Brake when 15% over set speed when coasting enabled
 - [x] [✅] Nudgeless lane change: OP will start lane change automatically in direction of blinker after blinker on for 3s
-- [x] [✅] Friction braking indicator
+- [x] [✅] Braking indicator shows level of regenerative/engine and friction braking
 - [x] **Customizable, dynamic vehicle/device metrics** (adapted from kegman)
     * To use:
         * Tap the current speed on the openpilot display to cycle the number of metrics
@@ -103,6 +105,7 @@
       * *Press and hold*: apply temporary hard braking (indicated by follow level 3 on vehicle cluster and red one-pedal icon) (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
       * *Press when friction braking disabled*: activate friction braking
       * *Double-press when stopped or when gas is pressed and friction braking is active*: deactivate friction braking
+    * [Volt] Coasting: using gear shifter, select D for coasting or L for regen (thanks to jshuler)
     * When one-pedal mode active and blinker is on below 20mph, autosteer will automatically pause
       * [Optional; tap wheel icon to toggle while in one-pedal mode]
       * A second white circle around the wheel icon indicates autosteer pause is enabled

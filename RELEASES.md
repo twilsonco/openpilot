@@ -1,3 +1,12 @@
+Version tw-0.8.9-3.9 (2022-02-01)
+========================
+ * NEW: [Volt] control coasting for cruise and one-pedal mode using D and L mode with the gear shifter
+   * Coasts in D, regen in L
+   * Thanks to Jason Shuler
+ * NEW: Display vehicle fingerprint on startup
+ * IMPROVED: Brake indicator now shows regen/engine braking while cruising, or regen while in one-pedal regen mode
+ * FIXED: [Volt] Prevent misprinting as Escalade ESV
+
 Version tw-0.8.9-3.8 (2022-01-24)
 ========================
  * FIXED: Now works with rev2 (shipped "with" 0.8.11) Comma Three units (sensor error resolved)
