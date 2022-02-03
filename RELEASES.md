@@ -8,6 +8,7 @@ Version tw-0.8.9-3.9 (2022-02-01)
    * Suggested by Shadowlight5
  * NEW: Display vehicle fingerprint on startup
  * IMPROVED: Brake indicator now shows regen/engine braking while cruising, or regen while in one-pedal regen mode
+ * IMPROVED: UI Metrics now larger when four or fewer present (suggested by C Tyrell)
  * FIXED: [Volt] Prevent misprinting as Escalade ESV
 
 Version tw-0.8.9-3.8 (2022-01-24)

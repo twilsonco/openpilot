@@ -213,10 +213,6 @@ static void update_state(UIState *s) {
     scene.lastAEgo = scene.aEgo;
     scene.steeringTorqueEps = scene.car_state.getSteeringTorqueEps();
     
-    scene.hvbVoltage = scene.car_state.getHvbVoltage();
-    scene.hvbCurrent = scene.car_state.getHvbCurrent();
-    scene.hvbWattage = scene.car_state.getHvbWattage();
-    
     if (scene.car_state.getVEgo() > 0.0){
       scene.percentGradeCurDist += scene.car_state.getVEgo() * (t - scene.percentGradeLastTime);
       if (scene.percentGradeCurDist > scene.percentGradeLenStep){ // record position/elevation at even length intervals

@@ -214,7 +214,6 @@ typedef struct UIScene {
   float desiredFollowDistance, followDistanceCost, followAccelCost;
   float stoppingDistance;
   float percentGradeDevice;
-  float hvbCurrent, hvbVoltage, hvbWattage;
   
   float lastTime = 0., sessionInitTime = 0.;
   float paramsCheckLast = 0., paramsCheckFreq = 0.1; // check params at 10Hz

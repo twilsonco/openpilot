@@ -411,12 +411,14 @@ NVGcolor color_from_thermal_status(int thermalStatus){
 static void ui_draw_measures(UIState *s){
   if (s->scene.measure_cur_num_slots){
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
-    const int center_x = s->fb_w - face_wheel_radius - bdr_s * 2;
+    int center_x = s->fb_w - face_wheel_radius - bdr_s * 2;
     const int brake_y = s->fb_h - footer_h / 2;
     const int y_min = maxspeed_rect.bottom() + bdr_s / 2;
     const int y_max = brake_y - brake_size - bdr_s / 2;
     const int y_rng = y_max - y_min;
-    const int slot_y_rng = y_rng / s->scene.measure_max_num_slots * 2; // two columns
+    const int slot_y_rng = (s->scene.measure_cur_num_slots <= 4 ? y_rng / (s->scene.measure_cur_num_slots < 3 ? 3 : s->scene.measure_cur_num_slots) : y_rng / s->scene.measure_max_num_slots * 2); // two columns
+    const int slot_y_rng_orig = y_rng / s->scene.measure_max_num_slots * 2; // two columns
+    const float slot_aspect_ratio_ratio = float(slot_y_rng) / float(slot_y_rng_orig);
     const int y_mid = (y_max + y_min) / 2;
     const int slots_y_rng = slot_y_rng * (s->scene.measure_cur_num_slots <= 5 ? s->scene.measure_cur_num_slots : 5);
     const int slots_y_min = y_mid - (slots_y_rng / 2);
@@ -424,14 +426,24 @@ static void ui_draw_measures(UIState *s){
     NVGcolor default_name_color = nvgRGBA(255, 255, 255, 200);
     NVGcolor default_unit_color = nvgRGBA(255, 255, 255, 200);
     NVGcolor default_val_color = nvgRGBA(255, 255, 255, 200);
-    int default_val_font_size = 78;
-    int default_name_font_size = 32;
-    int default_unit_font_size = 38;
+    int default_val_font_size = 78. * slot_aspect_ratio_ratio;
+    int default_name_font_size = 32. * (slot_y_rng_orig > 1. ? 0.9 * slot_aspect_ratio_ratio : 1.);
+    int default_unit_font_size = 38. * slot_aspect_ratio_ratio;
   
     // determine bounding rectangle
-    const int slots_r = brake_size + 6 + (s->scene.measure_cur_num_slots <= 5 ? 6 : 0);
-    const int slots_w = (s->scene.measure_cur_num_slots <= 5 ? 2 : 4) * slots_r;
-    const int slots_x = (s->scene.measure_cur_num_slots <= 5 ? center_x - slots_r : center_x - 3 * slots_r);
+    int slots_r, slots_w, slots_x;
+    if (s->scene.measure_cur_num_slots <= 4){
+      const int slots_r_orig = brake_size + 6 + (s->scene.measure_cur_num_slots <= 5 ? 6 : 0);
+      slots_r = float(brake_size) * slot_aspect_ratio_ratio + 12.;
+      center_x -= slots_r - slots_r_orig;
+      slots_w = 2 * slots_r;
+      slots_x = center_x - slots_r;
+    }
+    else{
+      slots_r = brake_size + 6 + (s->scene.measure_cur_num_slots <= 5 ? 6 : 0);
+      slots_w = (s->scene.measure_cur_num_slots <= 5 ? 2 : 4) * slots_r;
+      slots_x = (s->scene.measure_cur_num_slots <= 5 ? center_x - slots_r : center_x - 3 * slots_r);
+    }
     const Rect slots_rect = {slots_x, slots_y_min, slots_w, slots_y_rng};
     // draw bounding rectangle
     nvgBeginPath(s->vg);
@@ -1062,7 +1074,7 @@ static void ui_draw_measures(UIState *s){
             b = 255;
             p = temp - 360.;
             p = p > 0 ? p : -p;
-            p *= 0.025; // red by the time voltage deviates from nominal voltage (360) by 40V
+            p *= 0.01666667; // red by the time voltage deviates from nominal voltage (360) by 60V deviation from nominal
             g -= int(0.5 * p * 255.);
             b -= int(p * 255.);
             g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
@@ -1081,7 +1093,7 @@ static void ui_draw_measures(UIState *s){
             b = 255;
             p = scene.car_state.getHvbVoltage() - 360.;
             p = p > 0 ? p : -p;
-            p *= 0.025; // red by the time voltage deviates from nominal voltage (360) by 40V (not based on amperage; voltage is the thing you want to monitor)
+            p *= 0.01666667; // red by the time voltage deviates from nominal voltage (360) by 60V deviation from nominal
             g -= int(0.5 * p * 255.);
             b -= int(p * 255.);
             g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
@@ -1105,7 +1117,7 @@ static void ui_draw_measures(UIState *s){
             b = 255;
             p = scene.car_state.getHvbVoltage() - 360.;
             p = p > 0 ? p : -p;
-            p *= 0.025; // red by the time voltage deviates from nominal voltage (360) by 40V (not based on amperage; voltage is the thing you want to monitor)
+            p *= 0.01666667; // red by the time voltage deviates from nominal voltage (360) by 60V deviation from nominal
             g -= int(0.5 * p * 255.);
             b -= int(p * 255.);
             g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
@@ -1130,7 +1142,7 @@ static void ui_draw_measures(UIState *s){
             b = 255;
             p = temp - 360.;
             p = p > 0 ? p : -p;
-            p *= 0.025; // red by the time voltage deviates from nominal voltage (360) by 40V (not based on amperage; voltage is the thing you want to monitor)
+            p *= 0.01666667; // red by the time voltage deviates from nominal voltage (360) by 60V deviation from nominal
             g -= int(0.5 * p * 255.);
             b -= int(p * 255.);
             g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
