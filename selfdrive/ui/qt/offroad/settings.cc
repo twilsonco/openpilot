@@ -145,25 +145,40 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "When coasting, start applying cruise braking when 15% over set speed.",
                                   "../assets/offroad/icon_speed_offset.png",
                                   this));
+  toggles.append(new ParamControl("CoastingDL",
+                                  "[Volt] D/L coast control",
+                                  "Tie the above option to the D/L gear shifter position. Coast in D; maintain set speed exactly in L.",
+                                  "../assets/offroad/icon_gear_shifter.png",
+                                  this));
   toggles.append(new ParamControl("RegenBraking",
-                                  "[GM] Engine/regen braking (tap me)",
+                                  "[GM] Engine/regen braking",
                                   "Disable friction braking when OP is slowing to maintain cruise/speed limit; still brake for following/curves",
                                   "../assets/img_brake.png",
                                   this));
   toggles.append(new ParamControl("OnePedalMode",
                                   "[GM] One-pedal mode (tap me)",
-                                  "In combination with the \"Disable disengage on gas\" option, you control speed with gas pedal (with optional, adjustable braking) while OP continues to steer and brake for curves and lead car following. To activate, ① (see \"One-pedal/Always-on-steering engage on gas\" below) set cruise speed to 1 and pedal icon will replace max speed indicator; set/resume button to return to normal cruise. ② Tap pedal icon to toggle one-pedal mode (see below). If one-pedal mode is active, then vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = 🟢/🟠/🔴 = light/moderate/heavy braking. ③ Press follow distance button to toggle persistent light/moderate braking; hold for temporary heavy braking. ④ Toggle between one-pedal braking and regen/engine braking only by tapping the pedal icon (grey pedal icon indicates engine/regen braking only) or by using the follow distance button; one press will activating braking if not active, and a double press while the gas pedal is pressed will deactivate braking.",
+                                  "In combination with the \"Disable disengage on gas\" option, you control speed with gas pedal (with optional, adjustable braking) while OP continues to steer and brake for curves and lead car following. To activate, ① (see \"One-pedal/Always-on-steering engage on gas\" below) set cruise speed to 1 and pedal icon will replace max speed indicator; set/resume button to return to normal cruise. ② Tap pedal icon to toggle one-pedal mode (see below). If one-pedal mode is active, then vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = (⚫️)/🟢/🟠/🔴 = (regen/engine)/light/moderate/heavy braking. ③ Press follow distance button to toggle between persistent light/moderate braking; hold for temporary heavy braking. ④ Toggle between friction 🟢/🟠/🔴 and regen/engine ⚫️ braking by tapping the pedal icon or by using the follow distance button; one press will activating friction braking if not active, and a double press while the gas pedal is pressed, or while stopped, will deactivate friction braking.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("OnePedalModeSimple",
-                                  "[GM] One-pedal pro brakes (tap me) ⚠️",
+                                  "[GM] One-pedal pro brakes ⚠️",
                                   "When using one-pedal mode, COMPLETELY DISABLE ALL OTHER FORMS OF OPENPILOT BRAKING. No additional braking will be automatically applied to slow/stop you behind a lead car, or to slow for a curve. You are solely responsible for applying brakes using adjustable one-pedal braking with the follow button or using the actual brakes.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
+  toggles.append(new ParamControl("OnePedalDLCoasting",
+                                  "[Volt] One-pedal D/L coast",
+                                  "When in one-pedal mode with regen braking ⚫️ active, regen will only be used when in L mode. In D, no braking whatsoever will be applied while you are not pressing the gas. (In fact a light press will result in more braking than no press at all)",
+                                  "../assets/offroad/icon_gear_shifter.png",
+                                  this));
   toggles.append(new ParamControl("OnePedalModeEngageOnGas",
-                                  "[GM] One-pedal engage on gas",
+                                  "[GM] One-pedal engage on gas (EoG)",
                                   "When you press the gas in cruise mode at speed (i.e. not when resuming from a stop), enter one-pedal/always-on-steering mode. Increase or reset speed to return to normal cruise.",
                                   "../assets/offroad/icon_car_pedal.png",
+                                  this));
+  toggles.append(new ParamControl("OnePedalDLEngageOnGas",
+                                  "[Volt] One-pedal D/L EoG",
+                                  "Tie the above option to the gear shifter D/L position. Off in D; on in L.",
+                                  "../assets/offroad/icon_gear_shifter.png",
                                   this));
   toggles.append(new ParamControl("BrakeIndicator",
                                   "[GM] Brake indicator",

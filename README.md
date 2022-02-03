@@ -82,6 +82,7 @@
     * *Can be a bit rough on the brakes when following downhill over set speed; recommend to disable if uncomfortable when constantly following downhill*
     * (Inspired by the implementation in sunnyhaibin's fork)
 - [x] [✅] Brake when 15% over set speed when coasting enabled
+- [x] [Volt] [✅] Coasting D/L control: Tie the above option to the D/L gear shifter position. Coast in D; maintain set speed exactly in L.
 - [x] [✅] Nudgeless lane change: OP will start lane change automatically in direction of blinker after blinker on for 3s
 - [x] [✅] Braking indicator shows level of regenerative/engine and friction braking
 - [x] **Customizable, dynamic vehicle/device metrics** (adapted from kegman)
@@ -99,21 +100,23 @@
       2. If one-pedal engage on gas toggle is enabled, press gas while cruise is set and traveling above 1mph
       3. While cruise is set, lower cruise speed to 1
     * When in one-pedal mode, the max speed indicator in openpilot will be replaced with a one-pedal mode indicator. Tap the one-pedal icon to toggle one-pedal engage on gas mode
-    * Vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1 bar/2 bar/3 bar = 🟢/🟠/🔴 = light/moderate/heavy braking
+    * Vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1 bar/2 bar/3 bar = (⚫️)/🟢/🟠/🔴 = (regen-engine)/light/moderate/heavy braking
     * Control braking with follow distance button:
-      * *Single press*: alternate between persistent light or moderate braking
-      * *Press and hold*: apply temporary hard braking (indicated by follow level 3 on vehicle cluster and red one-pedal icon) (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
-      * *Press when friction braking disabled*: activate friction braking
-      * *Double-press when stopped or when gas is pressed and friction braking is active*: deactivate friction braking
+      * *Single press*: alternate between persistent light or moderate 🟢/🟠 braking
+      * *Press and hold*: apply temporary hard braking 🔴 (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
+      * *Press when friction braking disabled*: activate friction braking 🟢
+      * *Double-press when stopped or when gas is pressed and friction braking is active*: deactivate friction braking/activate regen/engine braking ⚫️
     * [Volt] Coasting: using gear shifter, select D for coasting or L for regen (thanks to jshuler)
     * When one-pedal mode active and blinker is on below 20mph, autosteer will automatically pause
       * [Optional; tap wheel icon to toggle while in one-pedal mode]
       * A second white circle around the wheel icon indicates autosteer pause is enabled
     * *Must have disable disengage on gas toggle enabled*
 - [x] [GM] [✅] One-pedal pro braking: Completely disable cruise/speed limit/curve/follow braking when in one-pedal mode. You are soley responsible for slowing the car using the adjustable one-pedal braking (by pressing/holding the follow distance button) or with the physical brakes/regen paddle
+- [x] [Volt] [✅] One-pedal D/L coasting: In one-pedal regen/engine ⚫️ braking mode in D, no braking whatsoever will be applied. Shift to L for max regen. Happy hypermiling!
 - [x] [GM] [✅] One-pedal engage on gas: When cruising at speed and the driver presses the gas (i.e. not when resuming from a stop), engage one-pedal mode
     * Toggle while one-pedal mode enabled by tapping the pedal icon
     * Indiated by an extra circle around one-pedal icon
+- [x] [Volt] [✅] One-pedal D/L engage on gas: tie the engage on gas setting to the D/L gear shifter position. Off in D; on in L. (suggested by Shadowlight5)
 - [x] [GM] panda-based GM steering fault fix (thanks jshuler)
 - [x] Remember last follow mode (ported from kegman)
 

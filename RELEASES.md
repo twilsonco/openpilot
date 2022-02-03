@@ -1,8 +1,11 @@
 Version tw-0.8.9-3.9 (2022-02-01)
 ========================
- * NEW: [Volt] control coasting for cruise and one-pedal mode using D and L mode with the gear shifter
+ * NEW: [Volt] [optional] control coasting for cruise and one-pedal mode using D and L mode with the gear shifter
    * Coasts in D, regen in L
+   * Two separate toggles
    * Thanks to Jason Shuler
+ * NEW: [Volt] [optional] tie one-pedal engage on gas setting to D/L position: off in D; on in L
+   * Suggested by Shadowlight5
  * NEW: Display vehicle fingerprint on startup
  * IMPROVED: Brake indicator now shows regen/engine braking while cruising, or regen while in one-pedal regen mode
  * FIXED: [Volt] Prevent misprinting as Escalade ESV

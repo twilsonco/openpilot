@@ -56,6 +56,7 @@ class CarState(CarStateBase):
     self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco; 3 = creep
     
     self.coasting_enabled = self._params.get_bool("Coasting")
+    self.coasting_dl_enabled = self.is_ev and self._params.get_bool("CoastingDL")
     self.coasting_enabled_last = self.coasting_enabled
     self.no_friction_braking = self._params.get_bool("RegenBraking")
     self.coasting_brake_over_speed_enabled = self._params.get_bool("CoastingBrakeOverSpeed")
@@ -74,6 +75,8 @@ class CarState(CarStateBase):
     self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode") and not self.disengage_on_gas
     self.one_pedal_mode_op_braking_allowed = not self._params.get_bool("OnePedalModeSimple")
     self.one_pedal_mode_engage_on_gas_enabled = self._params.get_bool("OnePedalModeEngageOnGas") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
+    self.one_pedal_dl_engage_on_gas_enabled = self.is_ev and self._params.get_bool("OnePedalDLEngageOnGas") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
+    self.one_pedal_dl_coasting_enabled = self.is_ev and self._params.get_bool("OnePedalDLCoasting") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
     self.one_pedal_mode_engage_on_gas = False
     self.one_pedal_mode_engage_on_gas_min_speed = 1. * CV.MPH_TO_MS # gas press at or above this speed with engage on gas enabled and one-pedal mode will activate
     self.one_pedal_mode_max_set_speed = 3 * CV.MPH_TO_MS #  one pedal mode activates if cruise set at or below this speed
@@ -266,6 +269,8 @@ class CarState(CarStateBase):
       hvb_voltage = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryVoltage']
       self.hvb_wattage = hvb_current * hvb_voltage * 0.001
       self.gear_shifter_ev = pt_cp.vl["ECMPRDNL2"]['PRNDL2']
+    
+    if self.is_ev and self.coasting_dl_enabled:
       if not self.coasting_enabled and self.gear_shifter_ev == 4:
         self.coasting_enabled = True
         self._params.put_bool("Coasting", True)
@@ -279,6 +284,14 @@ class CarState(CarStateBase):
           self._params.put_bool("Coasting", True)
           self.coasting_enabled = True
     ret.coastingActive = self.coasting_enabled
+    
+    if self.is_ev and self.one_pedal_dl_engage_on_gas_enabled:
+      if not self.one_pedal_mode_engage_on_gas_enabled and self.gear_shifter_ev == 6:
+        self.one_pedal_mode_engage_on_gas_enabled = True
+        self._params.put_bool("OnePedalModeEngageOnGas", True)
+      elif self.one_pedal_mode_engage_on_gas_enabled and self.gear_shifter_ev == 4:
+        self.one_pedal_mode_engage_on_gas_enabled = False
+        self._params.put_bool("OnePedalModeEngageOnGas", False)
 
     ret.cruiseState.enabled = self.pcm_acc_status != AccState.OFF
     ret.cruiseState.standstill = False
