@@ -268,6 +268,9 @@ class CarState(CarStateBase):
       hvb_current = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryCurrent']
       hvb_voltage = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryVoltage']
       self.hvb_wattage = hvb_current * hvb_voltage * 0.001
+      ret.hvbVoltage = hvb_voltage
+      ret.hvbCurrent = hvb_current
+      ret.hvbWattage = self.hvb_wattage
       self.gear_shifter_ev = pt_cp.vl["ECMPRDNL2"]['PRNDL2']
     
     if self.is_ev and self.coasting_dl_enabled:

@@ -1051,6 +1051,93 @@ static void ui_draw_measures(UIState *s){
             snprintf(val, sizeof(val), "%s", gap.c_str());
           }
           break;
+          
+        case UIMeasure::HVB_VOLTAGE: 
+          {
+            snprintf(name, sizeof(name), "HVB VOLT");
+            snprintf(unit, sizeof(unit), "V");
+            float temp = scene.car_state.getHvbVoltage();
+            snprintf(val, sizeof(val), "%.0f", temp);
+            g = 255;
+            b = 255;
+            p = temp - 360.;
+            p = p > 0 ? p : -p;
+            p *= 0.025; // red by the time voltage deviates from nominal voltage (360) by 40V
+            g -= int(0.5 * p * 255.);
+            b -= int(p * 255.);
+            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+            val_color = nvgRGBA(255, g, b, 200);
+          }
+          break;
+        
+        case UIMeasure::HVB_CURRENT: 
+          {
+            snprintf(name, sizeof(name), "HVB CUR");
+            snprintf(unit, sizeof(unit), "A");
+            float temp = scene.car_state.getHvbCurrent();
+            snprintf(val, sizeof(val), "%.0f", temp);
+            g = 255;
+            b = 255;
+            p = scene.car_state.getHvbVoltage() - 360.;
+            p = p > 0 ? p : -p;
+            p *= 0.025; // red by the time voltage deviates from nominal voltage (360) by 40V (not based on amperage; voltage is the thing you want to monitor)
+            g -= int(0.5 * p * 255.);
+            b -= int(p * 255.);
+            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+            val_color = nvgRGBA(255, g, b, 200);
+          }
+          break;
+        
+        case UIMeasure::HVB_WATTAGE: 
+          {
+            snprintf(name, sizeof(name), "HVB POW");
+            snprintf(unit, sizeof(unit), "kW");
+            float temp = scene.car_state.getHvbWattage();
+            if (temp >= 100.){
+              snprintf(val, sizeof(val), "%.0f", temp);
+            }
+            else{
+              snprintf(val, sizeof(val), "%.1f", temp);
+            }
+            g = 255;
+            b = 255;
+            p = scene.car_state.getHvbVoltage() - 360.;
+            p = p > 0 ? p : -p;
+            p *= 0.025; // red by the time voltage deviates from nominal voltage (360) by 40V (not based on amperage; voltage is the thing you want to monitor)
+            g -= int(0.5 * p * 255.);
+            b -= int(p * 255.);
+            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+            val_color = nvgRGBA(255, g, b, 200);
+          }
+          break;
+        
+        case UIMeasure::HVB_WATTVOLT: 
+          {
+            snprintf(name, sizeof(name), "HVB kW");
+            float temp = scene.car_state.getHvbWattage();
+            if (temp >= 100.){
+              snprintf(val, sizeof(val), "%.0f", temp);
+            }
+            else{
+              snprintf(val, sizeof(val), "%.1f", temp);
+            }
+            temp = scene.car_state.getHvbVoltage();
+            snprintf(unit, sizeof(unit), "%.0fV", temp);
+            g = 255;
+            b = 255;
+            p = temp - 360.;
+            p = p > 0 ? p : -p;
+            p *= 0.025; // red by the time voltage deviates from nominal voltage (360) by 40V (not based on amperage; voltage is the thing you want to monitor)
+            g -= int(0.5 * p * 255.);
+            b -= int(p * 255.);
+            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+            val_color = nvgRGBA(255, g, b, 200);
+          }
+          break;
 
         default: {// invalid number
           snprintf(name, sizeof(name), "INVALID");

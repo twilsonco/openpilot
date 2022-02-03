@@ -159,6 +159,10 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   FANSPEED_PERCENT,
   MEMORY_USAGE_PERCENT,
   FREESPACE_STORAGE,
+  HVB_VOLTAGE,
+  HVB_CURRENT,
+  HVB_WATTAGE,
+  HVB_WATTVOLT,
   
   NUM_MEASURES
 } UIMeasure;
@@ -210,6 +214,7 @@ typedef struct UIScene {
   float desiredFollowDistance, followDistanceCost, followAccelCost;
   float stoppingDistance;
   float percentGradeDevice;
+  float hvbCurrent, hvbVoltage, hvbWattage;
   
   float lastTime = 0., sessionInitTime = 0.;
   float paramsCheckLast = 0., paramsCheckFreq = 0.1; // check params at 10Hz
