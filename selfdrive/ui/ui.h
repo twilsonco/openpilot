@@ -183,6 +183,9 @@ typedef struct UIScene {
   
   Rect wheel_touch_rect;
   bool wheel_rotates = true;
+  
+  bool screen_dim_active = false;
+  Rect screen_dim_touch_rect;
 
   cereal::PandaState::PandaType pandaType;
   

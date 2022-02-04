@@ -69,6 +69,8 @@
 - [x] [✅] 3mph cruise speed offset: speed will be 23/28/33/38/etc.
 - [x] [✅] Alternate sound effect set (inspired by sunnyhaibin implementation of mute sounds)
 - [x] [✅] Mute engage and disengage sounds (inspired by sunnyhaibin implementation)
+- [x] Dim screen by tapping driver monitoring icon (most recently suggested by veryluckyguy)
+    * Screen will automatically undim for warning/critical alerts
 - [x] [✅] Disable onroad uploads: for use with data-limited wifi hotspots. Reduces data use from 400MB/hour or 22MB/mile (based on 30 minute low-speed trip) down to 25MB/hour or 0.4MB/mile (based on 5 hour trip at 84mph; i.e. not a perfect comparison to the other trip)
     * Don't bother if you subscribe to [comma Prime](https://comma.ai/prime), which has unlimited data, and a host of other benefits! Don't delay; subscribe today!!
     * iPhone users can use [this shortcut](https://www.icloud.com/shortcuts/7f3c7e98f95d4f85a9bad939aa069fcd) to instantly open the personal hotspot page in the Settings app in order to enable personal hotspot for your comma device to connect.
@@ -91,7 +93,7 @@
         * Tap any metric to cycle its content (sorry for all the god-forsaken tapping, a better metric display with vehicle, following, position, and device widgets is a WIP)
     * Metrics (35 to choose from):
         * Device info: CPU temperature (°C and °F), CPU percent, CPU temp + percent (°C and °F), memory temperature (°C and °F), memory used, free storage, ambient temperature (°C and °F), fanspeed (as percent of max), GPS accuracy (and number of satelites), altitude
-        * Vehicle info: Engine RPM, engine coolant temperature (°C and °F), engine RPM + coolant temperature (°C and °F), steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road (one based on GPS, one based on device accelerometer)
+        * Vehicle info: Engine RPM, engine coolant temperature (°C and °F), engine RPM + coolant temperature (°C and °F), steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road (one based on GPS, one based on device accelerometer), Volt high-voltage battery wattage [kW], voltage [V], current [A], and voltage+wattage 
         * Lead-following info: follow distance level, lead distance [length], desired lead distance [length], lead distance [time], desired lead distance [time], follow distance and acceleration mpc costs [in units of the stock OP costs; i.e. 2.5 means 2.5× the stock OP value], relative lead velocity, absolute lead velocity
 - [x] [GM] [✅] **One-pedal driving**: OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
     * **Not necessary to enable the one-pedal toggle; you engage/disengage while driving**

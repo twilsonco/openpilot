@@ -159,6 +159,12 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     Params().put("AccelMode", std::to_string((std::stoi(Params().get("AccelMode")) + 1) % 4).c_str(), 1);
     return;
   }
+  
+  // screen dim button (dm face icon)
+  if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.screen_dim_touch_rect.ptInRect(e->x(), e->y())){
+    QUIState::ui_state.scene.screen_dim_active = !QUIState::ui_state.scene.screen_dim_active;
+    return;
+  }
 
   // Handle sidebar collapsing
   else if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {

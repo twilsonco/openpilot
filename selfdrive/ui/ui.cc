@@ -152,6 +152,24 @@ static void update_state(UIState *s) {
       scene.accel_mode = std::stoi(Params().get("AccelMode"));
     }
   }
+  
+  // update screen dim
+  if (scene.started){
+    const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
+    const int radius = 96;
+    const int center_x = maxspeed_rect.centerX();
+    const int center_y = s->fb_h - footer_h / 2;
+    if (scene.screen_dim_active){
+      // s->scene.screen_dim_touch_rect = {maxspeed_rect.x, maxspeed_rect.y, s->scene.wheel_touch_rect.x - maxspeed_rect.x, center_y - maxspeed_rect.x};
+      scene.screen_dim_touch_rect = {center_x - 3*radius, center_y - 3*radius, 6 * radius, 6 * radius};
+    }
+    else{
+      scene.screen_dim_touch_rect = {center_x - radius, center_y - radius, 2 * radius, 2 * radius};
+    }
+  }
+  else{
+    scene.screen_dim_touch_rect = {1,1,1,1};
+  }
 
   // update engageability and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
@@ -406,8 +424,10 @@ static void update_status(UIState *s) {
     auto alert_status = controls_state.getAlertStatus();
     if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       s->status = STATUS_WARNING;
+      s->scene.screen_dim_active = false;
     } else if (alert_status == cereal::ControlsState::AlertStatus::CRITICAL) {
       s->status = STATUS_ALERT;
+      s->scene.screen_dim_active = false;
     } else {
       s->status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
@@ -552,11 +572,15 @@ void Device::updateBrightness(const UIState &s) {
 
   if (!s.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
+    QUIState::ui_state.scene.screen_dim_active = false;
   }
 
   int brightness = brightness_filter.update(clipped_brightness);
   if (!awake) {
     brightness = 0;
+  }
+  else if (s.scene.started && s.scene.screen_dim_active){
+    brightness = 1;
   }
 
   if (brightness != last_brightness) {
