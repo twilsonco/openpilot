@@ -47,6 +47,7 @@ def manager_init():
     ("StockSpeedAdjust", "1"),
     ("CustomSounds", "0"),
     ("SilentEngageDisengage", "0"),
+    ("ScreenDimMode", "2"),
     ("AccelModeButton", "0"),
     ("AccelMode", "0"),
     ("EndToEndToggle", "1"),

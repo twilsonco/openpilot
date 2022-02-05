@@ -22,6 +22,9 @@
 #define BACKLIGHT_TS 10.00
 #define BACKLIGHT_OFFROAD 75
 
+#define MAX(A,B) A > B ? A : B
+#define MIN(A,B) A < B ? A : B
+
 static const float fade_duration = 0.3; // [s] time it takes for the brake indicator to fade in/out
 static const float fade_time_step = 1. / fade_duration; // will step in the transparent or opaque direction
 
@@ -143,6 +146,7 @@ static void update_state(UIState *s) {
     scene.paramsCheckLast = t;
     scene.disableDisengageOnGasEnabled = Params().getBool("DisableDisengageOnGas");
     scene.speed_limit_control_enabled = Params().getBool("SpeedLimitControl");
+    scene.screen_dim_mode = std::stoi(Params().get("ScreenDimMode"));
     if (scene.disableDisengageOnGasEnabled){
       scene.onePedalModeActive = Params().getBool("OnePedalMode");
       scene.onePedalEngageOnGasEnabled = Params().getBool("OnePedalModeEngageOnGas");
@@ -153,23 +157,52 @@ static void update_state(UIState *s) {
     }
   }
   
+  // fade screen brightness
   // update screen dim
   if (scene.started){
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
     const int radius = 96;
     const int center_x = maxspeed_rect.centerX();
     const int center_y = s->fb_h - footer_h / 2;
-    if (scene.screen_dim_active){
-      // s->scene.screen_dim_touch_rect = {maxspeed_rect.x, maxspeed_rect.y, s->scene.wheel_touch_rect.x - maxspeed_rect.x, center_y - maxspeed_rect.x};
-      scene.screen_dim_touch_rect = {center_x - 3*radius, center_y - 3*radius, 6 * radius, 6 * radius};
+    scene.screen_dim_touch_rect = {center_x - (1+scene.screen_dim_mode_max-scene.screen_dim_mode) * radius, center_y - (1+scene.screen_dim_mode_max-scene.screen_dim_mode) * radius, (2*(1+scene.screen_dim_mode_max-scene.screen_dim_mode)) * radius, (2*(1+scene.screen_dim_mode_max-scene.screen_dim_mode)) * radius};
+    
+    if (s->status == STATUS_WARNING){
+      scene.screen_dim_mode_cur = scene.screen_dim_mode + 1;
+      if (scene.screen_dim_mode_cur > scene.screen_dim_mode_max){
+        scene.screen_dim_mode_cur = scene.screen_dim_mode_max;
+      }
+    }
+    else if (s->status == STATUS_ALERT){
+      scene.screen_dim_mode_cur = scene.screen_dim_mode_max;
+      scene.screen_dim_fade = scene.screen_dim_modes_v[scene.screen_dim_mode_cur];
     }
     else{
-      scene.screen_dim_touch_rect = {center_x - radius, center_y - radius, 2 * radius, 2 * radius};
+      scene.screen_dim_mode_cur = scene.screen_dim_mode;
+    }
+    
+    if (scene.screen_dim_mode_cur != scene.screen_dim_mode_last){
+      scene.screen_dim_fade_step = scene.screen_dim_modes_v[scene.screen_dim_mode_cur] - scene.screen_dim_modes_v[scene.screen_dim_mode_last];
+      scene.screen_dim_fade_step /= (scene.screen_dim_fade_step > 0 ? scene.screen_dim_fade_dur_up : scene.screen_dim_fade_dur_down);
+    }
+    
+    if (scene.screen_dim_fade > scene.screen_dim_modes_v[scene.screen_dim_mode_cur]){
+      scene.screen_dim_fade += scene.screen_dim_fade_step * (t - scene.screen_dim_fade_last_t);
+      if (scene.screen_dim_fade < scene.screen_dim_modes_v[scene.screen_dim_mode_cur])
+        scene.screen_dim_fade = scene.screen_dim_modes_v[scene.screen_dim_mode_cur];
+    }
+    else if (scene.screen_dim_fade < scene.screen_dim_modes_v[scene.screen_dim_mode_cur]){
+      scene.screen_dim_fade += scene.screen_dim_fade_step * (t - scene.screen_dim_fade_last_t);
+      if (scene.screen_dim_fade > scene.screen_dim_modes_v[scene.screen_dim_mode_cur])
+        scene.screen_dim_fade = scene.screen_dim_modes_v[scene.screen_dim_mode_cur];
     }
   }
   else{
+    scene.screen_dim_mode_cur = scene.screen_dim_mode_max;
+    scene.screen_dim_fade = scene.screen_dim_modes_v[scene.screen_dim_mode_cur];
     scene.screen_dim_touch_rect = {1,1,1,1};
   }
+  scene.screen_dim_mode_last = scene.screen_dim_mode_cur;
+  scene.screen_dim_fade_last_t = t;
 
   // update engageability and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
@@ -215,7 +248,6 @@ static void update_state(UIState *s) {
       }
     }
     scene.one_pedal_fade_last_t = t;
-  
     
     scene.steerOverride= scene.car_state.getSteeringPressed();
     scene.angleSteers = scene.car_state.getSteeringAngleDeg();
@@ -424,10 +456,8 @@ static void update_status(UIState *s) {
     auto alert_status = controls_state.getAlertStatus();
     if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       s->status = STATUS_WARNING;
-      s->scene.screen_dim_active = false;
     } else if (alert_status == cereal::ControlsState::AlertStatus::CRITICAL) {
       s->status = STATUS_ALERT;
-      s->scene.screen_dim_active = false;
     } else {
       s->status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
@@ -572,15 +602,14 @@ void Device::updateBrightness(const UIState &s) {
 
   if (!s.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
-    QUIState::ui_state.scene.screen_dim_active = false;
   }
 
   int brightness = brightness_filter.update(clipped_brightness);
   if (!awake) {
     brightness = 0;
   }
-  else if (s.scene.started && s.scene.screen_dim_active){
-    brightness = 1;
+  else if (s.scene.started && QUIState::ui_state.scene.screen_dim_fade < 1.0){
+    brightness = std::clamp(int(float(brightness) * QUIState::ui_state.scene.screen_dim_fade),1,100);
   }
 
   if (brightness != last_brightness) {

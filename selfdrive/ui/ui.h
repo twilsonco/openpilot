@@ -184,7 +184,13 @@ typedef struct UIScene {
   Rect wheel_touch_rect;
   bool wheel_rotates = true;
   
-  bool screen_dim_active = false;
+  float screen_dim_modes_v[3] = {0.01, 0.5, 1.};
+  int screen_dim_mode_max = 2;
+  int screen_dim_mode_cur = screen_dim_mode_max, 
+    screen_dim_mode = screen_dim_mode_max, 
+    screen_dim_mode_last = screen_dim_mode_max;
+  float screen_dim_fade = -1., screen_dim_fade_last_t = 0., screen_dim_fade_step = 1;
+  float screen_dim_fade_dur_up = 0.5, screen_dim_fade_dur_down = 2.;
   Rect screen_dim_touch_rect;
 
   cereal::PandaState::PandaType pandaType;

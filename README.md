@@ -69,8 +69,8 @@
 - [x] [✅] 3mph cruise speed offset: speed will be 23/28/33/38/etc.
 - [x] [✅] Alternate sound effect set (inspired by sunnyhaibin implementation of mute sounds)
 - [x] [✅] Mute engage and disengage sounds (inspired by sunnyhaibin implementation)
-- [x] Dim screen by tapping driver monitoring icon (most recently suggested by veryluckyguy)
-    * Screen will automatically undim for warning/critical alerts
+- [x] Brightness control: Tap driver monitoring icon to cycle stock/medium/low brightness (most recently suggested by veryluckyguy)
+    * Screen will temporarily undim for warning/critical alerts
 - [x] [✅] Disable onroad uploads: for use with data-limited wifi hotspots. Reduces data use from 400MB/hour or 22MB/mile (based on 30 minute low-speed trip) down to 25MB/hour or 0.4MB/mile (based on 5 hour trip at 84mph; i.e. not a perfect comparison to the other trip)
     * Don't bother if you subscribe to [comma Prime](https://comma.ai/prime), which has unlimited data, and a host of other benefits! Don't delay; subscribe today!!
     * iPhone users can use [this shortcut](https://www.icloud.com/shortcuts/7f3c7e98f95d4f85a9bad939aa069fcd) to instantly open the personal hotspot page in the Settings app in order to enable personal hotspot for your comma device to connect.

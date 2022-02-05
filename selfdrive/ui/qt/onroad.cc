@@ -79,7 +79,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
     bool sidebarVisible = geometry().x() > 0;
     bool ignorePress = false;
     
-    ignorePress = ptInBiggerRect(QUIState::ui_state.scene.speed_limit_sign_touch_rect, e);
+    ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.speed_limit_sign_touch_rect, e);
     ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.laneless_btn_touch_rect, e);
     ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.speed_rect, e);
     ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.wheel_touch_rect, e);

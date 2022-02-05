@@ -162,7 +162,12 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   
   // screen dim button (dm face icon)
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.screen_dim_touch_rect.ptInRect(e->x(), e->y())){
-    QUIState::ui_state.scene.screen_dim_active = !QUIState::ui_state.scene.screen_dim_active;
+    int dim_mode = std::stoi(Params().get("ScreenDimMode")) - 1;
+    if (dim_mode < 0){
+      dim_mode = QUIState::ui_state.scene.screen_dim_mode_max;
+    }
+    QUIState::ui_state.scene.screen_dim_mode = dim_mode;
+    Params().put("ScreenDimMode", std::to_string(dim_mode).c_str(), 1);
     return;
   }
 
