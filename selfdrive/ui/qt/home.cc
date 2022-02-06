@@ -160,6 +160,12 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     return;
   }
   
+  // accel_mode button
+  if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.dynamic_follow_mode_touch_rect.ptInRect(e->x(), e->y())){
+    Params().putBool("DynamicFollow", !Params().getBool("DynamicFollow"));
+    return;
+  }
+  
   // screen dim button (dm face icon)
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.screen_dim_touch_rect.ptInRect(e->x(), e->y())){
     int dim_mode = std::stoi(Params().get("ScreenDimMode")) - 1;

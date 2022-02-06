@@ -255,6 +255,7 @@ class Planner():
     longitudinalPlan.stoppingDistance = self.mpcs['lead0'].stopping_distance
     longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
     longitudinalPlan.fcw = self.fcw
+    longitudinalPlan.dynamicFollowLevel = self.mpcs['lead0'].follow_level_df
 
     longitudinalPlan.visionTurnControllerState = self.vision_turn_controller.state
     longitudinalPlan.visionTurnSpeed = float(self.vision_turn_controller.v_turn)

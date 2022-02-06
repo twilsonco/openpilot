@@ -155,6 +155,9 @@ static void update_state(UIState *s) {
     if (scene.accel_mode_button_enabled){
       scene.accel_mode = std::stoi(Params().get("AccelMode"));
     }
+    if (scene.dynamic_follow_mode_button_enabled){
+      scene.dynamic_follow_active = std::stoi(Params().get("DynamicFollow"));
+    }
   }
   
   // fade screen brightness
@@ -419,6 +422,7 @@ static void update_state(UIState *s) {
     scene.followDistanceCost = data.getLeadDistCost();
     scene.followAccelCost = data.getLeadAccelCost();
     scene.stoppingDistance = data.getStoppingDistance();
+    scene.dynamic_follow_level = data.getDynamicFollowLevel();
   }
   scene.lastTime = t;
 }
@@ -471,10 +475,20 @@ static void update_status(UIState *s) {
       s->scene.started_frame = s->sm->frame;
 
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
+      if (!s->scene.end_to_end){
+        s->scene.laneless_btn_touch_rect = {1,1,1,1};
+      }
       s->scene.laneless_mode = std::stoi(Params().get("LanelessMode"));
       s->scene.brake_percent = std::stoi(Params().get("FrictionBrakePercent"));
 
       s->scene.accel_mode_button_enabled = Params().getBool("AccelModeButton");
+      if (!s->scene.accel_mode_button_enabled){
+        s->scene.accel_mode_touch_rect = {1,1,1,1};
+      }
+      s->scene.dynamic_follow_mode_button_enabled = Params().getBool("DynamicFollowToggle");
+      if (!s->scene.dynamic_follow_mode_button_enabled){
+        s->scene.dynamic_follow_mode_touch_rect = {1,1,1,1};
+      }
 
       s->scene.sessionInitTime = seconds_since_boot();
       s->scene.percentGrade = 0;

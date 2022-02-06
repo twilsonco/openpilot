@@ -115,6 +115,7 @@ class LongControl():
       self.coasting_lead_d = long_plan.leadDist
       self.coasting_lead_v = long_plan.leadV
       self.tr = long_plan.desiredFollowDistance
+      
 
       # Toyota starts braking more when it thinks you want to stop
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration

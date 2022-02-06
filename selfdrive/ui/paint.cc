@@ -1043,24 +1043,29 @@ static void ui_draw_measures(UIState *s){
           {
             std::string gap;
             snprintf(name, sizeof(name), "GAP");
-            switch (int(scene.car_state.getReaddistancelines())){
-              case 1:
-              gap =  "I";
-              break;
+            if (scene.dynamic_follow_active){
+              snprintf(val, sizeof(val), "%.1f", scene.dynamic_follow_level);
+            }else
+            {
+              switch (int(scene.car_state.getReaddistancelines())){
+                case 1:
+                gap =  "I";
+                break;
               
-              case 2:
-              gap =  "I I";
-              break;
+                case 2:
+                gap =  "I I";
+                break;
               
-              case 3:
-              gap =  "I I I";
-              break;
+                case 3:
+                gap =  "I I I";
+                break;
               
-              default:
-              gap =  "";
-              break;
+                default:
+                gap =  "";
+                break;
+              }
+              snprintf(val, sizeof(val), "%s", gap.c_str());
             }
-            snprintf(val, sizeof(val), "%s", gap.c_str());
           }
           break;
           
@@ -1422,7 +1427,7 @@ static void ui_draw_vision_brake(UIState *s) {
 }
 
 static void draw_accel_mode_button(UIState *s) {
-  if (s->vipc_client->connected) {
+  if (s->vipc_client->connected && s->scene.accel_mode_button_enabled) {
     const int radius = 72;
     int center_x = s->fb_w - face_wheel_radius - bdr_s * 2;
     if (s->scene.brake_percent >= 0){
@@ -1488,6 +1493,51 @@ static void draw_accel_mode_button(UIState *s) {
     
     
     s->scene.accel_mode_touch_rect = Rect{center_x - laneless_btn_touch_pad, 
+                                                center_y - laneless_btn_touch_pad,
+                                                radius + 2 * laneless_btn_touch_pad, 
+                                                radius + 2 * laneless_btn_touch_pad}; 
+  }
+}
+
+static void draw_dynamic_follow_mode_button(UIState *s) {
+  if (s->vipc_client->connected && s->scene.dynamic_follow_mode_button_enabled) {
+    const int radius = 72;
+    int center_x = s->fb_w - face_wheel_radius - bdr_s * 2;
+    if (s->scene.brake_percent >= 0){
+      center_x -= brake_size + 3 * bdr_s + radius;
+    }
+    if (s->scene.accel_mode_button_enabled){
+      center_x -= 2 * (bdr_s + radius);
+    }
+    const int center_y = s->fb_h - footer_h / 2 - radius / 2;
+    int btn_w = radius * 2;
+    int btn_h = radius * 2;
+    int btn_x1 = center_x - 0.5 * radius;
+    int btn_y = center_y - 0.5 * radius;
+    int btn_xc1 = btn_x1 + radius;
+    int btn_yc = btn_y + radius;
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, radius);
+    // nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, 100);
+    nvgStrokeColor(s->vg, nvgRGBA(0,0,0,80));
+    nvgStrokeWidth(s->vg, 6);
+    nvgStroke(s->vg);
+    nvgFontSize(s->vg, 52);
+
+    nvgStrokeColor(s->vg, nvgRGBA(200,200,200,s->scene.dynamic_follow_active ? 200 : 80));
+    nvgStrokeWidth(s->vg, 6);
+    nvgStroke(s->vg);
+    NVGcolor fillColor = nvgRGBA(0,0,0,80);
+    nvgFillColor(s->vg, fillColor);
+    nvgFill(s->vg);
+    nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
+    char val[16];
+    snprintf(val, sizeof(val), "%.2f", s->scene.dynamic_follow_level);
+    nvgText(s->vg,btn_xc1,btn_yc,val,NULL);
+    
+    
+    s->scene.dynamic_follow_mode_touch_rect = Rect{center_x - laneless_btn_touch_pad, 
                                                 center_y - laneless_btn_touch_pad,
                                                 radius + 2 * laneless_btn_touch_pad, 
                                                 radius + 2 * laneless_btn_touch_pad}; 
@@ -1587,6 +1637,9 @@ static void ui_draw_vision(UIState *s) {
   }
   if (s->scene.accel_mode_button_enabled){
     draw_accel_mode_button(s);
+  }
+  if (s->scene.dynamic_follow_mode_button_enabled){
+    draw_dynamic_follow_mode_button(s);
   }
 }
 

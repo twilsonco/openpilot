@@ -121,9 +121,14 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("AccelModeButton",
-                                  "Acceleration mode button",
-                                  "Enable a button that will let you cycle between normal, sport, and eco acceleration profiles.",
+                                  "Acceleration profiles",
+                                  "Cycle between normal, sport, and eco acceleration profiles.",
                                   "../assets/offroad/icon_rocket.png",
+                                  this));
+  toggles.append(new ParamControl("DynamicFollowToggle",
+                                  "Dynamic follow",
+                                  "Automatically (and imperceptibly) switch between close/medium/far follow profiles based on speed and traffic.",
+                                  "../assets/offroad/icon_road.png",
                                   this));
   toggles.append(new ParamControl("NudgelessLaneChange",
                                   "Nudgeless lane change (1s delay) ⚠️",

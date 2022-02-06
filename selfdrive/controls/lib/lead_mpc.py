@@ -2,6 +2,7 @@ import math
 import numpy as np
 from common.numpy_fast import interp, clip
 from common.realtime import sec_since_boot
+from common.params import Params
 from selfdrive.config import Conversions as CV
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
@@ -110,7 +111,104 @@ def calc_follow_profile(v_ego, v_lead, x_lead, fpi):
   accel_cost = clip(accel_cost, FP_MIN_MAX_ACCEL_COSTS[fpi][0], FP_MIN_MAX_ACCEL_COSTS[fpi][1])
     
   return tr, dist_cost, accel_cost
+
+def interp_follow_profile(v_ego, v_lead, x_lead, fp_float):
+  if fp_float <= 0.:
+    fp = calc_follow_profile(v_ego, v_lead, x_lead, 0)
+  elif fp_float < 1.:
+    fp1,fp2 = [calc_follow_profile(v_ego, v_lead, x_lead, i) for i in [0,1]]
+    fp = [(1. - fp_float) * i + fp_float * j for i,j in zip(fp1,fp2)]
+  elif fp_float < 2.:
+    fptmp = fp_float - 1
+    fp1,fp2 = [calc_follow_profile(v_ego, v_lead, x_lead, i) for i in [1,2]]
+    fp = [(1. - fptmp) * i + fptmp * j for i,j in zip(fp1,fp2)]
+  else:
+    fp = calc_follow_profile(v_ego, v_lead, x_lead, 2)
+  return fp
   
+class DynamicFollow():
+  t_last = 0.
+  
+  cutin_t_last = 0.
+  cutin_rescind_t = 4.
+  user_timeout_t = 300.
+  user_timeout_last_t = -user_timeout_t
+  
+  speed_fp_limit_bp = [i * CV.MPH_TO_MS for i in [55., 80.]]
+  speed_fp_limit_v = [1., 2.]  # [follow profile number 0-based] restricted to close/med follow until 55mph, smoothly increase to far follow by 80mph
+  
+  speed_rate_factor_bp = [i * CV.MPH_TO_MS for i in [1., 30.]] # [mph]
+  speed_rate_factor_v = [0.,1.] # slow "time" at low speed to you have to be actually moving behind a lead in order to earn points
+  
+  fp_point_rate_bp = [0.5, 1.0, 1.5, 2.0]
+  fp_point_rate_v = [1. / 30., 1. / 120., 1. / 900., 1. / 3000.]  # [follow profile per second] ~30s to go from close to medium, then ~10 minutes to go from medium to far
+  
+  points_cur = 0.  # [follow profile number 0-based]
+  points_bounds = [-10., 2.]  # [follow profile number 0-based] min and max follow levels (at the 1/30 fp_point_rate, -10 means after the max number of cutins it takes ~5 minutes to get back to medium follow)
+  
+  cutin_dist_penalty_bp = [i * 0.3 for i in [40., 150.]]  # [ft converted to m]
+  cutin_dist_penalty_v = [2.5, 0.]  # [follow profile] cutin of 40ft or less, drop to close follow, with less penalty up to 150ft, at which point you don't care
+  
+  cutin_vel_penalty_bp = [i * CV.MPH_TO_MS for i in [-15., 15.]]  # [mph] relative velocity of new lead
+  cutin_vel_penalty_v = [-3., 2.5]  # [follow profile] additionally go to close follow for new lead approaching too quickly, or *offset* the penalty for a close cutin if they're moving away (to keep from darting after a new cutin)
+
+  cutin_last_t_factor_bp = [0., 15.] # [s] time since last cutin
+  cutin_last_t_factor_v = [3., 1.] # [unitless] factor of cutin penalty
+
+  cutin_penalty_last = 0.  # penalty for most recent cutin, so that it can be rescinded if the cutin really just cut *over* in front of you (i.e. they quickly disappear)
+  lead_d_last = 0.
+  has_lead_last = False
+  
+  def __init__(self,fpi = 1):
+    self.points_cur = fpi
+    self.t_last = 0
+  
+  def update(self, has_lead, lead_d, lead_v, v_ego):
+    t = sec_since_boot()
+    dur = t - self.t_last
+    self.t_last = sec_since_boot()
+    lead_v_rel = v_ego - lead_v
+    if has_lead:
+      new_lead = not self.has_lead_last and abs(lead_d - self.lead_d_last) > 2.5
+      self.lead_d_last = lead_d
+      if new_lead:
+        penalty_dist = interp(lead_d, self.cutin_dist_penalty_bp, self.cutin_dist_penalty_v)
+        penalty_vel = interp(lead_v_rel, self.cutin_vel_penalty_bp, self.cutin_vel_penalty_v)
+        penalty = max(0., penalty_dist + penalty_vel)
+        penalty *= interp(t - self.cutin_t_last, self.cutin_last_t_factor_bp, self.cutin_last_t_factor_v)
+        points_old = self.points_cur
+        if t - self.user_timeout_last_t > self.user_timeout_t:
+          self.points_cur = max(self.points_bounds[0], self.points_cur - penalty)
+        self.cutin_t_last = t
+        self.cutin_penalty_last = points_old - self.points_cur
+        return self.points_cur
+    elif t - self.user_timeout_last_t > self.user_timeout_t:
+      if t - self.cutin_t_last < self.cutin_rescind_t:
+        rate = interp(self.points_cur, self.fp_point_rate_bp, self.fp_point_rate_v)
+        self.points_cur += max(0,self.cutin_penalty_last - rate * (t - self.cutin_t_last))
+        self.cutin_t_last = t - self.cutin_rescind_t - 1.
+      self.lead_d_last = 1000.
+
+    rate = interp(self.points_cur, self.fp_point_rate_bp, self.fp_point_rate_v)
+    speed_factor = interp(v_ego, self.speed_rate_factor_bp, self.speed_rate_factor_v)
+    step = rate * dur * speed_factor
+    if t - self.user_timeout_last_t > self.user_timeout_t:
+      self.points_cur = min(interp(v_ego, self.speed_fp_limit_bp, self.speed_fp_limit_v), self.points_cur + step)
+
+    self.t_last = t
+    self.has_lead_last = has_lead
+
+    return self.points_cur
+  
+  def set_fp(self,fpi):
+    self.points_cur = fpi
+    self.user_timeout_last_t = self.t_last
+    self.cutin_t_last = -self.cutin_rescind_t
+  
+  def reset(self, fpi = 1):
+    self.points_cur = fpi
+    self.user_timeout_last_t = -self.user_timeout_t
+    self.cutin_t_last = -self.cutin_rescind_t
 
 class LeadMpc():
   def __init__(self, mpc_id):
@@ -136,6 +234,15 @@ class LeadMpc():
     self.v_solution = np.zeros(CONTROL_N)
     self.a_solution = np.zeros(CONTROL_N)
     self.j_solution = np.zeros(CONTROL_N)
+    
+    self.df = DynamicFollow()
+    self.follow_level_last = 1
+    self.follow_level_df = 0.
+    self.dynamic_follow_active = False
+    
+    self.params_check_last_t = 0.
+    self.params_check_freq = 0.5 # check params at 2Hz
+    self._params = Params()
 
   def reset_mpc(self):
     ffi, self.libmpc = libmpc_py.get_libmpc(self.lead_id)
@@ -146,6 +253,7 @@ class LeadMpc():
     self.cur_state[0].v_ego = 0
     self.cur_state[0].a_ego = 0
     self.a_lead_tau = _LEAD_ACCEL_TAU
+    self.df = DynamicFollow()
 
   def set_cur_state(self, v, a):
     v_safe = max(v, 1e-3)
@@ -163,13 +271,26 @@ class LeadMpc():
 
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
-
+    
+    
     follow_level = int(CS.readdistancelines) - 1 # use base 0
+    
+    t = sec_since_boot()
+    if t - self.params_check_last_t >= self.params_check_freq:
+      self.params_check_last_t = t
+      dynamic_follow_active = self._params.get_bool("DynamicFollow")
+      if dynamic_follow_active and dynamic_follow_active != self.dynamic_follow_active:
+        self.df.reset(follow_level)
+      self.dynamic_follow_active = dynamic_follow_active
+    
+    if follow_level != self.follow_level_last:
+      self.df.set_fp(follow_level)
+      
     if follow_level < 0 or follow_level > 2:
       follow_level = 1
     fp = FOLLOW_PROFILES[follow_level]
     stopping_distance = fp[4]
-
+    
     if lead is not None and lead.status:
       x_lead = max(0, lead.dRel - stopping_distance)  # increase stopping distance to car by X [m]
       v_lead = max(0.0, lead.vLead)
@@ -189,9 +310,14 @@ class LeadMpc():
       self.prev_lead_x = x_lead
       self.cur_state[0].x_l = x_lead
       self.cur_state[0].v_l = v_lead
-      
+
       # Setup mpc
-      tr, dist_cost, accel_cost = calc_follow_profile(v_ego, v_lead, lead.dRel, follow_level)
+      # dynamic follow 
+      if self.dynamic_follow_active:
+        self.follow_level_df = self.df.update(True, lead.dRel, v_lead, v_ego)
+        tr, dist_cost, accel_cost = interp_follow_profile(v_ego, v_lead, lead.dRel, self.follow_level_df)
+      else:
+        tr, dist_cost, accel_cost = calc_follow_profile(v_ego, v_lead, lead.dRel, follow_level)
     else:
       self.prev_lead_status = False
       # Fake a fast lead car, so mpc keeps running
@@ -206,12 +332,13 @@ class LeadMpc():
     if dist_cost != self.dist_cost_last or accel_cost != self.accel_cost_last:
       self.libmpc.change_costs(MPC_COST_LONG.TTC, dist_cost, accel_cost, MPC_COST_LONG.JERK)
       self.dist_cost_last = dist_cost
-      self.accel_cost_last = self.accel_cost
+      self.accel_cost_last = accel_cost
     
     self.tr = tr
     self.dist_cost = dist_cost / MPC_COST_LONG.DISTANCE
     self.accel_cost = accel_cost / MPC_COST_LONG.ACCELERATION
     self.stopping_distance = stopping_distance
+    self.follow_level_last = follow_level
       
     t = sec_since_boot()
     self.n_its = 0

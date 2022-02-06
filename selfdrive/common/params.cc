@@ -224,6 +224,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"OnePedalBrakeMode", CLEAR_ON_MANAGER_START},
     {"OnePedalPauseBlinkerSteering", PERSISTENT},
     {"FollowLevel", PERSISTENT},
+    {"DynamicFollow", CLEAR_ON_MANAGER_START},
+    {"DynamicFollowToggle", PERSISTENT},
     {"CoastingBrakeOverSpeed", PERSISTENT},
     {"CruiseSpeedOffset", PERSISTENT},
     {"NudgelessLaneChange", PERSISTENT},

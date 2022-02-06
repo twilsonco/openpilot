@@ -245,6 +245,12 @@ typedef struct UIScene {
   Rect accel_mode_touch_rect;
   int accel_mode;
   
+  // dynamic follow mode button
+  bool dynamic_follow_mode_button_enabled;
+  Rect dynamic_follow_mode_touch_rect;
+  bool dynamic_follow_active;
+  float dynamic_follow_level;
+  
   // one-pedal mode fading. maxspeed rect at -1, fades away by 0, and one-pedal icon fades in by 1
   float one_pedal_fade = -1., one_pedal_fade_last_t = 0.;
   Rect one_pedal_touch_rect;

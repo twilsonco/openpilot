@@ -64,6 +64,8 @@ def manager_init():
     ("OnePedalBrakeMode", "0"),
     ("OnePedalPauseBlinkerSteering", "1"),
     ("FollowLevel", "2"),
+    ("DynamicFollow", "1"),
+    ("DynamicFollowToggle", "0"),
     ("CoastingBrakeOverSpeed", "0"),
     ("FrictionBrakePercent", "0"),
     ("BrakeIndicator", "1"),
