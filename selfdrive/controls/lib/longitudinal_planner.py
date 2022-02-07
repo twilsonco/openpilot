@@ -108,6 +108,10 @@ class Planner():
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -10. # lead "absolute"" velocity
     self.tr = 1.8
+    
+    self.v_ego_last = 0.
+    self.stopped_t_last = 0.
+    self.seconds_stopped = 0
 
     self.sessionInitTime = sec_since_boot()
     self.debug_logging = False
@@ -130,6 +134,15 @@ class Planner():
     t = cur_time
     v_ego = sm['carState'].vEgo
     a_ego = sm['carState'].aEgo
+    
+    if self.v_ego_last > 0.02 and v_ego <= 0.02:
+      self.stopped_t_last = t
+    self.v_ego_last = v_ego
+    
+    if v_ego < 0.02:
+      self.seconds_stopped = int(t - self.stopped_t_last)
+    else:
+      self.seconds_stopped = 0
 
     v_cruise_kph = sm['controlsState'].vCruise
     v_cruise_kph = min(v_cruise_kph, V_CRUISE_MAX)
@@ -256,6 +269,7 @@ class Planner():
     longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
     longitudinalPlan.fcw = self.fcw
     longitudinalPlan.dynamicFollowLevel = self.mpcs['lead0'].follow_level_df
+    longitudinalPlan.secondsStopped = self.seconds_stopped
 
     longitudinalPlan.visionTurnControllerState = self.vision_turn_controller.state
     longitudinalPlan.visionTurnSpeed = float(self.vision_turn_controller.v_turn)

@@ -233,6 +233,44 @@ def startup_master_display_fingerprint_alert(CP: car.CarParams, sm: messaging.Su
     f"UNTESTED BRANCH on {CP.carFingerprint.title()[:40]}",
     AlertStatus.userPrompt, AlertSize.mid,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 10.)
+    
+
+def stotime(S):
+
+  S = int(S)
+  if S == -2:
+    return '?'
+  elif S == -1:
+    return 'N/A'
+  elif S < 0:
+    return 'N/A'
+    
+  
+  M = 60
+  H = M * 60
+  
+  h,S = divmod(S,H)
+  m,S = divmod(S,M)
+  
+  if h > 0:
+    return f"{h:02d}:{m:02d}:{S:02d}"
+  else:
+    return f"{m:02d}:{S:02d}"
+
+def autohold_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  return Alert(
+    "AutoHolding for %s | gas to resume" % stotime(sm['longitudinalPlan'].secondsStopped),
+    "You can rest your foot now.",
+    AlertStatus.normal, AlertSize.small,
+    Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3)
+
+
+def stopped_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  return Alert(
+    "Stopped for %s | gas to resume" % stotime(sm['longitudinalPlan'].secondsStopped),
+    "You can rest your foot now.",
+    AlertStatus.normal, AlertSize.small,
+    Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3)
 
 def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   axes = sm['testJoystick'].axes
@@ -925,20 +963,12 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.autoHoldActivated: {
-    ET.PERMANENT: Alert(
-      "AutoHold Activated: gas to resume",
-      "You can rest your foot now.",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3),
-    },
-
+    ET.PERMANENT: autohold_alert,
+  },
+  
   EventName.stoppedWaitForGas: {
-    ET.PERMANENT: Alert(
-      "Stopped: press gas to resume",
-      "You can rest your foot now.",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3),
-    },
+    ET.PERMANENT: stopped_alert,
+  },
 
   EventName.blinkerSteeringPaused: {
     ET.WARNING: Alert(
