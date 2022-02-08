@@ -166,10 +166,10 @@ class DynamicFollow():
   def update(self, has_lead, lead_d, lead_v, v_ego):
     t = sec_since_boot()
     dur = t - self.t_last
-    self.t_last = sec_since_boot()
+    self.t_last = t
     lead_v_rel = v_ego - lead_v
     if has_lead:
-      new_lead = not self.has_lead_last and abs(lead_d - self.lead_d_last) > 2.5
+      new_lead = not self.has_lead_last or abs(lead_d - self.lead_d_last) > 2.5
       self.lead_d_last = lead_d
       if new_lead:
         penalty_dist = interp(lead_d, self.cutin_dist_penalty_bp, self.cutin_dist_penalty_v)
@@ -181,13 +181,12 @@ class DynamicFollow():
           self.points_cur = max(self.points_bounds[0], self.points_cur - penalty)
         self.cutin_t_last = t
         self.cutin_penalty_last = points_old - self.points_cur
+        self.has_lead_last = has_lead
         return self.points_cur
-    elif t - self.user_timeout_last_t > self.user_timeout_t:
-      if t - self.cutin_t_last < self.cutin_rescind_t:
-        rate = interp(self.points_cur, self.fp_point_rate_bp, self.fp_point_rate_v)
-        self.points_cur += max(0,self.cutin_penalty_last - rate * (t - self.cutin_t_last))
-        self.cutin_t_last = t - self.cutin_rescind_t - 1.
-      self.lead_d_last = 1000.
+    elif t - self.user_timeout_last_t > self.user_timeout_t and t - self.cutin_t_last < self.cutin_rescind_t:
+      rate = interp(self.points_cur, self.fp_point_rate_bp, self.fp_point_rate_v)
+      self.points_cur += max(0,self.cutin_penalty_last - rate * (t - self.cutin_t_last))
+      self.cutin_t_last = t - self.cutin_rescind_t - 1.
 
     rate = interp(self.points_cur, self.fp_point_rate_bp, self.fp_point_rate_v)
     speed_factor = interp(v_ego, self.speed_rate_factor_bp, self.speed_rate_factor_v)
@@ -195,7 +194,6 @@ class DynamicFollow():
     if t - self.user_timeout_last_t > self.user_timeout_t:
       self.points_cur = min(interp(v_ego, self.speed_fp_limit_bp, self.speed_fp_limit_v), self.points_cur + step)
 
-    self.t_last = t
     self.has_lead_last = has_lead
 
     return self.points_cur
@@ -280,8 +278,11 @@ class LeadMpc():
       self.params_check_last_t = t
       dynamic_follow_active = self._params.get_bool("DynamicFollow")
       if dynamic_follow_active and dynamic_follow_active != self.dynamic_follow_active:
-        self.df.reset(follow_level)
+        self.df.reset(1)
       self.dynamic_follow_active = dynamic_follow_active
+    
+    if v_ego < 0.05:
+      self.df.reset(1)
     
     if follow_level != self.follow_level_last:
       self.df.set_fp(follow_level)
