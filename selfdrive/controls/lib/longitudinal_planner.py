@@ -5,7 +5,7 @@ from common.numpy_fast import interp
 
 from common.params import Params
 import cereal.messaging as messaging
-from cereal import log
+from cereal import log, car
 from common.realtime import DT_MDL
 from common.realtime import sec_since_boot
 from selfdrive.modeld.constants import T_IDXS
@@ -21,6 +21,8 @@ from selfdrive.controls.lib.speed_limit_controller import SpeedLimitController, 
 from selfdrive.controls.lib.turn_speed_controller import TurnSpeedController
 from selfdrive.controls.lib.events import Events
 from selfdrive.swaglog import cloudlog
+
+GearShifter = car.CarState.GearShifter
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
@@ -111,6 +113,8 @@ class Planner():
     
     self.stopped_t_last = 0.
     self.seconds_stopped = 0
+    
+    self.last_gear_shifter = GearShifter.park
 
     self.sessionInitTime = sec_since_boot()
     self.debug_logging = False
@@ -161,6 +165,11 @@ class Planner():
       self.coasting_lead_d = -1.
       self.coasting_lead_v = -10.
     self.tr = self.mpcs['lead0'].tr
+    
+    
+    if sm['carState'].gearShifter == GearShifter.drive and self.gear_shifter_last != GearShifter.drive:
+      for i in ['lead0','lead1']:
+        self.mpcs[i].df.reset()
     
     
     if not enabled or sm['carState'].gasPressed:
