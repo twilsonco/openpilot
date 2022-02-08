@@ -109,7 +109,6 @@ class Planner():
     self.coasting_lead_v = -10. # lead "absolute"" velocity
     self.tr = 1.8
     
-    self.v_ego_last = 0.
     self.stopped_t_last = 0.
     self.seconds_stopped = 0
 
@@ -135,9 +134,8 @@ class Planner():
     v_ego = sm['carState'].vEgo
     a_ego = sm['carState'].aEgo
     
-    if self.v_ego_last > 0.02 and v_ego <= 0.02:
+    if not sm['controlsState'].engageable or v_ego > 0.02:
       self.stopped_t_last = t
-    self.v_ego_last = v_ego
     
     if v_ego < 0.02:
       self.seconds_stopped = int(t - self.stopped_t_last)
