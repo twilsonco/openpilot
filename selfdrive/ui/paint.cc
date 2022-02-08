@@ -1092,8 +1092,13 @@ static void ui_draw_measures(UIState *s){
           {
             snprintf(name, sizeof(name), "HVB CUR");
             snprintf(unit, sizeof(unit), "A");
-            float temp = scene.car_state.getHvbCurrent();
-            snprintf(val, sizeof(val), "%.0f", temp);
+            float temp = -scene.car_state.getHvbCurrent();
+            if (abs(temp) >= 100.){
+              snprintf(val, sizeof(val), "%.0f", temp);
+            }
+            else{
+              snprintf(val, sizeof(val), "%.1f", temp);
+            }
             g = 255;
             b = 255;
             p = scene.car_state.getHvbVoltage() - 360.;
@@ -1111,8 +1116,8 @@ static void ui_draw_measures(UIState *s){
           {
             snprintf(name, sizeof(name), "HVB POW");
             snprintf(unit, sizeof(unit), "kW");
-            float temp = scene.car_state.getHvbWattage();
-            if (temp >= 100.){
+            float temp = -scene.car_state.getHvbWattage();
+            if (abs(temp) >= 100.){
               snprintf(val, sizeof(val), "%.0f", temp);
             }
             else{
@@ -1134,8 +1139,8 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::HVB_WATTVOLT: 
           {
             snprintf(name, sizeof(name), "HVB kW");
-            float temp = scene.car_state.getHvbWattage();
-            if (temp >= 100.){
+            float temp = -scene.car_state.getHvbWattage();
+            if (abs(temp) >= 100.){
               snprintf(val, sizeof(val), "%.0f", temp);
             }
             else{
