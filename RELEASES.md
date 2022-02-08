@@ -1,5 +1,6 @@
 Version tw-0.8.9-3.9 (2022-02-04)
 ========================
+ * NEW: [optional] Dynamic follow mode
  * NEW: Stop timer (inspired by sunnyhaibin)
  * NEW: Brightness control; tap driver monitoring icon to cycle brightness modes stock/medium/low
    * Screen will temporarily undim for warning/critical alerts

@@ -113,8 +113,9 @@ class Planner():
     
     self.stopped_t_last = 0.
     self.seconds_stopped = 0
-    
-    self.last_gear_shifter = GearShifter.park
+    self.v_ego_last = -1.0
+    self.panda_ignition_last = False
+    self.gear_shifter_last = GearShifter.park
 
     self.sessionInitTime = sec_since_boot()
     self.debug_logging = False
@@ -138,8 +139,11 @@ class Planner():
     v_ego = sm['carState'].vEgo
     a_ego = sm['carState'].aEgo
     
-    if not sm['controlsState'].engageable or v_ego > 0.02:
+    panda_ignition = sm['pandaState'].ignitionLine or sm['pandaState'].ignitionCan
+    if panda_ignition and (not self.panda_ignition_last or (self.v_ego_last > 0.02 and v_ego <= 0.02)):
       self.stopped_t_last = t
+    self.panda_ignition_last = panda_ignition
+    self.v_ego_last = v_ego
     
     if v_ego < 0.02:
       self.seconds_stopped = int(t - self.stopped_t_last)
@@ -170,6 +174,7 @@ class Planner():
     if sm['carState'].gearShifter == GearShifter.drive and self.gear_shifter_last != GearShifter.drive:
       for i in ['lead0','lead1']:
         self.mpcs[i].df.reset()
+    self.gear_shifter_last = sm['carState'].gearShifter
     
     
     if not enabled or sm['carState'].gasPressed:
