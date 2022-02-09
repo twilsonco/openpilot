@@ -154,6 +154,9 @@ class DynamicFollow():
 
   cutin_last_t_factor_bp = [0., 15.] # [s] time since last cutin
   cutin_last_t_factor_v = [3., 1.] # [unitless] factor of cutin penalty
+  
+  cutin_v_ego_factor_bp = [i * CV.MPH_TO_MS for i in [5.,10.,45.]]
+  cutin_v_ego_factor_v = [0., 1., 1.5]
 
   cutin_penalty_last = 0.  # penalty for most recent cutin, so that it can be rescinded if the cutin really just cut *over* in front of you (i.e. they quickly disappear)
   lead_d_last = 0.
@@ -175,6 +178,7 @@ class DynamicFollow():
         penalty_dist = interp(lead_d, self.cutin_dist_penalty_bp, self.cutin_dist_penalty_v)
         penalty_vel = interp(lead_v_rel, self.cutin_vel_penalty_bp, self.cutin_vel_penalty_v)
         penalty = max(0., penalty_dist + penalty_vel)
+        penalty *= interp(v_ego, self.cutin_v_ego_factor_bp, self.cutin_v_ego_factor_v)
         penalty *= interp(t - self.cutin_t_last, self.cutin_last_t_factor_bp, self.cutin_last_t_factor_v)
         points_old = self.points_cur
         if t - self.user_timeout_last_t > self.user_timeout_t:
