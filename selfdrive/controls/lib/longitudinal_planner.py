@@ -113,8 +113,7 @@ class Planner():
     
     self.stopped_t_last = 0.
     self.seconds_stopped = 0
-    self.v_ego_last = -1.0
-    self.panda_ignition_last = False
+    self.standstill_last = False
     self.gear_shifter_last = GearShifter.park
 
     self.sessionInitTime = sec_since_boot()
@@ -139,13 +138,11 @@ class Planner():
     v_ego = sm['carState'].vEgo
     a_ego = sm['carState'].aEgo
     
-    panda_ignition = sm['pandaState'].ignitionLine or sm['pandaState'].ignitionCan
-    if panda_ignition and (not self.panda_ignition_last or (self.v_ego_last > 0.02 and v_ego <= 0.02)):
+    if sm['carState'].standstill and not self.standstill_last:
       self.stopped_t_last = t
-    self.panda_ignition_last = panda_ignition
-    self.v_ego_last = v_ego
+    self.standstill_last = sm['carState'].standstill
     
-    if v_ego < 0.02:
+    if sm['carState'].standstill:
       self.seconds_stopped = int(t - self.stopped_t_last)
     else:
       self.seconds_stopped = 0
