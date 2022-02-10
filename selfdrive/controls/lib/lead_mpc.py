@@ -242,6 +242,9 @@ class LeadMpc():
     self.follow_level_df = 0.
     self.dynamic_follow_active = False
     
+    self.one_pedal_mode_active_last = False
+    self.coast_one_pedal_mode_active_last = False
+    
     self.params_check_last_t = 0.
     self.params_check_freq = 0.5 # check params at 2Hz
     self._params = Params()
@@ -282,11 +285,13 @@ class LeadMpc():
       self.params_check_last_t = t
       dynamic_follow_active = self._params.get_bool("DynamicFollow")
       if dynamic_follow_active and dynamic_follow_active != self.dynamic_follow_active:
-        self.df.reset(1)
+        self.df.reset()
       self.dynamic_follow_active = dynamic_follow_active
     
-    if v_ego < 0.05:
-      self.df.reset(1)
+    if (not CS.onePedalModeActive and self.one_pedal_mode_active_last) or (not CS.coastOnePedalModeActive and self.coast_one_pedal_mode_active_last):
+      self.df.reset()
+    self.one_pedal_mode_active_last = CS.onePedalModeActive
+    self.coast_one_pedal_mode_active_last = CS.coastOnePedalModeActive
     
     if follow_level != self.follow_level_last:
       self.df.set_fp(follow_level)
