@@ -127,37 +127,58 @@ def interp_follow_profile(v_ego, v_lead, x_lead, fp_float):
   return fp
   
 class DynamicFollow():
-  t_last = 0.
+  t_last = 0. # sec_since_boot() on last iteration
+  cutin_t_last = 0. # sec_since_boot() of last remembered cut-in
+  user_timeout_t = 300. # amount of time df waits after the user sets the follow level
+  user_timeout_last_t = -user_timeout_t # (i.e. it's already been 300 seconds)
   
-  cutin_t_last = 0.
-  cutin_rescind_t = 4.
-  user_timeout_t = 300.
-  user_timeout_last_t = -user_timeout_t
+  ####################################
+  #    ACCRUING FOLLOW POINTS
+  ####################################
   
+  # limit follow distance (profile) used based on speed
   speed_fp_limit_bp = [i * CV.MPH_TO_MS for i in [55., 80.]]
   speed_fp_limit_v = [1., 2.]  # [follow profile number 0-based] restricted to close/med follow until 55mph, smoothly increase to far follow by 80mph
   
+  # acrue follow points at different rates (per time) depending the current follow level
+  # it will take significantly more time to change from medium to far than from close to medium (if allowed by your speed)
+  fp_point_rate_bp = [0.0, 1.0, 1.5, 2.0]
+  fp_point_rate_v = [1. / 30., 1. / 240., 1. / 900., 1. / 3000.]  # [follow profile per second] ~30s to go from close to medium, then ~10 minutes to go from medium to far
+  
+  # follow point accrual rate is also scaled by speed, so you don't earn points for being stopped behind a lead
   speed_rate_factor_bp = [i * CV.MPH_TO_MS for i in [1., 30.]] # [mph]
   speed_rate_factor_v = [0.,1.] # slow "time" at low speed to you have to be actually moving behind a lead in order to earn points
   
-  fp_point_rate_bp = [0.5, 1.0, 1.5, 2.0]
-  fp_point_rate_v = [1. / 30., 1. / 120., 1. / 900., 1. / 3000.]  # [follow profile per second] ~30s to go from close to medium, then ~10 minutes to go from medium to far
-  
-  points_cur = 0.  # [follow profile number 0-based]
+  points_cur = 0.  # [follow profile number 0-based] number of current points. corresponds to follow level
   points_bounds = [-10., 2.]  # [follow profile number 0-based] min and max follow levels (at the 1/30 fp_point_rate, -10 means after the max number of cutins it takes ~5 minutes to get back to medium follow)
   
+  
+  #############################################
+  #    PENALIZING FOLLOW POINTS FOR CUT-INS:
+  #    MORE PENALTY MEANS DRIVE DEFENSIVELY
+  #    FOR MORE TIME AFTER A CUT-IN
+  #############################################
+  
+  # penalize more for close cut-ins than for far
   cutin_dist_penalty_bp = [i * 0.3 for i in [40., 150.]]  # [ft converted to m]
   cutin_dist_penalty_v = [2.5, 0.]  # [follow profile] cutin of 40ft or less, drop to close follow, with less penalty up to 150ft, at which point you don't care
   
-  cutin_vel_penalty_bp = [i * CV.MPH_TO_MS for i in [-15., 15.]]  # [mph] relative velocity of new lead
-  cutin_vel_penalty_v = [-3., 2.5]  # [follow profile] additionally go to close follow for new lead approaching too quickly, or *offset* the penalty for a close cutin if they're moving away (to keep from darting after a new cutin)
-
+  # penalize more for approaching cut-ins, and *offset* the distance penalty for cut-ins pulling away
+  cutin_vel_penalty_bp = [i * CV.MPH_TO_MS for i in [-7.5, 0., 15.]]  # [mph] relative velocity of new lead
+  cutin_vel_penalty_v = [-3.,0., 2.5]  # [follow profile] additionally go to close follow for new lead approaching too quickly, or *offset* the penalty for a close cutin if they're moving away (to keep from darting after a new cutin)
+  
+  # bonus penalty factor for repeat cut-ins
   cutin_last_t_factor_bp = [0., 15.] # [s] time since last cutin
   cutin_last_t_factor_v = [3., 1.] # [unitless] factor of cutin penalty
   
-  cutin_v_ego_factor_bp = [i * CV.MPH_TO_MS for i in [5.,10.,45.]]
-  cutin_v_ego_factor_v = [0., 1., 1.5]
-
+  # scale penalty based on your speed; no penalty at low speed and extra at high speed
+  cutin_v_ego_factor_bp = [i * CV.MPH_TO_MS for i in [5.,10.,45.]] # [mph] your velocity
+  cutin_v_ego_factor_v = [0., 1., 1.5] # [unitless] factor of cutin penalty
+  
+  # rescind penalty for cut-overs (cut-in and then left lane quickly)
+  cutin_rescind_t_bp = [2.,6.] # [s] time since last cut-in
+  cutin_rescind_t_v = [1., 0.] # [unitless] factor of cut-in penalty that is rescinded
+  
   cutin_penalty_last = 0.  # penalty for most recent cutin, so that it can be rescinded if the cutin really just cut *over* in front of you (i.e. they quickly disappear)
   lead_d_last = 0.
   has_lead_last = False
@@ -172,7 +193,7 @@ class DynamicFollow():
     self.t_last = t
     lead_v_rel = v_ego - lead_v
     if has_lead:
-      new_lead = not self.has_lead_last or abs(lead_d - self.lead_d_last) > 2.5
+      new_lead = not self.has_lead_last or self.lead_d_last - lead_d > 2.5
       self.lead_d_last = lead_d
       if new_lead:
         penalty_dist = interp(lead_d, self.cutin_dist_penalty_bp, self.cutin_dist_penalty_v)
@@ -187,10 +208,10 @@ class DynamicFollow():
         self.cutin_penalty_last = points_old - self.points_cur
         self.has_lead_last = has_lead
         return self.points_cur
-    elif t - self.user_timeout_last_t > self.user_timeout_t and t - self.cutin_t_last < self.cutin_rescind_t:
-      rate = interp(self.points_cur, self.fp_point_rate_bp, self.fp_point_rate_v)
-      self.points_cur += max(0,self.cutin_penalty_last - rate * (t - self.cutin_t_last))
-      self.cutin_t_last = t - self.cutin_rescind_t - 1.
+    elif t - self.user_timeout_last_t > self.user_timeout_t and t - self.cutin_t_last < self.cutin_rescind_t_bp[-1]:
+      rescinded_penalty = self.cutin_penalty_last * interp(t - self.cutin_t_last, self.cutin_rescind_t_bp, self.cutin_rescind_t_v)
+      self.points_cur += max(0,rescinded_penalty)
+      self.cutin_t_last = t - self.cutin_rescind_t_bp[-1] - 1.
 
     rate = interp(self.points_cur, self.fp_point_rate_bp, self.fp_point_rate_v)
     speed_factor = interp(v_ego, self.speed_rate_factor_bp, self.speed_rate_factor_v)
@@ -205,12 +226,12 @@ class DynamicFollow():
   def set_fp(self,fpi):
     self.points_cur = fpi
     self.user_timeout_last_t = self.t_last
-    self.cutin_t_last = -self.cutin_rescind_t
+    self.cutin_t_last = -self.cutin_rescind_t_bp[-1]
   
   def reset(self, fpi = 1):
     self.points_cur = fpi
     self.user_timeout_last_t = -self.user_timeout_t
-    self.cutin_t_last = -self.cutin_rescind_t
+    self.cutin_t_last = -self.cutin_rescind_t_bp[-1]
 
 class LeadMpc():
   def __init__(self, mpc_id):
