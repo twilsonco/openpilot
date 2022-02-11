@@ -1,6 +1,12 @@
-Version tw-0.8.9-3.9 (2022-02-04)
+Version tw-0.8.9-3.9 (2022-02-11)
 ========================
  * NEW: [optional] Dynamic follow mode
+   * Enable toggle to show onscreen button
+   * Solid white circle on button means dynamic follow active
+   * Tap button to toggle
+   * Set follow distance manually to lock level for 5 minutes
+   * Number indicates the current follow level (-10 to 0/1/2 = close/med/far)
+   * (Number to be replaced with better UI element)
  * NEW: Stop timer (inspired by sunnyhaibin)
  * NEW: Brightness control; tap driver monitoring icon to cycle brightness modes stock/medium/low
    * Screen will temporarily undim for warning/critical alerts
@@ -14,6 +20,8 @@ Version tw-0.8.9-3.9 (2022-02-04)
  * NEW: UI metrics; Volt high voltage battery voltage, wattage, amperage, and volt+watt
  * IMPROVED: Brake indicator now shows regen/engine braking while cruising, or regen while in one-pedal regen mode
  * IMPROVED: UI Metrics now larger when four or fewer present (suggested by C Tyrell)
+ * IMPROVED: Roll compensation (backported from 0.8.13)
+ * FIXED: Params autolearner fix for consistent centering on long straight stretches
  * FIXED: [Volt] Prevent misprinting as Escalade ESV
 
 Version tw-0.8.9-3.8 (2022-01-24)
