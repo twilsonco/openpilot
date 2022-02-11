@@ -52,6 +52,14 @@ class ParamsLearner:
                                       np.array([[-yaw_rate]]),
                                       np.array([np.atleast_2d(yaw_rate_std**2)]))
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[0]]))
+        
+        # We observe the current stiffness and steer ratio (with a high observation noise) to bound
+        # the respective estimate STD. Otherwise the STDs keep increasing, causing rapid changes in the
+        # states in longer routes (especially straight stretches).
+        stiffness = float(self.kf.x[States.STIFFNESS])
+        steer_ratio = float(self.kf.x[States.STEER_RATIO])
+        self.kf.predict_and_observe(t, ObservationKind.STIFFNESS, np.array([[stiffness]]))
+        self.kf.predict_and_observe(t, ObservationKind.STEER_RATIO, np.array([[steer_ratio]]))
 
     elif which == 'carState':
       self.steering_angle = msg.steeringAngleDeg

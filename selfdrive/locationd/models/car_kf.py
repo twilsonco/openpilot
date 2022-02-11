@@ -67,10 +67,10 @@ class CarKalman(KalmanFilter):
   P_initial = Q.copy()
 
   obs_noise: Dict[int, Any] = {
-    ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.01)**2),
+    ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.05)**2),
     ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(10.0)**2),
     ObservationKind.STEER_RATIO: np.atleast_2d(5.0**2),
-    ObservationKind.STIFFNESS: np.atleast_2d(5.0**2),
+    ObservationKind.STIFFNESS: np.atleast_2d(0.5**2),
     ObservationKind.ROAD_FRAME_X_SPEED: np.atleast_2d(0.1**2),
   }
 
@@ -101,9 +101,9 @@ class CarKalman(KalmanFilter):
     state = sp.Matrix(state_sym)
 
     # Vehicle model constants
-    x = state[States.STIFFNESS, :][0, 0]
+    sf = state[States.STIFFNESS, :][0, 0]
 
-    cF, cR = x * cF_orig, x * cR_orig
+    cF, cR = sf * cF_orig, sf * cR_orig
     angle_offset = state[States.ANGLE_OFFSET, :][0, 0]
     angle_offset_fast = state[States.ANGLE_OFFSET_FAST, :][0, 0]
     sa = state[States.STEER_ANGLE, :][0, 0]
@@ -144,7 +144,7 @@ class CarKalman(KalmanFilter):
       [sp.Matrix([sa]), ObservationKind.STEER_ANGLE, None],
       [sp.Matrix([angle_offset_fast]), ObservationKind.ANGLE_OFFSET_FAST, None],
       [sp.Matrix([sR]), ObservationKind.STEER_RATIO, None],
-      [sp.Matrix([x]), ObservationKind.STIFFNESS, None],
+      [sp.Matrix([sf]), ObservationKind.STIFFNESS, None],
     ]
 
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, global_vars=global_vars)
