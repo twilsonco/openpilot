@@ -17,6 +17,7 @@ Version tw-0.8.9-3.9 (2022-02-11)
    * Suggested by Shadowlight5
  * NEW: Display vehicle fingerprint on startup
  * NEW: UI metrics; Volt high voltage battery voltage, wattage, amperage, and volt+watt
+ * IMPROVED: Tamer "stock" acceleration profile
  * IMPROVED: Brake indicator now shows regen/engine braking while cruising, or regen while in one-pedal regen mode
  * IMPROVED: UI Metrics now larger when four or fewer present (suggested by C Tyrell)
  * IMPROVED: Roll compensation (backported from 0.8.13)

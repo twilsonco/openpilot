@@ -1566,7 +1566,7 @@ static void draw_dynamic_follow_mode_button(UIState *s) {
       alpha_f = (alpha_f > 1. ? 1. : alpha_f) * 1.5707963268;
       nvgFillColor(s->vg, nvgRGBA(255, 255, 255, int(cos(alpha_f) * (s->scene.dynamic_follow_active ? 200. : 80.))));
                                 
-      nvgFontSize(s->vg, 26 + int(cos(alpha_f * 1.5707963268) * 30.));
+      nvgFontSize(s->vg, 40 + int(cos(alpha_f * 1.5707963268) * 16.));
       
       int text_y = btn_yc;
       if (df_level <= i){
