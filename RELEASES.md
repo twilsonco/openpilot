@@ -1,12 +1,11 @@
 Version tw-0.8.9-3.9 (2022-02-11)
 ========================
  * NEW: [optional] Dynamic follow mode
-   * Enable toggle to show onscreen button
+   * Enable toggle to show onscreen button and indicator
    * Solid white circle on button means dynamic follow active
    * Tap button to toggle
    * Set follow distance manually to lock level for 5 minutes
-   * Number indicates the current follow level (-10 to 0/1/2 = close/med/far)
-   * (Number to be replaced with better UI element)
+   * Follow gap UI metric shows raw dynamic follow point value
  * NEW: Stop timer (inspired by sunnyhaibin)
  * NEW: Brightness control; tap driver monitoring icon to cycle brightness modes stock/medium/low
    * Screen will temporarily undim for warning/critical alerts
