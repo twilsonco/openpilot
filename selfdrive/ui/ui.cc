@@ -28,6 +28,9 @@
 static const float fade_duration = 0.3; // [s] time it takes for the brake indicator to fade in/out
 static const float fade_time_step = 1. / fade_duration; // will step in the transparent or opaque direction
 
+static const float dynamic_follow_fade_duration = 0.5;
+static const float dynamic_follow_fade_step = 1. / dynamic_follow_fade_duration;
+
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
 static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, vertex_data *out) {
@@ -221,37 +224,8 @@ static void update_state(UIState *s) {
     scene.car_state = sm["carState"].getCarState();
     
     scene.percentGradeDevice = tan(scene.car_state.getPitch()) * 100.;
-    
+  
     scene.brake_percent = scene.car_state.getFrictionBrakePercent();
-    if (scene.brake_percent > 50){
-      if (scene.brake_indicator_alpha < 1.){
-        scene.brake_indicator_alpha += fade_time_step * (t - scene.brake_indicator_last_t);
-        if (scene.brake_indicator_alpha > 1.)
-          scene.brake_indicator_alpha = 1.;
-      }
-    }
-    else if (scene.brake_indicator_alpha > 0.){
-      scene.brake_indicator_alpha -= fade_time_step * (t - scene.brake_indicator_last_t);
-      if (scene.brake_indicator_alpha < 0.)
-        scene.brake_indicator_alpha = 0.;
-    }
-    scene.brake_indicator_last_t = t;
-    
-    if (t - scene.sessionInitTime > 10.){
-      if ((scene.car_state.getOnePedalModeActive() || scene.car_state.getCoastOnePedalModeActive())
-        || (s->status == UIStatus::STATUS_DISENGAGED && scene.controls_state.getVCruise() <= 3 && (scene.onePedalModeActive || scene.disableDisengageOnGasEnabled))){
-        scene.one_pedal_fade += fade_time_step * (t - scene.one_pedal_fade_last_t);
-        if (scene.one_pedal_fade > 1.)
-          scene.one_pedal_fade = 1.;
-      }
-      else if (scene.one_pedal_fade > -1.){
-        scene.one_pedal_fade -= fade_time_step * (t - scene.one_pedal_fade_last_t);
-        if (scene.one_pedal_fade < -1.)
-          scene.one_pedal_fade = -1.;
-      }
-    }
-    scene.one_pedal_fade_last_t = t;
-    
     scene.steerOverride= scene.car_state.getSteeringPressed();
     scene.angleSteers = scene.car_state.getSteeringAngleDeg();
     scene.engineRPM = static_cast<int>((scene.car_state.getEngineRPM() / (10.0)) + 0.5) * 10;
@@ -424,6 +398,53 @@ static void update_state(UIState *s) {
     scene.stoppingDistance = data.getStoppingDistance();
     scene.dynamic_follow_level = data.getDynamicFollowLevel();
   }
+  
+  if (scene.brake_percent > 50){
+    if (scene.brake_indicator_alpha < 1.){
+      scene.brake_indicator_alpha += fade_time_step * (t - scene.brake_indicator_last_t);
+      if (scene.brake_indicator_alpha > 1.)
+        scene.brake_indicator_alpha = 1.;
+    }
+  }
+  else if (scene.brake_indicator_alpha > 0.){
+    scene.brake_indicator_alpha -= fade_time_step * (t - scene.brake_indicator_last_t);
+    if (scene.brake_indicator_alpha < 0.)
+      scene.brake_indicator_alpha = 0.;
+  }
+  scene.brake_indicator_last_t = t;
+  
+  if (t - scene.sessionInitTime > 10.){
+    if ((scene.car_state.getOnePedalModeActive() || scene.car_state.getCoastOnePedalModeActive())
+      || (s->status == UIStatus::STATUS_DISENGAGED && scene.controls_state.getVCruise() <= 3 && (scene.onePedalModeActive || scene.disableDisengageOnGasEnabled))){
+      scene.one_pedal_fade += fade_time_step * (t - scene.one_pedal_fade_last_t);
+      if (scene.one_pedal_fade > 1.)
+        scene.one_pedal_fade = 1.;
+    }
+    else if (scene.one_pedal_fade > -1.){
+      scene.one_pedal_fade -= fade_time_step * (t - scene.one_pedal_fade_last_t);
+      if (scene.one_pedal_fade < -1.)
+        scene.one_pedal_fade = -1.;
+    }
+  }
+  scene.one_pedal_fade_last_t = t;
+  
+  // dynamic follow
+  if (scene.dynamic_follow_level != scene.dynamic_follow_level_ui){
+    if (scene.dynamic_follow_level > scene.dynamic_follow_level_ui){
+      scene.dynamic_follow_level_ui += dynamic_follow_fade_step * (t - scene.dynamic_follow_last_t);
+      if (scene.dynamic_follow_level_ui > scene.dynamic_follow_level){
+        scene.dynamic_follow_level_ui = scene.dynamic_follow_level;
+      }
+    }
+    else{ // if (scene.dynamic_follow_level < scene.dynamic_follow_level_ui){
+      scene.dynamic_follow_level_ui -= dynamic_follow_fade_step * (t - scene.dynamic_follow_last_t);
+      if (scene.dynamic_follow_level_ui < scene.dynamic_follow_level){
+        scene.dynamic_follow_level_ui = scene.dynamic_follow_level;
+      }
+    }
+  }
+  scene.dynamic_follow_last_t = t;
+  
   scene.lastTime = t;
 }
 

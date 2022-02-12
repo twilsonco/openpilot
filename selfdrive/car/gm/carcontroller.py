@@ -236,7 +236,7 @@ class CarController():
       elif CS.is_ev and CS.out.brake == 0.:
         CS.apply_brake_percent = int(interp(CS.hvb_wattage, CS.hvb_wattage_bp, [0., 50.]))
       elif CS.out.brake > 0.:
-        CS.apply_brake_percent = int(interp(CS.out.brake, [0., 1.], [50., 100.]))
+        CS.apply_brake_percent = int(interp(CS.out.brake, [0., 0.5], [50., 100.]))
     
     # Gas/regen and brakes - all at 25Hz
     if (frame % 4) == 0:

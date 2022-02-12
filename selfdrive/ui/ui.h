@@ -249,7 +249,14 @@ typedef struct UIScene {
   bool dynamic_follow_mode_button_enabled;
   Rect dynamic_follow_mode_touch_rect;
   bool dynamic_follow_active;
-  float dynamic_follow_level;
+  float dynamic_follow_level, dynamic_follow_level_ui, dynamic_follow_last_t;
+  std::string dynamic_follow_strs[3] = {"Close","Med.","Far"};
+  int dynamic_follow_r[3] = {0, 157, 74};
+  int dynamic_follow_b[3] = {100, 157, 132};
+  int dynamic_follow_g[3] = {255, 157, 23};
+  int dynamic_follow_bg_r[3] = {0, 0, 74};
+  int dynamic_follow_bg_b[3] = {100, 0, 132};
+  int dynamic_follow_bg_g[3] = {255, 0, 23};
   
   // one-pedal mode fading. maxspeed rect at -1, fades away by 0, and one-pedal icon fades in by 1
   float one_pedal_fade = -1., one_pedal_fade_last_t = 0.;

@@ -1521,26 +1521,62 @@ static void draw_dynamic_follow_mode_button(UIState *s) {
     int btn_y = center_y - 0.5 * radius;
     int btn_xc1 = btn_x1 + radius;
     int btn_yc = btn_y + radius;
+    float df_level = s->scene.dynamic_follow_level_ui >= 0. ? s->scene.dynamic_follow_level_ui : 0.;
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
     nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, radius);
     // nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, 100);
-    nvgStrokeColor(s->vg, nvgRGBA(0,0,0,80));
-    nvgStrokeWidth(s->vg, 6);
-    nvgStroke(s->vg);
-    nvgFontSize(s->vg, 52);
-
-    nvgStrokeColor(s->vg, nvgRGBA(200,200,200,s->scene.dynamic_follow_active ? 200 : 80));
-    nvgStrokeWidth(s->vg, 6);
-    nvgStroke(s->vg);
-    NVGcolor fillColor = nvgRGBA(0,0,0,80);
-    nvgFillColor(s->vg, fillColor);
-    nvgFill(s->vg);
-    nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
-    char val[16];
-    snprintf(val, sizeof(val), "%.2f", s->scene.dynamic_follow_level);
-    nvgText(s->vg,btn_xc1,btn_yc,val,NULL);
+    if (s->scene.dynamic_follow_active){
+      int r, b, g;
+      int bg_r, bg_b, bg_g;
+      for (int i = 1; i < 3; ++i){
+        if (df_level <= i){
+          float c = float(i) - df_level;
+          r = float(s->scene.dynamic_follow_r[i-1]) * c + float(s->scene.dynamic_follow_r[i]) * (1. - c);
+          b = float(s->scene.dynamic_follow_b[i-1]) * c + float(s->scene.dynamic_follow_b[i]) * (1. - c);
+          g = float(s->scene.dynamic_follow_g[i-1]) * c + float(s->scene.dynamic_follow_g[i]) * (1. - c);
+          bg_r = float(s->scene.dynamic_follow_bg_r[i-1]) * c + float(s->scene.dynamic_follow_bg_r[i]) * (1. - c);
+          bg_b = float(s->scene.dynamic_follow_bg_b[i-1]) * c + float(s->scene.dynamic_follow_bg_b[i]) * (1. - c);
+          bg_g = float(s->scene.dynamic_follow_bg_g[i-1]) * c + float(s->scene.dynamic_follow_bg_g[i]) * (1. - c);
+          break;
+        }
+      }
+      nvgStrokeColor(s->vg, nvgRGBA(r,b,g,255));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+      nvgFillColor(s->vg, nvgRGBA(bg_r,bg_b,bg_g,80));
+      nvgFill(s->vg);
+    } else{
+      nvgStrokeColor(s->vg, nvgRGBA(0,0,0,80));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+      nvgStrokeColor(s->vg, nvgRGBA(200,200,200,80));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+      nvgFillColor(s->vg, nvgRGBA(0,0,0,80));
+      nvgFill(s->vg);
+    }
     
+    // draw the three follow level strings. adjust alpha and y position to create a rolling effect
+    const float dscale = 0.5;
+    for (int i = 0; i < 3; ++i){
+      char val[16];
+      snprintf(val, sizeof(val), "%s", s->scene.dynamic_follow_strs[i].c_str());
+      float alpha_f = abs(float(i) - df_level);
+      alpha_f = (alpha_f > 1. ? 1. : alpha_f) * 1.5707963268;
+      nvgFillColor(s->vg, nvgRGBA(255, 255, 255, int(cos(alpha_f) * (s->scene.dynamic_follow_active ? 200. : 80.))));
+                                
+      nvgFontSize(s->vg, 26 + int(cos(alpha_f * 1.5707963268) * 30.));
+      
+      int text_y = btn_yc;
+      if (df_level <= i){
+        text_y -= float(radius) * sin(alpha_f) * dscale;
+      }
+      else{
+        text_y += float(radius) * sin(alpha_f) * dscale;
+      }
+      nvgText(s->vg, btn_xc1, text_y, val, NULL);
+    }
     
     s->scene.dynamic_follow_mode_touch_rect = Rect{center_x - laneless_btn_touch_pad, 
                                                 center_y - laneless_btn_touch_pad,
