@@ -191,6 +191,8 @@ class CarState(CarStateBase):
     ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"] != 0
     self.user_brake = pt_cp.vl["EBCMBrakePedalPosition"]['BrakePedalPosition']
     ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
+    if not ret.brakePressed:
+      ret.brake = 0.
     
     if self.showBrakeIndicator:
       if t - self.sessionInitTime < 22.:
