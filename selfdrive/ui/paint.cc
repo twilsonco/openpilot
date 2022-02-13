@@ -1526,7 +1526,8 @@ static void draw_dynamic_follow_mode_button(UIState *s) {
     nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, radius);
     // nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, 100);
-    if (s->scene.dynamic_follow_active){
+    const bool df_active = s->scene.dynamic_follow_active && !(s->scene.car_state.getOnePedalModeActive() || s->scene.car_state.getCoastOnePedalModeActive())
+    if (df_active){
       int r, b, g;
       int bg_r, bg_b, bg_g;
       for (int i = 1; i < 3; ++i){
@@ -1564,7 +1565,7 @@ static void draw_dynamic_follow_mode_button(UIState *s) {
       snprintf(val, sizeof(val), "%s", s->scene.dynamic_follow_strs[i].c_str());
       float alpha_f = abs(float(i) - df_level);
       alpha_f = (alpha_f > 1. ? 1. : alpha_f) * 1.5707963268;
-      nvgFillColor(s->vg, nvgRGBA(255, 255, 255, int(cos(alpha_f) * (s->scene.dynamic_follow_active ? 200. : 80.))));
+      nvgFillColor(s->vg, nvgRGBA(255, 255, 255, int(cos(alpha_f) * (df_active ? 200. : 80.))));
                                 
       nvgFontSize(s->vg, 40 + int(cos(alpha_f * 1.5707963268) * 16.));
       
