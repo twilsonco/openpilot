@@ -601,6 +601,10 @@ class Controls:
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
     CC.actuators = actuators
+    
+    if len(self.sm['liveLocationKalman'].orientationNED.value) > 2:
+      CC.roll = self.sm['liveLocationKalman'].orientationNED.value[0]
+      CC.pitch = self.sm['liveLocationKalman'].orientationNED.value[1]
 
     CC.cruiseControl.override = True
     CC.cruiseControl.cancel = not self.CP.pcmCruise or (not self.enabled and CS.cruiseState.enabled)
