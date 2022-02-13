@@ -188,11 +188,9 @@ class CarState(CarStateBase):
       
     self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
     ret.gearShifter = self.gear_shifter
+    ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"] != 0
     self.user_brake = pt_cp.vl["EBCMBrakePedalPosition"]['BrakePedalPosition']
     ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
-    # Brake pedal's potentiometer returns near-zero reading even when pedal is not pressed.
-    if ret.brake < 10/0xd0:
-      ret.brake = 0.
     
     if self.showBrakeIndicator:
       if t - self.sessionInitTime < 22.:
@@ -200,7 +198,7 @@ class CarState(CarStateBase):
     ret.frictionBrakePercent = self.apply_brake_percent
     
 
-    ret.gas = pt_cp.vl["AcceleratorPedal"]["AcceleratorPedal"] / 254.
+    ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
     ret.gasPressed = ret.gas > 1e-5
     self.gasPressed = ret.gasPressed
 
@@ -256,15 +254,14 @@ class CarState(CarStateBase):
     
 
     self.park_brake = pt_cp.vl["EPBStatus"]["EPBClosed"]
-    ret.cruiseState.available = bool(pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"])
+    ret.cruiseState.available = pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"] != 0
     self.cruiseMain = ret.cruiseState.available
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
     self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
 
-    ret.brakePressed = ret.brake > 1e-5
     # Regen braking is braking
     if self.is_ev:
-      self.regenPaddlePressed = bool(pt_cp.vl["EBCMRegenPaddle"]['RegenPaddle'])
+      self.regenPaddlePressed = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
       ret.brakePressed = ret.brakePressed or self.regenPaddlePressed
       hvb_current = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryCurrent']
       hvb_voltage = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryVoltage']
@@ -350,7 +347,7 @@ class CarState(CarStateBase):
       ("LeftSeatBelt", "BCMDoorBeltStatus", 0),
       ("RightSeatBelt", "BCMDoorBeltStatus", 0),
       ("TurnSignals", "BCMTurnSignals", 0),
-      ("AcceleratorPedal", "AcceleratorPedal", 0),
+      ("AcceleratorPedal2", "AcceleratorPedal2", 0),
       ("CruiseState", "AcceleratorPedal2", 0),
       ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
       ("DriveModeButton", "ASCMSteeringButton", 0),
@@ -372,6 +369,7 @@ class CarState(CarStateBase):
       ("TractionControlOn", "ESPStatus", 0),
       ("EPBClosed", "EPBStatus", 0),
       ("CruiseMainOn", "ECMEngineStatus", 0),
+      ("Brake_Pressed", "ECMEngineStatus", 0),
     ]
 
     checks = [
