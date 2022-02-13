@@ -17,12 +17,31 @@ Version tw-0.8.9-3.9 (2022-02-11)
    * Suggested by Shadowlight5
  * NEW: Display vehicle fingerprint on startup
  * NEW: UI metrics; Volt high voltage battery voltage, wattage, amperage, and volt+watt
+ * NEW: Custom opgm spinner at boot
+ * AGNOS 4 & NEOS 19.1
+ * FIXED: [Volt] Prevent misprinting as Escalade ESV
  * IMPROVED: Tamer "stock" acceleration profile
  * IMPROVED: Brake indicator now shows regen/engine braking while cruising, or regen while in one-pedal regen mode
  * IMPROVED: UI Metrics now larger when four or fewer present (suggested by C Tyrell)
- * IMPROVED: Roll compensation (backported from 0.8.13)
- * FIXED: Params autolearner fix for consistent centering on long straight stretches
- * FIXED: [Volt] Prevent misprinting as Escalade ESV
+ * IMPROVED: Cherry-picked a number of improvements from upstream
+    * Road Roll Compensation Rebased (#23251)
+    * params learner fix per
+    * fix gm brake noise per
+    * controlsd: remove redundant condition
+    * use roll std from locationd
+    * Controlsd: fix bug in curv rate limit
+    * paramsd: Sort messages in each update iteration before processing
+    * locationd: Gyro bias initial covariance
+    * pitch and roll to car control
+    * pitch roll to car control
+    * locationd : Acceleration Bias in locationd 
+    * decrease lateral planner max cost
+    * Revert ecef std until real fix
+    * longitudinal: only apply overshoot prevention when braking
+    * Mesh3D: Add accelerometer bias to loc_kf)
+    * tici: use powersave CPU governor while offroad
+    * tici: higher cpu freq while offroad
+    * alert text simplification
 
 Version tw-0.8.9-3.8 (2022-01-24)
 ========================
