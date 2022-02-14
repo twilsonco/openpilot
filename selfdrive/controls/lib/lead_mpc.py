@@ -160,7 +160,7 @@ class DynamicFollow():
   #############################################
   
   # penalize more for close cut-ins than for far
-  cutin_dist_penalty_bp = [i * 0.3 for i in [40., 150.]]  # [ft converted to m]
+  cutin_dist_penalty_bp = [.2, .8]	# [factor of current follow distance]
   cutin_dist_penalty_v = [2.5, 0.]  # [follow profile] cutin of 40ft or less, drop to close follow, with less penalty up to 150ft, at which point you don't care
   
   # penalize more for approaching cut-ins, and *offset* the distance penalty for cut-ins pulling away
@@ -196,7 +196,8 @@ class DynamicFollow():
       new_lead = not self.has_lead_last or self.lead_d_last - lead_d > 2.5
       self.lead_d_last = lead_d
       if new_lead:
-        penalty_dist = interp(lead_d, self.cutin_dist_penalty_bp, self.cutin_dist_penalty_v)
+        desired_follow_distance = v_ego * interp_follow_profile(v_ego, lead_v, lead_d, self.points_cur)[0]
+        penalty_dist = interp(lead_d / desired_follow_distance, self.cutin_dist_penalty_bp, self.cutin_dist_penalty_v)
         penalty_vel = interp(lead_v_rel, self.cutin_vel_penalty_bp, self.cutin_vel_penalty_v)
         penalty = max(0., penalty_dist + penalty_vel)
         penalty *= interp(v_ego, self.cutin_v_ego_factor_bp, self.cutin_v_ego_factor_v)
