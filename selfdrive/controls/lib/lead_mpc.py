@@ -193,7 +193,7 @@ class DynamicFollow():
       self.lead_d_last = lead_d
       if new_lead:
         desired_follow_distance = v_ego * interp_follow_profile(v_ego, lead_v, lead_d, self.points_cur)[0]
-        penalty_dist = interp(lead_d / desired_follow_distance, self.cutin_dist_penalty_bp, self.cutin_dist_penalty_v)
+        penalty_dist = interp(lead_d / desired_follow_distance, self.cutin_dist_penalty_bp, self.cutin_dist_penalty_v) if desired_follow_distance > 0. else 0.
         penalty_vel = interp(lead_v_rel, self.cutin_vel_penalty_bp, self.cutin_vel_penalty_v)
         penalty = max(0., penalty_dist + penalty_vel)
         penalty *= interp(t - self.cutin_t_last, self.cutin_last_t_factor_bp, self.cutin_last_t_factor_v)
