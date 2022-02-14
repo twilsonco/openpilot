@@ -171,10 +171,6 @@ class DynamicFollow():
   cutin_last_t_factor_bp = [0., 15.] # [s] time since last cutin
   cutin_last_t_factor_v = [3., 1.] # [unitless] factor of cutin penalty
   
-  # scale penalty based on your speed; no penalty at low speed and extra at high speed
-  cutin_v_ego_factor_bp = [i * CV.MPH_TO_MS for i in [5.,10.,45.]] # [mph] your velocity
-  cutin_v_ego_factor_v = [0., 1., 1.5] # [unitless] factor of cutin penalty
-  
   # rescind penalty for cut-overs (cut-in and then left lane quickly)
   cutin_rescind_t_bp = [2.,6.] # [s] time since last cut-in
   cutin_rescind_t_v = [1., 0.] # [unitless] factor of cut-in penalty that is rescinded
@@ -200,7 +196,6 @@ class DynamicFollow():
         penalty_dist = interp(lead_d / desired_follow_distance, self.cutin_dist_penalty_bp, self.cutin_dist_penalty_v)
         penalty_vel = interp(lead_v_rel, self.cutin_vel_penalty_bp, self.cutin_vel_penalty_v)
         penalty = max(0., penalty_dist + penalty_vel)
-        penalty *= interp(v_ego, self.cutin_v_ego_factor_bp, self.cutin_v_ego_factor_v)
         penalty *= interp(t - self.cutin_t_last, self.cutin_last_t_factor_bp, self.cutin_last_t_factor_v)
         points_old = self.points_cur
         if t - self.user_timeout_last_t > self.user_timeout_t:
