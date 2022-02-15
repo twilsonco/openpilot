@@ -27,6 +27,26 @@
 
 #include "selfdrive/ui/ui.h"
 
+
+int offset_button_y(UIState *s, int center_y, int radius){
+  if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL){
+    center_y = 2 * center_y / 3 + radius / 2;
+  }
+  else if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::MID){
+    center_y = (center_y + radius) / 2;
+  }
+  return center_y;
+}
+
+int offset_right_side_button_x(UIState *s, int center_x, int radius){
+  if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL
+  && s->scene.measure_cur_num_slots > 0){
+    int off = s->scene.measure_slots_rect.right() - center_x;
+    center_x = s->scene.measure_slots_rect.x - off - bdr_s;
+  }
+  return center_x;
+}
+
 static void ui_draw_text(const UIState *s, float x, float y, const char *string, float size, NVGcolor color, const char *font_name) {
   nvgFontFace(s->vg, font_name);
   nvgFontSize(s->vg, size);
@@ -444,10 +464,10 @@ static void ui_draw_measures(UIState *s){
       slots_w = (s->scene.measure_cur_num_slots <= 5 ? 2 : 4) * slots_r;
       slots_x = (s->scene.measure_cur_num_slots <= 5 ? center_x - slots_r : center_x - 3 * slots_r);
     }
-    const Rect slots_rect = {slots_x, slots_y_min, slots_w, slots_y_rng};
+    s->scene.measure_slots_rect = {slots_x, slots_y_min, slots_w, slots_y_rng};
     // draw bounding rectangle
     nvgBeginPath(s->vg);
-    nvgRoundedRect(s->vg, slots_rect.x, slots_rect.y, slots_rect.w, slots_rect.h, 20);
+    nvgRoundedRect(s->vg, s->scene.measure_slots_rect.x, s->scene.measure_slots_rect.y, s->scene.measure_slots_rect.w, s->scene.measure_slots_rect.h, 20);
     nvgStrokeColor(s->vg, nvgRGBA(200,200,200,200));
     nvgStrokeWidth(s->vg, 6);
     nvgStroke(s->vg);
@@ -1175,12 +1195,12 @@ static void ui_draw_measures(UIState *s){
       if (vallen > 4){
         val_font_size -= (vallen - 4) * 5;
       }
-      int slot_x = slots_rect.x + (scene.measure_cur_num_slots <= 5 ? 0 : (i < 5 ? slots_r * 2 : 0));
+      int slot_x = s->scene.measure_slots_rect.x + (scene.measure_cur_num_slots <= 5 ? 0 : (i < 5 ? slots_r * 2 : 0));
       int x = slot_x + slots_r - unit_font_size / 2;
       if (i >= 5){
         x = slot_x + slots_r + unit_font_size / 2;
       }
-      int slot_y = slots_rect.y + (i % 5) * slot_y_rng;
+      int slot_y = s->scene.measure_slots_rect.y + (i % 5) * slot_y_rng;
       int slot_y_mid = slot_y + slot_y_rng / 2;
       int y = slot_y_mid + slot_y_rng / 2 - 8 - label_font_size;
       if (strlen(name) == 0){
@@ -1337,7 +1357,8 @@ static void ui_draw_vision_face(UIState *s) {
   const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
   const int radius = 96;
   const int center_x = maxspeed_rect.centerX();
-  const int center_y = s->fb_h - footer_h / 2;
+  int center_y = s->fb_h - footer_h / 2;
+  center_y = offset_button_y(s, center_y, radius);
   ui_draw_circle_image(s, center_x, center_y, radius, "driver_face", s->scene.dm_active);
 }
 
@@ -1345,8 +1366,10 @@ static void ui_draw_vision_brake(UIState *s) {
   if (s->scene.brake_percent >= 0){
     // scene.brake_percent in [0,50] is engine/regen
     // scene.brake_percent in [51,100] is friction
-    const int brake_x = s->fb_w - face_wheel_radius - bdr_s * 2;
-    const int brake_y = s->fb_h - footer_h / 2;
+    int brake_x = s->fb_w - face_wheel_radius - bdr_s * 2;
+    int brake_y = s->fb_h - footer_h / 2;
+    brake_x = offset_right_side_button_x(s, brake_x, brake_size);
+    brake_y = offset_button_y(s, brake_y, brake_size);
     const int brake_r1 = 1;
     const int brake_r2 = brake_size / 3 + 2;
     const float brake_r_range = brake_r2 - brake_r1;
@@ -1438,7 +1461,9 @@ static void draw_accel_mode_button(UIState *s) {
     if (s->scene.brake_percent >= 0){
       center_x -= brake_size + 3 * bdr_s + radius;
     }
-    const int center_y = s->fb_h - footer_h / 2 - radius / 2;
+    int center_y = s->fb_h - footer_h / 2 - radius / 2;
+    center_y = offset_button_y(s, center_y, radius);
+    center_x = offset_right_side_button_x(s, center_x, radius);
     int btn_w = radius * 2;
     int btn_h = radius * 2;
     int btn_x1 = center_x - 0.5 * radius;
@@ -1514,7 +1539,9 @@ static void draw_dynamic_follow_mode_button(UIState *s) {
     if (s->scene.accel_mode_button_enabled){
       center_x -= 2 * (bdr_s + radius);
     }
-    const int center_y = s->fb_h - footer_h / 2 - radius / 2;
+    int center_y = s->fb_h - footer_h / 2 - radius / 2;
+    center_y = offset_button_y(s, center_y, radius);
+    center_x = offset_right_side_button_x(s, center_x, radius);
     int btn_w = radius * 2;
     int btn_h = radius * 2;
     int btn_x1 = center_x - 0.5 * radius;
@@ -1592,7 +1619,8 @@ static void draw_laneless_button(UIState *s) {
     const int vision_face_radius = 96;
     const int radius = 72;
     const int center_x = maxspeed_rect.centerX() + vision_face_radius + bdr_s + radius;
-    const int center_y = s->fb_h - footer_h / 2 - radius / 2;
+    int center_y = s->fb_h - footer_h / 2 - radius / 2;
+    center_y = offset_button_y(s, center_y, radius);
     int btn_w = radius * 2;
     int btn_h = radius * 2;
     int btn_x1 = center_x - 0.5 * radius;
@@ -1666,13 +1694,15 @@ static void ui_draw_vision(UIState *s) {
   }
   // Set Speed, Current Speed, Status/Events
   ui_draw_vision_header(s);
-  if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE) {
+  if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE
+  || (*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL) {
     ui_draw_vision_face(s);
     ui_draw_vision_brake(s);
     ui_draw_measures(s);
   }
-  if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL) {
-    ui_draw_measures(s);
+  else if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::MID) {
+    ui_draw_vision_face(s);
+    ui_draw_vision_brake(s);
   }
   if (s->scene.end_to_end) {
     draw_laneless_button(s);
