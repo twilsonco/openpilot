@@ -135,7 +135,7 @@ class CarState(CarStateBase):
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
     self.hvb_wattage = 0. # [kW]
     self.hvb_wattage_bp = [0., 53.] # [kW], based on the banned user BZZT's testimony at https://www.gm-volt.com/threads/using-regen-paddle-and-l-drive-mode-summary.222289/
-    self.apply_brake_percent = 0 if self.showBrakeIndicator else -1 # for brake percent on ui
+    self.apply_brake_percent = 0. if self.showBrakeIndicator else -1. # for brake percent on ui
     self.vEgo = 0.
     self.v_cruise_kph = 1
     self.min_lane_change_speed = 20. * CV.MPH_TO_MS
@@ -189,15 +189,17 @@ class CarState(CarStateBase):
     self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
     ret.gearShifter = self.gear_shifter
     ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"] != 0
-    self.user_brake = pt_cp.vl["EBCMBrakePedalPosition"]['BrakePedalPosition']
-    ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
-    if not ret.brakePressed:
+    if ret.brakePressed:
+      self.user_brake = pt_cp.vl["EBCMBrakePedalPosition"]['BrakePedalPosition']
+      ret.brake = self.user_brake / 0xd0
+    else:
+      self.user_brake = 0.
       ret.brake = 0.
     
     if self.showBrakeIndicator:
       if t - self.sessionInitTime < 22.:
         self.apply_brake_percent = int(round(interp(t - self.sessionInitTime - 10., [i * 3. for i in range(6)], ([100,0]*3))))
-    ret.frictionBrakePercent = self.apply_brake_percent
+    ret.frictionBrakePercent = int(self.apply_brake_percent)
     
 
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
