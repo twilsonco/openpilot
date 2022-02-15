@@ -127,10 +127,7 @@ def interp_follow_profile(v_ego, v_lead, x_lead, fp_float):
   return fp
   
 class DynamicFollow():
-  t_last = 0. # sec_since_boot() on last iteration
-  cutin_t_last = 0. # sec_since_boot() of last remembered cut-in
   user_timeout_t = 300. # amount of time df waits after the user sets the follow level
-  user_timeout_last_t = -user_timeout_t # (i.e. it's already been 300 seconds)
   
   ####################################
   #    ACCRUING FOLLOW POINTS
@@ -149,7 +146,6 @@ class DynamicFollow():
   speed_rate_factor_bp = [i * CV.MPH_TO_MS for i in [1., 30.]] # [mph]
   speed_rate_factor_v = [0.,1.] # slow "time" at low speed to you have to be actually moving behind a lead in order to earn points
   
-  points_cur = 0.  # [follow profile number 0-based] number of current points. corresponds to follow level
   points_bounds = [-10., 2.]  # [follow profile number 0-based] min and max follow levels (at the 1/30 fp_point_rate, -10 means after the max number of cutins it takes ~5 minutes to get back to medium follow)
   
   
@@ -175,13 +171,14 @@ class DynamicFollow():
   cutin_rescind_t_bp = [2.,6.] # [s] time since last cut-in
   cutin_rescind_t_v = [1., 0.] # [unitless] factor of cut-in penalty that is rescinded
   
-  cutin_penalty_last = 0.  # penalty for most recent cutin, so that it can be rescinded if the cutin really just cut *over* in front of you (i.e. they quickly disappear)
-  lead_d_last = 0.
-  has_lead_last = False
-  
   def __init__(self,fpi = 1):
-    self.points_cur = fpi
-    self.t_last = 0
+    self.points_cur = fpi # [follow profile number 0-based] number of current points. corresponds to follow level
+    self.t_last = 0. # sec_since_boot() on last iteration
+    self.cutin_penalty_last = 0.  # penalty for most recent cutin, so that it can be rescinded if the cutin really just cut *over* in front of you (i.e. they quickly disappear)
+    self.lead_d_last = 0.
+    self.has_lead_last = False
+    self.user_timeout_last_t = -self.user_timeout_t # (i.e. it's already been 300 seconds)
+    self.cutin_t_last = 0. # sec_since_boot() of last remembered cut-in
   
   def update(self, has_lead, lead_d, lead_v, v_ego):
     t = sec_since_boot()
@@ -302,11 +299,11 @@ class LeadMpc():
       self.params_check_last_t = t
       dynamic_follow_active = self._params.get_bool("DynamicFollow")
       if dynamic_follow_active and dynamic_follow_active != self.dynamic_follow_active:
-        self.df.reset()
+        self.df.reset(1)
       self.dynamic_follow_active = dynamic_follow_active
     
     if (not CS.onePedalModeActive and self.one_pedal_mode_active_last) or (not CS.coastOnePedalModeActive and self.coast_one_pedal_mode_active_last):
-      self.df.reset()
+      self.df.reset(1)
     self.one_pedal_mode_active_last = CS.onePedalModeActive
     self.coast_one_pedal_mode_active_last = CS.coastOnePedalModeActive
     
