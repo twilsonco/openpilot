@@ -189,7 +189,7 @@ class DynamicFollow():
     self.t_last = t
     lead_v_rel = v_ego - lead_v
     if has_lead:
-      new_lead = not self.has_lead_last or self.lead_d_last - lead_d > 2.5
+      new_lead = not self.has_lead_last or self.lead_d_last - lead_d > 3.5
       self.lead_d_last = lead_d
       if new_lead:
         desired_follow_distance = v_ego * interp_follow_profile(v_ego, lead_v, lead_d, self.points_cur)[0]
