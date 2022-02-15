@@ -199,7 +199,7 @@ class CarState(CarStateBase):
     if self.showBrakeIndicator:
       if t - self.sessionInitTime < 22.:
         self.apply_brake_percent = int(round(interp(t - self.sessionInitTime - 10., [i * 3. for i in range(6)], ([100,0]*3))))
-    ret.frictionBrakePercent = int(self.apply_brake_percent)
+    ret.frictionBrakePercent = int(round(self.apply_brake_percent))
     
 
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.

@@ -226,16 +226,16 @@ class CarController():
       if CS.vEgo > 0.1:
         if CS.out.cruiseState.enabled:
           if not CS.pause_long_on_gas_press:
-            if apply_brake > 0:
+            if apply_brake > 1:
               CS.apply_brake_percent = interp(apply_brake, [float(P.BRAKE_LOOKUP_V[-1]), float(P.BRAKE_LOOKUP_V[0])], [51., 100.])
+            elif (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active):
+              CS.apply_brake_percent = interp(CS.hvb_wattage, CS.hvb_wattage_bp, [0., 50.])
             elif apply_gas < P.ZERO_GAS:
               CS.apply_brake_percent = interp(apply_gas, [float(P.GAS_LOOKUP_V[0]), float(P.GAS_LOOKUP_V[1])], [51., 0.])
-            elif (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active):
-              CS.apply_brake_percent = interp(CS.hvb_wattage, CS.hvb_wattage_bp, [0., 49.])
           else:
-            CS.apply_brake_percent = interp(CS.hvb_wattage, CS.hvb_wattage_bp, [0., 49.])
+            CS.apply_brake_percent = interp(CS.hvb_wattage, CS.hvb_wattage_bp, [0., 50.])
         elif CS.is_ev and CS.out.brake == 0.:
-          CS.apply_brake_percent = interp(CS.hvb_wattage, CS.hvb_wattage_bp, [0., 49.])
+          CS.apply_brake_percent = interp(CS.hvb_wattage, CS.hvb_wattage_bp, [0., 50.])
         elif CS.out.brake > 0.:
           CS.apply_brake_percent = interp(CS.out.brake, [0., 0.5], [51., 100.])
       elif CS.out.brake > 0.:

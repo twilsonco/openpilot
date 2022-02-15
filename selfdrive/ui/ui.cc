@@ -400,7 +400,7 @@ static void update_state(UIState *s) {
     scene.dynamic_follow_level = data.getDynamicFollowLevel();
   }
   
-  if (scene.brake_percent > 50){
+  if (scene.brake_percent > 50 && scene.car_state.getBrakePressed()){
     if (scene.brake_indicator_alpha < 1.){
       scene.brake_indicator_alpha += fade_time_step * (t - scene.brake_indicator_last_t);
       if (scene.brake_indicator_alpha > 1.)
