@@ -13,7 +13,7 @@ from selfdrive.swaglog import cloudlog
 MPC_T = list(np.arange(0,1.,.2)) + list(np.arange(1.,10.6,.6))
 
 TR_DEFAULT = 1.8
-SNG_SPEED = 20 * CV.MPH_TO_MS
+SNG_SPEED = 20. * CV.MPH_TO_MS
 SNG_DIST_COST = MPC_COST_LONG.DISTANCE
 SNG_ACCEL_COST = MPC_COST_LONG.ACCELERATION
 
@@ -29,8 +29,8 @@ FOLLOW_PROFILES = [
     [MPC_COST_LONG.DISTANCE * 10., MPC_COST_LONG.DISTANCE * 7., MPC_COST_LONG.DISTANCE], # mpc distance costs lookup table based on follow distance behind lead (higher value means harder accel/braking to make up distance) (recommended to use factors of MPC_COST_LONG.DISTANCE) (It's ok to only have one value, ie static distance cost )
     [15., 33., 100.], # meters behind lead car
     [MPC_COST_LONG.DISTANCE * 10., MPC_COST_LONG.DISTANCE * 7., MPC_COST_LONG.DISTANCE], # distance costs for the absolute follow distances
-    0., # [units of MPC_COST_LONG.DISTANCE / (m/s)] lead car pull-away speed cost shift factor "d" (when lead car is pulling away, ie v_lead < 0, distance cost will be increased by |v_lead| * d)
-    0., # [units of MPC_COST_LONG.DISTANCE / (m/s)] lead car pull-away speed cost shift factor "d" (when lead car is pulling away, ie v_lead < 0, distance cost will be increased by |v_lead| * d)
+    0., # [units of MPC_COST_LONG.DISTANCE / (m/s)] lead car pull-away speed cost shift factor "d" (when lead car is pulling away, ie v_lead < 0, distance cost will be increased by |v_lead| * d if it's above the cutoff defined below)
+    0., # [units of MPC_COST_LONG.DISTANCE / (m/s)] lead car approaching speed cost shift factor "d" (when lead car is approaching, ie v_lead > 0, distance cost will be increased by |v_lead| * d if it's above the cutoff defined below)
     [1.5, 1.8, 2.8], # seconds behind lead car
     [MPC_COST_LONG.ACCELERATION * 1., MPC_COST_LONG.ACCELERATION * 1.2, MPC_COST_LONG.ACCELERATION * 1.4], # values of accel cost 
     [15., 20., 40.], # meters behind lead car
@@ -66,7 +66,7 @@ FOLLOW_PROFILES = [
     [15., 25., 35., 45.], # meters behind lead car
     [MPC_COST_LONG.DISTANCE * 1.5, MPC_COST_LONG.DISTANCE * 0.8, MPC_COST_LONG.DISTANCE * 0.25, MPC_COST_LONG.DISTANCE * 0.1],
     0.5 * CV.MPH_TO_MS,
-    0.1 * CV.MPH_TO_MS,
+    0.05 * CV.MPH_TO_MS,
     [1.5, 1.8, 2.8], 
     [MPC_COST_LONG.ACCELERATION * 1., MPC_COST_LONG.ACCELERATION * 2.0, MPC_COST_LONG.ACCELERATION * 3.], 
     [10., 20., 40.],
@@ -79,7 +79,7 @@ FP_MIN_MAX_DIST_COSTS = [[f(f(fp[6]),f(fp[8])) for f in [min,max]] for fp in FOL
 FP_MIN_MAX_ACCEL_COSTS = [[f(f(fp[12]),f(fp[14])) for f in [min,max]] for fp in FOLLOW_PROFILES]
 
 LEAD_PULLAWAY_V_REL = -0.5 * CV.MPH_TO_MS # [m/s] lead car pull-away speed cost shift factor cutoff! Lead car has to be pulling away faster than this before it starts increasing the mpc distance cost (must be negative)
-LEAD_APPROACHING_V_REL = 8. * CV.MPH_TO_MS # [m/s] lead car approaching cost shift factor cutoff! Lead car has to be approaching faster than this before it starts increasing/decreasing the mpc distance/acceleration costs (must be positive)
+LEAD_APPROACHING_V_REL = 10. * CV.MPH_TO_MS # [m/s] lead car approaching cost shift factor cutoff! Lead car has to be approaching faster than this before it starts increasing/decreasing the mpc distance/acceleration costs (must be positive)
 
 # calculate the desired follow distance and mcp distance cost from current state
 def calc_follow_profile(v_ego, v_lead, x_lead, fpi):
@@ -91,8 +91,11 @@ def calc_follow_profile(v_ego, v_lead, x_lead, fpi):
   
   # first target distance
   hwy_shift = interp(v_ego, fp[2], fp[3]) # calculate variable shift of objective follow distance based on city/highway speed
+  tr_equil = interp(0., fp[0], fp[1]) # distance when speed is matched
+  lead_sng_factor = interp(v_lead, [0., SNG_SPEED], [1., 0.])
   tr = interp(v_rel, fp[0], fp[1]) + hwy_shift # calculate objective distance in seconds(ish)
-  tr = TR_DEFAULT * sng_factor + tr * (1.0 - sng_factor)
+  tr = tr_equil * lead_sng_factor + tr * (1.0 - lead_sng_factor)
+  tr = min(tr_equil,TR_DEFAULT) * sng_factor + tr * (1.0 - sng_factor)
   
   # then distance cost
   dist_cost = max(interp(d_lead, fp[5], fp[6]), interp(x_lead, fp[7], fp[8]))
