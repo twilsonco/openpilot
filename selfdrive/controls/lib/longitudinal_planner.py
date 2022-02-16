@@ -174,7 +174,7 @@ class Planner():
     self.gear_shifter_last = sm['carState'].gearShifter
     
     
-    if not enabled or sm['carState'].gasPressed:
+    if long_control_state == LongCtrlState.off or sm['carState'].gasPressed:
       self.v_desired = v_ego
       self.a_desired = a_ego
 

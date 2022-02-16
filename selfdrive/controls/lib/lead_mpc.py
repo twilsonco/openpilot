@@ -13,7 +13,7 @@ from selfdrive.swaglog import cloudlog
 MPC_T = list(np.arange(0,1.,.2)) + list(np.arange(1.,10.6,.6))
 
 TR_DEFAULT = 1.8
-SNG_SPEED = 18 * CV.MPH_TO_MS
+SNG_SPEED = 20 * CV.MPH_TO_MS
 SNG_DIST_COST = MPC_COST_LONG.DISTANCE
 SNG_ACCEL_COST = MPC_COST_LONG.ACCELERATION
 
@@ -85,7 +85,7 @@ LEAD_APPROACHING_V_REL = 8. * CV.MPH_TO_MS # [m/s] lead car approaching cost shi
 def calc_follow_profile(v_ego, v_lead, x_lead, fpi):
   fp = FOLLOW_PROFILES[fpi]
   # adjust based on speed for sng smooth stopping
-  sng_factor = interp(v_ego, [SNG_SPEED * 0.8, SNG_SPEED], [1., 0.])
+  sng_factor = interp(v_ego, [SNG_SPEED * 0.6, SNG_SPEED], [1., 0.])
   v_rel = v_ego - v_lead   # calculate relative velocity vs lead car
   d_lead = (x_lead / v_ego) if v_ego > 0.1 else 0.0 # distance to lead car in seconds
   
