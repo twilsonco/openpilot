@@ -20,6 +20,8 @@ Version tw-0.8.9-3.9 (2022-02-11)
  * NEW: Custom opgm spinner at boot
  * AGNOS 4 & NEOS 19.1
  * FIXED: [Volt] Prevent misprinting as Escalade ESV
+ * IMPROVED: Reposition footer elements (buttons, face, and brake indicator) to keep them in view
+ * IMPROVED: [Volt] Improved lateral control by adding derivative gain
  * IMPROVED: Tamer "stock" acceleration profile
  * IMPROVED: Brake indicator now shows regen/engine braking while cruising, or regen while in one-pedal regen mode
  * IMPROVED: UI Metrics now larger when four or fewer present (suggested by C Tyrell)
