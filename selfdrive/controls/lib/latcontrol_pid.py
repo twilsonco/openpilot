@@ -1,6 +1,6 @@
 import math
 
-from selfdrive.controls.lib.pid import PIController
+from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from cereal import log
@@ -9,16 +9,18 @@ from cereal import log
 class LatControlPID(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
-    self.pid = PIController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
-                            (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
-                            k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, neg_limit=-1.0)
+    self.pid = PIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
+                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
+                             (CP.lateralTuning.pid.kdBP, CP.lateralTuning.pid.kdV),
+                             k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, neg_limit=-1.0,
+                             sat_limit=CP.steerLimitTimer, derivative_period=0.1)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
 
   def reset(self):
     super().reset()
     self.pid.reset()
 
-  def update(self, active, CS, CP, VM, params, last_actuators, desired_curvature, desired_curvature_rate):
+  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate):
     pid_log = log.ControlsState.LateralPIDState.new_message()
     pid_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     pid_log.steeringRateDeg = float(CS.steeringRateDeg)
@@ -42,7 +44,8 @@ class LatControlPID(LatControl):
 
       deadzone = 0.0
 
-      output_steer = self.pid.update(angle_steers_des, CS.steeringAngleDeg, override=CS.steeringPressed,
+      check_saturation = (CS.vEgo > 10) and not CS.steeringRateLimited and not CS.steeringPressed
+      output_steer = self.pid.update(angle_steers_des, CS.steeringAngleDeg, check_saturation=check_saturation, override=CS.steeringPressed,
                                      feedforward=steer_feedforward, speed=CS.vEgo, deadzone=deadzone)
       pid_log.active = True
       pid_log.p = self.pid.p
