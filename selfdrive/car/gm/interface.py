@@ -85,6 +85,11 @@ class CarInterface(CarInterfaceBase):
     # TODO: JJS: Add param to cereal
     # ret.hasEPB = 0x230 in fingerprint[0]
     
+
+    ret.longitudinalTuning.kpBP = [5., 35.]
+    ret.longitudinalTuning.kpV = [2.4, 1.5]
+    ret.longitudinalTuning.kiBP = [0.]
+    ret.longitudinalTuning.kiV = [0.36]
     
     if ret.enableGasInterceptor:
       ret.openpilotLongitudinalControl = True
@@ -100,11 +105,18 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.45 # Volt Gen 1, TODO corner weigh
 
       ret.lateralTuning.pid.kpBP = [0., 40.]
-      ret.lateralTuning.pid.kpV = [0., 0.17]
-      ret.lateralTuning.pid.kiBP = [0.]
-      ret.lateralTuning.pid.kiV = [0.]
-      ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_volt()
+      ret.lateralTuning.pid.kpV = [0.0, 0.19]
+      ret.lateralTuning.pid.kiBP = [i * CV.MPH_TO_MS for i in [0., 15., 55., 80.]]
+      ret.lateralTuning.pid.kiV = [0., .018, .012, .01]
+      ret.lateralTuning.pid.kdBP = [i * CV.MPH_TO_MS for i in [0., 35.]]
+      ret.lateralTuning.pid.kdV = [0., 0.07]
+      ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
       ret.steerActuatorDelay = 0.2
+      
+      # Only tuned to reduce oscillations. TODO.
+      ret.longitudinalTuning.kpV = [1.7, 1.3]
+      ret.longitudinalTuning.kiV = [0.34]
+      ret.longitudinalTuning.kdV = [0.2]
 
     elif candidate == CAR.MALIBU or candidate == CAR.MALIBU_NR:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -131,6 +143,11 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.4  # end to end is 13.46
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
+      ret.lateralTuning.pid.kpBP = [i * CV.MPH_TO_MS for i in [20., 80.]]
+      ret.lateralTuning.pid.kpV = [0.18, 0.26]
+      ret.lateralTuning.pid.kiBP = [i * CV.MPH_TO_MS for i in [0., 15., 55., 80.]]
+      ret.lateralTuning.pid.kiV = [0., .018, .012, .01]
+      ret.lateralTuning.pid.kdV = [0.06]
       ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
       ret.steerMaxBP = [10., 25.]
       ret.steerMaxV = [1., 1.05]
@@ -176,6 +193,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.
       ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.26], [0.01, 0.021]]
+      ret.lateralTuning.pid.kdV = [0.06]
       ret.lateralTuning.pid.kf = 0.0002
       ret.steerMaxBP = [10., 25.]
       ret.steerMaxV = [1., 1.15]
@@ -235,10 +253,6 @@ class CarInterface(CarInterfaceBase):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
-    ret.longitudinalTuning.kpBP = [5., 35.]
-    ret.longitudinalTuning.kpV = [2.4, 1.5]
-    ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.36]
 
 
     # TODO: Needs refinement for stop and go 
