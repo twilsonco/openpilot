@@ -130,7 +130,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
-      ret.steerRateCost = 0.8
+      ret.steerRateCost = 1.0
       tire_stiffness_factor = 0.469 # Stock Michelin Energy Saver A/S, LiveParameters
       ret.steerRatioRear = 0.
       ret.centerToFront = 0.45 * ret.wheelbase # from Volt Gen 1
@@ -139,14 +139,15 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV = [0.0, 0.19]
       ret.lateralTuning.pid.kiBP = [i * CV.MPH_TO_MS for i in [0., 15., 55., 80.]]
       ret.lateralTuning.pid.kiV = [0., .018, .012, .01]
-      ret.lateralTuning.pid.kdV = [0.06]
+      ret.lateralTuning.pid.kdBP = [i * CV.MPH_TO_MS for i in [0., 35.]]
+      ret.lateralTuning.pid.kdV = [0., 0.07]
       ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
       ret.steerActuatorDelay = 0.2
 
       # Only tuned to reduce oscillations. TODO.
       ret.longitudinalTuning.kpV = [1.7, 1.3]
       ret.longitudinalTuning.kiV = [0.34]
-      ret.longitudinalTuning.kdV = [0.5]
+      ret.longitudinalTuning.kdV = [0.6, 0.2]
 
 
     elif candidate == CAR.MALIBU:
