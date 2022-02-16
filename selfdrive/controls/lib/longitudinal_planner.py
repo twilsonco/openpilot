@@ -39,9 +39,9 @@ _A_CRUISE_MIN_BP = [i * CV.MPH_TO_MS for i in [0., 15., 30., 55., 85.]]
 # make sure these accelerations are smaller than mpc limits
 _A_CRUISE_MAX_V_CREEP = [.3, .3, .3, .3, .3]
 _A_CRUISE_MAX_V_ECO = [.8, .65, .55, .5, .4]
-_A_CRUISE_MAX_V = [1., 1.2, .9, 0.7, 0.65]
+_A_CRUISE_MAX_V = [1.1, 1.25, 1.0, 0.7, 0.65]
 _A_CRUISE_MAX_V_SPORT = [2.2, 2.4, 2.2, 1.1, 0.9]
-_A_CRUISE_MAX_V_FOLLOWING = [1.3, 1.5, 1.2, 0.7, 0.65]
+_A_CRUISE_MAX_V_FOLLOWING = [1.5, 1.5, 1.2, 0.7, 0.65]
 _A_CRUISE_MAX_BP = _A_CRUISE_MIN_BP
 
 _A_CRUISE_MIN_V_MODE_LIST = [_A_CRUISE_MIN_V, _A_CRUISE_MIN_V_SPORT, _A_CRUISE_MIN_V_ECO, _A_CRUISE_MIN_V_ECO]
