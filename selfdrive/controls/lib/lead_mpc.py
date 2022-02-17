@@ -165,23 +165,22 @@ class DynamicFollow():
     dur = t - self.t_last
     self.t_last = t
     lead_v_rel = v_ego - lead_v
-    if has_lead:
-      new_lead = not self.has_lead_last or self.lead_d_last - lead_d > 3.5
-      self.lead_d_last = lead_d
-      if new_lead:
-        desired_follow_distance = v_ego * interp_follow_profile(v_ego, lead_v, lead_d, self.points_cur)[0]
-        penalty_dist = interp(lead_d / desired_follow_distance, self.cutin_dist_penalty_bp, self.cutin_dist_penalty_v) if desired_follow_distance > 0. else 0.
-        penalty_vel = interp(lead_v_rel, self.cutin_vel_penalty_bp, self.cutin_vel_penalty_v)
-        penalty = max(0., penalty_dist + penalty_vel)
-        penalty *= interp(t - self.cutin_t_last, self.cutin_last_t_factor_bp, self.cutin_last_t_factor_v)
-        points_old = self.points_cur
-        if t - self.user_timeout_last_t > self.user_timeout_t:
-          self.points_cur = max(self.points_bounds[0], self.points_cur - penalty)
-        self.cutin_t_last = t
-        self.cutin_penalty_last = points_old - self.points_cur
-        self.has_lead_last = has_lead
-        return self.points_cur
-    elif t - self.user_timeout_last_t > self.user_timeout_t and t - self.cutin_t_last < self.cutin_rescind_t_bp[-1]:
+    lead_gone = (self.has_lead_last and not has_lead) or self.lead_d_last - lead_d < 2.5
+    new_lead = has_lead and (not self.has_lead_last or self.lead_d_last - lead_d > 2.5)
+    if new_lead:
+      desired_follow_distance = v_ego * interp_follow_profile(v_ego, lead_v, lead_d, self.points_cur)[0]
+      penalty_dist = interp(lead_d / desired_follow_distance, self.cutin_dist_penalty_bp, self.cutin_dist_penalty_v) if desired_follow_distance > 0. else 0.
+      penalty_vel = interp(lead_v_rel, self.cutin_vel_penalty_bp, self.cutin_vel_penalty_v)
+      penalty = max(0., penalty_dist + penalty_vel)
+      penalty *= interp(t - self.cutin_t_last, self.cutin_last_t_factor_bp, self.cutin_last_t_factor_v)
+      points_old = self.points_cur
+      if t - self.user_timeout_last_t > self.user_timeout_t:
+        self.points_cur = max(self.points_bounds[0], self.points_cur - penalty)
+      self.cutin_t_last = t
+      self.cutin_penalty_last = points_old - self.points_cur
+      self.has_lead_last = has_lead
+      return self.points_cur
+    elif lead_gone and t - self.user_timeout_last_t > self.user_timeout_t and t - self.cutin_t_last < self.cutin_rescind_t_bp[-1]:
       rescinded_penalty = self.cutin_penalty_last * interp(t - self.cutin_t_last, self.cutin_rescind_t_bp, self.cutin_rescind_t_v)
       self.points_cur += max(0,rescinded_penalty)
       self.cutin_t_last = t - self.cutin_rescind_t_bp[-1] - 1.
