@@ -188,15 +188,26 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0.
       ret.centerToFront = 2.0828 #ret.wheelbase * 0.4 # wild guess
       tire_stiffness_factor = 1.0
-      # still working on improving lateral
       ret.steerRateCost = 0.5
       ret.steerActuatorDelay = 0.
       ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 41.0], [10., 41.0]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.26], [0.01, 0.021]]
-      ret.lateralTuning.pid.kdV = [0.06]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.275], [0.01, 0.021]]
+      #unsure of kdV value
+      ret.lateralTuning.pid.kdV = [0.3]
       ret.lateralTuning.pid.kf = 0.0002
       ret.steerMaxBP = [10., 25.]
-      ret.steerMaxV = [1., 1.15]
+      ret.steerMaxV = [1., 1.2]
+
+      ret.longitudinalTuning.kpBP = [0., 35]
+      ret.longitudinalTuning.kpV = [0.21, 0.46] 
+      ret.longitudinalTuning.kiBP = [0., 35.] 
+      ret.longitudinalTuning.kiV = [0.22, 0.33]
+      ret.stoppingDecelRate = 0.17  # reach stopping target smoothly, brake_travel/s while trying to stop
+      ret.stopAccel = -4.0 # Required acceleraton to keep vehicle stationary
+      ret.vEgoStopping = 0.6  # Speed at which the car goes into stopping state, when car starts requesting stopping accel
+      ret.vEgoStarting = 0.6  # Speed at which the car goes into starting state, when car starts requesting starting accel,
+      # vEgoStarting needs to be > or == vEgoStopping to avoid state transition oscillation
+      ret.stoppingControl = True
       
     elif candidate == CAR.EQUINOX_NR:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
