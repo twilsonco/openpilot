@@ -533,13 +533,13 @@ class Controls:
     if not self.joystick_mode:
       # accel PID loop
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS, self.CI)
-      actuators.accel, self.v_target, self.a_target = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits)
+      t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
+      actuators.accel = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
       
       self.CI.CS.coasting_long_plan = self.LoC.longPlan
       self.CI.CS.coasting_lead_d = self.LoC.coasting_lead_d
       self.CI.CS.coasting_lead_v = self.LoC.coasting_lead_v
       self.CI.CS.tr = self.LoC.tr
-          
 
       # Steering PID loop and lateral MPC
       desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
