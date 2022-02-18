@@ -1,8 +1,14 @@
-Version 0.8.13-GM7 (2022-02-11)
+Version 0.8.14-GM7 (2022-02-18)
 ========================
  * WARNING: Forced update on opendbc may require reinstall
  * ^^^^^^
  * ALPHA: Pedal Interceptor adjusted basesd on L-mode status for EVs!
+ * Derivative gain in lateral controller for
+   * Volt
+   * Bolt
+   * Acadia
+   * Silverado
+ * Silverado linear feedforward
  * CarState.gearShifter now more detailed, includes L mode!
    Supports following GearShifter enum vals from cereal
     park @1
@@ -29,7 +35,7 @@ Version 0.8.13-GM7 (2022-02-11)
  * TODO: Pedal low-speed tuning
  * TODO: Auto-detection of B-mode
  * TODO: Auto-detection of B-mode zero-point
-Version 0.8.13 (2022-02-16)
+
 ========================
  * Improved driver monitoring
    * Retuned driver pose learner for relaxed driving positions
