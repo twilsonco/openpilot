@@ -35,6 +35,7 @@ class PIDController:
     self.i_rate = 1.0 / rate
     self.sat_limit = sat_limit
     self._d_period = round(derivative_period * rate)  # period of time for derivative calculation (seconds converted to frames)
+    self._d_period_recip = 1. / self._d_period
 
     self.reset()
 
@@ -80,7 +81,7 @@ class PIDController:
 
     d = 0
     if len(self.errors) >= self._d_period:  # makes sure we have enough history for period
-      d = (error - self.errors[-self._d_period]) / self._d_period  # get deriv in terms of 100hz (tune scale doesn't change)
+      d = (error - self.errors[-self._d_period]) * self._d_period_recip  # get deriv in terms of 100hz (tune scale doesn't change)
       d *= self.k_d
 
     if override:
