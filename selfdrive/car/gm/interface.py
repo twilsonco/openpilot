@@ -29,12 +29,18 @@ class CarInterface(CarInterfaceBase):
     desired_angle *= 0.09760208
     sigmoid = desired_angle / (1 + fabs(desired_angle))
     return 0.04689655 * sigmoid * (v_ego + 10.028217)
+  
+  @staticmethod
+  def get_steer_feedforward_silverado(desired_angle, v_ego):
+    return desired_angle * v_ego
 
   def get_steer_feedforward_function(self):
-    if self.CP.carFingerprint == CAR.VOLT:
+    if self.CP.carFingerprint in {CAR.VOLT, CAR.VOLT_NR}:
       return self.get_steer_feedforward_volt
-    elif self.CP.carFingerprint == CAR.ACADIA:
+    elif self.CP.carFingerprint in {CAR.ACADIA, CAR.ACADIA_NR}:
       return self.get_steer_feedforward_acadia
+    elif self.CP.carFingerprint == CAR.SILVERADO_NR:
+      return self.get_steer_feedforward_silverado
     else:
       return CarInterfaceBase.get_steer_feedforward_default
 
@@ -96,7 +102,7 @@ class CarInterface(CarInterfaceBase):
 
     if candidate == CAR.VOLT or candidate == CAR.VOLT_NR:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.minEnableSpeed = -1 * CV.MPH_TO_MS
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
@@ -235,9 +241,16 @@ class CarInterface(CarInterfaceBase):
       ret.minSteerSpeed = -1 * CV.MPH_TO_MS
       ret.mass = 2241. + STD_CARGO_KG
       ret.wheelbase = 3.745
-      ret.steerRatio = 23.3 # Determined by skip # 16.3 # From a 2019 SILVERADO
+      ret.steerRatio = 16.3 # Determined by skip # 16.3 # From a 2019 SILVERADO
+      ret.lateralTuning.pid.kpBP = [i * CV.MPH_TO_MS for i in [20., 80.]]
+      ret.lateralTuning.pid.kpV = [0.18, 0.26]
+      ret.lateralTuning.pid.kiBP = [i * CV.MPH_TO_MS for i in [0., 15., 55., 80.]]
+      ret.lateralTuning.pid.kiV = [0., .018, .012, .01]
+      ret.lateralTuning.pid.kdV = [0.1]
+      ret.lateralTuning.pid.kf = 0.0022 # !!! ONLY for (angle * vEgo) feedforward !!!
       ret.centerToFront = ret.wheelbase * 0.49
-      ret.steerActuatorDelay = 0.1 # Determined by skip # 0.075
+      ret.steerRateCost = 1.0
+      ret.steerActuatorDelay = 0.075 # Determined by skip # 0.075
       ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
 
     elif candidate == CAR.SUBURBAN:
