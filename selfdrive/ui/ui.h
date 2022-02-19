@@ -27,6 +27,17 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 const float y_offset = Hardware::EON() ? 0.0 : 150.0;
 const float ZOOM = Hardware::EON() ? 2138.5 : 2912.8;
 
+typedef struct Rect {
+  int x, y, w, h;
+  int centerX() const { return x + w / 2; }
+  int centerY() const { return y + h / 2; }
+  int right() const { return x + w; }
+  int bottom() const { return y + h; }
+  bool ptInRect(int px, int py) const {
+    return px >= x && px < (x + w) && py >= y && py < (y + h);
+  }
+} Rect;
+
 struct Alert {
   QString text1;
   QString text2;
@@ -93,6 +104,16 @@ typedef struct {
 typedef struct UIScene {
   mat3 view_from_calib;
   cereal::PandaState::PandaType pandaType;
+
+  // brightness control
+  float screen_dim_modes_v[3] = {0.01, 0.5, 1.}; // add more levels as desired
+  int screen_dim_mode_max = sizeof(screen_dim_modes_v) / sizeof(screen_dim_modes_v[0]) - 1;
+  int screen_dim_mode_cur = screen_dim_mode_max;
+  int screen_dim_mode = screen_dim_mode_max;
+  int screen_dim_mode_last = screen_dim_mode_max;
+  float screen_dim_fade = -1., screen_dim_fade_last_t = 0., screen_dim_fade_step = 1;
+  float screen_dim_fade_dur_up = 0.5, screen_dim_fade_dur_down = 2.;
+  Rect screen_dim_touch_rect;
 
   // modelV2
   float lane_line_probs[4];
