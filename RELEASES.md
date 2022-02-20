@@ -1,40 +1,6 @@
 Version 0.8.14-GM7 (2022-02-18)
 ========================
- * WARNING: Forced update on opendbc may require reinstall
- * ^^^^^^
- * ALPHA: Pedal Interceptor adjusted basesd on L-mode status for EVs!
- * Derivative gain in lateral controller for
-   * Volt
-   * Bolt
-   * Acadia
-   * Silverado
- * Silverado linear feedforward
- * CarState.gearShifter now more detailed, includes L mode!
-   Supports following GearShifter enum vals from cereal
-    park @1
-    drive @2
-    neutral @3 (NEW)
-    reverse @4
-    low @6 (NEW)
-    manumatic @9 (NEW)
- * Added all gears that should be considered "drive" to
-   extra_gears
- * Chevy Bolt EV Support (And several others)
- * Non-ASCM (aka non-radar) GM support
- * GM longitudinal support using Pedal Interceptor (no braking on non-EV)
- * Grey & White Panda Support restored
- * WARNING: Pedal firmware is GM specific
- * Silverado with Cam ACC passthrough
- * Suburban & Tahoe with self-contained ACC
- * Robust and efficient camera detection for forwarding on Panda
- * DBC groundwork for friction braking and AEB on PT
- * Reworked GM values.py with capability for conditional limits
- * Panda now supports multiple limit profiles through safety_param
- * Cleaned up radar settings
- * TODO: Pedal transform values configurable, store in flash
- * TODO: Pedal low-speed tuning
- * TODO: Auto-detection of B-mode
- * TODO: Auto-detection of B-mode zero-point
+ * bigmodel!
 
 ========================
  * Improved driver monitoring
