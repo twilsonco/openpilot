@@ -96,6 +96,10 @@ const QColor bg_colors [] = {
   [STATUS_ALERT] = QColor(0xC9, 0x22, 0x31, 0xf1),
 };
 
+// Given interpolate between engaged/warning/critical bg color on [0-1]
+// If a < 0, interpolate that too based on bg color alpha, else pass through.
+QColor interp_alert_color(float p, int a);
+
 typedef struct {
   QPointF v[TRAJECTORY_SIZE * 2];
   int cnt;
