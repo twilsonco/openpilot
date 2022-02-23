@@ -2,6 +2,10 @@ Version 0.8.14-GM7 (2022-02-18)
 ========================
  * bigmodel!
 
+<<<<<<< HEAD
+=======
+Version 0.8.13 (2022-02-18)
+>>>>>>> upstream/master
 ========================
  * Improved driver monitoring
    * Retuned driver pose learner for relaxed driving positions
