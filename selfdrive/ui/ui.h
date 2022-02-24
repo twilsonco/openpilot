@@ -124,6 +124,8 @@ typedef struct UIScene {
 
   // lead
   QPointF lead_vertices[2];
+  
+  float steering_angle = 0.;
 
   float light_sensor, accel_sensor, gyro_sensor;
   bool started, ignition, is_metric, longitudinal_control, end_to_end;
