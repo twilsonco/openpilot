@@ -194,6 +194,7 @@ void OnroadHud::updateState(const UIState &s) {
   setProperty("speedUnit", s.scene.is_metric ? "km/h" : "mph");
   setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
   setProperty("status", s.status);
+  setProperty("steering_angle_deg", s.scene.steering_angle);
 
   // update engageability and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
@@ -238,7 +239,7 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   // engage-ability icon
   if (engageable) {
     drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
-             engage_img, bg_colors[status], 1.0);
+             engage_img, bg_colors[status], 1.0, steering_angle_deg);
   }
 
   // dm icon
@@ -258,12 +259,17 @@ void OnroadHud::drawText(QPainter &p, int x, int y, const QString &text, int alp
   p.drawText(real_rect.x(), real_rect.bottom(), text);
 }
 
-void OnroadHud::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity) {
+void OnroadHud::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity, int angle_deg) {
   p.setPen(Qt::NoPen);
   p.setBrush(bg);
-  p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
+  const int r_over_2 = radius / 2;
+  p.drawEllipse(x - r_over_2, y - r_over_2, radius, radius);
+  p.save();
+  p.translate(x, y);
+  p.rotate(-angle_deg);
   p.setOpacity(opacity);
-  p.drawPixmap(x - img_size / 2, y - img_size / 2, img);
+  p.drawPixmap(-img.width() / 2, -img.height() / 2, img);
+  p.restore();
 }
 
 // NvgWindow

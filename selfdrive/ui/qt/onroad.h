@@ -19,13 +19,14 @@ class OnroadHud : public QWidget {
   Q_PROPERTY(bool dmActive MEMBER dmActive NOTIFY valueChanged);
   Q_PROPERTY(bool hideDM MEMBER hideDM NOTIFY valueChanged);
   Q_PROPERTY(int status MEMBER status NOTIFY valueChanged);
+  Q_PROPERTY(int steering_angle_deg MEMBER steering_angle_deg NOTIFY valueChanged);
 
 public:
   explicit OnroadHud(QWidget *parent);
   void updateState(const UIState &s);
 
 private:
-  void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
+  void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity, int angle_deg = 0);
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
   void paintEvent(QPaintEvent *event) override;
 
@@ -41,6 +42,7 @@ private:
   bool dmActive = false;
   bool hideDM = false;
   int status = STATUS_DISENGAGED;
+  int steering_angle_deg = 0;
 
 signals:
   void valueChanged();

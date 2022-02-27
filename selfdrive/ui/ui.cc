@@ -187,6 +187,12 @@ static void update_state(UIState *s) {
 
     scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
   }
+  
+  if (sm.updated("carState")) {
+    auto car_state = sm["carState"].getCarState();
+    scene.steering_angle = (int)car_state.getSteeringAngleDeg();
+  }
+
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
 
