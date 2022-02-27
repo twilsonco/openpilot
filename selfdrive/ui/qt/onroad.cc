@@ -237,7 +237,7 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
   // engage-ability icon
-  if (engageable) {
+  if (true || engageable) {
     drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
              engage_img, bg_colors[status], 1.0, steering_angle_deg);
   }

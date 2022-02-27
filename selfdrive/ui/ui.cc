@@ -192,6 +192,7 @@ static void update_state(UIState *s) {
     auto car_state = sm["carState"].getCarState();
     scene.steering_angle = (int)car_state.getSteeringAngleDeg();
   }
+  scene.steering_angle = seconds_since_boot() * 30.;
 
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
