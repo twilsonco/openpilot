@@ -648,11 +648,11 @@ static void ui_draw_measures(UIState *s){
           snprintf(unit, sizeof(unit), "m/s²");
           break;}
         
-        case UIMeasure::JERK:
+        case UIMeasure::LAT_ACCEL:
           {
-          snprintf(name, sizeof(name), "JERK");
-          snprintf(val, sizeof(val), "%.1f", scene.jEgo);
-          snprintf(unit, sizeof(unit), "m/s³");
+          snprintf(name, sizeof(name), "LAT ACC");
+          snprintf(val, sizeof(val), "%.1f", scene.latAccel);
+          snprintf(unit, sizeof(unit), "m/s²");
           break;}
         
         case UIMeasure::LEAD_TTC:

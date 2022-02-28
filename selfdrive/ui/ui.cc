@@ -365,14 +365,6 @@ static void update_state(UIState *s) {
     scene.angleSteers = scene.car_state.getSteeringAngleDeg();
     scene.engineRPM = static_cast<int>((scene.car_state.getEngineRPM() / (10.0)) + 0.5) * 10;
     scene.aEgo = scene.car_state.getAEgo();
-    float dt = t - scene.lastTime;
-    if (dt > 0.){
-      scene.jEgo = (scene.aEgo - scene.lastAEgo) / dt;
-    }
-    else{
-      scene.jEgo = 0.;
-    }
-    scene.lastAEgo = scene.aEgo;
     scene.steeringTorqueEps = scene.car_state.getSteeringTorqueEps();
     
     if (scene.car_state.getVEgo() > 0.0){
@@ -513,6 +505,7 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("liveLocationKalman")) {
     scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();
+    scene.latAccel = sm["liveLocationKalman"].getLiveLocationKalman().getAccelerationCalibrated().getValue()[0];
   }
   if (sm.updated("lateralPlan")) {
     scene.lateral_plan = sm["lateralPlan"].getLateralPlan();

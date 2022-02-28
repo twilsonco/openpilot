@@ -133,7 +133,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   COOLANT_TEMPC,
   COOLANT_TEMPF,
   ACCELERATION,
-  JERK,
+  LAT_ACCEL,//JERK,
   ALTITUDE,
   PERCENT_GRADE,
   PERCENT_GRADE_DEVICE,
@@ -214,7 +214,7 @@ typedef struct UIScene {
   bool steerOverride;
   float steeringTorqueEps;
   float aEgo;
-  float jEgo, lastAEgo;
+  float latAccel = 0.;
   float cpuTemp;
   int cpuPerc;
   int thermalStatus;
