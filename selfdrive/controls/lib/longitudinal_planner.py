@@ -281,6 +281,9 @@ class Planner():
     longitudinalPlan.secondsStopped = self.seconds_stopped
 
     longitudinalPlan.visionTurnControllerState = self.vision_turn_controller.state
+    longitudinalPlan.visionCurrentLateralAcceleration = float(self.vision_turn_controller._current_lat_acc)
+    longitudinalPlan.visionMaxVForCurrentCurvature = float(self.vision_turn_controller._max_v_for_current_curvature)
+    longitudinalPlan.visionMaxPredictedLateralAcceleration = float(self.vision_turn_controller._max_pred_lat_acc)
     longitudinalPlan.visionTurnSpeed = float(self.vision_turn_controller.v_turn)
 
     longitudinalPlan.speedLimitControlState = self.speed_limit_controller.state

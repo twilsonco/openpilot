@@ -655,6 +655,27 @@ static void ui_draw_measures(UIState *s){
           snprintf(unit, sizeof(unit), "m/s²");
           break;}
         
+        case UIMeasure::VISION_CURLATACCEL:
+          {
+          snprintf(name, sizeof(name), "V:LAT ACC");
+          snprintf(val, sizeof(val), "%.1f", scene.vision_cur_lat_accel);
+          snprintf(unit, sizeof(unit), "m/s²");
+          break;}
+        
+        case UIMeasure::VISION_MAXVFORCURCURV:
+          {
+          snprintf(name, sizeof(name), "V:MX CUR V");
+          snprintf(val, sizeof(val), "%.1f", scene.vision_max_v_cur_curv * 2.24);
+          snprintf(unit, sizeof(unit), "mph");
+          break;}
+        
+        case UIMeasure::VISION_MAXPREDLATACCEL:
+          {
+          snprintf(name, sizeof(name), "V:MX PLA");
+          snprintf(val, sizeof(val), "%.1f", scene.vision_max_pred_lat_accel);
+          snprintf(unit, sizeof(unit), "m/s²");
+          break;}
+        
         case UIMeasure::LEAD_TTC:
           {
           snprintf(name, sizeof(name), "TTC");

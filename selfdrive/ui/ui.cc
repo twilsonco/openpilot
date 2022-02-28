@@ -525,6 +525,9 @@ static void update_state(UIState *s) {
     scene.followAccelCost = data.getLeadAccelCost();
     scene.stoppingDistance = data.getStoppingDistance();
     scene.dynamic_follow_level = data.getDynamicFollowLevel();
+    scene.vision_cur_lat_accel = data.getVisionCurrentLateralAcceleration();
+    scene.vision_max_v_cur_curv = data.getVisionMaxVForCurrentCurvature();
+    scene.vision_max_pred_lat_accel = data.getVisionMaxPredictedLateralAcceleration();
   }
   
   if (scene.brake_percent > 50){

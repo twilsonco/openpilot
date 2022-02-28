@@ -163,6 +163,9 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   HVB_CURRENT,
   HVB_WATTAGE,
   HVB_WATTVOLT,
+  VISION_CURLATACCEL,
+  VISION_MAXVFORCURCURV,
+  VISION_MAXPREDLATACCEL,
   
   NUM_MEASURES
 } UIMeasure;
@@ -215,6 +218,7 @@ typedef struct UIScene {
   float steeringTorqueEps;
   float aEgo;
   float latAccel = 0.;
+  float vision_cur_lat_accel, vision_max_v_cur_curv, vision_max_pred_lat_accel;
   float cpuTemp;
   int cpuPerc;
   int thermalStatus;
