@@ -395,3 +395,5 @@ public slots:
   void setAwake(bool on, bool reset);
   void update(const UIState &s);
 };
+
+NVGcolor interp_alert_color(float p, int a);

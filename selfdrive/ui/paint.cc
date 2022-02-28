@@ -247,27 +247,13 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   const UIScene &scene = s->scene;
   NVGpaint track_bg;
   int steerOverride = scene.car_state.getSteeringPressed();
-  int red_lvl = 0;
-  int green_lvl = 0;
-
-  float red_lvl_line = 0;
-  float green_lvl_line = 0;
   //if (!scene.end_to_end) {
   if (!scene.lateralPlan.lanelessModeStatus) {
     // paint lanelines
     for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
-      if (scene.lane_line_probs[i] > 0.4){
-        red_lvl_line = 1.0 - ((scene.lane_line_probs[i] - 0.4) * 2.5);
-        green_lvl_line = 1.0;
-      } else {
-        red_lvl_line = 1.0;
-        green_lvl_line = 1.0 - ((0.4 - scene.lane_line_probs[i]) * 2.5);
-      }
-      NVGcolor color = nvgRGBAf(1.0, 1.0, 1.0, scene.lane_line_probs[i]);
-      color = nvgRGBAf(red_lvl_line, green_lvl_line, 0, 1);
+      NVGcolor color = interp_alert_color(1.f - scene.lane_line_probs[i], 255);
       ui_draw_line(s, scene.lane_line_vertices[i], &color, nullptr);
     }
-
     // paint road edges
     for (int i = 0; i < std::size(scene.road_edge_vertices); i++) {
       NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0));
@@ -279,10 +265,8 @@ static void ui_draw_vision_lane_lines(UIState *s) {
       track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
         COLOR_BLACK_ALPHA(80), COLOR_BLACK_ALPHA(20));
     } else if (!scene.lateralPlan.lanelessModeStatus) {
-      red_lvl = 0;
-      green_lvl = 200;
       track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
-        nvgRGBA(red_lvl, green_lvl, 0, 250), nvgRGBA(red_lvl, green_lvl, 0, 50));
+        nvgRGBA(bg_colors[STATUS_ENGAGED].red(), bg_colors[STATUS_ENGAGED].green(), bg_colors[STATUS_ENGAGED].blue(), 250), nvgRGBA(bg_colors[STATUS_ENGAGED].red(), bg_colors[STATUS_ENGAGED].green(), bg_colors[STATUS_ENGAGED].blue(), 50));
     } else { // differentiate laneless mode color (Grace blue)
         track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
           nvgRGBA(0, 100, 255, 250), nvgRGBA(0, 100, 255, 50));
