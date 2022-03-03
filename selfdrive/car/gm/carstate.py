@@ -31,6 +31,7 @@ class CarState(CarStateBase):
     with open("/data/fp_log.txt",'a') as f:
       f.write(f"{self.car_fingerprint}\n")
     
+    self.t = 0.
     self.is_ev = (self.car_fingerprint == CAR.VOLT)
     
     self.prev_distance_button = 0
@@ -47,6 +48,10 @@ class CarState(CarStateBase):
     self.autoHoldActivated = False
     self.regenPaddlePressed = False
     self.cruiseMain = False
+    self.cruise_enabled_last_t = 0.
+    self.cruise_enabled_last = False
+    self.cruise_enabled_neg_accel_ramp_bp = [0.25, 0.75] # ramp up negative accel when engaging behind a lead over 0.5s with a .25s delay
+    self.cruise_enabled_neg_accel_ramp_v = [0., 1.]
     self.engineRPM = 0
     self.lastAutoHoldTime = 0.0
     self.sessionInitTime = sec_since_boot()
@@ -150,6 +155,7 @@ class CarState(CarStateBase):
     ret = car.CarState.new_message()
     
     t = sec_since_boot()
+    self.t = t
     
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
@@ -298,7 +304,12 @@ class CarState(CarStateBase):
         self.one_pedal_mode_engage_on_gas_enabled = False
         self._params.put_bool("OnePedalModeEngageOnGas", False)
 
-    ret.cruiseState.enabled = self.pcm_acc_status != AccState.OFF
+    
+    cruise_enabled = self.pcm_acc_status != AccState.OFF
+    if cruise_enabled and not self.cruise_enabled_last:
+      self.cruise_enabled_last_t = t
+    self.cruise_enabled_last = cruise_enabled
+    ret.cruiseState.enabled = cruise_enabled
     ret.cruiseState.standstill = False
     
     one_pedal_mode_active = (self.one_pedal_mode_enabled and ret.cruiseState.enabled and self.v_cruise_kph * CV.KPH_TO_MS <= self.one_pedal_mode_max_set_speed)
