@@ -16,124 +16,38 @@
 #define BACKLIGHT_TS 10.00
 #define BACKLIGHT_OFFROAD 50
 
-// For optimizing interpolation of alert colors through the HSV colorspace.
-// (looks better than interpolating through RGB)
-// Only includes engaged, warning, and alert.
-// Implementation based on https://stackoverflow.com/a/14733008/2620767
-// (Don't need the rgb to hsv conversion since the needed hsv values
-// are hardcoded below. The alpha value is interpolated directly)
-const char bg_colors_hsv[3][4] = {
-    {(char)102,(char)211,(char)134,(char)0xc8},
-    {(char)17,(char)211,(char)218,(char)0xc8},
-    {(char)253,(char)211,(char)201,(char)0xc8}
-};
-typedef struct RgbColor
-{
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
-} RgbColor;
-typedef struct HsvColor
-{
-    unsigned char h;
-    unsigned char s;
-    unsigned char v;
-} HsvColor;
-RgbColor HsvToRgb(HsvColor hsv)
-{
-    RgbColor rgb;
-    unsigned char region, p, q, t;
-    unsigned int h, s, v, remainder;
-
-    if (hsv.s == 0)
-    {
-        rgb.r = hsv.v;
-        rgb.g = hsv.v;
-        rgb.b = hsv.v;
-        return rgb;
-    }
-
-    // converting to 16 bit to prevent overflow
-    h = hsv.h;
-    s = hsv.s;
-    v = hsv.v;
-
-    region = h / 43;
-    remainder = (h - (region * 43)) * 6; 
-
-    p = (v * (255 - s)) >> 8;
-    q = (v * (255 - ((s * remainder) >> 8))) >> 8;
-    t = (v * (255 - ((s * (255 - remainder)) >> 8))) >> 8;
-
-    switch (region)
-    {
-        case 0:
-            rgb.r = v;
-            rgb.g = t;
-            rgb.b = p;
-            break;
-        case 1:
-            rgb.r = q;
-            rgb.g = v;
-            rgb.b = p;
-            break;
-        case 2:
-            rgb.r = p;
-            rgb.g = v;
-            rgb.b = t;
-            break;
-        case 3:
-            rgb.r = p;
-            rgb.g = q;
-            rgb.b = v;
-            break;
-        case 4:
-            rgb.r = t;
-            rgb.g = p;
-            rgb.b = v;
-            break;
-        default:
-            rgb.r = v;
-            rgb.g = p;
-            rgb.b = q;
-            break;
-    }
-
-    return rgb;
-}
-
 // Given interpolate between engaged/warning/critical bg color on [0-1]
 // If a < 0, interpolate that too based on bg color alpha, else pass through.
 QColor interp_alert_color(float p, int a){
   char c1, c2;
   if (p <= 0.){
-    return (a < 0 ? bg_colors[1] : QColor(bg_colors[1].red(), bg_colors[1].green(), bg_colors[1].blue(), a));
+    return (a < 0 ? bg_colors[STATUS_ENGAGED] : QColor(bg_colors[STATUS_ENGAGED].red(), bg_colors[STATUS_ENGAGED].green(), bg_colors[STATUS_ENGAGED].blue(), a));
   }
   else if (p <= 0.5){
-    c1 = 0; // lower color index
-    c2 = 1; // higher color index
+    c1 = STATUS_ENGAGED; // lower color index
+    c2 = STATUS_WARNING; // higher color index
   }
   else if (p < 1.){
     p -= 0.5;
-    c1 = 1;
-    c2 = 2;
+    c1 = STATUS_WARNING;
+    c2 = STATUS_ALERT;
   }
   else{
-    return (a < 0 ? bg_colors[3] : QColor(bg_colors[3].red(), bg_colors[3].green(), bg_colors[3].blue(), a));
+    return (a < 0 ? bg_colors[STATUS_ALERT] : QColor(bg_colors[STATUS_ALERT].red(), bg_colors[STATUS_ALERT].green(), bg_colors[STATUS_ALERT].blue(), a));
   }
   
   p *= 2.; // scale to 1
   
-  HsvColor hsv;
-  hsv.h = bg_colors_hsv[c1][0] * (1.f - p) + bg_colors_hsv[c2][0] * p;
-  hsv.s = bg_colors_hsv[c1][1] * (1.f - p) + bg_colors_hsv[c2][1] * p;
-  hsv.v = bg_colors_hsv[c1][2] * (1.f - p) + bg_colors_hsv[c2][2] * p;
+  int r, g, b;
+  float complement = (1.f - p);
+  r = bg_colors[c1].red() * complement + bg_colors[c2].red() * p;
+  g = bg_colors[c1].green() * complement + bg_colors[c2].green() * p;
+  b = bg_colors[c1].blue() * complement + bg_colors[c2].blue() * p;
   if (a < 0){
-    a = bg_colors_hsv[c1][3] * (1.f - p) + bg_colors_hsv[c2][3] * p;
+    a = bg_colors[c1].alpha() * complement + bg_colors[c2].alpha() * p;
   }
   
-  RgbColor c = HsvToRgb(hsv);
-  QColor out = QColor(c.r, c.g, c.b, a);
+  QColor out = QColor(r, g, b, a);
   
   return out;
 }
