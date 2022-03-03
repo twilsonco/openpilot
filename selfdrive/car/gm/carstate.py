@@ -306,9 +306,6 @@ class CarState(CarStateBase):
 
     
     cruise_enabled = self.pcm_acc_status != AccState.OFF
-    if cruise_enabled and not self.cruise_enabled_last:
-      self.cruise_enabled_last_t = t
-    self.cruise_enabled_last = cruise_enabled
     ret.cruiseState.enabled = cruise_enabled
     ret.cruiseState.standstill = False
     
@@ -322,6 +319,12 @@ class CarState(CarStateBase):
       else:
         self.one_pedal_last_brake_mode = min(self.one_pedal_brake_mode, 1)
         self.follow_level = self.one_pedal_last_follow_level
+    
+    if (cruise_enabled and not self.cruise_enabled_last) \
+       or (not one_pedal_mode_active and self.one_pedal_mode_active) \
+       or (not coast_one_pedal_mode_active and self.coast_one_pedal_mode_active):
+      self.cruise_enabled_last_t = t
+    self.cruise_enabled_last = cruise_enabled
         
     self.coast_one_pedal_mode_active = coast_one_pedal_mode_active
     ret.coastOnePedalModeActive = self.coast_one_pedal_mode_active
