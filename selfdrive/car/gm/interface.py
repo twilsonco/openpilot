@@ -143,8 +143,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kdV = [0.1, 0.3]
       ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
       ret.steerActuatorDelay = 0.2
-      ret.steerMaxBP = [i * CV.MPH_TO_MS for i in [0., 55.]]
-      ret.steerMaxV = [1., 1.2]
 
       # Only tuned to reduce oscillations. TODO.
       ret.longitudinalTuning.kpV = [1.7, 1.3]
