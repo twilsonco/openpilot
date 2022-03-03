@@ -136,7 +136,7 @@ class DynamicFollow():
   #############################################
   
   # penalize more for close cut-ins than for far
-  cutin_dist_penalty_bp = [.2, .8]	# [factor of current follow distance]
+  cutin_dist_penalty_bp = [.2, 1.5]	# [factor of current follow distance]
   cutin_dist_penalty_v = [2.5, 0.]  # [follow profile] cutin of 40ft or less, drop to close follow, with less penalty up to 150ft, at which point you don't care
   
   # penalize more for approaching cut-ins, and *offset* the distance penalty for cut-ins pulling away
