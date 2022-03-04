@@ -542,10 +542,12 @@ class Controls:
       self.CI.CS.tr = self.LoC.tr
 
       # Steering PID loop and lateral MPC
+      t_since_plan = (self.sm.frame - self.sm.rcv_frame['lateralPlan']) * DT_CTRL
       desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                              lat_plan.psis,
                                                                              lat_plan.curvatures,
-                                                                             lat_plan.curvatureRates)
+                                                                             lat_plan.curvatureRates,
+                                                                             t_since_plan)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, 
                                                                              desired_curvature, desired_curvature_rate)
     else:
