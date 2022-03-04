@@ -11,6 +11,10 @@ from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, \
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.drive_helpers import set_v_cruise_offset
 
+class GEAR_SHIFTER2:
+  DRIVE = 4
+  LOW = 6
+
 def get_chassis_can_parser(CP, canbus):
   # this function generates lists for signal, messages and initial values
   signals = [
@@ -282,10 +286,10 @@ class CarState(CarStateBase):
       self.gear_shifter_ev = pt_cp.vl["ECMPRDNL2"]['PRNDL2']
     
     if self.is_ev and self.coasting_dl_enabled:
-      if not self.coasting_enabled and self.gear_shifter_ev == 4:
+      if not self.coasting_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.DRIVE:
         self.coasting_enabled = True
         self._params.put_bool("Coasting", True)
-      elif self.coasting_enabled and self.gear_shifter_ev == 6 and (self.vEgo <= self.v_cruise_kph * CV.KPH_TO_MS or self.no_friction_braking):
+      elif self.coasting_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.LOW and (self.vEgo <= self.v_cruise_kph * CV.KPH_TO_MS or self.no_friction_braking):
         self.coasting_enabled = False
         self._params.put_bool("Coasting", False)
     else:
@@ -297,10 +301,10 @@ class CarState(CarStateBase):
     ret.coastingActive = self.coasting_enabled
     
     if self.is_ev and self.one_pedal_dl_engage_on_gas_enabled:
-      if not self.one_pedal_mode_engage_on_gas_enabled and self.gear_shifter_ev == 6:
+      if not self.one_pedal_mode_engage_on_gas_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.DRIVE:
         self.one_pedal_mode_engage_on_gas_enabled = True
         self._params.put_bool("OnePedalModeEngageOnGas", True)
-      elif self.one_pedal_mode_engage_on_gas_enabled and self.gear_shifter_ev == 4:
+      elif self.one_pedal_mode_engage_on_gas_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.LOW:
         self.one_pedal_mode_engage_on_gas_enabled = False
         self._params.put_bool("OnePedalModeEngageOnGas", False)
 
@@ -323,7 +327,12 @@ class CarState(CarStateBase):
     if (cruise_enabled and not self.cruise_enabled_last) \
        or (not one_pedal_mode_active and self.one_pedal_mode_active) \
        or (not coast_one_pedal_mode_active and self.coast_one_pedal_mode_active):
+      if self.is_ev and self.gear_shifter_ev == GEAR_SHIFTER2.LOW:
+        self.cruise_enabled_neg_accel_ramp_v[0] = 0.15
+      else:
+        self.cruise_enabled_neg_accel_ramp_v[0] = 0.
       self.cruise_enabled_last_t = t
+      
     self.cruise_enabled_last = cruise_enabled
         
     self.coast_one_pedal_mode_active = coast_one_pedal_mode_active
