@@ -301,10 +301,10 @@ class CarState(CarStateBase):
     ret.coastingActive = self.coasting_enabled
     
     if self.is_ev and self.one_pedal_dl_engage_on_gas_enabled:
-      if not self.one_pedal_mode_engage_on_gas_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.DRIVE:
+      if not self.one_pedal_mode_engage_on_gas_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.LOW:
         self.one_pedal_mode_engage_on_gas_enabled = True
         self._params.put_bool("OnePedalModeEngageOnGas", True)
-      elif self.one_pedal_mode_engage_on_gas_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.LOW:
+      elif self.one_pedal_mode_engage_on_gas_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.DRIVE:
         self.one_pedal_mode_engage_on_gas_enabled = False
         self._params.put_bool("OnePedalModeEngageOnGas", False)
 
