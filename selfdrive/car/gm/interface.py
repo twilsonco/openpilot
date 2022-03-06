@@ -244,10 +244,10 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.3 # Determined by skip # 16.3 # From a 2019 SILVERADO
       ret.lateralTuning.pid.kpBP = [i * CV.MPH_TO_MS for i in [20., 80.]]
       ret.lateralTuning.pid.kpV = [0.18, 0.26]
-      ret.lateralTuning.pid.kiBP = [i * CV.MPH_TO_MS for i in [0., 15., 55., 80.]]
-      ret.lateralTuning.pid.kiV = [0., .018, .012, .01]
-      ret.lateralTuning.pid.kdV = [0.1]
-      ret.lateralTuning.pid.kf = 0.0019 # !!! ONLY for (angle * vEgo) feedforward !!!
+      ret.lateralTuning.pid.kiBP = [0.0]
+      ret.lateralTuning.pid.kiV = [0.02]
+      ret.lateralTuning.pid.kdV = [0.3]
+      ret.lateralTuning.pid.kf = 0.0017 # !!! ONLY for (angle * vEgo) feedforward !!!
       ret.centerToFront = ret.wheelbase * 0.49
       ret.steerRateCost = 1.0
       ret.steerActuatorDelay = 0.075 # Determined by skip # 0.075
