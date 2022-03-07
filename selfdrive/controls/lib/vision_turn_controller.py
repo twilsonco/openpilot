@@ -25,8 +25,6 @@ _EVAL_LENGHT = 150.  # mts. Distance ahead where to stop evaluating vision curva
 _EVAL_RANGE = np.arange(_EVAL_START, _EVAL_LENGHT, _EVAL_STEP)
 
 _A_LAT_REG_MAX = 2.8  # Maximum lateral acceleration
-_A_LAT_DAMPING_THRESHOLD = 0.004 # [radians/meter] curvature above this value will be damped (doing 50mph with max lat accel of 2.6 means 2.6m/s^2 / (22m/s) ≈ 0.0053, so we'll start dampening at 0.004
-_A_LAT_DAMPING_FACTOR = 0.5 # factor of curvature above threshold considered for lateral acceleration calculation
 
 # Lookup table for the minimum smooth deceleration during the ENTERING state
 # depending on the actual maximum absolute lateral acceleration predicted on the turn ahead.
@@ -195,8 +193,6 @@ class VisionTurnController():
 
     current_curvature = abs(
       sm['carState'].steeringAngleDeg * CV.DEG_TO_RAD / (self._CP.steerRatio * self._CP.wheelbase))
-    if current_curvature > _A_LAT_DAMPING_THRESHOLD:
-      current_curvature -= (current_curvature - _A_LAT_DAMPING_THRESHOLD) * _A_LAT_DAMPING_FACTOR
 
     self._current_lat_acc = current_curvature * self._v_ego**2
     self._max_v_for_current_curvature = math.sqrt(_A_LAT_REG_MAX / current_curvature) if current_curvature > 0 \
