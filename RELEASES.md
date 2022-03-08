@@ -1,4 +1,4 @@
-Version tw-0.8.9-3.9 (2022-02-11)
+Version tw-0.8.9-3.9 (2022-03-08)
 ========================
  * NEW: [optional] Dynamic follow mode
    * Enable toggle to show onscreen button and indicator
@@ -18,7 +18,8 @@ Version tw-0.8.9-3.9 (2022-02-11)
  * NEW: Display vehicle fingerprint on startup
  * NEW: UI metrics; Volt high voltage battery voltage, wattage, amperage, and volt+watt, lateral acceleration (from accelerometer and computed using steering angle + speed), vision curve brake debug output
  * NEW: Custom opgm spinner at boot
- * AGNOS 4 & NEOS 19.1
+ * AGNOS 4
+ * FIXED: Grey/White Panda support!
  * FIXED: [Volt] Prevent misprinting as Escalade ESV
  * FIXED: Disable Comma prime ad window in offroad view
  * IMPROVED: [Volt] Add derivative gain to lateral and longitudinal controllers with all new lateral tune (huge improvement in steering)

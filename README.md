@@ -122,6 +122,7 @@
 - [x] [Volt] [✅] One-pedal D/L engage on gas: tie the engage on gas setting to the D/L gear shifter position. Off in D; on in L. (suggested by Shadowlight5)
 - [x] [GM] panda-based GM steering fault fix (thanks jshuler)
 - [x] Remember last follow mode (ported from kegman)
+- [x] Grey/White panda support
 
 #### Planned Fork Features (in no particular order):
 -----
