@@ -50,7 +50,7 @@
 **Additional fork features:**
 
 - [x] Latest openpilot 0.8.12 lateral and 0.8.10 driver monitoring models
-- [x] [Comma3] Latest AGNOS3 OS
+- [x] [Comma3] Latest AGNOS4 OS
 - [x] [Chevy Volt 2017] Auto-resume behind stopped lead car as they pull away; a.k.a. stop and go (ported from kegman)
 - [x] [Chevy Volt] Sigmoidal steering response (thanks qadmus)
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
