@@ -21,6 +21,9 @@ class kegman_conf():
       if self.conf['Ki'] == "-1":
         self.conf['Ki'] = str(round(CP.lateralTuning.pid.kiV[0],3))
         write_conf = True
+      if self.conf.get('Kd',"-1") == "-1":
+        self.conf['Kd'] = str(round(CP.lateralTuning.pid.kdV[0],3))
+        write_conf = True
       if self.conf['Kf'] == "-1":
         self.conf['Kf'] = str('{:f}'.format(CP.lateralTuning.pid.kf))
         write_conf = True
@@ -53,6 +56,7 @@ class kegman_conf():
         self.config.update({"tuneGernby":"1"})
         self.config.update({"Kp":"-1"})
         self.config.update({"Ki":"-1"})
+        self.config.update({"Kd":"-1"})
         self.element_updated = True
 
       if "liveParams" not in self.config:
@@ -150,7 +154,7 @@ class kegman_conf():
       self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"60", "battChargeMax":"70", \
                      "wheelTouchSeconds":"180", "accelerationMode":"1","battPercOff":"25", "carVoltageMinEonShutdown":"11800", \
                      "brakeStoppingTarget":"0.25", "tuneGernby":"1", "AutoHold":"0",\
-                     "Kp":"-1", "Ki":"-1", "liveParams":"1", "leadDistance":"5", "deadzone":"0.0", \
+                     "Kp":"-1", "Ki":"-1", "Kd":"-1", "liveParams":"1", "leadDistance":"5", "deadzone":"0.0", \
                      "1barBP0":"-0.1", "1barBP1":"2.25", "2barBP0":"-0.1", "2barBP1":"2.5", "3barBP0":"0.0", \
                      "3barBP1":"3.0", "1barMax":"2.1", "2barMax":"2.1", "3barMax":"2.1", \
                      "1barHwy":"0.4", "2barHwy":"0.3", "3barHwy":"0.1", \

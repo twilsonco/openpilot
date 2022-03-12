@@ -1,4 +1,4 @@
-from selfdrive.controls.lib.pid import PIController
+from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 from cereal import car
 from cereal import log
@@ -6,13 +6,16 @@ from selfdrive.kegman_conf import kegman_conf
 
 
 class LatControlPID():
-  def __init__(self, CP):
+  def __init__(self, CP, CI):
     self.kegman = kegman_conf(CP)
+    self.CI = CI
     self.deadzone = float(self.kegman.conf['deadzone'])
-    self.pid = PIController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
+    self.pid = PIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
+                            (CP.lateralTuning.pid.kdBP, CP.lateralTuning.pid.kdV),
                             k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, neg_limit=-1.0,
-                            sat_limit=CP.steerLimitTimer)
+                            sat_limit=CP.steerLimitTimer, derivative_period=0.1)
+    self.get_steer_feedforward = CI.get_steer_feedforward_function()
     self.angle_steers_des = 0.
     self.mpc_frame = 0
 
@@ -20,20 +23,25 @@ class LatControlPID():
     self.pid.reset()
     
   def live_tune(self, CP):
-    self.mpc_frame += 1
-    if self.mpc_frame % 300 == 0:
-      # live tuning through /data/openpilot/tune.py overrides interface.py settings
-      self.kegman = kegman_conf()
-      if self.kegman.conf['tuneGernby'] == "1":
-        self.steerKpV = [float(self.kegman.conf['Kp'])]
-        self.steerKiV = [float(self.kegman.conf['Ki'])]
-        self.steerKf = float(self.kegman.conf['Kf'])
-        self.pid = PIController((CP.lateralTuning.pid.kpBP, self.steerKpV),
-                            (CP.lateralTuning.pid.kiBP, self.steerKiV),
-                            k_f=self.steerKf, pos_limit=1.0)
-        self.deadzone = float(self.kegman.conf['deadzone'])
+    if self.get_steer_feedforward == self.CI.get_steer_feedforward_default:
+      self.mpc_frame += 1
+      if self.mpc_frame % 300 == 0:
+        # live tuning through /data/openpilot/tune.py overrides interface.py settings
+        self.kegman = kegman_conf()
+        if self.kegman.conf['tuneGernby'] == "1":
+          self.steerKpV = [float(self.kegman.conf['Kp'])]
+          self.steerKiV = [float(self.kegman.conf['Ki'])]
+          self.steerKdV = [float(self.kegman.conf['Kd'])]
+            # custom feedforward values are not allowed to be tuned.
+          self.steerKf = float(self.kegman.conf['Kf'])
+          self.pid = PIDController((CP.lateralTuning.pid.kpBP, self.steerKpV),
+                                  (CP.lateralTuning.pid.kiBP, self.steerKiV),
+                                  (CP.lateralTuning.pid.kdBP, self.steerKdV),
+                                  k_f=self.steerKf, pos_limit=self.pid.pos_limit, neg_limit=self.pid.neg_limit,
+                                  sat_limit=CP.steerLimitTimer, derivative_period=0.1)
+          self.deadzone = float(self.kegman.conf['deadzone'])
         
-      self.mpc_frame = 0    
+        self.mpc_frame = 0    
 
 
   def update(self, active, CS, CP, lat_plan):
@@ -52,11 +60,8 @@ class LatControlPID():
       steers_max = get_steer_max(CP, CS.vEgo)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
-      steer_feedforward = self.angle_steers_des   # feedforward desired angle
-      if CP.steerControlType == car.CarParams.SteerControlType.torque:
-        # TODO: feedforward something based on lat_plan.rateSteers
-        steer_feedforward -= lat_plan.angleOffsetDeg # subtract the offset, since it does not contribute to resistive torque
-        steer_feedforward *= CS.vEgo**2  # proportional to realigning tire momentum (~ lateral accel)
+      
+      steer_feedforward = self.get_steer_feedforward(self.angle_steers_des, CS.vEgo)
       
       deadzone = self.deadzone    
         
