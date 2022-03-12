@@ -8,6 +8,7 @@ from selfdrive.kegman_conf import kegman_conf
 class LatControlPID():
   def __init__(self, CP, CI):
     self.kegman = kegman_conf(CP)
+    self.CI = CI
     self.deadzone = float(self.kegman.conf['deadzone'])
     self.pid = PIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
@@ -29,10 +30,15 @@ class LatControlPID():
       if self.kegman.conf['tuneGernby'] == "1":
         self.steerKpV = [float(self.kegman.conf['Kp'])]
         self.steerKiV = [float(self.kegman.conf['Ki'])]
-        self.steerKf = float(self.kegman.conf['Kf'])
+        self.steerKdV = [float(self.kegman.conf['Kd'])]
+        if self.get_steer_feedforward == self.CI.get_steer_feedforward_default:
+          # custom feedforward values are not allowed to be tuned.
+          self.steerKf = float(self.kegman.conf['Kf'])
         self.pid = PIDController((CP.lateralTuning.pid.kpBP, self.steerKpV),
-                            (CP.lateralTuning.pid.kiBP, self.steerKiV),
-                            k_f=self.steerKf, pos_limit=1.0)
+                                (CP.lateralTuning.pid.kiBP, self.steerKiV),
+                                (CP.lateralTuning.pid.kdBP, self.steerKdV),
+                                k_f=self.steerKf, pos_limit=self.pid.pos_limit, neg_limit=self.pid.neg_limit,
+                                sat_limit=CP.steerLimitTimer, derivative_period=0.1)
         self.deadzone = float(self.kegman.conf['deadzone'])
         
       self.mpc_frame = 0    
