@@ -80,6 +80,13 @@ class CarInterface(CarInterfaceBase):
     ret.safetyModel = car.CarParams.SafetyModel.gm
     ret.enableCruise = False  # stock cruise control is kept off
 
+
+    ret.stoppingControl = True
+    ret.startAccel = 0.8
+
+    ret.steerLimitTimer = 0.4
+    ret.radarTimeStep = 1/15  # GM radar runs at 15Hz instead of standard 20Hz
+
     # GM port is a community feature
     # TODO: make a port that uses a car harness and it only intercepts the camera
     ret.communityFeature = True
@@ -110,21 +117,26 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
-      ret.steerRateCost = 0.9
+      ret.steerRateCost = 1.0
       tire_stiffness_factor = 0.469 # Stock Michelin Energy Saver A/S, LiveParameters
       ret.steerRatioRear = 0.
       ret.centerToFront = 0.45 * ret.wheelbase # from Volt Gen 1
 
       ret.lateralTuning.pid.kpBP = [0., 40.]
-      ret.lateralTuning.pid.kpV = [0.0, 0.17]
-      ret.lateralTuning.pid.kiBP = [i * CV.MPH_TO_MS for i in [0., 15., 55., 80.]]
-      ret.lateralTuning.pid.kiV = [0., .01, .01, .002]
+      ret.lateralTuning.pid.kpV = [0.0, .20]
+      ret.lateralTuning.pid.kiBP = [0.0]
+      ret.lateralTuning.pid.kiV = [0.02]
+      ret.lateralTuning.pid.kdBP = [i * CV.MPH_TO_MS for i in [15., 30., 55.]]
+      ret.lateralTuning.pid.kdV = [0.1, 0.25, 0.3]
       ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
       ret.steerActuatorDelay = 0.2
 
       # Only tuned to reduce oscillations. TODO.
       ret.longitudinalTuning.kpV = [1.7, 1.3]
-      ret.longitudinalTuning.kiV = [0.34]
+      ret.longitudinalTuning.kiBP = [5., 35.]
+      ret.longitudinalTuning.kiV = [0.32, 0.34]
+      ret.longitudinalTuning.kdV = [0.8, 0.2]
+      ret.longitudinalTuning.kdBP = [5., 25.]
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -176,13 +188,6 @@ class CarInterface(CarInterfaceBase):
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
-
-
-    ret.stoppingControl = True
-    ret.startAccel = 0.8
-
-    ret.steerLimitTimer = 0.4
-    ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
 
     return ret
 

@@ -1,4 +1,4 @@
-from selfdrive.controls.lib.pid import PIController
+from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 from cereal import car
 from cereal import log
@@ -9,10 +9,11 @@ class LatControlPID():
   def __init__(self, CP, CI):
     self.kegman = kegman_conf(CP)
     self.deadzone = float(self.kegman.conf['deadzone'])
-    self.pid = PIController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
+    self.pid = PIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
+                            (CP.lateralTuning.pid.kdBP, CP.lateralTuning.pid.kdV),
                             k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, neg_limit=-1.0,
-                            sat_limit=CP.steerLimitTimer)
+                            sat_limit=CP.steerLimitTimer, derivative_period=0.1)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
     self.angle_steers_des = 0.
     self.mpc_frame = 0
@@ -29,7 +30,7 @@ class LatControlPID():
         self.steerKpV = [float(self.kegman.conf['Kp'])]
         self.steerKiV = [float(self.kegman.conf['Ki'])]
         self.steerKf = float(self.kegman.conf['Kf'])
-        self.pid = PIController((CP.lateralTuning.pid.kpBP, self.steerKpV),
+        self.pid = PIDController((CP.lateralTuning.pid.kpBP, self.steerKpV),
                             (CP.lateralTuning.pid.kiBP, self.steerKiV),
                             k_f=self.steerKf, pos_limit=1.0)
         self.deadzone = float(self.kegman.conf['deadzone'])
