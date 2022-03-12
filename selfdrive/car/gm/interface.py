@@ -58,6 +58,21 @@ class CarInterface(CarInterfaceBase):
 
     return float(max(max_accel, a_target / FOLLOW_AGGRESSION)) * min(speedLimiter, accelLimiter)
 
+  # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
+  @staticmethod
+  def get_steer_feedforward_volt(desired_angle, v_ego):
+    # maps [-inf,inf] to [-1,1]: sigmoid(34.4 deg) = sigmoid(1) = 0.5
+    # 1 / 0.02904609 = 34.4 deg ~= 36 deg ~= 1/10 circle? Arbitrary?
+    desired_angle *= 0.02904609
+    sigmoid = desired_angle / (1 + fabs(desired_angle))
+    return 0.10006696 * sigmoid * (v_ego + 3.12485927)
+
+  def get_steer_feedforward_function(self):
+    if self.CP.carFingerprint == CAR.VOLT:
+      return self.get_steer_feedforward_volt
+    else:
+      return CarInterfaceBase.get_steer_feedforward_default
+
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
@@ -84,14 +99,32 @@ class CarInterface(CarInterfaceBase):
     ret.steerRateCost = 1.0
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
 
+    ret.longitudinalTuning.kpBP = [5., 35.]
+    ret.longitudinalTuning.kpV = [2.4, 1.5]
+    ret.longitudinalTuning.kiBP = [0.]
+    ret.longitudinalTuning.kiV = [0.36]
+
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = -1
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
-      ret.steerRatio = 15.7
+      ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
+      ret.steerRateCost = 0.9
+      tire_stiffness_factor = 0.469 # Stock Michelin Energy Saver A/S, LiveParameters
       ret.steerRatioRear = 0.
-      ret.centerToFront = ret.wheelbase * 0.4  # wild guess
+      ret.centerToFront = 0.45 * ret.wheelbase # from Volt Gen 1
+
+      ret.lateralTuning.pid.kpBP = [0., 40.]
+      ret.lateralTuning.pid.kpV = [0.0, 0.17]
+      ret.lateralTuning.pid.kiBP = [i * CV.MPH_TO_MS for i in [0., 15., 55., 80.]]
+      ret.lateralTuning.pid.kiV = [0., .01, .01, .002]
+      ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
+      ret.steerActuatorDelay = 0.2
+
+      # Only tuned to reduce oscillations. TODO.
+      ret.longitudinalTuning.kpV = [1.7, 1.3]
+      ret.longitudinalTuning.kiV = [0.34]
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -144,10 +177,6 @@ class CarInterface(CarInterfaceBase):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
-    ret.longitudinalTuning.kpBP = [5., 35.]
-    ret.longitudinalTuning.kpV = [2.4, 1.5]
-    ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.36]
 
     ret.stoppingControl = True
     ret.startAccel = 0.8

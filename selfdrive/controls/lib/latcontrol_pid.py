@@ -6,13 +6,14 @@ from selfdrive.kegman_conf import kegman_conf
 
 
 class LatControlPID():
-  def __init__(self, CP):
+  def __init__(self, CP, CI):
     self.kegman = kegman_conf(CP)
     self.deadzone = float(self.kegman.conf['deadzone'])
     self.pid = PIController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
                             k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, neg_limit=-1.0,
                             sat_limit=CP.steerLimitTimer)
+    self.get_steer_feedforward = CI.get_steer_feedforward_function()
     self.angle_steers_des = 0.
     self.mpc_frame = 0
 
@@ -52,11 +53,8 @@ class LatControlPID():
       steers_max = get_steer_max(CP, CS.vEgo)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
-      steer_feedforward = self.angle_steers_des   # feedforward desired angle
-      if CP.steerControlType == car.CarParams.SteerControlType.torque:
-        # TODO: feedforward something based on lat_plan.rateSteers
-        steer_feedforward -= lat_plan.angleOffsetDeg # subtract the offset, since it does not contribute to resistive torque
-        steer_feedforward *= CS.vEgo**2  # proportional to realigning tire momentum (~ lateral accel)
+      
+      steer_feedforward = self.get_steer_feedforward(self.angle_steers_des, CS.vEgo)
       
       deadzone = self.deadzone    
         
