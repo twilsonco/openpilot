@@ -185,6 +185,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Tie the above option to the gear shifter D/L position. Off in D; on in L.",
                                   "../assets/offroad/icon_gear_shifter.png",
                                   this));
+  toggles.append(new ParamControl("OnePedalPauseBlinkerSteering",
+                                  "One-pedal no slow blinker steer",
+                                  "When in one-pedal mode, under 20mph with the blinker on, steering is paused to make it easier to perform sharp turns.",
+                                  "../assets/offroad/icon_hands_on_wheel.png",
+                                  this));
   toggles.append(new ParamControl("BrakeIndicator",
                                   "[GM] Brake indicator",
                                   "Brake indicator at bottom-right when driving. Circle at indicator center grows and turns red to indicate the level of braking. Pulses immediately after starting car to let you know it's on.",

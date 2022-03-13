@@ -164,7 +164,7 @@ class TurnSpeedController():
 
   def _update_params(self):
     time = sec_since_boot()
-    if time > self._last_params_update + 5.0:
+    if time > self._last_params_update + 0.5:
       self._is_enabled = self._params.get_bool("TurnSpeedControl")
       self._last_params_update = time
 

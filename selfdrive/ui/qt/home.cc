@@ -129,10 +129,18 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     return;
   }
   
-  // presses of wheel to toggle steering pause for one-pedal low-speed blinker
+  // presses of wheel to toggle vision/map curve braking
   if (QUIState::ui_state.scene.started 
-    && QUIState::ui_state.scene.wheel_touch_rect.ptInRect(e->x(), e->y())){
-    Params().putBool("OnePedalPauseBlinkerSteering", !Params().getBool("OnePedalPauseBlinkerSteering"));
+    && QUIState::ui_state.scene.wheel_touch_rect.ptInRect(e->x(), e->y()))
+  {
+    if (Params().getBool("TurnVisionControl") || Params().getBool("TurnSpeedControl")){
+      Params().putBool("TurnVisionControl", false);
+      Params().putBool("TurnSpeedControl", false);
+    }
+    else{
+      Params().putBool("TurnVisionControl", true);
+      Params().putBool("TurnSpeedControl", true);
+    }
     return;
   }
   

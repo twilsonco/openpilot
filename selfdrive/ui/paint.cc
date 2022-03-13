@@ -1342,11 +1342,11 @@ static void ui_draw_vision_event(UIState *s) {
     nvgRestore(s->vg);
     
     // draw extra circle to indiate paused low-speed one-pedal blinker steering is enabled
-    if (s->scene.one_pedal_fade > 0. && s->scene.onePedalPauseSteering){
+    if (s->scene.visionBrakingEnabled){
       nvgBeginPath(s->vg);
       const int r = int(float(radius) * 1.15);
       nvgRoundedRect(s->vg, center_x - r, center_y - r, 2 * r, 2 * r, r);
-      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(int(s->scene.one_pedal_fade * 255.)));
+      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(255));
       nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
       nvgFill(s->vg);
       nvgStrokeWidth(s->vg, 6);
@@ -1837,7 +1837,7 @@ void ui_nvg_init(UIState *s) {
   // init images
   std::vector<std::pair<const char *, const char *>> images = {
     {"eye", "../assets/img_eye_open_white.png"},
-    {"wheel", "../assets/img_brake.png"},
+    {"wheel", "../assets/img_chffr_wheel.png"},
     {"driver_face", "../assets/img_driver_face.png"},
     {"hands_on_wheel", "../assets/img_hands_on_wheel.png"},
     {"turn_left_icon", "../assets/img_turn_left_icon.png"},

@@ -201,7 +201,7 @@ static void update_state(UIState *s) {
     if (scene.disableDisengageOnGasEnabled){
       scene.onePedalModeActive = Params().getBool("OnePedalMode");
       scene.onePedalEngageOnGasEnabled = Params().getBool("OnePedalModeEngageOnGas");
-      scene.onePedalPauseSteering = Params().getBool("OnePedalPauseBlinkerSteering");
+      scene.visionBrakingEnabled = Params().getBool("TurnVisionControl");
     }
     if (scene.accel_mode_button_enabled){
       scene.accel_mode = std::stoi(Params().get("AccelMode"));
