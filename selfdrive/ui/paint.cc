@@ -1327,10 +1327,18 @@ static void ui_draw_vision_event(UIState *s) {
     // now rotate and draw the wheel
     nvgSave(s->vg);
     nvgTranslate(s->vg, center_x, center_y);
+    if (visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::DISABLED){
+      ui_draw_image(s, {-radius/3, -radius/3, 2 * radius / 3, 2 * radius / 3}, "eye", 1.0f);
+    }
     if (s->scene.wheel_rotates){
       nvgRotate(s->vg, rot_angle);
     }
-    ui_draw_image(s, {-radius, -radius, 2*radius, 2*radius}, "wheel", 1.0f);
+    if (visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::DISABLED){
+      ui_draw_image(s, {-radius, -radius, 2*radius, 2*radius}, "brake_disk", 1.0f);
+    }
+    else{
+      ui_draw_image(s, {-radius, -radius, 2*radius, 2*radius}, "wheel", 1.0f);
+    }
     nvgRestore(s->vg);
     
     // draw extra circle to indiate paused low-speed one-pedal blinker steering is enabled
@@ -1828,7 +1836,8 @@ void ui_nvg_init(UIState *s) {
 
   // init images
   std::vector<std::pair<const char *, const char *>> images = {
-    {"wheel", "../assets/img_chffr_wheel.png"},
+    {"eye", "../assets/img_eye_open_white.png"},
+    {"wheel", "../assets/img_brake.png"},
     {"driver_face", "../assets/img_driver_face.png"},
     {"hands_on_wheel", "../assets/img_hands_on_wheel.png"},
     {"turn_left_icon", "../assets/img_turn_left_icon.png"},
