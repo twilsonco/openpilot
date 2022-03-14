@@ -175,13 +175,22 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.ACADIA:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
-      ret.mass = 4353 * CV.LB_TO_KG + STD_CARGO_KG # from vin decoder
-      ret.wheelbase = 2.86 # Confirmed from vin decoder
-      ret.steerRatio = 14.4  # end to end is 13.46 - seems to be undocumented, using JYoung value
+      ret.mass = 4353. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.86
+      ret.steerRatio = 16.0 #14.4  # end to end is 13.46
       ret.steerRatioRear = 0.
+      ret.steerActuatorDelay = 0.4
       ret.centerToFront = ret.wheelbase * 0.4
+      ret.lateralTuning.pid.kpBP = [i * CV.MPH_TO_MS for i in [0., 80.]]
+      ret.lateralTuning.pid.kpV = [0., 0.2]
+      ret.lateralTuning.pid.kiBP = [0.0]
+      ret.lateralTuning.pid.kiV = [0.025]
+      ret.lateralTuning.pid.kdV = [0.35]
       ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
-      ret.longitudinalTuning.kpV = [.19, .15]
+      ret.longitudinalTuning.kdBP = [5., 25.]
+      ret.longitudinalTuning.kdV = [0.8, 0.2]
+      ret.longitudinalTuning.kiBP = [5., 35.]
+      ret.longitudinalTuning.kiV = [0.3, 0.34]
 
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
