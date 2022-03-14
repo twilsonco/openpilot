@@ -1,5 +1,6 @@
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.drive_helpers import get_steer_max
+from selfdrive.config import Conversions as CV
 from cereal import car
 from cereal import log
 from selfdrive.kegman_conf import kegman_conf
@@ -62,6 +63,14 @@ class LatControlPID():
       self.pid.neg_limit = -steers_max
       
       steer_feedforward = self.get_steer_feedforward(self.angle_steers_des, CS.vEgo)
+      
+      # torque for steer rate. ~0 angle, steer rate ~= steer command.
+      steer_rate_actual = CS.steeringRateDeg
+      steer_rate_desired = lat_plan.lat_plan.steeringAngleDeg
+      speed_mph =  CS.vEgo * CV.MS_TO_MPH
+      steer_rate_max = 0.0389837 * speed_mph**2 - 5.34858 * speed_mph + 223.831
+
+      steer_feedforward += ((steer_rate_desired - steer_rate_actual) / steer_rate_max)
       
       deadzone = self.deadzone    
         
