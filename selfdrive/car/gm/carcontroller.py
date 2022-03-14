@@ -80,6 +80,7 @@ class CarController():
       apply_gas = P.MAX_ACC_REGEN
       apply_brake = 0
     else:
+      P.update_gas_lookup(CS.accel_mode)
       apply_gas = interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
       apply_brake = interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
       t = sec_since_boot()
