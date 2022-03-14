@@ -266,6 +266,7 @@ static void update_state(UIState *s) {
   if (scene.started && sm.updated("controlsState")) {
     scene.controls_state = sm["controlsState"].getControlsState();
     scene.car_state = sm["carState"].getCarState();
+    scene.lateralCorrection = scene.controls_state.getLateralControlState().getPidState().getOutput();
     scene.angleSteersDes = scene.controls_state.getLateralControlState().getPidState().getAngleError() + scene.car_state.getSteeringAngleDeg();
   }
   if (sm.updated("carState")){

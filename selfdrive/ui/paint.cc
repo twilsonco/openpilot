@@ -266,7 +266,8 @@ static void ui_draw_vision_lane_lines(UIState *s) {
         COLOR_BLACK_ALPHA(80), COLOR_BLACK_ALPHA(20));
     } else if (!scene.lateralPlan.lanelessModeStatus) {
       track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
-        nvgRGBA(bg_colors[STATUS_ENGAGED].red(), bg_colors[STATUS_ENGAGED].green(), bg_colors[STATUS_ENGAGED].blue(), 250), nvgRGBA(bg_colors[STATUS_ENGAGED].red(), bg_colors[STATUS_ENGAGED].green(), bg_colors[STATUS_ENGAGED].blue(), 50));
+        interp_alert_color(fabs(scene.lateralCorrection), 255), 
+        interp_alert_color(fabs(scene.lateralCorrection), 50));
     } else { // differentiate laneless mode color (Grace blue)
         track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
           nvgRGBA(0, 100, 255, 250), nvgRGBA(0, 100, 255, 50));
