@@ -3,6 +3,7 @@ import math
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
+from selfdrive.config import Conversions as CV
 from cereal import log
 
 
@@ -41,6 +42,14 @@ class LatControlPID(LatControl):
 
       # offset does not contribute to resistive torque
       steer_feedforward = self.get_steer_feedforward(angle_steers_des_no_offset, CS.vEgo)
+      
+      # torque for steer rate. ~0 angle, steer rate ~= steer command.
+      steer_rate_actual = CS.steeringRateDeg
+      steer_rate_desired = math.degrees(VM.get_steer_from_curvature(-desired_curvature_rate, CS.vEgo, 0))
+      speed_mph =  CS.vEgo * CV.MS_TO_MPH
+      steer_rate_max = 0.0389837 * speed_mph**2 - 5.34858 * speed_mph + 223.831
+
+      steer_feedforward += ((steer_rate_desired - steer_rate_actual) / steer_rate_max)
 
       deadzone = 0.0
 
