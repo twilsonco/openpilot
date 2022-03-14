@@ -1,14 +1,18 @@
 Version tw-0.8.9-3.10 (2022-03-11--)
 ========================
+ * NEW: Color path according to (essentially) steering torque (inspired by kegman)
  * NEW: Toggle vision- AND map-based curve braking while driving by tapping the steering wheel icon
    * Extra white circle around icon indicates curve braking is enabled
    * Steering wheel changes to brake disk with eye to indicate that vision curve braking is active (turn off debug UI toggle)
  * IMPROVED: "Autotuned" PID controller for better lateral performance
  * IMPROVED: Retuned vision turn controller
+  * Smoother entry/exit to/from curves
  * IMPROVED: Volt: improved low-speed long tune
   * Buttery stops or your money back!
+ * IMPROVED: Smoother maintaining of cruise speed in stock/eco acceleration modes
+  * No more "hunting" for the right speed while you involuntarily nod along.
  * IMPROVED?: Dynamic follow: tuning cut-in penalty
-  * Please test in traffic, getting cut-off, and provide feedback
+  * Please test in traffic, get cut-off, and provide feedback
   * "Honk gas honk; honk honk punch, gas gas gas." -HS
 
 Version tw-0.8.9-3.9 (2022-03-08)
