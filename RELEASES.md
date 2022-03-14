@@ -1,5 +1,10 @@
 Version tw-0.8.9-3.10 (2022-03-11--)
 ========================
+ * NEW: Toggle vision- AND map-based curve braking while driving by tapping the steering wheel icon
+   * Extra white circle around icon indicates curve braking is enabled
+   * Steering wheel changes to brake disk with eye to indicate that vision curve braking is active (turn off debug UI toggle)
+ * IMPROVED: "Autotuned" PID controller for better lateral performance
+ * IMPROVED: Retuned vision turn controller
  * IMPROVED: Volt: improved low-speed long tune
   * Buttery stops or your money back!
  * IMPROVED?: Dynamic follow: tuning cut-in penalty
