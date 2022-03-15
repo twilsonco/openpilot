@@ -22,8 +22,6 @@
 #define BACKLIGHT_TS 10.00
 #define BACKLIGHT_OFFROAD 75
 
-#define MAX(A,B) A > B ? A : B
-#define MIN(A,B) A < B ? A : B
 
 static const float fade_duration = 0.3; // [s] time it takes for the brake indicator to fade in/out
 static const float fade_time_step = 1. / fade_duration; // will step in the transparent or opaque direction

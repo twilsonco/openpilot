@@ -41,6 +41,11 @@
 #define COLOR_YELLOW_ALPHA(x) nvgRGBA(218, 202, 37, x)
 #define COLOR_GREY nvgRGBA(191, 191, 191, 1)
 
+
+#define MAX(A,B) A > B ? A : B
+#define MIN(A,B) A < B ? A : B
+#define CLIP(A,L,H) A < L ? L : (A > H ? H : A)
+
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 // TODO: this is also hardcoded in common/transformations/camera.py
