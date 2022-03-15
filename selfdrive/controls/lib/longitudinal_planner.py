@@ -37,22 +37,21 @@ _A_CRUISE_MIN_BP = [i * CV.MPH_TO_MS for i in [0., 15., 30., 55., 85.]]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V_CREEP = [.3, .3, .3, .3, .3]
-_A_CRUISE_MAX_V_ECO = [.8, .65, .55, .5, .4]
+_A_CRUISE_MAX_V_ECO = [.9, .75, .65, .5, .4]
 _A_CRUISE_MAX_V = [1.1, 1.25, 1.0, 0.7, 0.65]
-_A_CRUISE_MAX_V_SPORT = [2.2, 2.4, 2.2, 1.1, 0.9]
+_A_CRUISE_MAX_V_SPORT = [1.8, 2.0, 1.8, 1.1, 0.9]
 _A_CRUISE_MAX_V_FOLLOWING = [1.5, 1.5, 1.2, 0.7, 0.65]
 _A_CRUISE_MAX_BP = _A_CRUISE_MIN_BP
 
-_A_CRUISE_MIN_V_MODE_LIST = [_A_CRUISE_MIN_V, _A_CRUISE_MIN_V_SPORT, _A_CRUISE_MIN_V_ECO, _A_CRUISE_MIN_V_ECO]
-_A_CRUISE_MAX_V_MODE_LIST = [_A_CRUISE_MAX_V, _A_CRUISE_MAX_V_SPORT, _A_CRUISE_MAX_V_ECO, _A_CRUISE_MAX_V_CREEP]
+_A_CRUISE_MIN_V_MODE_LIST = [_A_CRUISE_MIN_V, _A_CRUISE_MIN_V_SPORT, _A_CRUISE_MIN_V_ECO]
+_A_CRUISE_MAX_V_MODE_LIST = [_A_CRUISE_MAX_V, _A_CRUISE_MAX_V_SPORT, _A_CRUISE_MAX_V_ECO]
 
 # Lookup table for turns - fast accel
 _A_TOTAL_MAX_V = [3.5, 4.0, 5.0]
 _A_TOTAL_MAX_BP = [0., 25., 55.]
 
 def calc_cruise_accel_limits(v_ego, following, accelMode):
-  if following and accelMode < 2:
+  if following and accelMode < 1:
     a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V_FOLLOWING)
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
   else:

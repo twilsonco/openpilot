@@ -1523,16 +1523,6 @@ static void draw_accel_mode_button(UIState *s) {
       nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
       nvgText(s->vg,btn_xc1,btn_yc-20,"Eco",NULL);
       nvgText(s->vg,btn_xc1,btn_yc+20,"accel",NULL);
-    } else if (s->scene.accel_mode == 3) { // creep
-      nvgStrokeColor(s->vg, nvgRGBA(24,82,200,255));
-      nvgStrokeWidth(s->vg, 6);
-      nvgStroke(s->vg);
-      NVGcolor fillColor = nvgRGBA(24,82,200,80);
-      nvgFillColor(s->vg, fillColor);
-      nvgFill(s->vg);
-      nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
-      nvgText(s->vg,btn_xc1,btn_yc-20,"Creep",NULL);
-      nvgText(s->vg,btn_xc1,btn_yc+20,"accel",NULL);
     }
     
     
