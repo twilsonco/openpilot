@@ -1,6 +1,7 @@
 Version tw-0.8.9-3.10 (2022-03-11--)
 ========================
  * NEW: Color path according to (essentially) steering torque (inspired by kegman)
+  * Laneful goes green to red, laneless blue to white
  * NEW: Toggle vision- AND map-based curve braking while driving by tapping the steering wheel icon
    * Extra white circle around icon indicates curve braking is enabled
    * Steering wheel changes to brake disk with eye to indicate that vision curve braking is active (turn off debug UI toggle)
