@@ -22,11 +22,11 @@ class CarControllerParams():
     self.CAMERA_KEEPALIVE_STEP = 100
 
     # pedal lookups, only for Volt
-    self.MAX_GAS_V = [3700, 4095, 3500] # max-gas values for stock/sport/eco/creep accel profiles
+    self.MAX_GAS = 4095
     self.ZERO_GAS = 2048
     MAX_BRAKE = 350             # Should be around 3.5m/s^2, including regen
 
-    self.ACCEL_MAX = 2.4 # m/s^2 (max accel of sport profile in longitudinal_planner.py)
+    self.ACCEL_MAX = 3.5 # m/s^2 (max accel of sport profile in longitudinal_planner.py)
 
     # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
     # perform the closed loop control, and might need some
@@ -37,13 +37,9 @@ class CarControllerParams():
 
     self.MAX_ACC_REGEN = 1404  # ACC Regen braking is slightly less powerful than max regen paddle
     self.GAS_LOOKUP_BP = [-1.0, 0., self.ACCEL_MAX]
-    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, self.MAX_GAS_V[0]]
+    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, self.MAX_GAS]
     self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, -1.0]
     self.BRAKE_LOOKUP_V = [MAX_BRAKE, 0]
-
-  def update_gas_lookup(self, accel_mode = 1):
-    accel_mode = 0 if accel_mode < 0 else 2 if accel_mode > 2 else accel_mode
-    self.GAS_LOOKUP_V[-1] = self.MAX_GAS_V[accel_mode]
 
 class CAR:
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
