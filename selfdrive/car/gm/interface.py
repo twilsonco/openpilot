@@ -140,8 +140,8 @@ class CarInterface(CarInterfaceBase):
       # Only tuned to reduce oscillations. TODO.
       ret.longitudinalTuning.kpV = [1.7, 1.3]
       ret.longitudinalTuning.kiBP = [5., 35.]
-      ret.longitudinalTuning.kiV = [0.32, 0.34]
-      ret.longitudinalTuning.kdV = [0.8, 0.0]
+      ret.longitudinalTuning.kiV = [0.31, 0.34]
+      ret.longitudinalTuning.kdV = [0.8, 0.4]
       ret.longitudinalTuning.kdBP = [5., 25.]
 
     elif candidate == CAR.MALIBU:
