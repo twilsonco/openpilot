@@ -65,6 +65,7 @@ class PIDController:
   def reset(self):
     self.p = 0.0
     self.i = 0.0
+    self.d = 0.0
     self.f = 0.0
     self.sat_count = 0.0
     self.saturated = False
@@ -78,16 +79,16 @@ class PIDController:
     self.p = error * self.k_p
     self.f = feedforward * self.k_f
 
-    d = 0
+    self.d = 0
     if len(self.errors) >= self._d_period:  # makes sure we have enough history for period
-      d = (error - self.errors[-self._d_period]) * self._d_period_recip  # get deriv in terms of 100hz (tune scale doesn't change)
-      d *= self.k_d
+      self.d = (error - self.errors[-self._d_period]) * self._d_period_recip  # get deriv in terms of 100hz (tune scale doesn't change)
+      self.d *= self.k_d
 
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
       i = self.i + error * self.k_i * self.i_rate
-      control = self.p + self.f + i + d
+      control = self.p + self.f + i + self.d
 
       # Update when changing i will move the control away from the limits
       # or when i will move towards the sign of the error
@@ -96,7 +97,7 @@ class PIDController:
          not freeze_integrator:
         self.i = i
 
-    control = self.p + self.f + self.i + d
+    control = self.p + self.f + self.i + self.d
     self.saturated = self._check_saturation(control, check_saturation, error)
 
     self.errors.append(float(error))
