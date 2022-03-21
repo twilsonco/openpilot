@@ -169,7 +169,6 @@ class DynamicFollow():
     t = sec_since_boot()
     dur = t - self.t_last
     self.t_last = t
-    lead_v_rel = v_ego - lead_v
     lead_gone = (self.has_lead_last and not has_lead) or self.lead_d_last - lead_d < 2.5
     new_lead = has_lead and (not self.has_lead_last or self.lead_d_last - lead_d > 2.5)
     if new_lead:
@@ -180,6 +179,7 @@ class DynamicFollow():
         penalty_time = 0.
       penalty_dist = interp(lead_d, self.cutin_dist_penalty_bp, self.cutin_dist_penalty_v)
       penalty_dist = max(penalty_dist, penalty_time)
+      lead_v_rel = v_ego - lead_v
       penalty_vel = interp(lead_v_rel, self.cutin_vel_penalty_bp, self.cutin_vel_penalty_v)
       penalty = max(0., penalty_dist + penalty_vel)
       penalty *= interp(t - self.cutin_t_last, self.cutin_last_t_factor_bp, self.cutin_last_t_factor_v)
