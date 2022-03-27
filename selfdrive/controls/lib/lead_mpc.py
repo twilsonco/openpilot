@@ -138,7 +138,7 @@ class DynamicFollow():
   # penalize more for close cut-ins than for far 
   # (greatest of the time/length based distance penalty will be used)
   # (at low speeds, the distance penalty will dominate)
-  cutin_time_dist_penalty_bp = [.2, 1.0, 2.0, 3.0]	# [distance from cut-in in seconds]
+  cutin_time_dist_penalty_bp = [.2, 1.0, 2.0, 2.5]	# [distance from cut-in in seconds]
   cutin_time_dist_penalty_v = [2.5, 1.0, 0.5, 0.0]  # [follow profile change]
 
   cutin_dist_penalty_bp = [i * 0.3 for i in [15, 30., 60.]]	# [distance from cut-in in ft]
