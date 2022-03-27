@@ -189,6 +189,15 @@ typedef struct UIScene {
   Rect speed_limit_sign_touch_rect;
   double last_speed_limit_sign_tap;
   
+  // adjustable lane position
+  Rect lane_pos_left_touch_rect = {1,1,1,1}, lane_pos_right_touch_rect = {1,1,1,1};
+  bool lane_pos_enabled = false;
+  int lane_pos = 0; // 0, 1, -1 = center, left, right
+  float lane_pos_timeout_short_t = 15.; // 30s short timeout
+  float lane_pos_timeout_long_t = 600.; // 10 minute long timeout
+  float lane_pos_timeout = lane_pos_timeout_short_t;
+  float lane_pos_set_t = 0.;
+  
   Rect wheel_touch_rect;
   bool wheel_rotates = true;
   

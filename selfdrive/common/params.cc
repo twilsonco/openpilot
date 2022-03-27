@@ -169,6 +169,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"IsUpdateAvailable", CLEAR_ON_MANAGER_START},
     {"UploadRaw", PERSISTENT},
     {"LanelessMode", PERSISTENT},
+    {"LanePosition", CLEAR_ON_MANAGER_START},
+    {"LanePositionEnabled", PERSISTENT},
     {"LastAthenaPingTime", CLEAR_ON_MANAGER_START},
     {"LastGPSPosition", PERSISTENT},
     {"LastUpdateException", PERSISTENT},

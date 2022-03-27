@@ -38,8 +38,8 @@ int offset_button_y(UIState *s, int center_y, int radius){
   return center_y;
 }
 
-int offset_right_side_button_x(UIState *s, int center_x, int radius){
-  if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL
+int offset_right_side_button_x(UIState *s, int center_x, int radius, bool doShift = false){
+  if ((doShift || (*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL)
   && s->scene.measure_cur_num_slots > 0){
     int off = s->scene.measure_slots_rect.right() - center_x;
     center_x = s->scene.measure_slots_rect.x - off - bdr_s;
@@ -1474,6 +1474,62 @@ static void ui_draw_vision_brake(UIState *s) {
   }
 }
 
+static void draw_lane_pos_buttons(UIState *s) {
+  if (s->vipc_client->connected && s->scene.lane_pos_enabled) {
+    const int radius = 108;
+    const int right_x = (s->scene.measure_cur_num_slots > 0 
+                          ? s->scene.measure_slots_rect.x - 4 * radius / 3
+                          : 4 * s->fb_w / 5);
+    const int left_x = s->fb_w / 5;
+    const int y = offset_button_y(s, s->fb_h / 2, radius);
+
+    // left button
+    s->scene.lane_pos_left_touch_rect = {left_x - radius, y - radius, 2 * radius, 2 * radius};
+    int radius_inner = 0;
+    if (s->scene.lane_pos == 1){
+      radius_inner = int(float(s->scene.lane_pos_timeout - (s->scene.lastTime - s->scene.lane_pos_set_t)) / float(s->scene.lane_pos_timeout) * float(radius));
+      if (radius_inner < 1){
+        radius_inner = 1;
+      }
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, left_x - radius_inner, y - radius_inner, 2 * radius_inner, 2 * radius_inner, radius_inner);
+      nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+      nvgFill(s->vg);
+    }
+    ui_draw_circle_image(s, left_x, y, radius, "lane_pos_left", COLOR_BLACK_ALPHA(80), 255);
+    
+    if (s->scene.lane_pos == 1){
+      // outline of button when active
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, left_x - radius, y - radius, 2 * radius, 2 * radius, radius);
+      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(200));
+      nvgStroke(s->vg);
+    }
+    
+    // right button
+    s->scene.lane_pos_right_touch_rect = {right_x - radius, y - radius, 2 * radius, 2 * radius};
+    radius_inner = 0;
+    if (s->scene.lane_pos == -1){
+      radius_inner = int(float(s->scene.lane_pos_timeout - (s->scene.lastTime - s->scene.lane_pos_set_t)) / float(s->scene.lane_pos_timeout) * float(radius));
+      if (radius_inner < 1){
+        radius_inner = 1;
+      }
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, right_x - radius_inner, y - radius_inner, 2 * radius_inner, 2 * radius_inner, radius_inner);
+      nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+      nvgFill(s->vg);
+    }
+    ui_draw_circle_image(s, right_x, y, radius, "lane_pos_right", COLOR_BLACK_ALPHA(80), 255);
+    if (s->scene.lane_pos == -1){
+      // outline of button when active
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, right_x - radius, y - radius, 2 * radius, 2 * radius, radius);
+      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(200));
+      nvgStroke(s->vg);
+    }
+  }
+}
+
 static void draw_accel_mode_button(UIState *s) {
   if (s->vipc_client->connected && s->scene.accel_mode_button_enabled) {
     const int radius = 72;
@@ -1714,6 +1770,9 @@ static void ui_draw_vision(UIState *s) {
     ui_draw_vision_face(s);
     ui_draw_vision_brake(s);
   }
+  if (s->scene.lane_pos_enabled){
+    draw_lane_pos_buttons(s);
+  }
   if (s->scene.end_to_end) {
     draw_laneless_button(s);
   }
@@ -1841,7 +1900,9 @@ void ui_nvg_init(UIState *s) {
     {"turn_right_icon", "../assets/img_turn_right_icon.png"},
     {"map_source_icon", "../assets/img_world_icon.png"},
     {"brake_disk", "../assets/img_brake.png"},
-    {"one_pedal_mode", "../assets/offroad/icon_car_pedal.png"}
+    {"one_pedal_mode", "../assets/offroad/icon_car_pedal.png"},
+    {"lane_pos_left", "../assets/offroad/icon_lane_pos_left.png"},
+    {"lane_pos_right", "../assets/offroad/icon_lane_pos_right.png"}
   };
   for (auto [name, file] : images) {
     s->images[name] = nvgCreateImage(s->vg, file, 1);

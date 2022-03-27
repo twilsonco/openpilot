@@ -120,6 +120,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Disable default comma stock disengage on gas feature",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
+  toggles.append(new ParamControl("LanePositionEnabled",
+                                  "Adjustable lane position",
+                                  "Adds onscreen arrows to the left and right sides of the onroad screen that can be used to adjust lane position temporarily.",
+                                  "../assets/offroad/icon_road.png",
+                                  this));
   toggles.append(new ParamControl("AccelModeButton",
                                   "Acceleration profiles",
                                   "Cycle between normal, sport, and eco acceleration profiles.",

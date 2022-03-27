@@ -52,6 +52,8 @@ def manager_init():
     ("AccelMode", "0"),
     ("EndToEndToggle", "1"),
     ("LanelessMode", "2"),
+    ("LanePositionEnabled", "0"),
+    ("LanePosition", "0"),
     ("NudgelessLaneChange", "0"),
     ("Coasting", "0"),
     ("CoastingDL", "0"),

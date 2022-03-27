@@ -1,4 +1,11 @@
-Version tw-0.8.9-3.10 (2022-03-11--)
+Version tw-0.8.9-3.11 (2022-03-28)
+========================
+ * NEW: Adjustable lane positioning
+   * Enable toggle, then tap onscreen (<) / (>) buttons to assume left/right position, resuming center position after 15s, 
+   * or double tap to make it stick for 10 minutes.
+   * Tap same button again to disable immediately.
+
+Version tw-0.8.9-3.10 (2022-03-24)
 ========================
  * NEW: Color path according to (essentially) steering torque (inspired by kegman)
   * Laneful goes green to red, laneless blue to white

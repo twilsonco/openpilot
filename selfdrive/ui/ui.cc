@@ -196,6 +196,7 @@ static void update_state(UIState *s) {
     scene.disableDisengageOnGasEnabled = Params().getBool("DisableDisengageOnGas");
     scene.speed_limit_control_enabled = Params().getBool("SpeedLimitControl");
     scene.screen_dim_mode = std::stoi(Params().get("ScreenDimMode"));
+    scene.lane_pos_enabled = Params().getBool("LanePositionEnabled");
     if (scene.disableDisengageOnGasEnabled){
       scene.onePedalModeActive = Params().getBool("OnePedalMode");
       scene.onePedalEngageOnGasEnabled = Params().getBool("OnePedalModeEngageOnGas");
@@ -207,6 +208,12 @@ static void update_state(UIState *s) {
     if (scene.dynamic_follow_mode_button_enabled){
       scene.dynamic_follow_active = std::stoi(Params().get("DynamicFollow"));
     }
+  }
+  
+  if (scene.lane_pos != 0 && t - scene.lane_pos_set_t > scene.lane_pos_timeout){
+    scene.lane_pos = 0;
+    scene.lane_pos_timeout = scene.lane_pos_timeout_short_t;
+    Params().put("LanePosition", "0", 1);
   }
   
   // fade screen brightness
