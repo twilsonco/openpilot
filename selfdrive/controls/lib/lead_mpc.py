@@ -145,7 +145,7 @@ class DynamicFollow():
   cutin_dist_penalty_v = [2.5, 1.0, 0.0]  # [follow profile change]
   
   # penalize more for approaching cut-ins, and *offset* the distance penalty for cut-ins pulling away
-  cutin_vel_penalty_bp = [i * CV.MPH_TO_MS for i in [-7.5, 0., 15.]]  # [mph] relative velocity of new lead
+  cutin_vel_penalty_bp = [i * CV.MPH_TO_MS for i in [-15., 0., 15.]]  # [mph] relative velocity of new lead
   cutin_vel_penalty_v = [-3.,0., 2.5]  # [follow profile] additionally go to close follow for new lead approaching too quickly, or *offset* the penalty for a close cutin if they're moving away (to keep from darting after a new cutin)
   
   # bonus penalty factor for repeat cut-ins
