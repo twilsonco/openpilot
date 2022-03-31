@@ -205,6 +205,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Mute engage and disengage sounds.",
                                   "../assets/offroad/icon_mute.png",
                                   this));
+  toggles.append(new ParamControl("FPVolt",
+                                  "Volt Fingerprint",
+                                  "Forces Volt fingerprint",
+                                  "../assets/offroad/icon_settings.png",
+                                  this));
   toggles.append(new ParamControl("ShowDebugUI",
                                   "Show debug UI elements",
                                   "Show UI elements that aid debugging.",

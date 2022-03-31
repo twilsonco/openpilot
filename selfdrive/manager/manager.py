@@ -70,6 +70,7 @@ def manager_init():
     ("FrictionBrakePercent", "0"),
     ("BrakeIndicator", "1"),
     ("DisableOnroadUploads", "0"),
+    ("FPVolt", "0"),
     ("MeasureNumSlots", "0"),
     ("MeasureSlot00", "0"), # steering angle
     ("MeasureSlot01", "11"), # percent grade

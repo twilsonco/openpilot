@@ -175,6 +175,7 @@ def fingerprint(logcan, sendcan):
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 RECHECK_CANDIDATES = ["CADILLAC ESCALADE ESV 2016"]
+FORCE_VOLT = Params().get_bool("FPVolt")
 def get_car(logcan, sendcan):
   
   old_fp = ''
@@ -183,8 +184,13 @@ def get_car(logcan, sendcan):
   num_matches_min = 1
   iter_max = 4
   iter_cur = 0
+  
   while iter_cur < iter_max and num_matches < num_matches_min:
     candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan)
+    if FORCE_VOLT:
+      candidate = "CHEVROLET VOLT PREMIER 2017"
+      old_fp = "CHEVROLET VOLT PREMIER 2017"
+      break
     if candidate == old_fp:
       num_matches += 1
     else:
