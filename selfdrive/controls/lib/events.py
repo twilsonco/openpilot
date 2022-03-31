@@ -238,7 +238,7 @@ def startup_master_display_fingerprint_alert(CP: car.CarParams, sm: messaging.Su
   return Alert(
     "Hands on wheel | Eyes on road",
     f"UNTESTED BRANCH on {CP.carFingerprint.title()[:40]}",
-    AlertStatus.userPrompt, AlertSize.mid,
+    AlertStatus.normal, AlertSize.mid,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 10.)
     
 
