@@ -134,6 +134,11 @@ class Planner():
   def update(self, sm, CP):
     cur_time = sec_since_boot()
     t = cur_time
+    
+    if sm.updated['carState'] and sm['carState'].onePedalModeActive or sm['carState'].coastOnePedalModeActive:
+      self.mpcs['lead0'].reset_mpc()
+      self.mpcs['lead1'].reset_mpc()
+    
     v_ego = sm['carState'].vEgo
     a_ego = sm['carState'].aEgo
     

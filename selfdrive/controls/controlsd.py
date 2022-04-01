@@ -59,6 +59,8 @@ class Controls:
     self.accel_pressed_last = 0.
     self.decel_pressed_last = 0.
     self.fastMode = False
+    self.lk_mode_last = False
+    self.oplongcontrol_last = False
 
     # Setup sockets
     self.pm = pm
@@ -529,6 +531,11 @@ class Controls:
     if not self.active:
       self.LaC.reset()
       self.LoC.reset(v_pid=CS.vEgo)
+    else:
+      if self.CI.CS.one_pedal_mode_active or self.CI.CS.coast_one_pedal_mode_active:
+        self.LoC.reset(v_pid=CS.vEgo)
+      if not self.CI.CS.lkMode:
+        self.LaC.reset()
 
     if not self.joystick_mode:
       # accel PID loop
