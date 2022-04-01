@@ -40,6 +40,11 @@ _LEAVING_ACC = 0.5  # Confortble acceleration to regain speed while leaving a tu
 
 _MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow curvature prediction based on lanes.
 
+# scale velocity used to determine curvature in order to provide more braking at low speed
+# where the LKA torque is less capable despite low lateral acceleration.
+_LOW_SPEED_SCALE_V = [2.0, 1.0] #increase the first value to increase low-speed vision braking; don't touch the second
+_LOW_SPEED_SCALE_BP = [i * CV.MPH_TO_MS for i in [0., 40.]]
+
 _DEBUG = False
 
 
@@ -197,17 +202,20 @@ class VisionTurnController():
     self._current_lat_acc = current_curvature * self._v_ego**2
     self._max_v_for_current_curvature = math.sqrt(_A_LAT_REG_MAX / current_curvature) if current_curvature > 0 \
       else V_CRUISE_MAX * CV.KPH_TO_MS
-
+    
+    # scale velocity used to determine curvature in order to provide more braking at low speed
+    vf = interp(self._v_ego, _LOW_SPEED_SCALE_BP, _LOW_SPEED_SCALE_V)
+    
     pred_curvatures = eval_curvature(path_poly, _EVAL_RANGE)
     max_pred_curvature = np.amax(pred_curvatures)
-    self._max_pred_lat_acc = self._v_ego**2 * max_pred_curvature
+    self._max_pred_lat_acc = (self._v_ego*vf)**2 * max_pred_curvature
 
-    max_curvature_for_vego = _A_LAT_REG_MAX / max(self._v_ego, 0.1)**2
+    max_curvature_for_vego = _A_LAT_REG_MAX / max(self._v_ego*vf, 0.1)**2
     lat_acc_overshoot_idxs = np.nonzero(pred_curvatures >= max_curvature_for_vego)[0]
     self._lat_acc_overshoot_ahead = len(lat_acc_overshoot_idxs) > 0
 
     if self._lat_acc_overshoot_ahead:
-      self._v_overshoot = min(math.sqrt(_A_LAT_REG_MAX / max_pred_curvature), self._v_cruise_setpoint)
+      self._v_overshoot = min(math.sqrt(_A_LAT_REG_MAX / max_pred_curvature), self._v_cruise_setpoint*vf)
       self._v_overshoot_distance = max(lat_acc_overshoot_idxs[0] * _EVAL_STEP + _EVAL_START, _EVAL_STEP)
       _debug(f'TVC: High LatAcc. Dist: {self._v_overshoot_distance:.2f}, v: {self._v_overshoot * CV.MS_TO_KPH:.2f}')
 
