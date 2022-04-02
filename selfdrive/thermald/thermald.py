@@ -192,6 +192,8 @@ def thermald_thread():
 
   HARDWARE.initialize_hardware()
   thermal_config = HARDWARE.get_thermal_config()
+  
+  ignore_missing_nvme = params.get_bool("IgnoreMissingNVME")
 
   # TODO: use PI controller for UNO
   controller = PIDController(k_p=0, k_i=2e-3, neg_limit=-80, pos_limit=0, rate=(1 / DT_TRML))
@@ -381,7 +383,7 @@ def thermald_thread():
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not startup_conditions["device_temp_good"]))
 
     if TICI:
-      set_offroad_alert_if_changed("Offroad_NvmeMissing", (not Path("/data/media").is_mount()))
+      set_offroad_alert_if_changed("Offroad_NvmeMissing", (not Path("/data/media").is_mount() and not ignore_missing_nvme))
 
     # Handle offroad/onroad transition
     should_start = all(startup_conditions.values())

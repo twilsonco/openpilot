@@ -158,6 +158,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"HandsOnWheelMonitoring", PERSISTENT},
     {"HardwareSerial", PERSISTENT},
     {"HasAcceptedTerms", PERSISTENT},
+    {"IgnoreMissingNVME", PERSISTENT},
     {"IsDriverViewEnabled", CLEAR_ON_MANAGER_START},
     {"IMEI", PERSISTENT},
     {"IsLdwEnabled", PERSISTENT},

@@ -210,6 +210,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Mute engage and disengage sounds.",
                                   "../assets/offroad/icon_mute.png",
                                   this));
+  toggles.append(new ParamControl("IgnoreMissingNVME",
+                                  "Ignore missing NVME",
+                                  "Prevent an error about missing NVME drive from showing on 32GB C3's. (restart device for change to take effect)",
+                                  "../assets/offroad/icon_settings.png",
+                                  this));
   toggles.append(new ParamControl("ShowDebugUI",
                                   "Show debug UI elements",
                                   "Show UI elements that aid debugging.",
