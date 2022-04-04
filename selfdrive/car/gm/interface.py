@@ -138,7 +138,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
 
       # Only tuned to reduce oscillations. TODO.
-      ret.longitudinalTuning.kpV = [1.7, 1.3]
+      ret.longitudinalTuning.kpV = [1.6, 1.3]
       ret.longitudinalTuning.kiBP = [5., 35.]
       ret.longitudinalTuning.kiV = [0.27, 0.34]
       ret.longitudinalTuning.kdV = [0.8, 0.4]
