@@ -52,7 +52,7 @@ class CarInterface(CarInterfaceBase):
       accel_limits[1] = max(DECLINE_ACCEL_MIN, accel_limits[1] + g_accel * DECLINE_ACCEL_FACTOR)
     
     time_since_engage = CI.CS.t - CI.CS.cruise_enabled_last_t
-    if time_since_engage < CI.CS.cruise_enabled_neg_accel_ramp_bp[-1]:
+    if CI.CS.coasting_lead_d > 0. and time_since_engage < CI.CS.cruise_enabled_neg_accel_ramp_bp[-1]:
       accel_limits[0] *= interp(time_since_engage, CI.CS.cruise_enabled_neg_accel_ramp_bp, CI.CS.cruise_enabled_neg_accel_ramp_v)
       
     return [max(CI.params.ACCEL_MIN, accel_limits[0]), min(accel_limits[1], CI.params.ACCEL_MAX)]
