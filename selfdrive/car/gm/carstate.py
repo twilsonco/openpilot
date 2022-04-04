@@ -54,7 +54,7 @@ class CarState(CarStateBase):
     self.cruiseMain = False
     self.cruise_enabled_last_t = 0.
     self.cruise_enabled_last = False
-    self.cruise_enabled_neg_accel_ramp_bp = [0.25, 1.0] # ramp up negative accel when engaging behind a lead over 0.75s with a .25s delay
+    self.cruise_enabled_neg_accel_ramp_bp = [0.5, 1.25] # ramp up negative accel when engaging behind a lead over 0.75s with a .25s delay
     self.cruise_enabled_neg_accel_ramp_v = [0., 1.]
     self.engineRPM = 0
     self.lastAutoHoldTime = 0.0
