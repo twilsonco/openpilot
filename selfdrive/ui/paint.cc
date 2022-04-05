@@ -1476,7 +1476,7 @@ static void ui_draw_vision_brake(UIState *s) {
 
 static void draw_lane_pos_buttons(UIState *s) {
   if (s->vipc_client->connected && s->scene.lane_pos_enabled) {
-    const int radius = ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE ? 200 : 100);
+    const int radius = ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE ? 250 : 100);
     const int right_x = (s->scene.measure_cur_num_slots > 0 
                           ? s->scene.measure_slots_rect.x - 4 * radius / 3
                           : 4 * s->fb_w / 5);
