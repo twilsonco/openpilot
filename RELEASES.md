@@ -1,9 +1,13 @@
-Version tw-0.8.9-3.11 (2022-03-28)
+Version tw-0.8.9-3.11 (2022-03-28--2022-04-08)
 ========================
  * NEW: Adjustable lane positioning
    * Enable toggle, then tap onscreen (<) / (>) buttons to assume left/right position, resuming center position after 15s, 
    * or double tap to make it stick for 10 minutes.
    * Tap same button again to disable immediately.
+ * NEW: Force Volt fingerprint using toggle
+ * NEW: Toggle to ignore missing NVME SSD (for 32GB C3 units)
+ * FIXED: White panda and Grey panda support!
+   * No GPS error not shown for no-GPS pandas
 
 Version tw-0.8.9-3.10 (2022-03-24)
 ========================
