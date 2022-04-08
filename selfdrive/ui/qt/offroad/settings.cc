@@ -215,6 +215,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Prevent an error about missing NVME drive from showing on 32GB C3's. (restart device for change to take effect)",
                                   "../assets/offroad/icon_settings.png",
                                   this));
+  toggles.append(new ParamControl("FPVolt",
+                                  "Volt Fingerprint",
+                                  "Forces Volt fingerprint",
+                                  "../assets/offroad/icon_settings.png",
+                                  this));
   toggles.append(new ParamControl("ShowDebugUI",
                                   "Show debug UI elements",
                                   "Show UI elements that aid debugging.",

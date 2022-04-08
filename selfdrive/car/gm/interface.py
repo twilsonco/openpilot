@@ -7,7 +7,8 @@ from common.params import Params
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.car.gm.values import CAR, CruiseButtons, \
-                                    AccState, CarControllerParams
+                                    AccState, CarControllerParams, \
+                                    FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.controls.lib.longitudinal_planner import _A_CRUISE_MAX_V_SPORT, \
