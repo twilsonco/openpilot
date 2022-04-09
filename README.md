@@ -13,9 +13,12 @@
 
 ### Infographics
 ------
-![](https://user-images.githubusercontent.com/37757984/127420744-89ca219c-8f8e-46d3-bccf-c1cb53b81bb1.png)
-![](https://github.com/twilsonco/openpilot/blob/tw-0.8.9-dev/fork_image_onepedal.png?raw=true)
 ![](https://github.com/twilsonco/openpilot/blob/tw-0.8.9-dev/fork_image_touchcontrols.png?raw=true)
+![](https://github.com/twilsonco/openpilot/blob/tw-0.8.9-dev/fork_image_onepedal.png?raw=true)
+![](https://github.com/twilsonco/openpilot/blob/tw-0.8.9-dev/fork_image_coasting.png?raw=true)
+![](https://github.com/twilsonco/openpilot/blob/tw-0.8.9-dev/fork_image_lane_position.png?raw=true)
+![](https://github.com/twilsonco/openpilot/blob/tw-0.8.9-dev/fork_image_brake_indicator.png?raw=true)
+![](https://github.com/twilsonco/openpilot/blob/tw-0.8.9-dev/fork_image_metrics.png?raw=true)
 ![](https://github.com/twilsonco/openpilot/blob/tw-0.8.9-dev/fork_image_misc.png?raw=true)
 
 ### Appreciate My Work?
