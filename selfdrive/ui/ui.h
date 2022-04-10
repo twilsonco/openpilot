@@ -416,3 +416,7 @@ public slots:
 };
 
 NVGcolor interp_alert_color(float p, int a);
+
+int offset_button_y(UIState *s, int center_y, int radius);
+
+int offset_right_side_button_x(UIState *s, int center_x, int radius, bool doShift = false);

@@ -28,24 +28,7 @@
 #include "selfdrive/ui/ui.h"
 
 
-int offset_button_y(UIState *s, int center_y, int radius){
-  if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL){
-    center_y = 2 * center_y / 3 + radius / 2;
-  }
-  else if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::MID){
-    center_y = (center_y + radius) / 2;
-  }
-  return center_y;
-}
 
-int offset_right_side_button_x(UIState *s, int center_x, int radius, bool doShift = false){
-  if ((doShift || (*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL)
-  && s->scene.measure_cur_num_slots > 0){
-    int off = s->scene.measure_slots_rect.right() - center_x;
-    center_x = s->scene.measure_slots_rect.x - off - bdr_s;
-  }
-  return center_x;
-}
 
 static void ui_draw_text(const UIState *s, float x, float y, const char *string, float size, NVGcolor color, const char *font_name) {
   nvgFontFace(s->vg, font_name);
