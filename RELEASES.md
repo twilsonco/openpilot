@@ -7,6 +7,7 @@ Version tw-0.8.9-3.11 (2022-03-28--2022-04-09)
    * Car will move over more in wider lanes than in narrower lanes, up to 0.8m (2'7.5") off center
  * NEW: Force Volt fingerprint using toggle
  * NEW: Toggle to ignore missing NVME SSD (for 32GB C3 units)
+ * IMPROVED: Startup message with fingerprint is less visually aggressive 🐯
  * IMPROVED??? Vision braking is more aggressive
  * FIXED: White panda and Grey panda support!
    * "No GPS" error not shown for no-GPS pandas
