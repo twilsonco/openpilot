@@ -1,6 +1,8 @@
 Version tw-0.8.9-3.11 (2022-03-28--2022-04-09)
 ========================
+ ThE fAnCy-PaNtS uPdAtEd InFoGrApHiCs EdItIoN!
  * NEW: Adjustable lane positioning
+   * Now with larger buttons!
    * Enable toggle, then tap onscreen (<) and (>) buttons to assume left/right position, resuming center position after 15s, 
    * or double tap to make it stick for 10 minutes
    * Tap same button again to disable immediately
