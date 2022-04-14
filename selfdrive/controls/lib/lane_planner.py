@@ -21,7 +21,7 @@ else:
 
 LANE_WIDTH_DEFAULT = 3.7
 class LaneOffset: 
-  OFFSET = 0.15 # [unitless] offset of the left/right positions as factor of current lane width
+  OFFSET = 0.13 # [unitless] offset of the left/right positions as factor of current lane width
   OFFSET_MAX = 0.8 # [m]
   DUR = 2.0 # [s] time it takes to switch lane positions
   STEP = OFFSET / DUR * DT_MDL * LANE_WIDTH_DEFAULT
