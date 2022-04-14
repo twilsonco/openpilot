@@ -171,6 +171,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   VISION_CURLATACCEL,
   VISION_MAXVFORCURCURV,
   VISION_MAXPREDLATACCEL,
+  LANE_WIDTH,
   
   NUM_MEASURES
 } UIMeasure;

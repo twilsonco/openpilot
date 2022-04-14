@@ -1175,6 +1175,20 @@ static void ui_draw_measures(UIState *s){
             val_color = nvgRGBA(255, g, b, 200);
           }
           break;
+          
+        case UIMeasure::LANE_WIDTH: 
+          {
+            snprintf(name, sizeof(name), "LANE W");
+            if (s->is_metric){
+              snprintf(unit, sizeof(unit), "m");
+              snprintf(val, sizeof(val), "%f.1", scene.lateralPlan.laneWidth);
+            }
+            else{
+              snprintf(unit, sizeof(unit), "ft");
+              snprintf(val, sizeof(val), "%f.1", scene.lateralPlan.laneWidth * 3.281);
+            }
+          }
+          break;
 
         default: {// invalid number
           snprintf(name, sizeof(name), "INVALID");
