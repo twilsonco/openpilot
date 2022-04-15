@@ -1,5 +1,7 @@
-Version tw-0.8.9-3.11 (2022-03-28--2022-04-09)
+Version tw-0.8.9-3.11 (2022-03-28--2022-04-14)
 ========================
+ * NEW: UI Toggles: current lane width; device battery + current (non-C3)
+ * IMPROVED: [Volt] smoother stopping behind lead
  ThE fAnCy-PaNtS uPdAtEd InFoGrApHiCs EdItIoN!
  * NEW: Adjustable lane positioning
    * Now with larger buttons!
@@ -7,7 +9,6 @@ Version tw-0.8.9-3.11 (2022-03-28--2022-04-09)
    * or double tap to make it stick for 10 minutes
    * Tap same button again to disable immediately
    * Car will move over more in wider lanes than in narrower lanes, up to 0.8m (2'7.5") off center
- * NEW: UI Toggles: current lane width; device battery + current (non-C3)
  * NEW: Force Volt fingerprint using toggle
  * NEW: Toggle to ignore missing NVME SSD (for 32GB C3 units)
  * IMPROVED: Startup message with fingerprint is less visually aggressive 🐯
