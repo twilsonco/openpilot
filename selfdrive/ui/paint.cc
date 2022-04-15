@@ -1185,8 +1185,16 @@ static void ui_draw_measures(UIState *s){
             }
             else{
               snprintf(unit, sizeof(unit), "ft");
-              snprintf(val, sizeof(val), "%f.1", scene.lateralPlan.laneWidth * 3.281);
+              snprintf(val, sizeof(val), "%.1f", scene.lateralPlan.laneWidth * 3.281);
             }
+          }
+          break;
+          
+        case UIMeasure::DEVICE_BATTERY: 
+          {
+            snprintf(name, sizeof(name), "DEVICE BATT.");
+            snprintf(unit, sizeof(unit), "%d A", scene.deviceState.getBatteryCurrent());
+            snprintf(val, sizeof(val), "%d", scene.deviceState.getBatteryPercent());
           }
           break;
 

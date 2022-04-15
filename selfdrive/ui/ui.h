@@ -164,6 +164,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   FANSPEED_PERCENT,
   MEMORY_USAGE_PERCENT,
   FREESPACE_STORAGE,
+  DEVICE_BATTERY,
   HVB_VOLTAGE,
   HVB_CURRENT,
   HVB_WATTAGE,
