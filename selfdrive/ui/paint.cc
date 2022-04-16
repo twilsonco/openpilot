@@ -545,7 +545,8 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::FANSPEED_PERCENT: 
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%d%%", scene.deviceState.getFanSpeedPercentDesired());
+          int fs = scene.deviceState.getFanSpeedPercentDesired();
+          snprintf(val, sizeof(val), "%d%%", (Hardware::EON() ? int(float(fs) * 1e-3) : fs));
           snprintf(name, sizeof(name), "FAN");}
           break;
         
@@ -1193,7 +1194,7 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::DEVICE_BATTERY: 
           {
             snprintf(name, sizeof(name), "DEVICE BATT.");
-            snprintf(unit, sizeof(unit), "%d A", scene.deviceState.getBatteryCurrent());
+            snprintf(unit, sizeof(unit), "%.1f A", float(scene.deviceState.getBatteryCurrent()) * 1e-6);
             snprintf(val, sizeof(val), "%d", scene.deviceState.getBatteryPercent());
           }
           break;
