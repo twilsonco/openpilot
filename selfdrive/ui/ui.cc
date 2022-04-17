@@ -546,6 +546,10 @@ static void update_status(UIState *s) {
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
 
+      if (Params().getBool("LowOverheadMode") && s->scene.screen_dim_mode_cur == s->scene.screen_dim_mode_max){
+        s->scene.screen_dim_mode_cur -= 1;
+        Params().put("ScreenDimMode", std::to_string(s->scene.screen_dim_mode_cur).c_str(), 1);
+      }
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       if (!s->scene.end_to_end){
         s->scene.laneless_btn_touch_rect = {1,1,1,1};

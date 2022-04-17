@@ -73,6 +73,7 @@ def manager_init():
     ("FrictionBrakePercent", "0"),
     ("BrakeIndicator", "1"),
     ("DisableOnroadUploads", "0"),
+    ("LowOverheadMode", "0"),
     ("FPVolt", "0"),
     ("MeasureNumSlots", "0"),
     ("MeasureSlot00", "0"), # steering angle
@@ -187,6 +188,9 @@ def manager_thread():
 
     if sm['deviceState'].freeSpacePercent < 5:
       not_run.append("loggerd")
+    elif params.get_bool("LowOverheadMode"):
+      low_overhead_ignore = ["loggerd","proclogd"]
+      not_run += low_overhead_ignore
 
     started = sm['deviceState'].started
     driverview = params.get_bool("IsDriverViewEnabled")

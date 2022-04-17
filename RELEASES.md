@@ -1,5 +1,10 @@
 Version tw-0.8.9-3.11 (2022-03-28--2022-04-14)
 ========================
+ * NEW: Low-overhead mode for older devices
+  * Sets default brightness to medium (feel free to tap DM icon to set it to stock/medium/low)
+  * Disables loggerd and proclogd
+  * Disables onroad uploads
+  * (On C3, dropped cpu use while car turned on, in park, from 40% to 30%)
  * NEW: UI Toggles: current lane width; device battery + current (non-C3)
  * IMPROVED: [Volt] smoother stopping behind lead
  ThE fAnCy-PaNtS uPdAtEd InFoGrApHiCs EdItIoN!

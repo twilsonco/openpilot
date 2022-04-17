@@ -274,7 +274,7 @@ def uploader_fn(exit_event):
     on_wifi = network_type == NetworkType.wifi
     allow_raw_upload = params.get_bool("UploadRaw")
     
-    if Params().get_bool("DisableOnroadUploads"):
+    if Params().get_bool("DisableOnroadUploads") or Params().get_bool("LowOverheadMode"):
       if not offroad or (transition_to_offroad_last > 0. and t - transition_to_offroad_last < disable_onroad_upload_offroad_transition_timeout):
         if not offroad:
           cloudlog.info("not uploading: onroad uploads disabled")
