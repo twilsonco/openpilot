@@ -450,7 +450,7 @@ static void ui_draw_measures(UIState *s){
 
     UIScene &scene = s->scene;
 
-    char deg = Hardware::EON() ? "o" : "°";
+    char const * deg = Hardware::EON() ? "o" : "°";
     
     // now start from the top and draw the current set of metrics
     for (int i = 0; i < scene.measure_cur_num_slots; ++i){
@@ -548,8 +548,15 @@ static void ui_draw_measures(UIState *s){
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
           int fs = scene.deviceState.getFanSpeedPercentDesired();
-          snprintf(val, sizeof(val), "%d%%", (Hardware::EON() ? int(float(fs) * 1e-3) : fs));
+          snprintf(val, sizeof(val), "%d%%", fs);
           snprintf(name, sizeof(name), "FAN");}
+          break;
+        case UIMeasure::FANSPEED_RPM: 
+          {
+          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+          snprintf(val, sizeof(val), "%d", scene.fanspeed_rpm);
+          snprintf(name, sizeof(name), "FAN");
+          snprintf(unit, sizeof(unit), "RPM");}
           break;
         
         case UIMeasure::MEMORY_USAGE_PERCENT: 
