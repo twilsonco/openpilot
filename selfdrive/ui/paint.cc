@@ -449,6 +449,8 @@ static void ui_draw_measures(UIState *s){
     nvgFill(s->vg);
 
     UIScene &scene = s->scene;
+
+    char deg = Hardware::EON() ? "o" : "°";
     
     // now start from the top and draw the current set of metrics
     for (int i = 0; i < scene.measure_cur_num_slots; ++i){
@@ -474,7 +476,7 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::CPU_TEMP_AND_PERCENTF: 
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%.0f°F", scene.cpuTemp * 1.8 + 32.);
+          snprintf(val, sizeof(val), "%.0f%sF", scene.cpuTemp * 1.8 + 32., deg);
           snprintf(unit, sizeof(unit), "%d%%", scene.cpuPerc);
           snprintf(name, sizeof(name), "CPU");}
           break;
@@ -483,7 +485,7 @@ static void ui_draw_measures(UIState *s){
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
           snprintf(val, sizeof(val), "%.0f", scene.cpuTemp * 1.8 + 32.);
-          snprintf(unit, sizeof(unit), "°F");
+          snprintf(unit, sizeof(unit), "%sF", deg);
           snprintf(name, sizeof(name), "CPU TEMP");}
           break;
         
@@ -491,7 +493,7 @@ static void ui_draw_measures(UIState *s){
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
           snprintf(val, sizeof(val), "%.0f", scene.deviceState.getMemoryTempC() * 1.8 + 32.);
-          snprintf(unit, sizeof(unit), "°F");
+          snprintf(unit, sizeof(unit), "%sF", deg);
           snprintf(name, sizeof(name), "MEM TEMP");}
           break;
         
@@ -499,14 +501,14 @@ static void ui_draw_measures(UIState *s){
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
           snprintf(val, sizeof(val), "%.0f", scene.deviceState.getAmbientTempC() * 1.8 + 32.);
-          snprintf(unit, sizeof(unit), "°F");
+          snprintf(unit, sizeof(unit), "%sF", deg);
           snprintf(name, sizeof(name), "AMB TEMP");}
           break;
           
         case UIMeasure::CPU_TEMP_AND_PERCENTC: 
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-            snprintf(val, sizeof(val), "%.0f°C", scene.cpuTemp);
+            snprintf(val, sizeof(val), "%.0f%sC", scene.cpuTemp, deg);
           snprintf(unit, sizeof(unit), "%d%%", scene.cpuPerc);
           snprintf(name, sizeof(name), "CPU");}
           break;
@@ -515,7 +517,7 @@ static void ui_draw_measures(UIState *s){
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
           snprintf(val, sizeof(val), "%.0f", scene.cpuTemp);
-          snprintf(unit, sizeof(unit), "°C");
+          snprintf(unit, sizeof(unit), "%sC", deg);
           snprintf(name, sizeof(name), "CPU TEMP");}
           break;
         
@@ -523,7 +525,7 @@ static void ui_draw_measures(UIState *s){
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
           snprintf(val, sizeof(val), "%.0f", scene.deviceState.getMemoryTempC());
-          snprintf(unit, sizeof(unit), "°C");
+          snprintf(unit, sizeof(unit), "%sC", deg);
           snprintf(name, sizeof(name), "MEM TEMP");}
           break;
         
@@ -531,7 +533,7 @@ static void ui_draw_measures(UIState *s){
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
           snprintf(val, sizeof(val), "%.0f", scene.deviceState.getAmbientTempC());
-          snprintf(unit, sizeof(unit), "°C");
+          snprintf(unit, sizeof(unit), "%sC", deg);
           snprintf(name, sizeof(name), "AMB TEMP");}
           break;
         
@@ -897,7 +899,7 @@ static void ui_draw_measures(UIState *s){
           b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
           val_color = nvgRGBA(255, g, b, 200);
           // steering is in degrees
-          snprintf(val, sizeof(val), "%.0f°", scene.angleSteers);
+          snprintf(val, sizeof(val), "%.0f%s", scene.angleSteers, deg);
           }
           break;
 
@@ -915,10 +917,10 @@ static void ui_draw_measures(UIState *s){
           val_color = nvgRGBA(255, g, b, 200);
           if (scene.controls_state.getEnabled()) {
             // steering is in degrees
-            snprintf(val, sizeof(val), "%.0f°:%.0f°", scene.angleSteers, scene.angleSteersDes);
+            snprintf(val, sizeof(val), "%.0f%s:%.0f%s", scene.angleSteers, deg, scene.angleSteersDes, deg);
             val_font_size += 12;
           }else{
-            snprintf(val, sizeof(val), "%.0f°", scene.angleSteers);
+            snprintf(val, sizeof(val), "%.0f%s", scene.angleSteers, deg);
           }
           }
           break;
@@ -939,7 +941,7 @@ static void ui_draw_measures(UIState *s){
           {
             snprintf(name, sizeof(name), "ENGINE");
             int temp = scene.car_state.getEngineCoolantTemp();
-            snprintf(unit, sizeof(unit), "%d°C", temp);
+            snprintf(unit, sizeof(unit), "%d%sC", temp, deg);
             if(scene.engineRPM == 0) {
               snprintf(val, sizeof(val), "OFF");
             }
@@ -962,7 +964,7 @@ static void ui_draw_measures(UIState *s){
           {
             snprintf(name, sizeof(name), "ENGINE");
             int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
-            snprintf(unit, sizeof(unit), "%d°F", temp);
+            snprintf(unit, sizeof(unit), "%d%sF", temp, deg);
             if(scene.engineRPM == 0) {
               snprintf(val, sizeof(val), "OFF");
             }
@@ -984,7 +986,7 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::COOLANT_TEMPC: 
           {
             snprintf(name, sizeof(name), "COOLANT");
-            snprintf(unit, sizeof(unit), "°C");
+            snprintf(unit, sizeof(unit), "%sC", deg);
             int temp = scene.car_state.getEngineCoolantTemp();
             snprintf(val, sizeof(val), "%d", temp);
             if(scene.engineRPM > 0) {
@@ -1004,7 +1006,7 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::COOLANT_TEMPF: 
           {
             snprintf(name, sizeof(name), "COOLANT");
-            snprintf(unit, sizeof(unit), "°F");
+            snprintf(unit, sizeof(unit), "%sF", deg);
             int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
             snprintf(val, sizeof(val), "%d", temp);
             if(scene.engineRPM > 0) {
@@ -1201,7 +1203,7 @@ static void ui_draw_measures(UIState *s){
 
         default: {// invalid number
           snprintf(name, sizeof(name), "INVALID");
-          snprintf(val, sizeof(val), "⚠️");}
+          snprintf(val, sizeof(val), "42");}
           break;
       }
 
