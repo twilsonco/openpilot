@@ -58,6 +58,9 @@
 - [x] [Chevy Volt] Sigmoidal steering response (thanks qadmus)
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
+- [x] Adjustable lane position using onscreen buttons
+    * Tap buttons to change lane position for 15 seconds; double-tap to change for 10 minutes
+    * Tap again to go back to center position
 - [x] [GM] [✅] Dynamic follow mode
 - [x] [GM] Toggle steering with LKAS button (wheel color changes to indicate disengagement)
 - [x] [GM] One-pedal driving a.k.a. autosteering only a.k.a. toggle longitudinal control: using regen (volt) and/or light/moderate/heavy braking, control OP all the way to a stop, without a lead, and without disengaging, with just the gas pedal (see below) (application of friction brakes originally suggested by cybertronicify — 10/06/2021)
