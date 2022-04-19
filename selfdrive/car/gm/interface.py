@@ -142,7 +142,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kpV = [1.4, 1.3]
       ret.longitudinalTuning.kiBP = [5., 35.]
       ret.longitudinalTuning.kiV = [0.23, 0.34]
-      ret.longitudinalTuning.kdV = [0.5, 0.4]
+      ret.longitudinalTuning.kdV = [0.5, 0.0]
       ret.longitudinalTuning.kdBP = [5., 25.]
 
     elif candidate == CAR.MALIBU:
