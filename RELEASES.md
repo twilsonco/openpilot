@@ -1,5 +1,6 @@
-Version tw-0.8.9-3.11 (2022-03-28--2022-04-18)
+Version tw-0.8.9-3.11 (2022-03-28--2022-04-19)
 ========================
+ * Put Comma Prime widget back on off-road screen
  * NEW: UI metric: device fanspeed (rpm)
  * NEW: Low-overhead mode for older devices
   * Sets default brightness to medium (feel free to tap DM icon to set it to stock/medium/low)
