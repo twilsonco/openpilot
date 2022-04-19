@@ -143,7 +143,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiBP = [5., 35.]
       ret.longitudinalTuning.kiV = [0.23, 0.34]
       ret.longitudinalTuning.kdV = [0.5, 0.0]
-      ret.longitudinalTuning.kdBP = [5., 25.]
+      ret.longitudinalTuning.kdBP = [5., 15.]
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
