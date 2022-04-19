@@ -139,11 +139,12 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.18
 
       # Only tuned to reduce oscillations. TODO.
-      ret.longitudinalTuning.kpV = [1.4, 1.3]
-      ret.longitudinalTuning.kiBP = [5., 35.]
-      ret.longitudinalTuning.kiV = [0.23, 0.34]
+      ret.longitudinalTuning.kpBP = [5., 15., 35.]
+      ret.longitudinalTuning.kpV = [1.4, 1.6, 1.3]
+      ret.longitudinalTuning.kiBP = [5., 15., 35.]
+      ret.longitudinalTuning.kiV = [0.23, 0.31, 0.34]
+      ret.longitudinalTuning.kdBP = [5., 25.]
       ret.longitudinalTuning.kdV = [0.5, 0.0]
-      ret.longitudinalTuning.kdBP = [5., 15.]
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
