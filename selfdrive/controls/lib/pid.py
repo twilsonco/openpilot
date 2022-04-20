@@ -113,7 +113,7 @@ class PIDController:
     kd = self.k_d
     
     if self.do_auto_tune and len(self.error_norms) >= self._k_period:
-      delta_error_norm = self.error_norms[-1] - self.error_norms[-self._k_period]
+      delta_error_norm = self.error_norms[-1] - self.error_norms[0]
       gain_update_factor = self.error_norms[-1] * delta_error_norm
       if gain_update_factor != 0.:
         abs_guf = abs(gain_update_factor)
@@ -122,7 +122,7 @@ class PIDController:
         kd *= 1. + min(2., self.k_13 * abs_guf)
     
     if len(self.errors) >= self._d_period and kd > 0.:  # makes sure we have enough history for period
-      d = (error - self.errors[-self._d_period]) * self._d_period_recip  # get deriv in terms of 100hz (tune scale doesn't change)
+      d = (error - self.errors[0]) * self._d_period_recip  # get deriv in terms of 100hz (tune scale doesn't change)
       d *= kd
     else:
       d = 0.
