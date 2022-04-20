@@ -268,7 +268,7 @@ def autohold_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> 
   return Alert(
     "AutoHolding for %s | Gas to resume" % stotime(sm['longitudinalPlan'].secondsStopped),
     "You can rest your foot now.",
-    AlertStatus.normal, AlertSize.small,
+    AlertStatus.userPrompt, AlertSize.small,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3)
 
 
@@ -276,7 +276,7 @@ def stopped_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> A
   return Alert(
     "Stopped for %s | Gas to resume" % stotime(sm['longitudinalPlan'].secondsStopped),
     "You can rest your foot now.",
-    AlertStatus.normal, AlertSize.small,
+    AlertStatus.userPrompt, AlertSize.small,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3)
 
 def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
@@ -980,7 +980,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.WARNING: Alert(
       "Autosteer paused for low-speed blinker",
       "Low-speed blinker",
-      AlertStatus.normal, AlertSize.small,
+      AlertStatus.userPrompt, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3, creation_delay=0.5),
   },
 
