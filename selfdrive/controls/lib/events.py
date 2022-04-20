@@ -981,7 +981,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Autosteer paused for low-speed blinker",
       "Low-speed blinker",
       AlertStatus.userPrompt, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3, creation_delay=0.5),
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3, creation_delay=0.5),
   },
 
   EventName.pauseLongOnGasPress: {
