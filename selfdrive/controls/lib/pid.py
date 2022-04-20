@@ -1,6 +1,6 @@
 import numpy as np
 from numbers import Number
-
+from collections import deque
 from common.numpy_fast import clip, interp
 
 
@@ -94,8 +94,8 @@ class PIDController:
     self.sat_count = 0.0
     self.saturated = False
     self.control = 0
-    self.errors = []
-    self.error_norms = []
+    self.errors = deque()
+    self.error_norms = deque()
 
   def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
     self.speed = speed
@@ -106,7 +106,7 @@ class PIDController:
       abs_sp = setpoint if setpoint > 0. else -setpoint
       self.error_norms.append(float(error) / (abs_sp + 1.))
       while len(self.error_norms) > self._k_period:
-        self.error_norms.pop(0)
+        self.error_norms.popleft()
 
     kp = self.k_p
     ki = self.k_i
@@ -148,7 +148,7 @@ class PIDController:
 
     self.errors.append(float(error))
     while len(self.errors) > self._d_period:
-      self.errors.pop(0)
+      self.errors.popleft()
 
     self.control = clip(control, self.neg_limit, self.pos_limit)
     return self.control
