@@ -94,8 +94,8 @@ class PIDController:
     self.sat_count = 0.0
     self.saturated = False
     self.control = 0
-    self.errors = deque()
-    self.error_norms = deque()
+    self.errors = deque(maxlen=self._d_period)
+    self.error_norms = deque(maxlen=self._d_period)
 
   def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
     self.speed = speed
@@ -105,8 +105,6 @@ class PIDController:
     if self.do_auto_tune:
       abs_sp = setpoint if setpoint > 0. else -setpoint
       self.error_norms.append(float(error) / (abs_sp + 1.))
-      while len(self.error_norms) > self._k_period:
-        self.error_norms.popleft()
 
     kp = self.k_p
     ki = self.k_i
@@ -120,7 +118,8 @@ class PIDController:
         kp *= 1. + min(2., self.k_11 * abs_guf)
         ki *= 1. + clip(self.k_12 * gain_update_factor, -1., 2.)
         kd *= 1. + min(2., self.k_13 * abs_guf)
-    
+
+    self.errors.append(float(error))
     if len(self.errors) >= self._d_period and kd > 0.:  # makes sure we have enough history for period
       d = (error - self.errors[0]) * self._d_period_recip  # get deriv in terms of 100hz (tune scale doesn't change)
       d *= kd
@@ -145,10 +144,6 @@ class PIDController:
 
     control = self.p + self.f + self.i + d
     self.saturated = self._check_saturation(control, check_saturation, error)
-
-    self.errors.append(float(error))
-    while len(self.errors) > self._d_period:
-      self.errors.popleft()
 
     self.control = clip(control, self.neg_limit, self.pos_limit)
     return self.control
