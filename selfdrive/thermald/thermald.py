@@ -134,7 +134,7 @@ def handle_fan_tici(controller, max_cpu_temp, fan_speed, ignition):
   controller.pos_limit = -(30 if ignition else 0)
 
   fan_pwr_out = -int(controller.update(
-                     setpoint=(75 if ignition else (OFFROAD_DANGER_TEMP - 2)),
+                     setpoint=(70 if ignition else (OFFROAD_DANGER_TEMP - 2)),
                      measurement=max_cpu_temp,
                      feedforward=interp(max_cpu_temp, [60.0, 100.0], [0, -80])
                   ))
@@ -196,7 +196,7 @@ def thermald_thread():
   ignore_missing_nvme = params.get_bool("IgnoreMissingNVME")
 
   # TODO: use PI controller for UNO
-  controller = PIDController(k_p=0, k_i=2e-3, neg_limit=-80, pos_limit=0, rate=(1 / DT_TRML))
+  controller = PIDController(k_p=0, k_i=4e-3, neg_limit=-80, pos_limit=0, rate=(1 / DT_TRML))
 
   if params.get_bool("IsOnroad"):
     cloudlog.event("onroad flag not cleared")
