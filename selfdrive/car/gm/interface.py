@@ -130,7 +130,7 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = 0.45 * ret.wheelbase # from Volt Gen 1
 
       ret.lateralTuning.pid.kpBP = [0., 40.]
-      ret.lateralTuning.pid.kpV = [0.0, .20]
+      ret.lateralTuning.pid.kpV = [0.0, .17]
       ret.lateralTuning.pid.kiBP = [0.0]
       ret.lateralTuning.pid.kiV = [0.02]
       ret.lateralTuning.pid.kdBP = [i * CV.MPH_TO_MS for i in [15., 30., 55.]]
