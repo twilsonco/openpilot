@@ -36,7 +36,8 @@ class CarState(CarStateBase):
       f.write(f"{self.car_fingerprint}\n")
     
     self.t = 0.
-    self.is_ev = (self.car_fingerprint == CAR.VOLT)
+    self.is_ev = (self.car_fingerprint in [CAR.VOLT, CAR.VOLT18])
+    self.do_sng = (self.car_fingerprint in [CAR.VOLT])
     
     self.prev_distance_button = 0
     self.prev_lka_button = 0
@@ -420,7 +421,7 @@ class CarState(CarStateBase):
       ("ECMEngineCoolantTemp", 1),
     ]
 
-    if CP.carFingerprint == CAR.VOLT:
+    if CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
       signals += [
         ("RegenPaddle", "EBCMRegenPaddle", 0),
         ("PRNDL2", "ECMPRDNL2", 0),
