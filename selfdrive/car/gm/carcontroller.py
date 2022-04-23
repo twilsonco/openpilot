@@ -277,10 +277,9 @@ class CarController():
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, apply_brake, idx, near_stop, at_full_stop))
         CS.autoHoldActivated = False
 
-        if CS.do_sng:
-          # Auto-resume from full stop by resetting ACC control
-          acc_enabled = enabled
-      
+        # Auto-resume from full stop by resetting ACC control
+        acc_enabled = CS.do_sng
+        
         if standstill and not car_stopping:
           acc_enabled = False
       
