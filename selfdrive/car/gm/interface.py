@@ -134,7 +134,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP = [0.0]
       ret.lateralTuning.pid.kiV = [0.05]
       ret.lateralTuning.pid.kdBP = [0.]
-      ret.lateralTuning.pid.kdV = [0.5]
+      ret.lateralTuning.pid.kdV = [0.6]
       ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
       ret.steerActuatorDelay = 0.18
 
