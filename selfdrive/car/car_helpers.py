@@ -8,6 +8,7 @@ from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
 from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
+from selfdrive.car.gm.values import CAR
 
 from cereal import car
 EventName = car.CarEvent.EventName
@@ -174,7 +175,7 @@ def fingerprint(logcan, sendcan):
                  source=source, fuzzy=not exact_match, fw_count=len(car_fw))
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
-RECHECK_CANDIDATES = ["CADILLAC ESCALADE ESV 2016"]
+RECHECK_CANDIDATES = [CAR.ESCALADE_ESV]
 FORCE_VOLT = Params().get_bool("FPVolt")
 def get_car(logcan, sendcan):
   
@@ -187,9 +188,9 @@ def get_car(logcan, sendcan):
   
   while iter_cur < iter_max and num_matches < num_matches_min:
     candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan)
-    if FORCE_VOLT and candidate not in ["CHEVROLET VOLT PREMIER 2017", "CHEVROLET VOLT PREMIER 2018"]:
-      candidate = "CHEVROLET VOLT PREMIER 2017"
-      old_fp = "CHEVROLET VOLT PREMIER 2017"
+    if FORCE_VOLT and candidate not in [CAR.VOLT, CAR.VOLT18]:
+      candidate = CAR.VOLT
+      old_fp = CAR.VOLT
       break
     if candidate == old_fp:
       num_matches += 1
