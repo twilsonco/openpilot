@@ -81,7 +81,6 @@ class TestStartup(unittest.TestCase):
     params.clear_all()
     params.put_bool("Passive", False)
     params.put_bool("OpenpilotEnabledToggle", True)
-    params.put_bool("CommunityFeaturesToggle", toggle_enabled)
 
     # Build capnn version of FW array
     if fw_versions is not None:

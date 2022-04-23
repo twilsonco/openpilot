@@ -103,7 +103,7 @@ class Controls:
     # read params
     self.is_metric = params.get_bool("IsMetric")
     self.is_ldw_enabled = params.get_bool("IsLdwEnabled")
-    community_feature_toggle = params.get_bool("CommunityFeaturesToggle")
+    community_feature_toggle = True
     openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
     passive = params.get_bool("Passive") or not openpilot_enabled_toggle
 

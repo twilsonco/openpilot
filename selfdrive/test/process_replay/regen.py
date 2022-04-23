@@ -89,8 +89,6 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   params.clear_all()
   params.put_bool("Passive", False)
   params.put_bool("OpenpilotEnabledToggle", True)
-  params.put_bool("CommunityFeaturesToggle", True)
-  params.put_bool("CommunityFeaturesToggle", True)
   cal = messaging.new_message('liveCalibration')
   cal.liveCalibration.validBlocks = 20
   cal.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]

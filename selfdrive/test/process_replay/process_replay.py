@@ -360,7 +360,6 @@ def python_replay_process(cfg, lr, fingerprint=None):
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
   params.put_bool("Passive", False)
-  params.put_bool("CommunityFeaturesToggle", True)
 
   os.environ['NO_RADAR_SLEEP'] = "1"
   os.environ["SIMULATION"] = "1"
