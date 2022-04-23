@@ -37,6 +37,7 @@ def manager_init():
     ("HasAcceptedTerms", "0"),
     ("HandsOnWheelMonitoring", "0"),
     ("OpenpilotEnabledToggle", "1"),
+    ("CommunityFeaturesToggle", "1"),
     ("ShowDebugUI", "1"),
     ("IgnoreMissingNVME", "0"),
     ("SpeedLimitControl", "1"),
