@@ -74,7 +74,7 @@ class CarInterface(CarInterfaceBase):
     return 0.04689655 * sigmoid * (v_ego + 10.028217)
 
   def get_steer_feedforward_function(self):
-    if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
+    if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18, CAR.VOLT16]:
       return self.get_steer_feedforward_volt
     elif self.CP.carFingerprint == CAR.ACADIA:
       return self.get_steer_feedforward_acadia
@@ -118,7 +118,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.36]
 
-    if candidate in [CAR.VOLT, CAR.VOLT18]:
+    if candidate in [CAR.VOLT, CAR.VOLT18, CAR.VOLT16]:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = -1
       ret.mass = 1607. + STD_CARGO_KG

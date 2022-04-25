@@ -188,7 +188,7 @@ def get_car(logcan, sendcan):
   
   while iter_cur < iter_max and num_matches < num_matches_min:
     candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan)
-    if FORCE_VOLT and candidate not in [CAR.VOLT, CAR.VOLT18]:
+    if FORCE_VOLT and candidate not in [CAR.VOLT, CAR.VOLT18, CAR.VOLT16]:
       candidate = CAR.VOLT
       old_fp = CAR.VOLT
       break

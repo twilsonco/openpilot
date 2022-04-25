@@ -36,8 +36,9 @@ class CarState(CarStateBase):
       f.write(f"{self.car_fingerprint}\n")
     
     self.t = 0.
-    self.is_ev = (self.car_fingerprint in [CAR.VOLT, CAR.VOLT18])
+    self.is_ev = (self.car_fingerprint in [CAR.VOLT, CAR.VOLT18, CAR.VOLT16])
     self.do_sng = (self.car_fingerprint in [CAR.VOLT])
+    self.no_acc = (self.car_fingerprint in [CAR.VOLT16])
     
     self.prev_distance_button = 0
     self.prev_lka_button = 0
@@ -343,6 +344,8 @@ class CarState(CarStateBase):
     ret.coastOnePedalModeActive = self.coast_one_pedal_mode_active
     self.one_pedal_mode_active = one_pedal_mode_active
     ret.onePedalModeActive = self.one_pedal_mode_active
+    if self.no_acc:
+      self.one_pedal_brake_mode = 0
     ret.onePedalBrakeMode = self.one_pedal_brake_mode
     
     if t - self.pitch_check_last > self.pitch_check_freq:
@@ -421,7 +424,7 @@ class CarState(CarStateBase):
       ("ECMEngineCoolantTemp", 1),
     ]
 
-    if CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
+    if CP.carFingerprint in [CAR.VOLT, CAR.VOLT18, CAR.VOLT16]:
       signals += [
         ("RegenPaddle", "EBCMRegenPaddle", 0),
         ("PRNDL2", "ECMPRDNL2", 0),
