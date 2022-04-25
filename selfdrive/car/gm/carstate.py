@@ -93,7 +93,7 @@ class CarState(CarStateBase):
     self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [1., 4., 45., 85.]], [i * CV.MPH_TO_MS for i in [1., 4., 45., 85.]], [1.]]
     self.one_pedal_mode_stop_apply_brake_v = [[80., 95., 115., 90.], [110., 165., 185., 140.], [280.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
     self.one_pedal_mode_apply_brake = 0.
-    self.one_pedal_mode_ramp_duration = 0.6
+    self.one_pedal_mode_ramp_duration = 0.9
     self.one_pedal_mode_ramp_time_step = 60. / self.one_pedal_mode_ramp_duration
     self.one_pedal_mode_ramp_t_last = 0.
     self.one_pedal_mode_active_last = False
