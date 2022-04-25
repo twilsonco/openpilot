@@ -339,13 +339,16 @@ class CarState(CarStateBase):
       self.cruise_enabled_last_t = t
       
     self.cruise_enabled_last = cruise_enabled
-        
+    
+    if self.no_acc and one_pedal_mode_active:
+      one_pedal_mode_active = False
+      coast_one_pedal_mode_active = True
+      self.one_pedal_brake_mode = 0
+
     self.coast_one_pedal_mode_active = coast_one_pedal_mode_active
     ret.coastOnePedalModeActive = self.coast_one_pedal_mode_active
     self.one_pedal_mode_active = one_pedal_mode_active
     ret.onePedalModeActive = self.one_pedal_mode_active
-    if self.no_acc:
-      self.one_pedal_brake_mode = 0
     ret.onePedalBrakeMode = self.one_pedal_brake_mode
     
     if t - self.pitch_check_last > self.pitch_check_freq:
