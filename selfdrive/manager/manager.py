@@ -53,6 +53,7 @@ def manager_init():
     ("AccelModeButton", "0"),
     ("AccelMode", "0"),
     ("EndToEndToggle", "1"),
+    ("EnableTorqueControl", "0"),
     ("LanelessMode", "2"),
     ("LanePositionEnabled", "0"),
     ("LanePosition", "0"),

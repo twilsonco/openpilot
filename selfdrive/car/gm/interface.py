@@ -128,15 +128,25 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.469 # Stock Michelin Energy Saver A/S, LiveParameters
       ret.steerRatioRear = 0.
       ret.centerToFront = 0.45 * ret.wheelbase # from Volt Gen 1
-      max_torque = 3.0
-      ret.lateralTuning.init('torque')
-      ret.lateralTuning.torque.useSteeringAngle = True
-      ret.lateralTuning.torque.kp = 2.0 / max_torque
-      ret.lateralTuning.torque.ki = 0.8 / max_torque
-      ret.lateralTuning.torque.kd = 5.0 / max_torque
-      ret.lateralTuning.torque.kf = 1.2 / max_torque
-      ret.lateralTuning.torque.friction = 0.02
       ret.steerActuatorDelay = 0.18
+      if (Params().get_bool("EnableTorqueControl")):
+        max_torque = 3.0
+        ret.lateralTuning.init('torque')
+        ret.lateralTuning.torque.useSteeringAngle = True
+        ret.lateralTuning.torque.kp = 2.0 / max_torque
+        ret.lateralTuning.torque.ki = 0.8 / max_torque
+        ret.lateralTuning.torque.kd = 5.0 / max_torque
+        ret.lateralTuning.torque.kf = 1.2 / max_torque
+        ret.lateralTuning.torque.friction = 0.02
+      else:
+        ret.lateralTuning.pid.kpBP = [0., 40.]
+        ret.lateralTuning.pid.kpV = [0., .16]
+        ret.lateralTuning.pid.kiBP = [0.]
+        ret.lateralTuning.pid.kiV = [.028]
+        ret.lateralTuning.pid.kdBP = [0.]
+        ret.lateralTuning.pid.kdV = [.6]
+        ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
+      
 
       # Only tuned to reduce oscillations. TODO.
       ret.longitudinalTuning.kpBP = [5., 15., 35.]
@@ -172,13 +182,25 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
       ret.steerActuatorDelay = 0.24
-      ret.lateralTuning.pid.kpBP = [i * CV.MPH_TO_MS for i in [0., 80.]]
-      ret.lateralTuning.pid.kpV = [0., 0.2]
-      ret.lateralTuning.pid.kiBP = [0.0]
-      ret.lateralTuning.pid.kiV = [0.025]
-      ret.lateralTuning.pid.kdBP = [i * CV.MPH_TO_MS for i in [15., 30., 55.]]
-      ret.lateralTuning.pid.kdV = [0.1, 0.28, 0.32]
-      ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
+
+      if (Params().get_bool("EnableTorqueControl")):
+        max_torque = 3.0
+        ret.lateralTuning.init('torque')
+        ret.lateralTuning.torque.useSteeringAngle = True
+        ret.lateralTuning.torque.kp = 2.0 / max_torque
+        ret.lateralTuning.torque.ki = 0.8 / max_torque
+        ret.lateralTuning.torque.kd = 5.0 / max_torque
+        ret.lateralTuning.torque.kf = 1.5 / max_torque
+        ret.lateralTuning.torque.friction = 0.05
+      else:
+        ret.lateralTuning.pid.kpBP = [i * CV.MPH_TO_MS for i in [0., 80.]]
+        ret.lateralTuning.pid.kpV = [0., 0.2]
+        ret.lateralTuning.pid.kiBP = [0.0]
+        ret.lateralTuning.pid.kiV = [0.025]
+        ret.lateralTuning.pid.kdBP = [i * CV.MPH_TO_MS for i in [15., 30., 55.]]
+        ret.lateralTuning.pid.kdV = [0.1, 0.28, 0.32]
+        ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
+
       ret.longitudinalTuning.kdBP = [5., 25.]
       ret.longitudinalTuning.kdV = [0.8, 0.4]
       ret.longitudinalTuning.kiBP = [5., 35.]
