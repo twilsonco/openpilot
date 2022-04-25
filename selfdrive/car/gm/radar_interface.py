@@ -6,6 +6,7 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.gm.values import DBC, CAR, CanBus
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import RadarInterfaceBase
+from selfdrive.swaglog import cloudlog
 
 RADAR_HEADER_MSG = 1120
 SLOT_1_MSG = RADAR_HEADER_MSG + 1
@@ -107,4 +108,5 @@ class RadarInterface(RadarInterfaceBase):
     return ret
 
 class RadarlessInterface(RadarInterfaceBase):
-  pass
+  def __init__(self, CP):
+    cloudlog.info("loading no-acc radar interface")
