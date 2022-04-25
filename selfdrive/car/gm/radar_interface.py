@@ -105,3 +105,6 @@ class RadarInterface(RadarInterfaceBase):
     ret.points = list(self.pts.values())
     self.updated_messages.clear()
     return ret
+
+class RadarlessInterface(RadarInterfaceBase):
+  pass

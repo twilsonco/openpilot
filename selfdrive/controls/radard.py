@@ -183,7 +183,10 @@ def radard_thread(sm=None, pm=None, can_sock=None):
 
   # import the radar from the fingerprint
   cloudlog.info("radard is importing %s", CP.carName)
-  RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % CP.carName).RadarInterface
+  if CP.radarTimeStep > 0.:
+    RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % CP.carName).RadarInterface
+  else: # no-acc cars
+    RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % CP.carName).RadarlessInterface
 
   # *** setup messaging
   if can_sock is None:
