@@ -228,7 +228,7 @@ typedef struct UIScene {
   // actual measures
   float angleSteers;
   float angleSteersDes;
-  float lateralCorrection;
+  float lateralCorrection, lateralCorrectionAbsMax = 0.;
   float gpsAccuracyUblox;
   float altitudeUblox = 0.;
   int engineRPM;
