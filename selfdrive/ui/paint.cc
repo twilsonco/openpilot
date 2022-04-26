@@ -476,7 +476,7 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::CPU_TEMP_AND_PERCENTF: 
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%.0f%sF", scene.cpuTemp * 1.8 + 32., deg);
+          snprintf(val, sizeof(val), "%.0f%sF", scene.deviceState.getCpuTempC()[0] * 1.8 + 32., deg);
           snprintf(unit, sizeof(unit), "%d%%", scene.cpuPerc);
           snprintf(name, sizeof(name), "CPU");}
           break;
@@ -484,7 +484,7 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::CPU_TEMPF: 
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%.0f", scene.cpuTemp * 1.8 + 32.);
+          snprintf(val, sizeof(val), "%.0f", scene.deviceState.getCpuTempC()[0] * 1.8 + 32.);
           snprintf(unit, sizeof(unit), "%sF", deg);
           snprintf(name, sizeof(name), "CPU TEMP");}
           break;
@@ -508,7 +508,7 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::CPU_TEMP_AND_PERCENTC: 
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-            snprintf(val, sizeof(val), "%.0f%sC", scene.cpuTemp, deg);
+            snprintf(val, sizeof(val), "%.0f%sC", scene.deviceState.getCpuTempC()[0], deg);
           snprintf(unit, sizeof(unit), "%d%%", scene.cpuPerc);
           snprintf(name, sizeof(name), "CPU");}
           break;
@@ -516,7 +516,7 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::CPU_TEMPC: 
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%.0f", scene.cpuTemp);
+          snprintf(val, sizeof(val), "%.0f", scene.deviceState.getCpuTempC()[0]);
           snprintf(unit, sizeof(unit), "%sC", deg);
           snprintf(name, sizeof(name), "CPU TEMP");}
           break;
