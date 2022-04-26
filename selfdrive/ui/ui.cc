@@ -287,17 +287,14 @@ static void update_state(UIState *s) {
   if (scene.started && sm.updated("controlsState")) {
     scene.controls_state = sm["controlsState"].getControlsState();
     scene.car_state = sm["carState"].getCarState();
-    scene.lateralCorrection = scene.controls_state.getLateralControlState().getPidState().getOutput();
-    float lateralCorrectionAbs = (scene.lateralCorrection > 0. ? scene.lateralCorrection : -scene.lateralCorrection);
-    scene.lateralCorrectionAbsMax = (lateralCorrectionAbs > scene.lateralCorrectionAbsMax ? lateralCorrectionAbs : scene.lateralCorrectionAbsMax);
-    if (scene.lateralCorrectionAbsMax != 0.){
-      scene.lateralCorrection /= scene.lateralCorrectionAbsMax;
+    if (scene.is_using_torque_control){// if lateral torque controller in use, angle error is stored in its unused error_rate.
+      scene.lateralCorrection = scene.controls_state.getLateralControlState().getTorqueState().getOutput();
+      scene.angleSteersDes = scene.controls_state.getLateralControlState().getTorqueState().getErrorRate() + scene.car_state.getSteeringAngleDeg();
     }
-    float angle_error = scene.controls_state.getLateralControlState().getPidState().getAngleError();
-    if (angle_error == 0.){// if lateral torque controller in use, angle error is stored in its unused error_rate.
-      angle_error = scene.controls_state.getLateralControlState().getTorqueState().getErrorRate();
+    else{
+      scene.lateralCorrection = scene.controls_state.getLateralControlState().getPidState().getOutput();
+      scene.angleSteersDes = scene.controls_state.getLateralControlState().getPidState().getAngleError() + scene.car_state.getSteeringAngleDeg();
     }
-    scene.angleSteersDes = angle_error + scene.car_state.getSteeringAngleDeg();
   }
   if (sm.updated("carState")){
     scene.car_state = sm["carState"].getCarState();
@@ -571,6 +568,8 @@ static void update_status(UIState *s) {
     if (s->scene.started) {
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
+
+      s->scene.is_using_torque_control = Params().getBool("EnableTorqueControl");
 
       if (Params().getBool("LowOverheadMode") && s->scene.screen_dim_mode_cur == s->scene.screen_dim_mode_max){
         s->scene.screen_dim_mode_cur -= 1;
