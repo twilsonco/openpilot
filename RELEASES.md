@@ -1,6 +1,7 @@
-Version tw-0.8.14-1 (2022-04-15)
+Version tw-0.8.12-1_tw-dev (2022-04-26)
 ========================
- * NEW: [optional] Torque-based steering control for Volt and Acadia
+ * NEW: [optional w/ toggle] Torque-based steering control for Volt and Acadia
+ * IMPROVED: [Volt] inproved (non-torque-based) steering performance too!
  * IMPROVED: ['18 Volt] auto-creep; still not as good as auto-resume
   * When lead car pulls away, brakes will release and car will creep
   * Press resume button or tap gas to resume
