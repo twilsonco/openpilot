@@ -450,7 +450,7 @@ static void ui_draw_measures(UIState *s){
 
     UIScene &scene = s->scene;
 
-    char const * deg = Hardware::EON() ? "o" : "°";
+    char const * deg = Hardware::EON() ? "°" : "°";
     
     // now start from the top and draw the current set of metrics
     for (int i = 0; i < scene.measure_cur_num_slots; ++i){
