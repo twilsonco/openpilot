@@ -423,7 +423,6 @@ static void update_state(UIState *s) {
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
   if (sm.updated("deviceState")) {
     scene.deviceState = sm["deviceState"].getDeviceState();
-    scene.cpuTemp = scene.deviceState.getCpuTempC()[0];
     auto cpus = scene.deviceState.getCpuUsagePercent();
     float cpu = 0.;
     int num_cpu = 0;

@@ -239,7 +239,6 @@ typedef struct UIScene {
   float aEgo;
   float latAccel = 0.;
   float vision_cur_lat_accel, vision_max_v_cur_curv, vision_max_pred_lat_accel;
-  float cpuTemp;
   int cpuPerc;
   int thermalStatus;
   int percentGradeRollingIter = 0, percentGradeNumSamples = 10;
