@@ -108,5 +108,4 @@ class RadarInterface(RadarInterfaceBase):
     return ret
 
 class RadarlessInterface(RadarInterfaceBase):
-  def __init__(self, CP):
-    cloudlog.info("loading no-acc radar interface")
+  pass
