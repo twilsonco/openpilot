@@ -146,11 +146,6 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kdBP = [0.]
         ret.lateralTuning.pid.kdV = [.6]
         ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
-      
-      # incidate no radar for '16 Volt; used in radard
-      if candidate in [CAR.VOLT16]:
-        ret.radarTimeStep = -1.
-
       # Only tuned to reduce oscillations. TODO.
       ret.longitudinalTuning.kpBP = [5., 15., 35.]
       ret.longitudinalTuning.kpV = [1.25, 1.6, 1.3]

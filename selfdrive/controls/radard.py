@@ -13,6 +13,7 @@ from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroi
 from selfdrive.controls.lib.radar_helpers import Cluster, Track
 from selfdrive.swaglog import cloudlog
 from selfdrive.hardware import TICI
+from selfdrive.car.gm.values import CAR
 
 
 class KalmanParams():
@@ -183,7 +184,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
 
   # import the radar from the fingerprint
   cloudlog.info("radard is importing %s", CP.carName)
-  if CP.radarTimeStep > 0.:
+  if CP.carFingerprint not in [CAR.VOLT16]:
     RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % CP.carName).RadarInterface
   else: # no-acc cars
     RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % CP.carName).RadarlessInterface
@@ -199,10 +200,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
   RI = RadarInterface(CP)
 
   rk = Ratekeeper(1.0 / CP.radarTimeStep, print_delay_threshold=None)
-  if CP.radarTimeStep > 0.:
-    RD = RadarD(CP.radarTimeStep, RI.delay)
-  else:
-    RD = RadarD(1./20., RI.delay)
+  RD = RadarD(CP.radarTimeStep, RI.delay)
 
   # TODO: always log leads once we can hide them conditionally
   enable_lead = CP.openpilotLongitudinalControl or not CP.radarOffCan
