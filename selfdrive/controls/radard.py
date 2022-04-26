@@ -199,7 +199,10 @@ def radard_thread(sm=None, pm=None, can_sock=None):
   RI = RadarInterface(CP)
 
   rk = Ratekeeper(1.0 / CP.radarTimeStep, print_delay_threshold=None)
-  RD = RadarD(CP.radarTimeStep, RI.delay)
+  if CP.radarTimeStep > 0.:
+    RD = RadarD(CP.radarTimeStep, RI.delay)
+  else:
+    RD = RadarD(1./20., RI.delay)
 
   # TODO: always log leads once we can hide them conditionally
   enable_lead = CP.openpilotLongitudinalControl or not CP.radarOffCan
