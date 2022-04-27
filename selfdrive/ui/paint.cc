@@ -488,7 +488,7 @@ static void ui_draw_measures(UIState *s){
           }
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
           snprintf(val, sizeof(val), "%.0f%sF", scene.deviceState.getCpuTempC()[0] * 1.8 + 32., deg);
-          snprintf(unit, sizeof(unit), "%d%%", cpu);
+          snprintf(unit, sizeof(unit), "%d%%", int(cpu));
           snprintf(name, sizeof(name), "CPU");}
           break;
         
@@ -530,7 +530,7 @@ static void ui_draw_measures(UIState *s){
           }
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
             snprintf(val, sizeof(val), "%.0f%sC", scene.deviceState.getCpuTempC()[0], deg);
-          snprintf(unit, sizeof(unit), "%d%%", cpu);
+          snprintf(unit, sizeof(unit), "%d%%", int(cpu));
           snprintf(name, sizeof(name), "CPU");}
           break;
         
@@ -571,7 +571,7 @@ static void ui_draw_measures(UIState *s){
             cpu /= num_cpu;
           }
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%d%%", cpu);
+          snprintf(val, sizeof(val), "%d%%", int(cpu));
           snprintf(name, sizeof(name), "CPU PERC");}
           break;
           
@@ -623,47 +623,50 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::GPS_ACCURACY:
           {
           auto data = sm["ubloxGnss"].getUbloxGnss();
+          int satelliteCount;
+          float gpsAccuracyUblox;
           if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
-            scene.satelliteCount = data.getMeasurementReport().getNumMeas();
+            satelliteCount = data.getMeasurementReport().getNumMeas();
           }
           auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
-          scene.gpsAccuracyUblox = data2.getAccuracy();
+          gpsAccuracyUblox = data2.getAccuracy();
 
           snprintf(name, sizeof(name), "GPS PREC");
-          if (scene.gpsAccuracyUblox != 0.00) {
+          if (gpsAccuracyUblox != 0.00) {
             //show red/orange if gps accuracy is low
-            if(scene.gpsAccuracyUblox > 0.85) {
+            if(gpsAccuracyUblox > 0.85) {
                val_color = nvgRGBA(255, 188, 3, 200);
             }
-            if(scene.gpsAccuracyUblox > 1.3) {
+            if(gpsAccuracyUblox > 1.3) {
                val_color = nvgRGBA(255, 0, 0, 200);
             }
             // gps accuracy is always in meters
-            if(scene.gpsAccuracyUblox > 99 || scene.gpsAccuracyUblox == 0) {
+            if(gpsAccuracyUblox > 99 || gpsAccuracyUblox == 0) {
                snprintf(val, sizeof(val), "None");
-            }else if(scene.gpsAccuracyUblox > 9.99) {
-              snprintf(val, sizeof(val), "%.1f", scene.gpsAccuracyUblox);
+            }else if(gpsAccuracyUblox > 9.99) {
+              snprintf(val, sizeof(val), "%.1f", gpsAccuracyUblox);
             }
             else {
-              snprintf(val, sizeof(val), "%.2f", scene.gpsAccuracyUblox);
+              snprintf(val, sizeof(val), "%.2f", gpsAccuracyUblox);
             }
-            snprintf(unit, sizeof(unit), "%d", scene.satelliteCount);
+            snprintf(unit, sizeof(unit), "%d", satelliteCount);
           }}
           break;
 
         case UIMeasure::ALTITUDE:
           {
           auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
-          scene.altitudeUblox = data2.getAltitude();
+          float altitudeUblox = data2.getAltitude();
+          float gpsAccuracyUblox = data2.getAccuracy();
           snprintf(name, sizeof(name), "ALTITUDE");
-          if (scene.gpsAccuracyUblox != 0.00) {
+          if (gpsAccuracyUblox != 0.00) {
             float tmp_val;
             if (s->is_metric) {
-              tmp_val = scene.altitudeUblox;
-              snprintf(val, sizeof(val), "%.0f", scene.altitudeUblox);
+              tmp_val = altitudeUblox;
+              snprintf(val, sizeof(val), "%.0f", altitudeUblox);
               snprintf(unit, sizeof(unit), "m");
             } else {
-              tmp_val = scene.altitudeUblox * 3.2808399;
+              tmp_val = altitudeUblox * 3.2808399;
               snprintf(val, sizeof(val), "%.0f", tmp_val);
               snprintf(unit, sizeof(unit), "ft");
             }
@@ -698,7 +701,7 @@ static void ui_draw_measures(UIState *s){
         case UIMeasure::VISION_CURLATACCEL:
           {
           snprintf(name, sizeof(name), "V:LAT ACC");
-          snprintf(val, sizeof(val), "%.1f", sm["longitudinalPlan"].getLongitudinalPlan().getVisionCurrentLateralAcceleration(););
+          snprintf(val, sizeof(val), "%.1f", sm["longitudinalPlan"].getLongitudinalPlan().getVisionCurrentLateralAcceleration());
           snprintf(unit, sizeof(unit), "m/s²");
           break;}
         
@@ -1077,9 +1080,10 @@ static void ui_draw_measures(UIState *s){
         
         case UIMeasure::PERCENT_GRADE:
           {
+          auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
+          float altitudeUblox = data2.getAltitude();
+          float gpsAccuracyUblox = data2.getAccuracy();
           if (scene.car_state.getVEgo() > 0.0){
-            auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
-            scene.altitudeUblox = data2.getAltitude();
             scene.percentGradeCurDist += scene.car_state.getVEgo() * (t - scene.percentGradeLastTime);
             if (scene.percentGradeCurDist > scene.percentGradeLenStep){ // record position/elevation at even length intervals
               float prevDist = scene.percentGradePositions[scene.percentGradeRollingIter];
@@ -1102,7 +1106,7 @@ static void ui_draw_measures(UIState *s){
                 }
                 scene.percentGradeRollingIter = 0;
               }
-              scene.percentGradeAltitudes[scene.percentGradeRollingIter] = scene.altitudeUblox;
+              scene.percentGradeAltitudes[scene.percentGradeRollingIter] = altitudeUblox;
               scene.percentGradePositions[scene.percentGradeRollingIter] = prevDist + scene.percentGradeCurDist;
               if (scene.percentGradeIterRolled){
                 float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
@@ -1121,7 +1125,7 @@ static void ui_draw_measures(UIState *s){
           scene.percentGradeLastTime = t;
 
           snprintf(name, sizeof(name), "GRADE (GPS)");
-          if (scene.percentGradeIterRolled && scene.percentGradePositions[scene.percentGradeRollingIter] >= scene.percentGradeMinDist && scene.gpsAccuracyUblox != 0.00){
+          if (scene.percentGradeIterRolled && scene.percentGradePositions[scene.percentGradeRollingIter] >= scene.percentGradeMinDist && gpsAccuracyUblox != 0.00){
             g = 255;
             b = 255;
             p = 0.125 * (scene.percentGrade > 0 ? scene.percentGrade : -scene.percentGrade); // red by 8% grade
