@@ -131,6 +131,7 @@ typedef struct {
 typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   STEERING_ANGLE = 0,
   DESIRED_STEERING_ANGLE,
+  STEERING_ANGLE_ERROR,
   STEERING_TORQUE_EPS,
   ENGINE_RPM,
   ENGINE_RPM_TEMPC,
@@ -228,8 +229,7 @@ typedef struct UIScene {
   Rect speed_rect;
   
   // actual measures
-  float angleSteers;
-  float angleSteersDes;
+  float angleSteers, angleSteersDes, angleSteersErr;
   float lateralCorrection;
   int engineRPM;
   bool steerOverride;

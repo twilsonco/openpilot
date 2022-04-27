@@ -949,7 +949,12 @@ static void ui_draw_measures(UIState *s){
           b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
           val_color = nvgRGBA(255, g, b, 200);
           // steering is in degrees
-          snprintf(val, sizeof(val), "%.0f%s", scene.angleSteers, deg);
+          if (scene.angleSteers < 10.){
+            snprintf(val, sizeof(val), "%.1f%s", scene.angleSteers, deg);
+          }
+          else{
+            snprintf(val, sizeof(val), "%.0f%s", scene.angleSteers, deg);
+          }
           }
           break;
 
@@ -965,7 +970,7 @@ static void ui_draw_measures(UIState *s){
           g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
           b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
           val_color = nvgRGBA(255, g, b, 200);
-          if (scene.controls_state.getEnabled()) {
+          if (scene.controls_state.getEnabled() && !(scene.onePedalModeActive || scene.disableDisengageOnGasEnabled)) {
             // steering is in degrees
             if (scene.angleSteers < 10. && scene.angleSteersDes < 10.){
               snprintf(val, sizeof(val), "%.1f%s:%.1f%s", scene.angleSteers, deg, scene.angleSteersDes, deg);
@@ -975,7 +980,39 @@ static void ui_draw_measures(UIState *s){
             }
             val_font_size += 12;
           }else{
-            snprintf(val, sizeof(val), "%.0f%s", scene.angleSteers, deg);
+            if (scene.angleSteers < 10.){
+              snprintf(val, sizeof(val), "%.1f%s", scene.angleSteers, deg);
+            }
+            else{
+              snprintf(val, sizeof(val), "%.0f%s", scene.angleSteers, deg);
+            }
+          }
+          }
+          break;
+
+        case UIMeasure::STEERING_ANGLE_ERROR: 
+          {
+          snprintf(name, sizeof(name), "STR. ERR.");
+          float angleSteers = scene.angleSteersErr > 0. ? scene.angleSteersErr : -scene.angleSteersErr;
+          if (scene.controls_state.getEnabled() && !(scene.onePedalModeActive || scene.disableDisengageOnGasEnabled)) {
+            g = 255;
+            b = 255;
+            p = 0.2 * angleSteers;
+            g -= int(0.5 * p * 255.);
+            b -= int(p * 255.);
+            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+            val_color = nvgRGBA(255, g, b, 200);
+            // steering is in degrees
+            if (angleSteers < 10.){
+              snprintf(val, sizeof(val), "%.1f%s", angleSteers, deg);
+            }
+            else{
+              snprintf(val, sizeof(val), "%.0f%s", angleSteers, deg);
+            }
+            val_font_size += 12;
+          }else{
+            snprintf(val, sizeof(val), "-");
           }
           }
           break;
