@@ -924,7 +924,12 @@ static void ui_draw_measures(UIState *s){
           val_color = nvgRGBA(255, g, b, 200);
           if (scene.controls_state.getEnabled()) {
             // steering is in degrees
-            snprintf(val, sizeof(val), "%.0f%s:%.0f%s", scene.angleSteers, deg, scene.angleSteersDes, deg);
+            if (scene.angleSteers < 10. && scene.angleSteersDes < 10.){
+              snprintf(val, sizeof(val), "%.1f%s:%.1f%s", scene.angleSteers, deg, scene.angleSteersDes, deg);
+            }
+            else{
+              snprintf(val, sizeof(val), "%.0f%s:%.0f%s", scene.angleSteers, deg, scene.angleSteersDes, deg);
+            }
             val_font_size += 12;
           }else{
             snprintf(val, sizeof(val), "%.0f%s", scene.angleSteers, deg);
