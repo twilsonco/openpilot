@@ -381,17 +381,6 @@ static void update_state(UIState *s) {
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
   if (sm.updated("deviceState")) {
     scene.deviceState = sm["deviceState"].getDeviceState();
-    auto cpus = scene.deviceState.getCpuUsagePercent();
-    float cpu = 0.;
-    int num_cpu = 0;
-    for (auto c : cpus){
-      cpu += c;
-      num_cpu++;
-    }
-    if (num_cpu > 1){
-      cpu /= num_cpu;
-    }
-    scene.cpuPerc = cpu;
   }
   if (sm.updated("liveLocationKalman")) {
     scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();
