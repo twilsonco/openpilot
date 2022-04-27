@@ -231,15 +231,8 @@ typedef struct UIScene {
   float angleSteers;
   float angleSteersDes;
   float lateralCorrection;
-  float gpsAccuracyUblox;
-  float altitudeUblox = 0.;
   int engineRPM;
   bool steerOverride;
-  float steeringTorqueEps;
-  float aEgo;
-  float latAccel = 0.;
-  float vision_cur_lat_accel, vision_max_v_cur_curv, vision_max_pred_lat_accel;
-  int cpuPerc;
   int thermalStatus;
   int percentGradeRollingIter = 0, percentGradeNumSamples = 10;
   float percentGradeAltitudes[10], percentGradePositions[10], percentGrades[10], percentGradeCurDist = 0., percentGradeLenStep = 5., percentGradeLastTime = 0., percentGrade = 0., percentGradeMinDist = 200.;

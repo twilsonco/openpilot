@@ -404,6 +404,7 @@ NVGcolor color_from_thermal_status(int thermalStatus){
 
 static void ui_draw_measures(UIState *s){
   if (s->scene.measure_cur_num_slots){
+    SubMaster &sm = *(s->sm);
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
     int center_x = s->fb_w - face_wheel_radius - bdr_s * 2;
     const int brake_y = s->fb_h - footer_h / 2;
@@ -475,9 +476,19 @@ static void ui_draw_measures(UIState *s){
 
         case UIMeasure::CPU_TEMP_AND_PERCENTF: 
           {
+          auto cpus = scene.deviceState.getCpuUsagePercent();
+          float cpu = 0.;
+          int num_cpu = 0;
+          for (auto c : cpus){
+            cpu += c;
+            num_cpu++;
+          }
+          if (num_cpu > 1){
+            cpu /= num_cpu;
+          }
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
           snprintf(val, sizeof(val), "%.0f%sF", scene.deviceState.getCpuTempC()[0] * 1.8 + 32., deg);
-          snprintf(unit, sizeof(unit), "%d%%", scene.cpuPerc);
+          snprintf(unit, sizeof(unit), "%d%%", cpu);
           snprintf(name, sizeof(name), "CPU");}
           break;
         
@@ -507,9 +518,19 @@ static void ui_draw_measures(UIState *s){
           
         case UIMeasure::CPU_TEMP_AND_PERCENTC: 
           {
+          auto cpus = scene.deviceState.getCpuUsagePercent();
+          float cpu = 0.;
+          int num_cpu = 0;
+          for (auto c : cpus){
+            cpu += c;
+            num_cpu++;
+          }
+          if (num_cpu > 1){
+            cpu /= num_cpu;
+          }
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
             snprintf(val, sizeof(val), "%.0f%sC", scene.deviceState.getCpuTempC()[0], deg);
-          snprintf(unit, sizeof(unit), "%d%%", scene.cpuPerc);
+          snprintf(unit, sizeof(unit), "%d%%", cpu);
           snprintf(name, sizeof(name), "CPU");}
           break;
         
@@ -539,8 +560,18 @@ static void ui_draw_measures(UIState *s){
         
         case UIMeasure::CPU_PERCENT: 
           {
+          auto cpus = scene.deviceState.getCpuUsagePercent();
+          float cpu = 0.;
+          int num_cpu = 0;
+          for (auto c : cpus){
+            cpu += c;
+            num_cpu++;
+          }
+          if (num_cpu > 1){
+            cpu /= num_cpu;
+          }
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%d%%", scene.cpuPerc);
+          snprintf(val, sizeof(val), "%d%%", cpu);
           snprintf(name, sizeof(name), "CPU PERC");}
           break;
           
@@ -591,6 +622,13 @@ static void ui_draw_measures(UIState *s){
 
         case UIMeasure::GPS_ACCURACY:
           {
+          auto data = sm["ubloxGnss"].getUbloxGnss();
+          if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
+            scene.satelliteCount = data.getMeasurementReport().getNumMeas();
+          }
+          auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
+          scene.gpsAccuracyUblox = data2.getAccuracy();
+
           snprintf(name, sizeof(name), "GPS PREC");
           if (scene.gpsAccuracyUblox != 0.00) {
             //show red/orange if gps accuracy is low
@@ -615,6 +653,8 @@ static void ui_draw_measures(UIState *s){
 
         case UIMeasure::ALTITUDE:
           {
+          auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
+          scene.altitudeUblox = data2.getAltitude();
           snprintf(name, sizeof(name), "ALTITUDE");
           if (scene.gpsAccuracyUblox != 0.00) {
             float tmp_val;
@@ -637,42 +677,42 @@ static void ui_draw_measures(UIState *s){
           {
           snprintf(name, sizeof(name), "EPS TRQ");
           //TODO: Add orange/red color depending on torque intensity. <1x limit = white, btwn 1x-2x limit = orange, >2x limit = red
-          snprintf(val, sizeof(val), "%.1f", scene.steeringTorqueEps);
+          snprintf(val, sizeof(val), "%.1f", scene.car_state.getSteeringTorqueEps());
           snprintf(unit, sizeof(unit), "Nm");
           break;}
 
         case UIMeasure::ACCELERATION:
           {
           snprintf(name, sizeof(name), "ACCEL");
-          snprintf(val, sizeof(val), "%.1f", scene.aEgo);
+          snprintf(val, sizeof(val), "%.1f", scene.car_state.getAEgo());
           snprintf(unit, sizeof(unit), "m/s²");
           break;}
         
         case UIMeasure::LAT_ACCEL:
           {
           snprintf(name, sizeof(name), "LAT ACC");
-          snprintf(val, sizeof(val), "%.1f", scene.latAccel);
+          snprintf(val, sizeof(val), "%.1f", sm["liveLocationKalman"].getLiveLocationKalman().getAccelerationCalibrated().getValue()[1]);
           snprintf(unit, sizeof(unit), "m/s²");
           break;}
         
         case UIMeasure::VISION_CURLATACCEL:
           {
           snprintf(name, sizeof(name), "V:LAT ACC");
-          snprintf(val, sizeof(val), "%.1f", scene.vision_cur_lat_accel);
+          snprintf(val, sizeof(val), "%.1f", sm["longitudinalPlan"].getLongitudinalPlan().getVisionCurrentLateralAcceleration(););
           snprintf(unit, sizeof(unit), "m/s²");
           break;}
         
         case UIMeasure::VISION_MAXVFORCURCURV:
           {
           snprintf(name, sizeof(name), "V:MX CUR V");
-          snprintf(val, sizeof(val), "%.1f", scene.vision_max_v_cur_curv * 2.24);
+          snprintf(val, sizeof(val), "%.1f", sm["longitudinalPlan"].getLongitudinalPlan().getVisionMaxVForCurrentCurvature() * 2.24);
           snprintf(unit, sizeof(unit), "mph");
           break;}
         
         case UIMeasure::VISION_MAXPREDLATACCEL:
           {
           snprintf(name, sizeof(name), "V:MX PLA");
-          snprintf(val, sizeof(val), "%.1f", scene.vision_max_pred_lat_accel);
+          snprintf(val, sizeof(val), "%.1f", sm["longitudinalPlan"].getLongitudinalPlan().getVisionMaxPredictedLateralAcceleration());
           snprintf(unit, sizeof(unit), "m/s²");
           break;}
         
@@ -1037,6 +1077,49 @@ static void ui_draw_measures(UIState *s){
         
         case UIMeasure::PERCENT_GRADE:
           {
+          if (scene.car_state.getVEgo() > 0.0){
+            auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
+            scene.altitudeUblox = data2.getAltitude();
+            scene.percentGradeCurDist += scene.car_state.getVEgo() * (t - scene.percentGradeLastTime);
+            if (scene.percentGradeCurDist > scene.percentGradeLenStep){ // record position/elevation at even length intervals
+              float prevDist = scene.percentGradePositions[scene.percentGradeRollingIter];
+              scene.percentGradeRollingIter++;
+              if (scene.percentGradeRollingIter >= scene.percentGradeNumSamples){
+                if (!scene.percentGradeIterRolled){
+                  scene.percentGradeIterRolled = true;
+                  // Calculate initial mean percent grade
+                  float u = 0.;
+                  for (int i = 0; i < scene.percentGradeNumSamples; ++i){
+                    float rise = scene.percentGradeAltitudes[i] - scene.percentGradeAltitudes[(i+1)%scene.percentGradeNumSamples];
+                    float run = scene.percentGradePositions[i] - scene.percentGradePositions[(i+1)%scene.percentGradeNumSamples];
+                    if (run != 0.){
+                      scene.percentGrades[i] = rise/run * 100.;
+                      u += scene.percentGrades[i];
+                    }
+                  }
+                  u /= float(scene.percentGradeNumSamples);
+                  scene.percentGrade = u;
+                }
+                scene.percentGradeRollingIter = 0;
+              }
+              scene.percentGradeAltitudes[scene.percentGradeRollingIter] = scene.altitudeUblox;
+              scene.percentGradePositions[scene.percentGradeRollingIter] = prevDist + scene.percentGradeCurDist;
+              if (scene.percentGradeIterRolled){
+                float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
+                float run = scene.percentGradePositions[scene.percentGradeRollingIter] - scene.percentGradePositions[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
+                if (run != 0.){
+                  // update rolling average
+                  float newGrade = rise/run * 100.;
+                  scene.percentGrade -= scene.percentGrades[scene.percentGradeRollingIter] / float(scene.percentGradeNumSamples);
+                  scene.percentGrade += newGrade / float(scene.percentGradeNumSamples);
+                  scene.percentGrades[scene.percentGradeRollingIter] = newGrade;
+                }
+              }
+              scene.percentGradeCurDist = 0.;
+            }
+          }
+          scene.percentGradeLastTime = t;
+
           snprintf(name, sizeof(name), "GRADE (GPS)");
           if (scene.percentGradeIterRolled && scene.percentGradePositions[scene.percentGradeRollingIter] >= scene.percentGradeMinDist && scene.gpsAccuracyUblox != 0.00){
             g = 255;
@@ -1056,6 +1139,7 @@ static void ui_draw_measures(UIState *s){
         
         case UIMeasure::PERCENT_GRADE_DEVICE:
           {
+          scene.percentGradeDevice = tan(scene.car_state.getPitch()) * 100.;
           snprintf(name, sizeof(name), "GRADE");
           g = 255;
           b = 255;

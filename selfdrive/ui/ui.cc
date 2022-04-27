@@ -298,57 +298,15 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("carState")){
     scene.car_state = sm["carState"].getCarState();
-    
-    scene.percentGradeDevice = tan(scene.car_state.getPitch()) * 100.;
   
     scene.brake_percent = scene.car_state.getFrictionBrakePercent();
     
     scene.steerOverride= scene.car_state.getSteeringPressed();
     scene.angleSteers = scene.car_state.getSteeringAngleDeg();
     scene.engineRPM = static_cast<int>((scene.car_state.getEngineRPM() / (10.0)) + 0.5) * 10;
-    scene.aEgo = scene.car_state.getAEgo();
     scene.steeringTorqueEps = scene.car_state.getSteeringTorqueEps();
     
-    if (scene.car_state.getVEgo() > 0.0){
-      scene.percentGradeCurDist += scene.car_state.getVEgo() * (t - scene.percentGradeLastTime);
-      if (scene.percentGradeCurDist > scene.percentGradeLenStep){ // record position/elevation at even length intervals
-        float prevDist = scene.percentGradePositions[scene.percentGradeRollingIter];
-        scene.percentGradeRollingIter++;
-        if (scene.percentGradeRollingIter >= scene.percentGradeNumSamples){
-          if (!scene.percentGradeIterRolled){
-            scene.percentGradeIterRolled = true;
-            // Calculate initial mean percent grade
-            float u = 0.;
-            for (int i = 0; i < scene.percentGradeNumSamples; ++i){
-              float rise = scene.percentGradeAltitudes[i] - scene.percentGradeAltitudes[(i+1)%scene.percentGradeNumSamples];
-              float run = scene.percentGradePositions[i] - scene.percentGradePositions[(i+1)%scene.percentGradeNumSamples];
-              if (run != 0.){
-                scene.percentGrades[i] = rise/run * 100.;
-                u += scene.percentGrades[i];
-              }
-            }
-            u /= float(scene.percentGradeNumSamples);
-            scene.percentGrade = u;
-          }
-          scene.percentGradeRollingIter = 0;
-        }
-        scene.percentGradeAltitudes[scene.percentGradeRollingIter] = scene.altitudeUblox;
-        scene.percentGradePositions[scene.percentGradeRollingIter] = prevDist + scene.percentGradeCurDist;
-        if (scene.percentGradeIterRolled){
-          float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
-          float run = scene.percentGradePositions[scene.percentGradeRollingIter] - scene.percentGradePositions[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
-          if (run != 0.){
-            // update rolling average
-            float newGrade = rise/run * 100.;
-            scene.percentGrade -= scene.percentGrades[scene.percentGradeRollingIter] / float(scene.percentGradeNumSamples);
-            scene.percentGrade += newGrade / float(scene.percentGradeNumSamples);
-            scene.percentGrades[scene.percentGradeRollingIter] = newGrade;
-          }
-        }
-        scene.percentGradeCurDist = 0.;
-      }
-    }
-    scene.percentGradeLastTime = t;
+    
   }
   if (sm.updated("radarState")) {
     auto radar_state = sm["radarState"].getRadarState();
@@ -435,19 +393,8 @@ static void update_state(UIState *s) {
     }
     scene.cpuPerc = cpu;
   }
-  if (sm.updated("ubloxGnss")) {
-    auto data = sm["ubloxGnss"].getUbloxGnss();
-    if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
-      scene.satelliteCount = data.getMeasurementReport().getNumMeas();
-      scene.satelliteCount = scene.satelliteCount;
-    }
-    auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
-    scene.gpsAccuracyUblox = data2.getAccuracy();
-    scene.altitudeUblox = data2.getAltitude();
-  }
   if (sm.updated("liveLocationKalman")) {
     scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();
-    scene.latAccel = sm["liveLocationKalman"].getLiveLocationKalman().getAccelerationCalibrated().getValue()[1];
   }
   if (sm.updated("lateralPlan")) {
     scene.lateral_plan = sm["lateralPlan"].getLateralPlan();
@@ -467,9 +414,6 @@ static void update_state(UIState *s) {
     scene.followAccelCost = data.getLeadAccelCost();
     scene.stoppingDistance = data.getStoppingDistance();
     scene.dynamic_follow_level = data.getDynamicFollowLevel();
-    scene.vision_cur_lat_accel = data.getVisionCurrentLateralAcceleration();
-    scene.vision_max_v_cur_curv = data.getVisionMaxVForCurrentCurvature();
-    scene.vision_max_pred_lat_accel = data.getVisionMaxPredictedLateralAcceleration();
   }
   
   if (scene.brake_percent > 50){
