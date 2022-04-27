@@ -1084,7 +1084,7 @@ static void ui_draw_measures(UIState *s){
           float altitudeUblox = data2.getAltitude();
           float gpsAccuracyUblox = data2.getAccuracy();
           if (scene.car_state.getVEgo() > 0.0){
-            scene.percentGradeCurDist += scene.car_state.getVEgo() * (t - scene.percentGradeLastTime);
+            scene.percentGradeCurDist += scene.car_state.getVEgo() * (scene.lastTime - scene.percentGradeLastTime);
             if (scene.percentGradeCurDist > scene.percentGradeLenStep){ // record position/elevation at even length intervals
               float prevDist = scene.percentGradePositions[scene.percentGradeRollingIter];
               scene.percentGradeRollingIter++;
@@ -1122,7 +1122,7 @@ static void ui_draw_measures(UIState *s){
               scene.percentGradeCurDist = 0.;
             }
           }
-          scene.percentGradeLastTime = t;
+          scene.percentGradeLastTime = scene.lastTime;
 
           snprintf(name, sizeof(name), "GRADE (GPS)");
           if (scene.percentGradeIterRolled && scene.percentGradePositions[scene.percentGradeRollingIter] >= scene.percentGradeMinDist && gpsAccuracyUblox != 0.00){
