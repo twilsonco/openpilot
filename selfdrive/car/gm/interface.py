@@ -134,15 +134,15 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
         ret.lateralTuning.torque.kp = 2.0 / max_torque
-        ret.lateralTuning.torque.ki = 1.0 / max_torque
-        ret.lateralTuning.torque.kd = 5.0 / max_torque
+        ret.lateralTuning.torque.ki = 0.4 / max_torque
+        ret.lateralTuning.torque.kd = 3.0 / max_torque
         ret.lateralTuning.torque.kf = 1.3 / max_torque
         ret.lateralTuning.torque.friction = 0.02
       else:
         ret.lateralTuning.pid.kpBP = [0., 40.]
         ret.lateralTuning.pid.kpV = [0., .16]
         ret.lateralTuning.pid.kiBP = [0.]
-        ret.lateralTuning.pid.kiV = [.028]
+        ret.lateralTuning.pid.kiV = [.025]
         ret.lateralTuning.pid.kdBP = [0.]
         ret.lateralTuning.pid.kdV = [.6]
         ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
