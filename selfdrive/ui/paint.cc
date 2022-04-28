@@ -579,8 +579,16 @@ static void ui_draw_measures(UIState *s){
           {
           val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
           int fs = scene.deviceState.getFanSpeedPercentDesired();
-          snprintf(val, sizeof(val), "%d%%", fs);
-          snprintf(name, sizeof(name), "FAN");}
+          if (fs > 100){
+            fs = scene.fanspeed_rpm;
+            snprintf(unit, sizeof(unit), "RPM");
+            snprintf(val, sizeof(val), "%d", fs);
+          }
+          else{
+            snprintf(val, sizeof(val), "%d%%", fs);
+          }
+          snprintf(name, sizeof(name), "FAN");
+          }
           break;
         case UIMeasure::FANSPEED_RPM: 
           {
@@ -970,7 +978,7 @@ static void ui_draw_measures(UIState *s){
           g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
           b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
           val_color = nvgRGBA(255, g, b, 200);
-          if (scene.controls_state.getEnabled() && !(scene.onePedalModeActive || scene.disableDisengageOnGasEnabled)) {
+          if (scene.controls_state.getEnabled()) {
             // steering is in degrees
             if (scene.angleSteers < 10. && scene.angleSteersDes < 10.){
               snprintf(val, sizeof(val), "%.1f%s:%.1f%s", scene.angleSteers, deg, scene.angleSteersDes, deg);
@@ -994,7 +1002,7 @@ static void ui_draw_measures(UIState *s){
           {
           snprintf(name, sizeof(name), "STR. ERR.");
           float angleSteers = scene.angleSteersErr > 0. ? scene.angleSteersErr : -scene.angleSteersErr;
-          if (scene.controls_state.getEnabled() && !(scene.onePedalModeActive || scene.disableDisengageOnGasEnabled)) {
+          if (scene.controls_state.getEnabled()) {
             g = 255;
             b = 255;
             p = 0.2 * angleSteers;
@@ -1005,10 +1013,10 @@ static void ui_draw_measures(UIState *s){
             val_color = nvgRGBA(255, g, b, 200);
             // steering is in degrees
             if (angleSteers < 10.){
-              snprintf(val, sizeof(val), "%.1f%s", angleSteers, deg);
+              snprintf(val, sizeof(val), "%.1f%s", scene.angleSteersErr, deg);
             }
             else{
-              snprintf(val, sizeof(val), "%.0f%s", angleSteers, deg);
+              snprintf(val, sizeof(val), "%.0f%s", scene.angleSteersErr, deg);
             }
             val_font_size += 12;
           }else{

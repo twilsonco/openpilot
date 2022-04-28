@@ -347,6 +347,7 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
+    scene.is_using_torque_control = (sm["carParams"].getCarParams().getLateralTuning().which() == cereal::CarParams::LateralTuning::TORQUE);
   }
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
@@ -500,8 +501,6 @@ static void update_status(UIState *s) {
     if (s->scene.started) {
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
-
-      s->scene.is_using_torque_control = Params().getBool("EnableTorqueControl");
 
       if (Params().getBool("LowOverheadMode") && s->scene.screen_dim_mode_cur == s->scene.screen_dim_mode_max){
         s->scene.screen_dim_mode_cur -= 1;
