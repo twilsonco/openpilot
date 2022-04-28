@@ -1,4 +1,4 @@
-Version tw-0.8.12-1_tw-dev (2022-04-26)
+Version tw-0.8.12-1_twd (2022-04-27)
 ========================
  * NEW: [optional w/ toggle] Torque-based steering control for Volt and Acadia
  * IMPROVED: [Volt] inproved (non-torque-based) steering performance too!
