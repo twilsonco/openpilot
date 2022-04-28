@@ -77,7 +77,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   
   toggles.append(new ParamControl("EnableTorqueControl",
                                   "Enable \"torque\" steering control",
-                                  "Use the newer torque-based steering control that steers by achieving a target amount of lateral acceleration rather than achieving a target steering angle. Torque tune is only available in the Volt.",
+                                  "(Restart car to take effect) Use the newer torque-based steering control that steers by achieving a target amount of lateral acceleration rather than achieving a target steering angle. Torque tune is only available in the Volt.",
                                   "../assets/offroad/icon_openpilot.png",
                                   this));
   
