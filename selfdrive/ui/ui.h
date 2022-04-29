@@ -250,6 +250,7 @@ typedef struct UIScene {
   float lead_d_rel, lead_v_rel, lead_v;
 
   // gps
+  float altitudeUblox, gpsAccuracyUblox = 0.;
   int satelliteCount;
   bool gpsOK;
   

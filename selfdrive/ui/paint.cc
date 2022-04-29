@@ -630,51 +630,52 @@ static void ui_draw_measures(UIState *s){
 
         case UIMeasure::GPS_ACCURACY:
           {
-          auto data = sm["ubloxGnss"].getUbloxGnss();
-          int satelliteCount;
-          float gpsAccuracyUblox;
-          if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
-            satelliteCount = data.getMeasurementReport().getNumMeas();
+          if (sm.updated("ubloxGnss")) {
+            auto data = sm["ubloxGnss"].getUbloxGnss();
+            if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
+              scene.satelliteCount = data.getMeasurementReport().getNumMeas();
+            }
+            auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
+            scene.gpsAccuracyUblox = data2.getAccuracy();
           }
-          auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
-          gpsAccuracyUblox = data2.getAccuracy();
-
           snprintf(name, sizeof(name), "GPS PREC");
-          if (gpsAccuracyUblox != 0.00) {
+          if (scene.gpsAccuracyUblox != 0.00) {
             //show red/orange if gps accuracy is low
-            if(gpsAccuracyUblox > 0.85) {
+            if(scene.gpsAccuracyUblox > 0.85) {
                val_color = nvgRGBA(255, 188, 3, 200);
             }
-            if(gpsAccuracyUblox > 1.3) {
+            if(scene.gpsAccuracyUblox > 1.3) {
                val_color = nvgRGBA(255, 0, 0, 200);
             }
             // gps accuracy is always in meters
-            if(gpsAccuracyUblox > 99 || gpsAccuracyUblox == 0) {
+            if(scene.gpsAccuracyUblox > 99 || scene.gpsAccuracyUblox == 0) {
                snprintf(val, sizeof(val), "None");
-            }else if(gpsAccuracyUblox > 9.99) {
-              snprintf(val, sizeof(val), "%.1f", gpsAccuracyUblox);
+            }else if(scene.gpsAccuracyUblox > 9.99) {
+              snprintf(val, sizeof(val), "%.1f", scene.gpsAccuracyUblox);
             }
             else {
-              snprintf(val, sizeof(val), "%.2f", gpsAccuracyUblox);
+              snprintf(val, sizeof(val), "%.2f", scene.gpsAccuracyUblox);
             }
-            snprintf(unit, sizeof(unit), "%d", satelliteCount);
+            snprintf(unit, sizeof(unit), "%d", scene.satelliteCount);
           }}
           break;
 
         case UIMeasure::ALTITUDE:
           {
-          auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
-          float altitudeUblox = data2.getAltitude();
-          float gpsAccuracyUblox = data2.getAccuracy();
+          if (sm.updated("gpsLocationExternal")) {
+            auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
+            scene.altitudeUblox = data2.getAltitude();
+            scene.gpsAccuracyUblox = data2.getAccuracy();
+          }
           snprintf(name, sizeof(name), "ALTITUDE");
-          if (gpsAccuracyUblox != 0.00) {
+          if (scene.gpsAccuracyUblox != 0.00) {
             float tmp_val;
             if (s->is_metric) {
-              tmp_val = altitudeUblox;
-              snprintf(val, sizeof(val), "%.0f", altitudeUblox);
+              tmp_val = scene.altitudeUblox;
+              snprintf(val, sizeof(val), "%.0f", scene.altitudeUblox);
               snprintf(unit, sizeof(unit), "m");
             } else {
-              tmp_val = altitudeUblox * 3.2808399;
+              tmp_val = scene.altitudeUblox * 3.2808399;
               snprintf(val, sizeof(val), "%.0f", tmp_val);
               snprintf(unit, sizeof(unit), "ft");
             }
