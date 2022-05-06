@@ -206,6 +206,8 @@ typedef struct UIScene {
   
   Rect wheel_touch_rect;
   bool wheel_rotates = true;
+
+  bool color_path = false;
   
   float screen_dim_modes_v[3] = {0.01, 0.5, 1.};
   int screen_dim_mode_max = 2;

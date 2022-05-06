@@ -46,6 +46,7 @@ def manager_init():
     ("TurnVisionControl", "1"),
     ("GMAutoHold", "1"),
     ("CruiseSpeedOffset", "1"),
+    ("ColorPath", "0"),
     ("StockSpeedAdjust", "1"),
     ("CustomSounds", "0"),
     ("SilentEngageDisengage", "0"),

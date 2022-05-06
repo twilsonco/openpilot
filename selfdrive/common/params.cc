@@ -141,6 +141,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"EndToEndToggle", PERSISTENT},
     {"EnableTorqueControl", PERSISTENT},
     {"CompletedTrainingVersion", PERSISTENT},
+    {"ColorPath", PERSISTENT},
     {"DisablePowerDown", PERSISTENT},
     {"DisableUpdates", PERSISTENT},
     {"DisableDisengageOnGas", PERSISTENT},

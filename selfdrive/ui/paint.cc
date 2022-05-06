@@ -247,12 +247,21 @@ static void ui_draw_vision_lane_lines(UIState *s) {
     if (steerOverride) {
       track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
         COLOR_BLACK_ALPHA(80), COLOR_BLACK_ALPHA(20));
-    } else if (!scene.lateralPlan.lanelessModeStatus) {
-      track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
-        interp_alert_color(fabs(scene.lateralCorrection), 255), 
-        interp_alert_color(fabs(scene.lateralCorrection), 50));
-    } else 
-    { // differentiate laneless mode color (Grace blue)
+    } 
+    else if (!scene.lateralPlan.lanelessModeStatus) {
+      if (scene.color_path){
+        track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
+          interp_alert_color(fabs(scene.lateralCorrection), 255), 
+          interp_alert_color(fabs(scene.lateralCorrection), 50));
+      }
+      else{
+        track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
+          interp_alert_color(0., 255), 
+          interp_alert_color(0., 50));
+      }
+    } 
+    else { // differentiate laneless mode color (Grace blue)
+      if (scene.color_path){
       int g, r = 255. * fabs(scene.lateralCorrection);
       r = CLIP(r, 0, 255);
       g = 100 + r;
@@ -260,6 +269,12 @@ static void ui_draw_vision_lane_lines(UIState *s) {
       track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
                                   nvgRGBA(r, g, 255, 250), 
                                   nvgRGBA(r, g, 255, 50));
+      }
+      else{
+        track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                  nvgRGBA(0, 100, 255, 250), 
+                                  nvgRGBA(0, 100, 255, 50));
+      }
     }
   } else {
     // Draw white vision track

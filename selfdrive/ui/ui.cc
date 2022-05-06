@@ -507,6 +507,7 @@ static void update_status(UIState *s) {
         Params().put("ScreenDimMode", std::to_string(s->scene.screen_dim_mode_cur).c_str(), 1);
       }
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
+      s->scene.color_path = Params().getBool("ColorPath");
       if (!s->scene.end_to_end){
         s->scene.laneless_btn_touch_rect = {1,1,1,1};
       }
