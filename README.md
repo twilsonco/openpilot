@@ -54,8 +54,9 @@
 
 - [x] Latest openpilot 0.8.12 lateral and 0.8.10 driver monitoring models
 - [x] [Comma3] Latest AGNOS4 OS
-- [x] [Chevy Volt 2017] Auto-resume behind stopped lead car as they pull away; a.k.a. stop and go (ported from kegman)
-- [x] [Chevy Volt] Sigmoidal steering response (thanks qadmus)
+- [x] [Volt/Acadia] Alternate lateral (steering) tunes using the new "torque" controller
+- [x] [Volt 2017] Auto-resume behind stopped lead car as they pull away; a.k.a. stop and go (ported from kegman)
+- [x] [Volt 2018] Auto-creep behind stopped lead car as they pull away (tap gas or resume button to resume)
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
 - [x] Adjustable lane position using onscreen buttons
