@@ -508,6 +508,8 @@ static void update_status(UIState *s) {
       }
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->scene.color_path = Params().getBool("ColorPath");
+      s->scene.turn_speed_control_enabled = Params().getBool("TurnSpeedControlEnabled");
+      s->scene.turn_vision_control_enabled = Params().getBool("TurnVisionControlEnabled");
       if (!s->scene.end_to_end){
         s->scene.laneless_btn_touch_rect = {1,1,1,1};
       }
