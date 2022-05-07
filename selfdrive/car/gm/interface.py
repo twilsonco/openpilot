@@ -111,11 +111,11 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.45 # Volt Gen 1, TODO corner weigh
 
       ret.lateralTuning.pid.kpBP = [0., 40.]
-      ret.lateralTuning.pid.kpV = [0.0, 0.19]
-      ret.lateralTuning.pid.kiBP = [i * CV.MPH_TO_MS for i in [0., 15., 55., 80.]]
-      ret.lateralTuning.pid.kiV = [0., .018, .012, .01]
-      ret.lateralTuning.pid.kdBP = [i * CV.MPH_TO_MS for i in [0., 35.]]
-      ret.lateralTuning.pid.kdV = [0., 0.07]
+      ret.lateralTuning.pid.kpV = [0., .16]
+      ret.lateralTuning.pid.kiBP = [0.]
+      ret.lateralTuning.pid.kiV = [.025]
+      ret.lateralTuning.pid.kdBP = [0.]
+      ret.lateralTuning.pid.kdV = [.6]
       ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
       ret.steerActuatorDelay = 0.2
       
