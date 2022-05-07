@@ -64,7 +64,7 @@ class LatControlTorque(LatControl):
                                       speed=CS.vEgo,
                                       freeze_integrator=CS.steeringRateLimited)
 
-      # record desired steering angle to the unused pid_log.error_rate
+      # record steering angle error to the unused pid_log.error_rate
       angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
       angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
       pid_log.errorRate = angle_steers_des - CS.steeringAngleDeg
