@@ -24,7 +24,11 @@
 ### Appreciate My Work?
 ------
 
-**[Buy me a beer/coffee](https://www.patreon.com/twilsonco)***
+Please show your support by contributing to the ongoing development of this project.
+
+**[Patreon (recurring contributions)](https://www.patreon.com/twilsonco)**
+
+**[PayPal (one-time contribution)](https://paypal.me/twilsonco)**
 
 # Fork Details
 ------
