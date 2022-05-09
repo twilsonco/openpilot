@@ -55,16 +55,17 @@ class RadarInterface(RadarInterfaceBase):
       return None
 
     ret = car.RadarData.new_message()
-    header = self.rcp.vl[RADAR_HEADER_MSG]
-    fault = header['FLRRSnsrBlckd'] or header['FLRRSnstvFltPrsntInt'] or \
-      header['FLRRYawRtPlsblityFlt'] or header['FLRRHWFltPrsntInt'] or \
-      header['FLRRAntTngFltPrsnt'] or header['FLRRAlgnFltPrsnt']
-    errors = []
-    if not self.rcp.can_valid:
-      errors.append("canError")
-    if fault:
-      errors.append("fault")
-    ret.errors = errors
+    if self.rcp is not None:
+      header = self.rcp.vl[RADAR_HEADER_MSG]
+      fault = header['FLRRSnsrBlckd'] or header['FLRRSnstvFltPrsntInt'] or \
+        header['FLRRYawRtPlsblityFlt'] or header['FLRRHWFltPrsntInt'] or \
+        header['FLRRAntTngFltPrsnt'] or header['FLRRAlgnFltPrsnt']
+      errors = []
+      if not self.rcp.can_valid:
+        errors.append("canError")
+      if fault:
+        errors.append("fault")
+      ret.errors = errors
 
     currentTargets = set()
     num_targets = header['FLRRNumValidTargets']
