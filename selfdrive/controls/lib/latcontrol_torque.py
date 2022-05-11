@@ -17,7 +17,7 @@ from cereal import log
 # move it at all, this is compensated for too.
 
 
-LOW_SPEED_FACTOR = 200
+LOW_SPEED_FACTOR = 300
 JERK_THRESHOLD = 0.2
 
 
