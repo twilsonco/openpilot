@@ -28,7 +28,7 @@ _A_LAT_REG_MAX = 3.3  # Maximum lateral acceleration
 
 # Lookup table for the minimum smooth deceleration during the ENTERING state
 # depending on the actual maximum absolute lateral acceleration predicted on the turn ahead.
-_ENTERING_SMOOTH_DECEL_V = [0.5, 0. -1.]  # min decel value allowed on ENTERING state
+_ENTERING_SMOOTH_DECEL_V = [0.5, 0., -1.]  # min decel value allowed on ENTERING state
 _ENTERING_SMOOTH_DECEL_BP = [0.9, 2.2, 3.7]  # absolute value of lat acc ahead
 
 # Lookup table for the acceleration for the TURNING state
@@ -268,7 +268,8 @@ class VisionTurnController():
       if self._lat_acc_overshoot_ahead:
         # when overshooting, target the acceleration needed to achieve the overshoot speed at
         # the required distance
-        a_target = min((self._v_overshoot**2 - self._v_ego**2) / (2 * self._v_overshoot_distance), a_target)
+        vf = interp(self._v_ego, _LOW_SPEED_SCALE_BP, _LOW_SPEED_SCALE_V)
+        a_target = min(((vf * self._v_overshoot)**2 - (vf * self._v_ego)**2) / (2 * self._v_overshoot_distance), a_target)
       _debug(f'TVC Entering: Overshooting: {self._lat_acc_overshoot_ahead}')
       _debug(f'    Decel: {a_target:.2f}, target v: {self.v_turn * CV.MS_TO_KPH}')
     # TURNING
