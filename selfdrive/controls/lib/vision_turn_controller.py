@@ -153,6 +153,9 @@ class VisionTurnController():
     path_poly = None
     model_data = sm['modelV2'] if sm.valid.get('modelV2', False) else None
     lat_planner_data = sm['lateralPlan'] if sm.valid.get('lateralPlan', False) else None
+    
+    # scale velocity used to determine curvature in order to provide more braking at low speed
+    vf = interp(self._v_ego, _LOW_SPEED_SCALE_BP, _LOW_SPEED_SCALE_V)
 
     # 1. When the probability of lanes is good enough, compute polynomial from lanes as they are way more stable
     # on current mode than drving path.
@@ -169,7 +172,7 @@ class VisionTurnController():
       width_pts = rll_y - lll_y
       prob_mods = []
       for t_check in [0.0, 1.5, 3.0]:
-        width_at_t = interp(t_check * (self._v_ego + 7), ll_x, width_pts)
+        width_at_t = interp(t_check * (vf * self._v_ego + 7), ll_x, width_pts)
         prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
       mod = min(prob_mods)
       l_prob *= mod
@@ -199,18 +202,15 @@ class VisionTurnController():
     current_curvature = abs(
       sm['carState'].steeringAngleDeg * CV.DEG_TO_RAD / (self._CP.steerRatio * self._CP.wheelbase))
 
-    self._current_lat_acc = current_curvature * self._v_ego**2
+    self._current_lat_acc = current_curvature * (vf * self._v_ego)**2
     self._max_v_for_current_curvature = math.sqrt(_A_LAT_REG_MAX / current_curvature) if current_curvature > 0 \
       else V_CRUISE_MAX * CV.KPH_TO_MS
     
-    # scale velocity used to determine curvature in order to provide more braking at low speed
-    vf = interp(self._v_ego, _LOW_SPEED_SCALE_BP, _LOW_SPEED_SCALE_V)
-    
     pred_curvatures = eval_curvature(path_poly, _EVAL_RANGE)
     max_pred_curvature = np.amax(pred_curvatures)
-    self._max_pred_lat_acc = (self._v_ego*vf)**2 * max_pred_curvature
+    self._max_pred_lat_acc = (vf * self._v_ego)**2 * max_pred_curvature
 
-    max_curvature_for_vego = _A_LAT_REG_MAX / max(self._v_ego*vf, 0.1)**2
+    max_curvature_for_vego = _A_LAT_REG_MAX / max(vf * self._v_ego, 0.1)**2
     lat_acc_overshoot_idxs = np.nonzero(pred_curvatures >= max_curvature_for_vego)[0]
     self._lat_acc_overshoot_ahead = len(lat_acc_overshoot_idxs) > 0
 
