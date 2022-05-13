@@ -11,10 +11,10 @@ from tools.tuning.lat_settings import *
 
 # For comparison with previous best
 def old_feedforward(speed, angle):
-#   return 0.00004 * (speed ** 2) * angle
-  a = angle * 0.02904609
-  sigmoid = a / (1 + np.fabs(a))
-  return 0.10006696 * sigmoid * (speed + 3.12485927)
+  return 0.00006 * (speed ** 2) * angle
+  # a = angle * 0.02904609
+  # sigmoid = a / (1 + np.fabs(a))
+  # return 0.10006696 * sigmoid * (speed + 3.12485927)
 
 def new_feedforward(speed, angle):
   return feedforward(speed, angle, ANGLE, SIGMOID_SPEED, SIGMOID, SPEED)
@@ -30,9 +30,12 @@ def _fit_kf(x_input, angle_gain, sigmoid_speed, sigmoid, speed_gain):
   return feedforward(speed, angle, angle_gain, sigmoid_speed, sigmoid, speed_gain)
 
 def fit(speed, angle, steer):
-  # print(f'speed: {describe(speed)}')
-  # print(f'angle: {describe(angle)}')
-  # print(f'steer: {describe(steer)}')
+  print(f'speed: {len(speed) = }')
+  print(f'angle: {len(angle) = }')
+  print(f'steer: {len(steer) = }')
+  print(f'speed: {describe(speed)}')
+  print(f'angle: {describe(angle)}')
+  print(f'steer: {describe(steer)}')
 
   global ANGLE, SIGMOID_SPEED, SIGMOID, SPEED
   params, _ = curve_fit(  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking

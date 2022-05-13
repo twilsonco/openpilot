@@ -26,62 +26,63 @@ from tools.tuning.lat_settings import *
 
 # Reduce samples using binning and outlier rejection
 def regularize(speed, angle, steer):
-    # Bin by rounding
-    speed_bin = np.around(speed*2)/2
-    angle_bin = np.around(angle*2)/2
+  print("Regularizing...")
+  # Bin by rounding
+  speed_bin = np.around(speed*2)/2
+  angle_bin = np.around(angle*2)/2
 
-    i = 0
-    std = []
-    count = []
-    while i != len(speed):
-        # Select bins by mask
-        mask = (speed_bin == speed_bin[i]) & (angle_bin == angle_bin[i])
+  i = 0
+  std = []
+  count = []
+  while i != len(speed):
+      # Select bins by mask
+      mask = (speed_bin == speed_bin[i]) & (angle_bin == angle_bin[i])
 
-        # Exclude outliers
-        sigma = np.std(steer[mask])
-        mean = np.mean(steer[mask])
-        inliers = mask & (np.fabs(steer - mean) <= BIN_SIGMA * sigma)
+      # Exclude outliers
+      sigma = np.std(steer[mask])
+      mean = np.mean(steer[mask])
+      inliers = mask & (np.fabs(steer - mean) <= BIN_SIGMA * sigma)
 
-        c = inliers.sum()
-        s = np.std(steer[inliers])
-        # Use this bin
-        if c > BIN_COUNT and s < BIN_STD:
-          speed[i] = np.mean(speed[inliers])
-          angle[i] = np.mean(angle[inliers])
-          steer[i] = np.mean(steer[inliers])
+      c = inliers.sum()
+      s = np.std(steer[inliers])
+      # Use this bin
+      if c > BIN_COUNT and s < BIN_STD:
+        speed[i] = np.mean(speed[inliers])
+        angle[i] = np.mean(angle[inliers])
+        steer[i] = np.mean(steer[inliers])
 
-          count.append(c)
-          std.append(s)
-          mask[i] = False
-          i += 1
+        count.append(c)
+        std.append(s)
+        mask[i] = False
+        i += 1
 
-        # Remove samples
-        speed = speed[~mask]
-        angle = angle[~mask]
-        steer = steer[~mask]
-        speed_bin = speed_bin[~mask]
-        angle_bin = angle_bin[~mask]
+      # Remove samples
+      speed = speed[~mask]
+      angle = angle[~mask]
+      steer = steer[~mask]
+      speed_bin = speed_bin[~mask]
+      angle_bin = angle_bin[~mask]
 
-    count = np.log(np.sort(count))
-    std = np.sort(std)
-    plt.figure(figsize=(12,8))
-    plt.plot(std, label='std')
-    plt.title('std')
-    if not os.path.isdir('plots'):
-      os.mkdir('plots')
-    plt.savefig('plots/std.png')
-    plt.close()
+  count = np.log(np.sort(count))
+  std = np.sort(std)
+  plt.figure(figsize=(12,8))
+  plt.plot(std, label='std')
+  plt.title('std')
+  if not os.path.isdir('plots'):
+    os.mkdir('plots')
+  plt.savefig('plots/std.png')
+  plt.close()
 
-    plt.figure(figsize=(12,8))
-    plt.plot(count, label='count')
-    plt.title('count')
-    if not os.path.isdir('plots'):
-      os.mkdir('plots')
-    plt.savefig('plots/count.png')
-    plt.close()
+  plt.figure(figsize=(12,8))
+  plt.plot(count, label='count')
+  plt.title('count')
+  if not os.path.isdir('plots'):
+    os.mkdir('plots')
+  plt.savefig('plots/count.png')
+  plt.close()
 
-    print(f'Regularized samples: {len(speed)}')
-    return speed, angle, steer
+  print(f'Regularized samples: {len(speed)}')
+  return speed, angle, steer
 
 def lag(x, y):
   assert (len(x) == len(y))
@@ -136,6 +137,7 @@ def collect(lr):
   last_msg_time: int = 0
 
   for msg in tqdm(sorted(lr, key=lambda msg: msg.logMonoTime)):
+    # print(f'{msg.which() = }')
     if msg.which() == 'carState':
       s.v_ego  = msg.carState.vEgo
       s.steer_angle = msg.carState.steeringAngleDeg
@@ -163,6 +165,12 @@ def collect(lr):
     valid = not np.isnan(s.v_ego) and \
             not np.isnan(s.steer_offset) and \
             not np.isnan(s.curvature_rate)
+    
+    # if valid:
+    #   print(f"{s.v_ego = :0.3f}\t{s.steer_angle = :0.3f}\t{s.steer_rate = :0.3f}\t{s.torque_driver = :0.3f}\t{s.torque_eps = :0.3f}")
+    # else:
+    #   print("invalid")
+    #   pass
 
     # assert continuous section
     if last_msg_time:
@@ -200,20 +208,21 @@ def collect(lr):
   if eps > 10:
     print('eps > 10')
   else:
-    print('eps < 10 wtf !!!')
+    print(f'eps < 10 wtf:{eps = } !!!\n{len(samples) = }')
   if driver > 10:
     print('driver > 10')
   else:
-    print('!!! driver < 10 wtf:{driver} !!!')
+    print(f'!!! driver < 10 wtf:{driver = } !!!')
 
   return np.array(samples)
 
 def filter(samples):
   # Order these to remove the most samples first
-
+  
+  
   # No steer pressed
   data = np.array([s.torque_driver for s in samples])
-  mask = np.abs(data) < 0.1
+  mask = np.abs(data) < STEER_PRESSED_MIN
   samples = samples[mask]
 
   # Enabled
@@ -227,7 +236,7 @@ def filter(samples):
 
   # No steer rate: holding steady curve or straight
   data = np.array([s.steer_rate for s in samples])
-  mask = np.abs(data) < 1
+  mask = np.abs(data) < STEER_RATE_MIN
   samples = samples[mask]
 
   # GM no steering below 7 mph
@@ -273,12 +282,13 @@ def load(path, route=None):
   if route:
     print(f'Loading from rlogs {route}')
     r = Route(route, data_dir=path)
-    lr = MultiLogIterator(r.log_paths(), wraparound=False)
+    lr = MultiLogIterator(r.log_paths(), sort_by_time=True)#, wraparound=False)
     data = collect(lr)
 
     if len(data):
       with open(latpath, 'wb') as f: # cache
         pickle.dump(data, f)
+    data = filter(data)
     if PREPROCESS_ONLY:
       exit(0)
   # Only path
@@ -314,9 +324,11 @@ if __name__ == '__main__':
 
   regfile = 'regularized'
   if REGULARIZED and os.path.isfile(regfile):
+    print("Opening regularized data")
     with open(regfile,'rb') as file:
       speed, angle, steer = pickle.load(file)
   else:
+    print("Loading new data")
     speed, angle, steer = load(args.path, args.route)
     speed, angle, steer = regularize(speed, angle, steer)
     with open(regfile, 'wb') as f:

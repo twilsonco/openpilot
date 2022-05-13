@@ -98,7 +98,6 @@ class Route:
       fullpath = os.path.join(data_dir, f)
       explorer_match = re.match(RE.EXPLORER_FILE, f)
       op_match = re.match(RE.OP_SEGMENT_DIR, f)
-
       if explorer_match:
         segment_name = explorer_match.group('segment_name')
         fn = explorer_match.group('file_name')
@@ -113,10 +112,15 @@ class Route:
         for seg_num in os.listdir(fullpath):
           if not seg_num.isdigit():
             continue
-
           segment_name = f'{self.name.canonical_name}--{seg_num}'
           for seg_f in os.listdir(os.path.join(fullpath, seg_num)):
             segment_files[segment_name].append((os.path.join(fullpath, seg_num, seg_f), seg_f))
+      elif len(f.split('--')) == 4:
+        seg_num = f.split('--')[2]
+        if not seg_num.isdigit():
+          continue
+        segment_name = f'{self.name.canonical_name}--{seg_num}'
+        segment_files[segment_name].append((fullpath,f.split('--')[3]))
 
     segments = []
     for segment, files in segment_files.items():
