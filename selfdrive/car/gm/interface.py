@@ -69,9 +69,14 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def get_steer_feedforward_acadia(desired_angle, v_ego):
-    desired_angle *= 0.09760208
-    sigmoid = desired_angle / (1 + fabs(desired_angle))
-    return 0.04689655 * sigmoid * (v_ego + 10.028217)
+    ANGLE = 0.15744259
+    SIGMOID_SPEED = 0.1140071
+    SIGMOID = -0.32876008
+    SPEED = 0.00281532
+    x = ANGLE * desired_angle
+    sigmoid = x / (1 + fabs(x))
+    # sigmoid = np.arcsinh(x)
+    return (SIGMOID_SPEED * sigmoid * v_ego) + (SIGMOID * sigmoid) + (SPEED * v_ego)
 
   def get_steer_feedforward_function(self):
     if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
@@ -194,12 +199,12 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torque.friction = 0.05
       else:
         ret.lateralTuning.pid.kpBP = [i * CV.MPH_TO_MS for i in [0., 80.]]
-        ret.lateralTuning.pid.kpV = [0., 0.2]
-        ret.lateralTuning.pid.kiBP = [0.0]
-        ret.lateralTuning.pid.kiV = [0.025]
-        ret.lateralTuning.pid.kdBP = [i * CV.MPH_TO_MS for i in [15., 30., 55.]]
-        ret.lateralTuning.pid.kdV = [0.1, 0.28, 0.32]
-        ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
+        ret.lateralTuning.pid.kpV = [0., 0.16]
+        ret.lateralTuning.pid.kiBP = [0.]
+        ret.lateralTuning.pid.kiV = [0.016]
+        ret.lateralTuning.pid.kdBP = [0.]
+        ret.lateralTuning.pid.kdV = [0.6]
+        ret.lateralTuning.pid.kf = 0.9 # get_steer_feedforward_acadia()
 
       ret.longitudinalTuning.kdBP = [5., 25.]
       ret.longitudinalTuning.kdV = [0.8, 0.4]
