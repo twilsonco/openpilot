@@ -196,6 +196,9 @@ def collect(lr):
 
   # Some rlogs use [-300,300] for torque, others [-3,3]
   # Scale both from STEER_MAX to [-1,1]
+  if len(samples) == 0:
+    return np.array([])
+  
   driver = np.max(np.abs(np.array([s.torque_driver for s in samples])))
   eps = np.max(np.abs(np.array([s.torque_eps for s in samples])))
   for s in samples:
@@ -221,13 +224,13 @@ def filter(samples):
   
   
   # No steer pressed
-  data = np.array([s.torque_driver for s in samples])
-  mask = np.abs(data) < STEER_PRESSED_MIN
-  samples = samples[mask]
+  # data = np.array([s.torque_driver for s in samples])
+  # mask = np.abs(data) < STEER_PRESSED_MIN
+  # samples = samples[mask]
 
   # Enabled
-  mask = np.array([s.enabled for s in samples])
-  samples = samples[mask]
+  # mask = np.array([s.enabled for s in samples])
+  # samples = samples[mask]
 
   # No steer rate: holding steady curve or straight
   # data = np.array([s.curvature_rate for s in samples])
@@ -235,9 +238,9 @@ def filter(samples):
   # samples = samples[mask]
 
   # No steer rate: holding steady curve or straight
-  data = np.array([s.steer_rate for s in samples])
-  mask = np.abs(data) < STEER_RATE_MIN
-  samples = samples[mask]
+  # data = np.array([s.steer_rate for s in samples])
+  # mask = np.abs(data) < STEER_RATE_MIN
+  # samples = samples[mask]
 
   # GM no steering below 7 mph
   data = np.array([s.v_ego for s in samples])
@@ -296,18 +299,40 @@ def load(path, route=None):
     if latpath and os.path.isfile(latpath):
       data = filter(load_cache(latpath))
     elif os.path.isfile(allpath):
-      data = load_cache(allpath)
+      data = filter(load_cache(allpath))
     else:
-      print(f'Loading many cached in {path}')
+      print(f'Loading many in {path}')
       data = []
+      dataraw = []
+      routes = set()
+      latroutes = set()
       for filename in os.listdir(path):
         if filename.endswith(ext):
           latpath = os.path.join(path, filename)
           data.extend(filter(load_cache(latpath)))
+          dataraw.extend(load_cache(latpath))
+          latroutes.add(filename.replace(ext,''))
+      for filename in os.listdir(path):
+        if filename.endswith('rlog.bz2'):
+          route='--'.join(filename.split('--')[:2]).replace('_','|')
+          if route not in latroutes:
+            routes.add(route)
+      if len(routes) > 0:
+        print(f'loading data from {len(routes)} routes')
+      for ri,route in enumerate(routes):
+        print(f'loading rlog {ri+1} of {len(routes)}: {route}')
+        r = Route(route, data_dir=path)
+        lr = MultiLogIterator(r.log_paths(), sort_by_time=True)#, wraparound=False)
+        data1 = collect(lr)
+        if len(data1):
+          with open(os.path.join(path, f"{route}.lat"), 'wb') as f:
+            pickle.dump(data1, f)
+          data.extend(filter(data1))
+          dataraw.extend(data1)
       # write all.dat
-      if len(data):
-        with open(allpath, 'wb') as f:
-          pickle.dump(data, f)
+      # if len(dataraw):
+      #   with open(allpath, 'wb') as f:
+      #     pickle.dump(dataraw, f)
 
   speed = np.array([sample.speed for sample in data])
   angle = np.array([sample.angle for sample in data])

@@ -13,6 +13,8 @@ model2.png
 a.out
 .hypothesis
 
+*.lat
+regularized
 *.dylib
 *.DSYM
 *.d

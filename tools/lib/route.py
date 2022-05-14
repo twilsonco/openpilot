@@ -115,7 +115,7 @@ class Route:
           segment_name = f'{self.name.canonical_name}--{seg_num}'
           for seg_f in os.listdir(os.path.join(fullpath, seg_num)):
             segment_files[segment_name].append((os.path.join(fullpath, seg_num, seg_f), seg_f))
-      elif len(f.split('--')) == 4:
+      elif f.replace('_', '|').startswith(self.name.canonical_name) and len(f.split('--')) == 4:
         seg_num = f.split('--')[2]
         if not seg_num.isdigit():
           continue

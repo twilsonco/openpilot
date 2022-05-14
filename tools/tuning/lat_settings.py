@@ -1,7 +1,7 @@
 import numpy as np
 
 PREPROCESS_ONLY = False
-REGULARIZED = True
+REGULARIZED = False
 SPEED_PLOTS = True # For all speeds at a fixed angle, plot steer
 ANGLE_PLOTS = True # For all angles at a fixed speed, plot steer
 FIT_EACH_PLOT = False # Print curve fit for each plot
@@ -27,4 +27,4 @@ MIN_SECTION_SECONDS = 10.
 SPEED_MIN = 8
 SPEED_MAX = 90
 STEER_PRESSED_MIN = 0.1
-STEER_RATE_MIN = 1.0
+STEER_RATE_MIN = 0.3

@@ -11,7 +11,12 @@ from tools.tuning.lat_settings import *
 
 # For comparison with previous best
 def old_feedforward(speed, angle):
-  return 0.00006 * (speed ** 2) * angle
+  return 0.0002 * (speed ** 2) * angle
+
+  # desired_angle = 0.09760208 * angle
+  # sigmoid = desired_angle / (1 + np.fabs(desired_angle))
+  # return 0.04689655 * sigmoid * (speed + 10.028217)
+
   # a = angle * 0.02904609
   # sigmoid = a / (1 + np.fabs(a))
   # return 0.10006696 * sigmoid * (speed + 3.12485927)
