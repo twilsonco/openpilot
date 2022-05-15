@@ -10,19 +10,25 @@ import os
 import pickle
 from copy import deepcopy
 from typing import NamedTuple
-
-import matplotlib.pyplot as plt
+import shutil
+import tempfile
+import bz2
 import numpy as np
-from scipy.signal import correlate, correlation_lags
 # import seaborn as sns
 from tqdm import tqdm  # type: ignore
-from scipy.stats import describe
+
+from tools.tuning.lat_settings import *
+if not PREPROCESS_ONLY:
+  from scipy.stats import describe
+  from scipy.signal import correlate, correlation_lags
+  import matplotlib.pyplot as plt
+  from tools.tuning.lat_plot import fit, plot
 
 from selfdrive.config import Conversions as CV
 from tools.lib.logreader import MultiLogIterator
 from tools.lib.route import Route
-from tools.tuning.lat_plot import fit, plot
-from tools.tuning.lat_settings import *
+
+
 
 # Reduce samples using binning and outlier rejection
 def regularize(speed, angle, steer):
@@ -281,19 +287,21 @@ def load(path, route=None):
       latpath = os.path.join(path, f'{route}{ext}')
     else:
       latpath = os.path.join(os.getcwd(), f'{route}{ext}')
-
+  data = []
   if route:
     print(f'Loading from rlogs {route}')
-    r = Route(route, data_dir=path)
-    lr = MultiLogIterator(r.log_paths(), sort_by_time=True)#, wraparound=False)
-    data = collect(lr)
+    try:
+      r = Route(route, data_dir=path)
+      lr = MultiLogIterator(r.log_paths(), sort_by_time=True)
+      data = collect(lr)
 
-    if len(data):
-      with open(latpath, 'wb') as f: # cache
-        pickle.dump(data, f)
-    data = filter(data)
-    if PREPROCESS_ONLY:
-      exit(0)
+      if len(data):
+        with open(latpath, 'wb') as f: # cache
+          pickle.dump(data, f)
+      data = filter(data)
+    except Exception as e:
+      print(f"Failed to load segment file {filename}:\n{e}")
+      
   # Only path
   else:
     if latpath and os.path.isfile(latpath):
@@ -309,30 +317,105 @@ def load(path, route=None):
       for filename in os.listdir(path):
         if filename.endswith(ext):
           latpath = os.path.join(path, filename)
-          data.extend(filter(load_cache(latpath)))
-          dataraw.extend(load_cache(latpath))
           latroutes.add(filename.replace(ext,''))
-      for filename in os.listdir(path):
-        if filename.endswith('rlog.bz2'):
-          route='--'.join(filename.split('--')[:2]).replace('_','|')
-          if route not in latroutes:
-            routes.add(route)
-      if len(routes) > 0:
-        print(f'loading data from {len(routes)} routes')
-      for ri,route in enumerate(routes):
-        print(f'loading rlog {ri+1} of {len(routes)}: {route}')
-        r = Route(route, data_dir=path)
-        lr = MultiLogIterator(r.log_paths(), sort_by_time=True)#, wraparound=False)
-        data1 = collect(lr)
-        if len(data1):
-          with open(os.path.join(path, f"{route}.lat"), 'wb') as f:
-            pickle.dump(data1, f)
-          data.extend(filter(data1))
-          dataraw.extend(data1)
+          if not PREPROCESS_ONLY:
+            data.extend(filter(load_cache(latpath)))
+            dataraw.extend(load_cache(latpath))
+      if PREPROCESS_ONLY:
+        if "/data/media/0/realdata" in path:
+          # we're on device going through rlogs
+          with open("/data/params/d/DongleId","r") as df:
+            dongle_id = df.read()
+          print(f"{dongle_id = }")
+          rlog_path = "/data/media/0/latfiles"
+          if not os.path.exists(rlog_path):
+            os.mkdir(rlog_path)
+          latsegs = set([f for f in os.listdir(rlog_path) if ".lat" in f])
+          num_files = len([None for filename in os.listdir(path) if len(filename.split('--')) == 3 and f"{dongle_id}|{filename}.lat" not in latsegs])
+          fi = 0
+          for filename in os.listdir(path):
+            if len(filename.split('--')) == 3 and f"{dongle_id}|{filename}.lat" not in latsegs:
+              fi += 1
+              print(f"\nloading segment {fi} of {num_files}: {dongle_id}|{filename}")
+              with tempfile.TemporaryDirectory() as d:
+                if os.path.exists(os.path.join(path,filename,"rlog")):
+                  # print("found raw rlog")
+                  shutil.copy(os.path.join(path,filename,"rlog"),os.path.join(d,f"{dongle_id}_{filename}--rlog"))
+                elif os.path.exists(os.path.join(path,filename,"rlog.bz2")):
+                  # print("found bz2 rlog")
+                  shutil.copy(os.path.join(path,filename,"rlog.bz2"),os.path.join(d,f"{dongle_id}_{filename}--rlog.bz2"))
+                  
+                else:
+                  print("rlog not found")
+                try:
+                  route='--'.join(f"{dongle_id}|{filename}".split('--')[:2])
+                  r = Route(route, data_dir=d)
+                  lr = MultiLogIterator(r.log_paths())
+                  data1 = collect(lr)
+                  if len(data1):
+                    seg_num = f"{dongle_id}|{filename}".split('--')[2]
+                    with open(os.path.join(rlog_path, f"{route}--{seg_num}.lat"), 'wb') as f:
+                      pickle.dump(data1, f)
+                except Exception as e:
+                    print(f"Failed to load segment file {filename}:\n{e}")
+          else:
+            # first make per-segment .lat files
+            # get previously completed segments
+            latsegs = set()
+            for filename in os.listdir(path):
+              if len(filename.split('--')) == 3 and filename.endswith('.lat'):
+                latsegs.add(filename.replace('.lat','--rlog.bz2').replace('|','_'))
+            num_files = len([ None for filename in os.listdir(path) if len(filename.split('--')) == 4 and filename.endswith('rlog.bz2') and filename not in latsegs ])
+            fi=0
+            for filename in os.listdir(path):
+              if len(filename.split('--')) == 4 and filename.endswith('rlog.bz2'):
+                if filename not in latsegs:
+                  fi+=1
+                  print(f'loading rlog segment {fi} of {num_files} {filename}')
+                  with tempfile.TemporaryDirectory() as d:
+                    try:
+                      shutil.copy(os.path.join(path,filename),os.path.join(d,filename))
+                      route='--'.join(filename.split('--')[:2]).replace('_','|')
+                      r = Route(route, data_dir=d)
+                      lr = MultiLogIterator(r.log_paths(), sort_by_time=True)
+                      data1 = collect(lr)
+                      if len(data1):
+                        seg_num = filename.split('--')[2]
+                        with open(os.path.join(path, f"{route}--{seg_num}.lat"), 'wb') as f:
+                          pickle.dump(data1, f)
+                      os.remove(os.path.join(path,filename))
+                    except Exception as e:
+                      print(f"Failed to load segment file {filename}:\n{e}")
+                else:
+                  os.remove(os.path.join(path,filename))
+      else:
+        for filename in os.listdir(path):
+          if filename.endswith('rlog.bz2'):
+            route='--'.join(filename.split('--')[:2]).replace('_','|')
+            if route not in latroutes:
+              routes.add(route)
+        if len(routes) > 0:
+          print(f'loading data from {len(routes)} routes')
+        for ri,route in enumerate(routes):
+          print(f'loading rlog {ri+1} of {len(routes)}: {route}')
+          try:
+            r = Route(route, data_dir=path)
+            lr = MultiLogIterator(r.log_paths(), sort_by_time=True)
+            data1 = collect(lr)
+            if len(data1):
+              with open(os.path.join(path, f"{route}.lat"), 'wb') as f:
+                pickle.dump(data1, f)
+              data.extend(filter(data1))
+              dataraw.extend(data1)
+          except Exception as e:
+            print(f"Failed to load segment file {filename}:\n{e}")
+              
       # write all.dat
       # if len(dataraw):
       #   with open(allpath, 'wb') as f:
       #     pickle.dump(dataraw, f)
+  if PREPROCESS_ONLY:
+    exit(0)
 
   speed = np.array([sample.speed for sample in data])
   angle = np.array([sample.angle for sample in data])
@@ -346,6 +429,7 @@ if __name__ == '__main__':
   parser.add_argument('--path')
   parser.add_argument('--route')
   args = parser.parse_args()
+  
 
   regfile = 'regularized'
   if REGULARIZED and os.path.isfile(regfile):

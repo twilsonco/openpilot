@@ -10,7 +10,7 @@ from tools.lib.helpers import RE
 
 QLOG_FILENAMES = ['qlog.bz2']
 QCAMERA_FILENAMES = ['qcamera.ts']
-LOG_FILENAMES = ['rlog.bz2', 'raw_log.bz2']
+LOG_FILENAMES = ['rlog.bz2', 'raw_log.bz2', 'rlog']
 CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
 DCAMERA_FILENAMES = ['dcamera.hevc']
 ECAMERA_FILENAMES = ['ecamera.hevc']
@@ -177,7 +177,7 @@ class Segment:
 
 class RouteName:
   def __init__(self, name_str: str):
-    self._name_str = name_str
+    self._name_str = name_str.replace("_","|")
     delim = next(c for c in self._name_str if c in ("|", "/"))
     self._dongle_id, self._time_str = self._name_str.split(delim)
 

@@ -11,6 +11,7 @@ from tools.tuning.lat_settings import *
 
 # For comparison with previous best
 def old_feedforward(speed, angle):
+  return feedforward(speed, angle, ANGLE, 0., SIGMOID_SPEED, SIGMOID, SPEED)
   return 0.0002 * (speed ** 2) * angle
 
   # desired_angle = 0.09760208 * angle
@@ -22,17 +23,17 @@ def old_feedforward(speed, angle):
   # return 0.10006696 * sigmoid * (speed + 3.12485927)
 
 def new_feedforward(speed, angle):
-  return feedforward(speed, angle, ANGLE, SIGMOID_SPEED, SIGMOID, SPEED)
+  return feedforward(speed, angle, ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED)
 
-def feedforward(speed, angle, ANGLE, SIGMOID_SPEED, SIGMOID, SPEED):
-  x = ANGLE * angle
+def feedforward(speed, angle, ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED):
+  x = ANGLE * (angle + ANGLE_OFFSET)
   sigmoid = x / (1 + np.fabs(x))
   # sigmoid = np.arcsinh(x)
   return (SIGMOID_SPEED * sigmoid * speed) + (SIGMOID * sigmoid) + (SPEED * speed)
 
-def _fit_kf(x_input, angle_gain, sigmoid_speed, sigmoid, speed_gain):
+def _fit_kf(x_input, angle_gain, angle_offset, sigmoid_speed, sigmoid, speed_gain):
   speed, angle = x_input.copy()
-  return feedforward(speed, angle, angle_gain, sigmoid_speed, sigmoid, speed_gain)
+  return feedforward(speed, angle, angle_gain, angle_offset, sigmoid_speed, sigmoid, speed_gain)
 
 def fit(speed, angle, steer):
   print(f'speed: {len(speed) = }')
@@ -42,14 +43,14 @@ def fit(speed, angle, steer):
   print(f'angle: {describe(angle)}')
   print(f'steer: {describe(steer)}')
 
-  global ANGLE, SIGMOID_SPEED, SIGMOID, SPEED
+  global ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED
   params, _ = curve_fit(  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking
     _fit_kf,
     np.array([speed, angle]),
     np.array(steer),
     maxfev=9000,
   )
-  ANGLE, SIGMOID_SPEED, SIGMOID, SPEED = params
+  ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED = params
   print(f'Fit: {params}')
 
   old_residual = np.fabs(old_feedforward(speed, angle) - steer)
@@ -95,14 +96,14 @@ def plot(speed, angle, steer):
       params = None
       if FIT_EACH_PLOT and sum(mask) > 4:
         try:
-          global ANGLE, SIGMOID_SPEED, SIGMOID, SPEED
+          global ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED
           params, _ = curve_fit(  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking
             _fit_kf,
             np.array([plot_speed, plot_angle]),
             np.array(plot_steer),
             maxfev=9000,
           )
-          ANGLE, SIGMOID_SPEED, SIGMOID, SPEED = params
+          ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED = params
         except RuntimeError as e:
           print(e)
           continue
