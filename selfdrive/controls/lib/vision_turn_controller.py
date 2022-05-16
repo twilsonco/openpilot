@@ -14,10 +14,10 @@ _MIN_V = 5.6  # Do not operate under 20km/h
 _ENTERING_PRED_LAT_ACC_TH = 1.6  # Predicted Lat Acc threshold to trigger entering turn state.
 _ABORT_ENTERING_PRED_LAT_ACC_TH = 1.5  # Predicted Lat Acc threshold to abort entering state if speed drops.
 
-_TURNING_LAT_ACC_TH = 2.1  # Lat Acc threshold to trigger turning turn state.
+_TURNING_LAT_ACC_TH = 1.6  # Lat Acc threshold to trigger turning turn state.
 
-_LEAVING_LAT_ACC_TH = 1.8  # Lat Acc threshold to trigger leaving turn state.
-_FINISH_LAT_ACC_TH = 1.5  # Lat Acc threshold to trigger end of turn cycle.
+_LEAVING_LAT_ACC_TH = 1.3  # Lat Acc threshold to trigger leaving turn state.
+_FINISH_LAT_ACC_TH = 1.1  # Lat Acc threshold to trigger end of turn cycle.
 
 _EVAL_STEP = 5.  # mts. Resolution of the curvature evaluation.
 _EVAL_START = 20.  # mts. Distance ahead where to start evaluating vision curvature.
@@ -28,8 +28,8 @@ _A_LAT_REG_MAX = 3.3  # Maximum lateral acceleration
 
 # Lookup table for the minimum smooth deceleration during the ENTERING state
 # depending on the actual maximum absolute lateral acceleration predicted on the turn ahead.
-_ENTERING_SMOOTH_DECEL_V = [0.5, 0., -1.]  # min decel value allowed on ENTERING state
-_ENTERING_SMOOTH_DECEL_BP = [0.9, 2.2, 3.7]  # absolute value of lat acc ahead
+_ENTERING_SMOOTH_DECEL_V = [0.5, -0.1, -1.]  # min decel value allowed on ENTERING state
+_ENTERING_SMOOTH_DECEL_BP = [0.8, 2.2, 3.6]  # absolute value of lat acc ahead
 
 # Lookup table for the acceleration for the TURNING state
 # depending on the current lateral acceleration of the vehicle.
@@ -172,7 +172,7 @@ class VisionTurnController():
       width_pts = rll_y - lll_y
       prob_mods = []
       for t_check in [0.0, 1.5, 3.0]:
-        width_at_t = interp(t_check * (vf * self._v_ego + 7), ll_x, width_pts)
+        width_at_t = interp(t_check * (self._v_ego + 7), ll_x, width_pts)
         prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
       mod = min(prob_mods)
       l_prob *= mod
@@ -215,7 +215,7 @@ class VisionTurnController():
     self._lat_acc_overshoot_ahead = len(lat_acc_overshoot_idxs) > 0
 
     if self._lat_acc_overshoot_ahead:
-      self._v_overshoot = min(math.sqrt(_A_LAT_REG_MAX / max_pred_curvature), self._v_cruise_setpoint*vf)
+      self._v_overshoot = min(math.sqrt(_A_LAT_REG_MAX / max_pred_curvature), self._v_cruise_setpoint)
       self._v_overshoot_distance = max(lat_acc_overshoot_idxs[0] * _EVAL_STEP + _EVAL_START, _EVAL_STEP)
       _debug(f'TVC: High LatAcc. Dist: {self._v_overshoot_distance:.2f}, v: {self._v_overshoot * CV.MS_TO_KPH:.2f}')
 
@@ -268,8 +268,7 @@ class VisionTurnController():
       if self._lat_acc_overshoot_ahead:
         # when overshooting, target the acceleration needed to achieve the overshoot speed at
         # the required distance
-        vf = interp(self._v_ego, _LOW_SPEED_SCALE_BP, _LOW_SPEED_SCALE_V)
-        a_target = min(((vf * self._v_overshoot)**2 - (vf * self._v_ego)**2) / (2 * self._v_overshoot_distance), a_target)
+        a_target = min((self._v_overshoot**2 - self._v_ego**2) / (2 * self._v_overshoot_distance), a_target)
       _debug(f'TVC Entering: Overshooting: {self._lat_acc_overshoot_ahead}')
       _debug(f'    Decel: {a_target:.2f}, target v: {self.v_turn * CV.MS_TO_KPH}')
     # TURNING
