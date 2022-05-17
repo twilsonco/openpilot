@@ -1,6 +1,6 @@
 import numpy as np
 
-PREPROCESS_ONLY = True
+PREPROCESS_ONLY = False
 REGULARIZED = False
 SPEED_PLOTS = True # For all speeds at a fixed angle, plot steer
 ANGLE_PLOTS = True # For all angles at a fixed speed, plot steer

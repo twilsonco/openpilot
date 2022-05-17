@@ -11,8 +11,11 @@ from tools.tuning.lat_settings import *
 
 # For comparison with previous best
 def old_feedforward(speed, angle):
-  return feedforward(speed, angle, ANGLE, 0., SIGMOID_SPEED, SIGMOID, SPEED)
-  return 0.0002 * (speed ** 2) * angle
+  # return feedforward(speed, angle, ANGLE, 0., SIGMOID_SPEED, SIGMOID, SPEED)
+  # return 0.00004 * (speed ** 2) * angle
+  x = angle * 0.02904609
+  sigmoid = x / (1 + np.fabs(x))
+  return 0.10006696 * sigmoid * (speed + 3.12485927)
 
   # desired_angle = 0.09760208 * angle
   # sigmoid = desired_angle / (1 + np.fabs(desired_angle))
@@ -36,12 +39,12 @@ def _fit_kf(x_input, angle_gain, angle_offset, sigmoid_speed, sigmoid, speed_gai
   return feedforward(speed, angle, angle_gain, angle_offset, sigmoid_speed, sigmoid, speed_gain)
 
 def fit(speed, angle, steer):
-  print(f'speed: {len(speed) = }')
-  print(f'angle: {len(angle) = }')
-  print(f'steer: {len(steer) = }')
-  print(f'speed: {describe(speed)}')
-  print(f'angle: {describe(angle)}')
-  print(f'steer: {describe(steer)}')
+  # print(f'speed: {len(speed) = }')
+  # print(f'angle: {len(angle) = }')
+  # print(f'steer: {len(steer) = }')
+  # print(f'speed: {describe(speed)}')
+  # print(f'angle: {describe(angle)}')
+  # print(f'steer: {describe(steer)}')
 
   global ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED
   params, _ = curve_fit(  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking
@@ -52,6 +55,11 @@ def fit(speed, angle, steer):
   )
   ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED = params
   print(f'Fit: {params}')
+  print(f"{ANGLE = }")
+  print(f"{ANGLE_OFFSET = }")
+  print(f"{SIGMOID_SPEED = }")
+  print(f"{SIGMOID = }")
+  print(f"{SPEED = }")
 
   old_residual = np.fabs(old_feedforward(speed, angle) - steer)
   new_residual = np.fabs(new_feedforward(speed, angle) - steer)
@@ -61,6 +69,16 @@ def fit(speed, angle, steer):
   old_std = np.std(old_residual)
   new_std = np.std(new_residual)
   print('STD old {}, new {}'.format(round(old_std, 4), round(new_std, 4)))
+  
+  with open("plots/out.txt","w") as f:
+    f.write(f"    {ANGLE = }\n")
+    f.write(f"    {ANGLE_OFFSET = }\n")
+    f.write(f"    {SIGMOID_SPEED = }\n")
+    f.write(f"    {SIGMOID = }\n")
+    f.write(f"    {SPEED = }\n")
+    f.write('MAE old {}, new {}\n'.format(round(old_mae, 4), round(new_mae, 4)))
+    f.write('STD old {}, new {}\n'.format(round(old_std, 4), round(new_std, 4)))
+    f.write(f"Fit generated using {len(speed)} data points")
 
 def plot(speed, angle, steer):
   if SPEED_PLOTS:
@@ -229,7 +247,10 @@ def plot(speed, angle, steer):
       'convert -loop -1 mph-up.gif mph-down.gif mph.gif',
       'convert -loop -1 deg.gif mph.gif solution.gif',
       'mv *.gif plots/',
-      'mv plots ~/Downloads/'
+      'mv plots ~/Downloads/',
+      'rm -f ~/Downloads/plots/deg*.png',
+      'rm -f ~/Downloads/plots/mph*.png',
+      'rm -f regularized'
     ]
     for cmd in cmds:
       print(cmd)

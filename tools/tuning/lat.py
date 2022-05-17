@@ -142,7 +142,15 @@ def collect(lr):
   section_end: int = 0
   last_msg_time: int = 0
 
-  for msg in tqdm(sorted(lr, key=lambda msg: msg.logMonoTime)):
+  lrd = dict()
+  for msg in lr:
+    msgid = f"{msg.logMonoTime}:{msg.which()}"
+    if msgid in lrd:
+      break
+    lrd[msgid] = msg
+  lr1 = list(lrd.values())
+  print(f"{len(lr1)} messages")
+  for msg in tqdm(sorted(lr1, key=lambda msg: msg.logMonoTime)):
     # print(f'{msg.which() = }')
     if msg.which() == 'carState':
       s.v_ego  = msg.carState.vEgo
@@ -339,19 +347,23 @@ def load(path, route=None):
               print(f"\nloading segment {fi} of {num_files}: {dongle_id}|{filename}")
               with tempfile.TemporaryDirectory() as d:
                 if os.path.exists(os.path.join(path,filename,"rlog")):
-                  # print("found raw rlog")
+                  print("found raw rlog")
                   shutil.copy(os.path.join(path,filename,"rlog"),os.path.join(d,f"{dongle_id}_{filename}--rlog"))
                 elif os.path.exists(os.path.join(path,filename,"rlog.bz2")):
-                  # print("found bz2 rlog")
-                  shutil.copy(os.path.join(path,filename,"rlog.bz2"),os.path.join(d,f"{dongle_id}_{filename}--rlog.bz2"))
-                  
+                  print("found bz2 rlog")
+                  tmpbz2 = os.path.join(d,f"{dongle_id}_{filename}--rlog.bz2")
+                  shutil.copy(os.path.join(path,filename,"rlog.bz2"),tmpbz2)
+                  # os.system(f"bzip2 -d {tmpbz2}")
                 else:
                   print("rlog not found")
                 try:
                   route='--'.join(f"{dongle_id}|{filename}".split('--')[:2])
                   r = Route(route, data_dir=d)
-                  lr = MultiLogIterator(r.log_paths())
+                  print("route loaded")
+                  lr = MultiLogIterator([lp for lp in r.log_paths() if lp])
+                  print("log iterator loaded")
                   data1 = collect(lr)
+                  print("log data preprocessed")
                   if len(data1):
                     seg_num = f"{dongle_id}|{filename}".split('--')[2]
                     with open(os.path.join(rlog_path, f"{route}--{seg_num}.lat"), 'wb') as f:
