@@ -31,6 +31,11 @@ DECLINE_ACCEL_MIN = 0.2 # [m/s^2] don't decrease acceleration limit due to decli
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
+def get_steer_feedforward_sigmoid(desired_angle, v_ego, ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED):
+  x = ANGLE * (desired_angle + ANGLE_OFFSET)
+  sigmoid = x / (1 + fabs(x))
+  return (SIGMOID_SPEED * sigmoid * v_ego) + (SIGMOID * sigmoid) + (SPEED * v_ego)
+
 class CarInterface(CarInterfaceBase):
   params_check_last_t = 0.
   params_check_freq = 0.1 # check params at 10Hz
@@ -61,11 +66,12 @@ class CarInterface(CarInterfaceBase):
   # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
   @staticmethod
   def get_steer_feedforward_volt(desired_angle, v_ego):
-    # maps [-inf,inf] to [-1,1]: sigmoid(34.4 deg) = sigmoid(1) = 0.5
-    # 1 / 0.02904609 = 34.4 deg ~= 36 deg ~= 1/10 circle? Arbitrary?
-    desired_angle *= 0.02904609
-    sigmoid = desired_angle / (1 + fabs(desired_angle))
-    return 0.10006696 * sigmoid * (v_ego + 3.12485927)
+    ANGLE = 0.03093722278106523
+    ANGLE_OFFSET = 0.46341000035928637
+    SIGMOID_SPEED = 0.07928458395144745
+    SIGMOID = 0.4983180128530419
+    SPEED = -0.0024896011696167266
+    return get_steer_feedforward_sigmoid(desired_angle, v_ego, ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED)
 
   @staticmethod
   def get_steer_feedforward_acadia(desired_angle, v_ego):
