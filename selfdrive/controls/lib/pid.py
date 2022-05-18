@@ -54,9 +54,9 @@ class PIDController:
     
     if any([k > 0.0 for kk in [self._k_11[1], self._k_12[1], self._k_13[1]] for k in kk]):
       self._k_period = round(k_period * rate)  # period of time for autotune calculation (seconds converted to frames)
-      self.error_norms = deque(maxlen=self._k_period)
+      self.output_norms = deque(maxlen=self._k_period)
     else:
-      self.error_norms = None
+      self.output_norms = None
 
     self.reset()
 
@@ -106,8 +106,8 @@ class PIDController:
     self.control = 0
     if self.outputs:
       self.outputs = deque(maxlen=self._d_period)
-    if self.error_norms:
-      self.error_norms = deque(maxlen=self._k_period)
+    if self.output_norms:
+      self.output_norms = deque(maxlen=self._k_period)
 
   def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
     self.speed = speed
@@ -118,12 +118,12 @@ class PIDController:
     ki = self.k_i
     kd = self.k_d
     
-    if self.error_norms:
+    if self.output_norms and len(self.outputs) > 0:
       abs_sp = setpoint if setpoint > 0. else -setpoint
-      self.error_norms.append(error / (abs_sp + 1.))
-      if len(self.error_norms) >= self._k_period:
-        delta_error_norm = self.error_norms[-1] - self.error_norms[0]
-        gain_update_factor = self.error_norms[-1] * delta_error_norm
+      self.output_norms.append(self.outputs[-1] / (abs_sp + 1.)) # use the last iteration's output
+      if len(self.output_norms) >= self._k_period:
+        delta_error_norm = self.output_norms[-1] - self.output_norms[0]
+        gain_update_factor = self.output_norms[-1] * delta_error_norm
         if gain_update_factor != 0.:
           abs_guf = abs(gain_update_factor)
           kp *= 1. + min(2., self.k_11 * abs_guf)
