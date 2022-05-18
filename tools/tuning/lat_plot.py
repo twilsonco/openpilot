@@ -11,19 +11,40 @@ from tools.tuning.lat_settings import *
 
 # For comparison with previous best
 def old_feedforward(speed, angle):
-  # return feedforward(speed, angle, ANGLE, 0., SIGMOID_SPEED, SIGMOID, SPEED)
-  # return 0.00004 * (speed ** 2) * angle
-  x = angle * 0.02904609
-  sigmoid = x / (1 + np.fabs(x))
-  return 0.10006696 * sigmoid * (speed + 3.12485927)
+  
+  # sierra silverado combined
+  ANGLE = 0.06539361463056717
+  ANGLE_OFFSET = -0.8390269362439537
+  SIGMOID_SPEED = 0.023681877712247515
+  SIGMOID = 0.5709779025308087
+  SPEED = -0.0016656455765509301
+  
+  #sierra only
+  # ANGLE = 0.07375408334531243
+  # ANGLE_OFFSET = -0.43842460609320844
+  # SIGMOID_SPEED = 0.015039986300916987
+  # SIGMOID = 0.6154522080649616
+  # SPEED = -0.00238195057681674
+  
+  # silverado only
+  # ANGLE = 0.07017408594582242
+  # ANGLE_OFFSET = -0.7108582322213549
+  # SIGMOID_SPEED = 0.02534582973830592
+  # SIGMOID = 0.5901819029949994
+  # SPEED = -0.0026961086215487357
+  return feedforward(speed, angle, ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED)
+  # return 0.0002 * (speed ** 2) * angle # old bolt and bolteuv
+  return 0.00004 * (speed ** 2) * angle # old silverado/sierra
 
+  # old volt sigmoid
+  # x = angle * 0.02904609
+  # sigmoid = x / (1 + np.fabs(x))
+  # return 0.10006696 * sigmoid * (speed + 3.12485927)
+
+  #old acadia sigmoid
   # desired_angle = 0.09760208 * angle
   # sigmoid = desired_angle / (1 + np.fabs(desired_angle))
   # return 0.04689655 * sigmoid * (speed + 10.028217)
-
-  # a = angle * 0.02904609
-  # sigmoid = a / (1 + np.fabs(a))
-  # return 0.10006696 * sigmoid * (speed + 3.12485927)
 
 def new_feedforward(speed, angle):
   return feedforward(speed, angle, ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED)
@@ -39,12 +60,12 @@ def _fit_kf(x_input, angle_gain, angle_offset, sigmoid_speed, sigmoid, speed_gai
   return feedforward(speed, angle, angle_gain, angle_offset, sigmoid_speed, sigmoid, speed_gain)
 
 def fit(speed, angle, steer):
-  # print(f'speed: {len(speed) = }')
-  # print(f'angle: {len(angle) = }')
-  # print(f'steer: {len(steer) = }')
-  # print(f'speed: {describe(speed)}')
-  # print(f'angle: {describe(angle)}')
-  # print(f'steer: {describe(steer)}')
+  print(f'speed: {len(speed) = }')
+  print(f'angle: {len(angle) = }')
+  print(f'steer: {len(steer) = }')
+  print(f'speed: {describe(speed)}')
+  print(f'angle: {describe(angle)}')
+  print(f'steer: {describe(steer)}')
 
   global ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED
   params, _ = curve_fit(  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking
@@ -70,7 +91,7 @@ def fit(speed, angle, steer):
   new_std = np.std(new_residual)
   print('STD old {}, new {}'.format(round(old_std, 4), round(new_std, 4)))
   
-  with open("plots/out.txt","w") as f:
+  with open("plots/out.txt","a") as f:
     f.write(f"    {ANGLE = }\n")
     f.write(f"    {ANGLE_OFFSET = }\n")
     f.write(f"    {SIGMOID_SPEED = }\n")
@@ -78,7 +99,7 @@ def fit(speed, angle, steer):
     f.write(f"    {SPEED = }\n")
     f.write('MAE old {}, new {}\n'.format(round(old_mae, 4), round(new_mae, 4)))
     f.write('STD old {}, new {}\n'.format(round(old_std, 4), round(new_std, 4)))
-    f.write(f"Fit generated using {len(speed)} data points")
+    f.write(f"fit computed using {len(speed)} points")
 
 def plot(speed, angle, steer):
   if SPEED_PLOTS:

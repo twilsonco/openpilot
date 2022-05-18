@@ -208,34 +208,30 @@ def collect(lr):
   if (section_end - section_start) * 1e-9 > MIN_SECTION_SECONDS:
     samples.extend(section)
 
-  # Some rlogs use [-300,300] for torque, others [-3,3]
-  # Scale both from STEER_MAX to [-1,1]
+
   if len(samples) == 0:
     return np.array([])
-  
-  driver = np.max(np.abs(np.array([s.torque_driver for s in samples])))
-  eps = np.max(np.abs(np.array([s.torque_eps for s in samples])))
-  for s in samples:
-    if driver > 10:
-      s.torque_driver /= 300
-    else:
-      s.torque_driver /= 3
-    if eps > 10:
-      s.torque_eps /= 300
-  if eps > 10:
-    print('eps > 10')
-  else:
-    print(f'eps < 10 wtf:{eps = } !!!\n{len(samples) = }')
-  if driver > 10:
-    print('driver > 10')
-  else:
-    print(f'!!! driver < 10 wtf:{driver = } !!!')
 
   return np.array(samples)
 
 def filter(samples):
   # Order these to remove the most samples first
   
+  # Some rlogs use [-300,300] for torque, others [-3,3]
+  # Scale both from STEER_MAX to [-1,1]
+  driver = np.max(np.abs(np.array([s.torque_driver for s in samples])))
+  eps = np.max(np.abs(np.array([s.torque_eps for s in samples])))
+  one_over_three = 1. / 3.
+  one_over_three_hundred = 1. / 300.
+  for s in samples:
+    if driver > 10 or eps > 10:
+      s.torque_driver *= one_over_three_hundred
+      s.torque_eps *= one_over_three_hundred
+    else:
+      s.torque_driver *= one_over_three
+      s.torque_eps *= one_over_three
+  print(f'max eps torque = {eps:0.4f}')
+  print(f"max driver torque = {driver:0.4f}")
   
   # No steer pressed
   # data = np.array([s.torque_driver for s in samples])
@@ -326,6 +322,13 @@ def load(path, route=None):
         if filename.endswith(ext):
           latpath = os.path.join(path, filename)
           latroutes.add(filename.replace(ext,''))
+          # commented code was used to correct existing .lat files
+          # data1=load_cache(latpath)
+          # for s in data1:
+          #   s.torque_eps *= 3
+          #   s.torque_driver *= 3
+          # with open(latpath, 'wb') as f:
+          #   pickle.dump(data1, f)
           if not PREPROCESS_ONLY:
             data.extend(filter(load_cache(latpath)))
             dataraw.extend(load_cache(latpath))
@@ -428,6 +431,16 @@ def load(path, route=None):
       #     pickle.dump(dataraw, f)
   if PREPROCESS_ONLY:
     exit(0)
+  
+  oldlen = len(dataraw)
+  newlen = len(data)
+  if not os.path.isdir('plots'):
+    os.mkdir('plots')
+  with open('plots/out.txt','w') as f:
+    if oldlen > 0 and newlen > 0:
+      f.write(f"{oldlen} points filtered down to {newlen}\n")
+    else:
+      f.write(f"{newlen} filtered points\n")
 
   speed = np.array([sample.speed for sample in data])
   angle = np.array([sample.angle for sample in data])
