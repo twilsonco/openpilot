@@ -200,13 +200,15 @@ class CarState(CarStateBase):
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
       
     self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
-    ret.gearShifter = self.gear_shifter
-    ret.brakePressed = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"] >= 8
-    ret.brake = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"] / 0xd0
+    ret.gearShifter = self.gear_shifter    
+    ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"] != 0 
+    ret.brakePressed = ret.brakePressed and pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"] >= 8
     if ret.brakePressed:
       self.user_brake = pt_cp.vl["ECMAcceleratorPos"]['BrakePedalPos']
+      ret.brake = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"] / 0xd0
     else:
       self.user_brake = 0.
+      ret.brake = 0.
     
     if self.showBrakeIndicator:
       if t - self.sessionInitTime < 13.:
@@ -378,6 +380,7 @@ class CarState(CarStateBase):
       ("TurnSignals", "BCMTurnSignals", 0),
       ("AcceleratorPedal2", "AcceleratorPedal2", 0),
       ("BrakePedalPos", "ECMAcceleratorPos", 0),
+      ("Brake_Pressed", "ECMEngineStatus", 0),
       ("CruiseState", "AcceleratorPedal2", 0),
       ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
       ("DriveModeButton", "ASCMSteeringButton", 0),
