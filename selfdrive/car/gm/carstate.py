@@ -377,7 +377,7 @@ class CarState(CarStateBase):
       ("RightSeatBelt", "BCMDoorBeltStatus", 0),
       ("TurnSignals", "BCMTurnSignals", 0),
       ("AcceleratorPedal2", "AcceleratorPedal2", 0),
-      ("BrakePedalPos", "ECMAcceleratorPos"),
+      ("BrakePedalPos", "ECMAcceleratorPos", 0),
       ("CruiseState", "AcceleratorPedal2", 0),
       ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
       ("DriveModeButton", "ASCMSteeringButton", 0),
@@ -399,7 +399,6 @@ class CarState(CarStateBase):
       ("TractionControlOn", "ESPStatus", 0),
       ("EPBClosed", "EPBStatus", 0),
       ("CruiseMainOn", "ECMEngineStatus", 0),
-      ("Brake_Pressed", "ECMEngineStatus", 0),
     ]
 
     checks = [
