@@ -201,13 +201,12 @@ class CarState(CarStateBase):
       
     self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
     ret.gearShifter = self.gear_shifter
-    ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"] != 0
+    ret.brakePressed = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"] >= 8
+    ret.brake = self.user_brake / 0xd0
     if ret.brakePressed:
-      self.user_brake = pt_cp.vl["EBCMBrakePedalPosition"]['BrakePedalPosition']
-      ret.brake = self.user_brake / 0xd0
+      self.user_brake = pt_cp.vl["ECMAcceleratorPos"]['BrakePedalPos']
     else:
       self.user_brake = 0.
-      ret.brake = 0.
     
     if self.showBrakeIndicator:
       if t - self.sessionInitTime < 13.:
@@ -370,7 +369,6 @@ class CarState(CarStateBase):
     # this function generates lists for signal, messages and initial values
     signals = [
       # sig_name, sig_address, default
-      ("BrakePedalPosition", "EBCMBrakePedalPosition", 0),
       ("FrontLeftDoor", "BCMDoorBeltStatus", 0),
       ("FrontRightDoor", "BCMDoorBeltStatus", 0),
       ("RearLeftDoor", "BCMDoorBeltStatus", 0),
@@ -379,6 +377,7 @@ class CarState(CarStateBase):
       ("RightSeatBelt", "BCMDoorBeltStatus", 0),
       ("TurnSignals", "BCMTurnSignals", 0),
       ("AcceleratorPedal2", "AcceleratorPedal2", 0),
+      ("BrakePedalPos", "ECMAcceleratorPos"),
       ("CruiseState", "AcceleratorPedal2", 0),
       ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
       ("DriveModeButton", "ASCMSteeringButton", 0),
@@ -412,12 +411,11 @@ class CarState(CarStateBase):
       ("EPBStatus", 20),
       ("EBCMWheelSpdFront", 20),
       ("EBCMWheelSpdRear", 20),
-      ("AcceleratorPedal", 33),
       ("AcceleratorPedal2", 33),
+      ("ECMAcceleratorPos", 100),
       ("ASCMSteeringButton", 33),
       ("ECMEngineStatus", 100),
       ("PSCMSteeringAngle", 100),
-      ("EBCMBrakePedalPosition", 100),
       ("ECMEngineCoolantTemp", 1),
     ]
 
