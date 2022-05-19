@@ -202,7 +202,7 @@ class CarState(CarStateBase):
     self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
     ret.gearShifter = self.gear_shifter
     ret.brakePressed = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"] >= 8
-    ret.brake = self.user_brake / 0xd0
+    ret.brake = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"] / 0xd0
     if ret.brakePressed:
       self.user_brake = pt_cp.vl["ECMAcceleratorPos"]['BrakePedalPos']
     else:
