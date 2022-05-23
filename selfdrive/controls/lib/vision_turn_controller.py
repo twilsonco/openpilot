@@ -29,12 +29,12 @@ _A_LAT_REG_MAX = 3.3  # Maximum lateral acceleration
 # Lookup table for the minimum smooth deceleration during the ENTERING state
 # depending on the actual maximum absolute lateral acceleration predicted on the turn ahead.
 _ENTERING_SMOOTH_DECEL_V = [-0.05, -1.0]  # min decel value allowed on ENTERING state
-_ENTERING_SMOOTH_DECEL_BP = [1.8, 3.8]  # absolute value of lat acc ahead
+_ENTERING_SMOOTH_DECEL_BP = [2.0, 3.8]  # absolute value of lat acc ahead
 
 # Lookup table for the acceleration for the TURNING state
 # depending on the current lateral acceleration of the vehicle.
 _TURNING_ACC_V = [1.0, -0.05, -1.]  # acc value
-_TURNING_ACC_BP = [1.0, 1.8, 3.8]  # absolute value of current lat acc
+_TURNING_ACC_BP = [1.0, 2.0, 3.8]  # absolute value of current lat acc
 
 _LEAVING_ACC = 0.6  # Confortble acceleration to regain speed while leaving a turn.
 
@@ -42,8 +42,8 @@ _MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow curvature prediction 
 
 # scale velocity used to determine curvature in order to provide more braking at low speed
 # where the LKA torque is less capable despite low lateral acceleration.
-_LOW_SPEED_SCALE_V = [1.3, 1.0] #increase the first value to increase low-speed vision braking; don't touch the second
-_LOW_SPEED_SCALE_BP = [i * CV.MPH_TO_MS for i in [0., 40.]]
+_LOW_SPEED_SCALE_V = [1.5, 1.0] #increase the first value to increase low-speed vision braking; don't touch the second
+_LOW_SPEED_SCALE_BP = [i * CV.MPH_TO_MS for i in [0., 30.]]
 
 _DEBUG = False
 
