@@ -33,8 +33,8 @@ _ENTERING_SMOOTH_DECEL_BP = [1.5, 3.8]  # absolute value of lat acc ahead
 
 # Lookup table for the acceleration for the TURNING state
 # depending on the current lateral acceleration of the vehicle.
-_TURNING_ACC_V = [1.0, 0., -1.]  # acc value
-_TURNING_ACC_BP = [1.0, 2.2, 3.8]  # absolute value of current lat acc
+_TURNING_ACC_V = [1.0, -0.05, -1.]  # acc value
+_TURNING_ACC_BP = [1.0, 1.6, 3.8]  # absolute value of current lat acc
 
 _LEAVING_ACC = 0.6  # Confortble acceleration to regain speed while leaving a turn.
 
