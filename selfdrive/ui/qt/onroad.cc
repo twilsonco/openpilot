@@ -70,8 +70,13 @@ void OnroadWindow::updateState(const UIState &s) {
 }
 
 bool ptInBiggerRect(Rect const & r, QMouseEvent* e){
-  Rect br = {r.x - r.w / 5, r.y - r.h / 5, 7 * r.w / 5, 7 * r.h / 5};
-  return br.ptInRect(e->x(), e->y());
+  if (QUIState::ui_state.scene.map_open){
+    return r.ptInRect(e->x(), e->y());
+  }
+  else{
+    Rect br = {r.x - r.w / 5, r.y - r.h / 5, 7 * r.w / 5, 7 * r.h / 5};
+    return br.ptInRect(e->x(), e->y());
+  }
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {

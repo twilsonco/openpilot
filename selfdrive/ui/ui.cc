@@ -206,6 +206,9 @@ static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
   float t = seconds_since_boot();
+
+
+  scene.map_open = (s->fb_h != 0 && (float)s->fb_w / (float)s->fb_h < 1.5);
   
   if (t - scene.paramsCheckLast > scene.paramsCheckFreq){
     scene.paramsCheckLast = t;

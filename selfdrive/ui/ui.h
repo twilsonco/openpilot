@@ -187,6 +187,8 @@ typedef struct UIScene {
   // Debug UI
   bool show_debug_ui;
 
+  bool map_open;
+
   bool is_using_torque_control = false;
 
   // Speed limit control
