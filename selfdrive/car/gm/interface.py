@@ -67,7 +67,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_steer_feedforward_volt(desired_angle, v_ego):
     ANGLE = 0.03093722278106523
-    ANGLE_OFFSET = 0.46341000035928637
+    ANGLE_OFFSET = 0.#46341000035928637
     SIGMOID_SPEED = 0.07928458395144745
     SIGMOID = 0.4983180128530419
     SPEED = -0.0024896011696167266
@@ -76,7 +76,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_steer_feedforward_acadia(desired_angle, v_ego):
     ANGLE = 0.1314029550298617
-    ANGLE_OFFSET = 0.8317776927522815
+    ANGLE_OFFSET = 0.#8317776927522815
     SIGMOID_SPEED = 0.03820691400292691
     SIGMOID = 0.3785405719285944
     SPEED = -0.0010868615264700465
