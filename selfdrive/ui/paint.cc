@@ -426,7 +426,13 @@ static void ui_draw_measures(UIState *s){
     const int y_min = maxspeed_rect.bottom() + bdr_s / 2;
     const int y_max = brake_y - brake_size - bdr_s / 2;
     const int y_rng = y_max - y_min;
-    const int slot_y_rng = (s->scene.measure_cur_num_slots <= 4 ? y_rng / (s->scene.measure_cur_num_slots < 3 ? 3 : s->scene.measure_cur_num_slots) : y_rng / s->scene.measure_max_num_slots * 2); // two columns
+    int slot_y_rng;
+    if (s->scene.measure_cur_num_slots > 4 || s->scene.map_open){
+      slot_y_rng = y_rng / s->scene.measure_max_num_slots * 2;
+    }
+    else{
+      slot_y_rng = y_rng / (s->scene.measure_cur_num_slots < 3 ? 3 : s->scene.measure_cur_num_slots);
+    }
     const int slot_y_rng_orig = y_rng / s->scene.measure_max_num_slots * 2; // two columns
     const float slot_aspect_ratio_ratio = float(slot_y_rng) / float(slot_y_rng_orig);
     const int y_mid = (y_max + y_min) / 2;
