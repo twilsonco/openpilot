@@ -4,6 +4,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <deque>
 
 #include <QObject>
 #include <QTimer>
@@ -188,6 +189,10 @@ typedef struct UIScene {
   bool show_debug_ui;
 
   bool map_open;
+
+  bool lead_info_print_enabled;
+  std::deque<int> lead_x_vals, lead_y_vals;
+  int const lead_xy_num_vals = 5;
 
   bool is_using_torque_control = false;
 

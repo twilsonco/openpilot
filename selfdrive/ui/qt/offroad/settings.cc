@@ -231,6 +231,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Color path according to the amount of lateral (steering) correction being applied",
                                   "../assets/offroad/icon_road.png",
                                   this));
+  toggles.append(new ParamControl("PrintLeadInfo",
+                                  "Print lead car info",
+                                  "Prints lead car time and length distance, and absolute and relative velocity next to lead indicator",
+                                  "../assets/offroad/icon_metric.png",
+                                  this));
   toggles.append(new ParamControl("ShowDebugUI",
                                   "Show debug UI elements",
                                   "Show UI elements that aid debugging.",

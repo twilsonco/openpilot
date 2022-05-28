@@ -4,6 +4,7 @@
 #include <cassert>
 #include <string>
 #include <cmath>
+#include <deque>
 
 #include <QDateTime>
 
@@ -180,6 +181,104 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
   x = std::clamp(x, 0.f, s->fb_w - sz * 0.5f);
   y = std::fmin(s->fb_h - sz * .6, y);
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
+
+  if (s->scene.lead_info_print_enabled){
+    // print lead info around chevron
+    // Print relative distances to the left of the chevron
+    int const x_offset = 160;
+    int const y_offset = 48;
+    s->scene.lead_x_vals.push_back(x);
+    s->scene.lead_y_vals.push_back(y);
+    while (s->scene.lead_x_vals.size() > s->scene.lead_xy_num_vals){
+      s->scene.lead_x_vals.pop_front();
+      s->scene.lead_y_vals.pop_front();
+    }
+    int lead_x = 0, lead_y = 0;
+    for (int const & v : s->scene.lead_x_vals){
+      lead_x += v;
+    }
+    lead_x /= float(s->scene.lead_x_vals.size());
+    for (int const & v : s->scene.lead_y_vals){
+      lead_y += v;
+    }
+    lead_y /= float(s->scene.lead_y_vals.size());
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 180));
+    nvgFontFace(s->vg, "sans-semibold");
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+    nvgBeginPath(s->vg);
+    nvgFontSize(s->vg, 120);
+    char val[16], unit[8];
+
+    // first time distance
+    if (s->scene.car_state.getVEgo() > 0.5){
+      snprintf(unit, sizeof(unit), "s"); 
+      float follow_t = d_rel / s->scene.car_state.getVEgo();
+      snprintf(val, sizeof(val), "%.1f%s", follow_t, unit);
+    }
+    else{
+      snprintf(val, sizeof(val), "-");
+    }
+    nvgText(s->vg,lead_x-x_offset,lead_y-y_offset,val,NULL);
+
+    // then length distance
+    if (s->is_metric){
+      snprintf(unit, sizeof(unit), "m"); 
+      if (s->scene.lead_d_rel < 10.){
+        snprintf(val, sizeof(val), "%.1f%s", s->scene.lead_d_rel, unit);
+      }
+      else{
+        snprintf(val, sizeof(val), "%.0f%s", s->scene.lead_d_rel, unit);
+      }
+    }
+    else{
+      snprintf(unit, sizeof(unit), "ft"); 
+      float d_ft = s->scene.lead_d_rel * 3.281;
+      if (d_ft < 10.){
+        snprintf(val, sizeof(val), "%.1f%s", d_ft, unit);
+      }
+      else{
+        snprintf(val, sizeof(val), "%.0f%s", d_ft, unit);
+      }
+    }
+    nvgText(s->vg,lead_x-x_offset,lead_y+y_offset,val,NULL);
+
+    // now abs and relative speed to the right
+
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+    // first abs speed
+    if (s->is_metric){
+      snprintf(unit, sizeof(unit), "kph"); 
+      float v = (s->scene.lead_v * 3.6);
+      if (v < 100.){
+        snprintf(val, sizeof(val), "%.1f", v);
+      }
+      else{
+        snprintf(val, sizeof(val), "%.0f", v);
+      }
+    }
+    else{
+      snprintf(unit, sizeof(unit), "mph"); 
+      float v = (s->scene.lead_v * 2.2374144);
+      if (v < 100.){
+        snprintf(val, sizeof(val), "%.1f", v);
+      }
+      else{
+        snprintf(val, sizeof(val), "%.0f", v);
+      }
+    }
+    nvgText(s->vg,lead_x+x_offset,lead_y-(y_offset*1.3),val,NULL);
+
+    // then relative speed
+    if (s->is_metric) {
+        snprintf(val, sizeof(val), "%s%.1f", s->scene.lead_v_rel >= 0. ? "+" : "", (s->scene.lead_v_rel * 3.6));
+    } else {
+        snprintf(val, sizeof(val), "%s%.1f", s->scene.lead_v_rel >= 0. ? "+" : "", (s->scene.lead_v_rel * 2.2374144));
+    }
+    nvgText(s->vg,lead_x+x_offset,lead_y+(y_offset*1.4),val,NULL);
+
+    nvgFontSize(s->vg, 60);
+    nvgText(s->vg,lead_x+x_offset,lead_y,unit,NULL);
+  }
 }
 
 static void ui_draw_line(UIState *s, const line_vertices_data &vd, NVGcolor *color, NVGpaint *paint) {
@@ -870,7 +969,7 @@ static void ui_draw_measures(UIState *s){
             val_color = nvgRGBA(255, g, b, 200);
             snprintf(val, sizeof(val), "%.1f", follow_t);
           } else {
-             snprintf(val, sizeof(val), "-");
+            snprintf(val, sizeof(val), "-");
           }
           snprintf(unit, sizeof(unit), "s");}
           break;

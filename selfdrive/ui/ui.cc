@@ -216,6 +216,7 @@ static void update_state(UIState *s) {
     scene.speed_limit_control_enabled = Params().getBool("SpeedLimitControl");
     scene.screen_dim_mode = std::stoi(Params().get("ScreenDimMode"));
     scene.lane_pos_enabled = Params().getBool("LanePositionEnabled");
+    scene.lead_info_print_enabled = Params().getBool("PrintLeadInfo");
     if (scene.disableDisengageOnGasEnabled){
       scene.onePedalModeActive = Params().getBool("OnePedalMode");
       scene.onePedalEngageOnGasEnabled = Params().getBool("OnePedalModeEngageOnGas");
@@ -317,6 +318,10 @@ static void update_state(UIState *s) {
     scene.lead_d_rel = radar_state.getLeadOne().getDRel();
     scene.lead_v = radar_state.getLeadOne().getVLead();
     scene.lead_status = radar_state.getLeadOne().getStatus();
+    if (!scene.lead_status){
+      scene.lead_x_vals.clear();
+      scene.lead_y_vals.clear();
+    }
   }
   if (sm.updated("modelV2") && s->vg) {
     auto model = sm["modelV2"].getModelV2();
