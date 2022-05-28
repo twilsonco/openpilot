@@ -1815,7 +1815,7 @@ static void draw_accel_mode_button(UIState *s) {
     const int radius = 72;
     int center_x = s->fb_w - face_wheel_radius - bdr_s * 2;
     if (s->scene.brake_percent >= 0){
-      center_x -= brake_size + 3 * bdr_s + radius;
+      center_x -= brake_size + (s->scene.map_open ? 1.2 : 3) * bdr_s + radius;
     }
     int center_y = s->fb_h - footer_h / 2 - radius / 2;
     center_y = offset_button_y(s, center_y, radius);
@@ -1880,10 +1880,10 @@ static void draw_dynamic_follow_mode_button(UIState *s) {
     const int radius = 72;
     int center_x = s->fb_w - face_wheel_radius - bdr_s * 2;
     if (s->scene.brake_percent >= 0){
-      center_x -= brake_size + 3 * bdr_s + radius;
+      center_x -= brake_size + (s->scene.map_open ? 1.2 : 3) * bdr_s + radius;
     }
     if (s->scene.accel_mode_button_enabled){
-      center_x -= 2 * (bdr_s + radius);
+      center_x -= (s->scene.map_open ? 1.2 : 2) * bdr_s + 2 * radius;
     }
     int center_y = s->fb_h - footer_h / 2 - radius / 2;
     center_y = offset_button_y(s, center_y, radius);
@@ -1964,7 +1964,7 @@ static void draw_laneless_button(UIState *s) {
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
     const int vision_face_radius = 96;
     const int radius = 72;
-    const int center_x = maxspeed_rect.centerX() + vision_face_radius + bdr_s + radius;
+    const int center_x = maxspeed_rect.centerX() + vision_face_radius + bdr_s * (s->scene.map_open ? 0 : 1) + radius;
     int center_y = s->fb_h - footer_h / 2 - radius / 2;
     center_y = offset_button_y(s, center_y, radius);
     int btn_w = radius * 2;
@@ -2044,7 +2044,9 @@ static void ui_draw_vision(UIState *s) {
   || (*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL) {
     ui_draw_vision_face(s);
     ui_draw_vision_brake(s);
-    ui_draw_measures(s);
+    if (!s->scene.map_open || (*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE){
+      ui_draw_measures(s);
+    }
   }
   else if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::MID) {
     ui_draw_vision_face(s);

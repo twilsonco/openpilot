@@ -709,7 +709,7 @@ int offset_button_y(UIState *s, int center_y, int radius){
 
 int offset_right_side_button_x(UIState *s, int center_x, int radius, bool doShift){
   if ((doShift || (*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL)
-  && s->scene.measure_cur_num_slots > 0){
+  && s->scene.measure_cur_num_slots > 0 && !s->scene.map_open){
     int off = s->scene.measure_slots_rect.right() - center_x;
     center_x = s->scene.measure_slots_rect.x - off - bdr_s;
   }
