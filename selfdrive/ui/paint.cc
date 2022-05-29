@@ -185,7 +185,7 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
   if (s->scene.lead_info_print_enabled){
     // print lead info around chevron
     // Print relative distances to the left of the chevron
-    int const x_offset = 160;
+    int const x_offset = 100;
     int const y_offset = 48;
     s->scene.lead_x_vals.push_back(x);
     s->scene.lead_y_vals.push_back(y);
@@ -204,7 +204,7 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
     lead_y /= float(s->scene.lead_y_vals.size());
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 180));
     nvgFontFace(s->vg, "sans-semibold");
-    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+    nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_MIDDLE);
     nvgBeginPath(s->vg);
     nvgFontSize(s->vg, 120);
     char val[16], unit[8];
@@ -244,7 +244,7 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
 
     // now abs and relative speed to the right
 
-    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
     // first abs speed
     if (s->is_metric){
       snprintf(unit, sizeof(unit), "kph"); 
@@ -276,7 +276,7 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
     }
     nvgText(s->vg,lead_x+x_offset,lead_y+(y_offset*1.4),val,NULL);
 
-    nvgFontSize(s->vg, 60);
+    nvgFontSize(s->vg, 70);
     nvgText(s->vg,lead_x+x_offset,lead_y,unit,NULL);
   }
 }
