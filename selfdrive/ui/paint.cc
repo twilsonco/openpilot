@@ -277,7 +277,7 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
     nvgText(s->vg,lead_x+x_offset,lead_y+(y_offset*1.4),val,NULL);
 
     nvgFontSize(s->vg, 70);
-    nvgText(s->vg,lead_x+x_offset,lead_y,unit,NULL);
+    nvgText(s->vg,lead_x+x_offset+20,lead_y,unit,NULL);
   }
 }
 
