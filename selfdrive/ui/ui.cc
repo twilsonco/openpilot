@@ -312,6 +312,9 @@ static void update_state(UIState *s) {
     
     
   }
+  if (sm.updated("liveParameters")){
+    scene.road_roll = sm["liveParameters"].getLiveParameters().getRoll();
+  }
   if (sm.updated("radarState")) {
     auto radar_state = sm["radarState"].getRadarState();
     scene.lead_v_rel = radar_state.getLeadOne().getVRel();
@@ -393,6 +396,7 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("liveLocationKalman")) {
     scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();
+    scene.device_roll = sm["liveLocationKalman"].getLiveLocationKalman().getCalibratedOrientationNED().getValue()[0];
   }
   if (sm.updated("lateralPlan")) {
     scene.lateral_plan = sm["lateralPlan"].getLateralPlan();
@@ -585,7 +589,7 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "deviceState", "roadCameraState",
     "pandaState", "carParams", "driverMonitoringState", "sensorEvents", "carState", "radarState", "liveLocationKalman", "ubloxGnss", "gpsLocationExternal", 
-    "longitudinalPlan", "lateralPlan",
+    "longitudinalPlan", "lateralPlan", "liveParameters",
   });
 
   ui_state.fb_w = vwp_w;

@@ -1322,6 +1322,24 @@ static void ui_draw_measures(UIState *s){
           snprintf(val, sizeof(val), "%.1f%%", scene.percentGradeDevice);
           }
           break;
+                  
+        case UIMeasure::ROLL_DEVICE:
+          {
+          float degroll = nvgRadToDeg(scene.device_roll);
+          snprintf(name, sizeof(name), "DEVICE ROLL");
+          val_color = nvgRGBA(255, 255, 255, 200);
+          snprintf(val, sizeof(val), "%.1f°", degroll);
+          }
+          break;
+
+        case UIMeasure::ROLL:
+          {
+          float degroll = nvgRadToDeg(scene.road_roll);
+          snprintf(name, sizeof(name), "ROAD ROLL");
+          val_color = nvgRGBA(255, 255, 255, 200);
+          snprintf(val, sizeof(val), "%.1f°", degroll);
+          }
+          break;
 
         case UIMeasure::FOLLOW_LEVEL: 
           {

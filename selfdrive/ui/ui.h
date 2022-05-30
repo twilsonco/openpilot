@@ -176,6 +176,8 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   VISION_MAXVFORCURCURV,
   VISION_MAXPREDLATACCEL,
   LANE_WIDTH,
+  ROLL,
+  ROLL_DEVICE,
   
   NUM_MEASURES
 } UIMeasure;
@@ -237,6 +239,7 @@ typedef struct UIScene {
   Rect measure_slot_touch_rects[10];
   int num_measures = UIMeasure::NUM_MEASURES; // the number of cases handled in ui_draw_measures() in paint.cc
   Rect speed_rect;
+  float road_roll, device_roll;
   
   // actual measures
   float angleSteers, angleSteersDes, angleSteersErr;
