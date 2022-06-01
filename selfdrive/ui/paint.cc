@@ -160,7 +160,7 @@ static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, i
 }
 
 
-static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const vertex_data &vd) {
+static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const vertex_data &vd, bool draw_info) {
   // Draw lead car indicator
   auto [x, y] = vd;
 
@@ -182,7 +182,7 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
   y = std::fmin(s->fb_h - sz * .6, y);
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 
-  if (s->scene.lead_info_print_enabled){
+  if (s->scene.lead_info_print_enabled && draw_info){
     // print lead info around chevron
     // Print relative distances to the left of the chevron
     int const x_offset = 100;
@@ -193,6 +193,8 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
       s->scene.lead_x_vals.pop_front();
       s->scene.lead_y_vals.pop_front();
     }
+    s->scene.lead_x_vals.shrink_to_fit();
+    s->scene.lead_y_vals.shrink_to_fit();
     int lead_x = 0, lead_y = 0;
     for (int const & v : s->scene.lead_x_vals){
       lead_x += v;
@@ -396,10 +398,10 @@ static void ui_draw_world(UIState *s) {
     auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[0];
     auto lead_two = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[1];
     if (lead_one.getProb() > .5) {
-      draw_lead(s, lead_one, s->scene.lead_vertices[0]);
+      draw_lead(s, lead_one, s->scene.lead_vertices[0], true);
     }
    if (lead_two.getProb() > .5 && (std::abs(lead_one.getX()[0] - lead_two.getX()[0]) > 3.0)) {
-      draw_lead(s, lead_two, s->scene.lead_vertices[1]);
+      draw_lead(s, lead_two, s->scene.lead_vertices[1], false);
     }
   }
   nvgResetScissor(s->vg);
