@@ -13,11 +13,11 @@ from tools.tuning.lat_settings import *
 def old_feedforward(speed, angle):
   
   # sierra silverado combined
-  ANGLE = 0.06539361463056717
-  ANGLE_OFFSET = -0.8390269362439537
-  SIGMOID_SPEED = 0.023681877712247515
-  SIGMOID = 0.5709779025308087
-  SPEED = -0.0016656455765509301
+  # ANGLE = 0.06539361463056717
+  # ANGLE_OFFSET = -0.8390269362439537
+  # SIGMOID_SPEED = 0.023681877712247515
+  # SIGMOID = 0.5709779025308087
+  # SPEED = -0.0016656455765509301
   
   #sierra only
   # ANGLE = 0.07375408334531243
@@ -32,9 +32,12 @@ def old_feedforward(speed, angle):
   # SIGMOID_SPEED = 0.02534582973830592
   # SIGMOID = 0.5901819029949994
   # SPEED = -0.0026961086215487357
-  return feedforward(speed, angle, ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED)
+  # return feedforward(speed, angle, ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED)
   # return 0.0002 * (speed ** 2) * angle # old bolt and bolteuv
-  return 0.00004 * (speed ** 2) * angle # old silverado/sierra
+  # return 0.00004 * (speed ** 2) * angle # old silverado/sierra
+  # return 0.000195 * (speed ** 2) * angle # old suburban
+
+  return angle * 0.375
 
   # old volt sigmoid
   # x = angle * 0.02904609
@@ -50,7 +53,7 @@ def new_feedforward(speed, angle):
   return feedforward(speed, angle, ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED)
 
 def feedforward(speed, angle, ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED):
-  x = ANGLE * (angle + ANGLE_OFFSET)
+  x = ANGLE * angle
   sigmoid = x / (1 + np.fabs(x))
   # sigmoid = np.arcsinh(x)
   return (SIGMOID_SPEED * sigmoid * speed) + (SIGMOID * sigmoid) + (SPEED * speed)
@@ -97,8 +100,8 @@ def fit(speed, angle, steer):
     f.write(f"    {SIGMOID_SPEED = }\n")
     f.write(f"    {SIGMOID = }\n")
     f.write(f"    {SPEED = }\n")
-    f.write('MAE old {}, new {}\n'.format(round(old_mae, 4), round(new_mae, 4)))
-    f.write('STD old {}, new {}\n'.format(round(old_std, 4), round(new_std, 4)))
+    f.write('mean absolute error: old {}, new {}\n'.format(round(old_mae, 4), round(new_mae, 4)))
+    f.write('standard deviation: old {}, new {}\n'.format(round(old_std, 4), round(new_std, 4)))
     f.write(f"fit computed using {len(speed)} points")
 
 def plot(speed, angle, steer):
@@ -116,16 +119,27 @@ def plot(speed, angle, steer):
 
     res = 100
 
+    # _angles = []
+    # STEP = 1 # degrees
+    # for a in range(0, 90, STEP):
+    #   _angles.append([a, a + STEP])
+    # _angles = np.r_[_angles]
+    
     _angles = []
-    STEP = 1 # degrees
-    for a in range(0, 90, STEP):
+    STEP = 0.05 # degrees
+    astart = 0.
+    aend = 4.
+    for a in np.linspace(astart, aend, num=int((aend-astart)/STEP)).tolist():
       _angles.append([a, a + STEP])
     _angles = np.r_[_angles]
 
     for angle_range in _angles:
-      start = round(angle_range[0])
-      end = round(angle_range[1])
-      angle_range_str = f'deg {start:02d}-{end:02d}'
+      # start = round(angle_range[0])
+      # end = round(angle_range[1])
+      # angle_range_str = f'deg {start:02d}-{end:02d}'
+      start = angle_range[0]
+      end = angle_range[1]
+      angle_range_str = f'lat_accel {start:.2f}-{end:.2f}'
       mask = (angle_range[0] <= abs_angle) & (abs_angle <= angle_range[1])
 
       plot_speed = speed[mask]
@@ -180,6 +194,8 @@ def plot(speed, angle, steer):
       plt.ylabel('steer')
       plt.ylim(0., 1.5)
       plt.xlim(SPEED_MIN, SPEED_MAX)
+      plt.grid(axis='x', color='0.95')
+      plt.grid(axis='y', color='0.95')
       if not os.path.isdir('plots'):
         os.mkdir('plots')
       plt.savefig(f'plots/{angle_range_str}.png')
@@ -248,10 +264,14 @@ def plot(speed, angle, steer):
 
       plt.title(speed_range_str)
       plt.legend(loc='lower right')
-      plt.xlabel('angle (deg)')
+      # plt.xlabel('angle (deg)')
+      plt.xlabel('lateral acceleration (m/s^2)')
       plt.ylabel('steer')
       plt.ylim(-1.5, 1.5)
-      plt.xlim(-90.,90.)
+      # plt.xlim(-90.,90.)
+      plt.xlim(-4.,4.)
+      plt.grid(axis='x', color='0.95')
+      plt.grid(axis='y', color='0.95')
       # plt.xlim(-max(abs(plot_angle)), max(abs(plot_angle)))
       plt.savefig(f'plots/{speed_range_str}.png')
       plt.close()
@@ -261,6 +281,7 @@ def plot(speed, angle, steer):
     cmds = [
       'rm -rf ~/Downloads/plots',
       'convert -delay 8 plots/deg*.png deg-up.gif',
+      'convert -delay 8 plots/lat*.png deg-up.gif',
       'convert -reverse deg-up.gif deg-down.gif',
       'convert -loop -1 deg-up.gif deg-down.gif deg.gif',
       'convert -delay 8 plots/mph*.png mph-up.gif',
@@ -270,6 +291,7 @@ def plot(speed, angle, steer):
       'mv *.gif plots/',
       'mv plots ~/Downloads/',
       'rm -f ~/Downloads/plots/deg*.png',
+      'rm -f ~/Downloads/plots/lat*.png',
       'rm -f ~/Downloads/plots/mph*.png',
       'rm -f regularized'
     ]

@@ -15,11 +15,11 @@ for i in *; do
   if [ -f "$i"/rlog ]; then
     cp "$i"/rlog /data/rlogs/"$DONGLEID""_$i"--rlog
     bzip2 -f --verbose /data/rlogs/"$DONGLEID""_$i"--rlog # >> /data/getrlogs.txt 2>&1
-    cd /data/openpilot
-    ./tools/tuning/lat.py --path "/data/rlogs"
+    # cd /data/openpilot
+    # ./tools/tuning/lat.py --path "/data/rlogs"
   else
     cp --verbose "$i"/rlog.bz2 /data/rlogs/"$DONGLEID""_$i"--rlog.bz2 # >> /data/getrlogs.txt 2>&1
-    cd /data/openpilot
-    ./tools/tuning/lat.py --path "/data/rlogs"
+    # cd /data/openpilot
+    # ./tools/tuning/lat.py --path "/data/rlogs"
   fi
 done
