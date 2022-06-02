@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from math import fabs, sin
+from math import fabs, sin, erf
 from cereal import car
 from common.numpy_fast import interp
 from common.realtime import sec_since_boot
@@ -35,6 +35,11 @@ def get_steer_feedforward_sigmoid(desired_angle, v_ego, ANGLE, ANGLE_OFFSET, SIG
   x = ANGLE * (desired_angle + ANGLE_OFFSET)
   sigmoid = x / (1 + fabs(x))
   return (SIGMOID_SPEED * sigmoid * v_ego) + (SIGMOID * sigmoid) + (SPEED * v_ego)
+
+def get_steer_feedforward_erf(angle, speed, ANGLE_COEF, ANGLE_OFFSET, SPEED_OFFSET, SPEED_POWER, SIGMOID_COEF, SPEED_COEF):
+  x = ANGLE_COEF * (angle + ANGLE_OFFSET)
+  sigmoid = erf(x)
+  return (SIGMOID_COEF * sigmoid) / (max(speed - SPEED_OFFSET, 0.1) * SPEED_COEF)**SPEED_POWER
 
 class CarInterface(CarInterfaceBase):
   params_check_last_t = 0.
@@ -72,6 +77,19 @@ class CarInterface(CarInterfaceBase):
     SIGMOID = 0.4983180128530419
     SPEED = -0.0024896011696167266
     return get_steer_feedforward_sigmoid(desired_angle, v_ego, ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED)
+  
+  # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
+  @staticmethod
+  def get_steer_feedforward_volt_torque(desired_lateral_accel, v_ego):
+    ANGLE_COEF = 0.4949595577690545
+    ANGLE_OFFSET = 0.
+    SPEED_OFFSET = 7.167618977822346
+    SPEED_POWER = 0.12510621566177965
+    SIGMOID_COEF = 1.2456671526689822
+    SPEED_COEF = 1.2060306767931044
+    return get_steer_feedforward_erf(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_OFFSET, SPEED_OFFSET, SPEED_POWER, SIGMOID_COEF, SPEED_COEF)
+  
+
 
   @staticmethod
   def get_steer_feedforward_acadia(desired_angle, v_ego):
@@ -84,7 +102,10 @@ class CarInterface(CarInterfaceBase):
 
   def get_steer_feedforward_function(self):
     if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
-      return self.get_steer_feedforward_volt
+      if (Params().get_bool("EnableTorqueControl")):
+        return self.get_steer_feedforward_volt_torque
+      else:
+        return self.get_steer_feedforward_volt
     elif self.CP.carFingerprint == CAR.ACADIA:
       return self.get_steer_feedforward_acadia
     else:
@@ -139,13 +160,13 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = 0.45 * ret.wheelbase # from Volt Gen 1
       ret.steerActuatorDelay = 0.18
       if (Params().get_bool("EnableTorqueControl")):
-        max_torque = 3.0
+        max_lateral_accel = 3.0
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 2.0 / max_torque
-        ret.lateralTuning.torque.ki = 0.4 / max_torque
-        ret.lateralTuning.torque.kd = 3.0 / max_torque
-        ret.lateralTuning.torque.kf = 1.4 / max_torque
+        ret.lateralTuning.torque.kp = 1.8 / max_lateral_accel
+        ret.lateralTuning.torque.ki = 0.4 / max_lateral_accel
+        ret.lateralTuning.torque.kd = 35. / max_lateral_accel
+        ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
         ret.lateralTuning.torque.friction = 0.02
       else:
         ret.lateralTuning.pid.kpBP = [0., 40.]
@@ -193,13 +214,13 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.24
 
       if (Params().get_bool("EnableTorqueControl")):
-        max_torque = 3.0
+        max_lateral_accel = 3.0
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 2.0 / max_torque
-        ret.lateralTuning.torque.ki = 0.8 / max_torque
-        ret.lateralTuning.torque.kd = 5.0 / max_torque
-        ret.lateralTuning.torque.kf = 1.5 / max_torque
+        ret.lateralTuning.torque.kp = 2.0 / max_lateral_accel
+        ret.lateralTuning.torque.ki = 0.8 / max_lateral_accel
+        ret.lateralTuning.torque.kd = 5.0 / max_lateral_accel
+        ret.lateralTuning.torque.kf = 1.5 / max_lateral_accel
         ret.lateralTuning.torque.friction = 0.05
       else:
         ret.lateralTuning.pid.kpBP = [i * CV.MPH_TO_MS for i in [0., 80.]]

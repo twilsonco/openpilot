@@ -1,4 +1,5 @@
 import math
+from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.controls.lib.pid import PIDController
 from common.numpy_fast import interp
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
@@ -17,10 +18,11 @@ from cereal import log
 # move it at all, this is compensated for too.
 
 
-LOW_SPEED_FACTOR = 300
+LOW_SPEED_FACTOR = 200
 JERK_THRESHOLD = 0.2
 
-
+def get_steer_feedforward(desired_lateral_accel, speed):
+  return desired_lateral_accel
 class LatControlTorque(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
@@ -30,6 +32,9 @@ class LatControlTorque(LatControl):
                             k_f=CP.lateralTuning.torque.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
     self.friction = CP.lateralTuning.torque.friction
+    self.get_steer_feedforward = CI.get_steer_feedforward_function()
+    if self.get_steer_feedforward == CarInterfaceBase.get_steer_feedforward_default:
+      self.get_steer_feedforward = get_steer_feedforward
 
   def reset(self):
     super().reset()
@@ -56,7 +61,7 @@ class LatControlTorque(LatControl):
       error = setpoint - measurement
       pid_log.error = error
 
-      ff = desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY
+      ff = self.get_steer_feedforward(desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY, CS.vEgo)
       friction_compensation = interp(desired_lateral_jerk, [-JERK_THRESHOLD, JERK_THRESHOLD], [-self.friction, self.friction])
       ff += friction_compensation
       output_torque = self.pid.update(setpoint, measurement,
