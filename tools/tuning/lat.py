@@ -390,30 +390,32 @@ def load(path, route=None):
           num_files = len(filenames)
           fi = 0
           def rlog_to_lat(filename):
-            if len(filename.split('--')) == 3 and f"{dongle_id}|{filename}.lat" not in latsegs:
-                with tempfile.TemporaryDirectory() as d:
-                  if os.path.exists(os.path.join(path,filename,"rlog")):
-                    tmpbz2 = None
-                    shutil.move(os.path.join(path,filename,"rlog"),os.path.join(d,f"{dongle_id}_{filename}--rlog"))
-                  else: # os.path.exists(os.path.join(path,filename,"rlog.bz2"))
-                    tmpbz2 = os.path.join(d,f"{dongle_id}_{filename}--rlog.bz2")
-                    shutil.move(os.path.join(path,filename,"rlog.bz2"),tmpbz2)
-                  try:
-                    route='--'.join(f"{dongle_id}|{filename}".split('--')[:2])
-                    r = Route(route, data_dir=d)
-                    lr = MultiLogIterator([lp for lp in r.log_paths() if lp])
-                    data1 = collect(lr)
-                    if len(data1):
-                      seg_num = f"{dongle_id}|{filename}".split('--')[2]
-                      with open(os.path.join(rlog_path, f"{route}--{seg_num}.lat"), 'wb') as f:
-                        pickle.dump(data1, f)
-                  except Exception as e:
-                      print(f"Failed to load segment file {filename}:\n{e}")
-                  finally:
-                    if tmpbz2:
-                      shutil.move(tmpbz2,os.path.join(path,filename,"rlog.bz2"))
-                    else:
-                      shutil.move(os.path.join(d,f"{dongle_id}_{filename}--rlog"),os.path.join(path,filename,"rlog"))
+            try:
+              with tempfile.TemporaryDirectory() as d:
+                if os.path.exists(os.path.join(path,filename,"rlog")):
+                  tmpbz2 = None
+                  shutil.move(os.path.join(path,filename,"rlog"),os.path.join(d,f"{dongle_id}_{filename}--rlog"))
+                else: # os.path.exists(os.path.join(path,filename,"rlog.bz2"))
+                  tmpbz2 = os.path.join(d,f"{dongle_id}_{filename}--rlog.bz2")
+                try:
+                  shutil.move(os.path.join(path,filename,"rlog.bz2"),tmpbz2)
+                  route='--'.join(f"{dongle_id}|{filename}".split('--')[:2])
+                  r = Route(route, data_dir=d)
+                  lr = MultiLogIterator([lp for lp in r.log_paths() if lp])
+                  data1 = collect(lr)
+                  if len(data1):
+                    seg_num = f"{dongle_id}|{filename}".split('--')[2]
+                    with open(os.path.join(rlog_path, f"{route}--{seg_num}.lat"), 'wb') as f:
+                      pickle.dump(data1, f)
+                except Exception as e:
+                    print(f"Failed to load segment file {filename}:\n{e}")
+                finally:
+                  if tmpbz2:
+                    shutil.move(tmpbz2,os.path.join(path,filename,"rlog.bz2"))
+                  else:
+                    shutil.move(os.path.join(d,f"{dongle_id}_{filename}--rlog"),os.path.join(path,filename,"rlog"))
+            except Exception as e:
+                print(f"Failed to load segment file {filename}:\n{e}")
           result = Parallel(n_jobs = 5)(delayed(rlog_to_lat)(filename) for filename in tqdm(filenames, desc="Preparing fit data from rlogs"))
         else:
           # first make per-segment .lat files
