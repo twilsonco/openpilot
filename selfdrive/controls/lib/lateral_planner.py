@@ -98,6 +98,7 @@ class LateralPlanner():
       self.use_lanelines = not Params().get_bool("EndToEndToggle")
       self.laneless_mode = int(Params().get("LanelessMode", encoding="utf8"))
       self.lane_pos = float(Params().get("LanePosition", encoding="utf8"))
+      self.nudgeless_enabled = self._params.get_bool("NudgelessLaneChange")
       self.second = 0.0
     v_ego = sm['carState'].vEgo
     active = sm['controlsState'].active
@@ -130,7 +131,6 @@ class LateralPlanner():
         t = sec_since_boot()
         if self.prev_lane_change_state in [LaneChangeState.off, LaneChangeState.laneChangeFinishing] and t - self.preLaneChange_start_t > 3.:
           self.preLaneChange_start_t = t
-          self.nudgeless_enabled = self._params.get_bool("NudgelessLaneChange")
         # Set lane change direction
         if sm['carState'].leftBlinker:
           self.lane_change_direction = LaneChangeDirection.left
