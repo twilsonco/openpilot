@@ -22,7 +22,7 @@ MAX_COMMAND = 300 # TODO: autodetect from fingerprint
 
 # Section == continuous valid samples of interest, engaged without steering
 SECTION_DELAY = 5. # TODO
-MIN_SECTION_SECONDS = 10.
+MIN_SECTION_SECONDS = 1.0
 
 SPEED_MIN = 8
 SPEED_MAX = 90

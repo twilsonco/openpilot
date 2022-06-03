@@ -30,8 +30,6 @@ from selfdrive.config import Conversions as CV
 from tools.lib.logreader import MultiLogIterator
 from tools.lib.route import Route
 
-from joblib import Parallel, delayed  
-
 MULTI_FILE = False
 
 
@@ -154,8 +152,6 @@ def collect(lr):
   
   CP = None
   VM = None
-  stiffnessFactor = np.nan
-  steerRatio = np.nan
   lat_angular_velocity = np.nan
   lrd = dict()
   for msg in lr:
@@ -203,8 +199,6 @@ def collect(lr):
             not np.isnan(s.steer_offset) and \
             not np.isnan(s.curvature_rate) and \
             VM is not None and \
-            not np.isnan(stiffnessFactor) and \
-            not np.isnan(steerRatio) and \
             not np.isnan(lat_angular_velocity)
     
     if valid:
@@ -220,31 +214,28 @@ def collect(lr):
     #   pass
 
     # assert continuous section
-    if last_msg_time:
-      valid = valid and 0.1 > abs(msg.logMonoTime - last_msg_time) * 1e-9
-    last_msg_time = msg.logMonoTime
+    # if last_msg_time:
+    #   valid = valid and 0.1 > abs(msg.logMonoTime - last_msg_time) * 1e-9
+    # last_msg_time = msg.logMonoTime
 
     if valid:
-      section.append(deepcopy(s))
+      samples.append(deepcopy(s))
       s.v_ego = np.nan
-      section_end = msg.logMonoTime
-      if not section_start:
-        section_start = msg.logMonoTime
-    elif section_start:
-      # end of valid section
-      if (section_end - section_start) * 1e-9 > MIN_SECTION_SECONDS:
-        samples.extend(section)  
-        CP = None
-        VM = None
-        stiffnessFactor = np.nan
-        steerRatio = np.nan
-        lat_angular_velocity = np.nan
-      section = []
-      section_start = section_end = 0
+  #     section.append(deepcopy(s))
+  #     section_end = msg.logMonoTime
+  #     if not section_start:
+  #       section_start = msg.logMonoTime
+  #   elif section_start:
+  #     # end of valid section
+  #     if (section_end - section_start) * 1e-9 >= MIN_SECTION_SECONDS:
+  #       samples.extend(section)  
+  #       lat_angular_velocity = np.nan
+  #     section = []
+  #     section_start = section_end = 0
 
-  # Terminated during valid section
-  if (section_end - section_start) * 1e-9 > MIN_SECTION_SECONDS:
-    samples.extend(section)
+  # # Terminated during valid section
+  # if (section_end - section_start) * 1e-9 > MIN_SECTION_SECONDS:
+  #   samples.extend(section)
 
 
   if len(samples) == 0:
@@ -386,19 +377,16 @@ def load(path, route=None):
           if not os.path.exists(rlog_path):
             os.mkdir(rlog_path)
           latsegs = set([f for f in os.listdir(rlog_path) if ".lat" in f])
-          filenames = [filename for filename in os.listdir(path) if len(filename.split('--')) == 3 and f"{dongle_id}|{filename}.lat" not in latsegs]
-          num_files = len(filenames)
-          fi = 0
-          def rlog_to_lat(filename):
-            try:
+          filenames = sorted([filename for filename in os.listdir(path) if len(filename.split('--')) == 3 and f"{dongle_id}|{filename}.lat" not in latsegs])
+          for filename in tqdm(filenames, desc="Preparing fit data from rlogs"):
+            if len(filename.split('--')) == 3 and f"{dongle_id}|{filename}.lat" not in latsegs:
               with tempfile.TemporaryDirectory() as d:
                 if os.path.exists(os.path.join(path,filename,"rlog")):
-                  tmpbz2 = None
-                  shutil.move(os.path.join(path,filename,"rlog"),os.path.join(d,f"{dongle_id}_{filename}--rlog"))
-                else: # os.path.exists(os.path.join(path,filename,"rlog.bz2"))
+                  shutil.copy(os.path.join(path,filename,"rlog"),os.path.join(d,f"{dongle_id}_{filename}--rlog"))
+                elif os.path.exists(os.path.join(path,filename,"rlog.bz2")):
                   tmpbz2 = os.path.join(d,f"{dongle_id}_{filename}--rlog.bz2")
+                  shutil.copy(os.path.join(path,filename,"rlog.bz2"),tmpbz2)
                 try:
-                  shutil.move(os.path.join(path,filename,"rlog.bz2"),tmpbz2)
                   route='--'.join(f"{dongle_id}|{filename}".split('--')[:2])
                   r = Route(route, data_dir=d)
                   lr = MultiLogIterator([lp for lp in r.log_paths() if lp])
@@ -408,15 +396,8 @@ def load(path, route=None):
                     with open(os.path.join(rlog_path, f"{route}--{seg_num}.lat"), 'wb') as f:
                       pickle.dump(data1, f)
                 except Exception as e:
-                    print(f"Failed to load segment file {filename}:\n{e}")
-                finally:
-                  if tmpbz2:
-                    shutil.move(tmpbz2,os.path.join(path,filename,"rlog.bz2"))
-                  else:
-                    shutil.move(os.path.join(d,f"{dongle_id}_{filename}--rlog"),os.path.join(path,filename,"rlog"))
-            except Exception as e:
-                print(f"Failed to load segment file {filename}:\n{e}")
-          result = Parallel(n_jobs = 5)(delayed(rlog_to_lat)(filename) for filename in tqdm(filenames, desc="Preparing fit data from rlogs"))
+                    print(f"Failed to load segment file {filename}: {e}")
+                    continue
         else:
           # first make per-segment .lat files
           # get previously completed segments
