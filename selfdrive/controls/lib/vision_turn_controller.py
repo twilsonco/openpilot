@@ -30,12 +30,12 @@ _A_LAT_REG_MAX = 3.2  # Maximum lateral acceleration
 # Lookup table for the minimum smooth deceleration during the ENTERING state
 # depending on the actual maximum absolute lateral acceleration predicted on the turn ahead.
 _ENTERING_SMOOTH_DECEL_V = [-0.2, -1.5]  # min decel value allowed on ENTERING state
-_ENTERING_SMOOTH_DECEL_BP = [2.0, 3.8]  # absolute value of lat acc ahead
+_ENTERING_SMOOTH_DECEL_BP = [2.2, 3.9]  # absolute value of lat acc ahead
 
 # Lookup table for the acceleration for the TURNING state
 # depending on the current lateral acceleration of the vehicle.
 _TURNING_ACC_V = [1.0, -0.2, -1.5]  # acc value
-_TURNING_ACC_BP = [1.0, 2.1, 4.1]  # absolute value of current lat acc
+_TURNING_ACC_BP = [1.0, 2.3, 4.1]  # absolute value of current lat acc
 
 _LEAVING_ACC = 0.6  # Confortble acceleration to regain speed while leaving a turn.
 
