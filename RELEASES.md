@@ -7,6 +7,20 @@ Version tw-0.8.12-2_tws (2022-06-04)
  * IMPROVED: Volt torque steering porformance!
    * With custom feedforward fit from volt driving data like the traditional PIDF tune
 
+Version tw-0.8.12-1_tws (2022-04-27)
+========================
+ * NEW: [optional w/ toggle] Torque-based steering control for Volt and Acadia
+ * IMPROVED: [Volt] inproved (non-torque-based) steering performance too!
+ * IMPROVED: ['18 Volt] auto-creep; still not as good as auto-resume
+  * When lead car pulls away, brakes will release and car will creep
+  * Press resume button or tap gas to resume
+  * Car will apply brakes again if the lead stops, so it will auto-creep, but not completely resume
+ * IMPROVED: improve c3 thermal control
+ * IMRPOVED: increase brightness for more alerts when at low brightness
+ * IMPROVED: wider path drawn when in e2e control
+ * IMPROVED: fix path artifacts going over hills
+ * IMPROVED: remove community features toggle
+
 Version tw-0.8.9-3.11 (2022-03-28--2022-04-19)
 ========================
  * Put Comma Prime widget back on off-road screen
