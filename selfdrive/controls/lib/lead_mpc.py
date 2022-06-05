@@ -19,10 +19,10 @@ SNG_ACCEL_COST = MPC_COST_LONG.ACCELERATION
 
 FOLLOW_PROFILES = [
   [ # one-bar
-    [-1.0, 2.3], # bp0 and bp1; lead car relative velocities [m/s] (set both to 0.0 to disable dynamic brakepoints)
+    [-1.1, 2.3], # bp0 and bp1; lead car relative velocities [m/s] (set both to 0.0 to disable dynamic brakepoints)
     [0.5, 2.0], # follow distances corresponding to bp0 and bp1 [s]
     [0.0, 1.892, 3.7432, 5.8632, 8.0727, 10.7301, 14.343, 17.6275, 22.4049, 28.6752, 34.8858, 40.35], # lookup table of speeds for additional follow distances [m/s] (stolen from shane)
-    [0.0, 0.00099, -0.0324, -0.0647, -0.0636, -0.0601, -0.0296, -0.1211, -0.2341, -0.3991, -0.432, -0.4625], # additional follow distances based on speed [s]
+    [0.0, 0.00099, -0.0324, -0.0647, -0.0636, -0.0601, -0.0296, -0.1211, -0.2141, -0.3691, -0.38, -0.40], # additional follow distances based on speed [s]
     1.2, # stopping distance behind stopped lead car [m]
     # now variable distance cost. Defined in two ways; one according to abs follow distance [m] and one in relative follow distance [s]. Larger distance cost wins. First the time-based:
     [1.0, 1.5, 2.3], # seconds behind lead car
@@ -52,7 +52,7 @@ FOLLOW_PROFILES = [
     [0.0, 0.0020985, 0.005097, 0.009, 0.015, 0.02367, 0.037167, 0.0447, 0.05337, 0.0603, 0.06297, 0.06627, 0.07107],
     0.8,
     [0.8, 1.4, 1.8, 3.5],
-    [MPC_COST_LONG.DISTANCE * 1.5, MPC_COST_LONG.DISTANCE * 0.7, MPC_COST_LONG.DISTANCE * 0.25, MPC_COST_LONG.DISTANCE * 0.1],
+    [MPC_COST_LONG.DISTANCE * 1.5, MPC_COST_LONG.DISTANCE * 0.7, MPC_COST_LONG.DISTANCE * 0.15, MPC_COST_LONG.DISTANCE * 0.1],
     [15., 25., 35., 45.], # meters behind lead car
     [MPC_COST_LONG.DISTANCE * 1.5, MPC_COST_LONG.DISTANCE * 0.8, MPC_COST_LONG.DISTANCE * 0.25, MPC_COST_LONG.DISTANCE * 0.1],
     0.5 * CV.MPH_TO_MS,
@@ -108,6 +108,13 @@ def interp_follow_profile(v_ego, v_lead, x_lead, fp_float):
   
 class DynamicFollow():
   user_timeout_t = 300. # amount of time df waits after the user sets the follow level
+  
+  debug_log = True
+  if debug_log:
+    log_t_last = 0.
+    log_t_period = 5. # seconds
+    with open('/data/df_log.txt','w') as f:
+      f.write("time,time_since_user_timeout,points,new_lead,lead_gone,v_ego,lead_v,lead_v_rel,lead_d,time_dist,penalty_time,penalty_dist,penalty,last_cutin_factor,rescinded_penalty\n")
   
   ####################################
   #    ACCRUING FOLLOW POINTS
@@ -177,15 +184,21 @@ class DynamicFollow():
         penalty_time = interp(time_dist, self.cutin_time_dist_penalty_bp, self.cutin_time_dist_penalty_v)
       else:
         penalty_time = 0.
+        time_dist = 100.
       penalty_dist = interp(lead_d, self.cutin_dist_penalty_bp, self.cutin_dist_penalty_v)
       penalty_dist = max(penalty_dist, penalty_time)
       lead_v_rel = v_ego - lead_v
       penalty_vel = interp(lead_v_rel, self.cutin_vel_penalty_bp, self.cutin_vel_penalty_v)
       penalty = max(0., penalty_dist + penalty_vel)
-      penalty *= interp(t - self.cutin_t_last, self.cutin_last_t_factor_bp, self.cutin_last_t_factor_v)
+      last_cutin_factor = interp(t - self.cutin_t_last, self.cutin_last_t_factor_bp, self.cutin_last_t_factor_v)
+      penalty *= last_cutin_factor
       points_old = self.points_cur
       if t - self.user_timeout_last_t > self.user_timeout_t:
         self.points_cur = max(self.points_bounds[0], self.points_cur - penalty)
+      if self.debug_log:
+        self.log_t_last = t
+        with open('/data/df_log.txt','a') as f:
+          f.write(f"{t},{t - self.user_timeout_last_t},{self.points_cur},{new_lead},{lead_gone},{v_ego},{lead_v},{lead_v_rel},{lead_d},{time_dist},{penalty_time},{penalty_dist},{penalty},{last_cutin_factor},{0.}\n")
       self.cutin_t_last = t
       self.cutin_penalty_last = points_old - self.points_cur
       self.has_lead_last = has_lead
@@ -193,7 +206,16 @@ class DynamicFollow():
     elif lead_gone and t - self.user_timeout_last_t > self.user_timeout_t and t - self.cutin_t_last < self.cutin_rescind_t_bp[-1]:
       rescinded_penalty = self.cutin_penalty_last * interp(t - self.cutin_t_last, self.cutin_rescind_t_bp, self.cutin_rescind_t_v)
       self.points_cur += max(0,rescinded_penalty)
+      if self.debug_log:
+        self.log_t_last = t
+        with open('/data/df_log.txt','a') as f:
+          f.write(f"{t},{t - self.user_timeout_last_t},{self.points_cur},{new_lead},{lead_gone},{v_ego},{lead_v},{0},{lead_d},{0},{0},{0},{0},{0},{rescinded_penalty}\n")
       self.cutin_t_last = t - self.cutin_rescind_t_bp[-1] - 1.
+    else:
+      if self.debug_log and t - self.log_t_last > self.log_t_period:
+        self.log_t_last = t
+        with open('/data/df_log.txt','a') as f:
+          f.write(f"{t},{t - self.user_timeout_last_t},{self.points_cur},{new_lead},{lead_gone},{v_ego},{lead_v},{0},{lead_d},{0},{0},{0},{0},{0},{0.}\n")
 
     rate = interp(self.points_cur, self.fp_point_rate_bp, self.fp_point_rate_v)
     speed_factor = interp(v_ego, self.speed_rate_factor_bp, self.speed_rate_factor_v)

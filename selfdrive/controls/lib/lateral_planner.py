@@ -49,12 +49,13 @@ class LateralPlanner():
     self.setup_mpc()
     self.solution_invalid_cnt = 0
 
-    self.laneless_mode = int(Params().get("LanelessMode", encoding="utf8"))
+    self._params = Params()
+    self.laneless_mode = int(self._params.get("LanelessMode", encoding="utf8"))
     self.laneless_mode_status = False
     self.laneless_mode_status_buffer = False
 
-    self.nudgeless_enabled = Params().get_bool("NudgelessLaneChange")
-    self.nudgeless_delay = 3.0 # [s] amount of time blinker has to be on before nudgless lane change
+    self.nudgeless_enabled = self._params.get_bool("NudgelessLaneChange")
+    self.nudgeless_delay = 4.0 # [s] amount of time blinker has to be on before nudgless lane change
 
     self.lane_change_state = LaneChangeState.off
     self.prev_lane_change_state = self.lane_change_state
@@ -97,6 +98,7 @@ class LateralPlanner():
       self.use_lanelines = not Params().get_bool("EndToEndToggle")
       self.laneless_mode = int(Params().get("LanelessMode", encoding="utf8"))
       self.lane_pos = float(Params().get("LanePosition", encoding="utf8"))
+      self.nudgeless_enabled = self._params.get_bool("NudgelessLaneChange")
       self.second = 0.0
     v_ego = sm['carState'].vEgo
     active = sm['controlsState'].active

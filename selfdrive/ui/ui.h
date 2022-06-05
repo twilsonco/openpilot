@@ -4,6 +4,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <deque>
 
 #include <QObject>
 #include <QTimer>
@@ -175,6 +176,8 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   VISION_MAXVFORCURCURV,
   VISION_MAXPREDLATACCEL,
   LANE_WIDTH,
+  ROLL,
+  ROLL_DEVICE,
   
   NUM_MEASURES
 } UIMeasure;
@@ -187,6 +190,12 @@ typedef struct UIScene {
   // Debug UI
   bool show_debug_ui;
 
+  bool map_open;
+
+  bool lead_info_print_enabled;
+  std::deque<int> lead_x_vals, lead_y_vals;
+  int const lead_xy_num_vals = 5;
+
   bool is_using_torque_control = false;
 
   // Speed limit control
@@ -194,6 +203,7 @@ typedef struct UIScene {
   bool speed_limit_perc_offset;
   Rect speed_limit_sign_touch_rect;
   double last_speed_limit_sign_tap;
+  bool turn_speed_control_enabled, turn_vision_control_enabled;
   
   // adjustable lane position
   Rect lane_pos_left_touch_rect = {1,1,1,1}, lane_pos_right_touch_rect = {1,1,1,1};
@@ -206,6 +216,8 @@ typedef struct UIScene {
   
   Rect wheel_touch_rect;
   bool wheel_rotates = true;
+
+  bool color_path = false;
   
   float screen_dim_modes_v[3] = {0.01, 0.5, 1.};
   int screen_dim_mode_max = 2;
@@ -227,6 +239,7 @@ typedef struct UIScene {
   Rect measure_slot_touch_rects[10];
   int num_measures = UIMeasure::NUM_MEASURES; // the number of cases handled in ui_draw_measures() in paint.cc
   Rect speed_rect;
+  float road_roll, device_roll;
   
   // actual measures
   float angleSteers, angleSteersDes, angleSteersErr;

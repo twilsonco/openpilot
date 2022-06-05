@@ -86,12 +86,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Monitor and alert when driver is not keeping the hands on the steering wheel.",
                                   "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
-  toggles.append(new ParamControl("TurnVisionControl",
+  toggles.append(new ParamControl("TurnVisionControlEnabled",
                                   "Enable vision based turn control",
                                   "Use vision path predictions to estimate the appropiate speed to drive through turns ahead.",
                                   "../assets/offroad/icon_slow_curves_vision.png",
                                   this));
-  toggles.append(new ParamControl("TurnSpeedControl",
+  toggles.append(new ParamControl("TurnSpeedControlEnabled",
                                   "Enable Map Data Turn Control",
                                   "Use curvature info from map data to define speed limits to take turns ahead",
                                   "../assets/offroad/icon_slow_curves_map.png",
@@ -225,6 +225,16 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Lower device overhead",
                                   "Decreases device power, CPU, and storage use for running better on older hardware by: 1) defaulting to medium brightness (tap DM icon to change), 2) disable onroad logging (loggerd and proclogd). Your device will not keep or upload logs with this enabled!",
                                   "../assets/offroad/icon_settings.png",
+                                  this));
+  toggles.append(new ParamControl("ColorPath",
+                                  "Colored path",
+                                  "Color path according to the amount of lateral (steering) correction being applied",
+                                  "../assets/offroad/icon_road.png",
+                                  this));
+  toggles.append(new ParamControl("PrintLeadInfo",
+                                  "Print lead car info",
+                                  "Prints lead car time and length distance, and absolute and relative velocity next to lead indicator",
+                                  "../assets/offroad/icon_metric.png",
                                   this));
   toggles.append(new ParamControl("ShowDebugUI",
                                   "Show debug UI elements",

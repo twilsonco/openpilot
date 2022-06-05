@@ -138,8 +138,13 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
       Params().putBool("TurnSpeedControl", false);
     }
     else{
-      Params().putBool("TurnVisionControl", true);
-      Params().putBool("TurnSpeedControl", true);
+      bool const both_off = (!QUIState::ui_state.scene.turn_vision_control_enabled && !QUIState::ui_state.scene.turn_speed_control_enabled);
+      if (QUIState::ui_state.scene.turn_vision_control_enabled || both_off){
+        Params().putBool("TurnVisionControl", true);
+      }
+      if (QUIState::ui_state.scene.turn_speed_control_enabled || both_off){
+        Params().putBool("TurnSpeedControl", true);
+      }
     }
     return;
   }

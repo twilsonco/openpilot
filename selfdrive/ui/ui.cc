@@ -206,6 +206,9 @@ static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
   float t = seconds_since_boot();
+
+
+  scene.map_open = (s->fb_h != 0 && (float)s->fb_w / (float)s->fb_h < 1.5);
   
   if (t - scene.paramsCheckLast > scene.paramsCheckFreq){
     scene.paramsCheckLast = t;
@@ -213,6 +216,7 @@ static void update_state(UIState *s) {
     scene.speed_limit_control_enabled = Params().getBool("SpeedLimitControl");
     scene.screen_dim_mode = std::stoi(Params().get("ScreenDimMode"));
     scene.lane_pos_enabled = Params().getBool("LanePositionEnabled");
+    scene.lead_info_print_enabled = Params().getBool("PrintLeadInfo");
     if (scene.disableDisengageOnGasEnabled){
       scene.onePedalModeActive = Params().getBool("OnePedalMode");
       scene.onePedalEngageOnGasEnabled = Params().getBool("OnePedalModeEngageOnGas");
@@ -308,12 +312,19 @@ static void update_state(UIState *s) {
     
     
   }
+  if (sm.updated("liveParameters")){
+    scene.road_roll = sm["liveParameters"].getLiveParameters().getRoll();
+  }
   if (sm.updated("radarState")) {
     auto radar_state = sm["radarState"].getRadarState();
     scene.lead_v_rel = radar_state.getLeadOne().getVRel();
     scene.lead_d_rel = radar_state.getLeadOne().getDRel();
     scene.lead_v = radar_state.getLeadOne().getVLead();
     scene.lead_status = radar_state.getLeadOne().getStatus();
+    if (!scene.lead_status){
+      scene.lead_x_vals.clear();
+      scene.lead_y_vals.clear();
+    }
   }
   if (sm.updated("modelV2") && s->vg) {
     auto model = sm["modelV2"].getModelV2();
@@ -385,6 +396,7 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("liveLocationKalman")) {
     scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();
+    scene.device_roll = sm["liveLocationKalman"].getLiveLocationKalman().getCalibratedOrientationNED().getValue()[0];
   }
   if (sm.updated("lateralPlan")) {
     scene.lateral_plan = sm["lateralPlan"].getLateralPlan();
@@ -507,6 +519,15 @@ static void update_status(UIState *s) {
         Params().put("ScreenDimMode", std::to_string(s->scene.screen_dim_mode_cur).c_str(), 1);
       }
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
+      s->scene.color_path = Params().getBool("ColorPath");
+      s->scene.turn_speed_control_enabled = Params().getBool("TurnSpeedControlEnabled");
+      if (!s->scene.turn_speed_control_enabled){
+        Params().putBool("TurnSpeedControl", false);
+      }
+      s->scene.turn_vision_control_enabled = Params().getBool("TurnVisionControlEnabled");
+      if (!s->scene.turn_vision_control_enabled){
+        Params().putBool("TurnVisionControl", false);
+      }
       if (!s->scene.end_to_end){
         s->scene.laneless_btn_touch_rect = {1,1,1,1};
       }
@@ -568,7 +589,7 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "deviceState", "roadCameraState",
     "pandaState", "carParams", "driverMonitoringState", "sensorEvents", "carState", "radarState", "liveLocationKalman", "ubloxGnss", "gpsLocationExternal", 
-    "longitudinalPlan", "lateralPlan",
+    "longitudinalPlan", "lateralPlan", "liveParameters",
   });
 
   ui_state.fb_w = vwp_w;
@@ -692,7 +713,7 @@ int offset_button_y(UIState *s, int center_y, int radius){
 
 int offset_right_side_button_x(UIState *s, int center_x, int radius, bool doShift){
   if ((doShift || (*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL)
-  && s->scene.measure_cur_num_slots > 0){
+  && s->scene.measure_cur_num_slots > 0 && !s->scene.map_open){
     int off = s->scene.measure_slots_rect.right() - center_x;
     center_x = s->scene.measure_slots_rect.x - off - bdr_s;
   }
