@@ -135,7 +135,7 @@ class VisionTurnController():
     self._v_overshoot_distance = 200.
     self._lat_acc_overshoot_ahead = False
   
-  def eval_curvature(self, poly, x_vals, path_roll_poly, path_vego_poly, max_x):
+  def eval_curvature(self, poly, x_vals, path_roll_poly, max_x):
     """
     This function returns a vector with the curvature based on path defined by `poly`
     evaluated on distance vector `x_vals`
@@ -149,7 +149,7 @@ class VisionTurnController():
       nonlocal max_lat_accel, max_curvature, max_roll_compensation
       a = (2 * poly[1] + 6 * poly[0] * x) / (1 + (3 * poly[0] * x**2 + 2 * poly[1] * x + poly[2])**2)**(1.5)
       xx = min(x,max_x) # use farthest predicted roll/velocity instead of extrapolating
-      v = np.polyval(path_vego_poly, xx)
+      v = self._CS.vEgo
       vf = interp(v, _LOW_SPEED_SCALE_BP, _LOW_SPEED_SCALE_V)
       rc = self._VM.roll_compensation(np.polyval(path_roll_poly, xx), v)
       if abs(rc) > 0.5 * abs(a):
@@ -243,13 +243,7 @@ class VisionTurnController():
     path_rolls = np.array(model_data.orientation.x) + params.roll
     path_roll_poly = np.polyfit(path_x, path_rolls, 3)
     
-    # get model-predicted velocity
-    path_vegos = np.sqrt(np.square(np.array(model_data.velocity.x)) 
-                         + np.square(np.array(model_data.velocity.y))
-                         + np.square(np.array(model_data.velocity.z)))
-    path_vego_poly = np.polyfit(path_x, path_vegos, 3)
-    
-    pred_curvatures, self._max_pred_lat_acc, max_pred_curvature, self._max_pred_roll_compensation, self._max_pred_lat_acc_dist = self.eval_curvature(path_poly, _EVAL_RANGE, path_roll_poly, path_vego_poly, path_x[-1])
+    pred_curvatures, self._max_pred_lat_acc, max_pred_curvature, self._max_pred_roll_compensation, self._max_pred_lat_acc_dist = self.eval_curvature(path_poly, _EVAL_RANGE, path_roll_poly, path_x[-1])
 
     max_curvature_for_vego = _A_LAT_REG_MAX / max(vf * self._v_ego, 0.1)**2
     lat_acc_overshoot_idxs = np.nonzero(pred_curvatures >= max_curvature_for_vego)[0]
