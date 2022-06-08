@@ -130,7 +130,8 @@ class VisionTurnController():
     self._current_lat_acc_no_roll = 0.
     self._max_v_for_current_curvature = 0.
     self._max_pred_lat_acc = 0.
-    self._max_pred_lat_acc_no_roll = 0.
+    self._max_pred_lat_acc_dist = 0.
+    self._max_pred_roll_compensation = 0.
     self._v_overshoot_distance = 200.
     self._lat_acc_overshoot_ahead = False
   
@@ -141,26 +142,28 @@ class VisionTurnController():
     """
     max_lat_accel = 0.
     max_curvature = 0.
+    max_roll_compensation = 0.
+    max_lat_accel_dist = 0.
     # https://en.wikipedia.org/wiki/Curvature#  Local_expressions
     def curvature(x):
-      nonlocal max_lat_accel, max_curvature
+      nonlocal max_lat_accel, max_curvature, max_roll_compensation
       a = (2 * poly[1] + 6 * poly[0] * x) / (1 + (3 * poly[0] * x**2 + 2 * poly[1] * x + poly[2])**2)**(1.5)
-      if x >= max_x:
-        v = self._CS.vEgo
-        vf = interp(v, _LOW_SPEED_SCALE_BP, _LOW_SPEED_SCALE_V)
-        rc = 0.
-      else:
-        v = np.polyval(path_vego_poly, x)
-        vf = interp(v, _LOW_SPEED_SCALE_BP, _LOW_SPEED_SCALE_V)
-        rc = self._VM.roll_compensation(np.polyval(path_roll_poly, x), v)
+      xx = min(x,max_x) # use farthest predicted roll/velocity instead of extrapolating
+      v = np.polyval(path_vego_poly, xx)
+      vf = interp(v, _LOW_SPEED_SCALE_BP, _LOW_SPEED_SCALE_V)
+      rc = self._VM.roll_compensation(np.polyval(path_roll_poly, xx), v)
+      if abs(rc) > 0.5 * abs(a):
+        rc = 0.5 * abs(a) * np.sign(rc)
       c = abs(a + rc)
       la = c * (vf * v)**2
       if la > max_lat_accel:
         max_lat_accel = la
         max_curvature = c
+        max_roll_compensation = rc
+        max_lat_accel_dist = xx
       return c
     
-    return np.array([curvature(x) for x in x_vals]), max_lat_accel, max_curvature 
+    return np.array([curvature(x) for x in x_vals]), max_lat_accel, max_curvature, max_roll_compensation, max_lat_accel_dist
 
   def _update_params(self):
     time = sec_since_boot()
@@ -246,9 +249,7 @@ class VisionTurnController():
                          + np.square(np.array(model_data.velocity.z)))
     path_vego_poly = np.polyfit(path_x, path_vegos, 3)
     
-    pred_curvatures, self._max_pred_lat_acc, max_pred_curvature = self.eval_curvature(path_poly, _EVAL_RANGE, path_roll_poly, path_vego_poly, path_x[-1])
-    
-    pred_curvatures, self._max_pred_lat_acc_no_roll, _ = self.eval_curvature(path_poly, _EVAL_RANGE, np.array([0., 0., 0., 0.]), np.array([0., 0., 0., 0.]), path_x[-1])
+    pred_curvatures, self._max_pred_lat_acc, max_pred_curvature, self._max_pred_roll_compensation, self._max_pred_lat_acc_dist = self.eval_curvature(path_poly, _EVAL_RANGE, path_roll_poly, path_vego_poly, path_x[-1])
 
     max_curvature_for_vego = _A_LAT_REG_MAX / max(vf * self._v_ego, 0.1)**2
     lat_acc_overshoot_idxs = np.nonzero(pred_curvatures >= max_curvature_for_vego)[0]
