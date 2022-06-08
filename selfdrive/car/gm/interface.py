@@ -81,12 +81,12 @@ class CarInterface(CarInterfaceBase):
   # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
   @staticmethod
   def get_steer_feedforward_volt_torque(desired_lateral_accel, v_ego):
-    ANGLE_COEF = 0.4949595577690545
-    ANGLE_OFFSET = 0.
-    SPEED_OFFSET = 7.167618977822346
-    SPEED_POWER = 0.12510621566177965
-    SIGMOID_COEF = 1.2456671526689822
-    SPEED_COEF = 1.2060306767931044
+    ANGLE_COEF = 0.5633633834047794
+    ANGLE_OFFSET = -0.030907765916212613
+    SPEED_OFFSET = 6.1650340711962945
+    SPEED_POWER = 0.15243592891959243
+    SIGMOID_COEF = 1.1954852863714962
+    SPEED_COEF = 0.8293485873516095
     return get_steer_feedforward_erf(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_OFFSET, SPEED_OFFSET, SPEED_POWER, SIGMOID_COEF, SPEED_COEF)
   
 
