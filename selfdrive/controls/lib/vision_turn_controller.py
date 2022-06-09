@@ -289,9 +289,6 @@ class VisionTurnController():
       # Finish if current lateral acceleration goes below threshold.
       elif self._current_lat_acc < _FINISH_LAT_ACC_TH:
         self.state = VisionTurnControllerState.disabled
-        
-    if self.state != VisionTurnControllerState.turning and self._current_lat_acc >= _TURNING_LAT_ACC_TH:
-        self.state = VisionTurnControllerState.turning
 
   def _update_solution(self):
     # DISABLED
