@@ -98,6 +98,7 @@ class VisionTurnController():
     self._v_overshoot = 0.
     self._state = VisionTurnControllerState.disabled
     self._CS = None
+    self._liveparams = None
     self._vf = 1.
 
     self._reset()
@@ -152,7 +153,7 @@ class VisionTurnController():
       a = (2 * poly[1] + 6 * poly[0] * x) / (1 + (3 * poly[0] * x**2 + 2 * poly[1] * x + poly[2])**2)**(1.5)
       xx = min(x,max_x) # use farthest predicted roll/velocity instead of extrapolating
       v = self._v_ego * self._vf
-      rc = self._VM.roll_compensation(np.polyval(path_roll_poly, xx), v)
+      rc = self._VM.roll_compensation(np.polyval(path_roll_poly, xx), v) if self._VM is not None else 0.
       if abs(rc) > abs(a): # don't want to brake for roll absent curvature
         rc = abs(a) * np.sign(rc)
       c = abs(a + rc)
@@ -224,19 +225,32 @@ class VisionTurnController():
     if path_poly is None and model_data is not None and len(model_data.position.y) == TRAJECTORY_SIZE:
       path_poly = np.polyfit(model_data.position.x, model_data.position.y, 3)
 
-    # 3. If no polynomial derived from lanes or driving path, then provide a straight line poly.
+    # 4. If no polynomial derived from lanes or driving path, then provide a straight line poly.
     if path_poly is None:
       path_poly = np.array([0., 0., 0., 0.])
     
     # Update VehicleModel
-    params = sm['liveParameters']
-    x = max(params.stiffnessFactor, 0.1)
-    sr = max(params.steerRatio, 0.1)
-    self._VM.update_params(x, sr)
-    self._CS = sm['carState']
+    if sm.valid.get('liveParameters', False):
+      self._liveparams = sm['liveParameters']
+    if sm.valid.get('carState', False):
+      self._CS = sm['carState']
+    if self._liveparams is not None:
+      x = max(self._liveparams.stiffnessFactor, 0.1)
+      sr = max(self._liveparams.steerRatio, 0.1)
+      self._VM.update_params(x, sr)
+      roll_compensation = self._VM.roll_compensation(self._liveparams.roll, self._v_ego)
+      angle_offset = self._liveparams.angleOffsetDeg
+    else:
+      roll_compensation = 0.
+      angle_offset = 0.
     
-    roll_compensation = self._VM.roll_compensation(params.roll, self._CS.vEgo)
-    current_curvature_no_roll = self._VM.calc_curvature(-math.radians(self._CS.steeringAngleDeg - params.angleOffsetDeg), self._CS.vEgo, 0.)
+    if self._CS is not None:
+      steering_angle = self._CS.steeringAngleDeg
+    else:
+      steering_angle = 0.
+      
+    
+    current_curvature_no_roll = self._VM.calc_curvature(-math.radians(steering_angle - angle_offset), self._v_ego, 0.)
     if abs(roll_compensation) > abs(current_curvature_no_roll):
       roll_compensation = abs(current_curvature_no_roll) * np.sign(roll_compensation)
     current_curvature = abs(current_curvature_no_roll + roll_compensation)
@@ -248,9 +262,14 @@ class VisionTurnController():
       else V_CRUISE_MAX * CV.KPH_TO_MS
     
     # get model-predicted relative road roll, with current roll
-    path_x = np.array(model_data.position.x)
-    path_rolls = np.array(model_data.orientation.x) + params.roll
-    path_roll_poly = np.polyfit(path_x, path_rolls, 3)
+    if model_data is not None and self._liveparams is not None:
+      path_x = np.array(model_data.position.x)
+      path_rolls = np.array(model_data.orientation.x) + self._liveparams.roll
+      path_roll_poly = np.polyfit(path_x, path_rolls, 3)
+    else:
+      path_roll_poly = np.array([0., 0., 0., 0.])
+      path_x = [0.]
+      
     
     pred_curvatures, self._max_pred_lat_acc, self._max_pred_curvature, self._max_pred_roll_compensation, self._max_pred_lat_acc_dist = self.eval_curvature(path_poly, _EVAL_RANGE, path_roll_poly, path_x[-1])
 
