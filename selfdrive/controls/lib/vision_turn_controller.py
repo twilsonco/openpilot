@@ -148,10 +148,10 @@ class VisionTurnController():
     max_lat_accel_dist = 0.
     # https://en.wikipedia.org/wiki/Curvature#  Local_expressions
     def curvature(x):
-      nonlocal max_lat_accel, max_curvature, max_roll_compensation, max_lat_accel_dist, self
+      nonlocal max_lat_accel, max_curvature, max_roll_compensation, max_lat_accel_dist
       a = (2 * poly[1] + 6 * poly[0] * x) / (1 + (3 * poly[0] * x**2 + 2 * poly[1] * x + poly[2])**2)**(1.5)
       xx = min(x,max_x) # use farthest predicted roll/velocity instead of extrapolating
-      v = self._CS.vEgo * self._vf
+      v = self._v_ego * self._vf
       rc = self._VM.roll_compensation(np.polyval(path_roll_poly, xx), v)
       if abs(rc) > abs(a): # don't want to brake for roll absent curvature
         rc = abs(a) * np.sign(rc)
@@ -159,7 +159,7 @@ class VisionTurnController():
       la = c * v**2
       if la > max_lat_accel:
         max_lat_accel = la
-        max_curvature = c
+        max_curvature = a + rc
         max_roll_compensation = rc
         max_lat_accel_dist = xx
       return c
@@ -254,7 +254,7 @@ class VisionTurnController():
     self._lat_acc_overshoot_ahead = len(lat_acc_overshoot_idxs) > 0
 
     if self._lat_acc_overshoot_ahead:
-      self._v_overshoot = min(math.sqrt(_A_LAT_REG_MAX / self._max_pred_curvature), self._v_cruise_setpoint)
+      self._v_overshoot = min(math.sqrt(_A_LAT_REG_MAX / abs(self._max_pred_curvature)), self._v_cruise_setpoint)
       self._v_overshoot_distance = max(lat_acc_overshoot_idxs[0] * _EVAL_STEP + _EVAL_START, _EVAL_STEP)
       _debug(f'TVC: High LatAcc. Dist: {self._v_overshoot_distance:.2f}, v: {self._v_overshoot * CV.MS_TO_KPH:.2f}')
 
