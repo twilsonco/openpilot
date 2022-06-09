@@ -12,8 +12,8 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 
 _MIN_V = 5.6  # Do not operate under 20km/h
 
-_ENTERING_PRED_LAT_ACC_TH = 1.6  # Predicted Lat Acc threshold to trigger entering turn state.
-_ABORT_ENTERING_PRED_LAT_ACC_TH = 1.5  # Predicted Lat Acc threshold to abort entering state if speed drops.
+_ENTERING_PRED_LAT_ACC_TH = 2.2  # Predicted Lat Acc threshold to trigger entering turn state.
+_ABORT_ENTERING_PRED_LAT_ACC_TH = 1.3  # Predicted Lat Acc threshold to abort entering state if speed drops.
 
 _TURNING_LAT_ACC_TH = 1.9  # Lat Acc threshold to trigger turning turn state.
 
@@ -25,17 +25,17 @@ _EVAL_START = 10.  # mts. Distance ahead where to start evaluating vision curvat
 _EVAL_LENGHT = 150.  # mts. Distance ahead where to stop evaluating vision curvature.
 _EVAL_RANGE = np.arange(_EVAL_START, _EVAL_LENGHT, _EVAL_STEP)
 
-_A_LAT_REG_MAX = 3.2  # Maximum lateral acceleration
+_A_LAT_REG_MAX = 3.0  # Maximum lateral acceleration
 
 # Lookup table for the minimum smooth deceleration during the ENTERING state
 # depending on the actual maximum absolute lateral acceleration predicted on the turn ahead.
 _ENTERING_SMOOTH_DECEL_V = [-0.2, -1.5]  # min decel value allowed on ENTERING state
-_ENTERING_SMOOTH_DECEL_BP = [2.0, 3.9]  # absolute value of lat acc ahead
+_ENTERING_SMOOTH_DECEL_BP = [2.0, 3.5]  # absolute value of lat acc ahead
 
 # Lookup table for the acceleration for the TURNING state
 # depending on the current lateral acceleration of the vehicle.
 _TURNING_ACC_V = [1.0, -0.2, -1.5]  # acc value
-_TURNING_ACC_BP = [1.0, 2.0, 3.9]  # absolute value of current lat acc
+_TURNING_ACC_BP = [1.0, 2.0, 3.8]  # absolute value of current lat acc
 
 _LEAVING_ACC = 0.6  # Confortble acceleration to regain speed while leaving a turn.
 
