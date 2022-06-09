@@ -146,7 +146,7 @@ class VisionTurnController():
     max_lat_accel_dist = 0.
     # https://en.wikipedia.org/wiki/Curvature#  Local_expressions
     def curvature(x):
-      nonlocal max_lat_accel, max_curvature, max_roll_compensation
+      nonlocal max_lat_accel, max_curvature, max_roll_compensation, max_lat_accel_dist
       a = (2 * poly[1] + 6 * poly[0] * x) / (1 + (3 * poly[0] * x**2 + 2 * poly[1] * x + poly[2])**2)**(1.5)
       xx = min(x,max_x) # use farthest predicted roll/velocity instead of extrapolating
       v = self._CS.vEgo
