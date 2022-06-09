@@ -98,6 +98,7 @@ class VisionTurnController():
     self._v_overshoot = 0.
     self._state = VisionTurnControllerState.disabled
     self._CS = None
+    self._vf = 1.
 
     self._reset()
 
@@ -130,6 +131,7 @@ class VisionTurnController():
     self._current_lat_acc_no_roll = 0.
     self._max_v_for_current_curvature = 0.
     self._max_pred_lat_acc = 0.
+    self._max_pred_curvature = 0.
     self._max_pred_lat_acc_dist = 0.
     self._max_pred_roll_compensation = 0.
     self._v_overshoot_distance = 200.
@@ -146,16 +148,15 @@ class VisionTurnController():
     max_lat_accel_dist = 0.
     # https://en.wikipedia.org/wiki/Curvature#  Local_expressions
     def curvature(x):
-      nonlocal max_lat_accel, max_curvature, max_roll_compensation, max_lat_accel_dist
+      nonlocal max_lat_accel, max_curvature, max_roll_compensation, max_lat_accel_dist, self
       a = (2 * poly[1] + 6 * poly[0] * x) / (1 + (3 * poly[0] * x**2 + 2 * poly[1] * x + poly[2])**2)**(1.5)
       xx = min(x,max_x) # use farthest predicted roll/velocity instead of extrapolating
-      v = self._CS.vEgo
-      vf = interp(v, _LOW_SPEED_SCALE_BP, _LOW_SPEED_SCALE_V)
+      v = self._CS.vEgo * self._vf
       rc = self._VM.roll_compensation(np.polyval(path_roll_poly, xx), v)
-      if abs(rc) > 0.5 * abs(a):
-        rc = 0.5 * abs(a) * np.sign(rc)
+      if abs(rc) > abs(a): # don't want to brake for roll absent curvature
+        rc = abs(a) * np.sign(rc)
       c = abs(a + rc)
-      la = c * (vf * v)**2
+      la = c * v**2
       if la > max_lat_accel:
         max_lat_accel = la
         max_curvature = c
@@ -178,7 +179,7 @@ class VisionTurnController():
     lat_planner_data = sm['lateralPlan'] if sm.valid.get('lateralPlan', False) else None
     
     # scale velocity used to determine curvature in order to provide more braking at low speed
-    vf = interp(self._v_ego, _LOW_SPEED_SCALE_BP, _LOW_SPEED_SCALE_V)
+    self._vf = interp(self._v_ego, _LOW_SPEED_SCALE_BP, _LOW_SPEED_SCALE_V)
 
     # 1. When the probability of lanes is good enough, compute polynomial from lanes as they are way more stable
     # on current mode than driving path.
@@ -229,11 +230,14 @@ class VisionTurnController():
     self._VM.update_params(x, sr)
     self._CS = sm['carState']
     
-    current_curvature = abs(self._VM.calc_curvature(-math.radians(self._CS.steeringAngleDeg - params.angleOffsetDeg), self._CS.vEgo, params.roll))
-    self._current_lat_acc = current_curvature * (vf * self._v_ego)**2
+    roll_compensation = self._VM.roll_compensation(params.roll, self._CS.vEgo)
+    current_curvature_no_roll = self._VM.calc_curvature(-math.radians(self._CS.steeringAngleDeg - params.angleOffsetDeg), self._CS.vEgo, 0.)
+    if abs(roll_compensation) > abs(current_curvature_no_roll):
+      roll_compensation = abs(current_curvature_no_roll) * np.sign(roll_compensation)
+    current_curvature = abs(current_curvature_no_roll + roll_compensation)
     
-    current_curvature_no_roll = abs(self._VM.calc_curvature(-math.radians(self._CS.steeringAngleDeg - params.angleOffsetDeg), self._CS.vEgo, 0.))
-    self._current_lat_acc_no_roll = current_curvature_no_roll * (vf * self._v_ego)**2
+    self._current_lat_acc = current_curvature * (self._vf * self._v_ego)**2
+    self._current_lat_acc_no_roll = abs(current_curvature_no_roll) * (self._vf * self._v_ego)**2
     
     self._max_v_for_current_curvature = math.sqrt(_A_LAT_REG_MAX / current_curvature) if current_curvature > 0 \
       else V_CRUISE_MAX * CV.KPH_TO_MS
@@ -243,14 +247,14 @@ class VisionTurnController():
     path_rolls = np.array(model_data.orientation.x) + params.roll
     path_roll_poly = np.polyfit(path_x, path_rolls, 3)
     
-    pred_curvatures, self._max_pred_lat_acc, max_pred_curvature, self._max_pred_roll_compensation, self._max_pred_lat_acc_dist = self.eval_curvature(path_poly, _EVAL_RANGE, path_roll_poly, path_x[-1])
+    pred_curvatures, self._max_pred_lat_acc, self._max_pred_curvature, self._max_pred_roll_compensation, self._max_pred_lat_acc_dist = self.eval_curvature(path_poly, _EVAL_RANGE, path_roll_poly, path_x[-1])
 
-    max_curvature_for_vego = _A_LAT_REG_MAX / max(vf * self._v_ego, 0.1)**2
+    max_curvature_for_vego = _A_LAT_REG_MAX / max(self._vf * self._v_ego, 0.1)**2
     lat_acc_overshoot_idxs = np.nonzero(pred_curvatures >= max_curvature_for_vego)[0]
     self._lat_acc_overshoot_ahead = len(lat_acc_overshoot_idxs) > 0
 
     if self._lat_acc_overshoot_ahead:
-      self._v_overshoot = min(math.sqrt(_A_LAT_REG_MAX / max_pred_curvature), self._v_cruise_setpoint)
+      self._v_overshoot = min(math.sqrt(_A_LAT_REG_MAX / self._max_pred_curvature), self._v_cruise_setpoint)
       self._v_overshoot_distance = max(lat_acc_overshoot_idxs[0] * _EVAL_STEP + _EVAL_START, _EVAL_STEP)
       _debug(f'TVC: High LatAcc. Dist: {self._v_overshoot_distance:.2f}, v: {self._v_overshoot * CV.MS_TO_KPH:.2f}')
 

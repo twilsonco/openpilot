@@ -288,6 +288,7 @@ class Planner():
     longitudinalPlan.visionCurrentLateralAcceleration = float(self.vision_turn_controller._current_lat_acc)
     longitudinalPlan.visionMaxVForCurrentCurvature = float(self.vision_turn_controller._max_v_for_current_curvature)
     longitudinalPlan.visionMaxPredictedLateralAcceleration = float(self.vision_turn_controller._max_pred_lat_acc)
+    longitudinalPlan.visionMaxPredictedCurvature = float(self.vision_turn_controller._max_pred_curvature)
     longitudinalPlan.visionCurrentLateralAccelerationNoRoll = float(self.vision_turn_controller._current_lat_acc_no_roll)
     longitudinalPlan.visionMaxPredictedRollCompensation = float(self.vision_turn_controller._max_pred_roll_compensation)
     longitudinalPlan.visionMaxPredictedLateralAccelerationDistance = float(self.vision_turn_controller._max_pred_lat_acc_dist)
