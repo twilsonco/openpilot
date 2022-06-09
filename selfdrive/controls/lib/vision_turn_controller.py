@@ -218,6 +218,11 @@ class VisionTurnController():
     if path_poly is None and lat_planner_data is not None and len(lat_planner_data.dPathWLinesX) > 0 \
        and lat_planner_data.dPathWLinesX[0] > 0:
       path_poly = np.polyfit(lat_planner_data.dPathWLinesX, lat_planner_data.dPathWLinesY, 3)
+      
+    
+    # 3. Use path curvature otherwise
+    if path_poly is None and model_data is not None and len(model_data.position.y) == TRAJECTORY_SIZE:
+      path_poly = np.polyfit(model_data.position.x, model_data.position.y, 3)
 
     # 3. If no polynomial derived from lanes or driving path, then provide a straight line poly.
     if path_poly is None:
