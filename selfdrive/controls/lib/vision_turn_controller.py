@@ -297,7 +297,7 @@ class VisionTurnController():
         # the smooth deceleration.
       a_target = self._a_ego
     # ENTERING
-    elif self.state == VisionTurnControllerState.entering:
+    elif self.state == VisionTurnControllerState.entering or self.state == VisionTurnControllerState.turning:
       # when not overshooting, target a smooth deceleration in preparation for a sharp turn to come.
       a_target = interp(self._max_pred_lat_acc, _ENTERING_SMOOTH_DECEL_BP, _ENTERING_SMOOTH_DECEL_V)
       if self._lat_acc_overshoot_ahead:
@@ -306,10 +306,15 @@ class VisionTurnController():
         a_target = min((self._v_overshoot**2 - self._v_ego**2) / (2 * self._v_overshoot_distance), a_target)
       _debug(f'TVC Entering: Overshooting: {self._lat_acc_overshoot_ahead}')
       _debug(f'    Decel: {a_target:.2f}, target v: {self.v_turn * CV.MS_TO_KPH}')
-    # TURNING
-    elif self.state == VisionTurnControllerState.turning:
+      
       # When turning we provide a target acceleration that is confortable for the lateral accelearation felt.
-      a_target = interp(self._current_lat_acc, _TURNING_ACC_BP, _TURNING_ACC_V)
+      a_target_cur_lat_accel = interp(self._current_lat_acc, _TURNING_ACC_BP, _TURNING_ACC_V)
+      
+      a_target = min(a_target, a_target_cur_lat_accel)
+    # TURNING
+    # elif self.state == VisionTurnControllerState.turning:
+    #   # When turning we provide a target acceleration that is confortable for the lateral accelearation felt.
+    #   a_target = interp(self._current_lat_acc, _TURNING_ACC_BP, _TURNING_ACC_V)
     # LEAVING
     elif self.state == VisionTurnControllerState.leaving:
       # When leaving we provide a confortable acceleration to regain speed.
