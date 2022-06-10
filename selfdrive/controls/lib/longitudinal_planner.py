@@ -293,6 +293,7 @@ class Planner():
     longitudinalPlan.visionMaxPredictedRollCompensation = float(self.vision_turn_controller._max_pred_roll_compensation)
     longitudinalPlan.visionMaxPredictedLateralAccelerationDistance = float(self.vision_turn_controller._max_pred_lat_acc_dist)
     longitudinalPlan.visionTurnSpeed = float(self.vision_turn_controller.v_turn)
+    longitudinalPlan.visionPredictedPathSource = self.vision_turn_controller._predicted_path_source
 
     longitudinalPlan.speedLimitControlState = self.speed_limit_controller.state
     longitudinalPlan.speedLimit = float(self.speed_limit_controller.speed_limit)

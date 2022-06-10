@@ -137,6 +137,7 @@ class VisionTurnController():
     self._max_pred_roll_compensation = 0.
     self._v_overshoot_distance = 200.
     self._lat_acc_overshoot_ahead = False
+    self._predicted_path_source = 'none'
   
   def eval_curvature(self, poly, x_vals, path_roll_poly, max_x):
     """
@@ -213,21 +214,25 @@ class VisionTurnController():
       if l_prob > _MIN_LANE_PROB and r_prob > _MIN_LANE_PROB:
         c_y = width_pts / 2 + lll_y
         path_poly = np.polyfit(ll_x, c_y, 3)
+        self._predicted_path_source = 'lanelines'
 
     # 2. If not polynomial derived from lanes, then derive it from compensated driving path with lanes as
     # provided by `lateralPlanner`.
     if path_poly is None and lat_planner_data is not None and len(lat_planner_data.dPathWLinesX) > 0 \
        and lat_planner_data.dPathWLinesX[0] > 0:
       path_poly = np.polyfit(lat_planner_data.dPathWLinesX, lat_planner_data.dPathWLinesY, 3)
+      self._predicted_path_source = 'pathWithLanes'
       
     
     # 3. Use path curvature otherwise
     if path_poly is None and model_data is not None and len(model_data.position.y) == TRAJECTORY_SIZE:
       path_poly = np.polyfit(model_data.position.x, model_data.position.y, 3)
+      self._predicted_path_source = 'modelPosition'
 
     # 4. If no polynomial derived from lanes or driving path, then provide a straight line poly.
     if path_poly is None:
       path_poly = np.array([0., 0., 0., 0.])
+      self._predicted_path_source = 'none'
     
     # Update VehicleModel
     if sm.valid.get('liveParameters', False):
