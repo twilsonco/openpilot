@@ -22,8 +22,10 @@ _FINISH_LAT_ACC_TH = 1.1  # Lat Acc threshold to trigger end of turn cycle.
 
 _EVAL_STEP = 5.  # mts. Resolution of the curvature evaluation.
 _EVAL_START = 20.  # mts. Distance ahead where to start evaluating vision curvature.
+_EVAL_START_TURNING = 40. # mts. Distance ahead when in turning state, when current curvature should be used for current acceleration limit, and only farther ahead predicted curvatures should be considered. (This also makes it so the start point is out of frame (pre big-model at least) for long curves, better ensuring the use of current over predicted curvature)
 _EVAL_LENGHT = 150.  # mts. Distance ahead where to stop evaluating vision curvature.
 _EVAL_RANGE = np.arange(_EVAL_START, _EVAL_LENGHT, _EVAL_STEP)
+_EVAL_RANGE_TURNING = np.arange(_EVAL_START_TURNING, _EVAL_LENGHT, _EVAL_STEP)
 
 _A_LAT_REG_MAX = 2.6  # Maximum lateral acceleration
 
@@ -276,7 +278,7 @@ class VisionTurnController():
       path_x = [0.]
       
     
-    pred_curvatures, self._max_pred_lat_acc, self._max_pred_curvature, self._max_pred_roll_compensation, self._max_pred_lat_acc_dist = self.eval_curvature(path_poly, _EVAL_RANGE, path_roll_poly, path_x[-1])
+    pred_curvatures, self._max_pred_lat_acc, self._max_pred_curvature, self._max_pred_roll_compensation, self._max_pred_lat_acc_dist = self.eval_curvature(path_poly, _EVAL_RANGE if not self.state == VisionTurnControllerState.turning else _EVAL_RANGE_TURNING, path_roll_poly, path_x[-1])
 
     max_curvature_for_vego = _A_LAT_REG_MAX / max(self._vf * self._v_ego, 0.1)**2
     lat_acc_overshoot_idxs = np.nonzero(pred_curvatures >= max_curvature_for_vego)[0]
@@ -284,7 +286,7 @@ class VisionTurnController():
 
     if self._lat_acc_overshoot_ahead:
       self._v_overshoot = min(math.sqrt(_A_LAT_REG_MAX / abs(self._max_pred_curvature)), self._v_cruise_setpoint)
-      self._v_overshoot_distance = max(lat_acc_overshoot_idxs[0] * _EVAL_STEP + _EVAL_START, _EVAL_STEP)
+      self._v_overshoot_distance = max(lat_acc_overshoot_idxs[0] * _EVAL_STEP + (_EVAL_START if not self.state == VisionTurnControllerState.turning else _EVAL_START_TURNING), _EVAL_STEP)
       _debug(f'TVC: High LatAcc. Dist: {self._v_overshoot_distance:.2f}, v: {self._v_overshoot * CV.MS_TO_KPH:.2f}')
 
   def _state_transition(self):
