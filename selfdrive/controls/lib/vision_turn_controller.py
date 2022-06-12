@@ -21,7 +21,7 @@ _LEAVING_LAT_ACC_TH = 1.4  # Lat Acc threshold to trigger leaving turn state.
 _FINISH_LAT_ACC_TH = 1.1  # Lat Acc threshold to trigger end of turn cycle.
 
 _EVAL_STEP = 5.  # mts. Resolution of the curvature evaluation.
-_EVAL_START = 20.  # mts. Distance ahead where to start evaluating vision curvature.
+_EVAL_START = 10.  # mts. Distance ahead where to start evaluating vision curvature.
 _EVAL_START_TURNING = 40. # mts. Distance ahead when in turning state, when current curvature should be used for current acceleration limit, and only farther ahead predicted curvatures should be considered. (This also makes it so the start point is out of frame (pre big-model at least) for long curves, better ensuring the use of current over predicted curvature)
 _EVAL_LENGHT = 150.  # mts. Distance ahead where to stop evaluating vision curvature.
 _EVAL_RANGE = np.arange(_EVAL_START, _EVAL_LENGHT, _EVAL_STEP)
