@@ -48,6 +48,10 @@ _MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow curvature prediction 
 _LOW_SPEED_SCALE_V = [1.05, 1.0] #increase the first value to increase low-speed vision braking; don't touch the second
 _LOW_SPEED_SCALE_BP = [i * CV.MPH_TO_MS for i in [0., 35.]]
 
+# scale up current measured lateral acceleration if the lateral controller is saturated
+_LAT_SAT_DECEL_V = [1.0, 1.5] # unitless. scales current lateral acceleration
+_LAT_SAT_DECEL_BP = [0.2, 1.2] # seconds. time since lateral controller saturated
+
 _DEBUG = False
 
 
@@ -100,6 +104,7 @@ class VisionTurnController():
     self._v_overshoot = 0.
     self._state = VisionTurnControllerState.disabled
     self._CS = None
+    self._controls_state = None
     self._liveparams = None
     self._vf = 1.
 
@@ -140,6 +145,8 @@ class VisionTurnController():
     self._v_overshoot_distance = 200.
     self._lat_acc_overshoot_ahead = False
     self._predicted_path_source = 'none'
+    self._lat_sat_last = False
+    self._lat_sat_t = 0.
   
   def eval_curvature(self, poly, x_vals, path_roll_poly, max_x):
     """
@@ -261,9 +268,35 @@ class VisionTurnController():
     if abs(roll_compensation) > abs(current_curvature_no_roll):
       roll_compensation = abs(current_curvature_no_roll) * np.sign(roll_compensation)
     current_curvature = abs(current_curvature_no_roll + roll_compensation)
-    
+      
     self._current_lat_acc = current_curvature * (self._vf * self._v_ego)**2
     self._current_lat_acc_no_roll = abs(current_curvature_no_roll) * (self._vf * self._v_ego)**2
+    
+    lat_sat = False
+    if sm.valid.get('controlsState', False):
+      self._controls_state = sm['controlsState']
+    if self._controls_state is not None:
+      lat_type = self._controls_state.lateralControlState.which()
+      if lat_type == 'indiState':
+        lat_sat = (self._controls_state.lateralControlState.indiState.output >= 1.0)
+      if lat_type == 'pidState':
+        lat_sat = (self._controls_state.lateralControlState.pidState.output >= 1.0)
+      if lat_type == 'lqrState':
+        lat_sat = (self._controls_state.lateralControlState.lqrState.output >= 1.0)
+      if lat_type == 'angleState':
+        lat_sat = (self._controls_state.lateralControlState.indiState.angleState >= 1.0)
+      else: # if lat_type == 'torqueState':
+        lat_sat = (self._controls_state.lateralControlState.torqueState.output >= 1.0)
+      if lat_sat:
+        if not self._lat_sat_last:
+          self._lat_sat_t = sec_since_boot()
+        if self._lat_sat_last and self._lat_sat_t > 0.:
+          lat_sat_decel_factor = interp(sec_since_boot() - self._lat_sat_t, _LAT_SAT_DECEL_BP, _LAT_SAT_DECEL_V)
+        else:
+          lat_sat_decel_factor = 1.0
+        self._current_lat_acc *= lat_sat_decel_factor
+    
+    self._lat_sat_last = lat_sat
     
     self._max_v_for_current_curvature = math.sqrt(_A_LAT_REG_MAX / current_curvature) if current_curvature > 0 \
       else V_CRUISE_MAX * CV.KPH_TO_MS
