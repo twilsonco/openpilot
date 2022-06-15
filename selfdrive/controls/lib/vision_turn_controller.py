@@ -234,8 +234,8 @@ class VisionTurnController():
       
     
     # 3. Use path curvature otherwise
-    if path_poly is None and model_data is not None and len(model_data.position.y) == TRAJECTORY_SIZE:
-      path_poly = np.polyfit(model_data.position.x, model_data.position.y, 3)
+    if path_poly is None and model_data is not None and len(model_data.position.y) >= 16: #16 based on Harald's use of predicted orientations
+      path_poly = np.polyfit(np.array(model_data.position.x)[:16], np.array(model_data.position.y)[:16], 3)
       self._predicted_path_source = 'modelPosition'
 
     # 4. If no polynomial derived from lanes or driving path, then provide a straight line poly.
@@ -302,9 +302,9 @@ class VisionTurnController():
       else V_CRUISE_MAX * CV.KPH_TO_MS
     
     # get model-predicted relative road roll, with current roll
-    if model_data is not None and self._liveparams is not None:
-      path_x = np.array(model_data.position.x)
-      path_rolls = np.array(model_data.orientation.x) + self._liveparams.roll
+    if model_data is not None and self._liveparams is not None and len(model_data.position.x) >= 16:
+      path_x = np.array(model_data.position.x)[:16]
+      path_rolls = np.array(model_data.orientation.x)[:16] + self._liveparams.roll
       path_roll_poly = np.polyfit(path_x, path_rolls, 3)
     else:
       path_roll_poly = np.array([0., 0., 0., 0.])
