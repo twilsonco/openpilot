@@ -52,10 +52,9 @@ class LatControlTorque(LatControl):
       else:
         actual_curvature = llk.angularVelocityCalibrated.value[2] / CS.vEgo
       desired_lateral_accel = desired_curvature * CS.vEgo**2
-      desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
       actual_lateral_accel = actual_curvature * CS.vEgo**2
 
-      low_speed_factor = interp(CS.vEgo, [0, 15], [500, 0])
+      low_speed_factor = interp(CS.vEgo, [0., 15.], [500., 0.])
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
