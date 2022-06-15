@@ -18,8 +18,7 @@ from cereal import log
 # move it at all, this is compensated for too.
 
 
-LOW_SPEED_FACTOR = 200
-JERK_THRESHOLD = 0.2
+FRICTION_THRESHOLD = 0.2
 
 def get_steer_feedforward(desired_lateral_accel, speed):
   return desired_lateral_accel
@@ -56,13 +55,14 @@ class LatControlTorque(LatControl):
       desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
       actual_lateral_accel = actual_curvature * CS.vEgo**2
 
-      setpoint = desired_lateral_accel + LOW_SPEED_FACTOR * desired_curvature
-      measurement = actual_lateral_accel + LOW_SPEED_FACTOR * actual_curvature
+      low_speed_factor = interp(CS.vEgo, [0, 15], [500, 0])
+      setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
+      measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
       pid_log.error = error
 
       ff = self.get_steer_feedforward(desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY, CS.vEgo)
-      friction_compensation = interp(desired_lateral_jerk, [-JERK_THRESHOLD, JERK_THRESHOLD], [-self.friction, self.friction])
+      friction_compensation = interp(error, [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], [-self.friction, self.friction])
       ff += friction_compensation
       output_torque = self.pid.update(setpoint, measurement,
                                       override=CS.steeringPressed, feedforward=ff,
