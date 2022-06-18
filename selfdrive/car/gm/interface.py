@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from math import fabs, sin, erf
+from math import fabs, sin, erf, atan
 from cereal import car
 from common.numpy_fast import interp
 from common.realtime import sec_since_boot
@@ -36,15 +36,15 @@ def get_steer_feedforward_sigmoid(desired_angle, v_ego, ANGLE, ANGLE_OFFSET, SIG
   sigmoid = x / (1 + fabs(x))
   return (SIGMOID_SPEED * sigmoid * v_ego) + (SIGMOID * sigmoid) + (SPEED * v_ego)
 
-def get_steer_feedforward_sigmoid1(angle, speed, ANGLE_COEF, ANGLE_COEF2, SPEED_OFFSET, SIGMOID_COEF, SPEED_COEF):
+def get_steer_feedforward_sigmoid1(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
   x = ANGLE_COEF * (angle)
-  sigmoid = x / (1. + np.fabs(x))
-  return (SIGMOID_COEF * sigmoid) * ((speed + SPEED_OFFSET) * SPEED_COEF) * ((1. + fabs(angle)) ** fabs(ANGLE_COEF2))
+  sigmoid = x / (1. + fabs(x))
+  return ((SIGMOID_COEF_RIGHT if angle > 0. else SIGMOID_COEF_LEFT) * sigmoid) * ((speed + SPEED_OFFSET) * SPEED_COEF) * (ANGLE_OFFSET + (fabs(angle) ** fabs(ANGLE_COEF2)))
 
-def get_steer_feedforward_erf(angle, speed, ANGLE_COEF, ANGLE_COEF2, SPEED_OFFSET, SIGMOID_COEF, SPEED_COEF):
-  x = ANGLE_COEF * angle
+def get_steer_feedforward_erf(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
+  x = ANGLE_COEF * (angle) * (40.23 / (max(0.15,speed + SPEED_OFFSET)))**ANGLE_COEF2
   sigmoid = erf(x)
-  return (SIGMOID_COEF * sigmoid) / (fabs(0.1 + speed + SPEED_OFFSET) ** SPEED_COEF) * ((1. + fabs(angle)) * fabs(ANGLE_COEF2))
+  return ((SIGMOID_COEF_RIGHT if angle > 0. else SIGMOID_COEF_LEFT) * sigmoid) + SPEED_COEF * ((angle * 0.25) - atan(angle * 0.25))
 
 
 class CarInterface(CarInterfaceBase):
@@ -77,22 +77,26 @@ class CarInterface(CarInterfaceBase):
   # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
   @staticmethod
   def get_steer_feedforward_volt(desired_angle, v_ego):
-    ANGLE_COEF = -0.54067107
-    ANGLE_COEF2 = 0.49784486
-    SPEED_OFFSET = 6.89838801
-    SIGMOID_COEF = 0.03117802
-    SPEED_COEF = -0.21954360
-    return get_steer_feedforward_sigmoid1(desired_angle, v_ego, ANGLE_COEF, ANGLE_COEF2, SPEED_OFFSET, SIGMOID_COEF, SPEED_COEF)
+    ANGLE_COEF = 0.00364467
+    ANGLE_COEF2 = -0.00685627
+    ANGLE_OFFSET = -1.03581546
+    SPEED_OFFSET = 13.57832415
+    SIGMOID_COEF_RIGHT = 5.40742283
+    SIGMOID_COEF_LEFT = 7.09424589
+    SPEED_COEF = -2.61124382
+    return get_steer_feedforward_sigmoid1(desired_angle, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
   
   # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
   @staticmethod
   def get_steer_feedforward_volt_torque(desired_lateral_accel, v_ego):
-    ANGLE_COEF = 2.29297150
-    ANGLE_COEF2 = 0.65825693
-    SPEED_OFFSET = -3.79457530
-    SIGMOID_COEF = 0.65047011
-    SPEED_COEF = 0.21019948
-    return get_steer_feedforward_erf(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, SPEED_OFFSET, SIGMOID_COEF, SPEED_COEF)
+    ANGLE_COEF = 0.95902015
+    ANGLE_COEF2 = 0.41072839
+    ANGLE_OFFSET = 0.00000000
+    SPEED_OFFSET = -6.71061438
+    SIGMOID_COEF_RIGHT = 0.27076952
+    SIGMOID_COEF_LEFT = 0.38371884
+    SPEED_COEF = 8.37258304
+    return get_steer_feedforward_erf(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
   
 
 
