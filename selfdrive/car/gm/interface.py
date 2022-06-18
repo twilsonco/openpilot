@@ -31,20 +31,23 @@ DECLINE_ACCEL_MIN = 0.2 # [m/s^2] don't decrease acceleration limit due to decli
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
+# meant for traditional ff fits
 def get_steer_feedforward_sigmoid(desired_angle, v_ego, ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED):
   x = ANGLE * (desired_angle + ANGLE_OFFSET)
   sigmoid = x / (1 + fabs(x))
   return (SIGMOID_SPEED * sigmoid * v_ego) + (SIGMOID * sigmoid) + (SPEED * v_ego)
 
+# meant for traditional ff fits
 def get_steer_feedforward_sigmoid1(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
   x = ANGLE_COEF * (angle)
   sigmoid = x / (1. + fabs(x))
   return ((SIGMOID_COEF_RIGHT if angle > 0. else SIGMOID_COEF_LEFT) * sigmoid) * ((speed + SPEED_OFFSET) * SPEED_COEF) * (ANGLE_OFFSET + (fabs(angle) ** fabs(ANGLE_COEF2)))
 
+# meant for torque fits
 def get_steer_feedforward_erf(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
   x = ANGLE_COEF * (angle) * (40.23 / (max(0.15,speed + SPEED_OFFSET)))**ANGLE_COEF2
   sigmoid = erf(x)
-  return ((SIGMOID_COEF_RIGHT if angle > 0. else SIGMOID_COEF_LEFT) * sigmoid) + SPEED_COEF * ((angle * 0.25) - atan(angle * 0.25))
+  return ((SIGMOID_COEF_RIGHT if angle > 0. else SIGMOID_COEF_LEFT) * sigmoid) + 0.1 * angle
 
 
 class CarInterface(CarInterfaceBase):
