@@ -45,7 +45,7 @@ def get_steer_feedforward_sigmoid1(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_
 
 # meant for torque fits
 def get_steer_feedforward_erf(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
-  x = ANGLE_COEF * (angle) * (40.23 / (max(0.15,speed + SPEED_OFFSET)))**ANGLE_COEF2
+  x = ANGLE_COEF * (angle) * (40.23 / (max(0.2,speed + SPEED_OFFSET)))**ANGLE_COEF2
   sigmoid = erf(x)
   return ((SIGMOID_COEF_RIGHT if angle > 0. else SIGMOID_COEF_LEFT) * sigmoid) + 0.1 * angle
 
