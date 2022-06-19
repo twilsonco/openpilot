@@ -47,7 +47,7 @@ def get_steer_feedforward_sigmoid1(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_
 def get_steer_feedforward_erf(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
   x = ANGLE_COEF * (angle) * (40.23 / (max(0.2,speed + SPEED_OFFSET)))**ANGLE_COEF2
   sigmoid = erf(x)
-  return ((SIGMOID_COEF_RIGHT if angle > 0. else SIGMOID_COEF_LEFT) * sigmoid) + 0.1 * angle
+  return ((SIGMOID_COEF_RIGHT if angle > 0. else SIGMOID_COEF_LEFT) * sigmoid) + ANGLE_OFFSET * angle
 
 
 class CarInterface(CarInterfaceBase):
@@ -94,7 +94,7 @@ class CarInterface(CarInterfaceBase):
   def get_steer_feedforward_volt_torque(desired_lateral_accel, v_ego):
     ANGLE_COEF = 0.95902015
     ANGLE_COEF2 = 0.41072839
-    ANGLE_OFFSET = 0.00000000
+    ANGLE_OFFSET = 0.2
     SPEED_OFFSET = -6.71061438
     SIGMOID_COEF_RIGHT = 0.27076952
     SIGMOID_COEF_LEFT = 0.38371884
