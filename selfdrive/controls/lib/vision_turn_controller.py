@@ -8,6 +8,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.lane_planner import TRAJECTORY_SIZE
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 from selfdrive.controls.lib.vehicle_model import VehicleModel
+from selfdrive.swaglog import cloudlog
 
 
 _MIN_V = 5.6  # Do not operate under 20km/h
@@ -275,7 +276,7 @@ class VisionTurnController():
     lat_sat = False
     if sm.valid.get('controlsState', False):
       self._controls_state = sm['controlsState']
-    if self._controls_state is not None:
+    if self._controls_state is not None and self._lat_sat_t >= 0:
       lat_type = self._controls_state.lateralControlState.which()
       if lat_type == 'indiState':
         lat_sat = (self._controls_state.lateralControlState.indiState.output >= 1.0)
@@ -285,8 +286,11 @@ class VisionTurnController():
         lat_sat = (self._controls_state.lateralControlState.lqrState.output >= 1.0)
       if lat_type == 'angleState':
         lat_sat = (self._controls_state.lateralControlState.indiState.angleState >= 1.0)
-      else: # if lat_type == 'torqueState':
+      elif lat_type == 'torqueState':
         lat_sat = (self._controls_state.lateralControlState.torqueState.output >= 1.0)
+      else: # unknown type
+        cloudlog.info(f"Vision controller: unknown lateralControlState: {lat_type}")
+        self._lat_sat_t = -1
       if lat_sat:
         if not self._lat_sat_last:
           self._lat_sat_t = sec_since_boot()
