@@ -122,6 +122,12 @@ class CarInterface(CarInterfaceBase):
       return self.get_steer_feedforward_acadia
     else:
       return CarInterfaceBase.get_steer_feedforward_default
+  
+  def get_steer_feedforward_function_torque(self):
+    if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
+      return self.get_steer_feedforward_volt_torque
+    else:
+      return CarInterfaceBase.get_steer_feedforward_torque_default
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):

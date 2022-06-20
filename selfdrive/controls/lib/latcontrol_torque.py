@@ -1,5 +1,4 @@
 import math
-from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.controls.lib.pid import PIDController
 from common.numpy_fast import interp
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
@@ -31,9 +30,7 @@ class LatControlTorque(LatControl):
                             k_f=CP.lateralTuning.torque.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
     self.friction = CP.lateralTuning.torque.friction
-    self.get_steer_feedforward = CI.get_steer_feedforward_function()
-    if self.get_steer_feedforward == CarInterfaceBase.get_steer_feedforward_default:
-      self.get_steer_feedforward = get_steer_feedforward
+    self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
 
   def reset(self):
     super().reset()
