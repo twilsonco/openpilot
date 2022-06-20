@@ -186,7 +186,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kiBP = [0., 40.]
         ret.lateralTuning.pid.kiV = [.015, 0.02]
         ret.lateralTuning.pid.kdBP = [0.]
-        ret.lateralTuning.pid.kdV = [3.2]
+        ret.lateralTuning.pid.kdV = [0.6]
         ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
       
 
