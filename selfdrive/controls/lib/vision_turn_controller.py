@@ -280,11 +280,11 @@ class VisionTurnController():
       lat_type = self._controls_state.lateralControlState.which()
       if lat_type == 'indiState':
         lat_sat = (self._controls_state.lateralControlState.indiState.output >= 1.0)
-      if lat_type == 'pidState':
+      elif lat_type == 'pidState':
         lat_sat = (self._controls_state.lateralControlState.pidState.output >= 1.0)
-      if lat_type == 'lqrState':
+      elif lat_type == 'lqrState':
         lat_sat = (self._controls_state.lateralControlState.lqrState.output >= 1.0)
-      if lat_type == 'angleState':
+      elif lat_type == 'angleState':
         lat_sat = (self._controls_state.lateralControlState.indiState.angleState >= 1.0)
       elif lat_type == 'torqueState':
         lat_sat = (self._controls_state.lateralControlState.torqueState.output >= 1.0)
