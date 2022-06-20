@@ -1,3 +1,13 @@
+Version tw-0.8.12-2_twd (2022-06-04)
+========================
+ * NEW: [optional w/ toggle] print lead car info
+   * Resolved occasional double-printing of info
+ * RE-IMPROVED: Vision-based curve braking now includes roll-compensation in its calculations
+   * For example, it will brake less on a banked curve
+ * RE-IMPROVED: Volt torque steering porformance!
+   * With custom feedforward fit from volt driving data like the traditional PIDF tune
+ * IMPROVED: Traditional PIDF tune gets updated custom FF (I can't tell whether it or torque is better; likely a mater of preference; try them both!)
+
 Version tw-0.8.12-1_twd (2022-04-27)
 ========================
  * NEW: [optional w/ toggle] Torque-based steering control for Volt and Acadia
