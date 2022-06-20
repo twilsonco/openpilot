@@ -118,10 +118,10 @@ class PIDController:
     ki = self.k_i
     kd = self.k_d
     
-    if self.output_norms and len(self.outputs) > 0:
+    if self.output_norms is not None and len(self.outputs) > 0:
       abs_sp = setpoint if setpoint > 0. else -setpoint
       self.output_norms.append(self.outputs[-1] / (abs_sp + 1.)) # use the last iteration's output
-      if len(self.output_norms) >= self._k_period:
+      if len(self.output_norms) == int(self._k_period):
         delta_error_norm = self.output_norms[-1] - self.output_norms[0]
         gain_update_factor = self.output_norms[-1] * delta_error_norm
         if gain_update_factor != 0.:
@@ -130,8 +130,8 @@ class PIDController:
           ki *= 1. + clip(self.k_12 * gain_update_factor, -1., 2.)
           kd *= 1. + min(2., self.k_13 * abs_guf)
 
-    if self.outputs and len(self.outputs) >= self._d_period:  # makes sure we have enough history for period
-      self.d = (error - self.outputs[0]) * self._d_period_recip * kd  
+    if self.outputs and len(self.outputs) == int(self._d_period):  # makes sure we have enough history for period
+      self.d = (self.outputs[-1] - self.outputs[0]) * self._d_period_recip * kd  
     
     self.p = error * kp
     self.f = feedforward * self.k_f
@@ -152,7 +152,7 @@ class PIDController:
     control = self.p + self.f + self.i + self.d
     self.saturated = self._check_saturation(control, check_saturation, error)
     
-    if self.outputs:
+    if self.outputs is not None:
       self.outputs.append(control)
 
     self.control = clip(control, self.neg_limit, self.pos_limit)

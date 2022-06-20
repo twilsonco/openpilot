@@ -69,10 +69,18 @@ class CarInterfaceBase():
     # Proportional to realigning tire momentum: lateral acceleration.
     # TODO: something with lateralPlan.curvatureRates
     return desired_angle * (v_ego**2)
+  
+  @staticmethod
+  def get_steer_feedforward_torque_default(desired_lateral_accel, v_ego):
+    return desired_lateral_accel
 
   @staticmethod
   def get_steer_feedforward_function():
     return CarInterfaceBase.get_steer_feedforward_default
+  
+  @staticmethod
+  def get_steer_feedforward_function_torque():
+    return CarInterfaceBase.get_steer_feedforward_torque_default
 
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
