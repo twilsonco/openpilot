@@ -219,7 +219,7 @@ typedef struct UIScene {
 
   bool color_path = false;
   
-  float screen_dim_modes_v[3] = {0.01, 0.5, 1.};
+  float screen_dim_modes_v[3] = {0.01, 0.3, 1.};
   int screen_dim_mode_max = 2;
   int screen_dim_mode_cur = screen_dim_mode_max; 
   int screen_dim_mode = screen_dim_mode_cur, 
