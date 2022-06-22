@@ -268,7 +268,7 @@ def autohold_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> 
   return Alert(
     "AutoHolding for %s | Gas to resume" % stotime(sm['longitudinalPlan'].secondsStopped),
     "You can rest your foot now.",
-    AlertStatus.userPrompt, AlertSize.small,
+    AlertStatus.normal, AlertSize.small,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3)
 
 
@@ -276,7 +276,7 @@ def stopped_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> A
   return Alert(
     "Stopped for %s | Gas to resume" % stotime(sm['longitudinalPlan'].secondsStopped),
     "You can rest your foot now.",
-    AlertStatus.userPrompt, AlertSize.small,
+    AlertStatus.normal, AlertSize.small,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3)
 
 def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
@@ -534,14 +534,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
   },
 
-  EventName.resumeRequired: {
-    ET.WARNING: Alert(
-      "STOPPED",
-      "Press Resume to Go",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
-  },
-
   EventName.belowSteerSpeed: {
     ET.WARNING: below_steer_speed_alert,
   },
@@ -584,6 +576,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Turn Exceeds Steering Limit",
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 1., 1.),
+  },
+  
+  EventName.resumeRequired: {
+    ET.WARNING: Alert(
+      "Go time!",
+      "Tap gas or press resume",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, 1., 3., 3.),
   },
 
   # Thrown when the fan is driven at >50% but is not rotating

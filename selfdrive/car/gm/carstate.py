@@ -63,6 +63,9 @@ class CarState(CarStateBase):
     self.params_check_last_t = 0.
     self.params_check_freq = 0.1 # check params at 10Hz
     
+    self.resume_button_pressed = False
+    self.resume_required = False
+    
     self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco; 3 = creep
     
     self.coasting_enabled = self._params.get_bool("Coasting")
@@ -78,6 +81,7 @@ class CarState(CarStateBase):
     self.coasting_lead_v = -1.
     self.tr = 1.8
     self.coast_one_pedal_mode_active = False
+    self.coast_one_pedal_mode_active_last = False
     self.pause_long_on_gas_press = False
     self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False
@@ -219,6 +223,8 @@ class CarState(CarStateBase):
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
     ret.gasPressed = ret.gas > 1e-5
     self.gasPressed = ret.gasPressed
+    if self.gasPressed:
+      self.resume_required = False
 
     ret.steeringAngleDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelAngle"]
     ret.steeringRateDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelRate"]

@@ -334,10 +334,17 @@ class CarInterface(CarInterfaceBase):
       if but == CruiseButtons.RES_ACCEL:
         if not (ret.cruiseState.enabled and ret.standstill):
           be.type = ButtonType.accelCruise  # Suppress resume button if we're resuming from stop so we don't adjust speed.
+        if self.CS.one_pedal_mode_active or self.CS.coast_one_pedal_mode_active \
+          or ret.standstill or not ret.cruiseState.enabled:
+          self.CS.resume_button_pressed = True
+          self.CS.resume_required = False
       elif but == CruiseButtons.DECEL_SET:
         if not cruiseEnabled and not self.CS.lkMode:
           self.lkMode = True
         be.type = ButtonType.decelCruise
+        if self.CS.one_pedal_mode_active or self.CS.coast_one_pedal_mode_active \
+          or not ret.cruiseState.enabled:
+          self.CS.resume_button_pressed = True
       elif but == CruiseButtons.CANCEL:
         be.type = ButtonType.cancel
       elif but == CruiseButtons.MAIN:
@@ -450,7 +457,7 @@ class CarInterface(CarInterfaceBase):
         events.add(car.CarEvent.EventName.blinkerSteeringPaused)
         steer_paused = True
     if ret.vEgo < self.CP.minSteerSpeed:
-      if ret.standstill and cruiseEnabled and not ret.brakePressed and not self.CS.pause_long_on_gas_press and not self.CS.autoHoldActivated and not self.CS.disengage_on_gas and t - self.CS.sessionInitTime > 10.:
+      if ret.standstill and cruiseEnabled and not ret.brakePressed and not self.CS.pause_long_on_gas_press and not self.CS.autoHoldActivated and not self.CS.disengage_on_gas and t - self.CS.sessionInitTime > 10. and not self.CS.resume_required:
         events.add(car.CarEvent.EventName.stoppedWaitForGas)
       elif not steer_paused and self.CS.lkMode:
         events.add(car.CarEvent.EventName.belowSteerSpeed)
@@ -459,6 +466,8 @@ class CarInterface(CarInterfaceBase):
       events.add(car.CarEvent.EventName.autoHoldActivated)
     if self.CS.pcm_acc_status == AccState.FAULTED and t - self.CS.sessionInitTime > 10.0 and t - self.CS.lastAutoHoldTime > 1.0:
       events.add(EventName.accFaulted)
+    if self.CS.resume_required:
+      events.add(EventName.resumeRequired)
 
     # handle button presses
     for b in ret.buttonEvents:
@@ -503,6 +512,11 @@ class CarInterface(CarInterfaceBase):
     self.CS.pause_long_on_gas_press = pause_long_on_gas_press
     enabled = c.enabled or self.CS.pause_long_on_gas_press
 
+    if self.CS.resume_button_pressed \
+      and not self.CS.one_pedal_mode_active and not self.CS.coast_one_pedal_mode_active \
+      and (self.CS.one_pedal_mode_active_last or self.CS.coast_one_pedal_mode_active_last):
+        hud_v_cruise = max(self.CS.one_pedal_v_cruise_kph_last, hud_v_cruise)
+    
     can_sends = self.CC.update(enabled, self.CS, self.frame,
                                c.actuators,
                                hud_v_cruise, c.hudControl.lanesVisible,

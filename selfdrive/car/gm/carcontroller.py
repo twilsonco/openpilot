@@ -221,6 +221,7 @@ class CarController():
       apply_brake = int(round(apply_brake))
 
       CS.one_pedal_mode_active_last = CS.one_pedal_mode_active
+      CS.coast_one_pedal_mode_active_last = CS.coast_one_pedal_mode_active
 
       if do_log:
         f.write(",".join([str(i) for i in [
@@ -280,8 +281,14 @@ class CarController():
         # Auto-resume from full stop by resetting ACC control
         acc_enabled = enabled
         
-        if CS.do_sng and standstill and not car_stopping:
-          acc_enabled = False
+        if standstill and not car_stopping:
+          if CS.do_sng:
+            acc_enabled = False
+            CS.resume_button_pressed = True
+          else:
+            CS.resume_required = True
+        elif not standstill or not enabled:
+          CS.resume_required = False
       
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, acc_enabled, at_full_stop))
 
@@ -290,8 +297,10 @@ class CarController():
     if (frame % 4) == 0:
       send_fcw = hud_alert == VisualAlert.fcw
       follow_level = CS.get_follow_level()
+
       can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, enabled, 
-                                                                 hud_v_cruise * CV.MS_TO_KPH, hud_show_car, follow_level, send_fcw))
+                                                                 hud_v_cruise * CV.MS_TO_KPH, hud_show_car, follow_level, send_fcw, CS.resume_button_pressed))
+      CS.resume_button_pressed = False
 
     # Radar needs to know current speed and yaw rate (50hz),
     # and that ADAS is alive (10hz)
