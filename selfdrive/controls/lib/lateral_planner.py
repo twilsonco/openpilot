@@ -213,7 +213,11 @@ class LateralPlanner():
       heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.0])
       self.libmpc.set_weights(path_cost, heading_cost, CP.steerRateCost)
       self.laneless_mode_status = True
-    elif self.laneless_mode == 2 and ((self.LP.lll_prob + self.LP.rll_prob)/2 < 0.3) and self.lane_change_state == LaneChangeState.off:
+    elif self.laneless_mode == 2 \
+        and ((self.LP.lll_prob + self.LP.rll_prob)/2 < 0.3 \
+          or sm['longitudinalPlan'].visionMaxPredictedLateralAcceleration > 1.4 \
+          or sm['longitudinalPlan'].visionCurrentLateralAcceleration > 1.0) \
+        and self.lane_change_state == LaneChangeState.off:
       d_path_xyz = self.path_xyz
       path_cost = np.clip(abs(self.path_xyz[0,1]/self.path_xyz_stds[0,1]), 0.5, 3.0) * MPC_COST_LAT.PATH
       # Heading cost is useful at low speed, otherwise end of plan can be off-heading
@@ -221,8 +225,12 @@ class LateralPlanner():
       self.libmpc.set_weights(path_cost, heading_cost, CP.steerRateCost)
       self.laneless_mode_status = True
       self.laneless_mode_status_buffer = True
-    elif self.laneless_mode == 2 and ((self.LP.lll_prob + self.LP.rll_prob)/2 > 0.5) and \
-     self.laneless_mode_status_buffer and self.lane_change_state == LaneChangeState.off:
+    elif self.laneless_mode == 2 \
+        and ((self.LP.lll_prob + self.LP.rll_prob)/2 > 0.5) \
+        and self.laneless_mode_status_buffer \
+        and self.lane_change_state == LaneChangeState.off \
+        and sm['longitudinalPlan'].visionMaxPredictedLateralAcceleration < 0.7 \
+        and sm['longitudinalPlan'].visionCurrentLateralAcceleration < 0.6:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
       self.libmpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, CP.steerRateCost)
       self.laneless_mode_status = False
