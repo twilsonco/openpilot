@@ -287,8 +287,6 @@ class CarController():
             CS.resume_button_pressed = True
           else:
             CS.resume_required = True
-        elif not standstill or not enabled:
-          CS.resume_required = False
       
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, acc_enabled, at_full_stop))
 

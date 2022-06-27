@@ -341,12 +341,12 @@ class CarInterface(CarInterfaceBase):
         be.pressed = False
         but = self.CS.prev_cruise_buttons
       if but == CruiseButtons.RES_ACCEL:
+        self.CS.resume_required = False
         if not (ret.cruiseState.enabled and ret.standstill):
           be.type = ButtonType.accelCruise  # Suppress resume button if we're resuming from stop so we don't adjust speed.
         if self.CS.one_pedal_mode_active or self.CS.coast_one_pedal_mode_active \
           or ret.standstill or not ret.cruiseState.enabled:
           self.CS.resume_button_pressed = True
-          self.CS.resume_required = False
       elif but == CruiseButtons.DECEL_SET:
         if not cruiseEnabled and not self.CS.lkMode:
           self.lkMode = True
