@@ -1643,11 +1643,21 @@ static void ui_draw_vision_event(UIState *s) {
     nvgRestore(s->vg);
     
     // draw extra circle to indiate paused low-speed one-pedal blinker steering is enabled
-    if (s->scene.visionBrakingEnabled){
+    if (s->scene.visionBrakingEnabled and !(s->scene.mapBrakingEnabled)){
       nvgBeginPath(s->vg);
       const int r = int(float(radius) * 1.15);
       nvgRoundedRect(s->vg, center_x - r, center_y - r, 2 * r, 2 * r, r);
       nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(255));
+      nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
+      nvgFill(s->vg);
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+    }
+    else if (s->scene.visionBrakingEnabled and s->scene.mapBrakingEnabled){
+      nvgBeginPath(s->vg);
+      const int r = int(float(radius) * 1.15);
+      nvgRoundedRect(s->vg, center_x - r, center_y - r, 2 * r, 2 * r, r);
+      nvgStrokeColor(s->vg, COLOR_GREEN_ALPHA(255));
       nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
       nvgFill(s->vg);
       nvgStrokeWidth(s->vg, 6);

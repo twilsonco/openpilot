@@ -133,18 +133,21 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   if (QUIState::ui_state.scene.started 
     && QUIState::ui_state.scene.wheel_touch_rect.ptInRect(e->x(), e->y()))
   {
-    if (Params().getBool("TurnVisionControl") || Params().getBool("TurnSpeedControl")){
+    bool vision_enabled = Params().getBool("TurnVisionControl");
+    bool map_enabled = Params().getBool("TurnSpeedControl");
+    if (vision_enabled && map_enabled){
       Params().putBool("TurnVisionControl", false);
       Params().putBool("TurnSpeedControl", false);
     }
-    else{
-      bool const both_off = (!QUIState::ui_state.scene.turn_vision_control_enabled && !QUIState::ui_state.scene.turn_speed_control_enabled);
-      if (QUIState::ui_state.scene.turn_vision_control_enabled || both_off){
-        Params().putBool("TurnVisionControl", true);
-      }
-      if (QUIState::ui_state.scene.turn_speed_control_enabled || both_off){
-        Params().putBool("TurnSpeedControl", true);
-      }
+    else if (!vision_enabled && !map_enabled){
+      Params().putBool("TurnVisionControl", true);
+    }
+    else if (vision_enabled && !map_enabled){
+      Params().putBool("TurnSpeedControl", true);
+    }
+    else {
+      Params().putBool("TurnVisionControl", true);
+      Params().putBool("TurnSpeedControl", true);
     }
     return;
   }
