@@ -155,6 +155,9 @@ class CarInterface(CarInterfaceBase):
     # or camera is on powertrain bus (LKA cars without ACC).
     ret.openpilotLongitudinalControl = True
     tire_stiffness_factor = 0.444  # not optimized yet
+    
+    ret.longitudinalActuatorDelayLowerBound = 0.41
+    ret.longitudinalActuatorDelayUpperBound = 0.41
 
     # Default lateral controller params.
     ret.minSteerSpeed = 7 * CV.MPH_TO_MS
