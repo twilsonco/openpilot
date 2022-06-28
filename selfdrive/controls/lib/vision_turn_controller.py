@@ -375,14 +375,19 @@ class VisionTurnController():
       if self._lat_acc_overshoot_ahead:
         # when overshooting, target the acceleration needed to achieve the overshoot speed at
         # the required distance
-        a_target = min((self._v_overshoot**2 - self._v_ego**2) / (2 * self._v_overshoot_distance), a_target)
-      _debug(f'TVC Entering: Overshooting: {self._lat_acc_overshoot_ahead}')
-      _debug(f'    Decel: {a_target:.2f}, target v: {self.v_turn * CV.MS_TO_KPH}')
+        a_target_overshoot = min((self._v_overshoot**2 - self._v_ego**2) / (2 * self._v_overshoot_distance), a_target)
+        if self.state == VisionTurnControllerState.entering:
+          a_target = a_target_overshoot
+        _debug(f'TVC Entering: Overshooting: {self._lat_acc_overshoot_ahead}')
+        _debug(f'    Decel: {a_target:.2f}, target v: {self.v_turn * CV.MS_TO_KPH}')
+      else:
+        a_target_overshoot = 3.0 #big value
       
-      # When turning we provide a target acceleration that is confortable for the lateral accelearation felt.
-      a_target_cur_lat_accel = interp(self._current_lat_acc, _TURNING_ACC_BP, _TURNING_ACC_V)
       
-      a_target = min(a_target, a_target_cur_lat_accel)
+      if self.state == VisionTurnControllerState.turning:
+        # When turning we provide a target acceleration that is confortable for the lateral accelearation felt.
+        a_target_cur_lat_accel = interp(self._current_lat_acc, _TURNING_ACC_BP, _TURNING_ACC_V)
+        a_target = min(a_target_overshoot, a_target_cur_lat_accel)
     # TURNING
     # elif self.state == VisionTurnControllerState.turning:
     #   # When turning we provide a target acceleration that is confortable for the lateral accelearation felt.
