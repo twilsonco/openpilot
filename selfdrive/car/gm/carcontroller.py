@@ -2,6 +2,7 @@ from cereal import car
 from common.realtime import DT_CTRL
 from common.numpy_fast import interp
 from common.realtime import sec_since_boot
+from math import sin 
 from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
@@ -87,8 +88,9 @@ class CarController():
       apply_gas = P.MAX_ACC_REGEN
       apply_brake = 0
     else:
-      apply_gas = interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
-      apply_brake = interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
+      gravity_x = -9.8 * sin(CS.pitch)
+      apply_gas = interp(actuators.accel - gravity_x, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
+      apply_brake = interp(actuators.accel - gravity_x, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
       t = sec_since_boot()
       
       v_rel = CS.coasting_lead_v - CS.vEgo
