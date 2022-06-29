@@ -7,6 +7,7 @@ Version tw-0.8.12-3_tws (2022-06-29)
  * IMPROVED: map-based curve braking gets a 10% speed boost at all speeds so it doesn't slow excessively.
   * Please provide feedback on whether you think it should slow you more/less at low/high speeds
  * IMPROVED: gm long control now accounts for vehicle pitch for better gas/brake control on incline/decline (thanks qadmus!)
+  * Pitch is calculated using current and predicted pitch to provide a smoothed version of the current pitch with no delay!
  * IMPROVED: gm better gas/brake lookup tables so that the car produces the accel/decel openpilot thinks it will for a given gas/brake command (qadmus again!!!)
 
 Version tw-0.8.12-2_twd (2022-06-04)
