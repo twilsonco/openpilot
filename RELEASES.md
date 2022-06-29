@@ -1,3 +1,15 @@
+Version tw-0.8.12-3_twd (2022-06-29)
+========================
+ * IMPROVED: Vision and/or map-based curve braking separately toggleable by tapping steering wheel icon
+  * Tap to cycle between no-curve-braking/vision-only/vision+map
+  * Vision-only is indicated by a white circle around the wheel icon, and vision+map is indicated by a green circle
+ * IMPROVED: vision braking: higher "entering" curve braking
+ * IMPROVED: map-based curve braking gets a 10% speed boost at all speeds so it doesn't slow excessively.
+  * Please provide feedback on whether you think it should slow you more/less at low/high speeds
+ * IMPROVED: gm long control now accounts for vehicle pitch for better gas/brake control on incline/decline (thanks qadmus!)
+  * Pitch is calculated using current and predicted pitch to provide a smoothed version of the current pitch with no delay!
+ * IMPROVED: gm better gas/brake lookup tables so that the car produces the accel/decel openpilot thinks it will for a given gas/brake command (qadmus again!!!)
+
 Version tw-0.8.12-2_twd (2022-06-04)
 ========================
  * NEW: [optional w/ toggle] print lead car info
