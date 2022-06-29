@@ -2,6 +2,7 @@ from cereal import car
 from common.realtime import DT_CTRL
 from common.numpy_fast import interp
 from common.realtime import sec_since_boot
+from math import sin 
 from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
@@ -87,8 +88,9 @@ class CarController():
       apply_gas = P.MAX_ACC_REGEN
       apply_brake = 0
     else:
-      apply_gas = interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
-      apply_brake = interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
+      gravity_x = -9.8 * sin(CS.pitch)
+      apply_gas = interp(actuators.accel - gravity_x, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
+      apply_brake = interp(actuators.accel - gravity_x, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
       t = sec_since_boot()
       
       v_rel = CS.coasting_lead_v - CS.vEgo
@@ -221,6 +223,7 @@ class CarController():
       apply_brake = int(round(apply_brake))
 
       CS.one_pedal_mode_active_last = CS.one_pedal_mode_active
+      CS.coast_one_pedal_mode_active_last = CS.coast_one_pedal_mode_active
 
       if do_log:
         f.write(",".join([str(i) for i in [
@@ -280,8 +283,12 @@ class CarController():
         # Auto-resume from full stop by resetting ACC control
         acc_enabled = enabled
         
-        if CS.do_sng and standstill and not car_stopping:
-          acc_enabled = False
+        if standstill and not car_stopping:
+          if CS.do_sng:
+            acc_enabled = False
+            CS.resume_button_pressed = True
+          else:
+            CS.resume_required = True
       
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, acc_enabled, at_full_stop))
 
@@ -290,8 +297,10 @@ class CarController():
     if (frame % 4) == 0:
       send_fcw = hud_alert == VisualAlert.fcw
       follow_level = CS.get_follow_level()
+
       can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, enabled, 
-                                                                 hud_v_cruise * CV.MS_TO_KPH, hud_show_car, follow_level, send_fcw))
+                                                                 hud_v_cruise * CV.MS_TO_KPH, hud_show_car, follow_level, send_fcw, CS.resume_button_pressed))
+      CS.resume_button_pressed = False
 
     # Radar needs to know current speed and yaw rate (50hz),
     # and that ADAS is alive (10hz)

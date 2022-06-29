@@ -16,10 +16,10 @@ _MIN_V = 5.6  # Do not operate under 20km/h
 _ENTERING_PRED_LAT_ACC_TH = 1.3  # Predicted Lat Acc threshold to trigger entering turn state.
 _ABORT_ENTERING_PRED_LAT_ACC_TH = 1.1  # Predicted Lat Acc threshold to abort entering state if speed drops.
 
-_TURNING_LAT_ACC_TH = 1.6  # Lat Acc threshold to trigger turning turn state.
+_TURNING_LAT_ACC_TH = 1.7  # Lat Acc threshold to trigger turning turn state.
 
-_LEAVING_LAT_ACC_TH = 1.8  # Lat Acc threshold to trigger leaving turn state.
-_FINISH_LAT_ACC_TH = 1.5  # Lat Acc threshold to trigger end of turn cycle.
+_LEAVING_LAT_ACC_TH = 1.5  # Lat Acc threshold to trigger leaving turn state.
+_FINISH_LAT_ACC_TH = 1.35  # Lat Acc threshold to trigger end of turn cycle.
 
 _EVAL_STEP = 5.  # mts. Resolution of the curvature evaluation.
 _EVAL_START = 20.  # mts. Distance ahead where to start evaluating vision curvature.
@@ -28,17 +28,17 @@ _EVAL_LENGHT = 150.  # mts. Distance ahead where to stop evaluating vision curva
 _EVAL_RANGE = np.arange(_EVAL_START, _EVAL_LENGHT, _EVAL_STEP)
 _EVAL_RANGE_TURNING = np.arange(_EVAL_START_TURNING, _EVAL_LENGHT, _EVAL_STEP)
 
-_A_LAT_REG_MAX = 2.45  # Maximum lateral acceleration
+_A_LAT_REG_MAX = 2.4  # Maximum lateral acceleration
 
 # Lookup table for the minimum smooth deceleration during the ENTERING state
 # depending on the actual maximum absolute lateral acceleration predicted on the turn ahead.
-_ENTERING_SMOOTH_DECEL_V = [0.0, -0.2, -1.]  # min decel value allowed on ENTERING state
-_ENTERING_SMOOTH_DECEL_BP = [1.3, 1.7, 3.5]  # absolute value of lat acc ahead
+_ENTERING_SMOOTH_DECEL_V = [0.0, -0.2, -1.5]  # min decel value allowed on ENTERING state
+_ENTERING_SMOOTH_DECEL_BP = [1.2, 1.65, 3.6]  # absolute value of lat acc ahead
 
 # Lookup table for the acceleration for the TURNING state
 # depending on the current lateral acceleration of the vehicle.
 _TURNING_ACC_V = [0.6, 0.0, -1.]  # acc value
-_TURNING_ACC_BP = [1.5, 2.5, 3.8]  # absolute value of current lat acc
+_TURNING_ACC_BP = [1.5, 2.55, 3.4]  # absolute value of current lat acc
 
 _LEAVING_ACC = 0.6  # Confortble acceleration to regain speed while leaving a turn.
 
@@ -234,7 +234,7 @@ class VisionTurnController():
       self._predicted_path_source = 'pathWithLanes'
       
     
-    # 3. Use path curvature otherwise
+    # 3. Use path curvature otherwise,
     if path_poly is None and model_data is not None and len(model_data.position.y) >= 16: #16 based on Harald's use of predicted orientations
       path_poly = np.polyfit(np.array(model_data.position.x)[:16], np.array(model_data.position.y)[:16], 3)
       self._predicted_path_source = 'modelPosition'
@@ -375,14 +375,19 @@ class VisionTurnController():
       if self._lat_acc_overshoot_ahead:
         # when overshooting, target the acceleration needed to achieve the overshoot speed at
         # the required distance
-        a_target = min((self._v_overshoot**2 - self._v_ego**2) / (2 * self._v_overshoot_distance), a_target)
-      _debug(f'TVC Entering: Overshooting: {self._lat_acc_overshoot_ahead}')
-      _debug(f'    Decel: {a_target:.2f}, target v: {self.v_turn * CV.MS_TO_KPH}')
+        a_target_overshoot = min((self._v_overshoot**2 - self._v_ego**2) / (2 * self._v_overshoot_distance), a_target)
+        if self.state == VisionTurnControllerState.entering:
+          a_target = a_target_overshoot
+        _debug(f'TVC Entering: Overshooting: {self._lat_acc_overshoot_ahead}')
+        _debug(f'    Decel: {a_target:.2f}, target v: {self.v_turn * CV.MS_TO_KPH}')
+      else:
+        a_target_overshoot = 3.0 #big value
       
-      # When turning we provide a target acceleration that is confortable for the lateral accelearation felt.
-      a_target_cur_lat_accel = interp(self._current_lat_acc, _TURNING_ACC_BP, _TURNING_ACC_V)
       
-      a_target = min(a_target, a_target_cur_lat_accel)
+      if self.state == VisionTurnControllerState.turning:
+        # When turning we provide a target acceleration that is confortable for the lateral accelearation felt.
+        a_target_cur_lat_accel = interp(self._current_lat_acc, _TURNING_ACC_BP, _TURNING_ACC_V)
+        a_target = min(a_target_overshoot, a_target_cur_lat_accel)
     # TURNING
     # elif self.state == VisionTurnControllerState.turning:
     #   # When turning we provide a target acceleration that is confortable for the lateral accelearation felt.

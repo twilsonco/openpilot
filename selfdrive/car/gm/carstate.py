@@ -63,6 +63,9 @@ class CarState(CarStateBase):
     self.params_check_last_t = 0.
     self.params_check_freq = 0.1 # check params at 10Hz
     
+    self.resume_button_pressed = False
+    self.resume_required = False
+    
     self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco; 3 = creep
     
     self.coasting_enabled = self._params.get_bool("Coasting")
@@ -78,6 +81,7 @@ class CarState(CarStateBase):
     self.coasting_lead_v = -1.
     self.tr = 1.8
     self.coast_one_pedal_mode_active = False
+    self.coast_one_pedal_mode_active_last = False
     self.pause_long_on_gas_press = False
     self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False
@@ -117,15 +121,9 @@ class CarState(CarStateBase):
     self.drive_mode_button_last = False
     self.gear_shifter_ev = None
           
-    self.pitch_rolling_iter = 0
-    self.pitch_rolling_period = 2. # 2-second moving average
-    self.pitch_check_freq = 0.1 # checked at 10Hz
-    self.pitch_num_vals = int(self.pitch_rolling_period / self.pitch_check_freq)
-    self.pitch_num_vals_recip = 1. / float(self.pitch_num_vals)
-    self.pitch_check_last = 0.
-    self.pitch_vals = [0. for i in range(self.pitch_num_vals)]
     self.pitch = 0.
     self.pitch_raw = 0.
+    self.pitch_ema = 1/200
     
     # similar to over-speed coast braking, lockout coast/one-pedal logic first for engine/regen braking, and then for actual brakes.
     # gas lockout lookup tables:
@@ -219,6 +217,8 @@ class CarState(CarStateBase):
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
     ret.gasPressed = ret.gas > 1e-5
     self.gasPressed = ret.gasPressed
+    if self.gasPressed:
+      self.resume_required = False
 
     ret.steeringAngleDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelAngle"]
     ret.steeringRateDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelRate"]
@@ -346,14 +346,7 @@ class CarState(CarStateBase):
     ret.onePedalModeActive = self.one_pedal_mode_active
     ret.onePedalBrakeMode = self.one_pedal_brake_mode
     
-    if t - self.pitch_check_last > self.pitch_check_freq:
-      self.pitch_check_last = t
-      self.pitch_rolling_iter += 1
-      if (self.pitch_rolling_iter >= self.pitch_num_vals):
-        self.pitch_rolling_iter = 0
-      self.pitch -= self.pitch_vals[self.pitch_rolling_iter] * self.pitch_num_vals_recip
-      self.pitch += self.pitch_raw * self.pitch_num_vals_recip
-      self.pitch_vals[self.pitch_rolling_iter] = self.pitch_raw
+    self.pitch = self.pitch_ema * self.pitch_raw + (1 - self.pitch_ema) * self.pitch 
     ret.pitch = self.pitch
 
     ret.autoHoldActivated = self.autoHoldActivated

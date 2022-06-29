@@ -203,7 +203,6 @@ typedef struct UIScene {
   bool speed_limit_perc_offset;
   Rect speed_limit_sign_touch_rect;
   double last_speed_limit_sign_tap;
-  bool turn_speed_control_enabled, turn_vision_control_enabled;
   
   // adjustable lane position
   Rect lane_pos_left_touch_rect = {1,1,1,1}, lane_pos_right_touch_rect = {1,1,1,1};
@@ -219,7 +218,7 @@ typedef struct UIScene {
 
   bool color_path = false;
   
-  float screen_dim_modes_v[3] = {0.01, 0.5, 1.};
+  float screen_dim_modes_v[3] = {0.01, 0.3, 1.};
   int screen_dim_mode_max = 2;
   int screen_dim_mode_cur = screen_dim_mode_max; 
   int screen_dim_mode = screen_dim_mode_cur, 
@@ -257,7 +256,7 @@ typedef struct UIScene {
   
   float lastTime = 0., sessionInitTime = 0.;
   float paramsCheckLast = 0., paramsCheckFreq = 0.1; // check params at 10Hz
-  bool onePedalModeActive, disableDisengageOnGasEnabled, onePedalEngageOnGasEnabled, visionBrakingEnabled;
+  bool onePedalModeActive, disableDisengageOnGasEnabled, onePedalEngageOnGasEnabled, visionBrakingEnabled, mapBrakingEnabled;
 
   int lead_status;
   float lead_d_rel, lead_v_rel, lead_v;

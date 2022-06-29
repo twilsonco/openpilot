@@ -218,8 +218,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"TrainingVersion", PERSISTENT},
     {"TurnSpeedControl", PERSISTENT},
     {"TurnVisionControl", PERSISTENT},
-    {"TurnSpeedControlEnabled", PERSISTENT},
-    {"TurnVisionControlEnabled", PERSISTENT},
     {"GMAutoHold", PERSISTENT},
     {"AccelModeButton", PERSISTENT},
     {"AccelMode", PERSISTENT},
