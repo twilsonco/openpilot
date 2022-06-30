@@ -45,7 +45,7 @@ public:
         {AudibleAlert::CHIME_ENGAGE, sound_asset_path + "engaged_cust.wav", false},
         {AudibleAlert::CHIME_WARNING1, sound_asset_path + "warning_1_cust.wav", false},
         {AudibleAlert::CHIME_WARNING2, sound_asset_path + "warning_2_cust.wav", false},
-        {AudibleAlert::CHIME_WARNING2_REPEAT, sound_asset_path + "warning_2_cust.wav", true},
+        {AudibleAlert::CHIME_WARNING2_REPEAT, sound_asset_path + "warning_1_cust.wav", true},
         {AudibleAlert::CHIME_WARNING_REPEAT, sound_asset_path + "warning_repeat_cust.wav", true},
         {AudibleAlert::CHIME_ERROR, sound_asset_path + "error_cust.wav", false},
         {AudibleAlert::CHIME_PROMPT, sound_asset_path + "error_cust.wav", false}
