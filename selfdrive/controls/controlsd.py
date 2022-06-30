@@ -416,6 +416,7 @@ class Controls:
         self.CI.CS.one_pedal_v_cruise_kph_last = self.v_cruise_kph
         self.CI.CS.one_pedal_last_follow_level = self.CI.CS.follow_level
         self.v_cruise_kph = V_CRUISE_MIN
+        self.CI.CS.one_pedal_last_brake_mode = 0
       elif not self.accel_pressed and cur_time - self.accel_pressed_last < 0.3 and self.enabled and CS.cruiseState.enabled and (self.CI.CS.one_pedal_mode_active or self.CI.CS.coast_one_pedal_mode_active) and self.CI.CS.one_pedal_v_cruise_kph_last > 0: # user resuming speed from one-pedal mode
         self.v_cruise_kph = self.CI.CS.one_pedal_v_cruise_kph_last
         self.CI.CS.one_pedal_brake_mode = min(1, self.CI.CS.one_pedal_last_brake_mode)
