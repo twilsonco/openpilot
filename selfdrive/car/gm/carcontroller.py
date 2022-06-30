@@ -88,7 +88,12 @@ class CarController():
       apply_gas = P.MAX_ACC_REGEN
       apply_brake = 0
     else:
-      gravity_x = -9.8 * sin(CS.pitch)
+      # apply pitch "shifted deadzone" that gives smooth output in addition to applying a deadzone
+      if abs(CS.pitch) > CS.pitch_accel_deadzone:
+        pitch = CS.pitch + (CS.pitch_accel_deadzone if CS.pitch < 0. else -CS.pitch_accel_deadzone)
+      else:
+        pitch = 0.
+      gravity_x = -9.8 * sin(pitch) * CS.pitch_accel_factor
       apply_gas = interp(actuators.accel - gravity_x, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
       apply_brake = interp(actuators.accel - gravity_x, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
       t = sec_since_boot()
