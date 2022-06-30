@@ -13,7 +13,7 @@ _ACTIVE_LIMIT_MIN_ACC = -0.5  # m/s^2 Maximum deceleration allowed while active.
 _ACTIVE_LIMIT_MAX_ACC = 0.5   # m/s^2 Maximum acelration allowed while active.
 
 _SPEED_LIMIT_SCALE_BY_SPEED_BP = [0.]
-_SPEED_LIMIT_SCALE_BY_SPEED_V = [1.1]
+_SPEED_LIMIT_SCALE_BY_SPEED_V = [1.15]
 
 _DEBUG = False
 
