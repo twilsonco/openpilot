@@ -351,9 +351,6 @@ class CarInterface(CarInterfaceBase):
         if not cruiseEnabled and not self.CS.lkMode:
           self.lkMode = True
         be.type = ButtonType.decelCruise
-        if self.CS.one_pedal_mode_active or self.CS.coast_one_pedal_mode_active \
-          or not ret.cruiseState.enabled:
-          self.CS.resume_button_pressed = True
       elif but == CruiseButtons.CANCEL:
         be.type = ButtonType.cancel
       elif but == CruiseButtons.MAIN:
