@@ -35,6 +35,7 @@ STEER_ANGLE_SATURATION_TIMEOUT = 1.0 / DT_CTRL
 STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 MAX_ABS_PITCH = 0.314 # 20% grade = 18 degrees = pi/10 radians
+MAX_ABS_PRED_PITCH_DELTA = MAX_ABS_PITCH * 0.5
 
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
@@ -527,7 +528,7 @@ class Controls:
     long_plan = self.sm['longitudinalPlan']
     
     if self.sm.valid.get('liveLocationKalman', False) and self.sm.valid.get('modelV2', False) and len(self.sm['modelV2'].orientation.y) >= 11 and sec_since_boot() > 120.:
-      self.CI.CS.pitch_raw = clip(self.sm['liveLocationKalman'].calibratedOrientationNED.value[1], -MAX_ABS_PITCH, MAX_ABS_PITCH) + self.sm['modelV2'].orientation.y[10]
+      self.CI.CS.pitch_raw = clip(self.sm['liveLocationKalman'].calibratedOrientationNED.value[1], -MAX_ABS_PITCH, MAX_ABS_PITCH) + clip(self.sm['modelV2'].orientation.y[10], -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
       
 
     actuators = car.CarControl.Actuators.new_message()
