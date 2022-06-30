@@ -526,7 +526,7 @@ class Controls:
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
     
-    if self.sm.valid.get('liveLocationKalman', False) and self.sm.valid.get('modelV2', False) and len(self.sm['modelV2'].orientation.y) >= 11:
+    if self.sm.valid.get('liveLocationKalman', False) and self.sm.valid.get('modelV2', False) and len(self.sm['modelV2'].orientation.y) >= 11 and sec_since_boot() > 120.:
       self.CI.CS.pitch_raw = clip(self.sm['liveLocationKalman'].calibratedOrientationNED.value[1], -MAX_ABS_PITCH, MAX_ABS_PITCH) + self.sm['modelV2'].orientation.y[10]
       
 
