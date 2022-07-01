@@ -38,7 +38,8 @@ _ENTERING_SMOOTH_DECEL_BP = [1.2, 1.65, 3.6]  # absolute value of lat acc ahead
 # Lookup table for the acceleration for the TURNING state
 # depending on the current lateral acceleration of the vehicle.
 _TURNING_ACC_V = [0.6, 0.0, -1.]  # acc value
-_TURNING_ACC_BP = [1.5, 2.55, 3.4]  # absolute value of current lat acc
+_TURNING_ACC_BP = [1.5, 2.5, 3.4]  # absolute value of current lat acc
+_TURNING_PRED_FACTOR = 0.7 # scales the predicted lateral acceleration when in TURNING state, to ensure only strong predicted lateral acceleration will override braking from current lateral acceleration
 
 _LEAVING_ACC = 0.6  # Confortble acceleration to regain speed while leaving a turn.
 
@@ -369,7 +370,7 @@ class VisionTurnController():
         # the smooth deceleration.
       a_target = self._a_ego
     # ENTERING
-    elif self.state == VisionTurnControllerState.entering or self.state == VisionTurnControllerState.turning:
+    elif self.state == VisionTurnControllerState.entering:
       # when not overshooting, target a smooth deceleration in preparation for a sharp turn to come.
       a_target = interp(self._max_pred_lat_acc, _ENTERING_SMOOTH_DECEL_BP, _ENTERING_SMOOTH_DECEL_V)
       if self._lat_acc_overshoot_ahead:
@@ -382,16 +383,10 @@ class VisionTurnController():
         _debug(f'    Decel: {a_target:.2f}, target v: {self.v_turn * CV.MS_TO_KPH}')
       else:
         a_target_overshoot = 3.0 #big value
-      
-      
-      if self.state == VisionTurnControllerState.turning:
-        # When turning we provide a target acceleration that is confortable for the lateral accelearation felt.
-        a_target_cur_lat_accel = interp(self._current_lat_acc, _TURNING_ACC_BP, _TURNING_ACC_V)
-        a_target = min(a_target_overshoot, a_target_cur_lat_accel)
     # TURNING
-    # elif self.state == VisionTurnControllerState.turning:
-    #   # When turning we provide a target acceleration that is confortable for the lateral accelearation felt.
-    #   a_target = interp(self._current_lat_acc, _TURNING_ACC_BP, _TURNING_ACC_V)
+    elif self.state == VisionTurnControllerState.turning:
+      # When turning we provide a target acceleration that is confortable for the lateral accelearation felt.
+      a_target = interp(self._current_lat_acc, _TURNING_ACC_BP, _TURNING_ACC_V)
     # LEAVING
     elif self.state == VisionTurnControllerState.leaving:
       # When leaving we provide a confortable acceleration to regain speed.
