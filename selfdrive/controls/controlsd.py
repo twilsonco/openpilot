@@ -529,7 +529,7 @@ class Controls:
     long_plan = self.sm['longitudinalPlan']
     
     if self.sm.valid.get('liveLocationKalman', False) and self.sm.valid.get('modelV2', False) and len(self.sm['modelV2'].orientation.y) >= 12 and sec_since_boot() > 120.:
-      self.CI.CS.pitch_raw = clip(self.sm['liveLocationKalman'].calibratedOrientationNED.value[1], -MAX_ABS_PITCH, MAX_ABS_PITCH) + clip(self.sm['modelV2'].orientation.y[11], -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
+      self.CI.CS.pitch_raw = clip(self.sm['liveLocationKalman'].calibratedOrientationNED.value[1], -MAX_ABS_PITCH, MAX_ABS_PITCH) #+ clip(self.sm['modelV2'].orientation.y[11], -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
       
 
     actuators = car.CarControl.Actuators.new_message()
