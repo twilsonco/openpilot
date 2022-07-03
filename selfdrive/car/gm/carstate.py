@@ -125,7 +125,7 @@ class CarState(CarStateBase):
     self.pitch_raw = 0. # radians
     self.pitch_ema = 1/100
     self.pitch_future_time = 0.5 # seconds
-    self.pitch_accel_factor = 0.8
+    self.pitch_accel_factor = 1.
     self.pitch_accel_deadzone = 0.01 # radians ~ ±1% grade
     self.pitch_accel = 0.
     self.pitch_accel_raw = 0.
