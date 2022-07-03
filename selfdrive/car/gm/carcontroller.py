@@ -89,8 +89,8 @@ class CarController():
       apply_brake = 0
     else:
       # apply pitch "shifted deadzone" that gives smooth output in addition to applying a deadzone
-      if abs(CS.pitch) > CS.pitch_accel_deadzone:
-        pitch = CS.pitch + (CS.pitch_accel_deadzone if CS.pitch < 0. else -CS.pitch_accel_deadzone)
+      if abs(CS.pitch_accel) > CS.pitch_accel_deadzone:
+        pitch = CS.pitch_accel + (CS.pitch_accel_deadzone if CS.pitch_accel < 0. else -CS.pitch_accel_deadzone)
       else:
         pitch = 0.
       gravity_x = -9.8 * sin(pitch) * CS.pitch_accel_factor

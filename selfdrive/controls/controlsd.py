@@ -4,7 +4,7 @@ import math
 from numbers import Number
 
 from cereal import car, log
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
 from common.params import Params, put_nonblocking
@@ -26,6 +26,7 @@ from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.locationd.calibrationd import Calibration
+from selfdrive.modeld.constants import T_IDXS
 from selfdrive.hardware import HARDWARE, TICI, EON
 from selfdrive.manager.process_config import managed_processes
 
@@ -529,7 +530,11 @@ class Controls:
     long_plan = self.sm['longitudinalPlan']
     
     if self.sm.valid.get('liveLocationKalman', False) and self.sm.valid.get('modelV2', False) and len(self.sm['modelV2'].orientation.y) >= 12 and sec_since_boot() > 120.:
-      self.CI.CS.pitch_raw = clip(self.sm['liveLocationKalman'].calibratedOrientationNED.value[1], -MAX_ABS_PITCH, MAX_ABS_PITCH) #+ clip(self.sm['modelV2'].orientation.y[11], -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
+      current_pitch = clip(self.sm['liveLocationKalman'].calibratedOrientationNED.value[1], -MAX_ABS_PITCH, MAX_ABS_PITCH)
+      future_pitch_diff = clip(interp(self.CI.CS.pitch_future_time, T_IDXS, self.sm['modelV2'].orientation.y), -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
+      self.CI.CS.pitch_raw = current_pitch + future_pitch_diff
+      future_pitch_diff = clip(interp(self.CI.CS.pitch_accel_future_time, T_IDXS, self.sm['modelV2'].orientation.y), -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
+      self.CI.CS.pitch_accel_raw = current_pitch + clip(future_pitch_diff, -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
       
 
     actuators = car.CarControl.Actuators.new_message()
