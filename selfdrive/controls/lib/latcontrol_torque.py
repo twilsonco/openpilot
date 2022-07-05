@@ -72,6 +72,8 @@ class LatControlTorque(LatControl):
       pid_log.errorRate = angle_steers_des - CS.steeringAngleDeg
 
       pid_log.active = True
+      pid_log.currentLateralAcceleration = actual_lateral_accel
+      pid_log.desiredLateralAcceleration = desired_lateral_accel
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i
       pid_log.d = self.pid.d
