@@ -18,8 +18,8 @@ _ABORT_ENTERING_PRED_LAT_ACC_TH = 1.1  # Predicted Lat Acc threshold to abort en
 
 _TURNING_LAT_ACC_TH = 1.8  # Lat Acc threshold to trigger turning turn state.
 
-_LEAVING_LAT_ACC_TH = 1.7  # Lat Acc threshold to trigger leaving turn state.
-_FINISH_LAT_ACC_TH = 1.5  # Lat Acc threshold to trigger end of turn cycle.
+_LEAVING_LAT_ACC_TH = 1.6  # Lat Acc threshold to trigger leaving turn state.
+_FINISH_LAT_ACC_TH = 1.2  # Lat Acc threshold to trigger end of turn cycle.
 
 _EVAL_STEP = 5.  # mts. Resolution of the curvature evaluation.
 _EVAL_START = 20.  # mts. Distance ahead where to start evaluating vision curvature.
