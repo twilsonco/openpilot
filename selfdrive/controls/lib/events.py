@@ -583,7 +583,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Go time!",
       "Tap gas or press resume",
       AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, 3., 3., 3.),
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, 1., 1., 3.),
   },
 
   # Thrown when the fan is driven at >50% but is not rotating

@@ -292,7 +292,7 @@ class CarController():
           if CS.do_sng:
             acc_enabled = False
             CS.resume_button_pressed = True
-          else:
+          elif CS.out.vEgo < 1.5:
             CS.resume_required = True
       
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, acc_enabled, at_full_stop))
