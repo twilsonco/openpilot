@@ -172,11 +172,12 @@ class DynamicFollow():
     self.user_timeout_last_t = -self.user_timeout_t # (i.e. it's already been 300 seconds)
     self.cutin_t_last = 0. # sec_since_boot() of last remembered cut-in
   
-  def update(self, has_lead, lead_d, lead_v, v_ego):
+  def update(self, has_lead, lead_d, lead_v, v_ego, lead_a):
     t = sec_since_boot()
     dur = t - self.t_last
     self.t_last = t
-    lead_gone = (self.has_lead_last and not has_lead) or self.lead_d_last - lead_d < -2.5
+    lead_gone = (self.has_lead_last and not has_lead) \
+                or self.lead_d_last - lead_d < -2.5
     new_lead = has_lead and (not self.has_lead_last or self.lead_d_last - lead_d > 2.5)
     if new_lead:
       if v_ego > 0.:
@@ -349,7 +350,7 @@ class LeadMpc():
       # Setup mpc
       # dynamic follow 
       if self.dynamic_follow_active:
-        self.follow_level_df = self.df.update(True, lead.dRel, v_lead, v_ego)
+        self.follow_level_df = self.df.update(lead.status, lead.dRel, v_lead, v_ego, lead.aRel)
         tr, dist_cost, accel_cost = interp_follow_profile(v_ego, v_lead, lead.dRel, self.follow_level_df)
       else:
         tr, dist_cost, accel_cost = calc_follow_profile(v_ego, v_lead, lead.dRel, follow_level)
