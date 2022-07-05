@@ -207,7 +207,7 @@ class CarInterface(CarInterfaceBase):
 
       # Only tuned to reduce oscillations. TODO.
       ret.longitudinalTuning.kpBP = [5., 15., 35.]
-      ret.longitudinalTuning.kpV = [1.25, 1.6, 1.3]
+      ret.longitudinalTuning.kpV = [1.32, 1.6, 1.3]
       ret.longitudinalTuning.kiBP = [5., 15., 35.]
       ret.longitudinalTuning.kiV = [0.17, 0.31, 0.34]
       ret.longitudinalTuning.kdBP = [5., 25.]
