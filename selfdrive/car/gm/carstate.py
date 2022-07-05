@@ -233,6 +233,10 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = pt_cp.vl["PSCMStatus"]["LKATorqueDelivered"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
     self.lka_steering_cmd_counter = loopback_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
+    
+    ret.lateralAcceleration = pt_cp.vl["EBCMVehicleDynamic"]["LateralAcceleration"]
+    ret.yawRate = pt_cp.vl["EBCMVehicleDynamic"]["YawRate"]
+    ret.yawRate2 = pt_cp.vl["EBCMVehicleDynamic"]["YawRate2"]
 
     # 0 inactive, 1 active, 2 temporarily limited, 3 failed
     self.lkas_status = pt_cp.vl["PSCMStatus"]["LKATorqueDeliveredStatus"]
@@ -403,6 +407,9 @@ class CarState(CarStateBase):
       ("TractionControlOn", "ESPStatus", 0),
       ("EPBClosed", "EPBStatus", 0),
       ("CruiseMainOn", "ECMEngineStatus", 0),
+      ("LateralAcceleration", "EBCMVehicleDynamic", 0),
+      ("YawRate", "EBCMVehicleDynamic", 0),
+      ("YawRate2", "EBCMVehicleDynamic", 0),
     ]
 
     checks = [
@@ -420,6 +427,7 @@ class CarState(CarStateBase):
       ("ECMEngineStatus", 100),
       ("PSCMSteeringAngle", 100),
       ("ECMEngineCoolantTemp", 1),
+      ("EBCMVehicleDynamic", 100),
     ]
 
     if CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
