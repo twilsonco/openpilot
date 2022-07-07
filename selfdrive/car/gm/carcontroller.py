@@ -27,32 +27,6 @@ class CarController():
     self.packer_obj = CANPacker(DBC[CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[CP.carFingerprint]['chassis'])
 
-    self.debug_logging = False
-    self.debug_log_time_step = 0.333
-    self.last_debug_log_t = 0.
-    if self.debug_logging:
-      with open("/data/openpilot/coast_debug.csv","w") as f:
-        f.write(",".join([
-          "t",
-          "long plan",
-          "d (m/s)", 
-          "v", 
-          "vEgo", 
-          "v_cruise",
-          "v (mph)", 
-          "vEgo (mph)", 
-          "v_cruise (mph)",
-          "ttc", 
-          "coast gas lockout", 
-          "coast brake lockout", 
-          "gas in", 
-          "brake in", 
-          "one-pedal",
-          "coasting enabled",
-          "no f brakes",
-          "gas out",
-          "brake out"]) + "\n")
-
   def update(self, enabled, CS, frame, actuators,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
@@ -131,29 +105,6 @@ class CarController():
         lead_long_gas_lockout_factor =  0. # 1.0 means regular braking logic is completely unaltered, 0.0 means no cruise braking
         lead_long_brake_lockout_factor =  0. # 1.0 means regular braking logic is completely unaltered, 0.0 means no cruise braking
         
-      # debug logging
-      do_log = self.debug_logging and (t - self.last_debug_log_t > self.debug_log_time_step)
-      if do_log:
-        self.last_debug_log_t = t
-        f = open("/data/openpilot/coast_debug.csv","a")
-        f.write(",".join([f"{i:.1f}" if i == float else str(i) for i in [
-          t - CS.sessionInitTime,
-          CS.coasting_long_plan,
-          CS.coasting_lead_d, 
-          CS.coasting_lead_v, 
-          CS.vEgo, 
-          CS.v_cruise_kph * CV.KPH_TO_MS,
-          CS.coasting_lead_v * CV.MS_TO_MPH, 
-          CS.vEgo * CV.MS_TO_MPH, 
-          CS.v_cruise_kph * CV.KPH_TO_MPH,
-          ttc, 
-          lead_long_gas_lockout_factor, 
-          lead_long_brake_lockout_factor,
-          int(apply_gas), 
-          int(apply_brake), 
-          (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active),
-          CS.coasting_enabled,
-          CS.no_friction_braking]]) + ",")
       
       if (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active):
         if not CS.one_pedal_mode_active and CS.gear_shifter_ev == 4 and CS.one_pedal_dl_coasting_enabled and CS.vEgo > 0.05:
