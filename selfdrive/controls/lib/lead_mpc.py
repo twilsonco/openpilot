@@ -109,13 +109,6 @@ def interp_follow_profile(v_ego, v_lead, x_lead, fp_float):
 class DynamicFollow():
   user_timeout_t = 300. # amount of time df waits after the user sets the follow level
   
-  debug_log = True
-  if debug_log:
-    log_t_last = 0.
-    log_t_period = 5. # seconds
-    with open('/data/df_log.txt','w') as f:
-      f.write("time,time_since_user_timeout,points,new_lead,lead_gone,v_ego,lead_v,lead_v_rel,lead_d,time_dist,penalty_time,penalty_dist,penalty,last_cutin_factor,rescinded_penalty\n")
-  
   ####################################
   #    ACCRUING FOLLOW POINTS
   ####################################
@@ -196,10 +189,6 @@ class DynamicFollow():
       points_old = self.points_cur
       if t - self.user_timeout_last_t > self.user_timeout_t:
         self.points_cur = max(self.points_bounds[0], self.points_cur - penalty)
-      if self.debug_log:
-        self.log_t_last = t
-        with open('/data/df_log.txt','a') as f:
-          f.write(f"{t},{t - self.user_timeout_last_t},{self.points_cur},{new_lead},{lead_gone},{v_ego},{lead_v},{lead_v_rel},{lead_d},{time_dist},{penalty_time},{penalty_dist},{penalty},{last_cutin_factor},{0.}\n")
       self.cutin_t_last = t
       self.cutin_penalty_last = points_old - self.points_cur
       self.has_lead_last = has_lead
@@ -207,17 +196,8 @@ class DynamicFollow():
     elif lead_gone and t - self.user_timeout_last_t > self.user_timeout_t and t - self.cutin_t_last < self.cutin_rescind_t_bp[-1]:
       rescinded_penalty = self.cutin_penalty_last * interp(t - self.cutin_t_last, self.cutin_rescind_t_bp, self.cutin_rescind_t_v)
       self.points_cur += max(0,rescinded_penalty)
-      if self.debug_log:
-        self.log_t_last = t
-        with open('/data/df_log.txt','a') as f:
-          f.write(f"{t},{t - self.user_timeout_last_t},{self.points_cur},{new_lead},{lead_gone},{v_ego},{lead_v},{0},{lead_d},{0},{0},{0},{0},{0},{rescinded_penalty}\n")
       self.cutin_t_last = t - self.cutin_rescind_t_bp[-1] - 1.
-    else:
-      if self.debug_log and t - self.log_t_last > self.log_t_period:
-        self.log_t_last = t
-        with open('/data/df_log.txt','a') as f:
-          f.write(f"{t},{t - self.user_timeout_last_t},{self.points_cur},{new_lead},{lead_gone},{v_ego},{lead_v},{0},{lead_d},{0},{0},{0},{0},{0},{0.}\n")
-
+  
     rate = interp(self.points_cur, self.fp_point_rate_bp, self.fp_point_rate_v)
     speed_factor = interp(v_ego, self.speed_rate_factor_bp, self.speed_rate_factor_v)
     step = rate * dur * speed_factor
