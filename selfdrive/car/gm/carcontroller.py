@@ -69,7 +69,8 @@ class CarController():
         pitch = 0.
       gravity_x = -9.8 * sin(pitch) * CS.pitch_accel_factor
       apply_gas = interp(actuators.accel - gravity_x, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
-      apply_brake = interp(actuators.accel - gravity_x, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
+      pitch_brake_lowspeed_factor = interp(CS.vEgo, CS.pitch_accel_brake_lowspeed_lockout_bp, CS.pitch_accel_brake_lowspeed_lockout_v)
+      apply_brake = interp(actuators.accel - gravity_x * pitch_brake_lowspeed_factor, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
       t = sec_since_boot()
       
       v_rel = CS.coasting_lead_v - CS.vEgo
