@@ -164,39 +164,59 @@ class DynamicFollow():
     self.has_lead_last = False
     self.user_timeout_last_t = -self.user_timeout_t # (i.e. it's already been 300 seconds)
     self.cutin_t_last = 0. # sec_since_boot() of last remembered cut-in
+    self.new_lead = False
+    self.lead_gone = False
+    self.penalty_dist = 0.
+    self.penalty_vel = 0.
+    self.penalty_time = 0.
+    self.penalty = 0.
+    self.last_cutin_factor = 0.
+    self.rescinded_penalty = 0.
   
-  def update(self, has_lead, lead_d, lead_v, v_ego, lead_a):
+  def update_init(self):
+    self.new_lead = False
+    self.lead_gone = False
+    self.penalty_dist = 0.
+    self.penalty_vel = 0.
+    self.penalty_time = 0.
+    self.penalty = 0.
+    self.last_cutin_factor = 0.
+    self.rescinded_penalty = 0.
+  
+  def update(self, has_lead, lead_d, lead_v, v_ego):
+    self.update_init()
     t = sec_since_boot()
     dur = t - self.t_last
     self.t_last = t
-    lead_gone = (self.has_lead_last and not has_lead) \
+    self.lead_gone = (self.has_lead_last and not has_lead) \
                 or self.lead_d_last - lead_d < -2.5
-    new_lead = has_lead and (not self.has_lead_last or self.lead_d_last - lead_d > 2.5)
-    if new_lead:
+    self.new_lead = has_lead and (not self.has_lead_last or self.lead_d_last - lead_d > 2.5)
+    if self.new_lead:
       if v_ego > 0.:
         time_dist = lead_d / v_ego
-        penalty_time = interp(time_dist, self.cutin_time_dist_penalty_bp, self.cutin_time_dist_penalty_v)
+        self.penalty_time = interp(time_dist, self.cutin_time_dist_penalty_bp, self.cutin_time_dist_penalty_v)
       else:
-        penalty_time = 0.
+        self.penalty_time = 0.
         time_dist = 100.
-      penalty_dist = interp(lead_d, self.cutin_dist_penalty_bp, self.cutin_dist_penalty_v)
-      penalty_dist = max(penalty_dist, penalty_time)
+      self.penalty_dist = interp(lead_d, self.cutin_dist_penalty_bp, self.cutin_dist_penalty_v)
+      self.penalty_dist = max(self.penalty_dist, self.penalty_time)
       lead_v_rel = v_ego - lead_v
-      penalty_vel = interp(lead_v_rel, self.cutin_vel_penalty_bp, self.cutin_vel_penalty_v)
-      penalty = max(0., penalty_dist + penalty_vel)
-      last_cutin_factor = interp(t - self.cutin_t_last, self.cutin_last_t_factor_bp, self.cutin_last_t_factor_v)
-      penalty *= last_cutin_factor
+      self.penalty_vel = interp(lead_v_rel, self.cutin_vel_penalty_bp, self.cutin_vel_penalty_v)
+      self.penalty = max(0., self.penalty_dist + self.penalty_vel)
+      self.last_cutin_factor = interp(t - self.cutin_t_last, self.cutin_last_t_factor_bp, self.cutin_last_t_factor_v)
+      self.penalty *= self.last_cutin_factor
       points_old = self.points_cur
       if t - self.user_timeout_last_t > self.user_timeout_t:
-        self.points_cur = max(self.points_bounds[0], self.points_cur - penalty)
+        self.points_cur = max(self.points_bounds[0], self.points_cur - self.penalty)
       self.cutin_t_last = t
       self.cutin_penalty_last = points_old - self.points_cur
       self.has_lead_last = has_lead
       return self.points_cur
-    elif lead_gone and t - self.user_timeout_last_t > self.user_timeout_t and t - self.cutin_t_last < self.cutin_rescind_t_bp[-1]:
-      rescinded_penalty = self.cutin_penalty_last * interp(t - self.cutin_t_last, self.cutin_rescind_t_bp, self.cutin_rescind_t_v)
-      self.points_cur += max(0,rescinded_penalty)
+    elif self.lead_gone and t - self.user_timeout_last_t > self.user_timeout_t and t - self.cutin_t_last < self.cutin_rescind_t_bp[-1]:
+      self.rescinded_penalty = self.cutin_penalty_last * interp(t - self.cutin_t_last, self.cutin_rescind_t_bp, self.cutin_rescind_t_v)
+      self.points_cur += max(0,self.rescinded_penalty)
       self.cutin_t_last = t - self.cutin_rescind_t_bp[-1] - 1.
+      
   
     rate = interp(self.points_cur, self.fp_point_rate_bp, self.fp_point_rate_v)
     speed_factor = interp(v_ego, self.speed_rate_factor_bp, self.speed_rate_factor_v)
@@ -330,7 +350,7 @@ class LeadMpc():
       # Setup mpc
       # dynamic follow 
       if self.dynamic_follow_active:
-        self.follow_level_df = self.df.update(lead.status, lead.dRel, v_lead, v_ego, lead.aRel)
+        self.follow_level_df = self.df.update(lead.status, lead.dRel, v_lead, v_ego)
         tr, dist_cost, accel_cost = interp_follow_profile(v_ego, v_lead, lead.dRel, self.follow_level_df)
       else:
         tr, dist_cost, accel_cost = calc_follow_profile(v_ego, v_lead, lead.dRel, follow_level)
