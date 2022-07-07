@@ -115,21 +115,6 @@ class Planner():
     self.standstill_last = False
     self.gear_shifter_last = GearShifter.park
 
-    self.sessionInitTime = sec_since_boot()
-    self.debug_logging = False
-    self.debug_log_time_step = 0.333
-    self.last_debug_log_t = 0.
-    self.debug_log_path = "/data/openpilot/long_debug.csv"
-    if self.debug_logging:
-      with open(self.debug_log_path,"w") as f:
-        f.write(",".join([
-          "t",
-          "vEgo", 
-          "vEgo (mph)",
-          "a lim low",
-          "a lim high",
-          "out a",
-          "out long plan"]) + "\n")
 
   def update(self, sm, CP):
     cur_time = sec_since_boot()
@@ -223,21 +208,6 @@ class Planner():
         self.a_desired_trajectory = self.mpcs[key].a_solution[:CONTROL_N]
         self.j_desired_trajectory = self.mpcs[key].j_solution[:CONTROL_N]
         next_a = self.mpcs[key].a_solution[5]
-    
-    # debug logging
-    do_log = self.debug_logging and (t - self.last_debug_log_t > self.debug_log_time_step)
-    if do_log:
-      self.last_debug_log_t = t
-      f = open(self.debug_log_path,"a")
-      f.write(",".join([f"{i:.1f}" if i == float else str(i) for i in [
-        t - self.sessionInitTime,
-        v_ego, 
-        v_ego * CV.MS_TO_MPH, 
-        accel_limits[0],
-        accel_limits[1],
-        next_a,
-        self.longitudinalPlanSource]]) + "\n")
-      f.close()
         
     
 
