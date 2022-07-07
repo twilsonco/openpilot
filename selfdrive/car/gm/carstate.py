@@ -32,8 +32,6 @@ class CarState(CarStateBase):
     self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
     self._params = Params()
     
-    with open("/data/fp_log.txt",'a') as f:
-      f.write(f"{self.car_fingerprint}\n")
     
     self.t = 0.
     self.is_ev = (self.car_fingerprint in [CAR.VOLT, CAR.VOLT18])
