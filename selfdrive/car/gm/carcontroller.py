@@ -181,12 +181,6 @@ class CarController():
       CS.one_pedal_mode_active_last = CS.one_pedal_mode_active
       CS.coast_one_pedal_mode_active_last = CS.coast_one_pedal_mode_active
 
-      if do_log:
-        f.write(",".join([str(i) for i in [
-          apply_gas, 
-          apply_brake]]) + "\n")
-        f.close()
-    
     if CS.showBrakeIndicator:
       CS.apply_brake_percent = 0.
       if CS.vEgo > 0.1:
