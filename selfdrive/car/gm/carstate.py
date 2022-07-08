@@ -92,8 +92,8 @@ class CarState(CarStateBase):
     self.one_pedal_mode_engage_on_gas = False
     self.one_pedal_mode_engage_on_gas_min_speed = 2.5 * CV.MPH_TO_MS # gas press at or above this speed with engage on gas enabled and one-pedal mode will activate
     self.one_pedal_mode_max_set_speed = 3 * CV.MPH_TO_MS #  one pedal mode activates if cruise set at or below this speed
-    self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [1., 4., 45., 85.]], [i * CV.MPH_TO_MS for i in [1., 4., 45., 85.]], [1.]]
-    self.one_pedal_mode_stop_apply_brake_v = [[80., 95., 115., 90.], [110., 165., 185., 140.], [280.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
+    self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [1., 4., 6., 45., 85.]], [i * CV.MPH_TO_MS for i in [1., 4., 6., 45., 85.]], [1.]]
+    self.one_pedal_mode_stop_apply_brake_v = [[82., 90., 95., 115., 90.], [110., 150., 165., 185., 140.], [280.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
     self.one_pedal_mode_apply_brake = 0.
     self.one_pedal_mode_ramp_duration = 0.9
     self.one_pedal_mode_ramp_time_step = 60. / self.one_pedal_mode_ramp_duration
