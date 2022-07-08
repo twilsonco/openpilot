@@ -16,10 +16,10 @@ _MIN_V = 5.6  # Do not operate under 20km/h
 _ENTERING_PRED_LAT_ACC_TH = 1.5  # Predicted Lat Acc threshold to trigger entering turn state.
 _ABORT_ENTERING_PRED_LAT_ACC_TH = 1.3  # Predicted Lat Acc threshold to abort entering state if speed drops.
 
-_TURNING_LAT_ACC_TH = 1.8  # Lat Acc threshold to trigger turning turn state.
+_TURNING_LAT_ACC_TH = 1.5  # Lat Acc threshold to trigger turning turn state.
 
-_LEAVING_LAT_ACC_TH = 1.5  # Lat Acc threshold to trigger leaving turn state.
-_FINISH_LAT_ACC_TH = 1.2  # Lat Acc threshold to trigger end of turn cycle.
+_LEAVING_LAT_ACC_TH = 1.3  # Lat Acc threshold to trigger leaving turn state.
+_FINISH_LAT_ACC_TH = 1.1  # Lat Acc threshold to trigger end of turn cycle.
 
 _EVAL_STEP = 5.  # mts. Resolution of the curvature evaluation.
 _EVAL_START = 20.  # mts. Distance ahead where to start evaluating vision curvature.
@@ -38,7 +38,7 @@ _ENTERING_SMOOTH_DECEL_BP = [1.2, 1.65, 3.6]  # absolute value of lat acc ahead
 # Lookup table for the acceleration for the TURNING state
 # depending on the current lateral acceleration of the vehicle.
 _TURNING_ACC_V = [0.6, 0.0, -1.]  # acc value
-_TURNING_ACC_BP = [1.5, 2.57, 3.4]  # absolute value of current lat acc
+_TURNING_ACC_BP = [1.3, 2.57, 3.4]  # absolute value of current lat acc
 
 _LEAVING_ACC = 0.6  # Confortble acceleration to regain speed while leaving a turn.
 
