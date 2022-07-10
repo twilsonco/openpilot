@@ -313,6 +313,10 @@ static void update_state(UIState *s) {
     
     if (scene.lane_pos != 0){
       scene.lane_pos_dist_since_set += scene.car_state.getVEgo() * (t - scene.lane_pos_dist_last_t);
+      if (abs(scene.car_state.getSteeringAngleDeg()) > scene.lane_pos_max_steer_deg){
+        scene.lane_pos = 0;
+        Params().put("LanePosition", "0", 1);
+      }
     }
     scene.lane_pos_dist_last_t = t;
   }
