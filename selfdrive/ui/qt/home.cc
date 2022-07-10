@@ -197,7 +197,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.lane_pos_enabled && QUIState::ui_state.scene.lane_pos_left_touch_rect.ptInRect(e->x(), e->y())){
     if (QUIState::ui_state.scene.lane_pos == 1){
       if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.lane_pos_set_t < 2.){
-        QUIState::ui_state.scene.lane_pos_timeout = QUIState::ui_state.scene.lane_pos_timeout_long_t;
+        QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_long;
       }
       else{
         QUIState::ui_state.scene.lane_pos = 0;
@@ -206,8 +206,9 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     }
     else{
       QUIState::ui_state.scene.lane_pos = 1;
-      QUIState::ui_state.scene.lane_pos_timeout = QUIState::ui_state.scene.lane_pos_timeout_short_t;
+      QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_short;
       QUIState::ui_state.scene.lane_pos_set_t = QUIState::ui_state.scene.lastTime;
+      QUIState::ui_state.scene.lane_pos_dist_since_set = 0.;
       Params().put("LanePosition", "1", 1);
     }
     return;
@@ -215,7 +216,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.lane_pos_enabled && QUIState::ui_state.scene.lane_pos_right_touch_rect.ptInRect(e->x(), e->y())){
     if (QUIState::ui_state.scene.lane_pos == -1){
       if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.lane_pos_set_t < 2.){
-        QUIState::ui_state.scene.lane_pos_timeout = QUIState::ui_state.scene.lane_pos_timeout_long_t;
+        QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_long;
       }
       else{
         QUIState::ui_state.scene.lane_pos = 0;
@@ -224,8 +225,9 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     }
     else{
       QUIState::ui_state.scene.lane_pos = -1;
-      QUIState::ui_state.scene.lane_pos_timeout = QUIState::ui_state.scene.lane_pos_timeout_short_t;
+      QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_short;
       QUIState::ui_state.scene.lane_pos_set_t = QUIState::ui_state.scene.lastTime;
+      QUIState::ui_state.scene.lane_pos_dist_since_set = 0.;
       Params().put("LanePosition", "-1", 2);
     }
     return;
