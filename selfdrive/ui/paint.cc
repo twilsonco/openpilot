@@ -1791,7 +1791,7 @@ static void draw_lane_pos_buttons(UIState *s) {
     s->scene.lane_pos_left_touch_rect = {left_x - radius, y - radius, 2 * radius, 2 * radius};
     int radius_inner = 0;
     if (s->scene.lane_pos == 1){
-      radius_inner = int(float(s->scene.lane_pos_timeout_dist - (s->scene.lastTime - s->scene.lane_pos_set_t)) / float(s->scene.lane_pos_timeout_dist) * float(radius));
+      radius_inner = int(float(s->scene.lane_pos_timeout_dist - s->scene.lane_pos_dist_since_set) / float(s->scene.lane_pos_timeout_dist) * float(radius));
       if (radius_inner < 1){
         radius_inner = 1;
       }
@@ -1817,7 +1817,7 @@ static void draw_lane_pos_buttons(UIState *s) {
     s->scene.lane_pos_right_touch_rect = {right_x - radius, y - radius, 2 * radius, 2 * radius};
     radius_inner = 0;
     if (s->scene.lane_pos == -1){
-      radius_inner = int(float(s->scene.lane_pos_timeout_dist - (s->scene.lastTime - s->scene.lane_pos_set_t)) / float(s->scene.lane_pos_timeout_dist) * float(radius));
+      radius_inner = int(float(s->scene.lane_pos_timeout_dist - s->scene.lane_pos_dist_since_set) / float(s->scene.lane_pos_timeout_dist) * float(radius));
       if (radius_inner < 1){
         radius_inner = 1;
       }
