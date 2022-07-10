@@ -312,7 +312,7 @@ static void update_state(UIState *s) {
     scene.engineRPM = static_cast<int>((scene.car_state.getEngineRPM() / (10.0)) + 0.5) * 10;
     
     if (scene.lane_pos != 0){
-      scene.lane_pos_dist_since_set += scene.CarState.getVEgo() * (t - scene.lane_pos_dist_last_t);
+      scene.lane_pos_dist_since_set += scene.car_state.getVEgo() * (t - scene.lane_pos_dist_last_t);
     }
     scene.lane_pos_dist_last_t = t;
   }
