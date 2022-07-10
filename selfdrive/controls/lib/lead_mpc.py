@@ -189,8 +189,9 @@ class DynamicFollow():
     dur = t - self.t_last
     self.t_last = t
     self.lead_gone = (self.has_lead_last and not has_lead) \
-                or self.lead_d_last - lead_d < -2.5
+                or (has_lead and self.lead_d_last - lead_d < -2.5)
     self.new_lead = has_lead and (not self.has_lead_last or self.lead_d_last - lead_d > 2.5)
+    self.has_lead_last = has_lead
     if self.new_lead:
       if v_ego > 0.:
         time_dist = lead_d / v_ego
@@ -210,7 +211,6 @@ class DynamicFollow():
         self.points_cur = max(self.points_bounds[0], self.points_cur - self.penalty)
       self.cutin_t_last = t
       self.cutin_penalty_last = points_old - self.points_cur
-      self.has_lead_last = has_lead
       return self.points_cur
     elif self.lead_gone and t - self.user_timeout_last_t > self.user_timeout_t and t - self.cutin_t_last < self.cutin_rescind_t_bp[-1]:
       self.rescinded_penalty = self.cutin_penalty_last * interp(t - self.cutin_t_last, self.cutin_rescind_t_bp, self.cutin_rescind_t_v)
@@ -224,7 +224,6 @@ class DynamicFollow():
     if t - self.user_timeout_last_t > self.user_timeout_t:
       self.points_cur = min(interp(v_ego, self.speed_fp_limit_bp, self.speed_fp_limit_v), self.points_cur + step)
 
-    self.has_lead_last = has_lead
 
     return self.points_cur
   
