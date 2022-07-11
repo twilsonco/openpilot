@@ -215,8 +215,8 @@ class LateralPlanner():
       self.laneless_mode_status = True
     elif self.laneless_mode == 2 \
         and ((self.LP.lll_prob + self.LP.rll_prob)/2 < 0.3 \
-          or sm['longitudinalPlan'].visionMaxPredictedLateralAcceleration > 1.4 \
-          or sm['longitudinalPlan'].visionCurrentLateralAcceleration > 1.0) \
+          or sm['longitudinalPlan'].visionMaxPredictedLateralAcceleration > 1.3 \
+          or sm['longitudinalPlan'].visionCurrentLateralAcceleration > 0.8) \
         and self.lane_change_state == LaneChangeState.off:
       d_path_xyz = self.path_xyz
       path_cost = np.clip(abs(self.path_xyz[0,1]/self.path_xyz_stds[0,1]), 0.5, 3.0) * MPC_COST_LAT.PATH
