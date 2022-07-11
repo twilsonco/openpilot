@@ -127,7 +127,7 @@ class CarState(CarStateBase):
     self.pitch_accel_deadzone = 0.01 # radians ~ ±1% grade
     self.pitch_accel = 0.
     self.pitch_accel_raw = 0.
-    self.pitch_accel_future_time = 0.9
+    self.pitch_accel_future_time = 0.8
     self.pitch_accel_brake_lowspeed_lockout_bp = [i * CV.MPH_TO_MS for i in [5., 15.]]
     self.pitch_accel_brake_lowspeed_lockout_v = [0., 1.]
     
