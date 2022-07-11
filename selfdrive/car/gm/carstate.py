@@ -421,7 +421,7 @@ class CarState(CarStateBase):
       ("EPBStatus", 20),
       ("EBCMWheelSpdFront", 20),
       ("EBCMWheelSpdRear", 20),
-      ("AcceleratorPedal2", 33),e
+      ("AcceleratorPedal2", 33),
       ("ECMAcceleratorPos", 100),
       ("ASCMSteeringButton", 33),
       ("ECMEngineStatus", 100),
