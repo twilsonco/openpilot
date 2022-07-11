@@ -21,12 +21,6 @@ FOLLOW_AGGRESSION = 0.15 # (Acceleration/Decel aggression) Lower is more aggress
 _A_MIN_V_STOCK_FACTOR_BP = [-5. * CV.MPH_TO_MS, 1. * CV.MPH_TO_MS]
 _A_MIN_V_STOCK_FACTOR_V = [0., 1.]
 
-# increase/decrease max accel based on vehicle pitch
-INCLINE_ACCEL_SCALE_BP = [i * CV.MPH_TO_MS for i in [25., 75]] # [mph] lookup speeds for additional offset
-INCLINE_ACCEL_SCALE_V = [1.5, 1.45] # [m/s^2] additional scale factor to change how incline affects accel based on speed
-INCLINE_ACCEL_MAX_SPORT_FACTOR = 0.9 # acceleration will never be increased to more than this factor of the "sport" acceleration at the current speed
-DECLINE_ACCEL_FACTOR = 0.5 # this factor of g accel is used to lower max accel limit so you don't floor it downhill
-DECLINE_ACCEL_MIN = 0.2 # [m/s^2] don't decrease acceleration limit due to decline below this total value
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -58,13 +52,6 @@ class CarInterface(CarInterfaceBase):
     # decrease min accel as necessary based on lead conditions
     stock_min_factor = interp(current_speed - CI.CS.coasting_lead_v, _A_MIN_V_STOCK_FACTOR_BP, _A_MIN_V_STOCK_FACTOR_V) if CI.CS.coasting_lead_d > 0. else 0.
     accel_limits[0] = stock_min_factor * CI.params.ACCEL_MIN + (1. - stock_min_factor) * accel_limits[0]
-    
-    # decrease/increase max accel based on vehicle pitch
-    g_accel = 9.81 * sin(CI.CS.pitch)
-    if g_accel > 0.:
-      accel_limits[1] = max(accel_limits[1], min(INCLINE_ACCEL_MAX_SPORT_FACTOR * interp(current_speed, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_SPORT), g_accel * interp(current_speed, INCLINE_ACCEL_SCALE_BP, INCLINE_ACCEL_SCALE_V)))
-    else:
-      accel_limits[1] = max(DECLINE_ACCEL_MIN, accel_limits[1] + g_accel * DECLINE_ACCEL_FACTOR)
     
     time_since_engage = CI.CS.t - CI.CS.cruise_enabled_last_t
     if CI.CS.coasting_lead_d > 0. and time_since_engage < CI.CS.cruise_enabled_neg_accel_ramp_bp[-1]:
