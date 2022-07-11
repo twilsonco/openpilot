@@ -133,11 +133,15 @@ class PIDController:
           self.ki *= 1. + clip(self.k_12 * gain_update_factor, -1., 2.)
           self.kd *= 1. + min(2., self.k_13 * abs_guf)
 
-    if self.outputs and len(self.outputs) == int(self._d_period):  # makes sure we have enough history for period
-      self.d = (self.outputs[-1] - self.outputs[0]) * self._d_period_recip * self.kd  
+      
     
     self.p = error * self.kp
     self.f = feedforward * self.k_f
+    
+    if self.outputs and len(self.outputs) == int(self._d_period):  # makes sure we have enough history for period
+      self.d = clip((self.outputs[-1] - self.outputs[0]) * self._d_period_recip * self.kd, -abs(self.p), abs(self.p))
+    else:
+      self.d = 0.
 
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
