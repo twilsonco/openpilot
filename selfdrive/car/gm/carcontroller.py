@@ -124,7 +124,11 @@ class CarController():
           one_pedal_apply_brake = min(one_pedal_apply_brake, float(P.BRAKE_LOOKUP_V[0]))
           one_pedal_apply_brake *= interp(time_since_brake, CS.one_pedal_mode_ramp_time_bp, CS.one_pedal_mode_ramp_time_v) if CS.one_pedal_brake_mode < 2 else 1.
         else:
-          one_pedal_apply_brake = 0.
+          if apply_brake > 0 and CS.coasting_long_plan not in ['cruise', 'limit']:
+            one_pedal_apply_brake = interp(CS.vEgo, CS.one_pedal_mode_stop_apply_brake_bp[0], CS.one_pedal_mode_stop_apply_brake_v[0])
+            one_pedal_apply_brake = min(one_pedal_apply_brake, apply_brake)
+          else:
+            one_pedal_apply_brake = 0.
           
         
         # ramp braking
