@@ -108,7 +108,7 @@ class VisionTurnController():
     self._controls_state = None
     self._liveparams = None
     self._vf = 1.
-
+    self._ema_k = 1/5 # exponential moving average factor for smoothing predicted values
     self._reset()
 
   @property
@@ -143,6 +143,7 @@ class VisionTurnController():
     self._max_pred_curvature = 0.
     self._max_pred_lat_acc_dist = 0.
     self._max_pred_roll_compensation = 0.
+    self._pred_curvatures = np.array()
     self._v_overshoot_distance = 200.
     self._lat_acc_overshoot_ahead = False
     self._predicted_path_source = 'none'
@@ -315,7 +316,17 @@ class VisionTurnController():
       path_x = [0.]
       
     
-    pred_curvatures, self._max_pred_lat_acc, self._max_pred_curvature, self._max_pred_roll_compensation, self._max_pred_lat_acc_dist = self.eval_curvature(path_poly, _EVAL_RANGE if not self.state == VisionTurnControllerState.turning else _EVAL_RANGE_TURNING, path_roll_poly, path_x[-1])
+    
+    pred_curvatures, max_pred_lat_acc, max_pred_curvature, max_pred_roll_compensation, max_pred_lat_acc_dist = self.eval_curvature(path_poly, _EVAL_RANGE if not self.state == VisionTurnControllerState.turning else _EVAL_RANGE_TURNING, path_roll_poly, path_x[-1])
+
+    self._max_pred_lat_acc = self._ema_k * max_pred_lat_acc + (1. - self._ema_k) * self._max_pred_lat_acc
+    self._max_pred_curvature = self._ema_k * max_pred_curvature + (1. - self._ema_k) * self._max_pred_curvature
+    self._max_pred_roll_compensation = self._ema_k * max_pred_roll_compensation + (1. - self._ema_k) * self._max_pred_roll_compensation
+    self._max_pred_lat_acc_dist = self._ema_k * max_pred_lat_acc_dist + (1. - self._ema_k) * self._max_pred_lat_acc_dist
+    if self._pred_curvatures.shape != pred_curvatures.shape:
+      self._pred_curvatures = pred_curvatures
+    else:
+      self._pred_curvatures = pred_curvatures * self._ema_k + self._pred_curvatures * (1. - self._ema_k) 
 
     max_curvature_for_vego = _A_LAT_REG_MAX / max(self._vf * self._v_ego, 0.1)**2
     lat_acc_overshoot_idxs = np.nonzero(pred_curvatures >= max_curvature_for_vego)[0]
