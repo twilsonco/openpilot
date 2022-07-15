@@ -143,7 +143,7 @@ class VisionTurnController():
     self._max_pred_curvature = 0.
     self._max_pred_lat_acc_dist = 0.
     self._max_pred_roll_compensation = 0.
-    self._pred_curvatures = np.array()
+    self._pred_curvatures = np.array([])
     self._v_overshoot_distance = 200.
     self._lat_acc_overshoot_ahead = False
     self._predicted_path_source = 'none'
