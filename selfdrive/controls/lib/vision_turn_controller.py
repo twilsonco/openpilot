@@ -46,7 +46,7 @@ _MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow curvature prediction 
 
 # scale velocity used to determine curvature in order to provide more braking at low speed
 # where the LKA torque is less capable despite low lateral acceleration.
-_LOW_SPEED_SCALE_V = [1.1, 1.0] #increase the first value to increase low-speed vision braking; don't touch the second
+_LOW_SPEED_SCALE_V = [1.12, 1.0] #increase the first value to increase low-speed vision braking; don't touch the second
 _LOW_SPEED_SCALE_BP = [i * CV.MPH_TO_MS for i in [0., 30.]]
 
 # scale up current measured lateral acceleration if the lateral controller is saturated
