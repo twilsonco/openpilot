@@ -136,14 +136,15 @@ class VisionTurnController():
     return self._state != VisionTurnControllerState.disabled
 
   def _reset(self):
-    self._current_lat_acc = 0.
-    self._current_lat_acc_no_roll = 0.
-    self._max_v_for_current_curvature = 0.
-    self._max_pred_lat_acc = 0.
-    self._max_pred_curvature = 0.
-    self._max_pred_lat_acc_dist = 0.
-    self._max_pred_roll_compensation = 0.
-    self._pred_curvatures = np.array([])
+    if not self._gas_pressed:
+      self._pred_curvatures = np.array([])
+      self._max_pred_lat_acc = 0.
+      self._max_pred_curvature = 0.
+      self._max_pred_roll_compensation = 0.
+      self._current_lat_acc = 0.
+      self._current_lat_acc_no_roll = 0.
+      self._max_v_for_current_curvature = 0.
+      self._max_pred_lat_acc_dist = 0.
     self._v_overshoot_distance = 200.
     self._lat_acc_overshoot_ahead = False
     self._predicted_path_source = 'none'
