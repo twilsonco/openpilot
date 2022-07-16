@@ -401,6 +401,8 @@ static void update_state(UIState *s) {
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
   if (sm.updated("deviceState")) {
     scene.deviceState = sm["deviceState"].getDeviceState();
+    scene.network_type_string = ui_network_type[scene.deviceState.getNetworkType()];
+    scene.network_strength = (int)scene.deviceState.getNetworkStrength();
   }
   if (sm.updated("liveLocationKalman")) {
     scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();

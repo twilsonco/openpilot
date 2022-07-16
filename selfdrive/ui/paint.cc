@@ -1675,6 +1675,28 @@ static void ui_draw_vision_event(UIState *s) {
       ui_draw_circle_image(s, center_x, wheel_y, radius, "hands_on_wheel", color, 1.0f);
     }
   }
+  // draw cell/wifi indicator if map-braking or speed limit control (which require data connection) enabled
+  if (s->scene.mapBrakingEnabled || s->scene.speed_limit_control_enabled){
+    const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
+    nvgBeginPath(s->vg);
+    const int r = 25;
+    int x = bdr_s * 2 + r;
+    const int y = int(bdr_s * 1.5) / 2;
+    for (int i = 0; i < 5; ++i){
+      nvgRoundedRect(s->vg, x, y, 2*r, 2*r);
+      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(200));
+      nvgFillColor(s->vg, COLOR_WHITE_ALPHA(i < s->scene.network_strength ? 200 : 70));
+      nvgFill(s->vg);
+      nvgStrokeWidth(s->vg, 6)
+      nvgStroke(s->vg);
+      x += 33;
+    }
+    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+    nvgFontFace(s->vg, "sans-semibold");
+    nvgFontSize(s->vg, val_font_size);
+    nvgFillColor(s->vg, val_color);
+    nvgText(s->vg, x, y, s->scene.network_type_string.c_str(), NULL);
+  }
 }
 
 static void ui_draw_vision_face(UIState *s) {

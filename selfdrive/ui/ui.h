@@ -54,6 +54,15 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 const float y_offset = Hardware::TICI() ? 150.0 : 0.0;
 const float ZOOM = Hardware::TICI() ? 2912.8 : 2138.5;
 
+const std::map<cereal::DeviceState::NetworkType, std::string> ui_network_type = {
+  {cereal::DeviceState::NetworkType::NONE, "--"},
+  {cereal::DeviceState::NetworkType::WIFI, "WiFi"},
+  {cereal::DeviceState::NetworkType::ETHERNET, "ETH"},
+  {cereal::DeviceState::NetworkType::CELL2_G, "2G"},
+  {cereal::DeviceState::NetworkType::CELL3_G, "3G"},
+  {cereal::DeviceState::NetworkType::CELL4_G, "LTE"},
+  {cereal::DeviceState::NetworkType::CELL5_G, "5G"}
+};
 typedef struct Rect {
   int x, y, w, h;
   int centerX() const { return x + w / 2; }
@@ -231,6 +240,10 @@ typedef struct UIScene {
   Rect screen_dim_touch_rect;
 
   cereal::PandaState::PandaType pandaType;
+
+  std::string network_type_string;
+  int network_strength;
+
   
 // measures
   int measure_min_num_slots = 0;
