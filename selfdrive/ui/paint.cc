@@ -1687,15 +1687,17 @@ static void ui_draw_vision_event(UIState *s) {
       nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(200));
       nvgFillColor(s->vg, COLOR_WHITE_ALPHA(i < s->scene.network_strength ? 200 : 70));
       nvgFill(s->vg);
-      nvgStrokeWidth(s->vg, 6)
+      nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
       x += 33;
     }
-    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-    nvgFontFace(s->vg, "sans-semibold");
-    nvgFontSize(s->vg, val_font_size);
-    nvgFillColor(s->vg, val_color);
-    nvgText(s->vg, x, y, s->scene.network_type_string.c_str(), NULL);
+    if (s->scene.network_strength > 0){
+      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+      nvgFontFace(s->vg, "sans-semibold");
+      nvgFontSize(s->vg, 40);
+      nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+      nvgText(s->vg, x, y, s->scene.network_type_string.c_str(), NULL);
+    }
   }
 }
 

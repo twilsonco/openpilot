@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <deque>
+#include <vector>
 
 #include <QObject>
 #include <QTimer>
@@ -54,15 +55,26 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 const float y_offset = Hardware::TICI() ? 150.0 : 0.0;
 const float ZOOM = Hardware::TICI() ? 2912.8 : 2138.5;
 
-const std::map<cereal::DeviceState::NetworkType, std::string> ui_network_type = {
-  {cereal::DeviceState::NetworkType::NONE, "--"},
-  {cereal::DeviceState::NetworkType::WIFI, "WiFi"},
-  {cereal::DeviceState::NetworkType::ETHERNET, "ETH"},
-  {cereal::DeviceState::NetworkType::CELL2_G, "2G"},
-  {cereal::DeviceState::NetworkType::CELL3_G, "3G"},
-  {cereal::DeviceState::NetworkType::CELL4_G, "LTE"},
-  {cereal::DeviceState::NetworkType::CELL5_G, "5G"}
+const std::vector<std::string> ui_network_type = {
+  "--",
+  "WiFi",
+  "ETH",
+  "2G",
+  "3G",
+  "LTE",
+  "5G"
 };
+  // above vector based on this cereal enum
+  // enum NetworkType { 
+  //   none @0;
+  //   wifi @1;
+  //   cell2G @2;
+  //   cell3G @3;
+  //   cell4G @4;
+  //   cell5G @5;
+  //   ethernet @6;
+  // }
+
 typedef struct Rect {
   int x, y, w, h;
   int centerX() const { return x + w / 2; }
