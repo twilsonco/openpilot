@@ -1170,13 +1170,13 @@ static void ui_draw_measures(UIState *s){
             }
             else {
               snprintf(val, sizeof(val), "%d", scene.engineRPM);
-              if (temp < 71){
+              if (temp < 87){
                 unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
               }
-              else if (temp > 99){
+              else if (temp > 120){
                 unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
               }
-              else if (temp > 87){
+              else if (temp > 105){
                 unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
               }
             }
@@ -1193,13 +1193,13 @@ static void ui_draw_measures(UIState *s){
             }
             else {
               snprintf(val, sizeof(val), "%d", scene.engineRPM);
-              if (temp < 160){
+              if (temp < 190){
                 unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
               }
-              else if (temp > 210){
+              else if (temp > 250){
                 unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
               }
-              else if (temp > 190){
+              else if (temp > 220){
                 unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
               }
             }
@@ -1213,13 +1213,13 @@ static void ui_draw_measures(UIState *s){
             int temp = scene.car_state.getEngineCoolantTemp();
             snprintf(val, sizeof(val), "%d", temp);
             if(scene.engineRPM > 0) {
-              if (temp < 71){
+              if (temp < 87){
                 val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
               }
-              else if (temp > 99){
+              else if (temp > 120){
                 val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
               }
-              else if (temp > 87){
+              else if (temp > 105){
                 val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
               }
             }
@@ -1233,13 +1233,13 @@ static void ui_draw_measures(UIState *s){
             int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
             snprintf(val, sizeof(val), "%d", temp);
             if(scene.engineRPM > 0) {
-              if (temp < 160){
+              if (temp < 190){
                 val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
               }
-              else if (temp > 210){
+              else if (temp > 250){
                 val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
               }
-              else if (temp > 190){
+              else if (temp > 220){
                 val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
               }
             }
