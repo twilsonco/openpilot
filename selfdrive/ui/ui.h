@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <deque>
+#include <vector>
 
 #include <QObject>
 #include <QTimer>
@@ -53,6 +54,26 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 // TODO: choose based on frame input size
 const float y_offset = Hardware::TICI() ? 150.0 : 0.0;
 const float ZOOM = Hardware::TICI() ? 2912.8 : 2138.5;
+
+const std::vector<std::string> ui_network_type = {
+  "--",
+  "WiFi",
+  "ETH",
+  "2G",
+  "3G",
+  "LTE",
+  "5G"
+};
+  // above vector based on this cereal enum
+  // enum NetworkType { 
+  //   none @0;
+  //   wifi @1;
+  //   cell2G @2;
+  //   cell3G @3;
+  //   cell4G @4;
+  //   cell5G @5;
+  //   ethernet @6;
+  // }
 
 typedef struct Rect {
   int x, y, w, h;
@@ -231,6 +252,10 @@ typedef struct UIScene {
   Rect screen_dim_touch_rect;
 
   cereal::PandaState::PandaType pandaType;
+
+  std::string network_type_string;
+  int network_strength;
+
   
 // measures
   int measure_min_num_slots = 0;
