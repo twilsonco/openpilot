@@ -1678,9 +1678,9 @@ static void ui_draw_vision_event(UIState *s) {
   // draw cell/wifi indicator if map-braking or speed limit control (which require data connection) enabled
   if (s->scene.mapBrakingEnabled || s->scene.speed_limit_control_enabled){
     nvgBeginPath(s->vg);
-    const int r = 25;
+    const int r = 12;
     int x = bdr_s * 2 + r;
-    const int y = int(bdr_s * 1.5) / 2;
+    const int y = int(bdr_s * 1.5) - r - 5;
     for (int i = 0; i < 5; ++i){
       nvgRoundedRect(s->vg, x, y, 2*r, 2*r, r);
       nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(200));
@@ -1688,7 +1688,7 @@ static void ui_draw_vision_event(UIState *s) {
       nvgFill(s->vg);
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
-      x += 33;
+      x += 2*r + 3;
     }
     if (s->scene.network_strength > 0){
       nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
