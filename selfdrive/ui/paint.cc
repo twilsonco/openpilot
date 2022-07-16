@@ -1677,7 +1677,6 @@ static void ui_draw_vision_event(UIState *s) {
   }
   // draw cell/wifi indicator if map-braking or speed limit control (which require data connection) enabled
   if (s->scene.mapBrakingEnabled || s->scene.speed_limit_control_enabled){
-    const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
     nvgBeginPath(s->vg);
     const int r = 25;
     int x = bdr_s * 2 + r;
