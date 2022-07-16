@@ -1683,7 +1683,7 @@ static void ui_draw_vision_event(UIState *s) {
     int x = bdr_s * 2 + r;
     const int y = int(bdr_s * 1.5) / 2;
     for (int i = 0; i < 5; ++i){
-      nvgRoundedRect(s->vg, x, y, 2*r, 2*r);
+      nvgRoundedRect(s->vg, x, y, 2*r, 2*r, r);
       nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(200));
       nvgFillColor(s->vg, COLOR_WHITE_ALPHA(i < s->scene.network_strength ? 200 : 70));
       nvgFill(s->vg);
