@@ -1688,11 +1688,11 @@ static void ui_draw_vision_event(UIState *s) {
       nvgFill(s->vg);
       nvgStrokeWidth(s->vg, 0);
       nvgStroke(s->vg);
-      x += 2*r + 5;
+      x += 2*r + 6;
     }
     if (s->scene.network_strength > 0){
-      x += 3;
-      y -= 12;
+      x += 5;
+      y -= 9;
       nvgBeginPath(s->vg);
       nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
       nvgFontFace(s->vg, "sans-semibold");
