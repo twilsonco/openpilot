@@ -1680,7 +1680,7 @@ static void ui_draw_vision_event(UIState *s) {
     
     const int r = 12;
     int x = bdr_s * 2;
-    const int y = bdr_s;
+    int y = bdr_s;
     for (int i = 0; i < 5; ++i){
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, x, y, 2*r, 2*r, r);
