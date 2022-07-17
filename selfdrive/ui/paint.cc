@@ -1680,7 +1680,7 @@ static void ui_draw_vision_event(UIState *s) {
     
     const int r = 12;
     int x = bdr_s * 2;
-    int y = bdr_s;
+    int y = bdr_s - r - 2;
     for (int i = 0; i < 5; ++i){
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, x, y, 2*r, 2*r, r);
@@ -1693,9 +1693,8 @@ static void ui_draw_vision_event(UIState *s) {
     }
     if (s->scene.network_strength > 0){
       x += 3;
-      y += r / 2;
       nvgBeginPath(s->vg);
-      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
       nvgFontFace(s->vg, "sans-semibold");
       nvgFontSize(s->vg, 40);
       nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
