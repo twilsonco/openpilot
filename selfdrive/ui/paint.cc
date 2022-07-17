@@ -1679,8 +1679,8 @@ static void ui_draw_vision_event(UIState *s) {
   if (s->scene.mapBrakingEnabled || s->scene.speed_limit_control_enabled){
     
     const int r = 12;
-    int x = bdr_s * 2 + r;
-    const int y = bdr_s + r;
+    int x = bdr_s * 2;
+    const int y = bdr_s;
     for (int i = 0; i < 5; ++i){
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, x, y, 2*r, 2*r, r);
@@ -1692,6 +1692,8 @@ static void ui_draw_vision_event(UIState *s) {
       x += 2*r + 3;
     }
     if (s->scene.network_strength > 0){
+      x += 3;
+      y += r / 2;
       nvgBeginPath(s->vg);
       nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
       nvgFontFace(s->vg, "sans-semibold");
