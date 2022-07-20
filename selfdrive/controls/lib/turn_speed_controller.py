@@ -58,7 +58,7 @@ class TurnSpeedController():
 
     self._a_target = 0.
     
-    self._a_target_ema_k = 1/30
+    self._a_target_ema_k = 1/15
 
   @property
   def a_target(self):
