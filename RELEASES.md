@@ -2,6 +2,7 @@ Version tw-0.8.12-4_twd (2022-07-20)
 ========================
  * NEW: Added "resume required" alert when lead car pulls away 
  * NEW: When map-curve braking or speed-limit control are enabled, current signal strength is shown above max speed indicator onroad
+ * IMPROVED: ['17 Volt] Eliminate rollback when autoresuming behind lead on hill
  * IMPROVED: map braking: if no signal, red circle instead of green around wheel icon at top-right
  * IMPROVED: nudgeless lane changes are fixed
   * 1.5s delay before initiating lane change
