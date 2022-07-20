@@ -57,6 +57,8 @@ class TurnSpeedController():
     self._next_speed_limit_prev = 0.
 
     self._a_target = 0.
+    
+    self._a_target_ema_k = 1/30
 
   @property
   def a_target(self):
@@ -224,12 +226,14 @@ class TurnSpeedController():
     elif self.state == TurnSpeedControlState.adapting:
       # When adapting we target to achieve the speed limit on the distance.
       a_target = (self.speed_limit**2 - self._v_ego**2) / (2. * self.distance)
+      a_target = self._a_target_ema_k * a_target + (1. - self._a_target_ema_k) * self._a_target
       a_target = np.clip(a_target, LIMIT_MIN_ACC, LIMIT_MAX_ACC)
     # active
     elif self.state == TurnSpeedControlState.active:
       # When active we are trying to keep the speed constant around the control time horizon.
       # but under constrained acceleration limits since we are in a turn.
       a_target = self._v_offset / T_IDXS[CONTROL_N]
+      a_target = self._a_target_ema_k * a_target + (1. - self._a_target_ema_k) * self._a_target
       a_target = np.clip(a_target, _ACTIVE_LIMIT_MIN_ACC, _ACTIVE_LIMIT_MAX_ACC)
 
     # update solution values.
