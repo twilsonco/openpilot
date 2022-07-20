@@ -55,11 +55,13 @@ class LateralPlanner():
     self.laneless_mode_status_buffer = False
 
     self.nudgeless_enabled = self._params.get_bool("NudgelessLaneChange")
-    self.nudgeless_delay = 4.0 # [s] amount of time blinker has to be on before nudgless lane change
+    self.nudgeless_delay = 1.5 # [s] amount of time blinker has to be on before nudgless lane change
+    self.nudgeless_min_speed = 18. # no nudgeless below ≈40mph
+    self.nudgeless_lane_change_start_t = 0.
+    self.nudgeless_blinker_press_t = 0.
 
     self.lane_change_state = LaneChangeState.off
     self.prev_lane_change_state = self.lane_change_state
-    self.preLaneChange_start_t = 0.
     self.lane_change_direction = LaneChangeDirection.none
     self.lane_change_timer = 0.0
     self.lane_change_ll_prob = 1.0
@@ -116,6 +118,11 @@ class LateralPlanner():
     # Lane change logic
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
+    
+    t = sec_since_boot()
+    
+    if one_blinker and not self.prev_one_blinker:
+      self.nudgeless_blinker_press_t = t
 
     if (not active) or (self.lane_change_timer > LANE_CHANGE_TIME_MAX):
       self.lane_change_state = LaneChangeState.off
@@ -125,12 +132,10 @@ class LateralPlanner():
       if self.lane_change_state == LaneChangeState.off and one_blinker and not self.prev_one_blinker and not below_lane_change_speed:
         self.lane_change_state = LaneChangeState.preLaneChange
         self.lane_change_ll_prob = 1.0
+        self.nudgeless_lane_change_start_t = t
 
       # LaneChangeState.preLaneChange
       elif self.lane_change_state == LaneChangeState.preLaneChange:
-        t = sec_since_boot()
-        if self.prev_lane_change_state in [LaneChangeState.off, LaneChangeState.laneChangeFinishing] and t - self.preLaneChange_start_t > 3.:
-          self.preLaneChange_start_t = t
         # Set lane change direction
         if sm['carState'].leftBlinker:
           self.lane_change_direction = LaneChangeDirection.left
@@ -143,7 +148,13 @@ class LateralPlanner():
                         ((sm['carState'].steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or
                           (sm['carState'].steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right))
         
-        torque_applied = torque_applied or (self.nudgeless_enabled and t - self.preLaneChange_start_t > self.nudgeless_delay)
+        torque_applied = torque_applied or \
+          ( self.nudgeless_enabled \
+            and t - self.nudgeless_lane_change_start_t > self.nudgeless_delay \
+            and t - self.nudgeless_blinker_press_t < 3. \
+            and v_ego > self.nudgeless_min_speed \
+            and not sm['carState'].onePedalModeActive \
+            and not sm['carState'].coastOnePedalModeActive )
 
         blindspot_detected = ((sm['carState'].leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
                               (sm['carState'].rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
