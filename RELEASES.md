@@ -3,12 +3,14 @@ Version tw-0.8.12-4_twd (2022-07-20)
  * NEW: Added "resume required" alert when lead car pulls away 
  * NEW: When map-curve braking or speed-limit control are enabled, current signal strength is shown above max speed indicator onroad
  * IMPROVED: ['17 Volt] Eliminate rollback when autoresuming behind lead on hill
- * IMPROVED: map braking: if no signal, red circle instead of green around wheel icon at top-right
+ * IMPROVED: map braking: 
+  * smooth in braking to lower severity of false positives (at cost of ~0.4s delay in braking)
+  * if no signal, red circle instead of green around wheel icon at top-right
  * IMPROVED: nudgeless lane changes are fixed
   * 1.5s delay before initiating lane change
   * only works over 40mph
   * doesn't work in one-pedal mode
-  * no nudgeless multi-lane changes, so if you leave your blinker on, it will keep driving you off the road!
+  * no nudgeless multi-lane changes, so if you leave your blinker on, it will not perform another lane change unless you nudge for the subsequent lane changes
  * IMPROVED: Volt updated "torque" and traditional steering feedforward fits (Basically converged at the "correct" feedforward at this point!)
  * IMPROVED: engine coolant UI metric uses higher color thresholds to better match dexcool limits
  * IMPROVED: adjustable lane position: 
