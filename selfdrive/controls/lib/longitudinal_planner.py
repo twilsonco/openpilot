@@ -115,21 +115,6 @@ class Planner():
     self.standstill_last = False
     self.gear_shifter_last = GearShifter.park
 
-    self.sessionInitTime = sec_since_boot()
-    self.debug_logging = False
-    self.debug_log_time_step = 0.333
-    self.last_debug_log_t = 0.
-    self.debug_log_path = "/data/openpilot/long_debug.csv"
-    if self.debug_logging:
-      with open(self.debug_log_path,"w") as f:
-        f.write(",".join([
-          "t",
-          "vEgo", 
-          "vEgo (mph)",
-          "a lim low",
-          "a lim high",
-          "out a",
-          "out long plan"]) + "\n")
 
   def update(self, sm, CP):
     cur_time = sec_since_boot()
@@ -173,8 +158,7 @@ class Planner():
     
     
     if sm['carState'].gearShifter == GearShifter.drive and self.gear_shifter_last != GearShifter.drive:
-      for i in ['lead0','lead1']:
-        self.mpcs[i].df.reset()
+      self.mpcs['lead0'].df.reset()
     self.gear_shifter_last = sm['carState'].gearShifter
     
     
@@ -223,21 +207,6 @@ class Planner():
         self.a_desired_trajectory = self.mpcs[key].a_solution[:CONTROL_N]
         self.j_desired_trajectory = self.mpcs[key].j_solution[:CONTROL_N]
         next_a = self.mpcs[key].a_solution[5]
-    
-    # debug logging
-    do_log = self.debug_logging and (t - self.last_debug_log_t > self.debug_log_time_step)
-    if do_log:
-      self.last_debug_log_t = t
-      f = open(self.debug_log_path,"a")
-      f.write(",".join([f"{i:.1f}" if i == float else str(i) for i in [
-        t - self.sessionInitTime,
-        v_ego, 
-        v_ego * CV.MS_TO_MPH, 
-        accel_limits[0],
-        accel_limits[1],
-        next_a,
-        self.longitudinalPlanSource]]) + "\n")
-      f.close()
         
     
 
@@ -294,6 +263,26 @@ class Planner():
     longitudinalPlan.visionMaxPredictedLateralAccelerationDistance = float(self.vision_turn_controller._max_pred_lat_acc_dist)
     longitudinalPlan.visionTurnSpeed = float(self.vision_turn_controller.v_turn)
     longitudinalPlan.visionPredictedPathSource = self.vision_turn_controller._predicted_path_source
+    
+    longitudinalPlan.dynamicFollowState0.pointsCurrent = self.mpcs['lead0'].df.points_cur
+    longitudinalPlan.dynamicFollowState0.newLead = self.mpcs['lead0'].df.new_lead
+    longitudinalPlan.dynamicFollowState0.leadGone = self.mpcs['lead0'].df.lead_gone
+    longitudinalPlan.dynamicFollowState0.penaltyDist = self.mpcs['lead0'].df.penalty_dist
+    longitudinalPlan.dynamicFollowState0.penaltyVel = self.mpcs['lead0'].df.penalty_vel
+    longitudinalPlan.dynamicFollowState0.penaltyTime = self.mpcs['lead0'].df.penalty_time
+    longitudinalPlan.dynamicFollowState0.penalty = self.mpcs['lead0'].df.penalty
+    longitudinalPlan.dynamicFollowState0.lastCutinFactor = self.mpcs['lead0'].df.last_cutin_factor
+    longitudinalPlan.dynamicFollowState0.rescindedPenalty = self.mpcs['lead0'].df.rescinded_penalty
+
+    longitudinalPlan.dynamicFollowState1.pointsCurrent = self.mpcs['lead1'].df.points_cur
+    longitudinalPlan.dynamicFollowState1.newLead = self.mpcs['lead1'].df.new_lead
+    longitudinalPlan.dynamicFollowState1.leadGone = self.mpcs['lead1'].df.lead_gone
+    longitudinalPlan.dynamicFollowState1.penaltyDist = self.mpcs['lead1'].df.penalty_dist
+    longitudinalPlan.dynamicFollowState1.penaltyVel = self.mpcs['lead1'].df.penalty_vel
+    longitudinalPlan.dynamicFollowState1.penaltyTime = self.mpcs['lead1'].df.penalty_time
+    longitudinalPlan.dynamicFollowState1.penalty = self.mpcs['lead1'].df.penalty
+    longitudinalPlan.dynamicFollowState1.lastCutinFactor = self.mpcs['lead1'].df.last_cutin_factor
+    longitudinalPlan.dynamicFollowState1.rescindedPenalty = self.mpcs['lead1'].df.rescinded_penalty
 
     longitudinalPlan.speedLimitControlState = self.speed_limit_controller.state
     longitudinalPlan.speedLimit = float(self.speed_limit_controller.speed_limit)

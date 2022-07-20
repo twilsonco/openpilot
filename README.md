@@ -56,8 +56,8 @@ Please show your support by contributing to the ongoing development of this proj
 
 **Additional fork features:**
 
-- [x] Latest openpilot 0.8.12 lateral and 0.8.10 driver monitoring models
-- [x] [Comma3] Latest AGNOS4 OS
+- [x] Running openpilot 0.8.12 lateral and 0.8.10 driver monitoring models
+- [x] [Comma3] AGNOS4 OS
 - [x] [Volt/Acadia] Alternate lateral (steering) tunes using the new "torque" controller
 - [Volt] Much improved steering control over stock (working on upstreaming)
 - [x] [Volt 2017] Auto-resume behind stopped lead car as they pull away; a.k.a. stop and go (ported from kegman)
@@ -65,19 +65,17 @@ Please show your support by contributing to the ongoing development of this proj
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
 - [x] Adjustable lane position using onscreen buttons
-    * Tap buttons to change lane position for 15 seconds; double-tap to change for 10 minutes
+    * Tap buttons to change lane position for 1/3 mile; double-tap to change for 10 miles
     * Tap again to go back to center position
 - [x] [GM] [✅] Dynamic follow mode
 - [x] [GM] Toggle steering with LKAS button (wheel color changes to indicate disengagement)
 - [x] [GM] One-pedal driving a.k.a. autosteering only a.k.a. toggle longitudinal control: using regen (volt) and/or light/moderate/heavy braking, control OP all the way to a stop, without a lead, and without disengaging, with just the gas pedal (see below) (application of friction brakes originally suggested by cybertronicify — 10/06/2021)
 - [x] [✅] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only. must enable "Disable use of lanelines" for button to appear* (ported from sunnyhaibin)
-- [x] [✅] Normal/sport/eco/creep acceleration modes [cycle with on-screen button] (adapted from kegman implementation)
+- [x] [✅] Normal/sport/eco acceleration modes [cycle with on-screen button] (adapted from kegman implementation)
     * Eco mode is great for
       * the environment (you pig),
       * not over-accelerating behind a jumpy lead in traffic, and 
       * softer acceleration when exiting curves (if curve braking is enabled).
-    * Think of creep mode as, for example, *mountain highway construction traffic* mode
-    * Eco/creep also lower engine/regen/friction braking intensitity (only for maintaining set speed, not for following behind lead)
 - [x] [✅] 1/5 mph changes for tap/hold of the inc/dec buttons (ported from Spector56; different from that of newer stock OP)
 - [x] [✅] 3mph cruise speed offset: speed will be 23/28/33/38/etc.
 - [x] [✅] Alternate sound effect set (inspired by sunnyhaibin implementation of mute sounds)
@@ -140,7 +138,6 @@ Please show your support by contributing to the ongoing development of this proj
 -----
 
 - [ ] Stop-and-go for 2018 Volt
-- [ ] Grey panda support
 - [ ] Chevy Bolt support
 - [ ] Record screen button
 - [ ] Auto engage parking brake
@@ -153,18 +150,9 @@ Please show your support by contributing to the ongoing development of this proj
   * Device widget: CPU/memory/temps/fans/...
   * EV widget: high voltage battery info similar to that shown in the LeafSpyPro app
 - [ ] [✅] [Modified assistive driving system](https://github.com/sunnyhaibin/openpilot#modified-assistive-driving-safety-mads) (MADS) style auto-engagement of steering
-- [ ] [✅] 0.5 second delay before activating newly selected follow mode so user can switch around without OP slightly jerking in response
-- [ ] [✅] Auto screen brightness (or at least a way to dim a bit at night)
-- [ ] [✅] Lane Speed alerts ([sshane](https://github.com/sshane/openpilot#lane-speed-alerts))
-- [ ] [✅] Dynamic camera offset (based on oncoming traffic) ([sshane)](https://github.com/sshane/openpilot#dynamic-camera-offset-based-on-oncoming-traffic)
 - [ ] [Chevy Volt] Steering control below 7mph using parking commands
 - [ ] [Chevy Volt] [✅] Road trip mode: automatically put car into Mountain Mode (i.e. hold at 20% battery charge) if sustained speed 55mph+
 - [ ] [GM] Use physical drive mode button to switch between normal/sport acceleration profiles
-- [ ] [GM] [✅] Dynamic follow mode: point-based
-    * Follow distance "earns points" the longer you're behind the same lead car, moving from close to medium after about 5 minutes
-    * When on highway, continue to increase from medium to far follow distance after about 20 minutes behind the same car
-    * If someone cuts in, the follow distance "takes a penalty" down to a closer follow distance proportional to the distance and relative speed of the car that cut in
-    * The penalties can "go negative", that is, repeated cut-ins can result in close follow being use for longer than normal
 * Metrics to add:
     - [ ] number of interventions/cut-ins during drive session
     - [ ] time since last intervention/cut-in

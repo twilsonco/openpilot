@@ -101,6 +101,9 @@ class PIDController:
     self.i = 0.0
     self.d = 0.0
     self.f = 0.0
+    self.kp = 0.0
+    self.ki = 0.0
+    self.kd = 0.0
     self.sat_count = 0.0
     self.saturated = False
     self.control = 0
@@ -114,9 +117,9 @@ class PIDController:
 
     error = float(apply_deadzone(setpoint - measurement, deadzone))
 
-    kp = self.k_p
-    ki = self.k_i
-    kd = self.k_d
+    self.kp = self.k_p
+    self.ki = self.k_i
+    self.kd = self.k_d
     
     if self.output_norms is not None and len(self.outputs) > 0:
       abs_sp = setpoint if setpoint > 0. else -setpoint
@@ -126,20 +129,24 @@ class PIDController:
         gain_update_factor = self.output_norms[-1] * delta_error_norm
         if gain_update_factor != 0.:
           abs_guf = abs(gain_update_factor)
-          kp *= 1. + min(2., self.k_11 * abs_guf)
-          ki *= 1. + clip(self.k_12 * gain_update_factor, -1., 2.)
-          kd *= 1. + min(2., self.k_13 * abs_guf)
+          self.kp *= 1. + min(2., self.k_11 * abs_guf)
+          self.ki *= 1. + clip(self.k_12 * gain_update_factor, -1., 2.)
+          self.kd *= 1. + min(2., self.k_13 * abs_guf)
 
-    if self.outputs and len(self.outputs) == int(self._d_period):  # makes sure we have enough history for period
-      self.d = (self.outputs[-1] - self.outputs[0]) * self._d_period_recip * kd  
+      
     
-    self.p = error * kp
+    self.p = error * self.kp
     self.f = feedforward * self.k_f
+    
+    if self.outputs and len(self.outputs) == int(self._d_period):  # makes sure we have enough history for period
+      self.d = clip((self.outputs[-1] - self.outputs[0]) * self._d_period_recip * self.kd, -abs(self.p), abs(self.p))
+    else:
+      self.d = 0.
 
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
-      i = self.i + error * ki * self.i_rate
+      i = self.i + error * self.ki * self.i_rate
       control = self.p + self.f + i + self.d
 
       # Update when changing i will move the control away from the limits

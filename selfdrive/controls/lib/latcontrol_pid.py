@@ -60,5 +60,8 @@ class LatControlPID():
       pid_log.f = self.pid.f
       pid_log.output = output_steer
       pid_log.saturated = bool(self.pid.saturated)
+      pid_log.kp = self.pid.kp
+      pid_log.ki = self.pid.ki
+      pid_log.kd = self.pid.kd
 
     return output_steer, angle_steers_des, pid_log

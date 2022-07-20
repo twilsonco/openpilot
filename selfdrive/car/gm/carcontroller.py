@@ -27,32 +27,6 @@ class CarController():
     self.packer_obj = CANPacker(DBC[CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[CP.carFingerprint]['chassis'])
 
-    self.debug_logging = False
-    self.debug_log_time_step = 0.333
-    self.last_debug_log_t = 0.
-    if self.debug_logging:
-      with open("/data/openpilot/coast_debug.csv","w") as f:
-        f.write(",".join([
-          "t",
-          "long plan",
-          "d (m/s)", 
-          "v", 
-          "vEgo", 
-          "v_cruise",
-          "v (mph)", 
-          "vEgo (mph)", 
-          "v_cruise (mph)",
-          "ttc", 
-          "coast gas lockout", 
-          "coast brake lockout", 
-          "gas in", 
-          "brake in", 
-          "one-pedal",
-          "coasting enabled",
-          "no f brakes",
-          "gas out",
-          "brake out"]) + "\n")
-
   def update(self, enabled, CS, frame, actuators,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
@@ -88,9 +62,15 @@ class CarController():
       apply_gas = P.MAX_ACC_REGEN
       apply_brake = 0
     else:
-      gravity_x = -9.8 * sin(CS.pitch)
+      # apply pitch "shifted deadzone" that gives smooth output in addition to applying a deadzone
+      if abs(CS.pitch_accel) > CS.pitch_accel_deadzone:
+        pitch = CS.pitch_accel + (CS.pitch_accel_deadzone if CS.pitch_accel < 0. else -CS.pitch_accel_deadzone)
+      else:
+        pitch = 0.
+      gravity_x = -9.8 * sin(pitch) * CS.pitch_accel_factor
       apply_gas = interp(actuators.accel - gravity_x, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
-      apply_brake = interp(actuators.accel - gravity_x, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
+      pitch_brake_lowspeed_factor = interp(CS.vEgo, CS.pitch_accel_brake_lowspeed_lockout_bp, CS.pitch_accel_brake_lowspeed_lockout_v)
+      apply_brake = interp(actuators.accel - gravity_x * pitch_brake_lowspeed_factor, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
       t = sec_since_boot()
       
       v_rel = CS.coasting_lead_v - CS.vEgo
@@ -126,29 +106,6 @@ class CarController():
         lead_long_gas_lockout_factor =  0. # 1.0 means regular braking logic is completely unaltered, 0.0 means no cruise braking
         lead_long_brake_lockout_factor =  0. # 1.0 means regular braking logic is completely unaltered, 0.0 means no cruise braking
         
-      # debug logging
-      do_log = self.debug_logging and (t - self.last_debug_log_t > self.debug_log_time_step)
-      if do_log:
-        self.last_debug_log_t = t
-        f = open("/data/openpilot/coast_debug.csv","a")
-        f.write(",".join([f"{i:.1f}" if i == float else str(i) for i in [
-          t - CS.sessionInitTime,
-          CS.coasting_long_plan,
-          CS.coasting_lead_d, 
-          CS.coasting_lead_v, 
-          CS.vEgo, 
-          CS.v_cruise_kph * CV.KPH_TO_MS,
-          CS.coasting_lead_v * CV.MS_TO_MPH, 
-          CS.vEgo * CV.MS_TO_MPH, 
-          CS.v_cruise_kph * CV.KPH_TO_MPH,
-          ttc, 
-          lead_long_gas_lockout_factor, 
-          lead_long_brake_lockout_factor,
-          int(apply_gas), 
-          int(apply_brake), 
-          (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active),
-          CS.coasting_enabled,
-          CS.no_friction_braking]]) + ",")
       
       if (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active):
         if not CS.one_pedal_mode_active and CS.gear_shifter_ev == 4 and CS.one_pedal_dl_coasting_enabled and CS.vEgo > 0.05:
@@ -167,7 +124,14 @@ class CarController():
           one_pedal_apply_brake = min(one_pedal_apply_brake, float(P.BRAKE_LOOKUP_V[0]))
           one_pedal_apply_brake *= interp(time_since_brake, CS.one_pedal_mode_ramp_time_bp, CS.one_pedal_mode_ramp_time_v) if CS.one_pedal_brake_mode < 2 else 1.
         else:
-          one_pedal_apply_brake = 0.
+          if CS.coasting_lead_d > 0. or (apply_brake > 0 and CS.coasting_long_plan not in ['cruise', 'limit']):
+            one_pedal_apply_brake = interp(CS.vEgo, CS.one_pedal_mode_stop_apply_brake_bp[0], CS.one_pedal_mode_stop_apply_brake_v[0])
+            if CS.coasting_lead_d > 0.:
+              one_pedal_apply_brake *= interp(CS.coasting_lead_d, CS.one_pedal_coast_lead_dist_apply_brake_bp, CS.one_pedal_coast_lead_dist_apply_brake_v)
+            else:
+              one_pedal_apply_brake = min(one_pedal_apply_brake, apply_brake)
+          else:
+            one_pedal_apply_brake = 0.
           
         
         # ramp braking
@@ -225,12 +189,6 @@ class CarController():
       CS.one_pedal_mode_active_last = CS.one_pedal_mode_active
       CS.coast_one_pedal_mode_active_last = CS.coast_one_pedal_mode_active
 
-      if do_log:
-        f.write(",".join([str(i) for i in [
-          apply_gas, 
-          apply_brake]]) + "\n")
-        f.close()
-    
     if CS.showBrakeIndicator:
       CS.apply_brake_percent = 0.
       if CS.vEgo > 0.1:
@@ -285,9 +243,11 @@ class CarController():
         
         if standstill and not car_stopping:
           if CS.do_sng:
-            acc_enabled = False
-            CS.resume_button_pressed = True
-          else:
+            gravity_x = -9.8 * sin(CS.pitch_accel)
+            if actuators.accel - gravity_x > 0.05: # desired accel must be enough to overcome hill
+              acc_enabled = False
+              CS.resume_button_pressed = True
+          elif CS.out.vEgo < 1.5:
             CS.resume_required = True
       
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, acc_enabled, at_full_stop))

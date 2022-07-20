@@ -32,8 +32,6 @@ class CarState(CarStateBase):
     self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
     self._params = Params()
     
-    with open("/data/fp_log.txt",'a') as f:
-      f.write(f"{self.car_fingerprint}\n")
     
     self.t = 0.
     self.is_ev = (self.car_fingerprint in [CAR.VOLT, CAR.VOLT18])
@@ -94,8 +92,8 @@ class CarState(CarStateBase):
     self.one_pedal_mode_engage_on_gas = False
     self.one_pedal_mode_engage_on_gas_min_speed = 2.5 * CV.MPH_TO_MS # gas press at or above this speed with engage on gas enabled and one-pedal mode will activate
     self.one_pedal_mode_max_set_speed = 3 * CV.MPH_TO_MS #  one pedal mode activates if cruise set at or below this speed
-    self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [1., 4., 45., 85.]], [i * CV.MPH_TO_MS for i in [1., 4., 45., 85.]], [1.]]
-    self.one_pedal_mode_stop_apply_brake_v = [[80., 95., 115., 90.], [110., 165., 185., 140.], [280.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
+    self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [1., 4., 8., 45., 85.]], [i * CV.MPH_TO_MS for i in [1., 7., 14., 45., 85.]], [1.]]
+    self.one_pedal_mode_stop_apply_brake_v = [[82., 90., 95., 115., 90.], [110., 150., 165., 185., 140.], [280.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
     self.one_pedal_mode_apply_brake = 0.
     self.one_pedal_mode_ramp_duration = 0.9
     self.one_pedal_mode_ramp_time_step = 60. / self.one_pedal_mode_ramp_duration
@@ -116,14 +114,25 @@ class CarState(CarStateBase):
     self.one_pedal_pitch_brake_adjust_bp = [-0.08, -0.005, 0.005, 0.10] # [radians] 0.12 radians of pitch ≈ 12% grade. No change within ±0.02
     self.one_pedal_pitch_brake_adjust_v = [[.6, 1., 1., 1.5], [.75, 1., 1., 1.5], [.9, 1., 1., 1.5]] # used to scale the value of apply_brake
     self.one_pedal_angle_steers_cutoff_bp = [60., 270.] # [degrees] one pedal braking goes down one "level" as steering wheel is turned more than this angle
+    self.one_pedal_coast_lead_dist_apply_brake_bp = [4.5, 7.5] # [m] distance to lead
+    self.one_pedal_coast_lead_dist_apply_brake_v = [1., 0.] # [unitless] factor of light one-pedal braking
     
     self.drive_mode_button = False
     self.drive_mode_button_last = False
     self.gear_shifter_ev = None
           
-    self.pitch = 0.
-    self.pitch_raw = 0.
-    self.pitch_ema = 1/200
+    self.pitch = 0. # radians
+    self.pitch_raw = 0. # radians
+    self.pitch_ema = 1/100
+    self.pitch_future_time = 0.5 # seconds
+    self.pitch_accel_factor = 0.85
+    self.pitch_accel_deadzone = 0.01 # radians ~ ±1% grade
+    self.pitch_accel = 0.
+    self.pitch_accel_raw = 0.
+    self.pitch_accel_future_time = 0.8
+    self.pitch_accel_brake_lowspeed_lockout_bp = [i * CV.MPH_TO_MS for i in [5., 15.]]
+    self.pitch_accel_brake_lowspeed_lockout_v = [0., 1.]
+    
     
     # similar to over-speed coast braking, lockout coast/one-pedal logic first for engine/regen braking, and then for actual brakes.
     # gas lockout lookup tables:
@@ -217,7 +226,7 @@ class CarState(CarStateBase):
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
     ret.gasPressed = ret.gas > 1e-5
     self.gasPressed = ret.gasPressed
-    if self.gasPressed:
+    if self.gasPressed or self.vEgo < 0.2:
       self.resume_required = False
 
     ret.steeringAngleDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelAngle"]
@@ -226,6 +235,10 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = pt_cp.vl["PSCMStatus"]["LKATorqueDelivered"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
     self.lka_steering_cmd_counter = loopback_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
+    
+    ret.lateralAcceleration = pt_cp.vl["EBCMVehicleDynamic"]["LateralAcceleration"]
+    ret.yawRate = pt_cp.vl["EBCMVehicleDynamic"]["YawRate"]
+    ret.yawRate2 = pt_cp.vl["EBCMVehicleDynamic"]["YawRate2"]
 
     # 0 inactive, 1 active, 2 temporarily limited, 3 failed
     self.lkas_status = pt_cp.vl["PSCMStatus"]["LKATorqueDeliveredStatus"]
@@ -347,6 +360,7 @@ class CarState(CarStateBase):
     ret.onePedalBrakeMode = self.one_pedal_brake_mode
     
     self.pitch = self.pitch_ema * self.pitch_raw + (1 - self.pitch_ema) * self.pitch 
+    self.pitch_accel = self.pitch_ema * self.pitch_accel_raw + (1 - self.pitch_ema) * self.pitch_accel
     ret.pitch = self.pitch
 
     ret.autoHoldActivated = self.autoHoldActivated
@@ -395,6 +409,9 @@ class CarState(CarStateBase):
       ("TractionControlOn", "ESPStatus", 0),
       ("EPBClosed", "EPBStatus", 0),
       ("CruiseMainOn", "ECMEngineStatus", 0),
+      ("LateralAcceleration", "EBCMVehicleDynamic", 0),
+      ("YawRate", "EBCMVehicleDynamic", 0),
+      ("YawRate2", "EBCMVehicleDynamic", 0),
     ]
 
     checks = [
@@ -412,6 +429,7 @@ class CarState(CarStateBase):
       ("ECMEngineStatus", 100),
       ("PSCMSteeringAngle", 100),
       ("ECMEngineCoolantTemp", 1),
+      ("EBCMVehicleDynamic", 100),
     ]
 
     if CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:

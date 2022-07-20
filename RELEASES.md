@@ -1,4 +1,29 @@
-Version tw-0.8.12-3_tws (2022-06-29)
+Version tw-0.8.12-4_tws (2022-07-20)
+========================
+ * NEW: Added "resume required" alert when lead car pulls away 
+ * NEW: When map-curve braking or speed-limit control are enabled, current signal strength is shown above max speed indicator onroad
+ * IMPROVED: ['17 Volt] Eliminate rollback when autoresuming behind lead on hill
+ * IMPROVED: map braking: 
+  * smooth in braking to lower severity of false positives (at cost of ~0.4s delay in braking)
+  * if no signal, red circle instead of green around wheel icon at top-right
+ * IMPROVED: nudgeless lane changes are fixed
+  * 1.5s delay before initiating lane change
+  * only works over 40mph
+  * doesn't work in one-pedal mode
+  * no nudgeless multi-lane changes, so if you leave your blinker on, it will not perform another lane change unless you nudge for the subsequent lane changes
+ * IMPROVED: Volt updated "torque" and traditional steering feedforward fits (Basically converged at the "correct" feedforward at this point!)
+ * IMPROVED: engine coolant UI metric uses higher color thresholds to better match dexcool limits
+ * IMPROVED: adjustable lane position: 
+  * use 1/2 mi and 10 mi distance timeouts instead of 15s and 10min
+  * disables if steering wheel turns more than 150° 
+ * IMPROVED: one-pedal mode:
+  * slightly smoother stops when using light/moderate braking
+  * always light/regen braking after engage-on-gas-press
+ * IMPROVED: vision curve braking improvements
+ * IMPROVED: gas/brake pitch-based adjust gets a 1% grade deadzone
+ * IMPROVED: dynamic lane profile now switches to laneless before entering curves
+
+Version tw-0.8.12-3_twd (2022-06-29)
 ========================
  * IMPROVED: Vision and/or map-based curve braking separately toggleable by tapping steering wheel icon
   * Tap to cycle between no-curve-braking/vision-only/vision+map
@@ -9,16 +34,6 @@ Version tw-0.8.12-3_tws (2022-06-29)
  * IMPROVED: gm long control now accounts for vehicle pitch for better gas/brake control on incline/decline (thanks qadmus!)
   * Pitch is calculated using current and predicted pitch to provide a smoothed version of the current pitch with no delay!
  * IMPROVED: gm better gas/brake lookup tables so that the car produces the accel/decel openpilot thinks it will for a given gas/brake command (qadmus again!!!)
-
-Version tw-0.8.12-2_twd (2022-06-04)
-========================
- * NEW: [optional w/ toggle] print lead car info
-   * Resolved occasional double-printing of info
- * RE-IMPROVED: Vision-based curve braking now includes roll-compensation in its calculations
-   * For example, it will brake less on a banked curve
- * RE-IMPROVED: Volt torque steering porformance!
-   * With custom feedforward fit from volt driving data like the traditional PIDF tune
- * IMPROVED: Traditional PIDF tune gets updated custom FF (I can't tell whether it or torque is better; likely a mater of preference; try them both!)
 
 Version tw-0.8.12-1_tws (2022-04-27)
 ========================

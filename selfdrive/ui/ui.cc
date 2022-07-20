@@ -231,9 +231,9 @@ static void update_state(UIState *s) {
     }
   }
   
-  if (scene.lane_pos != 0 && t - scene.lane_pos_set_t > scene.lane_pos_timeout){
+  if (scene.lane_pos != 0 && scene.lane_pos_dist_since_set > scene.lane_pos_timeout_dist){
     scene.lane_pos = 0;
-    scene.lane_pos_timeout = scene.lane_pos_timeout_short_t;
+    scene.lane_pos_timeout_dist = scene.lane_pos_dist_short;
     Params().put("LanePosition", "0", 1);
   }
   
@@ -311,7 +311,14 @@ static void update_state(UIState *s) {
     scene.angleSteers = scene.car_state.getSteeringAngleDeg();
     scene.engineRPM = static_cast<int>((scene.car_state.getEngineRPM() / (10.0)) + 0.5) * 10;
     
-    
+    if (scene.lane_pos != 0){
+      scene.lane_pos_dist_since_set += scene.car_state.getVEgo() * (t - scene.lane_pos_dist_last_t);
+      if (abs(scene.car_state.getSteeringAngleDeg()) > scene.lane_pos_max_steer_deg){
+        scene.lane_pos = 0;
+        Params().put("LanePosition", "0", 1);
+      }
+    }
+    scene.lane_pos_dist_last_t = t;
   }
   if (sm.updated("liveParameters")){
     scene.road_roll = sm["liveParameters"].getLiveParameters().getRoll();
@@ -394,6 +401,8 @@ static void update_state(UIState *s) {
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
   if (sm.updated("deviceState")) {
     scene.deviceState = sm["deviceState"].getDeviceState();
+    scene.network_type_string = ui_network_type[(int)scene.deviceState.getNetworkType()];
+    scene.network_strength = (int)scene.deviceState.getNetworkStrength();
   }
   if (sm.updated("liveLocationKalman")) {
     scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();

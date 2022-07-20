@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <deque>
+#include <vector>
 
 #include <QObject>
 #include <QTimer>
@@ -53,6 +54,26 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 // TODO: choose based on frame input size
 const float y_offset = Hardware::TICI() ? 150.0 : 0.0;
 const float ZOOM = Hardware::TICI() ? 2912.8 : 2138.5;
+
+const std::vector<std::string> ui_network_type = {
+  "--",
+  "WiFi",
+  "ETH",
+  "2G",
+  "3G",
+  "LTE",
+  "5G"
+};
+  // above vector based on this cereal enum
+  // enum NetworkType { 
+  //   none @0;
+  //   wifi @1;
+  //   cell2G @2;
+  //   cell3G @3;
+  //   cell4G @4;
+  //   cell5G @5;
+  //   ethernet @6;
+  // }
 
 typedef struct Rect {
   int x, y, w, h;
@@ -208,10 +229,13 @@ typedef struct UIScene {
   Rect lane_pos_left_touch_rect = {1,1,1,1}, lane_pos_right_touch_rect = {1,1,1,1};
   bool lane_pos_enabled = false;
   int lane_pos = 0; // 0, 1, -1 = center, left, right
-  float lane_pos_timeout_short_t = 15.; // 30s short timeout
-  float lane_pos_timeout_long_t = 600.; // 10 minute long timeout
-  float lane_pos_timeout = lane_pos_timeout_short_t;
+  float lane_pos_dist_short = 800.; // ≈1/3 mile short timeout
+  float lane_pos_dist_long = 16000.; // 10 mile long timeout
+  float lane_pos_timeout_dist = lane_pos_dist_short;
   float lane_pos_set_t = 0.;
+  float lane_pos_dist_since_set = 0.;
+  float lane_pos_dist_last_t = 0.;
+  float lane_pos_max_steer_deg = 150.;
   
   Rect wheel_touch_rect;
   bool wheel_rotates = true;
@@ -228,6 +252,10 @@ typedef struct UIScene {
   Rect screen_dim_touch_rect;
 
   cereal::PandaState::PandaType pandaType;
+
+  std::string network_type_string;
+  int network_strength;
+
   
 // measures
   int measure_min_num_slots = 0;

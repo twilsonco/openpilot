@@ -4,7 +4,7 @@ import math
 from numbers import Number
 
 from cereal import car, log
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
 from common.params import Params, put_nonblocking
@@ -26,6 +26,7 @@ from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.locationd.calibrationd import Calibration
+from selfdrive.modeld.constants import T_IDXS
 from selfdrive.hardware import HARDWARE, TICI, EON
 from selfdrive.manager.process_config import managed_processes
 
@@ -416,6 +417,7 @@ class Controls:
         self.CI.CS.one_pedal_v_cruise_kph_last = self.v_cruise_kph
         self.CI.CS.one_pedal_last_follow_level = self.CI.CS.follow_level
         self.v_cruise_kph = V_CRUISE_MIN
+        self.CI.CS.one_pedal_last_brake_mode = 0
       elif not self.accel_pressed and cur_time - self.accel_pressed_last < 0.3 and self.enabled and CS.cruiseState.enabled and (self.CI.CS.one_pedal_mode_active or self.CI.CS.coast_one_pedal_mode_active) and self.CI.CS.one_pedal_v_cruise_kph_last > 0: # user resuming speed from one-pedal mode
         self.v_cruise_kph = self.CI.CS.one_pedal_v_cruise_kph_last
         self.CI.CS.one_pedal_brake_mode = min(1, self.CI.CS.one_pedal_last_brake_mode)
@@ -527,8 +529,12 @@ class Controls:
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
     
-    if self.sm.valid.get('liveLocationKalman', False) and self.sm.valid.get('modelV2', False) and len(self.sm['modelV2'].orientation.y) >= 11 and sec_since_boot() > 120.:
-      self.CI.CS.pitch_raw = clip(self.sm['liveLocationKalman'].calibratedOrientationNED.value[1], -MAX_ABS_PITCH, MAX_ABS_PITCH) + clip(self.sm['modelV2'].orientation.y[10], -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
+    if self.sm.valid.get('liveLocationKalman', False) and self.sm.valid.get('modelV2', False) and len(self.sm['modelV2'].orientation.y) >= 12 and len(self.sm['liveLocationKalman'].calibratedOrientationNED.value) > 1 and sec_since_boot() > 120.:
+      current_pitch = clip(self.sm['liveLocationKalman'].calibratedOrientationNED.value[1], -MAX_ABS_PITCH, MAX_ABS_PITCH)
+      future_pitch_diff = clip(interp(self.CI.CS.pitch_future_time, T_IDXS, self.sm['modelV2'].orientation.y), -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
+      self.CI.CS.pitch_raw = current_pitch + future_pitch_diff
+      future_pitch_diff = clip(interp(self.CI.CS.pitch_accel_future_time, T_IDXS, self.sm['modelV2'].orientation.y), -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
+      self.CI.CS.pitch_accel_raw = current_pitch + clip(future_pitch_diff, -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
       
 
     actuators = car.CarControl.Actuators.new_message()

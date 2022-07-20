@@ -26,7 +26,7 @@ class LatControlTorque(LatControl):
     super().__init__(CP, CI)
     self.pid = PIDController(CP.lateralTuning.torque.kp, CP.lateralTuning.torque.ki,
                             k_d=CP.lateralTuning.torque.kd, derivative_period=0.1,
-                            k_11 = 0.5, k_12 = 2., k_13 = 5., k_period=0.1,
+                            k_11 = 0.5, k_12 = 0.5, k_13 = 0.5, k_period=0.1,
                             k_f=CP.lateralTuning.torque.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
     self.friction = CP.lateralTuning.torque.friction
@@ -72,12 +72,17 @@ class LatControlTorque(LatControl):
       pid_log.errorRate = angle_steers_des - CS.steeringAngleDeg
 
       pid_log.active = True
+      pid_log.currentLateralAcceleration = actual_lateral_accel
+      pid_log.desiredLateralAcceleration = desired_lateral_accel
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i
       pid_log.d = self.pid.d
       pid_log.f = self.pid.f
       pid_log.output = -output_torque
       pid_log.saturated = self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS)
+      pid_log.kp = self.pid.kp
+      pid_log.ki = self.pid.ki
+      pid_log.kd = self.pid.kd
 
     #TODO left is positive in this convention
     return -output_torque, 0.0, pid_log
