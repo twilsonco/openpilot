@@ -2,11 +2,17 @@ Version tw-0.8.12-4_twd (2022-07-20)
 ========================
  * NEW: Added "resume required" alert when lead car pulls away 
  * NEW: When map-curve braking or speed-limit control are enabled, current signal strength is shown above max speed indicator onroad
- * IMPROVED: Volt "torque" lateral steering performance
+ * IMPROVED: map braking: if no signal, red circle instead of green around wheel icon at top-right
+ * IMPROVED: nudgeless lane changes are fixed
+  * 1.5s delay before initiating lane change
+  * only works over 40mph
+  * doesn't work in one-pedal mode
+  * no nudgeless multi-lane changes, so if you leave your blinker on, it will keep driving you off the road!
+ * IMPROVED: Volt updated "torque" and traditional steering feedforward fits (Basically converged at the "correct" feedforward at this point!)
  * IMPROVED: engine coolant UI metric uses higher color thresholds to better match dexcool limits
  * IMPROVED: adjustable lane position: 
-  * use 1/2 mi and 10 mi distance timeouts
-  * disable if steering wheel turns more than 150° 
+  * use 1/2 mi and 10 mi distance timeouts instead of 15s and 10min
+  * disables if steering wheel turns more than 150° 
  * IMPROVED: one-pedal mode:
   * slightly smoother stops when using light/moderate braking
   * always light/regen braking after engage-on-gas-press
