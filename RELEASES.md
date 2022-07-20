@@ -1,3 +1,19 @@
+Version tw-0.8.12-4_twd (2022-07-20)
+========================
+ * NEW: Added "resume required" alert when lead car pulls away 
+ * NEW: When map-curve braking or speed-limit control are enabled, current signal strength is shown above max speed indicator onroad
+ * IMPROVED: Volt "torque" lateral steering performance
+ * IMPROVED: engine coolant UI metric uses higher color thresholds to better match dexcool limits
+ * IMPROVED: adjustable lane position: 
+  * use 1/2 mi and 10 mi distance timeouts
+  * disable if steering wheel turns more than 150° 
+ * IMPROVED: one-pedal mode:
+  * slightly smoother stops when using light/moderate braking
+  * always light/regen braking after engage-on-gas-press
+ * IMPROVED: vision curve braking improvements
+ * IMPROVED: gas/brake pitch-based adjust gets a 1% grade deadzone
+ * IMPROVED: dynamic lane profile now switches to laneless before entering curves
+
 Version tw-0.8.12-3_twd (2022-06-29)
 ========================
  * IMPROVED: Vision and/or map-based curve braking separately toggleable by tapping steering wheel icon
