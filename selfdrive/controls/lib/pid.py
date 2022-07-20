@@ -121,7 +121,7 @@ class PIDController:
     self.ki = self.k_i
     self.kd = self.k_d
     
-    if self.output_norms is not None and len(self.outputs) > 0:
+    if self.output_norms and len(self.outputs) > 0:
       abs_sp = setpoint if setpoint > 0. else -setpoint
       self.output_norms.append(self.outputs[-1] / (abs_sp + 1.)) # use the last iteration's output
       if len(self.output_norms) == int(self._k_period):
@@ -159,7 +159,7 @@ class PIDController:
     control = self.p + self.f + self.i + self.d
     self.saturated = self._check_saturation(control, check_saturation, error)
     
-    if self.outputs is not None:
+    if self.outputs:
       self.outputs.append(control)
 
     self.control = clip(control, self.neg_limit, self.pos_limit)
