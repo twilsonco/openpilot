@@ -578,6 +578,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 1., 1.),
   },
   
+  EventName.signalLost: {
+    ET.WARNING: Alert(
+      "Data signal lost",
+      "No map-based curve braking or auto speed limits",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 1., 5.),
+  },
+  
   EventName.resumeRequired: {
     ET.WARNING: Alert(
       "Go time!",

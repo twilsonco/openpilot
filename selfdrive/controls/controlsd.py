@@ -66,6 +66,7 @@ class Controls:
     self.fastMode = False
     self.lk_mode_last = False
     self.oplongcontrol_last = False
+    self.network_strength_last = log.DeviceState.NetworkStrength.unknown
     
     self.gpsWasOK = False
 
@@ -210,6 +211,14 @@ class Controls:
     if not self.initialized:
       self.events.add(EventName.controlsInitializing)
       return
+    
+    # Alert when network drops, but only if map braking or speed limit control is enabled
+    network_strength = self.sm['deviceState'].networkStrength
+    if (network_strength == log.DeviceState.NetworkStrength.unknown and self.network_strength_last != log.DeviceState.NetworkStrength.unknown \
+      and (self.sm['longitudinalPlan'].speedLimitControlState != log.LongitudinalPlan.SpeedLimitControlState.inactive \
+        or self.sm['longitudinalPlan'].turnSpeedControlState != log.LongitudinalPlan.SpeedLimitControlState.inactive)):
+      self.events.add(EventName.signalLost)
+    self.network_strength_last = self.sm['deviceState'].networkStrength
 
     # Create events for battery, temperature, disk space, and memory
     if EON and self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
