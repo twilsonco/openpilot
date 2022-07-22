@@ -38,7 +38,7 @@ _ENTERING_SMOOTH_DECEL_BP = [1.2, 1.5, 3.5]  # absolute value of lat acc ahead
 _TURNING_ACC_V = [0.6, 0.0, -1.]  # acc value
 _TURNING_ACC_BP = [0.8, 1.4, 2.2]  # absolute value of current lat acc
 
-_LEAVING_ACC = 0.6  # Confortable acceleration to regain speed while leaving a turn.
+_LEAVING_ACC = 0.7  # Confortable acceleration to regain speed while leaving a turn.
 
 _MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow curvature prediction based on lanes.
 
