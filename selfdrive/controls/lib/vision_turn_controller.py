@@ -106,7 +106,7 @@ class VisionTurnController():
     self._controls_state = None
     self._liveparams = None
     self._vf = 1.
-    self._ema_k = 1/5 # exponential moving average factor for smoothing predicted values
+    self._ema_k = 1/15 # exponential moving average factor for smoothing predicted values
     self._reset(True)
 
   @property
