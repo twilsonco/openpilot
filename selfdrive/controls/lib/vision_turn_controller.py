@@ -107,7 +107,7 @@ class VisionTurnController():
     self._liveparams = None
     self._vf = 1.
     self._ema_k = 1/5 # exponential moving average factor for smoothing predicted values
-    self._reset()
+    self._reset(True)
 
   @property
   def state(self):
@@ -133,8 +133,8 @@ class VisionTurnController():
   def is_active(self):
     return self._state != VisionTurnControllerState.disabled
 
-  def _reset(self):
-    if not self._gas_pressed:
+  def _reset(self, full_reset = False):
+    if full_reset:
       self._pred_curvatures = np.array([])
       self._max_pred_lat_acc = 0.
       self._max_pred_curvature = 0.
@@ -190,6 +190,17 @@ class VisionTurnController():
     model_data = sm['modelV2'] if sm.valid.get('modelV2', False) else None
     lat_planner_data = sm['lateralPlan'] if sm.valid.get('lateralPlan', False) else None
     
+    # For updating VehicleModel
+    if sm.valid.get('liveParameters', False):
+      self._liveparams = sm['liveParameters']
+    if sm.valid.get('carState', False):
+      self._CS = sm['carState']
+    
+    if self._CS is not None:
+      steering_angle = self._CS.steeringAngleDeg
+    else:
+      return
+    
     # scale velocity used to determine curvature in order to provide more braking at low speed
     self._vf = interp(self._v_ego, _LOW_SPEED_SCALE_BP, _LOW_SPEED_SCALE_V)
 
@@ -228,10 +239,11 @@ class VisionTurnController():
 
     # 2. If not polynomial derived from lanes, then derive it from compensated driving path with lanes as
     # provided by `lateralPlanner`.
-    if path_poly is None and lat_planner_data is not None and len(lat_planner_data.dPathWLinesX) > 0 \
-       and lat_planner_data.dPathWLinesX[0] > 0:
-      path_poly = np.polyfit(lat_planner_data.dPathWLinesX, lat_planner_data.dPathWLinesY, 3)
-      self._predicted_path_source = 'pathWithLanes'
+    # Axed due to bad data causing sudden braking
+    # if path_poly is None and lat_planner_data is not None and len(lat_planner_data.dPathWLinesX) > 0 \
+    #    and lat_planner_data.dPathWLinesX[0] > 0:
+    #   path_poly = np.polyfit(lat_planner_data.dPathWLinesX, lat_planner_data.dPathWLinesY, 3)
+    #   self._predicted_path_source = 'pathWithLanes'
       
     
     # 3. Use path curvature otherwise,
@@ -243,12 +255,7 @@ class VisionTurnController():
     if path_poly is None:
       path_poly = np.array([0., 0., 0., 0.])
       self._predicted_path_source = 'none'
-    
-    # Update VehicleModel
-    if sm.valid.get('liveParameters', False):
-      self._liveparams = sm['liveParameters']
-    if sm.valid.get('carState', False):
-      self._CS = sm['carState']
+      
     if self._liveparams is not None:
       x = max(self._liveparams.stiffnessFactor, 0.1)
       sr = max(self._liveparams.steerRatio, 0.1)
@@ -258,12 +265,6 @@ class VisionTurnController():
     else:
       roll_compensation = 0.
       angle_offset = 0.
-    
-    if self._CS is not None:
-      steering_angle = self._CS.steeringAngleDeg
-    else:
-      steering_angle = 0.
-      
     
     current_curvature_no_roll = self._VM.calc_curvature(-math.radians(steering_angle - angle_offset), self._v_ego, 0.)
     if abs(roll_compensation) > abs(current_curvature_no_roll):
