@@ -202,8 +202,8 @@ class WayRelation():
   @property
   def road_name(self):
     if self.name is not None:
-      return self.name
-    return self.ref
+      return f"{self.name} ({self.highway_type})" if self.highway_type is not None else self.name
+    return f"{self.ref} ({self.highway_type})" if self.highway_type is not None else self.ref
 
   def update(self, location_rad, bearing_rad, location_accuracy):
     """Will update and validate the associated way with a given `location_rad` and `bearing_rad`.
