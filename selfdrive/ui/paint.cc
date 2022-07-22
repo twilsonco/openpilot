@@ -1706,10 +1706,10 @@ static void ui_draw_vision_event(UIState *s) {
   if (s->scene.network_strength > 0){//} && s->scene.current_road_name != ""){
     nvgBeginPath(s->vg);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
-    nvgFontFace(s->vg, "sans-semibold");
+    nvgFontFace(s->vg, "sans-regular");
     nvgFontSize(s->vg, 75);
     nvgFillColor(s->vg, COLOR_WHITE_ALPHA(255));
-    nvgText(s->vg, s->fb_w / 2, bdr_s - 31, s->scene.current_road_name==""?"no street name":s->scene.current_road_name.c_str(), NULL);
+    nvgText(s->vg, s->fb_w / 2, bdr_s - 31, s->scene.current_road_name.c_str(), NULL);
   }
 }
 
