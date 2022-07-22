@@ -1701,6 +1701,16 @@ static void ui_draw_vision_event(UIState *s) {
       nvgText(s->vg, x, y, s->scene.network_type_string.c_str(), NULL);
     }
   }
+
+  // current road name
+  if (s->scene.network_strength > 0){//} && s->scene.current_road_name != ""){
+    nvgBeginPath(s->vg);
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
+    nvgFontFace(s->vg, "sans-semibold");
+    nvgFontSize(s->vg, 75);
+    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(255));
+    nvgText(s->vg, s->fb_w / 2, bdr_s - 31, s->scene.current_road_name==""?"no street name":s->scene.current_road_name.c_str(), NULL);
+  }
 }
 
 static void ui_draw_vision_face(UIState *s) {

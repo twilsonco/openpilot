@@ -306,3 +306,7 @@ class Route():
       return None
 
     return self._nodes_data.distance_to_end(self._ahead_idx, self._distance_to_node_ahead)
+  
+  @property
+  def current_road_name(self):
+    return self.current_wr.road_name if self.located else None
