@@ -13,7 +13,7 @@ from selfdrive.swaglog import cloudlog
 
 _MIN_V = 5.6  # Do not operate under 20km/h
 
-_ENTERING_PRED_LAT_ACC_TH = 1.5  # Predicted Lat Acc threshold to trigger entering turn state.
+_ENTERING_PRED_LAT_ACC_TH = 1.6  # Predicted Lat Acc threshold to trigger entering turn state.
 _ABORT_ENTERING_PRED_LAT_ACC_TH = 0.9  # Predicted Lat Acc threshold to abort entering state if speed drops.
 
 _TURNING_LAT_ACC_TH = 1.0  # Lat Acc threshold to trigger turning turn state.
@@ -26,7 +26,7 @@ _EVAL_START = 20.  # mts. Distance ahead where to start evaluating vision curvat
 _EVAL_LENGHT = 150.  # mts. Distance ahead where to stop evaluating vision curvature.
 _EVAL_RANGE = np.arange(_EVAL_START, _EVAL_LENGHT, _EVAL_STEP)
 
-_A_LAT_REG_MAX = 1.7  # Maximum lateral acceleration
+_A_LAT_REG_MAX = 2.2  # Maximum lateral acceleration
 
 # Lookup table for the minimum smooth deceleration during the ENTERING state
 # depending on the actual maximum absolute lateral acceleration predicted on the turn ahead.
@@ -239,11 +239,10 @@ class VisionTurnController():
 
     # 2. If not polynomial derived from lanes, then derive it from compensated driving path with lanes as
     # provided by `lateralPlanner`.
-    # Axed due to bad data causing sudden braking
-    # if path_poly is None and lat_planner_data is not None and len(lat_planner_data.dPathWLinesX) > 0 \
-    #    and lat_planner_data.dPathWLinesX[0] > 0:
-    #   path_poly = np.polyfit(lat_planner_data.dPathWLinesX, lat_planner_data.dPathWLinesY, 3)
-    #   self._predicted_path_source = 'pathWithLanes'
+    if path_poly is None and lat_planner_data is not None and len(lat_planner_data.dPathWLinesX) > 0 \
+       and lat_planner_data.dPathWLinesX[0] > 0:
+      path_poly = np.polyfit(lat_planner_data.dPathWLinesX, lat_planner_data.dPathWLinesY, 3)
+      self._predicted_path_source = 'pathWithLanes'
       
     
     # 3. Use path curvature otherwise,
