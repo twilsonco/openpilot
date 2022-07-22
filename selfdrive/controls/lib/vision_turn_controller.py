@@ -350,6 +350,8 @@ class VisionTurnController():
       # If substantial lateral acceleration is predicted ahead, then move to Entering turn state.
       elif self._max_pred_lat_acc >= _ENTERING_PRED_LAT_ACC_TH:
         self.state = VisionTurnControllerState.entering
+      elif self._current_lat_acc >= _TURNING_LAT_ACC_TH:
+        self.state = VisionTurnControllerState.turning
     # ENTERING
     elif self.state == VisionTurnControllerState.entering:
       # Transition to Turning if current lateral acceleration is over the threshold.
