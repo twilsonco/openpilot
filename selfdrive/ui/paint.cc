@@ -1703,7 +1703,7 @@ static void ui_draw_vision_event(UIState *s) {
   }
 
   // current road name
-  if (s->scene.network_strength > 0){//} && s->scene.current_road_name != ""){
+  if (s->scene.network_strength > 0 && !s->scene.map_open){//} && s->scene.current_road_name != ""){
     nvgBeginPath(s->vg);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
     nvgFontFace(s->vg, "sans-regular");
