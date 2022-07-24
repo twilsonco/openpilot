@@ -196,6 +196,7 @@ class MapD():
     horizon_mts = self.gps_speed * LOOK_AHEAD_HORIZON_TIME
     next_turn_speed_limit_sections = self.route.next_curvature_speed_limit_sections(horizon_mts)
     current_road_name = self.route.current_road_name
+    current_road_type = self.route.current_road_type
 
     map_data_msg = messaging.new_message('liveMapData')
     map_data_msg.valid = sm.all_alive_and_valid(service_list=['gpsLocationExternal'])
@@ -220,6 +221,7 @@ class MapD():
     map_data_msg.liveMapData.turnSpeedLimitsAheadDistances = [float(s.start) for s in next_turn_speed_limit_sections]
     map_data_msg.liveMapData.turnSpeedLimitsAheadSigns = [float(s.curv_sign) for s in next_turn_speed_limit_sections]
     map_data_msg.liveMapData.currentRoadName = str(current_road_name if current_road_name is not None else "")
+    map_data_msg.liveMapData.currentRoadType = str(current_road_type if current_road_type is not None else "")
 
     pm.send('liveMapData', map_data_msg)
     _debug(f'Mapd *****: Publish: \n{map_data_msg}\n********')

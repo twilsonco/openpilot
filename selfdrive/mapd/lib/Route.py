@@ -310,3 +310,7 @@ class Route():
   @property
   def current_road_name(self):
     return self.current_wr.road_name if self.located else None
+  
+  @property
+  def current_road_type(self):
+    return self.current_wr.road_type if self.located else None
