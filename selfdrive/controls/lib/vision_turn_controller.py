@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from cereal import log
+from collections import defaultdict
 from common.numpy_fast import interp
 from common.params import Params
 from common.realtime import sec_since_boot
@@ -44,8 +45,14 @@ _MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow curvature prediction 
 
 # scale velocity used to determine curvature in order to provide more braking at low speed
 # where the LKA torque is less capable despite low lateral acceleration.
-_LOW_SPEED_SCALE_V = [1.0, 1.0] #increase the first value to increase low-speed vision braking; don't touch the second
-_LOW_SPEED_SCALE_BP = [i * CV.MPH_TO_MS for i in [0., 30.]]
+# This will be a default dict based on road type, allowing for easy adjustment of vision braking based on road type
+# See the list of "highway" types here https://wiki.openstreetmap.org/wiki/Key:highway
+_SPEED_SCALE_V = [1.] # [unitless] scales the velocity value used to calculate lateral acceleration
+_SPEED_SCALE_BP = [0.] # [meters per second] speeds corresponding to scaling values, so you can alter low/high speed behavior for each road type
+_SPEED_SCALE_FOR_ROAD_TYPE = defaultdict((_SPEED_SCALE_BP, _SPEED_SCALE_V))
+_SPEED_SCALE_FOR_ROAD_TYPE["motorway_link"] = ([0.],[0.8])
+
+
 
 # scale up current measured lateral acceleration if the lateral controller is saturated
 _LAT_SAT_DECEL_V = [1.0, 1.5] # unitless. scales current lateral acceleration
@@ -148,6 +155,7 @@ class VisionTurnController():
     self._predicted_path_source = 'none'
     self._lat_sat_last = False
     self._lat_sat_t = 0.
+    self._speed_scale_bp_v = _SPEED_SCALE_FOR_ROAD_TYPE['']
   
   def eval_curvature(self, poly, x_vals, path_roll_poly, max_x):
     """
@@ -202,7 +210,10 @@ class VisionTurnController():
       return
     
     # scale velocity used to determine curvature in order to provide more braking at low speed
-    self._vf = interp(self._v_ego, _LOW_SPEED_SCALE_BP, _LOW_SPEED_SCALE_V)
+    if sm.valid.get('liveMapData', False):
+      self._speed_scale_bp_v = _SPEED_SCALE_FOR_ROAD_TYPE[sm['liveMapData'].currentRoadType]
+      
+    self._vf = interp(self._v_ego, self._speed_scale_bp_v[0], self._speed_scale_bp_v[1])
 
     # 1. When the probability of lanes is good enough, compute polynomial from lanes as they are way more stable
     # on current mode than driving path.
