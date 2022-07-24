@@ -182,7 +182,7 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
   y = std::fmin(s->fb_h - sz * .6, y);
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 
-  if (s->scene.lead_info_print_enabled && draw_info){
+  if (s->scene.lead_info_print_enabled && !s->scene.map_open && draw_info){
     // print lead info around chevron
     // Print relative distances to the left of the chevron
     int const x_offset = 100;
