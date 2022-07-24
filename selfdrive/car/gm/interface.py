@@ -98,12 +98,12 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_steer_feedforward_volt_torque(desired_lateral_accel, v_ego):
     ANGLE_COEF = 0.10000000
-    ANGLE_COEF2 = 0.13122630
-    ANGLE_OFFSET = 0.00666167
-    SPEED_OFFSET = -3.29933821
-    SIGMOID_COEF_RIGHT = 0.53844801
-    SIGMOID_COEF_LEFT = 0.47000514
-    SPEED_COEF = 0.60112716
+    ANGLE_COEF2 = 0.13609369
+    ANGLE_OFFSET = 0.00215830
+    SPEED_OFFSET = -3.40740140
+    SIGMOID_COEF_RIGHT = 0.54324908
+    SIGMOID_COEF_LEFT = 0.48109872
+    SPEED_COEF = 0.59589789
     return get_steer_feedforward_erf(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
 
   def get_steer_feedforward_function(self):
