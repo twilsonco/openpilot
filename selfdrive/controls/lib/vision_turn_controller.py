@@ -49,7 +49,9 @@ _MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow curvature prediction 
 # See the list of "highway" types here https://wiki.openstreetmap.org/wiki/Key:highway
 _SPEED_SCALE_V = [1.] # [unitless] scales the velocity value used to calculate lateral acceleration
 _SPEED_SCALE_BP = [0.] # [meters per second] speeds corresponding to scaling values, so you can alter low/high speed behavior for each road type
-_SPEED_SCALE_FOR_ROAD_TYPE = defaultdict((_SPEED_SCALE_BP, _SPEED_SCALE_V))
+def default_speed_scale():
+  return (_SPEED_SCALE_BP, _SPEED_SCALE_V)
+_SPEED_SCALE_FOR_ROAD_TYPE = defaultdict(default_speed_scale)
 _SPEED_SCALE_FOR_ROAD_TYPE["motorway_link"] = ([0.],[0.8])
 
 
