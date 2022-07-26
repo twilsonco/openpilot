@@ -278,7 +278,7 @@ class VisionTurnController():
       roll_compensation = 0.
       angle_offset = 0.
     
-    current_curvature_no_roll = self._VM.calc_curvature(-math.radians(steering_angle - angle_offset), self._v_ego, 0.)
+    current_curvature_no_roll = self._VM.calc_curvature(-math.radians(steering_angle - angle_offset), self._vf * self._v_ego, 0.)
     if abs(roll_compensation) > abs(current_curvature_no_roll):
       roll_compensation = abs(current_curvature_no_roll) * np.sign(roll_compensation)
     current_curvature = abs(current_curvature_no_roll + roll_compensation)
