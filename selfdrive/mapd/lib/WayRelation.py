@@ -201,9 +201,12 @@ class WayRelation():
   
   @property
   def road_name(self):
-    if self.name is not None:
+    if self.highway_type == "motorway_link":
+      return "(Interchange)"
+    elif self.name is not None:
       return self.name
-    return self.ref
+    else:
+      return self.ref
   
   @property
   def road_type(self):
