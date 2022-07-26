@@ -1487,6 +1487,13 @@ static void ui_draw_measures(UIState *s){
           }
           break;
 
+        case UIMeasure::VISION_VF: 
+          {
+            snprintf(name, sizeof(name), "V: VF");
+            snprintf(val, sizeof(val), "%.2f", scene.longitudinal_plan.getVisionVf());
+          }
+          break;
+
         default: {// invalid number
           snprintf(name, sizeof(name), "INVALID");
           snprintf(val, sizeof(val), "42");}
