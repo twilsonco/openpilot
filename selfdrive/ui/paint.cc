@@ -353,28 +353,28 @@ static void ui_draw_vision_lane_lines(UIState *s) {
       if (scene.color_path){
         track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
           interp_alert_color(fabs(scene.lateralCorrection), 255), 
-          interp_alert_color(fabs(scene.lateralCorrection), 50));
+          interp_alert_color(fabs(scene.lateralCorrection), 0));
       }
       else{
         track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
           interp_alert_color(0., 255), 
-          interp_alert_color(0., 50));
+          interp_alert_color(0., 0));
       }
     } 
     else { // differentiate laneless mode color (Grace blue)
       if (scene.color_path){
-      int g, r = 255. * fabs(scene.lateralCorrection);
-      r = CLIP(r, 0, 255);
-      g = 100 + r;
-      g = CLIP(g, 0, 255);
-      track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                  nvgRGBA(r, g, 255, 250), 
-                                  nvgRGBA(r, g, 255, 50));
+        int g, r = 255. * fabs(scene.lateralCorrection);
+        r = CLIP(r, 0, 255);
+        g = 100 + r;
+        g = CLIP(g, 0, 255);
+        track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                    nvgRGBA(r, g, 255, 255), 
+                                    nvgRGBA(r, g, 255, 0));
       }
       else{
         track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                  nvgRGBA(0, 100, 255, 250), 
-                                  nvgRGBA(0, 100, 255, 50));
+                                  nvgRGBA(0, 100, 255, 255), 
+                                  nvgRGBA(0, 100, 255, 0));
       }
     }
   } else {
