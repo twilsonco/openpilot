@@ -225,6 +225,7 @@ typedef struct UIScene {
   bool speed_limit_perc_offset;
   Rect speed_limit_sign_touch_rect;
   double last_speed_limit_sign_tap;
+  int speed_limit_eu_style = false;
 
   std::string current_road_name;
   

@@ -214,11 +214,9 @@ class Controls:
     
     # Alert when network drops, but only if map braking or speed limit control is enabled
     network_strength = self.sm['deviceState'].networkStrength
-    if (network_strength == log.DeviceState.NetworkStrength.unknown and self.network_strength_last != log.DeviceState.NetworkStrength.unknown \
-      and (self.sm['longitudinalPlan'].speedLimitControlState != log.LongitudinalPlan.SpeedLimitControlState.inactive \
-        or self.sm['longitudinalPlan'].turnSpeedControlState != log.LongitudinalPlan.SpeedLimitControlState.inactive)):
+    if (network_strength != self.network_strength_last and network_strength == log.DeviceState.NetworkStrength.unknown):
       self.events.add(EventName.signalLost)
-    self.network_strength_last = self.sm['deviceState'].networkStrength
+    self.network_strength_last = network_strength
 
     # Create events for battery, temperature, disk space, and memory
     if EON and self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:

@@ -101,6 +101,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Use speed limit signs information from map data and car interface to automatically adapt cruise speed to road limits.",
                                   "../assets/offroad/icon_speed_limit_sign.png",
                                   this));
+  toggles.append(new ParamControl("EUSpeedLimitStyle",
+                                  "Show EU style speed limit sign",
+                                  "If enabled, show EU style circular sign. If disabled, show US/Canada style rectangular sign.",
+                                  "../assets/offroad/icon_speed_limit_sign.png",
+                                  this));
   toggles.append(new ParamControl("SpeedLimitPercOffset",
                                   "Enable Speed Limit Offset",
                                   "Set speed limit slightly higher than actual speed limit for a more natural drive.",

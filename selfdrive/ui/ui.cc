@@ -217,6 +217,7 @@ static void update_state(UIState *s) {
     scene.screen_dim_mode = std::stoi(Params().get("ScreenDimMode"));
     scene.lane_pos_enabled = Params().getBool("LanePositionEnabled");
     scene.lead_info_print_enabled = Params().getBool("PrintLeadInfo");
+    scene.speed_limit_eu_style = int(Params().getBool("EUSpeedLimitStyle"));
     if (scene.disableDisengageOnGasEnabled){
       scene.onePedalModeActive = Params().getBool("OnePedalMode");
       scene.onePedalEngageOnGasEnabled = Params().getBool("OnePedalModeEngageOnGas");
