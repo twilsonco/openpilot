@@ -67,10 +67,12 @@ class LongControl():
                             sat_limit=0.8)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
+    self.output_accel_pos_rate_ema_k = 1/10 # use exponential moving average on output accel, but only for positive jerk
     self.longPlan = ""
     self.coasting_lead_d = -1.
     self.coasting_lead_v = -1.
     self.tr = 1.8
+    
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
@@ -152,6 +154,8 @@ class LongControl():
         output_accel += CP.startingAccelRate / RATE
       self.reset(CS.vEgo)
 
+    if output_accel > self.last_output_accel:
+      output_accel =  self.output_accel_pos_rate_ema_k * output_accel + (1. - self.output_accel_pos_rate_ema_k) * self.last_output_accel
     self.last_output_accel = output_accel
     final_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 
