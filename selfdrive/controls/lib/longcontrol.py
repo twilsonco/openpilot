@@ -114,20 +114,19 @@ class LongControl():
 
     v_ego_pid = max(CS.vEgo, CP.minSpeedCan)  # Without this we get jumps, CAN bus reports 0 when speed < 0.3
 
+    self.longPlan = long_plan.longitudinalPlanSource
+    self.coasting_lead_d = long_plan.leadDist
+    self.coasting_lead_v = long_plan.leadV
+    self.tr = long_plan.desiredFollowDistance
+
     if self.long_control_state == LongCtrlState.off or CS.gasPressed:
       self.reset(v_ego_pid)
       output_accel = 0.
-
+      
     # tracking objects and driving
     elif self.long_control_state == LongCtrlState.pid:
       self.v_pid = v_target
-
-      self.longPlan = long_plan.longitudinalPlanSource
-      self.coasting_lead_d = long_plan.leadDist
-      self.coasting_lead_v = long_plan.leadV
-      self.tr = long_plan.desiredFollowDistance
       
-
       # Toyota starts braking more when it thinks you want to stop
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
       prevent_overshoot = not CP.stoppingControl and CS.vEgo < 1.5 and v_target_future < 0.7 and v_target_future < v_target
