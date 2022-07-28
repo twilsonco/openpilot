@@ -89,10 +89,10 @@ static void ui_draw_speed_sign(UIState *s, float x, float y, int size, float spe
 
     // "SPEED"
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
-    ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 15, "SPEED", 19 * 2.5, COLOR_BLACK, "sans-semibold");
+    ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 15, "SPEED", 19 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-semibold");
 
     // "LIMIT"
-    ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 54, "LIMIT", 19 * 2.5, COLOR_BLACK, "sans-semibold");
+    ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 54, "LIMIT", 19 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-semibold");
 
     // Speed limit value
     int speed_size = 46;
@@ -101,7 +101,7 @@ static void ui_draw_speed_sign(UIState *s, float x, float y, int size, float spe
       speed_size -= 6;
     }
 
-    ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 85, speedlimit_str.c_str(), speed_size * 2.5, COLOR_BLACK, "sans-bold");
+    ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 85, speedlimit_str.c_str(), speed_size * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-bold");
 
     s->scene.speed_limit_sign_touch_rect = sign_rect_outer;
   }
