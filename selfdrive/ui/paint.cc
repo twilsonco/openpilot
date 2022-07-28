@@ -577,978 +577,981 @@ static void ui_draw_measures(UIState *s){
     
     // now start from the top and draw the current set of metrics
     for (int i = 0; i < scene.measure_cur_num_slots; ++i){
-      char name[16], val[16], unit[8];
-      snprintf(name, sizeof(name), "");
-      snprintf(val, sizeof(val), "");
-      snprintf(unit, sizeof(unit), "");
-      NVGcolor val_color, label_color, unit_color;
-      int val_font_size, label_font_size, unit_font_size;
-      int g, b;
-      float p;
+      try{
+        char name[16], val[16], unit[8];
+        snprintf(name, sizeof(name), "");
+        snprintf(val, sizeof(val), "");
+        snprintf(unit, sizeof(unit), "");
+        NVGcolor val_color, label_color, unit_color;
+        int val_font_size, label_font_size, unit_font_size;
+        int g, b;
+        float p;
+        
+        val_color = default_val_color;
+        label_color = default_name_color;
+        unit_color = default_unit_color;
+        val_font_size = default_val_font_size;
+        label_font_size = default_name_font_size;
+        unit_font_size = default_unit_font_size;
       
-      val_color = default_val_color;
-      label_color = default_name_color;
-      unit_color = default_unit_color;
-      val_font_size = default_val_font_size;
-      label_font_size = default_name_font_size;
-      unit_font_size = default_unit_font_size;
-    
-      // switch to get metric strings/colors 
-      switch (scene.measure_slots[i]){
+        // switch to get metric strings/colors 
+        switch (scene.measure_slots[i]){
 
-        case UIMeasure::CPU_TEMP_AND_PERCENTF: 
-          {
-          auto cpus = scene.deviceState.getCpuUsagePercent();
-          float cpu = 0.;
-          int num_cpu = 0;
-          for (auto c : cpus){
-            cpu += c;
-            num_cpu++;
-          }
-          if (num_cpu > 1){
-            cpu /= num_cpu;
-          }
-          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%.0f%sF", scene.deviceState.getCpuTempC()[0] * 1.8 + 32., deg);
-          snprintf(unit, sizeof(unit), "%d%%", int(cpu));
-          snprintf(name, sizeof(name), "CPU");}
-          break;
-        
-        case UIMeasure::CPU_TEMPF: 
-          {
-          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%.0f", scene.deviceState.getCpuTempC()[0] * 1.8 + 32.);
-          snprintf(unit, sizeof(unit), "%sF", deg);
-          snprintf(name, sizeof(name), "CPU TEMP");}
-          break;
-        
-        case UIMeasure::MEMORY_TEMPF: 
-          {
-          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%.0f", scene.deviceState.getMemoryTempC() * 1.8 + 32.);
-          snprintf(unit, sizeof(unit), "%sF", deg);
-          snprintf(name, sizeof(name), "MEM TEMP");}
-          break;
-        
-        case UIMeasure::AMBIENT_TEMPF: 
-          {
-          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%.0f", scene.deviceState.getAmbientTempC() * 1.8 + 32.);
-          snprintf(unit, sizeof(unit), "%sF", deg);
-          snprintf(name, sizeof(name), "AMB TEMP");}
-          break;
+          case UIMeasure::CPU_TEMP_AND_PERCENTF: 
+            {
+            auto cpus = scene.deviceState.getCpuUsagePercent();
+            float cpu = 0.;
+            int num_cpu = 0;
+            for (auto c : cpus){
+              cpu += c;
+              num_cpu++;
+            }
+            if (num_cpu > 1){
+              cpu /= num_cpu;
+            }
+            val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+            snprintf(val, sizeof(val), "%.0f%sF", scene.deviceState.getCpuTempC()[0] * 1.8 + 32., deg);
+            snprintf(unit, sizeof(unit), "%d%%", int(cpu));
+            snprintf(name, sizeof(name), "CPU");}
+            break;
           
-        case UIMeasure::CPU_TEMP_AND_PERCENTC: 
-          {
-          auto cpus = scene.deviceState.getCpuUsagePercent();
-          float cpu = 0.;
-          int num_cpu = 0;
-          for (auto c : cpus){
-            cpu += c;
-            num_cpu++;
-          }
-          if (num_cpu > 1){
-            cpu /= num_cpu;
-          }
-          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-            snprintf(val, sizeof(val), "%.0f%sC", scene.deviceState.getCpuTempC()[0], deg);
-          snprintf(unit, sizeof(unit), "%d%%", int(cpu));
-          snprintf(name, sizeof(name), "CPU");}
-          break;
-        
-        case UIMeasure::CPU_TEMPC: 
-          {
-          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%.0f", scene.deviceState.getCpuTempC()[0]);
-          snprintf(unit, sizeof(unit), "%sC", deg);
-          snprintf(name, sizeof(name), "CPU TEMP");}
-          break;
-        
-        case UIMeasure::MEMORY_TEMPC: 
-          {
-          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%.0f", scene.deviceState.getMemoryTempC());
-          snprintf(unit, sizeof(unit), "%sC", deg);
-          snprintf(name, sizeof(name), "MEM TEMP");}
-          break;
-        
-        case UIMeasure::AMBIENT_TEMPC: 
-          {
-          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%.0f", scene.deviceState.getAmbientTempC());
-          snprintf(unit, sizeof(unit), "%sC", deg);
-          snprintf(name, sizeof(name), "AMB TEMP");}
-          break;
-        
-        case UIMeasure::CPU_PERCENT: 
-          {
-          auto cpus = scene.deviceState.getCpuUsagePercent();
-          float cpu = 0.;
-          int num_cpu = 0;
-          for (auto c : cpus){
-            cpu += c;
-            num_cpu++;
-          }
-          if (num_cpu > 1){
-            cpu /= num_cpu;
-          }
-          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%d%%", int(cpu));
-          snprintf(name, sizeof(name), "CPU PERC");}
-          break;
+          case UIMeasure::CPU_TEMPF: 
+            {
+            val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+            snprintf(val, sizeof(val), "%.0f", scene.deviceState.getCpuTempC()[0] * 1.8 + 32.);
+            snprintf(unit, sizeof(unit), "%sF", deg);
+            snprintf(name, sizeof(name), "CPU TEMP");}
+            break;
           
-        case UIMeasure::FANSPEED_PERCENT: 
-          {
-          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          int fs = scene.deviceState.getFanSpeedPercentDesired();
-          if (fs > 100){
-            fs = scene.fanspeed_rpm;
-            snprintf(unit, sizeof(unit), "RPM");
-            snprintf(val, sizeof(val), "%d", fs);
-          }
-          else{
-            snprintf(val, sizeof(val), "%d%%", fs);
-          }
-          snprintf(name, sizeof(name), "FAN");
-          }
-          break;
-        case UIMeasure::FANSPEED_RPM: 
-          {
-          val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
-          snprintf(val, sizeof(val), "%d", scene.fanspeed_rpm);
-          snprintf(name, sizeof(name), "FAN");
-          snprintf(unit, sizeof(unit), "RPM");}
-          break;
-        
-        case UIMeasure::MEMORY_USAGE_PERCENT: 
-          {
-          int mem_perc = scene.deviceState.getMemoryUsagePercent();
-          g = 255; 
-          b = 255;
-          p = 0.011764706 * (mem_perc); // red by 85%
-          g -= int(0.5 * p * 255.);
-          b -= int(p * 255.);
-          g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-          b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-          val_color = nvgRGBA(255, g, b, 200);
-          snprintf(val, sizeof(val), "%d%%", mem_perc);
-          snprintf(name, sizeof(name), "MEM USED");}
-          break;
-        
-        case UIMeasure::FREESPACE_STORAGE: 
-          {
-          int free_perc = scene.deviceState.getFreeSpacePercent();
-          g = 0;
-          b = 0;
-          p = 0.05 * free_perc; // white at or above 20% freespace
-          g += int((0.5+p) * 255.);
-          b += int(p * 255.);
-          g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-          b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-          val_color = nvgRGBA(255, g, b, 200);
-          snprintf(val, sizeof(val), "%d%%", free_perc);
-          snprintf(name, sizeof(name), "SSD FREE");}
-          break;
-
-        case UIMeasure::GPS_ACCURACY:
-          {
-          if (sm.updated("ubloxGnss")) {
-            auto data = sm["ubloxGnss"].getUbloxGnss();
-            if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
-              scene.satelliteCount = data.getMeasurementReport().getNumMeas();
+          case UIMeasure::MEMORY_TEMPF: 
+            {
+            val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+            snprintf(val, sizeof(val), "%.0f", scene.deviceState.getMemoryTempC() * 1.8 + 32.);
+            snprintf(unit, sizeof(unit), "%sF", deg);
+            snprintf(name, sizeof(name), "MEM TEMP");}
+            break;
+          
+          case UIMeasure::AMBIENT_TEMPF: 
+            {
+            val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+            snprintf(val, sizeof(val), "%.0f", scene.deviceState.getAmbientTempC() * 1.8 + 32.);
+            snprintf(unit, sizeof(unit), "%sF", deg);
+            snprintf(name, sizeof(name), "AMB TEMP");}
+            break;
+            
+          case UIMeasure::CPU_TEMP_AND_PERCENTC: 
+            {
+            auto cpus = scene.deviceState.getCpuUsagePercent();
+            float cpu = 0.;
+            int num_cpu = 0;
+            for (auto c : cpus){
+              cpu += c;
+              num_cpu++;
             }
-            auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
-            scene.gpsAccuracyUblox = data2.getAccuracy();
-          }
-          snprintf(name, sizeof(name), "GPS PREC");
-          if (scene.gpsAccuracyUblox != 0.00) {
-            //show red/orange if gps accuracy is low
-            if(scene.gpsAccuracyUblox > 0.85) {
-               val_color = nvgRGBA(255, 188, 3, 200);
+            if (num_cpu > 1){
+              cpu /= num_cpu;
             }
-            if(scene.gpsAccuracyUblox > 1.3) {
-               val_color = nvgRGBA(255, 0, 0, 200);
+            val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+              snprintf(val, sizeof(val), "%.0f%sC", scene.deviceState.getCpuTempC()[0], deg);
+            snprintf(unit, sizeof(unit), "%d%%", int(cpu));
+            snprintf(name, sizeof(name), "CPU");}
+            break;
+          
+          case UIMeasure::CPU_TEMPC: 
+            {
+            val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+            snprintf(val, sizeof(val), "%.0f", scene.deviceState.getCpuTempC()[0]);
+            snprintf(unit, sizeof(unit), "%sC", deg);
+            snprintf(name, sizeof(name), "CPU TEMP");}
+            break;
+          
+          case UIMeasure::MEMORY_TEMPC: 
+            {
+            val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+            snprintf(val, sizeof(val), "%.0f", scene.deviceState.getMemoryTempC());
+            snprintf(unit, sizeof(unit), "%sC", deg);
+            snprintf(name, sizeof(name), "MEM TEMP");}
+            break;
+          
+          case UIMeasure::AMBIENT_TEMPC: 
+            {
+            val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+            snprintf(val, sizeof(val), "%.0f", scene.deviceState.getAmbientTempC());
+            snprintf(unit, sizeof(unit), "%sC", deg);
+            snprintf(name, sizeof(name), "AMB TEMP");}
+            break;
+          
+          case UIMeasure::CPU_PERCENT: 
+            {
+            auto cpus = scene.deviceState.getCpuUsagePercent();
+            float cpu = 0.;
+            int num_cpu = 0;
+            for (auto c : cpus){
+              cpu += c;
+              num_cpu++;
             }
-            // gps accuracy is always in meters
-            if(scene.gpsAccuracyUblox > 99 || scene.gpsAccuracyUblox == 0) {
-               snprintf(val, sizeof(val), "None");
-            }else if(scene.gpsAccuracyUblox > 9.99) {
-              snprintf(val, sizeof(val), "%.1f", scene.gpsAccuracyUblox);
+            if (num_cpu > 1){
+              cpu /= num_cpu;
             }
-            else {
-              snprintf(val, sizeof(val), "%.2f", scene.gpsAccuracyUblox);
-            }
-            snprintf(unit, sizeof(unit), "%d", scene.satelliteCount);
-          }}
-          break;
-
-        case UIMeasure::ALTITUDE:
-          {
-          if (sm.updated("gpsLocationExternal")) {
-            auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
-            scene.altitudeUblox = data2.getAltitude();
-            scene.gpsAccuracyUblox = data2.getAccuracy();
-          }
-          snprintf(name, sizeof(name), "ALTITUDE");
-          if (scene.gpsAccuracyUblox != 0.00) {
-            float tmp_val;
-            if (s->is_metric) {
-              tmp_val = scene.altitudeUblox;
-              snprintf(val, sizeof(val), "%.0f", scene.altitudeUblox);
-              snprintf(unit, sizeof(unit), "m");
-            } else {
-              tmp_val = scene.altitudeUblox * 3.2808399;
-              snprintf(val, sizeof(val), "%.0f", tmp_val);
-              snprintf(unit, sizeof(unit), "ft");
-            }
-            if (log10(tmp_val) >= 4){
-              val_font_size -= 10;
-            }
-          }}
-          break;
-
-        case UIMeasure::STEERING_TORQUE_EPS:
-          {
-          snprintf(name, sizeof(name), "EPS TRQ");
-          //TODO: Add orange/red color depending on torque intensity. <1x limit = white, btwn 1x-2x limit = orange, >2x limit = red
-          snprintf(val, sizeof(val), "%.1f", scene.car_state.getSteeringTorqueEps());
-          snprintf(unit, sizeof(unit), "Nm");
-          break;}
-
-        case UIMeasure::ACCELERATION:
-          {
-          snprintf(name, sizeof(name), "ACCEL");
-          snprintf(val, sizeof(val), "%.1f", scene.car_state.getAEgo());
-          snprintf(unit, sizeof(unit), "m/s²");
-          break;}
-        
-        case UIMeasure::LAT_ACCEL:
-          {
-          snprintf(name, sizeof(name), "LAT ACC");
-          snprintf(val, sizeof(val), "%.1f", sm["liveLocationKalman"].getLiveLocationKalman().getAccelerationCalibrated().getValue()[1]);
-          snprintf(unit, sizeof(unit), "m/s²");
-          break;}
-        
-        case UIMeasure::VISION_CURLATACCEL:
-          {
-          snprintf(name, sizeof(name), "V:LAT ACC");
-          snprintf(val, sizeof(val), "%.1f", sm["longitudinalPlan"].getLongitudinalPlan().getVisionCurrentLateralAcceleration());
-          snprintf(unit, sizeof(unit), "m/s²");
-          break;}
-        
-        case UIMeasure::VISION_MAXVFORCURCURV:
-          {
-          snprintf(name, sizeof(name), "V:MX CUR V");
-          snprintf(val, sizeof(val), "%.1f", sm["longitudinalPlan"].getLongitudinalPlan().getVisionMaxVForCurrentCurvature() * 2.24);
-          snprintf(unit, sizeof(unit), "mph");
-          break;}
-        
-        case UIMeasure::VISION_MAXPREDLATACCEL:
-          {
-          snprintf(name, sizeof(name), "V:MX PLA");
-          snprintf(val, sizeof(val), "%.1f", sm["longitudinalPlan"].getLongitudinalPlan().getVisionMaxPredictedLateralAcceleration());
-          snprintf(unit, sizeof(unit), "m/s²");
-          break;}
-        
-        case UIMeasure::LEAD_TTC:
-          {
-          snprintf(name, sizeof(name), "TTC");
-          if (scene.lead_status && scene.lead_v_rel < 0.) {
-            float ttc = -scene.lead_d_rel / scene.lead_v_rel;
-            g = 0;
-            b = 0;
-            p = 0.333 * ttc; // red for <= 3s
-            g += int((0.5+p) * 255.);
-            b += int(p * 255.);
-            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-            val_color = nvgRGBA(255, g, b, 200);
-            if (ttc > 99.){
-              snprintf(val, sizeof(val), "99+");
-            }
-            else if (ttc >= 10.){
-              snprintf(val, sizeof(val), "%.0f", ttc);
+            val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+            snprintf(val, sizeof(val), "%d%%", int(cpu));
+            snprintf(name, sizeof(name), "CPU PERC");}
+            break;
+            
+          case UIMeasure::FANSPEED_PERCENT: 
+            {
+            val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+            int fs = scene.deviceState.getFanSpeedPercentDesired();
+            if (fs > 100){
+              fs = scene.fanspeed_rpm;
+              snprintf(unit, sizeof(unit), "RPM");
+              snprintf(val, sizeof(val), "%d", fs);
             }
             else{
-              snprintf(val, sizeof(val), "%.1f", ttc);
+              snprintf(val, sizeof(val), "%d%%", fs);
             }
-          } else {
-             snprintf(val, sizeof(val), "-");
-          }
-          snprintf(unit, sizeof(unit), "s");}
-          break;
-
-        case UIMeasure::LEAD_DISTANCE_LENGTH:
-          {
-            snprintf(name, sizeof(name), "REL DIST");
-            if (scene.lead_status) {
-              if (s->is_metric) {
-                g = 0;
-                b = 0;
-                p = 0.0333 * scene.lead_d_rel;
-                g += int((0.5+p) * 255.);
-                b += int(p * 255.);
-                g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-                b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-                val_color = nvgRGBA(255, g, b, 200);
-                snprintf(val, sizeof(val), "%.0f", scene.lead_d_rel);
-              }
-              else{
-                g = 0;
-                b = 0;
-                p = 0.01 * scene.lead_d_rel * 3.281;
-                g += int((0.5+p) * 255.);
-                b += int(p * 255.);
-                g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-                b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-                val_color = nvgRGBA(255, g, b, 200);
-                float d_ft = scene.lead_d_rel * 3.281;
-                snprintf(val, sizeof(val), "%.0f", d_ft);
-              }
-            } else {
-               snprintf(val, sizeof(val), "-");
+            snprintf(name, sizeof(name), "FAN");
             }
-            if (s->is_metric) {
-              snprintf(unit, sizeof(unit), "m");
-            }
-            else{
-              snprintf(unit, sizeof(unit), "ft");
-            }
-          }
-          break;
-      
-        case UIMeasure::LEAD_DESIRED_DISTANCE_LENGTH:
-          {
-            snprintf(name, sizeof(name), "REL:DES DIST");
-            auto follow_d = scene.desiredFollowDistance * scene.car_state.getVEgo() + scene.stoppingDistance;
-            if (scene.lead_status) {
-              if (s->is_metric) {
-                g = 0;
-                b = 0;
-                p = 0.0333 * scene.lead_d_rel;
-                g += int((0.5+p) * 255.);
-                b += int(p * 255.);
-                g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-                b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-                val_color = nvgRGBA(255, g, b, 200);
-                snprintf(val, sizeof(val), "%d:%d", (int)scene.lead_d_rel, (int)follow_d);
-              }
-              else{
-                g = 0;
-                b = 0;
-                p = 0.01 * scene.lead_d_rel * 3.281;
-                g += int((0.5+p) * 255.);
-                b += int(p * 255.);
-                g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-                b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-                val_color = nvgRGBA(255, g, b, 200);
-                snprintf(val, sizeof(val), "%d:%d", (int)(scene.lead_d_rel * 3.281), (int)(follow_d * 3.281));
-              }
-            } else {
-               snprintf(val, sizeof(val), "-");
-            }
-            if (s->is_metric) {
-              snprintf(unit, sizeof(unit), "m");
-            }
-            else{
-              snprintf(unit, sizeof(unit), "ft");
-            }
-          }
-          break;
+            break;
+          case UIMeasure::FANSPEED_RPM: 
+            {
+            val_color = color_from_thermal_status(int(scene.deviceState.getThermalStatus()));
+            snprintf(val, sizeof(val), "%d", scene.fanspeed_rpm);
+            snprintf(name, sizeof(name), "FAN");
+            snprintf(unit, sizeof(unit), "RPM");}
+            break;
           
-        case UIMeasure::LEAD_DISTANCE_TIME:
-          {
-          snprintf(name, sizeof(name), "REL DIST");
-          if (scene.lead_status && scene.car_state.getVEgo() > 0.5) {
-            float follow_t = scene.lead_d_rel / scene.car_state.getVEgo();
-            g = 0;
-            b = 0;
-            p = 0.6667 * follow_t;
-            g += int((0.5+p) * 255.);
-            b += int(p * 255.);
-            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-            val_color = nvgRGBA(255, g, b, 200);
-            snprintf(val, sizeof(val), "%.1f", follow_t);
-          } else {
-            snprintf(val, sizeof(val), "-");
-          }
-          snprintf(unit, sizeof(unit), "s");}
-          break;
-        
-        case UIMeasure::LEAD_DESIRED_DISTANCE_TIME:
-          {
-          snprintf(name, sizeof(name), "REL:DES DIST");
-          if (scene.lead_status && scene.car_state.getVEgo() > 0.5) {
-            float follow_t = scene.lead_d_rel / scene.car_state.getVEgo();
-            float des_follow_t = scene.desiredFollowDistance + scene.stoppingDistance / scene.car_state.getVEgo();
-            g = 0;
-            b = 0;
-            p = 0.6667 * follow_t;
-            g += int((0.5+p) * 255.);
-            b += int(p * 255.);
-            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-            val_color = nvgRGBA(255, g, b, 200);
-            snprintf(val, sizeof(val), "%.1f:%.1f", follow_t, des_follow_t);
-          } else {
-             snprintf(val, sizeof(val), "-");
-          }
-          snprintf(unit, sizeof(unit), "s");}
-          break;
-        
-        case UIMeasure::LEAD_COSTS:
-          {
-            snprintf(name, sizeof(name), "D:A COST");
-            if (scene.lead_status && scene.car_state.getVEgo() > 0.5) {
-              snprintf(val, sizeof(val), "%.1f:%.1f", scene.followDistanceCost, scene.followAccelCost);
-            } else {
-               snprintf(val, sizeof(val), "-");
-            }
-          }
-          break;
-
-        case UIMeasure::LEAD_VELOCITY_RELATIVE:
-          {
-          snprintf(name, sizeof(name), "REL SPEED");
-          if (scene.lead_status) {
+          case UIMeasure::MEMORY_USAGE_PERCENT: 
+            {
+            int mem_perc = scene.deviceState.getMemoryUsagePercent();
             g = 255; 
             b = 255;
-            p = -0.2 * (scene.lead_v_rel);
+            p = 0.011764706 * (mem_perc); // red by 85%
             g -= int(0.5 * p * 255.);
             b -= int(p * 255.);
             g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
             b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
             val_color = nvgRGBA(255, g, b, 200);
-            // lead car relative speed is always in meters
-            if (s->is_metric) {
-               snprintf(val, sizeof(val), "%.1f", (scene.lead_v_rel * 3.6));
-            } else {
-               snprintf(val, sizeof(val), "%.1f", (scene.lead_v_rel * 2.2374144));
+            snprintf(val, sizeof(val), "%d%%", mem_perc);
+            snprintf(name, sizeof(name), "MEM USED");}
+            break;
+          
+          case UIMeasure::FREESPACE_STORAGE: 
+            {
+            int free_perc = scene.deviceState.getFreeSpacePercent();
+            g = 0;
+            b = 0;
+            p = 0.05 * free_perc; // white at or above 20% freespace
+            g += int((0.5+p) * 255.);
+            b += int(p * 255.);
+            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+            val_color = nvgRGBA(255, g, b, 200);
+            snprintf(val, sizeof(val), "%d%%", free_perc);
+            snprintf(name, sizeof(name), "SSD FREE");}
+            break;
+
+          case UIMeasure::GPS_ACCURACY:
+            {
+            if (sm.updated("ubloxGnss")) {
+              auto data = sm["ubloxGnss"].getUbloxGnss();
+              if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
+                scene.satelliteCount = data.getMeasurementReport().getNumMeas();
+              }
+              auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
+              scene.gpsAccuracyUblox = data2.getAccuracy();
             }
-          } else {
-             snprintf(val, sizeof(val), "-");
-          }
-          if (s->is_metric) {
-            snprintf(unit, sizeof(unit), "km/h");;
-          } else {
+            snprintf(name, sizeof(name), "GPS PREC");
+            if (scene.gpsAccuracyUblox != 0.00) {
+              //show red/orange if gps accuracy is low
+              if(scene.gpsAccuracyUblox > 0.85) {
+                val_color = nvgRGBA(255, 188, 3, 200);
+              }
+              if(scene.gpsAccuracyUblox > 1.3) {
+                val_color = nvgRGBA(255, 0, 0, 200);
+              }
+              // gps accuracy is always in meters
+              if(scene.gpsAccuracyUblox > 99 || scene.gpsAccuracyUblox == 0) {
+                snprintf(val, sizeof(val), "None");
+              }else if(scene.gpsAccuracyUblox > 9.99) {
+                snprintf(val, sizeof(val), "%.1f", scene.gpsAccuracyUblox);
+              }
+              else {
+                snprintf(val, sizeof(val), "%.2f", scene.gpsAccuracyUblox);
+              }
+              snprintf(unit, sizeof(unit), "%d", scene.satelliteCount);
+            }}
+            break;
+
+          case UIMeasure::ALTITUDE:
+            {
+            if (sm.updated("gpsLocationExternal")) {
+              auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
+              scene.altitudeUblox = data2.getAltitude();
+              scene.gpsAccuracyUblox = data2.getAccuracy();
+            }
+            snprintf(name, sizeof(name), "ALTITUDE");
+            if (scene.gpsAccuracyUblox != 0.00) {
+              float tmp_val;
+              if (s->is_metric) {
+                tmp_val = scene.altitudeUblox;
+                snprintf(val, sizeof(val), "%.0f", scene.altitudeUblox);
+                snprintf(unit, sizeof(unit), "m");
+              } else {
+                tmp_val = scene.altitudeUblox * 3.2808399;
+                snprintf(val, sizeof(val), "%.0f", tmp_val);
+                snprintf(unit, sizeof(unit), "ft");
+              }
+              if (log10(tmp_val) >= 4){
+                val_font_size -= 10;
+              }
+            }}
+            break;
+
+          case UIMeasure::STEERING_TORQUE_EPS:
+            {
+            snprintf(name, sizeof(name), "EPS TRQ");
+            //TODO: Add orange/red color depending on torque intensity. <1x limit = white, btwn 1x-2x limit = orange, >2x limit = red
+            snprintf(val, sizeof(val), "%.1f", scene.car_state.getSteeringTorqueEps());
+            snprintf(unit, sizeof(unit), "Nm");
+            break;}
+
+          case UIMeasure::ACCELERATION:
+            {
+            snprintf(name, sizeof(name), "ACCEL");
+            snprintf(val, sizeof(val), "%.1f", scene.car_state.getAEgo());
+            snprintf(unit, sizeof(unit), "m/s²");
+            break;}
+          
+          case UIMeasure::LAT_ACCEL:
+            {
+            snprintf(name, sizeof(name), "LAT ACC");
+            snprintf(val, sizeof(val), "%.1f", sm["liveLocationKalman"].getLiveLocationKalman().getAccelerationCalibrated().getValue()[1]);
+            snprintf(unit, sizeof(unit), "m/s²");
+            break;}
+          
+          case UIMeasure::VISION_CURLATACCEL:
+            {
+            snprintf(name, sizeof(name), "V:LAT ACC");
+            snprintf(val, sizeof(val), "%.1f", sm["longitudinalPlan"].getLongitudinalPlan().getVisionCurrentLateralAcceleration());
+            snprintf(unit, sizeof(unit), "m/s²");
+            break;}
+          
+          case UIMeasure::VISION_MAXVFORCURCURV:
+            {
+            snprintf(name, sizeof(name), "V:MX CUR V");
+            snprintf(val, sizeof(val), "%.1f", sm["longitudinalPlan"].getLongitudinalPlan().getVisionMaxVForCurrentCurvature() * 2.24);
             snprintf(unit, sizeof(unit), "mph");
-          }}
-          break;
+            break;}
+          
+          case UIMeasure::VISION_MAXPREDLATACCEL:
+            {
+            snprintf(name, sizeof(name), "V:MX PLA");
+            snprintf(val, sizeof(val), "%.1f", sm["longitudinalPlan"].getLongitudinalPlan().getVisionMaxPredictedLateralAcceleration());
+            snprintf(unit, sizeof(unit), "m/s²");
+            break;}
+          
+          case UIMeasure::LEAD_TTC:
+            {
+            snprintf(name, sizeof(name), "TTC");
+            if (scene.lead_status && scene.lead_v_rel < 0.) {
+              float ttc = -scene.lead_d_rel / scene.lead_v_rel;
+              g = 0;
+              b = 0;
+              p = 0.333 * ttc; // red for <= 3s
+              g += int((0.5+p) * 255.);
+              b += int(p * 255.);
+              g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+              b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+              val_color = nvgRGBA(255, g, b, 200);
+              if (ttc > 99.){
+                snprintf(val, sizeof(val), "99+");
+              }
+              else if (ttc >= 10.){
+                snprintf(val, sizeof(val), "%.0f", ttc);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.1f", ttc);
+              }
+            } else {
+              snprintf(val, sizeof(val), "-");
+            }
+            snprintf(unit, sizeof(unit), "s");}
+            break;
+
+          case UIMeasure::LEAD_DISTANCE_LENGTH:
+            {
+              snprintf(name, sizeof(name), "REL DIST");
+              if (scene.lead_status) {
+                if (s->is_metric) {
+                  g = 0;
+                  b = 0;
+                  p = 0.0333 * scene.lead_d_rel;
+                  g += int((0.5+p) * 255.);
+                  b += int(p * 255.);
+                  g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+                  b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+                  val_color = nvgRGBA(255, g, b, 200);
+                  snprintf(val, sizeof(val), "%.0f", scene.lead_d_rel);
+                }
+                else{
+                  g = 0;
+                  b = 0;
+                  p = 0.01 * scene.lead_d_rel * 3.281;
+                  g += int((0.5+p) * 255.);
+                  b += int(p * 255.);
+                  g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+                  b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+                  val_color = nvgRGBA(255, g, b, 200);
+                  float d_ft = scene.lead_d_rel * 3.281;
+                  snprintf(val, sizeof(val), "%.0f", d_ft);
+                }
+              } else {
+                snprintf(val, sizeof(val), "-");
+              }
+              if (s->is_metric) {
+                snprintf(unit, sizeof(unit), "m");
+              }
+              else{
+                snprintf(unit, sizeof(unit), "ft");
+              }
+            }
+            break;
         
-        case UIMeasure::LEAD_VELOCITY_ABS: 
-          {
-          snprintf(name, sizeof(name), "LEAD SPD");
-          if (scene.lead_status) {
-            if (s->is_metric) {
-              float v = (scene.lead_v * 3.6);
-              if (v < 100.){
-                snprintf(val, sizeof(val), "%.1f", v);
+          case UIMeasure::LEAD_DESIRED_DISTANCE_LENGTH:
+            {
+              snprintf(name, sizeof(name), "REL:DES DIST");
+              auto follow_d = scene.desiredFollowDistance * scene.car_state.getVEgo() + scene.stoppingDistance;
+              if (scene.lead_status) {
+                if (s->is_metric) {
+                  g = 0;
+                  b = 0;
+                  p = 0.0333 * scene.lead_d_rel;
+                  g += int((0.5+p) * 255.);
+                  b += int(p * 255.);
+                  g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+                  b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+                  val_color = nvgRGBA(255, g, b, 200);
+                  snprintf(val, sizeof(val), "%d:%d", (int)scene.lead_d_rel, (int)follow_d);
+                }
+                else{
+                  g = 0;
+                  b = 0;
+                  p = 0.01 * scene.lead_d_rel * 3.281;
+                  g += int((0.5+p) * 255.);
+                  b += int(p * 255.);
+                  g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+                  b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+                  val_color = nvgRGBA(255, g, b, 200);
+                  snprintf(val, sizeof(val), "%d:%d", (int)(scene.lead_d_rel * 3.281), (int)(follow_d * 3.281));
+                }
+              } else {
+                snprintf(val, sizeof(val), "-");
+              }
+              if (s->is_metric) {
+                snprintf(unit, sizeof(unit), "m");
               }
               else{
-                snprintf(val, sizeof(val), "%.0f", v);
+                snprintf(unit, sizeof(unit), "ft");
+              }
+            }
+            break;
+            
+          case UIMeasure::LEAD_DISTANCE_TIME:
+            {
+            snprintf(name, sizeof(name), "REL DIST");
+            if (scene.lead_status && scene.car_state.getVEgo() > 0.5) {
+              float follow_t = scene.lead_d_rel / scene.car_state.getVEgo();
+              g = 0;
+              b = 0;
+              p = 0.6667 * follow_t;
+              g += int((0.5+p) * 255.);
+              b += int(p * 255.);
+              g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+              b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+              val_color = nvgRGBA(255, g, b, 200);
+              snprintf(val, sizeof(val), "%.1f", follow_t);
+            } else {
+              snprintf(val, sizeof(val), "-");
+            }
+            snprintf(unit, sizeof(unit), "s");}
+            break;
+          
+          case UIMeasure::LEAD_DESIRED_DISTANCE_TIME:
+            {
+            snprintf(name, sizeof(name), "REL:DES DIST");
+            if (scene.lead_status && scene.car_state.getVEgo() > 0.5) {
+              float follow_t = scene.lead_d_rel / scene.car_state.getVEgo();
+              float des_follow_t = scene.desiredFollowDistance + scene.stoppingDistance / scene.car_state.getVEgo();
+              g = 0;
+              b = 0;
+              p = 0.6667 * follow_t;
+              g += int((0.5+p) * 255.);
+              b += int(p * 255.);
+              g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+              b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+              val_color = nvgRGBA(255, g, b, 200);
+              snprintf(val, sizeof(val), "%.1f:%.1f", follow_t, des_follow_t);
+            } else {
+              snprintf(val, sizeof(val), "-");
+            }
+            snprintf(unit, sizeof(unit), "s");}
+            break;
+          
+          case UIMeasure::LEAD_COSTS:
+            {
+              snprintf(name, sizeof(name), "D:A COST");
+              if (scene.lead_status && scene.car_state.getVEgo() > 0.5) {
+                snprintf(val, sizeof(val), "%.1f:%.1f", scene.followDistanceCost, scene.followAccelCost);
+              } else {
+                snprintf(val, sizeof(val), "-");
+              }
+            }
+            break;
+
+          case UIMeasure::LEAD_VELOCITY_RELATIVE:
+            {
+            snprintf(name, sizeof(name), "REL SPEED");
+            if (scene.lead_status) {
+              g = 255; 
+              b = 255;
+              p = -0.2 * (scene.lead_v_rel);
+              g -= int(0.5 * p * 255.);
+              b -= int(p * 255.);
+              g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+              b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+              val_color = nvgRGBA(255, g, b, 200);
+              // lead car relative speed is always in meters
+              if (s->is_metric) {
+                snprintf(val, sizeof(val), "%.1f", (scene.lead_v_rel * 3.6));
+              } else {
+                snprintf(val, sizeof(val), "%.1f", (scene.lead_v_rel * 2.2374144));
               }
             } else {
-              float v = (scene.lead_v * 2.2374144);
-              if (v < 100.){
-                snprintf(val, sizeof(val), "%.1f", v);
-              }
-              else{
-                snprintf(val, sizeof(val), "%.0f", v);
-              }
+              snprintf(val, sizeof(val), "-");
             }
-          } else {
-             snprintf(val, sizeof(val), "-");
-          }
-          if (s->is_metric) {
-            snprintf(unit, sizeof(unit), "km/h");;
-          } else {
-            snprintf(unit, sizeof(unit), "mph");
-          }}
-          break;
+            if (s->is_metric) {
+              snprintf(unit, sizeof(unit), "km/h");;
+            } else {
+              snprintf(unit, sizeof(unit), "mph");
+            }}
+            break;
+          
+          case UIMeasure::LEAD_VELOCITY_ABS: 
+            {
+            snprintf(name, sizeof(name), "LEAD SPD");
+            if (scene.lead_status) {
+              if (s->is_metric) {
+                float v = (scene.lead_v * 3.6);
+                if (v < 100.){
+                  snprintf(val, sizeof(val), "%.1f", v);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.0f", v);
+                }
+              } else {
+                float v = (scene.lead_v * 2.2374144);
+                if (v < 100.){
+                  snprintf(val, sizeof(val), "%.1f", v);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.0f", v);
+                }
+              }
+            } else {
+              snprintf(val, sizeof(val), "-");
+            }
+            if (s->is_metric) {
+              snprintf(unit, sizeof(unit), "km/h");;
+            } else {
+              snprintf(unit, sizeof(unit), "mph");
+            }}
+            break;
 
-        case UIMeasure::STEERING_ANGLE: 
-          {
-          snprintf(name, sizeof(name), "REAL STEER");
-          float angleSteers = scene.angleSteers > 0. ? scene.angleSteers : -scene.angleSteers;
-          g = 255;
-          b = 255;
-          p = 0.0333 * angleSteers;
-          g -= int(0.5 * p * 255.);
-          b -= int(p * 255.);
-          g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-          b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-          val_color = nvgRGBA(255, g, b, 200);
-          // steering is in degrees
-          if (scene.angleSteers < 10.){
-            snprintf(val, sizeof(val), "%.1f%s", scene.angleSteers, deg);
-          }
-          else{
-            snprintf(val, sizeof(val), "%.0f%s", scene.angleSteers, deg);
-          }
-          }
-          break;
-
-        case UIMeasure::DESIRED_STEERING_ANGLE: 
-          {
-          snprintf(name, sizeof(name), "REL:DES STR.");
-          float angleSteers = scene.angleSteers > 0. ? scene.angleSteers : -scene.angleSteers;
-          g = 255;
-          b = 255;
-          p = 0.0333 * angleSteers;
-          g -= int(0.5 * p * 255.);
-          b -= int(p * 255.);
-          g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-          b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-          val_color = nvgRGBA(255, g, b, 200);
-          if (scene.controls_state.getEnabled()) {
+          case UIMeasure::STEERING_ANGLE: 
+            {
+            snprintf(name, sizeof(name), "REAL STEER");
+            float angleSteers = scene.angleSteers > 0. ? scene.angleSteers : -scene.angleSteers;
+            g = 255;
+            b = 255;
+            p = 0.0333 * angleSteers;
+            g -= int(0.5 * p * 255.);
+            b -= int(p * 255.);
+            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+            val_color = nvgRGBA(255, g, b, 200);
             // steering is in degrees
-            if (scene.angleSteers < 10. && scene.angleSteersDes < 10.){
-              snprintf(val, sizeof(val), "%.1f%s:%.1f%s", scene.angleSteers, deg, scene.angleSteersDes, deg);
-            }
-            else{
-              snprintf(val, sizeof(val), "%.0f%s:%.0f%s", scene.angleSteers, deg, scene.angleSteersDes, deg);
-            }
-            val_font_size += 12;
-          }else{
             if (scene.angleSteers < 10.){
               snprintf(val, sizeof(val), "%.1f%s", scene.angleSteers, deg);
             }
             else{
               snprintf(val, sizeof(val), "%.0f%s", scene.angleSteers, deg);
             }
-          }
-          }
-          break;
+            }
+            break;
 
-        case UIMeasure::STEERING_ANGLE_ERROR: 
-          {
-          snprintf(name, sizeof(name), "STR. ERR.");
-          float angleSteers = scene.angleSteersErr > 0. ? scene.angleSteersErr : -scene.angleSteersErr;
-          if (scene.controls_state.getEnabled()) {
+          case UIMeasure::DESIRED_STEERING_ANGLE: 
+            {
+            snprintf(name, sizeof(name), "REL:DES STR.");
+            float angleSteers = scene.angleSteers > 0. ? scene.angleSteers : -scene.angleSteers;
             g = 255;
             b = 255;
-            p = 0.2 * angleSteers;
+            p = 0.0333 * angleSteers;
             g -= int(0.5 * p * 255.);
             b -= int(p * 255.);
             g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
             b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
             val_color = nvgRGBA(255, g, b, 200);
-            // steering is in degrees
-            if (angleSteers < 10.){
-              snprintf(val, sizeof(val), "%.1f%s", scene.angleSteersErr, deg);
+            if (scene.controls_state.getEnabled()) {
+              // steering is in degrees
+              if (scene.angleSteers < 10. && scene.angleSteersDes < 10.){
+                snprintf(val, sizeof(val), "%.1f%s:%.1f%s", scene.angleSteers, deg, scene.angleSteersDes, deg);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.0f%s:%.0f%s", scene.angleSteers, deg, scene.angleSteersDes, deg);
+              }
+              val_font_size += 12;
+            }else{
+              if (scene.angleSteers < 10.){
+                snprintf(val, sizeof(val), "%.1f%s", scene.angleSteers, deg);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.0f%s", scene.angleSteers, deg);
+              }
+            }
+            }
+            break;
+
+          case UIMeasure::STEERING_ANGLE_ERROR: 
+            {
+            snprintf(name, sizeof(name), "STR. ERR.");
+            float angleSteers = scene.angleSteersErr > 0. ? scene.angleSteersErr : -scene.angleSteersErr;
+            if (scene.controls_state.getEnabled()) {
+              g = 255;
+              b = 255;
+              p = 0.2 * angleSteers;
+              g -= int(0.5 * p * 255.);
+              b -= int(p * 255.);
+              g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+              b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+              val_color = nvgRGBA(255, g, b, 200);
+              // steering is in degrees
+              if (angleSteers < 10.){
+                snprintf(val, sizeof(val), "%.1f%s", scene.angleSteersErr, deg);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.0f%s", scene.angleSteersErr, deg);
+              }
+              val_font_size += 12;
+            }else{
+              snprintf(val, sizeof(val), "-");
+            }
+            }
+            break;
+
+          case UIMeasure::ENGINE_RPM: 
+            {
+              snprintf(name, sizeof(name), "ENG RPM");
+              if(scene.engineRPM == 0) {
+                snprintf(val, sizeof(val), "OFF");
+              }
+              else {
+                snprintf(val, sizeof(val), "%d", scene.engineRPM);
+              }
+            }
+            break;
+            
+          case UIMeasure::ENGINE_RPM_TEMPC: 
+            {
+              snprintf(name, sizeof(name), "ENGINE");
+              int temp = scene.car_state.getEngineCoolantTemp();
+              snprintf(unit, sizeof(unit), "%d%sC", temp, deg);
+              if(scene.engineRPM == 0) {
+                snprintf(val, sizeof(val), "OFF");
+              }
+              else {
+                snprintf(val, sizeof(val), "%d", scene.engineRPM);
+                if (temp < 87){
+                  unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+                }
+                else if (temp > 120){
+                  unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+                }
+                else if (temp > 105){
+                  unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+                }
+              }
+            }
+            break;
+
+          case UIMeasure::ENGINE_RPM_TEMPF: 
+            {
+              snprintf(name, sizeof(name), "ENGINE");
+              int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
+              snprintf(unit, sizeof(unit), "%d%sF", temp, deg);
+              if(scene.engineRPM == 0) {
+                snprintf(val, sizeof(val), "OFF");
+              }
+              else {
+                snprintf(val, sizeof(val), "%d", scene.engineRPM);
+                if (temp < 190){
+                  unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+                }
+                else if (temp > 250){
+                  unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+                }
+                else if (temp > 220){
+                  unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+                }
+              }
+            }
+            break;
+            
+          case UIMeasure::COOLANT_TEMPC: 
+            {
+              snprintf(name, sizeof(name), "COOLANT");
+              snprintf(unit, sizeof(unit), "%sC", deg);
+              int temp = scene.car_state.getEngineCoolantTemp();
+              snprintf(val, sizeof(val), "%d", temp);
+              if(scene.engineRPM > 0) {
+                if (temp < 87){
+                  val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+                }
+                else if (temp > 120){
+                  val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+                }
+                else if (temp > 105){
+                  val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+                }
+              }
+            }
+            break;
+          
+          case UIMeasure::COOLANT_TEMPF: 
+            {
+              snprintf(name, sizeof(name), "COOLANT");
+              snprintf(unit, sizeof(unit), "%sF", deg);
+              int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
+              snprintf(val, sizeof(val), "%d", temp);
+              if(scene.engineRPM > 0) {
+                if (temp < 190){
+                  val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
+                }
+                else if (temp > 250){
+                  val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
+                }
+                else if (temp > 220){
+                  val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
+                }
+              }
+            }
+            break;
+          
+          case UIMeasure::PERCENT_GRADE:
+            {
+            auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
+            float altitudeUblox = data2.getAltitude();
+            float gpsAccuracyUblox = data2.getAccuracy();
+            if (scene.car_state.getVEgo() > 0.0){
+              scene.percentGradeCurDist += scene.car_state.getVEgo() * (scene.lastTime - scene.percentGradeLastTime);
+              if (scene.percentGradeCurDist > scene.percentGradeLenStep){ // record position/elevation at even length intervals
+                float prevDist = scene.percentGradePositions[scene.percentGradeRollingIter];
+                scene.percentGradeRollingIter++;
+                if (scene.percentGradeRollingIter >= scene.percentGradeNumSamples){
+                  if (!scene.percentGradeIterRolled){
+                    scene.percentGradeIterRolled = true;
+                    // Calculate initial mean percent grade
+                    float u = 0.;
+                    for (int i = 0; i < scene.percentGradeNumSamples; ++i){
+                      float rise = scene.percentGradeAltitudes[i] - scene.percentGradeAltitudes[(i+1)%scene.percentGradeNumSamples];
+                      float run = scene.percentGradePositions[i] - scene.percentGradePositions[(i+1)%scene.percentGradeNumSamples];
+                      if (run != 0.){
+                        scene.percentGrades[i] = rise/run * 100.;
+                        u += scene.percentGrades[i];
+                      }
+                    }
+                    u /= float(scene.percentGradeNumSamples);
+                    scene.percentGrade = u;
+                  }
+                  scene.percentGradeRollingIter = 0;
+                }
+                scene.percentGradeAltitudes[scene.percentGradeRollingIter] = altitudeUblox;
+                scene.percentGradePositions[scene.percentGradeRollingIter] = prevDist + scene.percentGradeCurDist;
+                if (scene.percentGradeIterRolled){
+                  float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
+                  float run = scene.percentGradePositions[scene.percentGradeRollingIter] - scene.percentGradePositions[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
+                  if (run != 0.){
+                    // update rolling average
+                    float newGrade = rise/run * 100.;
+                    scene.percentGrade -= scene.percentGrades[scene.percentGradeRollingIter] / float(scene.percentGradeNumSamples);
+                    scene.percentGrade += newGrade / float(scene.percentGradeNumSamples);
+                    scene.percentGrades[scene.percentGradeRollingIter] = newGrade;
+                  }
+                }
+                scene.percentGradeCurDist = 0.;
+              }
+            }
+            scene.percentGradeLastTime = scene.lastTime;
+
+            snprintf(name, sizeof(name), "GRADE (GPS)");
+            if (scene.percentGradeIterRolled && scene.percentGradePositions[scene.percentGradeRollingIter] >= scene.percentGradeMinDist && gpsAccuracyUblox != 0.00){
+              g = 255;
+              b = 255;
+              p = 0.125 * (scene.percentGrade > 0 ? scene.percentGrade : -scene.percentGrade); // red by 8% grade
+              g -= int(0.5 * p * 255.);
+              b -= int(p * 255.);
+              g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+              b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+              val_color = nvgRGBA(255, g, b, 200);
+              snprintf(val, sizeof(val), "%.1f%%", scene.percentGrade);
             }
             else{
-              snprintf(val, sizeof(val), "%.0f%s", scene.angleSteersErr, deg);
-            }
-            val_font_size += 12;
-          }else{
-            snprintf(val, sizeof(val), "-");
-          }
-          }
-          break;
-
-        case UIMeasure::ENGINE_RPM: 
-          {
-            snprintf(name, sizeof(name), "ENG RPM");
-            if(scene.engineRPM == 0) {
-              snprintf(val, sizeof(val), "OFF");
-            }
-            else {
-              snprintf(val, sizeof(val), "%d", scene.engineRPM);
-            }
-          }
-          break;
+              snprintf(val, sizeof(val), "-");
+            }}
+            break;
           
-        case UIMeasure::ENGINE_RPM_TEMPC: 
-          {
-            snprintf(name, sizeof(name), "ENGINE");
-            int temp = scene.car_state.getEngineCoolantTemp();
-            snprintf(unit, sizeof(unit), "%d%sC", temp, deg);
-            if(scene.engineRPM == 0) {
-              snprintf(val, sizeof(val), "OFF");
-            }
-            else {
-              snprintf(val, sizeof(val), "%d", scene.engineRPM);
-              if (temp < 87){
-                unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
-              }
-              else if (temp > 120){
-                unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
-              }
-              else if (temp > 105){
-                unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
-              }
-            }
-          }
-          break;
-
-        case UIMeasure::ENGINE_RPM_TEMPF: 
-          {
-            snprintf(name, sizeof(name), "ENGINE");
-            int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
-            snprintf(unit, sizeof(unit), "%d%sF", temp, deg);
-            if(scene.engineRPM == 0) {
-              snprintf(val, sizeof(val), "OFF");
-            }
-            else {
-              snprintf(val, sizeof(val), "%d", scene.engineRPM);
-              if (temp < 190){
-                unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
-              }
-              else if (temp > 250){
-                unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
-              }
-              else if (temp > 220){
-                unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
-              }
-            }
-          }
-          break;
-          
-        case UIMeasure::COOLANT_TEMPC: 
-          {
-            snprintf(name, sizeof(name), "COOLANT");
-            snprintf(unit, sizeof(unit), "%sC", deg);
-            int temp = scene.car_state.getEngineCoolantTemp();
-            snprintf(val, sizeof(val), "%d", temp);
-            if(scene.engineRPM > 0) {
-              if (temp < 87){
-                val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
-              }
-              else if (temp > 120){
-                val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
-              }
-              else if (temp > 105){
-                val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
-              }
-            }
-          }
-          break;
-        
-        case UIMeasure::COOLANT_TEMPF: 
-          {
-            snprintf(name, sizeof(name), "COOLANT");
-            snprintf(unit, sizeof(unit), "%sF", deg);
-            int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
-            snprintf(val, sizeof(val), "%d", temp);
-            if(scene.engineRPM > 0) {
-              if (temp < 190){
-                val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
-              }
-              else if (temp > 250){
-                val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
-              }
-              else if (temp > 220){
-                val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
-              }
-            }
-          }
-          break;
-        
-        case UIMeasure::PERCENT_GRADE:
-          {
-          auto data2 = sm["gpsLocationExternal"].getGpsLocationExternal();
-          float altitudeUblox = data2.getAltitude();
-          float gpsAccuracyUblox = data2.getAccuracy();
-          if (scene.car_state.getVEgo() > 0.0){
-            scene.percentGradeCurDist += scene.car_state.getVEgo() * (scene.lastTime - scene.percentGradeLastTime);
-            if (scene.percentGradeCurDist > scene.percentGradeLenStep){ // record position/elevation at even length intervals
-              float prevDist = scene.percentGradePositions[scene.percentGradeRollingIter];
-              scene.percentGradeRollingIter++;
-              if (scene.percentGradeRollingIter >= scene.percentGradeNumSamples){
-                if (!scene.percentGradeIterRolled){
-                  scene.percentGradeIterRolled = true;
-                  // Calculate initial mean percent grade
-                  float u = 0.;
-                  for (int i = 0; i < scene.percentGradeNumSamples; ++i){
-                    float rise = scene.percentGradeAltitudes[i] - scene.percentGradeAltitudes[(i+1)%scene.percentGradeNumSamples];
-                    float run = scene.percentGradePositions[i] - scene.percentGradePositions[(i+1)%scene.percentGradeNumSamples];
-                    if (run != 0.){
-                      scene.percentGrades[i] = rise/run * 100.;
-                      u += scene.percentGrades[i];
-                    }
-                  }
-                  u /= float(scene.percentGradeNumSamples);
-                  scene.percentGrade = u;
-                }
-                scene.percentGradeRollingIter = 0;
-              }
-              scene.percentGradeAltitudes[scene.percentGradeRollingIter] = altitudeUblox;
-              scene.percentGradePositions[scene.percentGradeRollingIter] = prevDist + scene.percentGradeCurDist;
-              if (scene.percentGradeIterRolled){
-                float rise = scene.percentGradeAltitudes[scene.percentGradeRollingIter] - scene.percentGradeAltitudes[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
-                float run = scene.percentGradePositions[scene.percentGradeRollingIter] - scene.percentGradePositions[(scene.percentGradeRollingIter+1)%scene.percentGradeNumSamples];
-                if (run != 0.){
-                  // update rolling average
-                  float newGrade = rise/run * 100.;
-                  scene.percentGrade -= scene.percentGrades[scene.percentGradeRollingIter] / float(scene.percentGradeNumSamples);
-                  scene.percentGrade += newGrade / float(scene.percentGradeNumSamples);
-                  scene.percentGrades[scene.percentGradeRollingIter] = newGrade;
-                }
-              }
-              scene.percentGradeCurDist = 0.;
-            }
-          }
-          scene.percentGradeLastTime = scene.lastTime;
-
-          snprintf(name, sizeof(name), "GRADE (GPS)");
-          if (scene.percentGradeIterRolled && scene.percentGradePositions[scene.percentGradeRollingIter] >= scene.percentGradeMinDist && gpsAccuracyUblox != 0.00){
+          case UIMeasure::PERCENT_GRADE_DEVICE:
+            {
+            scene.percentGradeDevice = tan(scene.car_state.getPitch()) * 100.;
+            snprintf(name, sizeof(name), "GRADE");
             g = 255;
             b = 255;
-            p = 0.125 * (scene.percentGrade > 0 ? scene.percentGrade : -scene.percentGrade); // red by 8% grade
+            p = 0.125 * (scene.percentGradeDevice > 0 ? scene.percentGradeDevice : -scene.percentGradeDevice); // red by 8% grade
             g -= int(0.5 * p * 255.);
             b -= int(p * 255.);
             g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
             b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
             val_color = nvgRGBA(255, g, b, 200);
-            snprintf(val, sizeof(val), "%.1f%%", scene.percentGrade);
+            snprintf(val, sizeof(val), "%.1f%%", scene.percentGradeDevice);
+            }
+            break;
+                    
+          case UIMeasure::ROLL_DEVICE:
+            {
+            float degroll = nvgRadToDeg(scene.device_roll);
+            snprintf(name, sizeof(name), "DEVICE ROLL");
+            val_color = nvgRGBA(255, 255, 255, 200);
+            snprintf(val, sizeof(val), "%.1f°", degroll);
+            }
+            break;
+
+          case UIMeasure::ROLL:
+            {
+            float degroll = nvgRadToDeg(scene.road_roll);
+            snprintf(name, sizeof(name), "ROAD ROLL");
+            val_color = nvgRGBA(255, 255, 255, 200);
+            snprintf(val, sizeof(val), "%.1f°", degroll);
+            }
+            break;
+
+          case UIMeasure::FOLLOW_LEVEL: 
+            {
+              std::string gap;
+              snprintf(name, sizeof(name), "GAP");
+              if (scene.dynamic_follow_active){
+                snprintf(val, sizeof(val), "%.1f", scene.dynamic_follow_level);
+              }else
+              {
+                switch (int(scene.car_state.getReaddistancelines())){
+                  case 1:
+                  gap =  "I";
+                  break;
+                
+                  case 2:
+                  gap =  "I I";
+                  break;
+                
+                  case 3:
+                  gap =  "I I I";
+                  break;
+                
+                  default:
+                  gap =  "";
+                  break;
+                }
+                snprintf(val, sizeof(val), "%s", gap.c_str());
+              }
+            }
+            break;
+            
+          case UIMeasure::HVB_VOLTAGE: 
+            {
+              snprintf(name, sizeof(name), "HVB VOLT");
+              snprintf(unit, sizeof(unit), "V");
+              float temp = scene.car_state.getHvbVoltage();
+              snprintf(val, sizeof(val), "%.0f", temp);
+              g = 255;
+              b = 255;
+              p = temp - 360.;
+              p = p > 0 ? p : -p;
+              p *= 0.01666667; // red by the time voltage deviates from nominal voltage (360) by 60V deviation from nominal
+              g -= int(0.5 * p * 255.);
+              b -= int(p * 255.);
+              g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+              b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+              val_color = nvgRGBA(255, g, b, 200);
+            }
+            break;
+          
+          case UIMeasure::HVB_CURRENT: 
+            {
+              snprintf(name, sizeof(name), "HVB CUR");
+              snprintf(unit, sizeof(unit), "A");
+              float temp = -scene.car_state.getHvbCurrent();
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              g = 255;
+              b = 255;
+              p = scene.car_state.getHvbVoltage() - 360.;
+              p = p > 0 ? p : -p;
+              p *= 0.01666667; // red by the time voltage deviates from nominal voltage (360) by 60V deviation from nominal
+              g -= int(0.5 * p * 255.);
+              b -= int(p * 255.);
+              g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+              b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+              val_color = nvgRGBA(255, g, b, 200);
+            }
+            break;
+          
+          case UIMeasure::HVB_WATTAGE: 
+            {
+              snprintf(name, sizeof(name), "HVB POW");
+              snprintf(unit, sizeof(unit), "kW");
+              float temp = -scene.car_state.getHvbWattage();
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              g = 255;
+              b = 255;
+              p = scene.car_state.getHvbVoltage() - 360.;
+              p = p > 0 ? p : -p;
+              p *= 0.01666667; // red by the time voltage deviates from nominal voltage (360) by 60V deviation from nominal
+              g -= int(0.5 * p * 255.);
+              b -= int(p * 255.);
+              g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+              b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+              val_color = nvgRGBA(255, g, b, 200);
+            }
+            break;
+          
+          case UIMeasure::HVB_WATTVOLT: 
+            {
+              snprintf(name, sizeof(name), "HVB kW");
+              float temp = -scene.car_state.getHvbWattage();
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              temp = scene.car_state.getHvbVoltage();
+              snprintf(unit, sizeof(unit), "%.0fV", temp);
+              g = 255;
+              b = 255;
+              p = temp - 360.;
+              p = p > 0 ? p : -p;
+              p *= 0.01666667; // red by the time voltage deviates from nominal voltage (360) by 60V deviation from nominal
+              g -= int(0.5 * p * 255.);
+              b -= int(p * 255.);
+              g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
+              b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
+              val_color = nvgRGBA(255, g, b, 200);
+            }
+            break;
+            
+          case UIMeasure::LANE_WIDTH: 
+            {
+              snprintf(name, sizeof(name), "LANE W");
+              if (s->is_metric){
+                snprintf(unit, sizeof(unit), "m");
+                snprintf(val, sizeof(val), "%f.1", scene.lateralPlan.laneWidth);
+              }
+              else{
+                snprintf(unit, sizeof(unit), "ft");
+                snprintf(val, sizeof(val), "%.1f", scene.lateralPlan.laneWidth * 3.281);
+              }
+            }
+            break;
+            
+          case UIMeasure::DEVICE_BATTERY: 
+            {
+              snprintf(name, sizeof(name), "DEVICE BATT.");
+              snprintf(unit, sizeof(unit), "%.1f A", float(scene.deviceState.getBatteryCurrent()) * 1e-6);
+              snprintf(val, sizeof(val), "%d", scene.deviceState.getBatteryPercent());
+            }
+            break;
+
+          default: {// invalid number
+            snprintf(name, sizeof(name), "INVALID");
+            snprintf(val, sizeof(val), "42");}
+            break;
+        }
+
+        nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+        // now print the metric
+        // first value
+        
+        int vallen = strlen(val);
+        if (vallen > 4){
+          val_font_size -= (vallen - 4) * 5;
+        }
+        int slot_x = s->scene.measure_slots_rect.x + (scene.measure_cur_num_slots <= 5 ? 0 : (i < 5 ? slots_r * 2 : 0));
+        int x = slot_x + slots_r - unit_font_size / 2;
+        if (i >= 5){
+          x = slot_x + slots_r + unit_font_size / 2;
+        }
+        int slot_y = s->scene.measure_slots_rect.y + (i % 5) * slot_y_rng;
+        int slot_y_mid = slot_y + slot_y_rng / 2;
+        int y = slot_y_mid + slot_y_rng / 2 - 8 - label_font_size;
+        if (strlen(name) == 0){
+          y += label_font_size / 2;
+        }
+        if (strlen(unit) == 0){
+          x = slot_x + slots_r;
+        }
+        nvgFontFace(s->vg, "sans-semibold");
+        nvgFontSize(s->vg, val_font_size);
+        nvgFillColor(s->vg, val_color);
+        nvgText(s->vg, x, y, val, NULL);
+      
+        // now label
+        y = slot_y_mid + slot_y_rng / 2 - 9;
+        nvgFontFace(s->vg, "sans-regular");
+        nvgFontSize(s->vg, label_font_size);
+        nvgFillColor(s->vg, label_color);
+        nvgText(s->vg, x, y, name, NULL);
+      
+        // now unit
+        if (strlen(unit) > 0){
+          nvgSave(s->vg);
+          int rx = slot_x + slots_r * 2;
+          if (i >= 5){
+            rx = slot_x;
+            nvgTranslate(s->vg, rx + 13, slot_y_mid);
+            nvgRotate(s->vg, 1.5708); //-90deg in radians
           }
           else{
-            snprintf(val, sizeof(val), "-");
-          }}
-          break;
-        
-        case UIMeasure::PERCENT_GRADE_DEVICE:
-          {
-          scene.percentGradeDevice = tan(scene.car_state.getPitch()) * 100.;
-          snprintf(name, sizeof(name), "GRADE");
-          g = 255;
-          b = 255;
-          p = 0.125 * (scene.percentGradeDevice > 0 ? scene.percentGradeDevice : -scene.percentGradeDevice); // red by 8% grade
-          g -= int(0.5 * p * 255.);
-          b -= int(p * 255.);
-          g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-          b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-          val_color = nvgRGBA(255, g, b, 200);
-          snprintf(val, sizeof(val), "%.1f%%", scene.percentGradeDevice);
+            nvgTranslate(s->vg, rx - 13, slot_y_mid);
+            nvgRotate(s->vg, -1.5708); //-90deg in radians
           }
-          break;
-                  
-        case UIMeasure::ROLL_DEVICE:
-          {
-          float degroll = nvgRadToDeg(scene.device_roll);
-          snprintf(name, sizeof(name), "DEVICE ROLL");
-          val_color = nvgRGBA(255, 255, 255, 200);
-          snprintf(val, sizeof(val), "%.1f°", degroll);
-          }
-          break;
-
-        case UIMeasure::ROLL:
-          {
-          float degroll = nvgRadToDeg(scene.road_roll);
-          snprintf(name, sizeof(name), "ROAD ROLL");
-          val_color = nvgRGBA(255, 255, 255, 200);
-          snprintf(val, sizeof(val), "%.1f°", degroll);
-          }
-          break;
-
-        case UIMeasure::FOLLOW_LEVEL: 
-          {
-            std::string gap;
-            snprintf(name, sizeof(name), "GAP");
-            if (scene.dynamic_follow_active){
-              snprintf(val, sizeof(val), "%.1f", scene.dynamic_follow_level);
-            }else
-            {
-              switch (int(scene.car_state.getReaddistancelines())){
-                case 1:
-                gap =  "I";
-                break;
-              
-                case 2:
-                gap =  "I I";
-                break;
-              
-                case 3:
-                gap =  "I I I";
-                break;
-              
-                default:
-                gap =  "";
-                break;
-              }
-              snprintf(val, sizeof(val), "%s", gap.c_str());
-            }
-          }
-          break;
-          
-        case UIMeasure::HVB_VOLTAGE: 
-          {
-            snprintf(name, sizeof(name), "HVB VOLT");
-            snprintf(unit, sizeof(unit), "V");
-            float temp = scene.car_state.getHvbVoltage();
-            snprintf(val, sizeof(val), "%.0f", temp);
-            g = 255;
-            b = 255;
-            p = temp - 360.;
-            p = p > 0 ? p : -p;
-            p *= 0.01666667; // red by the time voltage deviates from nominal voltage (360) by 60V deviation from nominal
-            g -= int(0.5 * p * 255.);
-            b -= int(p * 255.);
-            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-            val_color = nvgRGBA(255, g, b, 200);
-          }
-          break;
-        
-        case UIMeasure::HVB_CURRENT: 
-          {
-            snprintf(name, sizeof(name), "HVB CUR");
-            snprintf(unit, sizeof(unit), "A");
-            float temp = -scene.car_state.getHvbCurrent();
-            if (abs(temp) >= 100.){
-              snprintf(val, sizeof(val), "%.0f", temp);
-            }
-            else{
-              snprintf(val, sizeof(val), "%.1f", temp);
-            }
-            g = 255;
-            b = 255;
-            p = scene.car_state.getHvbVoltage() - 360.;
-            p = p > 0 ? p : -p;
-            p *= 0.01666667; // red by the time voltage deviates from nominal voltage (360) by 60V deviation from nominal
-            g -= int(0.5 * p * 255.);
-            b -= int(p * 255.);
-            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-            val_color = nvgRGBA(255, g, b, 200);
-          }
-          break;
-        
-        case UIMeasure::HVB_WATTAGE: 
-          {
-            snprintf(name, sizeof(name), "HVB POW");
-            snprintf(unit, sizeof(unit), "kW");
-            float temp = -scene.car_state.getHvbWattage();
-            if (abs(temp) >= 100.){
-              snprintf(val, sizeof(val), "%.0f", temp);
-            }
-            else{
-              snprintf(val, sizeof(val), "%.1f", temp);
-            }
-            g = 255;
-            b = 255;
-            p = scene.car_state.getHvbVoltage() - 360.;
-            p = p > 0 ? p : -p;
-            p *= 0.01666667; // red by the time voltage deviates from nominal voltage (360) by 60V deviation from nominal
-            g -= int(0.5 * p * 255.);
-            b -= int(p * 255.);
-            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-            val_color = nvgRGBA(255, g, b, 200);
-          }
-          break;
-        
-        case UIMeasure::HVB_WATTVOLT: 
-          {
-            snprintf(name, sizeof(name), "HVB kW");
-            float temp = -scene.car_state.getHvbWattage();
-            if (abs(temp) >= 100.){
-              snprintf(val, sizeof(val), "%.0f", temp);
-            }
-            else{
-              snprintf(val, sizeof(val), "%.1f", temp);
-            }
-            temp = scene.car_state.getHvbVoltage();
-            snprintf(unit, sizeof(unit), "%.0fV", temp);
-            g = 255;
-            b = 255;
-            p = temp - 360.;
-            p = p > 0 ? p : -p;
-            p *= 0.01666667; // red by the time voltage deviates from nominal voltage (360) by 60V deviation from nominal
-            g -= int(0.5 * p * 255.);
-            b -= int(p * 255.);
-            g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-            b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-            val_color = nvgRGBA(255, g, b, 200);
-          }
-          break;
-          
-        case UIMeasure::LANE_WIDTH: 
-          {
-            snprintf(name, sizeof(name), "LANE W");
-            if (s->is_metric){
-              snprintf(unit, sizeof(unit), "m");
-              snprintf(val, sizeof(val), "%f.1", scene.lateralPlan.laneWidth);
-            }
-            else{
-              snprintf(unit, sizeof(unit), "ft");
-              snprintf(val, sizeof(val), "%.1f", scene.lateralPlan.laneWidth * 3.281);
-            }
-          }
-          break;
-          
-        case UIMeasure::DEVICE_BATTERY: 
-          {
-            snprintf(name, sizeof(name), "DEVICE BATT.");
-            snprintf(unit, sizeof(unit), "%.1f A", float(scene.deviceState.getBatteryCurrent()) * 1e-6);
-            snprintf(val, sizeof(val), "%d", scene.deviceState.getBatteryPercent());
-          }
-          break;
-
-        default: {// invalid number
-          snprintf(name, sizeof(name), "INVALID");
-          snprintf(val, sizeof(val), "42");}
-          break;
-      }
-
-      nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-      // now print the metric
-      // first value
+          nvgFontFace(s->vg, "sans-regular");
+          nvgFontSize(s->vg, unit_font_size);
+          nvgFillColor(s->vg, unit_color);
+          nvgText(s->vg, 0, 0, unit, NULL);
+          nvgRestore(s->vg);
+        }
       
-      int vallen = strlen(val);
-      if (vallen > 4){
-        val_font_size -= (vallen - 4) * 5;
+        // update touch rect
+        scene.measure_slot_touch_rects[i] = {slot_x, slot_y, slots_r * 2, slot_y_rng};
       }
-      int slot_x = s->scene.measure_slots_rect.x + (scene.measure_cur_num_slots <= 5 ? 0 : (i < 5 ? slots_r * 2 : 0));
-      int x = slot_x + slots_r - unit_font_size / 2;
-      if (i >= 5){
-        x = slot_x + slots_r + unit_font_size / 2;
-      }
-      int slot_y = s->scene.measure_slots_rect.y + (i % 5) * slot_y_rng;
-      int slot_y_mid = slot_y + slot_y_rng / 2;
-      int y = slot_y_mid + slot_y_rng / 2 - 8 - label_font_size;
-      if (strlen(name) == 0){
-        y += label_font_size / 2;
-      }
-      if (strlen(unit) == 0){
-        x = slot_x + slots_r;
-      }
-      nvgFontFace(s->vg, "sans-semibold");
-      nvgFontSize(s->vg, val_font_size);
-      nvgFillColor(s->vg, val_color);
-      nvgText(s->vg, x, y, val, NULL);
-    
-      // now label
-      y = slot_y_mid + slot_y_rng / 2 - 9;
-      nvgFontFace(s->vg, "sans-regular");
-      nvgFontSize(s->vg, label_font_size);
-      nvgFillColor(s->vg, label_color);
-      nvgText(s->vg, x, y, name, NULL);
-    
-      // now unit
-      if (strlen(unit) > 0){
-        nvgSave(s->vg);
-        int rx = slot_x + slots_r * 2;
-        if (i >= 5){
-          rx = slot_x;
-          nvgTranslate(s->vg, rx + 13, slot_y_mid);
-          nvgRotate(s->vg, 1.5708); //-90deg in radians
-        }
-        else{
-          nvgTranslate(s->vg, rx - 13, slot_y_mid);
-          nvgRotate(s->vg, -1.5708); //-90deg in radians
-        }
-        nvgFontFace(s->vg, "sans-regular");
-        nvgFontSize(s->vg, unit_font_size);
-        nvgFillColor(s->vg, unit_color);
-        nvgText(s->vg, 0, 0, unit, NULL);
-        nvgRestore(s->vg);
-      }
-    
-      // update touch rect
-      scene.measure_slot_touch_rects[i] = {slot_x, slot_y, slots_r * 2, slot_y_rng};
+      catch(...){}
     }
   }
 }
