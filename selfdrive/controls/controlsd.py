@@ -217,7 +217,7 @@ class Controls:
     if network_strength != self.network_strength_last:
       if network_strength == log.DeviceState.NetworkStrength.unknown:
         self.events.add(EventName.signalLost)
-      else:
+      elif self.network_strength_last == log.DeviceState.NetworkStrength.unknown:
         self.events.add(EventName.signalRestored)
     self.network_strength_last = network_strength
 
