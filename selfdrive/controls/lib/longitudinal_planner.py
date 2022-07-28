@@ -147,8 +147,11 @@ class Planner():
     self.lead_1 = sm['radarState'].leadTwo
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
-    following = self.lead_1.status and self.lead_1.dRel < 45.0 and self.lead_1.vLeadK > v_ego and self.lead_1.aLeadK > 0.0
-    if self.lead_1.status:
+    following = self.lead_0.status and self.lead_0.dRel < 45.0 and self.lead_0.vLeadK > v_ego and self.lead_0.aLeadK > 0.0
+    if self.lead_0.status:
+      self.coasting_lead_d = self.lead_0.dRel
+      self.coasting_lead_v = self.lead_0.vLead
+    elif self.lead_1.status:
       self.coasting_lead_d = self.lead_1.dRel
       self.coasting_lead_v = self.lead_1.vLead
     else:
