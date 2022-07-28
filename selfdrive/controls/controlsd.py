@@ -214,8 +214,11 @@ class Controls:
     
     # Alert when network drops, but only if map braking or speed limit control is enabled
     network_strength = self.sm['deviceState'].networkStrength
-    if (network_strength != self.network_strength_last and network_strength == log.DeviceState.NetworkStrength.unknown):
-      self.events.add(EventName.signalLost)
+    if network_strength != self.network_strength_last:
+      if network_strength == log.DeviceState.NetworkStrength.unknown:
+        self.events.add(EventName.signalLost)
+      else:
+        self.events.add(EventName.signalRestored)
     self.network_strength_last = network_strength
 
     # Create events for battery, temperature, disk space, and memory
