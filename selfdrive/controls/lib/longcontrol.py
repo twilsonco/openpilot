@@ -68,10 +68,7 @@ class LongControl():
     self.v_pid = 0.0
     self.last_output_accel = 0.0
     self.output_accel_pos_rate_ema_k = 1/10 # use exponential moving average on output accel, but only for positive jerk
-    self.longPlan = ""
-    self.coasting_lead_d = -1.
-    self.coasting_lead_v = -1.
-    self.tr = 1.8
+
     
 
   def reset(self, v_pid):
@@ -114,11 +111,6 @@ class LongControl():
 
     v_ego_pid = max(CS.vEgo, CP.minSpeedCan)  # Without this we get jumps, CAN bus reports 0 when speed < 0.3
 
-    self.longPlan = long_plan.longitudinalPlanSource
-    self.coasting_lead_d = long_plan.leadDist
-    self.coasting_lead_v = long_plan.leadV
-    self.tr = long_plan.desiredFollowDistance
-
     if self.long_control_state == LongCtrlState.off or CS.gasPressed:
       self.reset(v_ego_pid)
       output_accel = 0.
@@ -155,6 +147,7 @@ class LongControl():
 
     if output_accel > self.last_output_accel:
       output_accel =  self.output_accel_pos_rate_ema_k * output_accel + (1. - self.output_accel_pos_rate_ema_k) * self.last_output_accel
+    
     self.last_output_accel = output_accel
     final_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 

@@ -567,10 +567,10 @@ class Controls:
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
       actuators.accel = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
       
-      self.CI.CS.coasting_long_plan = self.LoC.longPlan
-      self.CI.CS.coasting_lead_d = self.LoC.coasting_lead_d
-      self.CI.CS.coasting_lead_v = self.LoC.coasting_lead_v
-      self.CI.CS.tr = self.LoC.tr
+      self.CI.CS.coasting_long_plan = long_plan.longitudinalPlanSource
+      self.CI.CS.coasting_lead_d = long_plan.leadDist
+      self.CI.CS.coasting_lead_v = long_plan.leadV
+      self.CI.CS.tr = long_plan.desiredFollowDistance
 
       # Steering PID loop and lateral MPC
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['lateralPlan']) * DT_CTRL
