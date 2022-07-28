@@ -239,7 +239,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CruiseSpeedOffset", PERSISTENT},
     {"NudgelessLaneChange", PERSISTENT},
     {"CustomSounds", PERSISTENT},
-    {"StockSpeedAdjust", PERSISTENT},
+    {"ReverseSpeedAdjust", PERSISTENT},
     {"SilentEngageDisengage", PERSISTENT},
     {"UpdateAvailable", CLEAR_ON_MANAGER_START},
     {"UpdateFailedCount", CLEAR_ON_MANAGER_START},

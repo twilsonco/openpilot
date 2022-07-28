@@ -58,15 +58,15 @@ def set_v_cruise_offset(do_offset):
   else:
     V_CRUISE_OFFSET = 0
 
-def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed,decel_pressed,accel_pressed_last,decel_pressed_last, fastMode, fast_mode_enabled, vEgo_kph, v_cruise_last_changed):
+def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed,decel_pressed,accel_pressed_last,decel_pressed_last, fastMode, stock_speed_adjust, vEgo_kph, gas_pressed):
   
-  if fast_mode_enabled:
+  if stock_speed_adjust:
     if enabled:
       if accel_pressed:
-        if ((cur_time-accel_pressed_last) >= 0.6667 or (fastMode and (cur_time-accel_pressed_last) >= 0.333)):
+        if ((cur_time-accel_pressed_last) >= 0.6667 or (fastMode and (cur_time-accel_pressed_last) >= 0.5)):
           v_cruise_kph += V_CRUISE_DELTA - (v_cruise_kph % V_CRUISE_DELTA)
       elif decel_pressed:
-        if ((cur_time-decel_pressed_last) >= 0.6667 or (fastMode and (cur_time-decel_pressed_last) >= 0.333)):
+        if ((cur_time-decel_pressed_last) >= 0.6667 or (fastMode and (cur_time-decel_pressed_last) >= 0.5)):
           v_cruise_kph -= V_CRUISE_DELTA - ((V_CRUISE_DELTA - v_cruise_kph) % V_CRUISE_DELTA)
       else:
         for b in buttonEvents:
@@ -76,22 +76,32 @@ def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed
                 v_cruise_kph += 1
             elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
               if (not fastMode):
-                if (cur_time-v_cruise_last_changed >= 4) and (vEgo_kph - v_cruise_kph) > V_CRUISE_DELTA * 2: # user pressed "set" after accelerating/decelerating while engaged
+                if gas_pressed:
                   v_cruise_kph = vEgo_kph
                 else:
                   v_cruise_kph -= 1
       v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
-  else:
-    for b in buttonEvents:
-      if enabled and not b.pressed:
-        if b.type == car.CarState.ButtonEvent.Type.accelCruise:
-          v_cruise_kph += V_CRUISE_DELTA - (v_cruise_kph % V_CRUISE_DELTA - V_CRUISE_OFFSET)
-        elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
-          if (cur_time-v_cruise_last_changed >= 4) and (vEgo_kph - v_cruise_kph) > V_CRUISE_DELTA * 2: # user pressed "set" after accelerating/decelerating while engaged
-            v_cruise_kph = vEgo_kph
-          else:
-            v_cruise_kph -= V_CRUISE_DELTA - ((V_CRUISE_DELTA - v_cruise_kph + V_CRUISE_OFFSET) % V_CRUISE_DELTA)
-        v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
+  else:    
+    if enabled:
+      if accel_pressed:
+        if ((cur_time-accel_pressed_last) >= 0.6667 or (fastMode and (cur_time-accel_pressed_last) >= 0.5)):
+          v_cruise_kph += 1
+      elif decel_pressed:
+        if ((cur_time-decel_pressed_last) >= 0.6667 or (fastMode and (cur_time-decel_pressed_last) >= 0.5)):
+          v_cruise_kph -= 1
+      else:
+        for b in buttonEvents:
+          if not b.pressed:
+            if b.type == car.CarState.ButtonEvent.Type.accelCruise:
+              if (not fastMode):
+                v_cruise_kph += V_CRUISE_DELTA - (v_cruise_kph % V_CRUISE_DELTA - V_CRUISE_OFFSET)
+            elif b.type == car.CarState.ButtonEvent.Type.decelCruise:
+              if (not fastMode):
+                if gas_pressed:
+                  v_cruise_kph = vEgo_kph
+                else:
+                  v_cruise_kph -= V_CRUISE_DELTA - ((V_CRUISE_DELTA - v_cruise_kph + V_CRUISE_OFFSET) % V_CRUISE_DELTA)
+      v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
 
   return v_cruise_kph
 
