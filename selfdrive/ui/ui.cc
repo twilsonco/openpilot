@@ -423,13 +423,13 @@ static void update_state(UIState *s) {
     scene.lateralPlan.lanelessModeStatus = data.getLanelessMode();
   }
   if (sm.updated("longitudinalPlan")) {
-    auto data = sm["longitudinalPlan"].getLongitudinalPlan();
-
-    scene.desiredFollowDistance = data.getDesiredFollowDistance();
-    scene.followDistanceCost = data.getLeadDistCost();
-    scene.followAccelCost = data.getLeadAccelCost();
-    scene.stoppingDistance = data.getStoppingDistance();
-    scene.dynamic_follow_level = data.getDynamicFollowLevel();
+    scene.longitudinal_plan = sm["longitudinalPlan"].getLongitudinalPlan();
+    
+    scene.desiredFollowDistance = scene.longitudinal_plan.getDesiredFollowDistance();
+    scene.followDistanceCost = scene.longitudinal_plan.getLeadDistCost();
+    scene.followAccelCost = scene.longitudinal_plan.getLeadAccelCost();
+    scene.stoppingDistance = scene.longitudinal_plan.getStoppingDistance();
+    scene.dynamic_follow_level = scene.longitudinal_plan.getDynamicFollowLevel();
   }
   
   if (scene.brake_percent > 50){
