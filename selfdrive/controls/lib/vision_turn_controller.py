@@ -50,9 +50,9 @@ _MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow curvature prediction 
 _SPEED_SCALE_V = [1.] # [unitless] scales the velocity value used to calculate lateral acceleration
 _SPEED_SCALE_BP = [0.] # [meters per second] speeds corresponding to scaling values, so you can alter low/high speed behavior for each road type
 def default_speed_scale():
-  return (_SPEED_SCALE_BP, _SPEED_SCALE_V)
+  return [_SPEED_SCALE_BP, _SPEED_SCALE_V]
 _SPEED_SCALE_FOR_ROAD_TYPE = defaultdict(default_speed_scale)
-_SPEED_SCALE_FOR_ROAD_TYPE["motorway_link"] = ([i*CV.MPH_TO_MS for i in [45., 55.]],[0.4, 1.0])
+_SPEED_SCALE_FOR_ROAD_TYPE["motorway_link"] = [[i*CV.MPH_TO_MS for i in [45., 55.]],[0.4, 1.0]]
 
 
 
@@ -272,7 +272,7 @@ class VisionTurnController():
       x = max(self._liveparams.stiffnessFactor, 0.1)
       sr = max(self._liveparams.steerRatio, 0.1)
       self._VM.update_params(x, sr)
-      roll_compensation = self._VM.roll_compensation(self._liveparams.roll, self._v_ego)
+      roll_compensation = self._VM.roll_compensation(self._liveparams.roll, self._vf * self._v_ego)
       angle_offset = self._liveparams.angleOffsetDeg
     else:
       roll_compensation = 0.
@@ -400,7 +400,7 @@ class VisionTurnController():
       if self._lat_acc_overshoot_ahead:
         # when overshooting, target the acceleration needed to achieve the overshoot speed at
         # the required distance
-        a_target_overshoot = min((self._v_overshoot**2 - self._v_ego**2) / (2 * self._v_overshoot_distance), a_target)
+        a_target_overshoot = min((self._v_overshoot**2 - (self._vf * self._v_ego)**2) / (2 * self._v_overshoot_distance), a_target)
         if self.state == VisionTurnControllerState.entering:
           a_target = a_target_overshoot
         _debug(f'TVC Entering: Overshooting: {self._lat_acc_overshoot_ahead}')
