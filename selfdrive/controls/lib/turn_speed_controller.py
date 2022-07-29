@@ -1,5 +1,6 @@
 import numpy as np
 import time
+from collections import defaultdict
 from common.params import Params
 from cereal import log
 from common.realtime import sec_since_boot
@@ -14,6 +15,11 @@ _ACTIVE_LIMIT_MAX_ACC = 0.5   # m/s^2 Maximum acelration allowed while active.
 
 _SPEED_LIMIT_SCALE_BY_SPEED_BP = [0.]
 _SPEED_LIMIT_SCALE_BY_SPEED_V = [1.18]
+def default_speed_scale():
+  return [_SPEED_LIMIT_SCALE_BY_SPEED_BP, _SPEED_LIMIT_SCALE_BY_SPEED_V]
+_SPEED_LIMIT_SCALE_FOR_ROAD_RANK = defaultdict(default_speed_scale)
+_SPEED_LIMIT_SCALE_FOR_ROAD_RANK[1] = [[0.],[1.28]] # motorway_link (freeway interchange)
+_SPEED_LIMIT_SCALE_FOR_ROAD_RANK[11] = _SPEED_LIMIT_SCALE_FOR_ROAD_RANK[1] # trunk_link (other interchange)
 
 _DEBUG = False
 
@@ -130,7 +136,8 @@ class TurnSpeedController():
       speed_limit_end_time = (map_data.turnSpeedLimitEndDistance / self._v_ego) - gps_fix_age
       if speed_limit_end_time > 0.:
         v_ego = sm['carState'].vEgo
-        scale_factor = interp(v_ego, _SPEED_LIMIT_SCALE_BY_SPEED_BP, _SPEED_LIMIT_SCALE_BY_SPEED_V)
+        speed_limit_scale = _SPEED_LIMIT_SCALE_FOR_ROAD_RANK[int(map_data.currentRoadType)]
+        scale_factor = interp(v_ego, speed_limit_scale[0], speed_limit_scale[1])
         speed_limit = map_data.turnSpeedLimit * scale_factor
 
     # When we have no ahead speed limit to consider or all are greater than current speed limit
