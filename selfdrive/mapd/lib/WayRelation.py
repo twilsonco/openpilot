@@ -201,7 +201,7 @@ class WayRelation():
   
   @property
   def road_name(self):
-    if self.highway_rank == 1: #'motorway_link'
+    if self.highway_rank in [1, 11]: #'motorway_link' or 'trunk_link'
       return "(Interchange)"
     elif self.name is not None:
       return self.name
