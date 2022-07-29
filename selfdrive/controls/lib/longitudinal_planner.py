@@ -266,7 +266,7 @@ class Planner():
     longitudinalPlan.visionMaxPredictedLateralAccelerationDistance = float(self.vision_turn_controller._max_pred_lat_acc_dist)
     longitudinalPlan.visionTurnSpeed = float(self.vision_turn_controller.v_turn)
     longitudinalPlan.visionPredictedPathSource = self.vision_turn_controller._predicted_path_source
-    longitudinalPlan.visionVf = self.vision_turn_controller._vf
+    longitudinalPlan.visionVf = float(self.vision_turn_controller._vf) if self.vision_turn_controller._vf is not None else -1.0
     
     longitudinalPlan.dynamicFollowState0.pointsCurrent = self.mpcs['lead0'].df.points_cur
     longitudinalPlan.dynamicFollowState0.newLead = self.mpcs['lead0'].df.new_lead
