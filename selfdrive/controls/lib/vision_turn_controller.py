@@ -216,6 +216,8 @@ class VisionTurnController():
     self._speed_scale_bp_v = _SPEED_SCALE_FOR_ROAD_RANK[int(sm['liveMapData'].currentRoadType)]
       
     self._vf = interp(self._v_ego, self._speed_scale_bp_v[0], self._speed_scale_bp_v[1])
+    if self._vf is None:
+      self._vf = 1.0
 
     # 1. When the probability of lanes is good enough, compute polynomial from lanes as they are way more stable
     # on current mode than driving path.
