@@ -53,7 +53,7 @@ _SPEED_SCALE_BP = [0.] # [meters per second] speeds corresponding to scaling val
 def default_speed_scale():
   return [_SPEED_SCALE_BP, _SPEED_SCALE_V]
 _SPEED_SCALE_FOR_ROAD_RANK = defaultdict(default_speed_scale)
-_SPEED_SCALE_FOR_ROAD_RANK[1] = [[i*CV.MPH_TO_MS for i in [45., 55.]],[0.4, 1.0]] # motorway_link
+_SPEED_SCALE_FOR_ROAD_RANK[1] = [[i*CV.MPH_TO_MS for i in [45., 55.]],[0.85, 1.0]] # motorway_link
 
 
 
