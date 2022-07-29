@@ -91,7 +91,7 @@ static void ui_draw_speed_sign(UIState *s, float x, float y, int size, float spe
 
     // Speed limit value
 
-    if (subtext_size > 0. && is_active){
+    if (subtext_size > 0. && is_active && !s->scene.onePedalModeActive){
       // "SPEED"
       nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
       ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 7, "SPEED", 19 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-semibold");
