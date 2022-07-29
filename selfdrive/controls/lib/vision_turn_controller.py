@@ -47,12 +47,13 @@ _MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow curvature prediction 
 # where the LKA torque is less capable despite low lateral acceleration.
 # This will be a default dict based on road type, allowing for easy adjustment of vision braking based on road type
 # See the list of "highway" types here https://wiki.openstreetmap.org/wiki/Key:highway
+# Also see selfdrive/mapd/lib/WayRelation.py for a list of ranks
 _SPEED_SCALE_V = [1.] # [unitless] scales the velocity value used to calculate lateral acceleration
 _SPEED_SCALE_BP = [0.] # [meters per second] speeds corresponding to scaling values, so you can alter low/high speed behavior for each road type
 def default_speed_scale():
   return [_SPEED_SCALE_BP, _SPEED_SCALE_V]
-_SPEED_SCALE_FOR_ROAD_TYPE = defaultdict(default_speed_scale)
-_SPEED_SCALE_FOR_ROAD_TYPE['motorway_link'] = [[i*CV.MPH_TO_MS for i in [45., 55.]],[0.4, 1.0]]
+_SPEED_SCALE_FOR_ROAD_RANK = defaultdict(default_speed_scale)
+_SPEED_SCALE_FOR_ROAD_RANK[1] = [[i*CV.MPH_TO_MS for i in [45., 55.]],[0.4, 1.0]] # motorway_link
 
 
 
@@ -157,7 +158,7 @@ class VisionTurnController():
     self._predicted_path_source = 'none'
     self._lat_sat_last = False
     self._lat_sat_t = 0.
-    self._speed_scale_bp_v = _SPEED_SCALE_FOR_ROAD_TYPE['']
+    self._speed_scale_bp_v = _SPEED_SCALE_FOR_ROAD_RANK[0]
   
   def eval_curvature(self, poly, x_vals, path_roll_poly, max_x):
     """
@@ -212,8 +213,7 @@ class VisionTurnController():
       return
     
     # scale velocity used to determine curvature in order to provide more braking at low speed
-    if sm.valid.get('liveMapData', False):
-      self._speed_scale_bp_v = _SPEED_SCALE_FOR_ROAD_TYPE[sm['liveMapData'].currentRoadType]
+    self._speed_scale_bp_v = _SPEED_SCALE_FOR_ROAD_RANK[int(sm['liveMapData'].currentRoadType)]
       
     self._vf = interp(self._v_ego, self._speed_scale_bp_v[0], self._speed_scale_bp_v[1])
 

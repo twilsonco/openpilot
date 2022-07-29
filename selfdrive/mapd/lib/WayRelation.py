@@ -201,7 +201,7 @@ class WayRelation():
   
   @property
   def road_name(self):
-    if self.highway_type == "motorway_link":
+    if self.highway_rank == 1: #'motorway_link'
       return "(Interchange)"
     elif self.name is not None:
       return self.name
@@ -210,7 +210,7 @@ class WayRelation():
   
   @property
   def road_type(self):
-    return self.highway_type if self.highway_type is not None else "unclassified"
+    return self.highway_rank
       
 
   def update(self, location_rad, bearing_rad, location_accuracy):
