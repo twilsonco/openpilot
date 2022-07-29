@@ -47,7 +47,7 @@ static void ui_draw_circle(UIState *s, float x, float y, float size, NVGcolor co
 
 static void ui_draw_speed_sign(UIState *s, float x, float y, int size, float speed, const char *subtext, 
                                float subtext_size, const char *font_name, bool is_map_sourced, bool is_active) {
-  std::string speedlimit_str = std::to_string((int)std::nearbyint(speed));
+  std::string const speedlimit_str = std::to_string((int)std::nearbyint(speed));
   float one_pedal_fade = MAX(0.5,-s->scene.one_pedal_fade);
   if (s->scene.speed_limit_eu_style){ // eu style
     NVGcolor ring_color = is_active ? COLOR_RED_ALPHA(int(one_pedal_fade * 255.)) : COLOR_RED_ALPHA(int(.2 * 255.));
@@ -87,21 +87,30 @@ static void ui_draw_speed_sign(UIState *s, float x, float y, int size, float spe
     Rect sign_rect = {int(sign_rect_outer.x + 1.5 * border_width), int(sign_rect_outer.y + 1.5 * border_width), int(sign_width - 3 * border_width), int(sign_height - 3 * border_width)};
     ui_draw_rect(s->vg, sign_rect, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), border_width, 16);
 
-    // "SPEED"
-    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
-    ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 15, "SPEED", 19 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-semibold");
-
-    // "LIMIT"
-    ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 54, "LIMIT", 19 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-semibold");
+    
 
     // Speed limit value
-    int speed_size = 46;
-    if (is_active && subtext_size > 0 && subtext[0] == '+'){
-      speedlimit_str += subtext;
-      speed_size -= 6;
+
+    if (subtext_size > 0. && is_active){
+      // "SPEED"
+      nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
+      ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 7, "SPEED", 19 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-semibold");
+
+      // "LIMIT"
+      ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 45, "LIMIT", 19 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-semibold");
+      ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 73, speedlimit_str.c_str(), 40 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-bold");
+      ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 150, subtext, 20 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 200.)), "sans-bold");
+    }
+    else{
+      // "SPEED"
+      nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
+      ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 15, "SPEED", 19 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-semibold");
+
+      // "LIMIT"
+      ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 54, "LIMIT", 19 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-semibold");
+      ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 83, speedlimit_str.c_str(), 48 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-bold");
     }
 
-    ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 85, speedlimit_str.c_str(), speed_size * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-bold");
 
     s->scene.speed_limit_sign_touch_rect = sign_rect_outer;
   }
