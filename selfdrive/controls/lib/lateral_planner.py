@@ -14,6 +14,7 @@ from cereal import log
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
+
 LANE_CHANGE_SPEED_MIN = 30 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
 
@@ -60,6 +61,8 @@ class LateralPlanner():
     self.nudgeless_lane_change_start_t = 0.
     self.nudgeless_blinker_press_t = 0.
 
+    self.auto_lane_pos_active = False
+    
     self.lane_change_state = LaneChangeState.off
     self.prev_lane_change_state = self.lane_change_state
     self.lane_change_direction = LaneChangeDirection.none
@@ -101,13 +104,14 @@ class LateralPlanner():
       self.laneless_mode = int(Params().get("LanelessMode", encoding="utf8"))
       self.lane_pos = float(Params().get("LanePosition", encoding="utf8"))
       self.nudgeless_enabled = self._params.get_bool("NudgelessLaneChange")
+      self.auto_lane_pos_active = self._params.get_bool("AutoLanePositionActive")
       self.second = 0.0
     v_ego = sm['carState'].vEgo
     active = sm['controlsState'].active
     measured_curvature = sm['controlsState'].curvature
 
     md = sm['modelV2']
-    self.LP.parse_model(sm['modelV2'], self.lane_pos)
+    self.LP.parse_model(sm['modelV2'], self.lane_pos, sm, self.auto_lane_pos_active)
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
       self.t_idxs = np.array(md.position.t)
@@ -318,5 +322,27 @@ class LateralPlanner():
     plan_send.lateralPlan.dPathWLinesY = [float(y) for y in self.d_path_w_lines_xyz[:, 1]]
     
     plan_send.lateralPlan.lanelessMode = bool(self.laneless_mode_status)
+    
+    plan_send.lateralPlan.autoLanePositionActive = bool(self.LP.lane_offset._auto_is_active)
+    plan_send.lateralPlan.lanePosition = log.LateralPlan.LanePosition.left if self.LP.lane_offset.lane_pos == 1. \
+                                    else log.LateralPlan.LanePosition.right if self.LP.lane_offset.lane_pos == -1. \
+                                    else log.LateralPlan.LanePosition.center
+    plan_send.lateralPlan.laneOffset = float(self.LP.lane_offset.offset)
+    plan_send.lateralPlan.laneWidthMeanLeftAdjacent = float(self.LP.lane_offset._lane_width_mean_left_adjacent)
+    plan_send.lateralPlan.laneWidthMeanRightAdjacent = float(self.LP.lane_offset._lane_width_mean_right_adjacent)
+    plan_send.lateralPlan.shoulderMeanWidthLeft = float(self.LP.lane_offset._shoulder_width_mean_left)
+    plan_send.lateralPlan.shoulderMeanWidthRight = float(self.LP.lane_offset._shoulder_width_mean_right)
+    plan_send.lateralPlan.laneProbs = [float(i) for i in self.LP.lane_offset._lane_probs]
+    plan_send.lateralPlan.roadEdgeProbs = [float(i) for i in self.LP.lane_offset._road_edge_probs]
+    if self.auto_lane_pos_active:
+      if self.LP.lane_offset._lane_pos_auto == -1. and self.lane_pos != -1.:
+        self.lane_pos = -1.
+        Params().put("LanePosition", "-1")
+      elif self.LP.lane_offset._lane_pos_auto == 1. and self.lane_pos != 1.:
+        self.lane_pos = 1.
+        Params().put("LanePosition", "1")
+      elif self.LP.lane_offset._lane_pos_auto == 0. and self.lane_pos != 0.:
+        self.lane_pos = 0.
+        Params().put("LanePosition", "0")
 
     pm.send('lateralPlan', plan_send)
