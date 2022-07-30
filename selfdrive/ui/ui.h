@@ -272,6 +272,9 @@ typedef struct UIScene {
   Rect measure_slots_rect;
   Rect measure_slot_touch_rects[10];
   int num_measures = UIMeasure::NUM_MEASURES; // the number of cases handled in ui_draw_measures() in paint.cc
+  float measures_touch_timeout = 10.;
+  float measures_last_tap_t = -measures_touch_timeout;
+  
   Rect speed_rect;
   float road_roll, device_roll;
   

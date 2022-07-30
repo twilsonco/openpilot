@@ -654,7 +654,12 @@ static void ui_draw_measures(UIState *s){
     // draw bounding rectangle
     nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, s->scene.measure_slots_rect.x, s->scene.measure_slots_rect.y, s->scene.measure_slots_rect.w, s->scene.measure_slots_rect.h, 20);
-    nvgStrokeColor(s->vg, nvgRGBA(200,200,200,200));
+    if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.measures_last_tap_t > QUIState::ui_state.scene.measures_touch_timeout){
+      nvgStrokeColor(s->vg, nvgRGBA(200,200,200,200));
+    }
+    else{
+      nvgStrokeColor(s->vg, COLOR_GRACE_BLUE_ALPHA(200));
+    }
     nvgStrokeWidth(s->vg, 6);
     nvgStroke(s->vg);
     nvgFillColor(s->vg, nvgRGBA(0,0,0,100));
