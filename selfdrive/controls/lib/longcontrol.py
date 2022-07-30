@@ -67,9 +67,6 @@ class LongControl():
                             rate=RATE,
                             sat_limit=0.8)
     self.v_pid = 0.0
-    self.lead_present_last = False
-    self.lead_gone_t = 0.
-    self.lead_gone_smooth_accel_time = 4. # seconds after lead gone during which we'll smooth positive jerk
     self.last_output_accel = 0.0
     self.output_accel_pos_rate_ema_k = 1/10 # use exponential moving average on output accel, but only for positive jerk
 
@@ -148,14 +145,8 @@ class LongControl():
       if output_accel < -DECEL_THRESHOLD_TO_PID:
         output_accel += CP.startingAccelRate / RATE
       self.reset(CS.vEgo)
-
-    t = sec_since_boot()
-    lead_present = long_plan.leadDist > 0.
-    if not lead_present and self.lead_present_last:
-      self.lead_gone_t = t
-    self.lead_present_last = lead_present
       
-    if not lead_present and t - self.lead_gone_t < self.lead_gone_smooth_accel_time and output_accel > self.last_output_accel:
+    if output_accel > self.last_output_accel:
       output_accel =  self.output_accel_pos_rate_ema_k * output_accel + (1. - self.output_accel_pos_rate_ema_k) * self.last_output_accel
     
     self.last_output_accel = output_accel
