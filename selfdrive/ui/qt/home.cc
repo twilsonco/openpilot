@@ -115,7 +115,8 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // presses of vehicle speed to increment number of measure boxes
   if (QUIState::ui_state.scene.started 
     && QUIState::ui_state.scene.speed_rect.ptInRect(e->x(), e->y())){
-    if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.measures_last_tap_t < QUIState::ui_state.scene.measures_touch_timeout){
+    if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.measures_last_tap_t < QUIState::ui_state.scene.measures_touch_timeout
+        || QUIState::ui_state.scene.measure_cur_num_slots == 0){
       int num_slots = QUIState::ui_state.scene.measure_cur_num_slots + 1; 
       if (num_slots > QUIState::ui_state.scene.measure_max_num_slots){
         num_slots = QUIState::ui_state.scene.measure_min_num_slots;
