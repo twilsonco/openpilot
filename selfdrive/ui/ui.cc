@@ -219,6 +219,7 @@ static void update_state(UIState *s) {
     scene.lead_info_print_enabled = Params().getBool("PrintLeadInfo");
     scene.speed_limit_eu_style = int(Params().getBool("EUSpeedLimitStyle"));
     scene.show_debug_ui = Params().getBool("ShowDebugUI");
+    scene.brake_indicator_enabled = Params().getBool("BrakeIndicator");
     if (scene.auto_lane_pos_active){
       scene.lane_pos = std::stoi(Params().get("LanePosition"));
     }
