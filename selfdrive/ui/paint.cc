@@ -561,9 +561,8 @@ static void ui_draw_vision_maxspeed(UIState *s) {
 }
 
 static void ui_draw_vision_speedlimit(UIState *s) {
-  auto longitudinal_plan = (*s->sm)["longitudinalPlan"].getLongitudinalPlan();
-  const float speedLimit = longitudinal_plan.getSpeedLimit();
-  const float speedLimitOffset = longitudinal_plan.getSpeedLimitOffset();
+  const float speedLimit = s->scene.longitudinal_plan.getSpeedLimit();
+  const float speedLimitOffset = s->scene.longitudinal_plan.getSpeedLimitOffset();
 
   if (speedLimit > 0.0 && s->scene.engageable) {
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
@@ -574,7 +573,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
     const float speed = speedLimit * (s->scene.is_metric ? 3.6 : 2.2369362921);
     const float speed_offset = speedLimitOffset * (s->scene.is_metric ? 3.6 : 2.2369362921);
 
-    auto speedLimitControlState = longitudinal_plan.getSpeedLimitControlState();
+    auto speedLimitControlState = s->scene.longitudinal_plan.getSpeedLimitControlState();
     const bool force_active = s->scene.speed_limit_control_enabled && 
                               seconds_since_boot() < s->scene.last_speed_limit_sign_tap + 2.0;
     const bool inactive = !force_active && (!s->scene.speed_limit_control_enabled || 
@@ -582,9 +581,9 @@ static void ui_draw_vision_speedlimit(UIState *s) {
     const bool temp_inactive = !force_active && (s->scene.speed_limit_control_enabled && 
                                speedLimitControlState == cereal::LongitudinalPlan::SpeedLimitControlState::TEMP_INACTIVE);
 
-    const int distToSpeedLimit = int(longitudinal_plan.getDistToSpeedLimit() * 
+    const int distToSpeedLimit = int(s->scene.longitudinal_plan.getDistToSpeedLimit() * 
                                      (s->scene.is_metric ? 1.0 : 3.28084) / 10) * 10;
-    const bool is_map_sourced = longitudinal_plan.getIsMapSpeedLimit();
+    const bool is_map_sourced = s->scene.longitudinal_plan.getIsMapSpeedLimit();
     const std::string distance_str = std::to_string(distToSpeedLimit) + (s->scene.is_metric ? "m" : "f");
     const std::string offset_str = speed_offset > 0.0 ? "+" + std::to_string((int)std::nearbyint(speed_offset)) : "";
     const std::string inactive_str = temp_inactive ? "TEMP" : "";
@@ -1658,8 +1657,7 @@ static void ui_draw_measures(UIState *s){
 
 
 static void ui_draw_vision_turnspeed(UIState *s) {
-  auto longitudinal_plan = (*s->sm)["longitudinalPlan"].getLongitudinalPlan();
-  const float turnSpeed = longitudinal_plan.getTurnSpeed();
+  const float turnSpeed = s->scene.longitudinal_plan.getTurnSpeed();
   const float vEgo = (*s->sm)["carState"].getCarState().getVEgo();
   const bool show = turnSpeed > 0.0 && (turnSpeed < vEgo || s->scene.show_debug_ui);
 
@@ -1671,11 +1669,11 @@ static void ui_draw_vision_turnspeed(UIState *s) {
       maxspeed_rect.h};
     const float speed = turnSpeed * (s->scene.is_metric ? 3.6 : 2.2369362921);
 
-    auto turnSpeedControlState = longitudinal_plan.getTurnSpeedControlState();
+    auto turnSpeedControlState = s->scene.longitudinal_plan.getTurnSpeedControlState();
     const bool is_active = turnSpeedControlState > cereal::LongitudinalPlan::SpeedLimitControlState::TEMP_INACTIVE;
 
-    const int curveSign = longitudinal_plan.getTurnSign();
-    const int distToTurn = int(longitudinal_plan.getDistToTurn() * 
+    const int curveSign = s->scene.longitudinal_plan.getTurnSign();
+    const int distToTurn = int(s->scene.longitudinal_plan.getDistToTurn() * 
                                (s->scene.is_metric ? 1.0 : 3.28084) / 10) * 10;
     const std::string distance_str = std::to_string(distToTurn) + (s->scene.is_metric ? "m" : "f");
 
