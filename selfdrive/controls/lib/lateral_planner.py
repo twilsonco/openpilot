@@ -17,6 +17,8 @@ LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
 LANE_CHANGE_SPEED_MIN = 30 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
+LANE_CHANGE_MIN_ADJACENT_LANE_LINE_PROB = 0.5
+LANE_CHANGE_ADJACENT_LANE_MIN_WIDTH_FACTOR = 0.6
 
 DESIRES = {
   LaneChangeDirection.none: {
@@ -152,8 +154,23 @@ class LateralPlanner():
                         ((sm['carState'].steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or
                           (sm['carState'].steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right))
         
+        # ignore nudgeless lane change if adjacent lane not present
+        adjacentLaneWidth = 0.
+        if self.nudgeless_enabled and \
+            len(md.laneLines) == 4 and len(md.laneLines[0].t) == TRAJECTORY_SIZE \
+            and len(md.roadEdges) >= 2 and len(md.roadEdges[0].t) == TRAJECTORY_SIZE:
+          if self.lane_change_direction == LaneChangeDirection.left:
+            if md.laneLineProbs[0] > LANE_CHANGE_MIN_ADJACENT_LANE_LINE_PROB \
+                and md.laneLineProbs[1] > LANE_CHANGE_MIN_ADJACENT_LANE_LINE_PROB:
+              adjacentLaneWidth = md.laneLines[1].y[0] - md.laneLines[0].y[0]
+          elif self.lane_change_direction == LaneChangeDirection.right:
+            if md.laneLineProbs[3] > LANE_CHANGE_MIN_ADJACENT_LANE_LINE_PROB \
+                and md.laneLineProbs[2] > LANE_CHANGE_MIN_ADJACENT_LANE_LINE_PROB:
+              adjacentLaneWidth = md.laneLines[3].y[0] - md.laneLines[2].y[0]
+        
         torque_applied = torque_applied or \
           ( self.nudgeless_enabled \
+            and adjacentLaneWidth > self.LP.lane_width * LANE_CHANGE_ADJACENT_LANE_MIN_WIDTH_FACTOR \
             and t - self.nudgeless_lane_change_start_t > self.nudgeless_delay \
             and t - self.nudgeless_blinker_press_t < 3. \
             and v_ego > self.nudgeless_min_speed \
