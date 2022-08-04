@@ -91,14 +91,14 @@ static void ui_draw_speed_sign(UIState *s, float x, float y, int size, float spe
 
     // Speed limit value
 
-    if (subtext_size > 0. && is_active && !s->scene.onePedalModeActive){
+    if (subtext_size > 0. && is_active && s->scene.one_pedal_fade <= 0.){
       // "SPEED"
       nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
       ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 7, "SPEED", 19 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-semibold");
 
       // "LIMIT"
       ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 45, "LIMIT", 19 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-semibold");
-      ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 73, speedlimit_str.c_str(), 40 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-bold");
+      ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 73, speedlimit_str.c_str(), 37 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 255.)), "sans-bold");
       ui_draw_text(s, sign_rect.centerX(), sign_rect.y + 150, subtext, 20 * 2.5, is_active ? COLOR_BLACK_ALPHA(int(one_pedal_fade * 255.)) : COLOR_BLACK_ALPHA(int(.5 * 200.)), "sans-bold");
     }
     else{
