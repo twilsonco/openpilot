@@ -901,6 +901,35 @@ static void ui_draw_measures(UIState *s){
             }}
             break;
 
+          case UIMeasure::BEARING:
+            {
+              snprintf(name, sizeof(name), "BEARING");
+              if (s->scene.bearingAccuracy != 180.00) {
+                snprintf(unit, sizeof(unit), "%.0d%s", (int)s->scene.bearingDeg, "°");
+                if (((s->scene.bearingDeg >= 337.5) && (s->scene.bearingDeg <= 360)) || ((s->scene.bearingDeg >= 0) && (s->scene.bearingDeg <= 22.5))) {
+                  snprintf(val, sizeof(val), "N");
+                } else if ((s->scene.bearingDeg > 22.5) && (s->scene.bearingDeg < 67.5)) {
+                  snprintf(val, sizeof(val), "NE");
+                } else if ((s->scene.bearingDeg >= 67.5) && (s->scene.bearingDeg <= 112.5)) {
+                  snprintf(val, sizeof(val), "E");
+                } else if ((s->scene.bearingDeg > 112.5) && (s->scene.bearingDeg < 157.5)) {
+                  snprintf(val, sizeof(val), "SE");
+                } else if ((s->scene.bearingDeg >= 157.5) && (s->scene.bearingDeg <= 202.5)) {
+                  snprintf(val, sizeof(val), "S");
+                } else if ((s->scene.bearingDeg > 202.5) && (s->scene.bearingDeg < 247.5)) {
+                  snprintf(val, sizeof(val), "SW");
+                } else if ((s->scene.bearingDeg >= 247.5) && (s->scene.bearingDeg <= 292.5)) {
+                  snprintf(val, sizeof(val), "W");
+                } else if ((s->scene.bearingDeg > 292.5) && (s->scene.bearingDeg < 337.5)) {
+                  snprintf(val, sizeof(val), "NW");
+                }
+              } else {
+                snprintf(val, sizeof(val), "OFF");
+                snprintf(unit, sizeof(unit), "-");
+              }
+            }
+            break;
+
           case UIMeasure::STEERING_TORQUE_EPS:
             {
             snprintf(name, sizeof(name), "EPS TRQ");

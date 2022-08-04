@@ -426,6 +426,11 @@ static void update_state(UIState *s) {
     scene.lateralPlan.rProb = data.getRProb();
     scene.lateralPlan.lanelessModeStatus = data.getLanelessMode();
   }
+  if (sm.updated("gpsLocationExternal")) {
+    auto data = sm["gpsLocationExternal"].getGpsLocationExternal();
+    scene.bearingAccuracy = data.getBearingAccuracyDeg();
+    scene.bearingDeg = data.getBearingDeg();
+  }
   if (sm.updated("longitudinalPlan")) {
     scene.longitudinal_plan = sm["longitudinalPlan"].getLongitudinalPlan();
     

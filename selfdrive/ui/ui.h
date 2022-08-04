@@ -165,6 +165,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   ACCELERATION,
   LAT_ACCEL,//JERK,
   ALTITUDE,
+  BEARING,
   PERCENT_GRADE,
   PERCENT_GRADE_DEVICE,
   FOLLOW_LEVEL,
@@ -291,6 +292,8 @@ typedef struct UIScene {
   float stoppingDistance;
   float percentGradeDevice;
   int fanspeed_rpm = 0;
+  float bearingAccuracy;
+  float bearingDeg;
   
   float lastTime = 0., sessionInitTime = 0.;
   float paramsCheckLast = 0., paramsCheckFreq = 0.1; // check params at 10Hz
