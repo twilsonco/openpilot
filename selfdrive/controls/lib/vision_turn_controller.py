@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from cereal import log
+from collections import defaultdict
 from common.numpy_fast import interp
 from common.params import Params
 from common.realtime import sec_since_boot
@@ -13,7 +14,7 @@ from selfdrive.swaglog import cloudlog
 
 _MIN_V = 5.6  # Do not operate under 20km/h
 
-_ENTERING_PRED_LAT_ACC_TH = 1.5  # Predicted Lat Acc threshold to trigger entering turn state.
+_ENTERING_PRED_LAT_ACC_TH = 1.6  # Predicted Lat Acc threshold to trigger entering turn state.
 _ABORT_ENTERING_PRED_LAT_ACC_TH = 0.9  # Predicted Lat Acc threshold to abort entering state if speed drops.
 
 _TURNING_LAT_ACC_TH = 1.0  # Lat Acc threshold to trigger turning turn state.
@@ -26,7 +27,7 @@ _EVAL_START = 20.  # mts. Distance ahead where to start evaluating vision curvat
 _EVAL_LENGHT = 150.  # mts. Distance ahead where to stop evaluating vision curvature.
 _EVAL_RANGE = np.arange(_EVAL_START, _EVAL_LENGHT, _EVAL_STEP)
 
-_A_LAT_REG_MAX = 1.7  # Maximum lateral acceleration
+_A_LAT_REG_MAX = 2.2  # Maximum lateral acceleration
 
 # Lookup table for the minimum smooth deceleration during the ENTERING state
 # depending on the actual maximum absolute lateral acceleration predicted on the turn ahead.
@@ -38,14 +39,26 @@ _ENTERING_SMOOTH_DECEL_BP = [1.2, 1.5, 3.5]  # absolute value of lat acc ahead
 _TURNING_ACC_V = [0.6, 0.0, -1.]  # acc value
 _TURNING_ACC_BP = [0.8, 1.4, 2.2]  # absolute value of current lat acc
 
-_LEAVING_ACC = 0.6  # Confortable acceleration to regain speed while leaving a turn.
+_LEAVING_ACC = 0.7  # Confortable acceleration to regain speed while leaving a turn.
 
 _MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow curvature prediction based on lanes.
 
 # scale velocity used to determine curvature in order to provide more braking at low speed
 # where the LKA torque is less capable despite low lateral acceleration.
-_LOW_SPEED_SCALE_V = [1.0, 1.0] #increase the first value to increase low-speed vision braking; don't touch the second
-_LOW_SPEED_SCALE_BP = [i * CV.MPH_TO_MS for i in [0., 30.]]
+# This will be a default dict based on road type, allowing for easy adjustment of vision braking based on road type
+# See the list of "highway" types here https://wiki.openstreetmap.org/wiki/Key:highway
+# Also see selfdrive/mapd/lib/WayRelation.py for a list of ranks
+_SPEED_SCALE_V = [1.] # [unitless] scales the velocity value used to calculate lateral acceleration
+_SPEED_SCALE_BP = [0.] # [meters per second] speeds corresponding to scaling values, so you can alter low/high speed behavior for each road type
+def default_speed_scale():
+  return [_SPEED_SCALE_BP, _SPEED_SCALE_V]
+_SPEED_SCALE_FOR_ROAD_RANK = defaultdict(default_speed_scale)
+_SPEED_SCALE_FOR_ROAD_RANK[1] = [[i*CV.MPH_TO_MS for i in [35., 55.]],[0.75, 1.0]] # motorway_link (freeway interchange)
+_SPEED_SCALE_FOR_ROAD_RANK[11] = _SPEED_SCALE_FOR_ROAD_RANK[1] # trunk_link (other interchange)
+_SPEED_SCALE_FOR_ROAD_RANK[20] = [[i*CV.MPH_TO_MS for i in [35., 55.]],[0.85, 1.0]] # primary (state highway)
+_SPEED_SCALE_FOR_ROAD_RANK[30] = [[i*CV.MPH_TO_MS for i in [35., 55.]],[0.9, 1.0]] # secondary (lesser state highway)
+
+
 
 # scale up current measured lateral acceleration if the lateral controller is saturated
 _LAT_SAT_DECEL_V = [1.0, 1.5] # unitless. scales current lateral acceleration
@@ -106,8 +119,8 @@ class VisionTurnController():
     self._controls_state = None
     self._liveparams = None
     self._vf = 1.
-    self._ema_k = 1/5 # exponential moving average factor for smoothing predicted values
-    self._reset()
+    self._ema_k = 1/10 # exponential moving average factor for smoothing predicted values
+    self._reset(True)
 
   @property
   def state(self):
@@ -133,8 +146,8 @@ class VisionTurnController():
   def is_active(self):
     return self._state != VisionTurnControllerState.disabled
 
-  def _reset(self):
-    if not self._gas_pressed:
+  def _reset(self, full_reset = False):
+    if full_reset:
       self._pred_curvatures = np.array([])
       self._max_pred_lat_acc = 0.
       self._max_pred_curvature = 0.
@@ -148,6 +161,7 @@ class VisionTurnController():
     self._predicted_path_source = 'none'
     self._lat_sat_last = False
     self._lat_sat_t = 0.
+    self._speed_scale_bp_v = _SPEED_SCALE_FOR_ROAD_RANK[0]
   
   def eval_curvature(self, poly, x_vals, path_roll_poly, max_x):
     """
@@ -190,8 +204,21 @@ class VisionTurnController():
     model_data = sm['modelV2'] if sm.valid.get('modelV2', False) else None
     lat_planner_data = sm['lateralPlan'] if sm.valid.get('lateralPlan', False) else None
     
+    # For updating VehicleModel
+    if sm.valid.get('liveParameters', False):
+      self._liveparams = sm['liveParameters']
+    if sm.valid.get('carState', False):
+      self._CS = sm['carState']
+    
+    if self._CS is not None:
+      steering_angle = self._CS.steeringAngleDeg
+    else:
+      return
+    
     # scale velocity used to determine curvature in order to provide more braking at low speed
-    self._vf = interp(self._v_ego, _LOW_SPEED_SCALE_BP, _LOW_SPEED_SCALE_V)
+    self._speed_scale_bp_v = _SPEED_SCALE_FOR_ROAD_RANK[int(sm['liveMapData'].currentRoadType)]
+      
+    self._vf = interp(self._v_ego, self._speed_scale_bp_v[0], self._speed_scale_bp_v[1])
 
     # 1. When the probability of lanes is good enough, compute polynomial from lanes as they are way more stable
     # on current mode than driving path.
@@ -243,29 +270,18 @@ class VisionTurnController():
     if path_poly is None:
       path_poly = np.array([0., 0., 0., 0.])
       self._predicted_path_source = 'none'
-    
-    # Update VehicleModel
-    if sm.valid.get('liveParameters', False):
-      self._liveparams = sm['liveParameters']
-    if sm.valid.get('carState', False):
-      self._CS = sm['carState']
+      
     if self._liveparams is not None:
       x = max(self._liveparams.stiffnessFactor, 0.1)
       sr = max(self._liveparams.steerRatio, 0.1)
       self._VM.update_params(x, sr)
-      roll_compensation = self._VM.roll_compensation(self._liveparams.roll, self._v_ego)
+      roll_compensation = self._VM.roll_compensation(self._liveparams.roll, self._vf * self._v_ego)
       angle_offset = self._liveparams.angleOffsetDeg
     else:
       roll_compensation = 0.
       angle_offset = 0.
     
-    if self._CS is not None:
-      steering_angle = self._CS.steeringAngleDeg
-    else:
-      steering_angle = 0.
-      
-    
-    current_curvature_no_roll = self._VM.calc_curvature(-math.radians(steering_angle - angle_offset), self._v_ego, 0.)
+    current_curvature_no_roll = self._VM.calc_curvature(-math.radians(steering_angle - angle_offset), self._vf * self._v_ego, 0.)
     if abs(roll_compensation) > abs(current_curvature_no_roll):
       roll_compensation = abs(current_curvature_no_roll) * np.sign(roll_compensation)
     current_curvature = abs(current_curvature_no_roll + roll_compensation)
@@ -350,6 +366,8 @@ class VisionTurnController():
       # If substantial lateral acceleration is predicted ahead, then move to Entering turn state.
       elif self._max_pred_lat_acc >= _ENTERING_PRED_LAT_ACC_TH:
         self.state = VisionTurnControllerState.entering
+      elif self._current_lat_acc >= _TURNING_LAT_ACC_TH:
+        self.state = VisionTurnControllerState.turning
     # ENTERING
     elif self.state == VisionTurnControllerState.entering:
       # Transition to Turning if current lateral acceleration is over the threshold.
@@ -385,7 +403,7 @@ class VisionTurnController():
       if self._lat_acc_overshoot_ahead:
         # when overshooting, target the acceleration needed to achieve the overshoot speed at
         # the required distance
-        a_target_overshoot = min((self._v_overshoot**2 - self._v_ego**2) / (2 * self._v_overshoot_distance), a_target)
+        a_target_overshoot = min((self._v_overshoot**2 - (self._vf * self._v_ego)**2) / (2 * self._v_overshoot_distance), a_target)
         if self.state == VisionTurnControllerState.entering:
           a_target = a_target_overshoot
         _debug(f'TVC Entering: Overshooting: {self._lat_acc_overshoot_ahead}')

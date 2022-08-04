@@ -97,13 +97,13 @@ class CarInterface(CarInterfaceBase):
   # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
   @staticmethod
   def get_steer_feedforward_volt_torque(desired_lateral_accel, v_ego):
-    ANGLE_COEF = 0.10000000
-    ANGLE_COEF2 = 0.13122630
-    ANGLE_OFFSET = 0.00666167
-    SPEED_OFFSET = -3.29933821
-    SIGMOID_COEF_RIGHT = 0.53844801
-    SIGMOID_COEF_LEFT = 0.47000514
-    SPEED_COEF = 0.60112716
+    ANGLE_COEF = 0.08617848
+    ANGLE_COEF2 = 0.12568428
+    ANGLE_OFFSET = 0.00205026
+    SPEED_OFFSET = -3.48009247
+    SIGMOID_COEF_RIGHT = 0.56664089
+    SIGMOID_COEF_LEFT = 0.50360594
+    SPEED_COEF = 0.55322718
     return get_steer_feedforward_erf(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
 
   def get_steer_feedforward_function(self):
@@ -178,8 +178,8 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
         ret.lateralTuning.torque.kp = 1.8 / max_lateral_accel
-        ret.lateralTuning.torque.ki = 0.6 / max_lateral_accel
-        ret.lateralTuning.torque.kd = 4.0 / max_lateral_accel
+        ret.lateralTuning.torque.ki = 0.55 / max_lateral_accel
+        ret.lateralTuning.torque.kd = 5.0 / max_lateral_accel
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
         ret.lateralTuning.torque.friction = 0.005
       else:

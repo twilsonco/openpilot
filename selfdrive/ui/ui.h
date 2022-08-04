@@ -38,6 +38,8 @@
 #define COLOR_GREEN_ALPHA(x) nvgRGBA(0, 255, 0, x)
 #define COLOR_BLUE nvgRGBA(0, 0, 255, 255)
 #define COLOR_BLUE_ALPHA(x) nvgRGBA(0, 0, 255, x)
+#define COLOR_GRACE_BLUE nvgRGBA(0, 100, 255, 255)
+#define COLOR_GRACE_BLUE_ALPHA(x) nvgRGBA(0, 100, 255, x)
 #define COLOR_ORANGE nvgRGBA(255, 175, 3, 255)
 #define COLOR_ORANGE_ALPHA(x) nvgRGBA(255, 175, 3, x)
 #define COLOR_YELLOW_ALPHA(x) nvgRGBA(218, 202, 37, x)
@@ -163,6 +165,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   ACCELERATION,
   LAT_ACCEL,//JERK,
   ALTITUDE,
+  BEARING,
   PERCENT_GRADE,
   PERCENT_GRADE_DEVICE,
   FOLLOW_LEVEL,
@@ -196,6 +199,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   VISION_CURLATACCEL,
   VISION_MAXVFORCURCURV,
   VISION_MAXPREDLATACCEL,
+  VISION_VF,
   LANE_WIDTH,
   ROLL,
   ROLL_DEVICE,
@@ -224,6 +228,9 @@ typedef struct UIScene {
   bool speed_limit_perc_offset;
   Rect speed_limit_sign_touch_rect;
   double last_speed_limit_sign_tap;
+  int speed_limit_eu_style = false;
+
+  std::string current_road_name;
   
   // adjustable lane position
   Rect lane_pos_left_touch_rect = {1,1,1,1}, lane_pos_right_touch_rect = {1,1,1,1};
@@ -236,6 +243,7 @@ typedef struct UIScene {
   float lane_pos_dist_since_set = 0.;
   float lane_pos_dist_last_t = 0.;
   float lane_pos_max_steer_deg = 150.;
+  bool auto_lane_pos_active = false;
   
   Rect wheel_touch_rect;
   bool wheel_rotates = true;
@@ -265,6 +273,9 @@ typedef struct UIScene {
   Rect measure_slots_rect;
   Rect measure_slot_touch_rects[10];
   int num_measures = UIMeasure::NUM_MEASURES; // the number of cases handled in ui_draw_measures() in paint.cc
+  float measures_touch_timeout = 10.;
+  float measures_last_tap_t = -measures_touch_timeout;
+  
   Rect speed_rect;
   float road_roll, device_roll;
   
@@ -281,6 +292,8 @@ typedef struct UIScene {
   float stoppingDistance;
   float percentGradeDevice;
   int fanspeed_rpm = 0;
+  float bearingAccuracy;
+  float bearingDeg;
   
   float lastTime = 0., sessionInitTime = 0.;
   float paramsCheckLast = 0., paramsCheckFreq = 0.1; // check params at 10Hz
@@ -298,6 +311,7 @@ typedef struct UIScene {
   int brake_percent;
   float brake_indicator_alpha;
   float brake_indicator_last_t;
+  bool brake_indicator_enabled;
   
   // accel mode button
   bool accel_mode_button_enabled;

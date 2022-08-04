@@ -198,6 +198,20 @@ class WayRelation():
   @property
   def id(self):
     return self.way.id
+  
+  @property
+  def road_name(self):
+    if self.highway_rank in [1, 11]: #'motorway_link' or 'trunk_link'
+      return "(Interchange)"
+    elif self.name is not None:
+      return self.name
+    else:
+      return self.ref
+  
+  @property
+  def road_type(self):
+    return self.highway_rank
+      
 
   def update(self, location_rad, bearing_rad, location_accuracy):
     """Will update and validate the associated way with a given `location_rad` and `bearing_rad`.

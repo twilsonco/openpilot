@@ -1,5 +1,6 @@
 from cereal import car
 from common.numpy_fast import clip, interp
+from common.realtime import sec_since_boot
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.drive_helpers import CONTROL_N
 from selfdrive.modeld.constants import T_IDXS
@@ -67,10 +68,9 @@ class LongControl():
                             sat_limit=0.8)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
-    self.longPlan = ""
-    self.coasting_lead_d = -1.
-    self.coasting_lead_v = -1.
-    self.tr = 1.8
+    self.output_accel_pos_rate_ema_k = 1/10 # use exponential moving average on output accel, but only for positive jerk
+
+    
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
@@ -115,17 +115,11 @@ class LongControl():
     if self.long_control_state == LongCtrlState.off or CS.gasPressed:
       self.reset(v_ego_pid)
       output_accel = 0.
-
+      
     # tracking objects and driving
     elif self.long_control_state == LongCtrlState.pid:
       self.v_pid = v_target
-
-      self.longPlan = long_plan.longitudinalPlanSource
-      self.coasting_lead_d = long_plan.leadDist
-      self.coasting_lead_v = long_plan.leadV
-      self.tr = long_plan.desiredFollowDistance
       
-
       # Toyota starts braking more when it thinks you want to stop
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
       prevent_overshoot = not CP.stoppingControl and CS.vEgo < 1.5 and v_target_future < 0.7 and v_target_future < v_target
@@ -151,7 +145,10 @@ class LongControl():
       if output_accel < -DECEL_THRESHOLD_TO_PID:
         output_accel += CP.startingAccelRate / RATE
       self.reset(CS.vEgo)
-
+      
+    if output_accel > self.last_output_accel:
+      output_accel =  self.output_accel_pos_rate_ema_k * output_accel + (1. - self.output_accel_pos_rate_ema_k) * self.last_output_accel
+    
     self.last_output_accel = output_accel
     final_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 

@@ -64,9 +64,13 @@ Please show your support by contributing to the ongoing development of this proj
 - [x] [Volt 2018] Auto-creep behind stopped lead car as they pull away (tap gas or resume button to resume)
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
-- [x] Adjustable lane position using onscreen buttons
+- [x] [✅] Adjustable lane position using onscreen buttons
     * Tap buttons to change lane position for 1/3 mile; double-tap to change for 10 miles
     * Tap again to go back to center position
+- [x] Automatic lane position: if in right lane, assume right position, or left position if in left lane.
+    * To activate, enable adjustable lane position, then while onroad, tap left then right (or right then left) lane position button within 2s.
+    * Tap either button to deactivate
+    * Requires clear lanelines, and a straight road
 - [x] [GM] [✅] Dynamic follow mode
 - [x] [GM] Toggle steering with LKAS button (wheel color changes to indicate disengagement)
 - [x] [GM] One-pedal driving a.k.a. autosteering only a.k.a. toggle longitudinal control: using regen (volt) and/or light/moderate/heavy braking, control OP all the way to a stop, without a lead, and without disengaging, with just the gas pedal (see below) (application of friction brakes originally suggested by cybertronicify — 10/06/2021)

@@ -1,9 +1,11 @@
 import numpy as np
 import time
+from collections import defaultdict
 from common.params import Params
 from cereal import log
 from common.realtime import sec_since_boot
 from common.numpy_fast import interp
+from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import LIMIT_ADAPT_ACC, LIMIT_MIN_SPEED, LIMIT_MAX_MAP_DATA_AGE, \
   LIMIT_SPEED_OFFSET_TH, CONTROL_N, LIMIT_MIN_ACC, LIMIT_MAX_ACC
 from selfdrive.modeld.constants import T_IDXS
@@ -13,7 +15,18 @@ _ACTIVE_LIMIT_MIN_ACC = -0.5  # m/s^2 Maximum deceleration allowed while active.
 _ACTIVE_LIMIT_MAX_ACC = 0.5   # m/s^2 Maximum acelration allowed while active.
 
 _SPEED_LIMIT_SCALE_BY_SPEED_BP = [0.]
-_SPEED_LIMIT_SCALE_BY_SPEED_V = [1.18]
+_SPEED_LIMIT_SCALE_BY_SPEED_V = [1.25]
+def default_speed_scale():
+  return [_SPEED_LIMIT_SCALE_BY_SPEED_BP, _SPEED_LIMIT_SCALE_BY_SPEED_V]
+_SPEED_LIMIT_SCALE_FOR_ROAD_RANK = defaultdict(default_speed_scale)
+_SPEED_LIMIT_SCALE_FOR_ROAD_RANK[1] = [[0.],[1.35]] # motorway_link (freeway interchange)
+_SPEED_LIMIT_SCALE_FOR_ROAD_RANK[11] = _SPEED_LIMIT_SCALE_FOR_ROAD_RANK[1] # trunk_link (other interchange)
+
+def default_min_cutoff_speed_limit():
+  return 40.
+_MIN_CUTOFF_SPEED_LIMIT_FOR_ROAD_RANK = defaultdict(default_min_cutoff_speed_limit)
+_MIN_CUTOFF_SPEED_LIMIT_FOR_ROAD_RANK[0] = 35. * CV.MPH_TO_MS # don't brake for <= 35mph curves if on the freeway
+_MIN_CUTOFF_SPEED_LIMIT_FOR_ROAD_RANK[10] = 35. * CV.MPH_TO_MS # don't brake for <= 35mph curves if on the freeway (trunk)
 
 _DEBUG = False
 
@@ -129,9 +142,13 @@ class TurnSpeedController():
     if map_data.turnSpeedLimitValid and self._v_ego > 0.:
       speed_limit_end_time = (map_data.turnSpeedLimitEndDistance / self._v_ego) - gps_fix_age
       if speed_limit_end_time > 0.:
-        v_ego = sm['carState'].vEgo
-        scale_factor = interp(v_ego, _SPEED_LIMIT_SCALE_BY_SPEED_BP, _SPEED_LIMIT_SCALE_BY_SPEED_V)
-        speed_limit = map_data.turnSpeedLimit * scale_factor
+        # see if curve is below threshold for road type
+        if map_data.turnSpeedLimit > _MIN_CUTOFF_SPEED_LIMIT_FOR_ROAD_RANK[int(map_data.currentRoadType)]:
+          v_ego = sm['carState'].vEgo
+          speed_limit_scale = _SPEED_LIMIT_SCALE_FOR_ROAD_RANK[int(map_data.currentRoadType)]
+          scale_factor = interp(v_ego, speed_limit_scale[0], speed_limit_scale[1])
+          speed_limit = map_data.turnSpeedLimit * scale_factor
+        
 
     # When we have no ahead speed limit to consider or all are greater than current speed limit
     # or car has stopped, then provide current value and reset tracking.

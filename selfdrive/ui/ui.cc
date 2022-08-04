@@ -217,6 +217,12 @@ static void update_state(UIState *s) {
     scene.screen_dim_mode = std::stoi(Params().get("ScreenDimMode"));
     scene.lane_pos_enabled = Params().getBool("LanePositionEnabled");
     scene.lead_info_print_enabled = Params().getBool("PrintLeadInfo");
+    scene.speed_limit_eu_style = int(Params().getBool("EUSpeedLimitStyle"));
+    scene.show_debug_ui = Params().getBool("ShowDebugUI");
+    scene.brake_indicator_enabled = Params().getBool("BrakeIndicator");
+    if (scene.auto_lane_pos_active){
+      scene.lane_pos = std::stoi(Params().get("LanePosition"));
+    }
     if (scene.disableDisengageOnGasEnabled){
       scene.onePedalModeActive = Params().getBool("OnePedalMode");
       scene.onePedalEngageOnGasEnabled = Params().getBool("OnePedalModeEngageOnGas");
@@ -368,6 +374,9 @@ static void update_state(UIState *s) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
     scene.is_using_torque_control = (sm["carParams"].getCarParams().getLateralTuning().which() == cereal::CarParams::LateralTuning::TORQUE);
   }
+  if (sm.updated("liveMapData")) {
+    scene.current_road_name = sm["liveMapData"].getLiveMapData().getCurrentRoadName();
+  }
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
       if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
@@ -418,14 +427,19 @@ static void update_state(UIState *s) {
     scene.lateralPlan.rProb = data.getRProb();
     scene.lateralPlan.lanelessModeStatus = data.getLanelessMode();
   }
+  if (sm.updated("gpsLocationExternal")) {
+    auto data = sm["gpsLocationExternal"].getGpsLocationExternal();
+    scene.bearingAccuracy = data.getBearingAccuracyDeg();
+    scene.bearingDeg = data.getBearingDeg();
+  }
   if (sm.updated("longitudinalPlan")) {
-    auto data = sm["longitudinalPlan"].getLongitudinalPlan();
-
-    scene.desiredFollowDistance = data.getDesiredFollowDistance();
-    scene.followDistanceCost = data.getLeadDistCost();
-    scene.followAccelCost = data.getLeadAccelCost();
-    scene.stoppingDistance = data.getStoppingDistance();
-    scene.dynamic_follow_level = data.getDynamicFollowLevel();
+    scene.longitudinal_plan = sm["longitudinalPlan"].getLongitudinalPlan();
+    
+    scene.desiredFollowDistance = scene.longitudinal_plan.getDesiredFollowDistance();
+    scene.followDistanceCost = scene.longitudinal_plan.getLeadDistCost();
+    scene.followAccelCost = scene.longitudinal_plan.getLeadAccelCost();
+    scene.stoppingDistance = scene.longitudinal_plan.getStoppingDistance();
+    scene.dynamic_follow_level = scene.longitudinal_plan.getDynamicFollowLevel();
   }
   
   if (scene.brake_percent > 50){
@@ -589,7 +603,7 @@ static void update_status(UIState *s) {
 
 QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
-    "modelV2", "controlsState", "liveCalibration", "deviceState", "roadCameraState",
+    "modelV2", "controlsState", "liveCalibration", "deviceState", "roadCameraState", "liveMapData",
     "pandaState", "carParams", "driverMonitoringState", "sensorEvents", "carState", "radarState", "liveLocationKalman", "ubloxGnss", "gpsLocationExternal", 
     "longitudinalPlan", "lateralPlan", "liveParameters",
   });

@@ -98,7 +98,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   
   // presses of measure boxes
   for (int i = 0; i < QUIState::ui_state.scene.measure_cur_num_slots; ++i){
-    if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.measure_slot_touch_rects[i].ptInRect(e->x(), e->y())){
+    if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.measures_last_tap_t < QUIState::ui_state.scene.measures_touch_timeout && QUIState::ui_state.scene.started && QUIState::ui_state.scene.measure_slot_touch_rects[i].ptInRect(e->x(), e->y())){
       // user pressed one of the measure boxes. Need to increment the data shown.
       char slotName[16];
       snprintf(slotName, sizeof(slotName), "MeasureSlot%.2d", i);
@@ -107,6 +107,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
       char val_str[6];
       sprintf(val_str, "%1d", slot_val);
       Params().put(slotName, val_str, strlen(val_str));
+      QUIState::ui_state.scene.measures_last_tap_t = QUIState::ui_state.scene.lastTime;
       return;
     }
   }
@@ -114,18 +115,21 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // presses of vehicle speed to increment number of measure boxes
   if (QUIState::ui_state.scene.started 
     && QUIState::ui_state.scene.speed_rect.ptInRect(e->x(), e->y())){
-      
-    int num_slots = QUIState::ui_state.scene.measure_cur_num_slots + 1; 
-    if (num_slots > QUIState::ui_state.scene.measure_max_num_slots){
-      num_slots = QUIState::ui_state.scene.measure_min_num_slots;
+    if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.measures_last_tap_t < QUIState::ui_state.scene.measures_touch_timeout
+        || QUIState::ui_state.scene.measure_cur_num_slots == 0){
+      int num_slots = QUIState::ui_state.scene.measure_cur_num_slots + 1; 
+      if (num_slots > QUIState::ui_state.scene.measure_max_num_slots){
+        num_slots = QUIState::ui_state.scene.measure_min_num_slots;
+      }
+      else if (num_slots > QUIState::ui_state.scene.measure_max_num_slots / 2){
+        num_slots = QUIState::ui_state.scene.measure_max_num_slots;
+      }
+      QUIState::ui_state.scene.measure_cur_num_slots = num_slots;
+      char val_str[6];
+      sprintf(val_str, "%1d", num_slots);
+      Params().put("MeasureNumSlots", val_str, strlen(val_str));
     }
-    else if (num_slots > QUIState::ui_state.scene.measure_max_num_slots / 2){
-      num_slots = QUIState::ui_state.scene.measure_max_num_slots;
-    }
-    QUIState::ui_state.scene.measure_cur_num_slots = num_slots;
-    char val_str[6];
-    sprintf(val_str, "%1d", num_slots);
-    Params().put("MeasureNumSlots", val_str, strlen(val_str));
+    QUIState::ui_state.scene.measures_last_tap_t = QUIState::ui_state.scene.lastTime;
     return;
   }
   
@@ -195,42 +199,72 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   
   // lane position buttons
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.lane_pos_enabled && QUIState::ui_state.scene.lane_pos_left_touch_rect.ptInRect(e->x(), e->y())){
-    if (QUIState::ui_state.scene.lane_pos == 1){
-      if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.lane_pos_set_t < 2.){
-        QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_long;
+    if (QUIState::ui_state.scene.auto_lane_pos_active){
+      QUIState::ui_state.scene.auto_lane_pos_active = false;
+      Params().putBool("AutoLanePositionActive", false);
+      QUIState::ui_state.scene.lane_pos = 0;
+      Params().put("LanePosition", "0", 1);
+    }
+    else{
+      if (QUIState::ui_state.scene.lane_pos == 1){
+        if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.lane_pos_set_t < 2.){
+          QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_long;
+        }
+        else{
+          QUIState::ui_state.scene.lane_pos = 0;
+          Params().put("LanePosition", "0", 1);
+        }
       }
-      else{
+      else if (QUIState::ui_state.scene.lane_pos == -1 && QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.lane_pos_set_t < 2.){
+        // activate auto mode
+        QUIState::ui_state.scene.auto_lane_pos_active = true;
+        Params().putBool("AutoLanePositionActive", true);
         QUIState::ui_state.scene.lane_pos = 0;
         Params().put("LanePosition", "0", 1);
       }
+      else{
+        QUIState::ui_state.scene.lane_pos = 1;
+        QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_short;
+        QUIState::ui_state.scene.lane_pos_set_t = QUIState::ui_state.scene.lastTime;
+        QUIState::ui_state.scene.lane_pos_dist_since_set = 0.;
+        Params().put("LanePosition", "1", 1);
+      }
+      return;
     }
-    else{
-      QUIState::ui_state.scene.lane_pos = 1;
-      QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_short;
-      QUIState::ui_state.scene.lane_pos_set_t = QUIState::ui_state.scene.lastTime;
-      QUIState::ui_state.scene.lane_pos_dist_since_set = 0.;
-      Params().put("LanePosition", "1", 1);
-    }
-    return;
   }
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.lane_pos_enabled && QUIState::ui_state.scene.lane_pos_right_touch_rect.ptInRect(e->x(), e->y())){
-    if (QUIState::ui_state.scene.lane_pos == -1){
-      if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.lane_pos_set_t < 2.){
-        QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_long;
+    if (QUIState::ui_state.scene.auto_lane_pos_active){
+      QUIState::ui_state.scene.auto_lane_pos_active = false;
+      Params().putBool("AutoLanePositionActive", false);
+      QUIState::ui_state.scene.lane_pos = 0;
+      Params().put("LanePosition", "0", 1);
+    }
+    else{
+      if (QUIState::ui_state.scene.lane_pos == -1){
+        if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.lane_pos_set_t < 2.){
+          QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_long;
+        }
+        else{
+          QUIState::ui_state.scene.lane_pos = 0;
+          Params().put("LanePosition", "0", 1);
+        }
       }
-      else{
+      else if (QUIState::ui_state.scene.lane_pos == 1 && QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.lane_pos_set_t < 2.){
+        // activate auto mode
+        QUIState::ui_state.scene.auto_lane_pos_active = true;
+        Params().putBool("AutoLanePositionActive", true);
         QUIState::ui_state.scene.lane_pos = 0;
         Params().put("LanePosition", "0", 1);
       }
+      else{
+        QUIState::ui_state.scene.lane_pos = -1;
+        QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_short;
+        QUIState::ui_state.scene.lane_pos_set_t = QUIState::ui_state.scene.lastTime;
+        QUIState::ui_state.scene.lane_pos_dist_since_set = 0.;
+        Params().put("LanePosition", "-1", 2);
+      }
+      return;
     }
-    else{
-      QUIState::ui_state.scene.lane_pos = -1;
-      QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_short;
-      QUIState::ui_state.scene.lane_pos_set_t = QUIState::ui_state.scene.lastTime;
-      QUIState::ui_state.scene.lane_pos_dist_since_set = 0.;
-      Params().put("LanePosition", "-1", 2);
-    }
-    return;
   }
 
   // Handle sidebar collapsing

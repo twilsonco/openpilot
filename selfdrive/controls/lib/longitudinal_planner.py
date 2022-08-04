@@ -147,8 +147,11 @@ class Planner():
     self.lead_1 = sm['radarState'].leadTwo
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
-    following = self.lead_1.status and self.lead_1.dRel < 45.0 and self.lead_1.vLeadK > v_ego and self.lead_1.aLeadK > 0.0
-    if self.lead_1.status:
+    following = self.lead_0.status and self.lead_0.dRel < 45.0 and self.lead_0.vLeadK > v_ego and self.lead_0.aLeadK > 0.0
+    if self.lead_0.status:
+      self.coasting_lead_d = self.lead_0.dRel
+      self.coasting_lead_v = self.lead_0.vLead
+    elif self.lead_1.status:
       self.coasting_lead_d = self.lead_1.dRel
       self.coasting_lead_v = self.lead_1.vLead
     else:
@@ -263,6 +266,7 @@ class Planner():
     longitudinalPlan.visionMaxPredictedLateralAccelerationDistance = float(self.vision_turn_controller._max_pred_lat_acc_dist)
     longitudinalPlan.visionTurnSpeed = float(self.vision_turn_controller.v_turn)
     longitudinalPlan.visionPredictedPathSource = self.vision_turn_controller._predicted_path_source
+    longitudinalPlan.visionVf = float(self.vision_turn_controller._vf) if self.vision_turn_controller._vf is not None else -1.0
     
     longitudinalPlan.dynamicFollowState0.pointsCurrent = self.mpcs['lead0'].df.points_cur
     longitudinalPlan.dynamicFollowState0.newLead = self.mpcs['lead0'].df.new_lead
