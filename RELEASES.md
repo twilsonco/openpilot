@@ -8,10 +8,12 @@ Version tw-0.8.12-5_tws (2022-08-04)
  * NEW: added alerts to tell you when your data signal drops and restores (only if you're using map curve braking or speed limit control, otherwise you don't care)
  * NEW: When debug ui toggle enabled, print lane, adjacent lane, and shoulder widths (along with line confidence values in parentheses) along bottom of screen
  * NEW: Print current road name above current speed
+ * IMPROVED: Nudgeless lane change now won't activate unless op knows there's an adjacent lane
  * IMPROVED: UI metrics don't respond to touches unless you first tap the current speed to unlock them (indicated by a blue border around the metrics). 10 second timeout to lock again.
  * IMPROVED: '17 Volt stop and go anti-rollback on hill.
   * It works by delaying the autoresume until the desired acceleration is more than enough to overcome the gravitational acceleration
  * IMPROVED: vision/map curve braking now go faster on interchanges (under 55mph, otherwise normal braking), and map braking goes faster also on interstate and state highways
+ * IMPROVED: map curve braking, on freeways, will now only brake for 35mph+ curves, to prevent harsh braking resulting from false positives
  * IMPROVED: speed limit control now shows US style speed limit sign (disable in toggles)
  * IMPROVED: improved Volt lateral performance
  * IMPROVED: smooth in acceleration after a lead turns right in front of you
