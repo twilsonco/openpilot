@@ -69,7 +69,6 @@ class LongControl():
     self.v_pid = 0.0
     self.last_output_accel = 0.0
     self.output_accel_pos_rate_ema_k = 1/10 # use exponential moving average on output accel, but only for positive jerk
-
     
 
   def reset(self, v_pid):
@@ -146,7 +145,7 @@ class LongControl():
         output_accel += CP.startingAccelRate / RATE
       self.reset(CS.vEgo)
       
-    if output_accel > self.last_output_accel:
+    if CS.vEgo > 1. and output_accel > self.last_output_accel:
       output_accel =  self.output_accel_pos_rate_ema_k * output_accel + (1. - self.output_accel_pos_rate_ema_k) * self.last_output_accel
     
     self.last_output_accel = output_accel
