@@ -63,14 +63,13 @@ class CarController():
     else:
       pitch = 0.
     gravity_x = -9.8 * sin(pitch) * CS.pitch_accel_factor
-    apply_gas_no_pitch = P.MAX_ACC_REGEN
     if not enabled or CS.pause_long_on_gas_press:
       # Stock ECU sends max regen when not enabled.
       apply_gas = P.MAX_ACC_REGEN
       apply_brake = 0
     else:
       apply_gas = interp(actuators.accel - gravity_x, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
-      apply_gas_no_pitch = interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
+      apply_gas = interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
       pitch_brake_lowspeed_factor = interp(CS.vEgo, CS.pitch_accel_brake_lowspeed_lockout_bp, CS.pitch_accel_brake_lowspeed_lockout_v)
       apply_brake = interp(actuators.accel - gravity_x * pitch_brake_lowspeed_factor, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
       t = sec_since_boot()
@@ -200,7 +199,7 @@ class CarController():
               CS.apply_brake_percent = interp(apply_brake, [float(P.BRAKE_LOOKUP_V[-1]), float(P.BRAKE_LOOKUP_V[0])], [51., 100.])
             elif (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active):
               CS.apply_brake_percent = interp(CS.hvb_wattage, CS.hvb_wattage_bp, [0., 50.])
-            elif apply_gas_no_pitch < P.ZERO_GAS:
+            elif apply_gas < P.ZERO_GAS:
               CS.apply_brake_percent = interp(apply_gas, [float(P.GAS_LOOKUP_V[0]), float(P.GAS_LOOKUP_V[1])], [51., 0.])
           else:
             CS.apply_brake_percent = interp(CS.hvb_wattage, CS.hvb_wattage_bp, [0., 50.])
@@ -217,7 +216,7 @@ class CarController():
 
       if CS.cruiseMain and not enabled and CS.autoHold and CS.autoHoldActive and not CS.out.gasPressed and CS.out.gearShifter in ['drive','low'] and CS.out.vEgo < 0.02 and not CS.regenPaddlePressed:
         # Auto Hold State
-        car_stopping = apply_gas_no_pitch < P.ZERO_GAS
+        car_stopping = apply_gas < P.ZERO_GAS
         standstill = CS.pcm_acc_status == AccState.STANDSTILL
 
         at_full_stop = standstill and car_stopping
@@ -232,7 +231,7 @@ class CarController():
           car_stopping = False
           standstill = False
         else:
-          car_stopping = apply_gas_no_pitch < P.ZERO_GAS
+          car_stopping = apply_gas < P.ZERO_GAS
           standstill = CS.pcm_acc_status == AccState.STANDSTILL
           at_full_stop = enabled and standstill and car_stopping
           near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
