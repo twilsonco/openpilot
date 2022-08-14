@@ -23,9 +23,8 @@ def update_panda() -> Panda:
   panda = None
   panda_dfu = None
 
-  cloudlog.info("Connecting to panda")
-
   while True:
+    cloudlog.info("Connecting to panda")
     # break on normal mode Panda
     panda_list = Panda.list()
     if len(panda_list) > 0:
