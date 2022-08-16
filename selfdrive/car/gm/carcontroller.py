@@ -29,7 +29,7 @@ class CarController():
 
   def update(self, enabled, CS, frame, actuators,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
-
+    self.params.update_gas_brake_threshold(CS.out.vEgo)
     P = self.params
 
     # Send CAN commands.

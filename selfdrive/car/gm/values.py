@@ -1,6 +1,7 @@
 # flake8: noqa
 
 from cereal import car
+from common.numpy_fast import interp
 from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
 
@@ -40,6 +41,15 @@ class CarControllerParams():
     self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, self.MAX_GAS]
     self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, -1.1]
     self.BRAKE_LOOKUP_V = [MAX_BRAKE, 0]
+    
+    # determined by letting Volt regen to a stop in L gear from 75mph
+    self.EV_GAS_BRAKE_THRESHOLD_BP = [1.0, 1.4, 1.6, 2.4, 3.6, 4.6, 5.4, 12.0, 24.6, 29.0, 33.5] # [m/s]
+    self.EV_GAS_BRAKE_THRESHOLD_V = [-0.1, -0.1, -0.22, -0.52, -0.62, -0.72, -0.82, -1.1, -1.1, -0.90, -0.8] # [m/s^s]
+  
+  def update_gas_brake_threshold(self, v_ego):
+    gas_brake_threshold = interp(v_ego, self.EV_GAS_BRAKE_THRESHOLD_BP, self.EV_GAS_BRAKE_THRESHOLD_V)
+    self.GAS_LOOKUP_BP = [gas_brake_threshold, 0., self.ACCEL_MAX]
+    self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, gas_brake_threshold]
 
 class CAR:
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
