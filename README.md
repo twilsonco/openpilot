@@ -175,6 +175,9 @@ This fork is developed and used on a Comma Three in a 2018 Chevy Volt, and is al
 Use [these instructions](https://github.com/sshane/openpilot-installer-generator#usage) and the following url:
 `https://smiskol.com/fork/twilsonco`
 
+Or use Comma's installer the same way: `https://www.installer.comma.ai/twilsonco`
+
+
 To ride the bleeding edge, try the staging branch where new features are tested before they go to regular users:
 (Be extra diligent and attentive when using the staging branch; it is considered experimental moreso than the regular branch!)
 `https://smiskol.com/fork/twilsonco/tw-0.8.9-staging`
