@@ -69,7 +69,6 @@ class CarController():
       apply_brake = 0
     else:
       apply_gas = interp(actuators.accel - gravity_x, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
-      apply_gas = interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
       pitch_brake_lowspeed_factor = interp(CS.vEgo, CS.pitch_accel_brake_lowspeed_lockout_bp, CS.pitch_accel_brake_lowspeed_lockout_v)
       apply_brake = interp(actuators.accel - gravity_x * pitch_brake_lowspeed_factor, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
       t = sec_since_boot()
