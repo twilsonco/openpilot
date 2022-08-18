@@ -8,6 +8,9 @@ Version tw-0.8.12-5_twd (2022-08-04)
  * NEW: added alerts to tell you when your data signal drops and restores (only if you're using map curve braking or speed limit control, otherwise you don't care)
  * NEW: When debug ui toggle enabled, print lane, adjacent lane, and shoulder widths (along with line confidence values in parentheses) along bottom of screen
  * NEW: Print current road name above current speed
+ * IMPROVED: Use liveParams pitch for better longitudinal pitch compensation
+ * IMPROVED: Only show "signal lost" alert if data features (map curve braking or speed limit control) are enabled
+  * Also only show if change persists for more than 1 minute
  * IMPROVED: Nudgeless lane change now won't activate unless op knows there's an adjacent lane
  * IMPROVED: UI metrics don't respond to touches unless you first tap the current speed to unlock them (indicated by a blue border around the metrics). 10 second timeout to lock again.
  * IMPROVED: '17 Volt stop and go anti-rollback on hill.
@@ -16,6 +19,7 @@ Version tw-0.8.12-5_twd (2022-08-04)
  * IMPROVED: map curve braking, on freeways, will now only brake for 35mph+ curves, to prevent harsh braking resulting from false positives
  * IMPROVED: speed limit control now shows US style speed limit sign (disable in toggles)
  * IMPROVED: improved Volt lateral performance
+ * IMPROVED: improved low-speed lateral performance using dynamic steer rate limits
  * IMPROVED: smooth in acceleration after a lead turns right in front of you
 
 Version tw-0.8.12-4_twd (2022-07-20)
