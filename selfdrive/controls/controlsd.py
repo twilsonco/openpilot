@@ -16,7 +16,9 @@ from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_cruise, V_CRUISE_MIN
 from selfdrive.controls.lib.drive_helpers import get_lag_adjusted_curvature
+from selfdrive.controls.lib.drive_helpers import apply_deadzone
 from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEED
+from selfdrive.controls.lib.lane_planner import TRAJECTORY_SIZE
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from selfdrive.controls.lib.latcontrol_indi import LatControlINDI
 from selfdrive.controls.lib.latcontrol_lqr import LatControlLQR
@@ -24,6 +26,7 @@ from selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager
+from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.locationd.calibrationd import Calibration
 from selfdrive.modeld.constants import T_IDXS
@@ -171,6 +174,8 @@ class Controls:
     self.logged_comm_issue = False
     self.v_target = 0.0
     self.a_target = 0.0
+    self.pitch = 0.0
+    self.pitch_accel_deadzone = 0.01 # [radians] ≈ 1% grade
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -539,12 +544,9 @@ class Controls:
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
     
-    if self.sm.valid.get('liveLocationKalman', False) and self.sm.valid.get('modelV2', False) and len(self.sm['modelV2'].orientation.y) >= 12 and len(self.sm['liveLocationKalman'].calibratedOrientationNED.value) > 1 and sec_since_boot() > 120.:
-      current_pitch = clip(self.sm['liveLocationKalman'].calibratedOrientationNED.value[1], -MAX_ABS_PITCH, MAX_ABS_PITCH)
+    if self.sm.updated['liveParameters'] and len(self.sm['modelV2'].orientation.y) == TRAJECTORY_SIZE:
       future_pitch_diff = clip(interp(self.CI.CS.pitch_future_time, T_IDXS, self.sm['modelV2'].orientation.y), -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
-      self.CI.CS.pitch_raw = current_pitch + future_pitch_diff
-      future_pitch_diff = clip(interp(self.CI.CS.pitch_accel_future_time, T_IDXS, self.sm['modelV2'].orientation.y), -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
-      self.CI.CS.pitch_accel_raw = current_pitch + clip(future_pitch_diff, -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
+      self.CI.CS.pitch_raw = self.sm['liveParameters'].pitch + future_pitch_diff
       
 
     actuators = car.CarControl.Actuators.new_message()
@@ -569,6 +571,12 @@ class Controls:
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS, self.CI)
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
       actuators.accel = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
+      
+      # compute pitch-compensated accel
+      if self.sm.updated['liveParameters']:
+        self.pitch = apply_deadzone(self.sm['liveParameters'].pitchFutureLong, self.pitch_accel_deadzone)
+      actuators.accelPitchCompensated = actuators.accel + ACCELERATION_DUE_TO_GRAVITY * math.sin(self.pitch)
+
       
       self.CI.CS.coasting_long_plan = long_plan.longitudinalPlanSource
       self.CI.CS.coasting_lead_d = long_plan.leadDist
