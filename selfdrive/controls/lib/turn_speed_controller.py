@@ -15,11 +15,11 @@ _ACTIVE_LIMIT_MIN_ACC = -0.5  # m/s^2 Maximum deceleration allowed while active.
 _ACTIVE_LIMIT_MAX_ACC = 0.5   # m/s^2 Maximum acelration allowed while active.
 
 _SPEED_LIMIT_SCALE_BY_SPEED_BP = [0.]
-_SPEED_LIMIT_SCALE_BY_SPEED_V = [1.25]
+_SPEED_LIMIT_SCALE_BY_SPEED_V = [1.15]
 def default_speed_scale():
   return [_SPEED_LIMIT_SCALE_BY_SPEED_BP, _SPEED_LIMIT_SCALE_BY_SPEED_V]
 _SPEED_LIMIT_SCALE_FOR_ROAD_RANK = defaultdict(default_speed_scale)
-_SPEED_LIMIT_SCALE_FOR_ROAD_RANK[1] = [[0.],[1.35]] # motorway_link (freeway interchange)
+_SPEED_LIMIT_SCALE_FOR_ROAD_RANK[1] = [[0.],[1.25]] # motorway_link (freeway interchange)
 _SPEED_LIMIT_SCALE_FOR_ROAD_RANK[11] = _SPEED_LIMIT_SCALE_FOR_ROAD_RANK[1] # trunk_link (other interchange)
 
 def default_min_cutoff_speed_limit():
@@ -138,15 +138,16 @@ class TurnSpeedController():
     speed_limit_in_sections_ahead = map_data.turnSpeedLimitsAhead
     turn_sings_in_sections_ahead = map_data.turnSpeedLimitsAheadSigns
 
+    v_ego = sm['carState'].vEgo
+    speed_limit_scale = _SPEED_LIMIT_SCALE_FOR_ROAD_RANK[int(map_data.currentRoadType)]
+    scale_factor = interp(v_ego, speed_limit_scale[0], speed_limit_scale[1])
+          
     # Ensure current speed limit is considered only if we are inside the section.
     if map_data.turnSpeedLimitValid and self._v_ego > 0.:
       speed_limit_end_time = (map_data.turnSpeedLimitEndDistance / self._v_ego) - gps_fix_age
       if speed_limit_end_time > 0.:
         # see if curve is below threshold for road type
         if map_data.turnSpeedLimit > _MIN_CUTOFF_SPEED_LIMIT_FOR_ROAD_RANK[int(map_data.currentRoadType)]:
-          v_ego = sm['carState'].vEgo
-          speed_limit_scale = _SPEED_LIMIT_SCALE_FOR_ROAD_RANK[int(map_data.currentRoadType)]
-          scale_factor = interp(v_ego, speed_limit_scale[0], speed_limit_scale[1])
           speed_limit = map_data.turnSpeedLimit * scale_factor
         
 
@@ -165,7 +166,7 @@ class TurnSpeedController():
 
     # We select as next speed limit, the one that have the lowest distance gap.
     next_idx = np.argmin(distance_gaps)
-    next_speed_limit = speed_limit_in_sections_ahead[next_idx]
+    next_speed_limit = speed_limit_in_sections_ahead[next_idx] * scale_factor
     distance_to_section_ahead = distances_to_sections_ahead[next_idx]
     next_turn_sign = turn_sings_in_sections_ahead[next_idx]
     distance_gap = distance_gaps[next_idx]
