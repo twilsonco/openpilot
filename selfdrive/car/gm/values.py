@@ -12,9 +12,9 @@ class CarControllerParams():
     # self.STEER_DELTA_UP = 14          # ~1s time to peak torque (255/50hz/1s)
     # self.STEER_DELTA_DOWN = 34       # ~0.4s from peak torque to zero
     self.STEER_DELTA_UP_BP = [10., 20.] # [m/s]
-    self.STEER_DELTA_UP_V = [24., 8.] # [steer command]
+    self.STEER_DELTA_UP_V = [12., 7.] # [steer command]
     self.STEER_DELTA_DOWN_BP = [10., 20.] # [m/s]
-    self.STEER_DELTA_DOWN_V = [36., 18.] # [steer command]
+    self.STEER_DELTA_DOWN_V = [29., 17.] # [steer command]
     self.MIN_STEER_SPEED = 3.
     self.STEER_DRIVER_ALLOWANCE = 50   # allowed driver torque before start limiting
     self.STEER_DRIVER_MULTIPLIER = 4   # weight driver torque heavily
