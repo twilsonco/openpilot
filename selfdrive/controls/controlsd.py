@@ -57,6 +57,7 @@ LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 EventName = car.CarEvent.EventName
 
+SpeedLimitControlState = log.LongitudinalPlan.SpeedLimitControlState
 
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
@@ -70,6 +71,7 @@ class Controls:
     self.lk_mode_last = False
     self.oplongcontrol_last = False
     self.network_strength_last = log.DeviceState.NetworkStrength.unknown
+    self.network_last_connect_t = -60
     
     self.gpsWasOK = False
 
@@ -218,13 +220,24 @@ class Controls:
       return
     
     # Alert when network drops, but only if map braking or speed limit control is enabled
+    t = sec_since_boot()
     network_strength = self.sm['deviceState'].networkStrength
     if network_strength != self.network_strength_last:
       if network_strength == log.DeviceState.NetworkStrength.unknown:
-        self.events.add(EventName.signalLost)
-      elif self.network_strength_last == log.DeviceState.NetworkStrength.unknown:
-        self.events.add(EventName.signalRestored)
+        self.network_last_connect_t = t
+      else:
+        if self.network_last_connect_t < 0:
+          self.events.add(EventName.signalRestored)
+        self.network_last_connect_t = -1
     self.network_strength_last = network_strength
+    
+    if self.network_last_connect_t > 0 and t - self.network_last_connect_t > 60 \
+      and (self.sm['longitudinalPlan'].speedLimitControlState != SpeedLimitControlState.inactive \
+        or self.sm['longitudinalPlan'].turnSpeedControlState != SpeedLimitControlState.inactive \
+          ):
+      self.events.add(EventName.signalLost)
+      self.network_last_connect_t = -1
+    
 
     # Create events for battery, temperature, disk space, and memory
     if EON and self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
