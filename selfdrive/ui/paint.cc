@@ -118,7 +118,7 @@ static void ui_draw_speed_sign(UIState *s, float x, float y, int size, float spe
 
 const float OneOverSqrt3 = 1.0 / sqrt(3.0);
 static void ui_draw_turn_speed_sign(UIState *s, float x, float y, int width, float speed, int curv_sign, 
-                                    const char *subtext, const char *font_name, bool is_active, const char *icon) {
+                                    const char *subtext, const char *font_name, bool is_active) {
   const float stroke_w = 15.0;
   NVGcolor border_color = is_active ? COLOR_RED : COLOR_BLACK_ALPHA(.2f * 255);
   NVGcolor inner_color = is_active ? COLOR_WHITE : COLOR_WHITE_ALPHA(.35f * 255);
@@ -130,14 +130,6 @@ static void ui_draw_turn_speed_sign(UIState *s, float x, float y, int width, flo
   const float h2 = 2.0 * R / (1.0 + A);
   const float h1 = A * h2;
   const float L = 4.0 * R * OneOverSqrt3;
-  
-  // Draw icon under everything
-  if (strlen(icon) > 2){
-    const int img_size = 60;
-    const int img_y = y + 10;
-    ui_draw_image(s, {int(x - (img_size / 2)), img_y, img_size, img_size}, 
-                icon, 0.4);
-  }
 
   // Draw the internal triangle, compensate for stroke width. Needed to improve rendering when in inactive 
   // state due to stroke transparency being different from inner transparency.
@@ -1695,10 +1687,26 @@ static void ui_draw_measures(UIState *s){
 
 static void ui_draw_vision_turnspeed(UIState *s) {
   const float mapTurnSpeed = s->scene.longitudinal_plan.getTurnSpeed();
-  const float visionTurnSpeed = s->scene.longitudinal_plan.getVisionTurnSpeed();
-  const float turnSpeed = mapTurnSpeed < visionTurnSpeed ? mapTurnSpeed : visionTurnSpeed;
-  const float vEgo = (*s->sm)["carState"].getCarState().getVEgo();
-  const bool show = turnSpeed > 0.0 && (turnSpeed < vEgo || s->scene.show_debug_ui);
+  auto visionTurnControllerState = s->scene.longitudinal_plan.getVisionTurnControllerState();
+  const bool vision_active = visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::DISABLED;
+  const float visionTurnSpeed = vision_active ? s->scene.longitudinal_plan.getVisionTurnSpeed() : 0.;
+  float turnSpeed;
+  if (mapTurnSpeed > 0. && visionTurnSpeed > 0.){
+    turnSpeed = mapTurnSpeed < visionTurnSpeed ? mapTurnSpeed : visionTurnSpeed;
+  }
+  else if (mapTurnSpeed > 0.){
+    turnSpeed = mapTurnSpeed;
+  }
+  else if (visionTurnSpeed > 0.){
+    turnSpeed = visionTurnSpeed;
+  }
+  else{
+    turnSpeed = 0.;
+  }
+  const float vEgo = s->scene.car_state.getVEgo();  
+  auto source = s->scene.longitudinal_plan.getLongitudinalPlanSource();
+  const bool manual_long = (s->scene.car_state.getOnePedalModeActive() || s->scene.car_state.getCoastOnePedalModeActive());
+  const bool show = (turnSpeed > 0.0 && ((turnSpeed < vEgo+2.24 && !manual_long) || s->scene.show_debug_ui));
 
   if (show) {
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
@@ -1708,35 +1716,31 @@ static void ui_draw_vision_turnspeed(UIState *s) {
       maxspeed_rect.h};
     const float speed = turnSpeed * (s->scene.is_metric ? 3.6 : 2.2369362921);
 
-    auto source = s->scene.longitudinal_plan.getLongitudinalPlanSource();
-    if (source == cereal::LongitudinalPlan::LongitudinalPlanSource::TURN){
+    if (vision_active){
       // vision turn controller, so need sign of curvature to know curve direction
-      auto visionTurnControllerState = s->scene.longitudinal_plan.getVisionTurnControllerState();
-      const bool is_active = visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::DISABLED;
-
       int curveSign = 0;
       if (visionTurnControllerState == cereal::LongitudinalPlan::VisionTurnControllerState::ENTERING){
-        curveSign = s->scene.longitudinal_plan.getVisionMaxPredictedCurvature() > 0. ? 1 : -1;
+        curveSign = s->scene.longitudinal_plan.getVisionMaxPredictedCurvature() > 0. ? -1 : 1;
       }
       else {
         auto curvatures = s->scene.lateral_plan.getCurvatures();
         for (auto curvature : curvatures){
-          curveSign = curvature > 0. ? 1 : -1;
+          curveSign = curvature > 0. ? -1 : 1;
           break;
         }
       }
 
-      const std::string icon = visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::ENTERING ? "" : "eye";
+      const bool is_active = source == cereal::LongitudinalPlan::LongitudinalPlanSource::TURN;
 
       const int distToTurn = visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::ENTERING ? -1 : int(s->scene.longitudinal_plan.getVisionMaxPredictedLateralAccelerationDistance() * 
                                 (s->scene.is_metric ? 1.0 : 3.28084) / 10) * 10;
-      const std::string distance_str = distToTurn > 0 ? std::to_string(distToTurn) + (s->scene.is_metric ? "m" : "f") : "";
+      const std::string distance_str = visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::ENTERING ? "TURN" : "VIS";
 
       ui_draw_turn_speed_sign(s, speed_sign_rect.centerX(), speed_sign_rect.centerY(), 
                               speed_sign_rect.w, speed, 
-                              curveSign, distToTurn > 0 ? distance_str.c_str() : "", "sans-bold", is_active, icon.c_str());
+                              curveSign, distToTurn > 0 ? distance_str.c_str() : "", "sans-bold", is_active);
     }
-    else if (source == cereal::LongitudinalPlan::LongitudinalPlanSource::TURNLIMIT){
+    else{
       auto turnSpeedControlState = s->scene.longitudinal_plan.getTurnSpeedControlState();
       const bool is_active = turnSpeedControlState > cereal::LongitudinalPlan::SpeedLimitControlState::TEMP_INACTIVE;
 
@@ -1749,7 +1753,7 @@ static void ui_draw_vision_turnspeed(UIState *s) {
 
       ui_draw_turn_speed_sign(s, speed_sign_rect.centerX(), speed_sign_rect.centerY(), 
                               speed_sign_rect.w, speed, 
-                              curveSign, distToTurn > 0 ? distance_str.c_str() : "", "sans-bold", is_active, "map_source_icon");
+                              curveSign, distToTurn > 0 ? distance_str.c_str() : "", "sans-bold", is_active);
     }
 
 
