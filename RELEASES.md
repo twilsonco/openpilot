@@ -21,6 +21,7 @@ Version tw-0.8.12-5_twd (2022-08-04)
  * IMPROVED: improved Volt lateral performance
  * IMPROVED: improved low-speed lateral performance using dynamic steer rate limits
  * IMPROVED: smooth in acceleration after a lead turns right in front of you
+ * IMPROVED: dynamic gas/brake threshold for more accurate gm long control
 
 Version tw-0.8.12-4_twd (2022-07-20)
 ========================
