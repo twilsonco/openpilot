@@ -118,7 +118,7 @@ static void ui_draw_speed_sign(UIState *s, float x, float y, int size, float spe
 
 const float OneOverSqrt3 = 1.0 / sqrt(3.0);
 static void ui_draw_turn_speed_sign(UIState *s, float x, float y, int width, float speed, int curv_sign, 
-                                    const char *subtext, const char *font_name, bool is_active) {
+                                    const char *subtext, const char *font_name, bool is_active, const char *icon) {
   const float stroke_w = 15.0;
   NVGcolor border_color = is_active ? COLOR_RED : COLOR_BLACK_ALPHA(.2f * 255);
   NVGcolor inner_color = is_active ? COLOR_WHITE : COLOR_WHITE_ALPHA(.35f * 255);
@@ -130,6 +130,14 @@ static void ui_draw_turn_speed_sign(UIState *s, float x, float y, int width, flo
   const float h2 = 2.0 * R / (1.0 + A);
   const float h1 = A * h2;
   const float L = 4.0 * R * OneOverSqrt3;
+  
+  // Draw icon under everything
+  if (strlen(icon) > 2){
+    const int img_size = 60;
+    const int img_y = y + 10;
+    ui_draw_image(s, {int(x - (img_size / 2)), img_y, img_size, img_size}, 
+                icon, 0.4);
+  }
 
   // Draw the internal triangle, compensate for stroke width. Needed to improve rendering when in inactive 
   // state due to stroke transparency being different from inner transparency.
@@ -1686,7 +1694,9 @@ static void ui_draw_measures(UIState *s){
 
 
 static void ui_draw_vision_turnspeed(UIState *s) {
-  const float turnSpeed = s->scene.longitudinal_plan.getTurnSpeed();
+  const float mapTurnSpeed = s->scene.longitudinal_plan.getTurnSpeed();
+  const float visionTurnSpeed = s->scene.longitudinal_plan.getVisionTurnSpeed();
+  const float turnSpeed = mapTurnSpeed < visionTurnSpeed ? mapTurnSpeed : visionTurnSpeed;
   const float vEgo = (*s->sm)["carState"].getCarState().getVEgo();
   const bool show = turnSpeed > 0.0 && (turnSpeed < vEgo || s->scene.show_debug_ui);
 
@@ -1698,16 +1708,52 @@ static void ui_draw_vision_turnspeed(UIState *s) {
       maxspeed_rect.h};
     const float speed = turnSpeed * (s->scene.is_metric ? 3.6 : 2.2369362921);
 
-    auto turnSpeedControlState = s->scene.longitudinal_plan.getTurnSpeedControlState();
-    const bool is_active = turnSpeedControlState > cereal::LongitudinalPlan::SpeedLimitControlState::TEMP_INACTIVE;
+    auto source = s->scene.longitudinal_plan.getLongitudinalPlanSource();
+    if (source == cereal::LongitudinalPlan::LongitudinalPlanSource::TURN){
+      // vision turn controller, so need sign of curvature to know curve direction
+      auto visionTurnControllerState = s->scene.longitudinal_plan.getVisionTurnControllerState();
+      const bool is_active = visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::DISABLED;
 
-    const int curveSign = s->scene.longitudinal_plan.getTurnSign();
-    const int distToTurn = int(s->scene.longitudinal_plan.getDistToTurn() * 
-                               (s->scene.is_metric ? 1.0 : 3.28084) / 10) * 10;
-    const std::string distance_str = std::to_string(distToTurn) + (s->scene.is_metric ? "m" : "f");
+      int curveSign = 0;
+      if (visionTurnControllerState == cereal::LongitudinalPlan::VisionTurnControllerState::ENTERING){
+        curveSign = s->scene.longitudinal_plan.getVisionMaxPredictedCurvature() > 0. ? 1 : -1;
+      }
+      else {
+        auto curvatures = s->scene.lateral_plan.getCurvatures();
+        for (auto curvature : curvatures){
+          curveSign = curvature > 0. ? 1 : -1;
+          break;
+        }
+      }
 
-    ui_draw_turn_speed_sign(s, speed_sign_rect.centerX(), speed_sign_rect.centerY(), speed_sign_rect.w, speed, 
-                            curveSign, distToTurn > 0 ? distance_str.c_str() : "", "sans-bold", is_active);
+      const std::string icon = visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::ENTERING ? "" : "eye";
+
+      const int distToTurn = visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::ENTERING ? -1 : int(s->scene.longitudinal_plan.getVisionMaxPredictedLateralAccelerationDistance() * 
+                                (s->scene.is_metric ? 1.0 : 3.28084) / 10) * 10;
+      const std::string distance_str = distToTurn > 0 ? std::to_string(distToTurn) + (s->scene.is_metric ? "m" : "f") : "";
+
+      ui_draw_turn_speed_sign(s, speed_sign_rect.centerX(), speed_sign_rect.centerY(), 
+                              speed_sign_rect.w, speed, 
+                              curveSign, distToTurn > 0 ? distance_str.c_str() : "", "sans-bold", is_active, icon.c_str());
+    }
+    else if (source == cereal::LongitudinalPlan::LongitudinalPlanSource::TURNLIMIT){
+      auto turnSpeedControlState = s->scene.longitudinal_plan.getTurnSpeedControlState();
+      const bool is_active = turnSpeedControlState > cereal::LongitudinalPlan::SpeedLimitControlState::TEMP_INACTIVE;
+
+      
+
+      const int curveSign = s->scene.longitudinal_plan.getTurnSign();
+      const int distToTurn = int(s->scene.longitudinal_plan.getDistToTurn() * 
+                                (s->scene.is_metric ? 1.0 : 3.28084) / 10) * 10;
+      const std::string distance_str = std::to_string(distToTurn) + (s->scene.is_metric ? "m" : "f");
+
+      ui_draw_turn_speed_sign(s, speed_sign_rect.centerX(), speed_sign_rect.centerY(), 
+                              speed_sign_rect.w, speed, 
+                              curveSign, distToTurn > 0 ? distance_str.c_str() : "", "sans-bold", is_active, "map_source_icon");
+    }
+
+
+
   }
 }
 
@@ -1721,28 +1767,8 @@ static void ui_draw_vision_speed(UIState *s) {
 }
 
 static void ui_draw_vision_event(UIState *s) {
-  auto longitudinal_plan = (*s->sm)["longitudinalPlan"].getLongitudinalPlan();
-  auto visionTurnControllerState = longitudinal_plan.getVisionTurnControllerState();
   s->scene.wheel_touch_rect = {1,1,1,1};
-  if (s->scene.show_debug_ui && 
-      visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::DISABLED && 
-      s->scene.engageable) {
-    // draw a rectangle with colors indicating the state with the value of the acceleration inside.
-    const int size = 184;
-    const Rect rect = {s->fb_w - size - bdr_s, int(bdr_s * 1.5), size, size};
-    ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 30.);
-
-    auto source = longitudinal_plan.getLongitudinalPlanSource();
-    const int alpha = source == cereal::LongitudinalPlan::LongitudinalPlanSource::TURN ? 255 : 100;
-    const QColor &color = tcs_colors[int(visionTurnControllerState)];
-    NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), alpha);
-    ui_draw_rect(s->vg, rect, nvg_color, 10, 20.);
-    
-    const float vision_turn_speed = longitudinal_plan.getVisionTurnSpeed() * (s->scene.is_metric ? 3.6 : 2.2369363);
-    std::string acc_str = std::to_string((int)std::nearbyint(vision_turn_speed));
-    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-    ui_draw_text(s, rect.centerX(), rect.centerY(), acc_str.c_str(), 56, COLOR_WHITE_ALPHA(alpha), "sans-bold");
-  } else if (s->scene.engageable) {
+  if (s->scene.engageable) {
     // draw steering wheel
     const float rot_angle = -s->scene.angleSteers * 0.01745329252;
     const int radius = 88;
@@ -1758,18 +1784,10 @@ static void ui_draw_vision_event(UIState *s) {
     // now rotate and draw the wheel
     nvgSave(s->vg);
     nvgTranslate(s->vg, center_x, center_y);
-    if (visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::DISABLED){
-      ui_draw_image(s, {-radius/3, -radius/3, 2 * radius / 3, 2 * radius / 3}, "eye", 1.0f);
-    }
     if (s->scene.wheel_rotates){
       nvgRotate(s->vg, rot_angle);
     }
-    if (visionTurnControllerState > cereal::LongitudinalPlan::VisionTurnControllerState::DISABLED){
-      ui_draw_image(s, {-radius, -radius, 2*radius, 2*radius}, "brake_disk", 1.0f);
-    }
-    else{
-      ui_draw_image(s, {-radius, -radius, 2*radius, 2*radius}, "wheel", 1.0f);
-    }
+    ui_draw_image(s, {-radius, -radius, 2*radius, 2*radius}, "wheel", 1.0f);
     nvgRestore(s->vg);
     
     // draw extra circle to indiate paused low-speed one-pedal blinker steering is enabled
