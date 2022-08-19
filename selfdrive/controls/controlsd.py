@@ -16,7 +16,9 @@ from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_cruise, V_CRUISE_MIN
 from selfdrive.controls.lib.drive_helpers import get_lag_adjusted_curvature
+from selfdrive.controls.lib.drive_helpers import apply_deadzone
 from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEED
+from selfdrive.controls.lib.lane_planner import TRAJECTORY_SIZE
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from selfdrive.controls.lib.latcontrol_indi import LatControlINDI
 from selfdrive.controls.lib.latcontrol_lqr import LatControlLQR
@@ -24,6 +26,7 @@ from selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager
+from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.locationd.calibrationd import Calibration
 from selfdrive.modeld.constants import T_IDXS
@@ -54,6 +57,7 @@ LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 EventName = car.CarEvent.EventName
 
+SpeedLimitControlState = log.LongitudinalPlan.SpeedLimitControlState
 
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
@@ -67,6 +71,7 @@ class Controls:
     self.lk_mode_last = False
     self.oplongcontrol_last = False
     self.network_strength_last = log.DeviceState.NetworkStrength.unknown
+    self.network_last_connect_t = -60
     
     self.gpsWasOK = False
 
@@ -171,6 +176,8 @@ class Controls:
     self.logged_comm_issue = False
     self.v_target = 0.0
     self.a_target = 0.0
+    self.pitch = 0.0
+    self.pitch_accel_deadzone = 0.01 # [radians] ≈ 1% grade
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -213,13 +220,24 @@ class Controls:
       return
     
     # Alert when network drops, but only if map braking or speed limit control is enabled
+    t = sec_since_boot()
     network_strength = self.sm['deviceState'].networkStrength
     if network_strength != self.network_strength_last:
       if network_strength == log.DeviceState.NetworkStrength.unknown:
-        self.events.add(EventName.signalLost)
-      elif self.network_strength_last == log.DeviceState.NetworkStrength.unknown:
-        self.events.add(EventName.signalRestored)
+        self.network_last_connect_t = t
+      else:
+        if self.network_last_connect_t < 0:
+          self.events.add(EventName.signalRestored)
+        self.network_last_connect_t = -1
     self.network_strength_last = network_strength
+    
+    if self.network_last_connect_t > 0 and t - self.network_last_connect_t > 60 \
+      and (self.sm['longitudinalPlan'].speedLimitControlState != SpeedLimitControlState.inactive \
+        or self.sm['longitudinalPlan'].turnSpeedControlState != SpeedLimitControlState.inactive \
+          ):
+      self.events.add(EventName.signalLost)
+      self.network_last_connect_t = -1
+    
 
     # Create events for battery, temperature, disk space, and memory
     if EON and self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
@@ -539,12 +557,9 @@ class Controls:
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
     
-    if self.sm.valid.get('liveLocationKalman', False) and self.sm.valid.get('modelV2', False) and len(self.sm['modelV2'].orientation.y) >= 12 and len(self.sm['liveLocationKalman'].calibratedOrientationNED.value) > 1 and sec_since_boot() > 120.:
-      current_pitch = clip(self.sm['liveLocationKalman'].calibratedOrientationNED.value[1], -MAX_ABS_PITCH, MAX_ABS_PITCH)
+    if self.sm.updated['liveParameters'] and len(self.sm['modelV2'].orientation.y) == TRAJECTORY_SIZE:
       future_pitch_diff = clip(interp(self.CI.CS.pitch_future_time, T_IDXS, self.sm['modelV2'].orientation.y), -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
-      self.CI.CS.pitch_raw = current_pitch + future_pitch_diff
-      future_pitch_diff = clip(interp(self.CI.CS.pitch_accel_future_time, T_IDXS, self.sm['modelV2'].orientation.y), -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
-      self.CI.CS.pitch_accel_raw = current_pitch + clip(future_pitch_diff, -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
+      self.CI.CS.pitch_raw = self.sm['liveParameters'].pitch + future_pitch_diff
       
 
     actuators = car.CarControl.Actuators.new_message()
@@ -569,6 +584,12 @@ class Controls:
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS, self.CI)
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
       actuators.accel = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
+      
+      # compute pitch-compensated accel
+      if self.sm.updated['liveParameters']:
+        self.pitch = apply_deadzone(self.sm['liveParameters'].pitchFutureLong, self.pitch_accel_deadzone)
+      actuators.accelPitchCompensated = actuators.accel + ACCELERATION_DUE_TO_GRAVITY * math.sin(self.pitch)
+
       
       self.CI.CS.coasting_long_plan = long_plan.longitudinalPlanSource
       self.CI.CS.coasting_lead_d = long_plan.leadDist

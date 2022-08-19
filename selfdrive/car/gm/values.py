@@ -1,6 +1,7 @@
 # flake8: noqa
 
 from cereal import car
+from common.numpy_fast import interp
 from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
 
@@ -8,8 +9,12 @@ class CarControllerParams():
   def __init__(self):
     self.STEER_MAX = 300
     self.STEER_STEP = 2              # how often we update the steer cmd
-    self.STEER_DELTA_UP = 5          # ~1s time to peak torque (255/50hz/1s)
-    self.STEER_DELTA_DOWN = 13       # ~0.4s from peak torque to zero
+    # self.STEER_DELTA_UP = 14          # ~1s time to peak torque (255/50hz/1s)
+    # self.STEER_DELTA_DOWN = 34       # ~0.4s from peak torque to zero
+    self.STEER_DELTA_UP_BP = [10., 20.] # [m/s]
+    self.STEER_DELTA_UP_V = [12., 7.] # [steer command]
+    self.STEER_DELTA_DOWN_BP = [10., 20.] # [m/s]
+    self.STEER_DELTA_DOWN_V = [29., 17.] # [steer command]
     self.MIN_STEER_SPEED = 3.
     self.STEER_DRIVER_ALLOWANCE = 50   # allowed driver torque before start limiting
     self.STEER_DRIVER_MULTIPLIER = 4   # weight driver torque heavily
@@ -40,6 +45,25 @@ class CarControllerParams():
     self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, self.MAX_GAS]
     self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, -1.1]
     self.BRAKE_LOOKUP_V = [MAX_BRAKE, 0]
+    
+    self.v_ego = 100.
+
+  @property
+  def STEER_DELTA_UP(self):
+    return int(round(interp(self.v_ego, self.STEER_DELTA_UP_BP, self.STEER_DELTA_UP_V)))
+  
+  @property
+  def STEER_DELTA_DOWN(self):
+    return int(round(interp(self.v_ego, self.STEER_DELTA_DOWN_BP, self.STEER_DELTA_DOWN_V)))
+    
+    # determined by letting Volt regen to a stop in L gear from 75mph
+  EV_GAS_BRAKE_THRESHOLD_BP = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.28, 1.6, 2.4, 3.6, 4.6, 5.4, 12.0, 24.6, 29.0, 33.5] # [m/s]
+  EV_GAS_BRAKE_THRESHOLD_V = [0.678, 0.67, 0.63, 0.56, 0.49, 0.38, 0.3, 0.13, 0.0, -0.22, -0.52, -0.62, -0.72, -0.82, -1.1, -1.1, -0.90, -0.8] # [m/s^s]
+  
+  def update_gas_brake_threshold(self, v_ego):
+    gas_brake_threshold = interp(v_ego, self.EV_GAS_BRAKE_THRESHOLD_BP, self.EV_GAS_BRAKE_THRESHOLD_V)
+    self.GAS_LOOKUP_BP = [gas_brake_threshold, 0., self.ACCEL_MAX]
+    self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, gas_brake_threshold]
 
 class CAR:
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"

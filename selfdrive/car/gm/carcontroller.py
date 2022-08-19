@@ -11,6 +11,9 @@ from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
+# only use pitch-compensated acceleration at 10m/s+
+ACCEL_PITCH_FACTOR_BP = [5., 10.] # [m/s]
+ACCEL_PITCH_FACTOR_V = [0., 1.] # [unitless in [0-1]]
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
@@ -29,7 +32,7 @@ class CarController():
 
   def update(self, enabled, CS, frame, actuators,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
-
+    self.params.update_gas_brake_threshold(CS.out.vEgo)
     P = self.params
 
     # Send CAN commands.
@@ -44,6 +47,7 @@ class CarController():
       lkas_enabled = (enabled or CS.pause_long_on_gas_press) and CS.lkMode and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > P.MIN_STEER_SPEED and CS.lane_change_steer_factor > 0.
       if lkas_enabled:
         new_steer = int(round(actuators.steer * P.STEER_MAX * CS.lane_change_steer_factor))
+        P.v_ego = CS.out.vEgo
         apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
         self.steer_rate_limited = new_steer != apply_steer
       else:
@@ -57,21 +61,15 @@ class CarController():
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))
 
     # Gas/regen prep
-    # apply pitch "shifted deadzone" that gives smooth output in addition to applying a deadzone
-    if abs(CS.pitch_accel) > CS.pitch_accel_deadzone:
-      pitch = CS.pitch_accel + (CS.pitch_accel_deadzone if CS.pitch_accel < 0. else -CS.pitch_accel_deadzone)
-    else:
-      pitch = 0.
-    gravity_x = -9.8 * sin(pitch) * CS.pitch_accel_factor
     if not enabled or CS.pause_long_on_gas_press:
       # Stock ECU sends max regen when not enabled.
       apply_gas = P.MAX_ACC_REGEN
       apply_brake = 0
     else:
-      apply_gas = interp(actuators.accel - gravity_x, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
-      apply_gas = interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
-      pitch_brake_lowspeed_factor = interp(CS.vEgo, CS.pitch_accel_brake_lowspeed_lockout_bp, CS.pitch_accel_brake_lowspeed_lockout_v)
-      apply_brake = interp(actuators.accel - gravity_x * pitch_brake_lowspeed_factor, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
+      k = interp(CS.out.vEgo, ACCEL_PITCH_FACTOR_BP, ACCEL_PITCH_FACTOR_V)
+      brake_accel = k * actuators.accelPitchCompensated + (1. - k) * actuators.accel
+      apply_gas = interp(actuators.accelPitchCompensated, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
+      apply_brake = interp(brake_accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
       t = sec_since_boot()
       
       v_rel = CS.coasting_lead_v - CS.vEgo

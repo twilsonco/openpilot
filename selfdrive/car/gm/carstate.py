@@ -125,13 +125,6 @@ class CarState(CarStateBase):
     self.pitch_raw = 0. # radians
     self.pitch_ema = 1/100
     self.pitch_future_time = 0.5 # seconds
-    self.pitch_accel_factor = 0.85
-    self.pitch_accel_deadzone = 0.01 # radians ~ ±1% grade
-    self.pitch_accel = 0.
-    self.pitch_accel_raw = 0.
-    self.pitch_accel_future_time = 0.8
-    self.pitch_accel_brake_lowspeed_lockout_bp = [i * CV.MPH_TO_MS for i in [5., 15.]]
-    self.pitch_accel_brake_lowspeed_lockout_v = [0., 1.]
     
     
     # similar to over-speed coast braking, lockout coast/one-pedal logic first for engine/regen braking, and then for actual brakes.
@@ -361,7 +354,6 @@ class CarState(CarStateBase):
     ret.onePedalBrakeMode = self.one_pedal_brake_mode
     
     self.pitch = self.pitch_ema * self.pitch_raw + (1 - self.pitch_ema) * self.pitch 
-    self.pitch_accel = self.pitch_ema * self.pitch_accel_raw + (1 - self.pitch_ema) * self.pitch_accel
     ret.pitch = self.pitch
 
     ret.autoHoldActivated = self.autoHoldActivated
