@@ -37,6 +37,8 @@ class CarController():
 
     # Send CAN commands.
     can_sends = []
+    
+    no_pitch_apply_gas = 0
 
     # Steering (50Hz)
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
@@ -69,6 +71,7 @@ class CarController():
       k = interp(CS.out.vEgo, ACCEL_PITCH_FACTOR_BP, ACCEL_PITCH_FACTOR_V)
       brake_accel = k * actuators.accelPitchCompensated + (1. - k) * actuators.accel
       apply_gas = interp(actuators.accelPitchCompensated, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
+      no_pitch_apply_gas = interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
       apply_brake = interp(brake_accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
       t = sec_since_boot()
       
@@ -214,7 +217,7 @@ class CarController():
 
       if CS.cruiseMain and not enabled and CS.autoHold and CS.autoHoldActive and not CS.out.gasPressed and CS.out.gearShifter in ['drive','low'] and CS.out.vEgo < 0.02 and not CS.regenPaddlePressed:
         # Auto Hold State
-        car_stopping = apply_gas < P.ZERO_GAS
+        car_stopping = no_pitch_apply_gas < P.ZERO_GAS
         standstill = CS.pcm_acc_status == AccState.STANDSTILL
 
         at_full_stop = standstill and car_stopping
@@ -229,7 +232,7 @@ class CarController():
           car_stopping = False
           standstill = False
         else:
-          car_stopping = apply_gas < P.ZERO_GAS
+          car_stopping = no_pitch_apply_gas < P.ZERO_GAS
           standstill = CS.pcm_acc_status == AccState.STANDSTILL
           at_full_stop = enabled and standstill and car_stopping
           near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
