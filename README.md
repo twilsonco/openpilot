@@ -51,12 +51,12 @@ Please show your support by contributing to the ongoing development of this proj
 * Map-based automatic changing of speed limit (with optional offset)
   * **Map-based slowing for curves and automatic setting of speed requires a data connection**
   * You can subscribe to [comma Prime](https://comma.ai/prime), which is a great service and is totally worth the cost, or you can use your own hotspot and enable the "disable onroad uploads" toggle (see below) to only use data for these features
-* Hands on wheel monitoring
-* Disable disengage when gas pressed
+* ~~Hands on wheel monitoring~~ *In stock*
+* ~~Disable disengage when gas pressed~~ *Now in stock*
 
 **Additional fork features:**
 
-- [x] Running openpilot 0.8.12 lateral and 0.8.10 driver monitoring models
+- [x] Running old but proud openpilot 0.8.12 lateral and 0.8.10 driver monitoring models
 - [x] [Comma3] AGNOS4 OS
 - [x] [Volt/Acadia] Alternate lateral (steering) tunes using the new "torque" controller
 - [Volt] Much improved steering control over stock (working on upstreaming)
@@ -145,7 +145,7 @@ Please show your support by contributing to the ongoing development of this proj
 - [ ] Chevy Bolt support
 - [ ] Record screen button
 - [ ] Auto engage parking brake
-- [ ] Live tuner
+- [ ] ~~Live tuner~~ Auto tuning
 - [ ] Redo UI metrics as themed "widgets" instead that can be activated independently and stack against the right (and left if necessary) side of the screen
   * Follow widget: a colored vertical bar indicating follow distance with lines indicating the actual and desired (length/time) follow distances. Tap to include more info items like current distance cost
   * Openpilot widget: a similar vertical bar (or maybe something like a circular progress bar or a speedometer--looking thing) showing the gas/braking being requested by OP. Also include Driver monitoring info.

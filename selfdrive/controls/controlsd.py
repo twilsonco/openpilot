@@ -71,7 +71,7 @@ class Controls:
     self.lk_mode_last = False
     self.oplongcontrol_last = False
     self.network_strength_last = log.DeviceState.NetworkStrength.unknown
-    self.network_last_connect_t = -60
+    self.network_last_change_t = -60
     
     self.gpsWasOK = False
 
@@ -224,19 +224,19 @@ class Controls:
     network_strength = self.sm['deviceState'].networkStrength
     if network_strength != self.network_strength_last:
       if network_strength == log.DeviceState.NetworkStrength.unknown:
-        self.network_last_connect_t = t
-      else:
-        if self.network_last_connect_t < 0:
+        self.network_last_change_t = t
+      elif self.network_strength_last == log.DeviceState.NetworkStrength.unknown:
+        self.network_last_change_t = t
+        if t - self.network_last_change_t > 60 and t - self.network_last_change_t < 61:
           self.events.add(EventName.signalRestored)
-        self.network_last_connect_t = -1
     self.network_strength_last = network_strength
     
-    if self.network_last_connect_t > 0 and t - self.network_last_connect_t > 60 \
+    if network_strength == log.DeviceState.NetworkStrength.unknown \
+      and t - self.network_last_change_t > 60 and t - self.network_last_change_t < 61 \
       and (self.sm['longitudinalPlan'].speedLimitControlState != SpeedLimitControlState.inactive \
         or self.sm['longitudinalPlan'].turnSpeedControlState != SpeedLimitControlState.inactive \
           ):
       self.events.add(EventName.signalLost)
-      self.network_last_connect_t = -1
     
 
     # Create events for battery, temperature, disk space, and memory

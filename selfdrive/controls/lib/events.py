@@ -591,7 +591,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Data signal restored",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, 1., 1., 5.),
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, 1., 1., 5.),
   },
   
   EventName.resumeRequired: {

@@ -237,7 +237,7 @@ static void update_state(UIState *s) {
     }
   }
   
-  if (scene.lane_pos != 0 && scene.lane_pos_dist_since_set > scene.lane_pos_timeout_dist){
+  if (scene.lane_pos != 0 && !s->scene.auto_lane_pos_active && scene.lane_pos_dist_since_set > scene.lane_pos_timeout_dist){
     scene.lane_pos = 0;
     scene.lane_pos_timeout_dist = scene.lane_pos_dist_short;
     Params().put("LanePosition", "0", 1);
@@ -319,7 +319,7 @@ static void update_state(UIState *s) {
     
     if (scene.lane_pos != 0){
       scene.lane_pos_dist_since_set += scene.car_state.getVEgo() * (t - scene.lane_pos_dist_last_t);
-      if (abs(scene.car_state.getSteeringAngleDeg()) > scene.lane_pos_max_steer_deg){
+      if (!s->scene.auto_lane_pos_active && abs(scene.car_state.getSteeringAngleDeg()) > scene.lane_pos_max_steer_deg){
         scene.lane_pos = 0;
         Params().put("LanePosition", "0", 1);
       }

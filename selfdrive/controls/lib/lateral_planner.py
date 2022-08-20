@@ -247,7 +247,7 @@ class LateralPlanner():
       self.laneless_mode_status = True
     elif self.laneless_mode == 2 \
         and ((self.LP.lll_prob + self.LP.rll_prob)/2 < 0.3 \
-          or sm['longitudinalPlan'].visionMaxPredictedLateralAcceleration > 1.3 \
+          or sm['longitudinalPlan'].visionMaxPredictedLateralAcceleration > 0.9 \
           or sm['longitudinalPlan'].visionCurrentLateralAcceleration > 0.8) \
         and self.lane_change_state == LaneChangeState.off:
       d_path_xyz = self.path_xyz
@@ -261,8 +261,8 @@ class LateralPlanner():
         and ((self.LP.lll_prob + self.LP.rll_prob)/2 > 0.5) \
         and self.laneless_mode_status_buffer \
         and self.lane_change_state == LaneChangeState.off \
-        and sm['longitudinalPlan'].visionMaxPredictedLateralAcceleration < 0.7 \
-        and sm['longitudinalPlan'].visionCurrentLateralAcceleration < 0.6:
+        and sm['longitudinalPlan'].visionMaxPredictedLateralAcceleration < 0.5 \
+        and sm['longitudinalPlan'].visionCurrentLateralAcceleration < 0.4:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
       self.libmpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, CP.steerRateCost)
       self.laneless_mode_status = False
