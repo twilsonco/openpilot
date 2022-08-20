@@ -17,6 +17,7 @@ Version tw-0.8.12-5_twd (2022-08-04)
   * It works by delaying the autoresume until the desired acceleration is more than enough to overcome the gravitational acceleration
  * IMPROVED: vision/map curve braking now go faster on interchanges (under 55mph, otherwise normal braking), and map braking goes faster also on interstate and state highways
  * IMPROVED: map curve braking, on freeways, will now only brake for 35mph+ curves, to prevent harsh braking resulting from false positives
+ * IMPROVED: all curve braking now indicated using triangle speed sign at left of screen.
  * IMPROVED: speed limit control now shows US style speed limit sign (disable in toggles)
  * IMPROVED: improved Volt lateral performance
  * IMPROVED: improved low-speed lateral performance using dynamic steer rate limits
