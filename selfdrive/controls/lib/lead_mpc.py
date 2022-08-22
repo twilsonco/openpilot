@@ -364,7 +364,7 @@ class LeadMpc():
       dist_cost = MPC_COST_LONG.DISTANCE
       accel_cost = MPC_COST_LONG.ACCELERATION
     
-    if dist_cost != self.dist_cost_last or accel_cost != self.accel_cost_last or smooth_stop_jerk_factor != 1.:
+    if dist_cost != self.dist_cost_last or accel_cost != self.accel_cost_last:
       self.libmpc.change_costs(MPC_COST_LONG.TTC, dist_cost, accel_cost, MPC_COST_LONG.JERK)
       self.dist_cost_last = dist_cost
       self.accel_cost_last = accel_cost
