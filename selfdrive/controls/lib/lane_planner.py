@@ -167,7 +167,7 @@ class LaneOffset:
       
     do_slow = self._auto_is_active # and self._lane_pos_auto != 0.
     if self._auto_is_active:
-      if (t - self._lane_state_changed_last_t > self.AUTO_LANE_STATE_MIN_TIME):
+      if t - self._lane_state_changed_last_t > self.AUTO_LANE_STATE_MIN_TIME:
         self.lane_pos = self._lane_pos_auto
       else:
         self.lane_pos = 0.
