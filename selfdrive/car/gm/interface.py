@@ -430,7 +430,7 @@ class CarInterface(CarInterfaceBase):
           cloudlog.info("button press event: distance button hold to engage one-pedal mode.")
           self.CS.one_pedal_mode_engage_on_gas = True
           self.CS.one_pedal_mode_engaged_with_button = True
-          self.CS.distance_button_last_press_t = t + 0.2 # gives the user X+0.3 seconds to release the distance button before hard braking is applied (which they may want, so don't want too long of a delay)
+          self.CS.distance_button_last_press_t = t + 1.0 # gives the user 1 second to release the distance button before hard braking is applied (which they may want, so don't want too long of a delay)
 
     ret.readdistancelines = self.CS.follow_level
 
