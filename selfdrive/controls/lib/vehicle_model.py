@@ -14,6 +14,7 @@ A depends on longitudinal speed, u [m/s], and vehicle parameters CP
 """
 from typing import Tuple
 
+from math import sin
 import numpy as np
 from numpy.linalg import solve
 
@@ -120,7 +121,7 @@ class VehicleModel:
     if abs(sf) < 1e-6:
       return 0
     else:
-      return (ACCELERATION_DUE_TO_GRAVITY * roll) / ((1 / sf) - u**2)
+      return (ACCELERATION_DUE_TO_GRAVITY * sin(roll)) / ((1 / sf) - u**2)
 
   def get_steer_from_yaw_rate(self, yaw_rate: float, u: float, roll: float) -> float:
     """Calculates the required steering wheel angle for a given yaw_rate
