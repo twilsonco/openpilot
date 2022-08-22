@@ -17,6 +17,9 @@ SNG_SPEED = 20. * CV.MPH_TO_MS
 SNG_DIST_COST = MPC_COST_LONG.DISTANCE
 SNG_ACCEL_COST = MPC_COST_LONG.ACCELERATION
 
+SMOOTH_STOP_JERK_BP = [0., 1.]
+SMOOTH_STOP_JERK_V = [3., 1.]
+
 FOLLOW_PROFILES = [
   [ # one-bar
     [-1.1, 2.3], # bp0 and bp1; lead car relative velocities [m/s] (set both to 0.0 to disable dynamic brakepoints)
@@ -364,8 +367,10 @@ class LeadMpc():
       dist_cost = MPC_COST_LONG.DISTANCE
       accel_cost = MPC_COST_LONG.ACCELERATION
     
-    if dist_cost != self.dist_cost_last or accel_cost != self.accel_cost_last:
-      self.libmpc.change_costs(MPC_COST_LONG.TTC, dist_cost, accel_cost, MPC_COST_LONG.JERK)
+    smooth_stop_jerk_factor = interp(v_ego, SMOOTH_STOP_JERK_BP, SMOOTH_STOP_JERK_V)
+    
+    if dist_cost != self.dist_cost_last or accel_cost != self.accel_cost_last or smooth_stop_jerk_factor != 1.:
+      self.libmpc.change_costs(MPC_COST_LONG.TTC, dist_cost, accel_cost, MPC_COST_LONG.JERK * smooth_stop_jerk_factor)
       self.dist_cost_last = dist_cost
       self.accel_cost_last = accel_cost
     
