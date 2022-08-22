@@ -57,8 +57,8 @@ class CarControllerParams():
     return int(round(interp(self.v_ego, self.STEER_DELTA_DOWN_BP, self.STEER_DELTA_DOWN_V)))
     
     # determined by letting Volt regen to a stop in L gear from 75mph
-  EV_GAS_BRAKE_THRESHOLD_BP = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.28, 1.6, 2.4, 3.6, 4.6, 5.4, 12.0, 24.6, 29.0, 33.5] # [m/s]
-  EV_GAS_BRAKE_THRESHOLD_V = [0.678, 0.67, 0.63, 0.56, 0.49, 0.38, 0.3, 0.13, 0.0, -0.22, -0.52, -0.62, -0.72, -0.82, -1.1, -1.1, -0.90, -0.8] # [m/s^s]
+  EV_GAS_BRAKE_THRESHOLD_BP = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.28, 1.3, 1.475, 1.49, 1.52, 1.55, 1.6, 1.7, 1.8, 2.0, 2.2, 2.5, 5.52, 9.6, 20.5, 23.5, 35.0] # [m/s]
+  EV_GAS_BRAKE_THRESHOLD_V = [0.678, 0.67, 0.63, 0.56, 0.49, 0.38, 0.3, 0.13, 0.0, 0.0, -0.019, -0.026, -0.14, -0.16, -0.18, -0.215, -0.255, -0.32, -0.41, -0.5, -0.72, -0.895, -1.125, -1.145, -1.16] # [m/s^s]
   
   def update_gas_brake_threshold(self, v_ego):
     gas_brake_threshold = interp(v_ego, self.EV_GAS_BRAKE_THRESHOLD_BP, self.EV_GAS_BRAKE_THRESHOLD_V)
