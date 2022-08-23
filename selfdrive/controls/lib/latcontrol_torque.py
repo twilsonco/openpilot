@@ -59,7 +59,7 @@ class LatControlTorque(LatControl):
       pid_log.error = error
       
       ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
-      ff_roll_a = 1.0
+      ff_roll_a = 0.5
       ff = self.get_steer_feedforward(desired_lateral_accel - ff_roll_a * ff_roll, CS.vEgo) - (1. - ff_roll_a) * ff_roll
       friction_compensation = interp(desired_lateral_jerk, [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], [-self.friction, self.friction])
       ff += friction_compensation
