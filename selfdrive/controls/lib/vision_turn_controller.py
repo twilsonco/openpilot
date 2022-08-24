@@ -14,12 +14,12 @@ from selfdrive.swaglog import cloudlog
 
 _MIN_V = 5.6  # Do not operate under 20km/h
 
-_ENTERING_PRED_LAT_ACC_TH = 1.6  # Predicted Lat Acc threshold to trigger entering turn state.
+_ENTERING_PRED_LAT_ACC_TH = 1.4  # Predicted Lat Acc threshold to trigger entering turn state.
 _ABORT_ENTERING_PRED_LAT_ACC_TH = 0.9  # Predicted Lat Acc threshold to abort entering state if speed drops.
 
-_TURNING_LAT_ACC_TH = 1.0  # Lat Acc threshold to trigger turning turn state.
+_TURNING_LAT_ACC_TH = 0.8  # Lat Acc threshold to trigger turning turn state.
 
-_LEAVING_LAT_ACC_TH = 0.8  # Lat Acc threshold to trigger leaving turn state.
+_LEAVING_LAT_ACC_TH = 0.7  # Lat Acc threshold to trigger leaving turn state.
 _FINISH_LAT_ACC_TH = 0.6  # Lat Acc threshold to trigger end of turn cycle.
 
 _EVAL_STEP = 5.  # mts. Resolution of the curvature evaluation.
@@ -27,17 +27,17 @@ _EVAL_START = 20.  # mts. Distance ahead where to start evaluating vision curvat
 _EVAL_LENGHT = 150.  # mts. Distance ahead where to stop evaluating vision curvature.
 _EVAL_RANGE = np.arange(_EVAL_START, _EVAL_LENGHT, _EVAL_STEP)
 
-_A_LAT_REG_MAX = 1.8  # Maximum lateral acceleration
+_A_LAT_REG_MAX = 1.7  # Maximum lateral acceleration
 
 # Lookup table for the minimum smooth deceleration during the ENTERING state
 # depending on the actual maximum absolute lateral acceleration predicted on the turn ahead.
 _ENTERING_SMOOTH_DECEL_V = [0.0, -0.2, -2.0]  # min decel value allowed on ENTERING state
-_ENTERING_SMOOTH_DECEL_BP = [1.2, 1.4, 3.5]  # absolute value of lat acc ahead
+_ENTERING_SMOOTH_DECEL_BP = [1.2, 1.35, 2.8]  # absolute value of lat acc ahead
 
 # Lookup table for the acceleration for the TURNING state
 # depending on the current lateral acceleration of the vehicle.
 _TURNING_ACC_V = [0.6, 0.0, -1.5]  # acc value
-_TURNING_ACC_BP = [0.8, 1.5, 2.2]  # absolute value of current lat acc
+_TURNING_ACC_BP = [0.8, 1.3, 2.0]  # absolute value of current lat acc
 
 _LEAVING_ACC = 0.7  # Confortable acceleration to regain speed while leaving a turn.
 
@@ -48,8 +48,8 @@ _MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow curvature prediction 
 # This will be a default dict based on road type, allowing for easy adjustment of vision braking based on road type
 # See the list of "highway" types here https://wiki.openstreetmap.org/wiki/Key:highway
 # Also see selfdrive/mapd/lib/WayRelation.py for a list of ranks
-_SPEED_SCALE_V = [1.08, 1.] # [unitless] scales the velocity value used to calculate lateral acceleration
-_SPEED_SCALE_BP = [8., 18.] # [meters per second] speeds corresponding to scaling values, so you can alter low/high speed behavior for each road type
+_SPEED_SCALE_V = [1.05, 1.] # [unitless] scales the velocity value used to calculate lateral acceleration
+_SPEED_SCALE_BP = [8., 25.] # [meters per second] speeds corresponding to scaling values, so you can alter low/high speed behavior for each road type
 def default_speed_scale():
   return [_SPEED_SCALE_BP, _SPEED_SCALE_V]
 _SPEED_SCALE_FOR_ROAD_RANK = defaultdict(default_speed_scale)
