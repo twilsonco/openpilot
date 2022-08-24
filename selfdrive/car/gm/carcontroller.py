@@ -23,8 +23,6 @@ class CarController():
     self.lka_icon_status_last = (False, False)
     self.steer_rate_limited = False
     self.fcw_count = 0
-
-    self.autoresume_triggered = True
     
     self.params = CarControllerParams()
 
@@ -247,18 +245,10 @@ class CarController():
         
         if standstill and not car_stopping:
           if CS.do_sng:
-            if self.autoresume_triggered:
-              acc_enabled = False
-            else:
-              gravity_x = 9.8 * sin(CS.pitch_accel)
-              if actuators.accel - gravity_x > 0.05: # desired accel must be enough to overcome hill
-                self.autoresume_triggered = True
-                acc_enabled = False
-                CS.resume_button_pressed = True
+            acc_enabled = False
+            CS.resume_button_pressed = True
           elif CS.out.vEgo < 1.5:
             CS.resume_required = True
-        elif standstill:
-          self.autoresume_triggered = False
       
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, acc_enabled, at_full_stop))
 
