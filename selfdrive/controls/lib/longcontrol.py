@@ -7,7 +7,7 @@ from selfdrive.modeld.constants import T_IDXS
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
-STOPPING_EGO_SPEED = 0.1
+STOPPING_EGO_SPEED = 0.02
 STOPPING_TARGET_SPEED_OFFSET = 0.01
 STARTING_TARGET_SPEED = 0.5
 DECEL_THRESHOLD_TO_PID = 0.8
