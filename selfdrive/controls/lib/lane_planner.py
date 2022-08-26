@@ -143,9 +143,9 @@ class LaneOffset:
         lane_pos_auto = 1.
     if lane_pos_auto != 0. \
         and ((self._lat_accel_cur >= self.AUTO_MAX_CUR_LAT_ACCEL \
-        and np.sign(self._lat_curvature_cur) != np.sign(lane_pos_auto)) \
+        and np.sign(self._lat_curvature_cur) == np.sign(lane_pos_auto)) \
         or (self._lat_accel_pred >= self.AUTO_MAX_PRED_LAT_ACCEL \
-        and np.sign(self._lat_curvature_pred) != np.sign(lane_pos_auto))):
+        and np.sign(self._lat_curvature_pred) == np.sign(lane_pos_auto))):
       lane_pos_auto = 0.
     
     if lane_pos_auto != self._lane_pos_auto:
