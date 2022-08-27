@@ -235,6 +235,7 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
     // Print relative distances to the left of the chevron
     int const x_offset = 100;
     int const y_offset = 48;
+    int const y_max = s->fb_h - bdr_s;
     s->scene.lead_x_vals.push_back(x);
     s->scene.lead_y_vals.push_back(y);
     while (s->scene.lead_x_vals.size() > s->scene.lead_xy_num_vals){
@@ -249,7 +250,7 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
     }
     lead_x /= float(s->scene.lead_x_vals.size());
     for (int const & v : s->scene.lead_y_vals){
-      lead_y += v;
+      lead_y += v > y_max ? y_max : v;
     }
     lead_y /= float(s->scene.lead_y_vals.size());
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 180));
