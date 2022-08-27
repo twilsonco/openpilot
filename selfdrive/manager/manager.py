@@ -65,7 +65,6 @@ def manager_init():
     ("CoastingDL", "0"),
     ("RegenBraking", "0"),
     ("OnePedalMode", "0"),
-    ("OnePedalModeSimple", "0"),
     ("OnePedalDLCoasting", "0"),
     ("OnePedalModeEngageOnGas", "0"),
     ("OnePedalDLEngageOnGas", "0"),

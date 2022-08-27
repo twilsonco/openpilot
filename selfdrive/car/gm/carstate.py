@@ -84,8 +84,9 @@ class CarState(CarStateBase):
     self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False
     
+    self.lead_accel = 0.
+    
     self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode") and not self.disengage_on_gas
-    self.one_pedal_mode_op_braking_allowed = not self._params.get_bool("OnePedalModeSimple")
     self.one_pedal_mode_engage_on_gas_enabled = self._params.get_bool("OnePedalModeEngageOnGas") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
     self.one_pedal_dl_engage_on_gas_enabled = self.is_ev and self._params.get_bool("OnePedalDLEngageOnGas") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
     self.one_pedal_dl_coasting_enabled = self.is_ev and self._params.get_bool("OnePedalDLCoasting") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
@@ -95,15 +96,9 @@ class CarState(CarStateBase):
     self.one_pedal_mode_stop_apply_brake_bp = [[i * CV.MPH_TO_MS for i in [1., 4., 8., 45., 85.]], [i * CV.MPH_TO_MS for i in [1., 7., 14., 45., 85.]], [1.]]
     self.one_pedal_mode_stop_apply_brake_v = [[82., 90., 95., 115., 90.], [110., 150., 165., 185., 140.], [280.]] # three levels. 1-2 are cycled using follow distance press, and 3 by holding
     self.one_pedal_mode_apply_brake = 0.
-    self.one_pedal_mode_ramp_duration = 0.9
-    self.one_pedal_mode_ramp_time_step = 60. / self.one_pedal_mode_ramp_duration
-    self.one_pedal_mode_ramp_t_last = 0.
     self.one_pedal_mode_active_last = False
-    self.one_pedal_mode_ramp_mode_last = 0 # stores brake mode for calculating the step when mode is changed
     self.one_pedal_mode_last_gas_press_t = 0.
     self.one_pedal_mode_engaged_with_button = False
-    self.one_pedal_mode_ramp_time_bp = [0., 0.5]
-    self.one_pedal_mode_ramp_time_v = [0.1, 1.0]
     self.one_pedal_mode_active = False
     self.one_pedal_brake_mode = int(self._params.get("OnePedalBrakeMode", encoding="utf8")) # 0, 1, or 2 selecting the brake profiles above. 2 is activated by pressing and holding the follow distance button for > 0.3s
     self.one_pedal_last_brake_mode = 0 # for saving brake mode when not in one-pedal-mode
