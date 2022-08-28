@@ -235,7 +235,7 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
     // Print relative distances to the left of the chevron
     int const x_offset = 100;
     int const y_offset = 48;
-    int const y_max = s->fb_h - 3*bdr_s;
+    int const y_max = s->fb_h - 4*bdr_s;
     s->scene.lead_x_vals.push_back(x);
     s->scene.lead_y_vals.push_back(y);
     while (s->scene.lead_x_vals.size() > s->scene.lead_xy_num_vals){
