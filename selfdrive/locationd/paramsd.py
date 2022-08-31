@@ -97,11 +97,6 @@ class ParamsLearner:
                                       np.array([[self.roll]]),
                                       np.array([np.atleast_2d(roll_std**2)]))
           
-          self.kf.predict_and_observe(t,
-                                      ObservationKind.ROAD_PITCH,
-                                      np.array([[self.pitch]]),
-                                      np.array([np.atleast_2d(pitch_std**2)]))
-          
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[0]]))
         
         # We observe the current stiffness and steer ratio (with a high observation noise) to bound
@@ -125,7 +120,7 @@ class ParamsLearner:
         self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[self.speed]]))
     elif which == 'modelV2' and self.active and len(msg.orientation.y) == TRAJECTORY_SIZE:
       future_pitch_diff = interp(self.future_pitch_delay, T_IDXS, msg.orientation.y)
-      future_pitch = float(self.kf.x[States.ROAD_PITCH]) + future_pitch_diff
+      future_pitch = float(self.pitch) + future_pitch_diff
       future_pitch = clip(future_pitch, self.future_pitch_ema - PITCH_MAX_DELTA, self.future_pitch_ema + PITCH_MAX_DELTA)
       self.future_pitch_ema = self.future_pitch_ema_k * future_pitch \
                             + (1 - self.future_pitch_ema_k) * self.future_pitch_ema
@@ -218,7 +213,7 @@ def main(sm=None, pm=None):
       msg.liveParameters.steerRatio = float(x[States.STEER_RATIO])
       msg.liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
       msg.liveParameters.roll = float(x[States.ROAD_ROLL])
-      msg.liveParameters.pitch = float(x[States.ROAD_PITCH])
+      msg.liveParameters.pitch = float(learner.pitch)
       msg.liveParameters.pitchFutureLong = float(learner.future_pitch_ema)
       msg.liveParameters.angleOffsetAverageDeg = angle_offset_average
       msg.liveParameters.angleOffsetDeg = angle_offset
