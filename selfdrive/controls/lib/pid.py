@@ -107,9 +107,9 @@ class PIDController:
     self.sat_count = 0.0
     self.saturated = False
     self.control = 0
-    if self.outputs:
+    if self.outputs is not None:
       self.outputs = deque(maxlen=self._d_period)
-    if self.output_norms:
+    if self.output_norms is not None:
       self.output_norms = deque(maxlen=self._k_period)
 
   def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
@@ -138,7 +138,7 @@ class PIDController:
     self.p = error * self.kp
     self.f = feedforward * self.k_f
     
-    if self.outputs and len(self.outputs) == int(self._d_period):  # makes sure we have enough history for period
+    if self.outputs is not None and len(self.outputs) == int(self._d_period):  # makes sure we have enough history for period
       self.d = clip((self.outputs[-1] - self.outputs[0]) * self._d_period_recip * self.kd, -abs(self.p), abs(self.p))
     else:
       self.d = 0.
