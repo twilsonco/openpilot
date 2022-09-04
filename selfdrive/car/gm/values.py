@@ -38,7 +38,8 @@ class CarControllerParams():
     # to apply some more braking if we're on a downhill slope.
     # Our controller should still keep the 2 second average above
     # -3.5 m/s^2 as per planner limits
-    self.ACCEL_MIN = -3.5 # m/s^2
+    # Decreased to -2.5 (by 1/1.75) based on response of aEgo to brake command
+    self.ACCEL_MIN = -2.5 # m/s^2
 
     self.MAX_ACC_REGEN = 1404  # ACC Regen braking is slightly less powerful than max regen paddle
     self.GAS_LOOKUP_BP = [-1.1, 0., self.ACCEL_MAX]
