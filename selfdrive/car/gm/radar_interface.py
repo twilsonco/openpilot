@@ -9,30 +9,46 @@ from selfdrive.car.interfaces import RadarInterfaceBase
 
 RADAR_HEADER_MSG = 1120
 SLOT_1_MSG = RADAR_HEADER_MSG + 1
-NUM_SLOTS = 20
+RADAR_NUM_SLOTS = 20
+
+VOACC_NUM_SLOTS = 12
 
 # Actually it's 0x47f, but can parser only reports
 # messages that are present in DBC
-LAST_RADAR_MSG = RADAR_HEADER_MSG + NUM_SLOTS
+LAST_RADAR_MSG = RADAR_HEADER_MSG + RADAR_NUM_SLOTS
 
 def create_radar_can_parser(car_fingerprint):
   if car_fingerprint not in (CAR.VOLT, CAR.VOLT18, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS, CAR.ESCALADE, CAR.ESCALADE_ESV):
     return None
-
-  # C1A-ARS3-A by Continental
-  radar_targets = list(range(SLOT_1_MSG, SLOT_1_MSG + NUM_SLOTS))
-  signals = list(zip(['FLRRNumValidTargets',
-                 'FLRRSnsrBlckd', 'FLRRYawRtPlsblityFlt',
-                 'FLRRHWFltPrsntInt', 'FLRRAntTngFltPrsnt',
-                 'FLRRAlgnFltPrsnt', 'FLRRSnstvFltPrsntInt'] +
-                ['TrkRange'] * NUM_SLOTS + ['TrkRangeRate'] * NUM_SLOTS +
-                ['TrkRangeAccel'] * NUM_SLOTS + ['TrkAzimuth'] * NUM_SLOTS +
-                ['TrkWidth'] * NUM_SLOTS + ['TrkObjectID'] * NUM_SLOTS,
-                [RADAR_HEADER_MSG] * 7 + radar_targets * 6,
-                [0] * 7 +
-                [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
-                [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
-                [0.0] * NUM_SLOTS + [0] * NUM_SLOTS))
+  
+  # radar header and RADAR_NUM_SLOTS tracks, preserving the ordering of the old implementation
+  signals = [
+    ('FLRRNumValidTargets', 'F_LRR_Obj_Header', 0),
+    ('FLRRSnsrBlckd', 'F_LRR_Obj_Header', 0),
+    ('FLRRYawRtPlsblityFlt', 'F_LRR_Obj_Header', 0),
+    ('FLRRHWFltPrsntInt', 'F_LRR_Obj_Header', 0),
+    ('FLRRAntTngFltPrsnt', 'F_LRR_Obj_Header', 0),
+    ('FLRRAlgnFltPrsnt', 'F_LRR_Obj_Header', 0),
+    ('FLRRSnstvFltPrsntInt', 'F_LRR_Obj_Header', 0)
+  ]
+  signals += [('TrkRange', f'LRRObject{i:02}', 0.0) for i in range(1, RADAR_NUM_SLOTS+1)]
+  signals += [('TrkRangeRate', f'LRRObject{i:02}', 0.0) for i in range(1, RADAR_NUM_SLOTS+1)]
+  signals += [('TrkRangeAccel', f'LRRObject{i:02}', 0.0) for i in range(1, RADAR_NUM_SLOTS+1)]
+  signals += [('TrkAzimuth', f'LRRObject{i:02}', 0.0) for i in range(1, RADAR_NUM_SLOTS+1)]
+  signals += [('TrkObjectID', f'LRRObject{i:02}', 0.0) for i in range(1, RADAR_NUM_SLOTS+1)]
+  
+  # VOACC header and VOACC_NUM_SLOTS tracks
+  signals += [
+    ('FVisionNumValidTrgts', 'F_Vision_Obj_Header', 0),
+    ('FVsnSnsrBlckd', 'F_Vision_Obj_Header', 0),
+    ('FrtVsnFld', 'F_Vision_Obj_Header', 0),
+    ('FrtVsnUnvlbl', 'F_Vision_Obj_Header', 0),
+    ('FrtVsnSrvAlgnInPrcs', 'F_Vision_Obj_Header', 0),
+  ]
+  signals += [(f'FwdVsnRngTrk{i}Rev', f'F_Vision_Obj_Track_{i}', 0.0) for i in range(1, VOACC_NUM_SLOTS+1)]
+  signals += [(f'FwdVsnLongVlctyTrk{i}', f'F_Vision_Obj_Track_{i}_B', 0.0) for i in range(1, VOACC_NUM_SLOTS+1)]
+  signals += [(f'FwdVsnLatOfstTrk{i}', f'F_Vision_Obj_Track_{i}_B', 0.0) for i in range(1, VOACC_NUM_SLOTS+1)]
+  signals += [(f'FVisionObjectIDTrk{i}', f'F_Vision_Obj_Track_{i}', 0.0) for i in range(1, VOACC_NUM_SLOTS+1)]
 
   checks = list({(s[1], 14) for s in signals})
 
@@ -59,44 +75,76 @@ class RadarInterface(RadarInterfaceBase):
       return None
 
     ret = car.RadarData.new_message()
-    header = self.rcp.vl[RADAR_HEADER_MSG]
-    fault = header['FLRRSnsrBlckd'] or header['FLRRSnstvFltPrsntInt'] or \
-      header['FLRRYawRtPlsblityFlt'] or header['FLRRHWFltPrsntInt'] or \
-      header['FLRRAntTngFltPrsnt'] or header['FLRRAlgnFltPrsnt']
+    radar_header = self.rcp.vl[RADAR_HEADER_MSG]
+    radar_fault = radar_header['FLRRSnsrBlckd'] or radar_header['FLRRSnstvFltPrsntInt'] or \
+      radar_header['FLRRYawRtPlsblityFlt'] or radar_header['FLRRHWFltPrsntInt'] or \
+      radar_header['FLRRAntTngFltPrsnt'] or radar_header['FLRRAlgnFltPrsnt']
+
+    # for voacc data, if one or the other faults, it's ok
+    voacc_header = self.rcp.vl['F_Vision_Obj_Header']
+    voacc_fault = voacc_header['FVsnSnsrBlckd'] or \
+            voacc_header['FrtVsnFld'] or \
+            voacc_header['FrtVsnUnvlbl']
+
     errors = []
     if not self.rcp.can_valid:
       errors.append("canError")
-    if fault:
+    if radar_fault and voacc_fault:
       errors.append("fault")
     ret.errors = errors
 
     currentTargets = set()
-    num_targets = header['FLRRNumValidTargets']
+    if not radar_fault:
+      num_targets = radar_header['FLRRNumValidTargets']
 
-    # Not all radar messages describe targets,
-    # no need to monitor all of the self.rcp.msgs_upd
-    for ii in self.updated_messages:
-      if ii == RADAR_HEADER_MSG:
-        continue
+      # Not all radar messages describe targets,
+      # no need to monitor all of the self.rcp.msgs_upd
+      for ii in self.updated_messages:
+        if ii == RADAR_HEADER_MSG:
+          continue
 
-      if num_targets == 0:
-        break
+        if num_targets == 0:
+          break
 
-      cpt = self.rcp.vl[ii]
-      # Zero distance means it's an empty target slot
-      if cpt['TrkRange'] > 0.0:
-        targetId = cpt['TrkObjectID']
-        currentTargets.add(targetId)
-        if targetId not in self.pts:
-          self.pts[targetId] = car.RadarData.RadarPoint.new_message()
-          self.pts[targetId].trackId = targetId
-        distance = cpt['TrkRange']
-        self.pts[targetId].dRel = distance  # from front of car
-        # From driver's pov, left is positive
-        self.pts[targetId].yRel = math.sin(cpt['TrkAzimuth'] * CV.DEG_TO_RAD) * distance
-        self.pts[targetId].vRel = cpt['TrkRangeRate']
-        self.pts[targetId].aRel = cpt['TrkRangeAccel']
-        self.pts[targetId].yvRel = float('nan')
+        cpt = self.rcp.vl[ii]
+        if 'TrkRange' not in cpt:
+          continue
+        
+        # Zero distance means it's an empty target slot
+        if cpt['TrkRange'] > 0.0:
+          targetId = cpt['TrkObjectID']
+          currentTargets.add(targetId)
+          if targetId not in self.pts:
+            self.pts[targetId] = car.RadarData.RadarPoint.new_message()
+            self.pts[targetId].trackId = targetId
+          distance = cpt['TrkRange']
+          self.pts[targetId].dRel = distance  # from front of car
+          # From driver's pov, left is positive
+          self.pts[targetId].yRel = math.sin(cpt['TrkAzimuth'] * CV.DEG_TO_RAD) * distance
+          self.pts[targetId].vRel = cpt['TrkRangeRate']
+          self.pts[targetId].aRel = cpt['TrkRangeAccel']
+          self.pts[targetId].yvRel = float('nan')
+            
+    if not voacc_fault:
+      num_targets = voacc_header['FVisionNumValidTrgts']
+      if num_targets > 0:
+        for i in range(1,VOACC_NUM_SLOTS+1):
+          cpt = self.rcp.vl[f'F_Vision_Obj_Track_{i}']
+          cptb = self.rcp.vl[f'F_Vision_Obj_Track_{i}_B']
+          # Zero distance means it's an empty target slot
+          if cpt[f'FwdVsnRngTrk{i}Rev'] > 0.0:
+            targetId = cpt[f'FVisionObjectIDTrk{i}']
+            currentTargets.add(targetId)
+            if targetId not in self.pts:
+              self.pts[targetId] = car.RadarData.RadarPoint.new_message()
+              self.pts[targetId].trackId = targetId
+            distance = cpt[f'FwdVsnRngTrk{i}Rev']
+            self.pts[targetId].dRel = distance  # from front of car
+            # From driver's pov, left is positive
+            self.pts[targetId].yRel = cptb[f'FwdVsnLatOfstTrk{i}']
+            self.pts[targetId].vRel = cptb[f'FwdVsnLongVlctyTrk{i}']
+            self.pts[targetId].aRel = float('nan')
+            self.pts[targetId].yvRel = float('nan')
 
     for oldTarget in list(self.pts.keys()):
       if oldTarget not in currentTargets:

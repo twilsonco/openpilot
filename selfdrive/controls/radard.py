@@ -10,10 +10,14 @@ from common.params import Params
 from common.realtime import Ratekeeper, Priority, config_realtime_process
 from selfdrive.config import RADAR_TO_CAMERA
 from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroid
+from selfdrive.controls.lib.lane_planner import TRAJECTORY_SIZE
 from selfdrive.controls.lib.radar_helpers import Cluster, Track
 from selfdrive.swaglog import cloudlog
 from selfdrive.hardware import TICI
 
+LEAD_PATH_YREL_MAX_BP = [100., 200.] # [m] distance to lead
+LEAD_PATH_YREL_MAX_V = [0.5, 1.5] # [m] an increasing tolerance for farther leads 
+LEAD_PATH_DREL_MIN = 110 # [m] only care about far away leads
 
 class KalmanParams():
   def __init__(self, dt):
@@ -50,7 +54,7 @@ def match_vision_to_cluster(v_ego, lead, clusters):
 
   cluster = max(clusters, key=prob)
 
-  # if no 'sane' match is found return -1
+  # if no 'sane' match is found return None
   # stationary radar points can be false positives
   dist_sane = abs(cluster.dRel - offset_vision_dist) < max([(offset_vision_dist)*.25, 5.0])
   vel_sane = (abs(cluster.vRel + v_ego - lead.v[0]) < 10) or (v_ego + cluster.vRel > 3)
@@ -60,7 +64,35 @@ def match_vision_to_cluster(v_ego, lead, clusters):
     return None
 
 
-def get_lead(v_ego, ready, clusters, lead_msg, low_speed_override=True):
+def match_model_path_to_cluster(v_ego, md, clusters):
+  if md is None or len(md.position.x) != TRAJECTORY_SIZE or md.position.x[-1] < LEAD_PATH_DREL_MIN:
+    return None
+  
+  # take clusters that are
+  # 1) closer than the farthest model predicted distance
+  # 2) at least near the edge of regular op lead detectability
+  # 3) close enough to the predicted path at the cluster distance
+  close_path_clusters = [c for c in clusters if \
+      c.dRel <= md.position.x[-1] and \
+      c.dRel >= LEAD_PATH_DREL_MIN and \
+      abs(-c.yRel - interp(c.dRel, md.position.x, md.position.y)) \
+        <= interp(c.dRel, LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V)]
+  if len(close_path_clusters) == 0:
+    return None
+
+  # only care about the closest lead on our path
+  cluster = min(close_path_clusters, key=lambda x: x.dRel)
+
+  # if no 'sane' match is found return None
+  # model path gets shorter when you brake, so can't use this for very slow leads
+  vel_sane = (v_ego + cluster.vRel > 8)
+  if vel_sane:
+    return cluster
+  else:
+    return None
+
+
+def get_lead(v_ego, ready, clusters, lead_msg, low_speed_override=True, md=None):
   # Determine leads, this is where the essential logic happens
   if len(clusters) > 0 and ready and lead_msg.prob > .5:
     cluster = match_vision_to_cluster(v_ego, lead_msg, clusters)
@@ -72,6 +104,10 @@ def get_lead(v_ego, ready, clusters, lead_msg, low_speed_override=True):
     lead_dict = cluster.get_RadarState(lead_msg.prob)
   elif (cluster is None) and ready and (lead_msg.prob > .5):
     lead_dict = Cluster().get_RadarState_from_vision(lead_msg, v_ego)
+  elif md is not None:
+    cluster = match_model_path_to_cluster(v_ego, md, clusters)
+    if cluster is not None:
+      lead_dict = cluster.get_RadarState()
 
   if low_speed_override:
     low_speed_clusters = [c for c in clusters if c.potential_low_speed_lead(v_ego)]
@@ -167,8 +203,8 @@ class RadarD():
 
     if enable_lead:
       if len(sm['modelV2'].leadsV3) > 1:
-        radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leadsV3[0], low_speed_override=True)
-        radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leadsV3[1], low_speed_override=False)
+        radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leadsV3[0], low_speed_override=True, md=sm['modelV2'])
+        radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leadsV3[1], low_speed_override=False, md=sm['modelV2'])
     return dat
 
 
