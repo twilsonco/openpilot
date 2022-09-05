@@ -1289,7 +1289,7 @@ static void ui_draw_measures(UIState *s){
               snprintf(name, sizeof(name), "ENGINE");
               int temp = scene.car_state.getEngineCoolantTemp();
               snprintf(unit, sizeof(unit), "%d%sC", temp, deg);
-              if(scene.engineRPM == 0) {
+              if(scene.engineRPM == 0 && temp < 55) {
                 snprintf(val, sizeof(val), "OFF");
               }
               else {
@@ -1312,7 +1312,7 @@ static void ui_draw_measures(UIState *s){
               snprintf(name, sizeof(name), "ENGINE");
               int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
               snprintf(unit, sizeof(unit), "%d%sF", temp, deg);
-              if(scene.engineRPM == 0) {
+              if(scene.engineRPM == 0 && temp < 130) {
                 snprintf(val, sizeof(val), "OFF");
               }
               else {
@@ -1336,7 +1336,7 @@ static void ui_draw_measures(UIState *s){
               snprintf(unit, sizeof(unit), "%sC", deg);
               int temp = scene.car_state.getEngineCoolantTemp();
               snprintf(val, sizeof(val), "%d", temp);
-              if(scene.engineRPM > 0) {
+              if(scene.engineRPM > 0 || temp >= 55) {
                 if (temp < 87){
                   val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
                 }
@@ -1356,7 +1356,7 @@ static void ui_draw_measures(UIState *s){
               snprintf(unit, sizeof(unit), "%sF", deg);
               int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
               snprintf(val, sizeof(val), "%d", temp);
-              if(scene.engineRPM > 0) {
+              if(scene.engineRPM > 0 || temp >= 130) {
                 if (temp < 190){
                   val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
                 }
