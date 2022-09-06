@@ -196,6 +196,9 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   HVB_CURRENT,
   HVB_WATTAGE,
   HVB_WATTVOLT,
+  EV_EFF_NOW,
+  EV_EFF_RECENT,
+  EV_EFF_TRIP,
   VISION_CURLATACCEL,
   VISION_MAXVFORCURCURV,
   VISION_MAXPREDLATACCEL,
@@ -301,6 +304,18 @@ typedef struct UIScene {
 
   int lead_status;
   float lead_d_rel, lead_v_rel, lead_v;
+
+  // EV efficiency
+  float ev_eff_distances[2] = {30.f / 20.f, 8046.f / 20.f};
+  float ev_eff_distances_recip[2] = {1.f/ev_eff_distances[0], 1.f/ev_eff_distances[1]}; // [m] denominator for weighted average weights
+  float ev_eff_stopped_kWh = 0.; // [kWh]
+  float ev_eff_total_kWh = 0.; // [kWh]
+  float ev_eff_total_dist = 0.; // [m]
+  float ev_recip_eff_wa[2] = {0., 0.}; // [kW] weighted averages of mi(km)/kWh
+  float ev_eff_total = 0.;
+  float ev_recip_eff_wa_max = 250.;
+  float ev_eff_last_time = 0.;
+
 
   // gps
   float altitudeUblox, gpsAccuracyUblox = 0.;

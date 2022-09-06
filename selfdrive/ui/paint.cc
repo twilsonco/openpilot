@@ -1588,6 +1588,70 @@ static void ui_draw_measures(UIState *s){
               val_color = nvgRGBA(255, g, b, 200);
             }
             break;
+
+          case UIMeasure::EV_EFF_NOW: 
+            {
+              snprintf(name, sizeof(name), "EV EFF NOW");
+              if (scene.ev_recip_eff_wa[0] == 0.){
+                snprintf(val, sizeof(val), "--");
+              }
+              else{
+                float temp = 1. / scene.ev_recip_eff_wa[0];
+                if (abs(temp) >= scene.ev_recip_eff_wa_max){
+                  snprintf(val, sizeof(val), (temp > 0. ? "%.0f+" : "%.0f-"), scene.ev_recip_eff_wa_max);
+                }
+                else if (abs(temp) >= 10.){
+                  snprintf(val, sizeof(val), "%.0f", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.1f", temp);
+                }
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "km/kWh" : "mi/kWh"));
+            }
+            break;
+
+          case UIMeasure::EV_EFF_RECENT: 
+            {
+              snprintf(name, sizeof(name), (scene.is_metric ? "EV EFF 8km" : "EV EFF 5mi"));
+              if (scene.ev_recip_eff_wa[1] == 0.){
+                snprintf(val, sizeof(val), "--");
+              }
+              else{
+                float temp = 1. / scene.ev_recip_eff_wa[1];
+                if (abs(temp) >= scene.ev_recip_eff_wa_max){
+                  snprintf(val, sizeof(val), (temp > 0. ? "%.0f+" : "%.0f-"), scene.ev_recip_eff_wa_max);
+                }
+                else if (abs(temp) >= 100.){
+                  snprintf(val, sizeof(val), "%.0f", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.1f", temp);
+                }
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "km/kWh" : "mi/kWh"));
+            }
+            break;
+
+          case UIMeasure::EV_EFF_TRIP: 
+            {
+              snprintf(name, sizeof(name), "EV EFF TRIP");
+              float temp = scene.ev_eff_total;
+              if (abs(temp) == scene.ev_recip_eff_wa_max){
+                snprintf(val, sizeof(val), (temp > 0. ? "%.0f+" : "%.0f-"), temp);
+              }
+              else if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "km/kWh" : "mi/kWh"));
+            }
+            break;
             
           case UIMeasure::LANE_WIDTH: 
             {
@@ -1631,6 +1695,10 @@ static void ui_draw_measures(UIState *s){
         int vallen = strlen(val);
         if (vallen > 4){
           val_font_size -= (vallen - 4) * 5;
+        }
+        int unitlen = strlen(unit);
+        if (unitlen > 5){
+          unit_font_size -= (unitlen - 5) * 5;
         }
         int slot_x = s->scene.measure_slots_rect.x + (scene.measure_cur_num_slots <= 5 ? 0 : (i < 5 ? slots_r * 2 : 0));
         int x = slot_x + slots_r - unit_font_size / 2;

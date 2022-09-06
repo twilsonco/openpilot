@@ -316,7 +316,39 @@ static void update_state(UIState *s) {
     scene.steerOverride= scene.car_state.getSteeringPressed();
     scene.angleSteers = scene.car_state.getSteeringAngleDeg();
     scene.engineRPM = static_cast<int>((scene.car_state.getEngineRPM() / (10.0)) + 0.5) * 10;
+
+    // EV efficiency
+    float cur_dist = std::abs(scene.car_state.getVEgo() * (t - scene.ev_eff_last_time));
     
+    scene.ev_eff_total_dist += cur_dist;
+    float cur_kW = -scene.car_state.getHvbWattage();
+    float cur_kWh = cur_kW * (t - scene.ev_eff_last_time) * 2.8e-4; // [kJ converted to kWh]
+    scene.ev_eff_total_kWh += cur_kWh;
+
+    if (cur_dist > 0.0){
+      if (scene.ev_eff_stopped_kWh != 0.){
+        cur_kWh += scene.ev_eff_stopped_kWh;
+        scene.ev_eff_stopped_kWh = 0.;
+      }
+      float cur_recip_eff = cur_kWh * (scene.is_metric ? 1000. : 1609.) / cur_dist;
+      for (int i = 0; i < 2; ++i){
+        float tmp_cur_dist = (cur_dist > scene.ev_eff_distances[i] ? scene.ev_eff_distances[i] : cur_dist);
+        scene.ev_recip_eff_wa[i] = tmp_cur_dist * scene.ev_eff_distances_recip[i] * cur_recip_eff 
+                            + (1. - tmp_cur_dist * scene.ev_eff_distances_recip[i]) * scene.ev_recip_eff_wa[i];
+      }
+    }
+    else{
+      scene.ev_eff_stopped_kWh += cur_kWh;
+    }
+    if (scene.ev_eff_total_kWh != 0.){
+        scene.ev_eff_total = scene.ev_eff_total_dist / (scene.is_metric ? 1000. : 1609.) / scene.ev_eff_total_kWh;
+        if (std::abs(scene.ev_eff_total) > scene.ev_recip_eff_wa_max){
+          scene.ev_eff_total = (scene.ev_eff_total > 0. ? scene.ev_recip_eff_wa_max : -scene.ev_recip_eff_wa_max);
+        }
+    }
+    scene.ev_eff_last_time = t;
+
+    // lane position
     if (scene.lane_pos != 0){
       scene.lane_pos_dist_since_set += scene.car_state.getVEgo() * (t - scene.lane_pos_dist_last_t);
       if (!s->scene.auto_lane_pos_active && abs(scene.car_state.getSteeringAngleDeg()) > scene.lane_pos_max_steer_deg){
