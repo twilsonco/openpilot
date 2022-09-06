@@ -208,15 +208,13 @@ static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, i
 }
 
 
-static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const vertex_data &vd, bool draw_info) {
+static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &vd, bool draw_info, bool is_voacc) {
   // Draw lead car indicator
   auto [x, y] = vd;
 
   float fillAlpha = 0;
   float speedBuff = 10.;
   float leadBuff = 40.;
-  float d_rel = lead_data.getX()[0];
-  float v_rel = lead_data.getV()[0];
   if (d_rel < leadBuff) {
     fillAlpha = 255*(1.0-(d_rel/leadBuff));
     if (v_rel < 0) {
@@ -228,7 +226,7 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
   float sz = std::clamp((25 * 30) / (d_rel * 0.33333f + 30), 15.0f, 30.0f) * 2.35;
   x = std::clamp(x, 0.f, s->fb_w - sz * 0.5f);
   y = std::fmin(s->fb_h - sz * .6, y);
-  draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
+  draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), is_voacc ? COLOR_BLUE : COLOR_YELLOW);
 
   if (s->scene.lead_info_print_enabled && !s->scene.map_open && draw_info){
     // print lead info around chevron
@@ -484,11 +482,20 @@ static void ui_draw_world(UIState *s) {
   if (s->scene.longitudinal_control) {
     auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[0];
     auto lead_two = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[1];
+    bool lead_drawn = false;
     if (lead_one.getProb() > .5) {
-      draw_lead(s, lead_one, s->scene.lead_vertices[0], true);
+      lead_drawn = true;
+      draw_lead(s, lead_one.getX()[0], lead_one.getV()[0], s->scene.lead_vertices[0], true, false);
     }
-   if (lead_two.getProb() > .5 && (std::abs(lead_one.getX()[0] - lead_two.getX()[0]) > 3.0)) {
-      draw_lead(s, lead_two, s->scene.lead_vertices[1], false);
+    if (lead_two.getProb() > .5 && (std::abs(lead_one.getX()[0] - lead_two.getX()[0]) > 3.0)) {
+      lead_drawn = true;
+      draw_lead(s, lead_two.getX()[0], lead_two.getV()[0], s->scene.lead_vertices[1], lead_one.getProb() <= .5, false);
+    }
+    for (int i = 0; i < 2 && !lead_drawn; ++i){
+      if (s->scene.lead_data[i].getStatus()){
+        lead_drawn = true;
+        draw_lead(s, s->scene.lead_data[i].getDRel(), s->scene.lead_data[i].getVRel(), s->scene.lead_vertices[i], true, true);
+      }
     }
   }
   nvgResetScissor(s->vg);

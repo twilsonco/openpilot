@@ -58,6 +58,7 @@ def manager_init():
     ("EnableTorqueControl", "0"),
     ("LanelessMode", "2"),
     ("LanePositionEnabled", "0"),
+    ("LongRangeLeadsEnabled", "0"),
     ("AutoLanePositionActive", "0"),
     ("LanePosition", "0"),
     ("NudgelessLaneChange", "0"),

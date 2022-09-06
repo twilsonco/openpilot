@@ -75,6 +75,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_road.png",
                                   this));
   
+  toggles.append(new ParamControl("LongRangeLeadsEnabled",
+                                  "Longer-range lead detection (alpha)",
+                                  "Use the much longer-range lead detection ability of the car's LKA camera to detect leads up to 40\% farther than stock openpilot.  This also allows for 10\% longer range detection using radar.",
+                                  "../assets/offroad/icon_plus.png",
+                                  this));
+
   toggles.append(new ParamControl("EnableTorqueControl",
                                   "Enable \"torque\" steering control",
                                   "(Restart car to take effect) Use the newer torque-based steering control that steers by achieving a target amount of lateral acceleration rather than achieving a target steering angle. Torque tune is only available in the Volt.",

@@ -98,8 +98,8 @@ class Planner():
     self.a_desired = 0.0
     self.longitudinalPlanSource = 'cruise'
     self.alpha = np.exp(-CP.radarTimeStep/2.0)
-    self.lead_0 = log.ModelDataV2.LeadDataV3.new_message()
-    self.lead_1 = log.ModelDataV2.LeadDataV3.new_message()
+    self.lead_0 = log.RadarState.LeadData.new_message()
+    self.lead_1 = log.RadarState.LeadData.new_message()
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
