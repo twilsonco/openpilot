@@ -1,4 +1,4 @@
-Version tw-0.8.12-6_twd (2022-09-09)
+Version tw-0.8.12-5_tws (2022-09-09)
 ========================
  * NEW: Bolt EUV support
  * NEW: [GM w/ ASCM] Include LKA camera vision data with radar for lead tracking
