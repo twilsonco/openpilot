@@ -1,3 +1,16 @@
+Version tw-0.8.12-6_twd (2022-09-09)
+========================
+ * NEW: Bolt EUV support
+ * NEW: [GM w/ ASCM] Include LKA camera vision data with radar for lead tracking
+  * Now both vision and radar have to fail in order for a radar fault to be thrown!
+  * Slightly better accuracy with lead tracking, but otherwise you won't notice a difference
+ * NEW: [toggle] Longer-range lead-detection! (use with caution and report problems, please!)
+  * Before, OP only considered a lead if it agreed with the model, but now it will use the long range voacc information, compared to model-predicted path and lanelines, in order to detect leads up to 600ft+ away
+ * NEW: UI metrics: EV efficiency (three metrics: instantaneous, 5mi, and trip efficiency)
+ * IMPROVED: Completely redone one-pedal mode logic. Smoother and more consistent braking.
+  * No more mixed openpilot + one-pedal braking: you're in charge of braking!
+
+
 Version tw-0.8.12-5_twd (2022-08-04)
 ========================
  * NEW: auto mode for adjustable lane position
