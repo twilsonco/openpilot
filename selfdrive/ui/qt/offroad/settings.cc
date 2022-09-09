@@ -75,6 +75,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_road.png",
                                   this));
   
+  toggles.append(new ParamControl("LongRangeLeadsEnabled",
+                                  "Longer-range lead detection (alpha)",
+                                  "Use the much longer-range lead detection ability of the car's LKA camera to detect leads up to 40\% farther than stock openpilot.  This also allows for 10\% longer range detection using radar.",
+                                  "../assets/offroad/icon_plus.png",
+                                  this));
+
   toggles.append(new ParamControl("EnableTorqueControl",
                                   "Enable \"torque\" steering control",
                                   "(Restart car to take effect) Use the newer torque-based steering control that steers by achieving a target amount of lateral acceleration rather than achieving a target steering angle. Torque tune is only available in the Volt.",
@@ -174,11 +180,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   toggles.append(new ParamControl("OnePedalMode",
                                   "[GM] One-pedal mode (tap me)",
                                   "In combination with the \"Disable disengage on gas\" option, you control speed with gas pedal (with optional, adjustable braking) while OP continues to steer and brake for curves and lead car following. To activate, ① (see \"One-pedal/Always-on-steering engage on gas\" below) set cruise speed to 1 and pedal icon will replace max speed indicator; set/resume button to return to normal cruise. ② Tap pedal icon to toggle one-pedal mode (see below). If one-pedal mode is active, then vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = (⚫️)/🟢/🟠/🔴 = (regen/engine)/light/moderate/heavy braking. ③ Press follow distance button to toggle between persistent light/moderate braking; hold for temporary heavy braking. ④ Toggle between friction 🟢/🟠/🔴 and regen/engine ⚫️ braking by tapping the pedal icon or by using the follow distance button; one press will activating friction braking if not active, and a double press while the gas pedal is pressed, or while stopped, will deactivate friction braking.",
-                                  "../assets/offroad/icon_car_pedal.png",
-                                  this));
-  toggles.append(new ParamControl("OnePedalModeSimple",
-                                  "[GM] One-pedal pro brakes ⚠️",
-                                  "When using one-pedal mode, COMPLETELY DISABLE ALL OTHER FORMS OF OPENPILOT BRAKING. No additional braking will be automatically applied to slow/stop you behind a lead car, or to slow for a curve. You are solely responsible for applying brakes using adjustable one-pedal braking with the follow button or using the actual brakes.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("OnePedalDLCoasting",

@@ -29,7 +29,7 @@ class CarControllerParams():
     # pedal lookups, only for Volt
     self.MAX_GAS = 4095
     self.ZERO_GAS = 2048
-    MAX_BRAKE = 350             # Should be around 3.5m/s^2, including regen
+    self.MAX_BRAKE = 350             # Should be around 3.5m/s^2, including regen
 
     self.ACCEL_MAX = 3.0 # m/s^2 (max accel of sport profile in longitudinal_planner.py)
 
@@ -38,13 +38,14 @@ class CarControllerParams():
     # to apply some more braking if we're on a downhill slope.
     # Our controller should still keep the 2 second average above
     # -3.5 m/s^2 as per planner limits
-    self.ACCEL_MIN = -3.5 # m/s^2
+    # Decreased to -2.5 (by 1/1.75) based on response of aEgo to brake command
+    self.ACCEL_MIN = -2.5 # m/s^2
 
     self.MAX_ACC_REGEN = 1404  # ACC Regen braking is slightly less powerful than max regen paddle
     self.GAS_LOOKUP_BP = [-1.1, 0., self.ACCEL_MAX]
     self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, self.MAX_GAS]
     self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, -1.1]
-    self.BRAKE_LOOKUP_V = [MAX_BRAKE, 0]
+    self.BRAKE_LOOKUP_V = [self.MAX_BRAKE, 0]
     
     self.v_ego = 100.
 
@@ -57,13 +58,14 @@ class CarControllerParams():
     return int(round(interp(self.v_ego, self.STEER_DELTA_DOWN_BP, self.STEER_DELTA_DOWN_V)))
     
     # determined by letting Volt regen to a stop in L gear from 75mph
-  EV_GAS_BRAKE_THRESHOLD_BP = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.28, 1.3, 1.475, 1.49, 1.52, 1.55, 1.6, 1.7, 1.8, 2.0, 2.2, 2.5, 5.52, 9.6, 20.5, 23.5, 35.0] # [m/s]
-  EV_GAS_BRAKE_THRESHOLD_V = [0.678, 0.67, 0.63, 0.56, 0.49, 0.38, 0.3, 0.13, 0.0, 0.0, -0.019, -0.026, -0.14, -0.16, -0.18, -0.215, -0.255, -0.32, -0.41, -0.5, -0.72, -0.895, -1.125, -1.145, -1.16] # [m/s^s]
+  EV_GAS_BRAKE_THRESHOLD_BP = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.29, 1.52, 1.55, 1.6, 1.7, 1.8, 2.0, 2.2, 2.5, 5.52, 9.6, 20.5, 23.5, 35.0] # [m/s]
+  EV_GAS_BRAKE_THRESHOLD_V = [0.678, 0.67, 0.63, 0.56, 0.49, 0.38, 0.3, 0.13, 0.0, -0.14, -0.16, -0.18, -0.215, -0.255, -0.32, -0.41, -0.5, -0.72, -0.895, -1.125, -1.145, -1.16] # [m/s^s]
   
   def update_gas_brake_threshold(self, v_ego):
     gas_brake_threshold = interp(v_ego, self.EV_GAS_BRAKE_THRESHOLD_BP, self.EV_GAS_BRAKE_THRESHOLD_V)
     self.GAS_LOOKUP_BP = [gas_brake_threshold, 0., self.ACCEL_MAX]
     self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, gas_brake_threshold]
+    return gas_brake_threshold
 
 class CAR:
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
@@ -75,6 +77,7 @@ class CAR:
   BUICK_REGAL = "BUICK REGAL ESSENCE 2018"
   ESCALADE = "CADILLAC ESCALADE 2019"
   ESCALADE_ESV = "CADILLAC ESCALADE ESV 2016"
+  BOLT_EUV = "CHEVROLET BOLT EUV 2022"
 
 class CruiseButtons:
   INIT = 0
@@ -143,6 +146,10 @@ FINGERPRINTS = {
   CAR.ESCALADE_ESV: [
   {
     309: 1, 848: 8, 849: 8, 850: 8, 851: 8, 852: 8, 853: 8, 854: 3, 1056: 6, 1057: 8, 1058: 8, 1059: 8, 1060: 8, 1061: 8, 1062: 8, 1063: 8, 1064: 8, 1065: 8, 1066: 8, 1067: 8, 1068: 8, 1120: 8, 1121: 8, 1122: 8, 1123: 8, 1124: 8, 1125: 8, 1126: 8, 1127: 8, 1128: 8, 1129: 8, 1130: 8, 1131: 8, 1132: 8, 1133: 8, 1134: 8, 1135: 8, 1136: 8, 1137: 8, 1138: 8, 1139: 8, 1140: 8, 1141: 8, 1142: 8, 1143: 8, 1146: 8, 1147: 8, 1148: 8, 1149: 8, 1150: 8, 1151: 8, 1216: 8, 1217: 8, 1218: 8, 1219: 8, 1220: 8, 1221: 8, 1222: 8, 1223: 8, 1224: 8, 1225: 8, 1226: 8, 1232: 8, 1233: 8, 1234: 8, 1235: 8, 1236: 8, 1237: 8, 1238: 8, 1239: 8, 1240: 8, 1241: 8, 1242: 8, 1787: 8, 1788: 8
+  }],
+  CAR.BOLT_EUV: [
+  {
+    189: 7, 190: 7, 193: 8, 197: 8, 201: 8, 209: 7, 211: 3, 241: 6, 257: 8, 288: 5, 289: 8, 298: 8, 304: 3, 309: 8, 311: 8, 313: 8, 320: 4, 322: 7, 328: 1, 352: 5, 381: 8, 384: 4, 386: 8, 388: 8, 451: 8, 452: 8, 453: 6, 458: 5, 463: 3, 479: 3, 481: 7, 485: 8, 489: 8, 497: 8, 500: 6, 501: 8, 528: 5, 532: 6, 560: 8, 562: 8, 563: 5, 565: 5, 566: 8, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 707: 8, 715: 8, 717: 5, 753: 5, 761: 7, 789: 5, 800: 6, 810: 8, 840: 5, 842: 5, 844: 8, 848: 4, 869: 4, 880: 6, 977: 8, 1001: 8, 1017: 8, 1020: 8, 1217: 8, 1221: 5, 1233: 8, 1249: 8, 1265: 8, 1280: 4, 1296: 4, 1300: 8, 1930: 7
   }],
 }
 

@@ -24,6 +24,14 @@ from selfdrive.swaglog import cloudlog
 
 GearShifter = car.CarState.GearShifter
 
+BRAKE_SOURCES = {'lead0', 
+                 'lead1', 
+                 'lead2',
+                 'turn',
+                 'turnlimit'}
+COAST_SOURCES = {'cruise',
+                 'limit'}
+
 LON_MPC_STEP = 0.2  # first step is 0.2s
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
 
@@ -37,7 +45,7 @@ _A_CRUISE_MIN_BP = [i * CV.MPH_TO_MS for i in [0., 15., 30., 55., 85.]]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V_ECO = [.8, .7, .6, .5, .4]
+_A_CRUISE_MAX_V_ECO = [.75, .65, .55, .45, .35]
 _A_CRUISE_MAX_V = [1.1, 1.25, 1.0, 0.7, 0.65]
 _A_CRUISE_MAX_V_SPORT = [2.0, 2.3, 2.0, 1.1, 0.9]
 _A_CRUISE_MAX_V_FOLLOWING = [1.5, 1.5, 1.2, 0.7, 0.65]
@@ -90,8 +98,8 @@ class Planner():
     self.a_desired = 0.0
     self.longitudinalPlanSource = 'cruise'
     self.alpha = np.exp(-CP.radarTimeStep/2.0)
-    self.lead_0 = log.ModelDataV2.LeadDataV3.new_message()
-    self.lead_1 = log.ModelDataV2.LeadDataV3.new_message()
+    self.lead_0 = log.RadarState.LeadData.new_message()
+    self.lead_1 = log.RadarState.LeadData.new_message()
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
@@ -109,6 +117,7 @@ class Planner():
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -10. # lead "absolute"" velocity
     self.tr = 1.8
+    self.lead_accel = 0.
     
     self.stopped_t_last = 0.
     self.seconds_stopped = 0
@@ -200,6 +209,7 @@ class Planner():
     self.mpcs['custom'].set_accel_limits(accel_limits[0], accel_limits[1])
 
     next_a = np.inf
+    self.lead_accel = np.inf
     for key in self.mpcs:
       self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
       self.mpcs[key].update(sm['carState'], sm['radarState'], v_cruise, a_mpc[key], active_mpc[key])
@@ -210,6 +220,9 @@ class Planner():
         self.a_desired_trajectory = self.mpcs[key].a_solution[:CONTROL_N]
         self.j_desired_trajectory = self.mpcs[key].j_solution[:CONTROL_N]
         next_a = self.mpcs[key].a_solution[5]
+      if self.mpcs[key].status and active_mpc[key] and (key in BRAKE_SOURCES or (key == 'custom' and c_source in BRAKE_SOURCES)) \
+          and self.mpcs[key].a_solution[5] < self.lead_accel and self.mpcs[key].a_solution[5] < 0.:
+        self.lead_accel = self.mpcs[key].a_solution[5]
         
     
 
@@ -246,6 +259,7 @@ class Planner():
 
     longitudinalPlan.hasLead = self.mpcs['lead0'].status
     longitudinalPlan.leadDist = self.coasting_lead_d
+    longitudinalPlan.leadAccelPlanned = float(self.lead_accel)
     longitudinalPlan.leadV = self.coasting_lead_v
     longitudinalPlan.desiredFollowDistance = self.mpcs['lead0'].tr
     longitudinalPlan.leadDistCost = self.mpcs['lead0'].dist_cost

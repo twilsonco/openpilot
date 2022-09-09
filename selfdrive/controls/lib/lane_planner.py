@@ -60,9 +60,12 @@ class LaneOffset:
     self._shoulder_width_mean_left = 0.
     self._shoulder_width_mean_right = 0.
     self._cs = None
-    self._lp = None
+    self._long_plan = None
+    self._lat_plan = None
     self._lat_accel_cur = 0.
     self._lat_accel_pred = 0.
+    self._lat_curvature_cur = 0.
+    self._lat_curvature_pred = 0.
     self._lane_state_changed_last_t = 0.
   
   def update_lane_info(self, md, v_ego, lane_width):
@@ -130,9 +133,7 @@ class LaneOffset:
   def update_lane_pos_auto(self, lane_width):
     lane_pos_auto = 0.
     if self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB \
-        and self._lane_probs[2] > self.AUTO_MIN_LANELINE_PROB \
-        and self._lat_accel_cur < self.AUTO_MAX_CUR_LAT_ACCEL \
-        and self._lat_accel_pred < self.AUTO_MAX_PRED_LAT_ACCEL:
+        and self._lane_probs[2] > self.AUTO_MIN_LANELINE_PROB:
       if (self._lane_width_mean_left_adjacent > 0. and self._lane_width_mean_right_adjacent > 0.) \
           or (self._lane_width_mean_left_adjacent == 0. and self._lane_width_mean_right_adjacent == 0.):
         lane_pos_auto = 0.
@@ -140,6 +141,12 @@ class LaneOffset:
         lane_pos_auto = -1.
       elif self._lane_width_mean_right_adjacent > 0. and self._shoulder_width_mean_left >= self.AUTO_MIN_SHOULDER_WIDTH_FACTOR * lane_width:
         lane_pos_auto = 1.
+    if lane_pos_auto != 0. \
+        and ((self._lat_accel_cur >= self.AUTO_MAX_CUR_LAT_ACCEL \
+        and np.sign(self._lat_curvature_cur) == np.sign(lane_pos_auto)) \
+        or (self._lat_accel_pred >= self.AUTO_MAX_PRED_LAT_ACCEL \
+        and np.sign(self._lat_curvature_pred) == np.sign(lane_pos_auto))):
+      lane_pos_auto = 0.
     
     if lane_pos_auto != self._lane_pos_auto:
       self._lane_state_changed_last_t = sec_since_boot()
@@ -154,13 +161,18 @@ class LaneOffset:
       if sm.valid.get('carState', False):
         self._cs = sm['carState']
       if sm.valid.get('longitudinalPlan', False):
-        self._lp = sm['longitudinalPlan']
+        self._long_plan = sm['longitudinalPlan']
+      if sm.valid.get('lateralPlan', False):
+        self._lat_plan = sm['lateralPlan']
       if self._cs is not None:
         self.update_lane_info(md, self._cs.vEgo, lane_width)
         self.update_lane_pos_auto(lane_width)
-      if self._lp is not None:
-        self._lat_accel_cur = self._lp.visionCurrentLateralAcceleration
-        self._lat_accel_pred = self._lp.visionMaxPredictedLateralAcceleration
+      if self._long_plan is not None:
+        self._lat_accel_cur = self._long_plan.visionCurrentLateralAcceleration
+        self._lat_accel_pred = self._long_plan.visionMaxPredictedLateralAcceleration
+        self._lat_curvature_pred = self._long_plan.visionMaxPredictedCurvature
+      if self._lat_plan is not None and len(self._lat_plan.curvatures) > 0:
+        self._lat_curvature_cur = self._lat_plan.curvatures[0]
       self._auto_is_active = auto_active
     else:
       self._auto_is_active = False

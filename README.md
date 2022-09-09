@@ -128,7 +128,6 @@ Please show your support by contributing to the ongoing development of this proj
       * [Optional; tap wheel icon to toggle while in one-pedal mode]
       * A second white circle around the wheel icon indicates autosteer pause is enabled
     * *Must have disable disengage on gas toggle enabled*
-- [x] [GM] [✅] One-pedal pro braking: Completely disable cruise/speed limit/curve/follow braking when in one-pedal mode. You are soley responsible for slowing the car using the adjustable one-pedal braking (by pressing/holding the follow distance button) or with the physical brakes/regen paddle
 - [x] [Volt] [✅] One-pedal D/L coasting: In one-pedal regen/engine ⚫️ braking mode in D, no braking whatsoever will be applied. Shift to L for max regen. Happy hypermiling!
 - [x] [GM] [✅] One-pedal engage on gas: When cruising at speed and the driver presses the gas (i.e. not when resuming from a stop), engage one-pedal mode
     * Toggle while one-pedal mode enabled by tapping the pedal icon

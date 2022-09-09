@@ -106,11 +106,41 @@ class CarInterface(CarInterfaceBase):
     SPEED_COEF = 0.55322718
     return get_steer_feedforward_erf(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
 
+  @staticmethod
+  def get_steer_feedforward_bolt_euv(angle, speed):
+    ANGLE_COEF = 4.80745391
+    ANGLE_COEF2 = 0.47214969
+    ANGLE_OFFSET = 0.#-0.32202861
+    SPEED_OFFSET = 2.85629120
+    SIGMOID_COEF_RIGHT = 0.33536781
+    SIGMOID_COEF_LEFT = 0.40555956
+    SPEED_COEF = 0.02123313
+
+    x = ANGLE_COEF * (angle + ANGLE_OFFSET)
+    sigmoid = x / (1. + fabs(x))
+    return ((SIGMOID_COEF_RIGHT if (angle + ANGLE_OFFSET) > 0. else SIGMOID_COEF_LEFT) * sigmoid) * ((speed + SPEED_OFFSET) * SPEED_COEF) * ((fabs(angle + ANGLE_OFFSET) ** fabs(ANGLE_COEF2)))
+  
+  @staticmethod
+  def get_steer_feedforward_bolt_euv_torque(desired_lateral_accel, speed):
+    ANGLE_COEF = 0.16179233
+    ANGLE_COEF2 = 0.20691964
+    ANGLE_OFFSET = 0.#0.04420955
+    SPEED_OFFSET = -7.94958973
+    SIGMOID_COEF_RIGHT = 0.34906506
+    SIGMOID_COEF_LEFT = 0.20000000
+    SPEED_COEF = 0.38748798
+
+    x = ANGLE_COEF * (desired_lateral_accel + ANGLE_OFFSET) * (40.23 / (max(0.05,speed + SPEED_OFFSET))**SPEED_COEF)
+    sigmoid = erf(x)
+    return ((SIGMOID_COEF_RIGHT if (desired_lateral_accel + ANGLE_OFFSET) < 0. else SIGMOID_COEF_LEFT) * sigmoid) + ANGLE_COEF2 * (desired_lateral_accel + ANGLE_OFFSET)
+
   def get_steer_feedforward_function(self):
     if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
       return self.get_steer_feedforward_volt
     elif self.CP.carFingerprint == CAR.ACADIA:
       return self.get_steer_feedforward_acadia
+    elif self.CP.carFingerprint == CAR.BOLT_EUV:
+      return self.get_steer_feedforward_bolt_euv
     else:
       return CarInterfaceBase.get_steer_feedforward_default
   
@@ -119,6 +149,8 @@ class CarInterface(CarInterfaceBase):
       return self.get_steer_feedforward_volt_torque
     elif self.CP.carFingerprint == CAR.ACADIA:
       return self.get_steer_feedforward_acadia_torque
+    elif self.CP.carFingerprint == CAR.BOLT_EUV:
+      return self.get_steer_feedforward_bolt_euv_torque
     else:
       return CarInterfaceBase.get_steer_feedforward_torque_default
 
@@ -147,7 +179,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelayUpperBound = 0.42
 
     # Default lateral controller params.
-    ret.minSteerSpeed = 7 * CV.MPH_TO_MS
+    ret.minSteerSpeed = 10 * CV.KPH_TO_MS
     ret.lateralTuning.pid.kpBP = [0.]
     ret.lateralTuning.pid.kpV = [0.2]
     ret.lateralTuning.pid.kiBP = [0.]
@@ -178,8 +210,8 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
         ret.lateralTuning.torque.kp = 1.8 / max_lateral_accel
-        ret.lateralTuning.torque.ki = 0.55 / max_lateral_accel
-        ret.lateralTuning.torque.kd = 5.0 / max_lateral_accel
+        ret.lateralTuning.torque.ki = 0.45 / max_lateral_accel
+        ret.lateralTuning.torque.kd = 6.0 / max_lateral_accel
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
         ret.lateralTuning.torque.friction = 0.005
       else:
@@ -196,9 +228,10 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kpBP = [5., 15., 35.]
       ret.longitudinalTuning.kpV = [0.9, .9, 0.8]
       ret.longitudinalTuning.kiBP = [5., 15., 35.]
-      ret.longitudinalTuning.kiV = [0.14, 0.16, 0.13]
+      ret.longitudinalTuning.kiV = [0.14, 0.13, 0.13]
       ret.longitudinalTuning.kdBP = [5., 25.]
       ret.longitudinalTuning.kdV = [0.4, 0.0]
+      ret.stoppingDecelRate = 0.2 # brake_travel/s while trying to stop
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -288,6 +321,29 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
       ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
+    elif candidate == CAR.BOLT_EUV:
+      ret.minEnableSpeed = -1
+      ret.mass = 1669. + STD_CARGO_KG
+      ret.wheelbase = 2.675
+      ret.steerRatio = 16.8
+      ret.centerToFront = ret.wheelbase * 0.4
+      tire_stiffness_factor = 1.0
+      ret.steerActuatorDelay = 0.2
+      if (Params().get_bool("LateralTorqueControl")):
+        max_lateral_accel = 3.0
+        ret.lateralTuning.init('torque')
+        ret.lateralTuning.torque.useSteeringAngle = True
+        ret.lateralTuning.torque.kp = 1.8 / max_lateral_accel
+        ret.lateralTuning.torque.ki = 0.4 / max_lateral_accel
+        ret.lateralTuning.torque.kd = 4.0 / max_lateral_accel
+        ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
+        ret.lateralTuning.torque.friction = 0.005
+      else:
+        ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 40.0], [0., 40.]]
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.1, 0.22], [0.01, 0.021]]
+        ret.lateralTuning.pid.kdBP = [0.]
+        ret.lateralTuning.pid.kdV = [0.6]
+        ret.lateralTuning.pid.kf = 1. # use with get_feedforward_bolt_euv
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase

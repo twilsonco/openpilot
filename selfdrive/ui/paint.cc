@@ -208,15 +208,13 @@ static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, i
 }
 
 
-static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const vertex_data &vd, bool draw_info) {
+static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &vd, bool draw_info, bool is_voacc) {
   // Draw lead car indicator
   auto [x, y] = vd;
 
   float fillAlpha = 0;
   float speedBuff = 10.;
   float leadBuff = 40.;
-  float d_rel = lead_data.getX()[0];
-  float v_rel = lead_data.getV()[0];
   if (d_rel < leadBuff) {
     fillAlpha = 255*(1.0-(d_rel/leadBuff));
     if (v_rel < 0) {
@@ -228,13 +226,14 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
   float sz = std::clamp((25 * 30) / (d_rel * 0.33333f + 30), 15.0f, 30.0f) * 2.35;
   x = std::clamp(x, 0.f, s->fb_w - sz * 0.5f);
   y = std::fmin(s->fb_h - sz * .6, y);
-  draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
+  draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), is_voacc ? COLOR_BLUE : COLOR_YELLOW);
 
   if (s->scene.lead_info_print_enabled && !s->scene.map_open && draw_info){
     // print lead info around chevron
     // Print relative distances to the left of the chevron
     int const x_offset = 100;
     int const y_offset = 48;
+    int const y_max = s->fb_h - 4*bdr_s;
     s->scene.lead_x_vals.push_back(x);
     s->scene.lead_y_vals.push_back(y);
     while (s->scene.lead_x_vals.size() > s->scene.lead_xy_num_vals){
@@ -249,7 +248,7 @@ static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader 
     }
     lead_x /= float(s->scene.lead_x_vals.size());
     for (int const & v : s->scene.lead_y_vals){
-      lead_y += v;
+      lead_y += v > y_max ? y_max : v;
     }
     lead_y /= float(s->scene.lead_y_vals.size());
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 180));
@@ -483,11 +482,20 @@ static void ui_draw_world(UIState *s) {
   if (s->scene.longitudinal_control) {
     auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[0];
     auto lead_two = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[1];
+    bool lead_drawn = false;
     if (lead_one.getProb() > .5) {
-      draw_lead(s, lead_one, s->scene.lead_vertices[0], true);
+      lead_drawn = true;
+      draw_lead(s, lead_one.getX()[0], lead_one.getV()[0], s->scene.lead_vertices[0], true, false);
     }
-   if (lead_two.getProb() > .5 && (std::abs(lead_one.getX()[0] - lead_two.getX()[0]) > 3.0)) {
-      draw_lead(s, lead_two, s->scene.lead_vertices[1], false);
+    if (lead_two.getProb() > .5 && (std::abs(lead_one.getX()[0] - lead_two.getX()[0]) > 3.0)) {
+      lead_drawn = true;
+      draw_lead(s, lead_two.getX()[0], lead_two.getV()[0], s->scene.lead_vertices[1], lead_one.getProb() <= .5, false);
+    }
+    for (int i = 0; i < 2 && !lead_drawn; ++i){
+      if (s->scene.lead_data[i].getStatus()){
+        lead_drawn = true;
+        draw_lead(s, s->scene.lead_data[i].getDRel(), s->scene.lead_data[i].getVRel(), s->scene.lead_vertices[i], true, true);
+      }
     }
   }
   nvgResetScissor(s->vg);
@@ -1288,7 +1296,7 @@ static void ui_draw_measures(UIState *s){
               snprintf(name, sizeof(name), "ENGINE");
               int temp = scene.car_state.getEngineCoolantTemp();
               snprintf(unit, sizeof(unit), "%d%sC", temp, deg);
-              if(scene.engineRPM == 0) {
+              if(scene.engineRPM == 0 && temp < 55) {
                 snprintf(val, sizeof(val), "OFF");
               }
               else {
@@ -1311,7 +1319,7 @@ static void ui_draw_measures(UIState *s){
               snprintf(name, sizeof(name), "ENGINE");
               int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
               snprintf(unit, sizeof(unit), "%d%sF", temp, deg);
-              if(scene.engineRPM == 0) {
+              if(scene.engineRPM == 0 && temp < 130) {
                 snprintf(val, sizeof(val), "OFF");
               }
               else {
@@ -1335,7 +1343,7 @@ static void ui_draw_measures(UIState *s){
               snprintf(unit, sizeof(unit), "%sC", deg);
               int temp = scene.car_state.getEngineCoolantTemp();
               snprintf(val, sizeof(val), "%d", temp);
-              if(scene.engineRPM > 0) {
+              if(scene.engineRPM > 0 || temp >= 55) {
                 if (temp < 87){
                   val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
                 }
@@ -1355,7 +1363,7 @@ static void ui_draw_measures(UIState *s){
               snprintf(unit, sizeof(unit), "%sF", deg);
               int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
               snprintf(val, sizeof(val), "%d", temp);
-              if(scene.engineRPM > 0) {
+              if(scene.engineRPM > 0 || temp >= 130) {
                 if (temp < 190){
                   val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
                 }
@@ -1587,6 +1595,70 @@ static void ui_draw_measures(UIState *s){
               val_color = nvgRGBA(255, g, b, 200);
             }
             break;
+
+          case UIMeasure::EV_EFF_NOW: 
+            {
+              snprintf(name, sizeof(name), "EV EFF NOW");
+              if (scene.ev_recip_eff_wa[0] == 0.){
+                snprintf(val, sizeof(val), "--");
+              }
+              else{
+                float temp = 1. / scene.ev_recip_eff_wa[0];
+                if (abs(temp) >= scene.ev_recip_eff_wa_max){
+                  snprintf(val, sizeof(val), (temp > 0. ? "%.0f+" : "%.0f-"), scene.ev_recip_eff_wa_max);
+                }
+                else if (abs(temp) >= 10.){
+                  snprintf(val, sizeof(val), "%.0f", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.1f", temp);
+                }
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "km/kWh" : "mi/kWh"));
+            }
+            break;
+
+          case UIMeasure::EV_EFF_RECENT: 
+            {
+              snprintf(name, sizeof(name), (scene.is_metric ? "EV EFF 8km" : "EV EFF 5mi"));
+              if (scene.ev_recip_eff_wa[1] == 0.){
+                snprintf(val, sizeof(val), "--");
+              }
+              else{
+                float temp = 1. / scene.ev_recip_eff_wa[1];
+                if (abs(temp) >= scene.ev_recip_eff_wa_max){
+                  snprintf(val, sizeof(val), (temp > 0. ? "%.0f+" : "%.0f-"), scene.ev_recip_eff_wa_max);
+                }
+                else if (abs(temp) >= 100.){
+                  snprintf(val, sizeof(val), "%.0f", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.1f", temp);
+                }
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "km/kWh" : "mi/kWh"));
+            }
+            break;
+
+          case UIMeasure::EV_EFF_TRIP: 
+            {
+              snprintf(name, sizeof(name), "EV EFF TRIP");
+              float temp = scene.ev_eff_total;
+              if (abs(temp) == scene.ev_recip_eff_wa_max){
+                snprintf(val, sizeof(val), (temp > 0. ? "%.0f+" : "%.0f-"), temp);
+              }
+              else if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "km/kWh" : "mi/kWh"));
+            }
+            break;
             
           case UIMeasure::LANE_WIDTH: 
             {
@@ -1630,6 +1702,10 @@ static void ui_draw_measures(UIState *s){
         int vallen = strlen(val);
         if (vallen > 4){
           val_font_size -= (vallen - 4) * 5;
+        }
+        int unitlen = strlen(unit);
+        if (unitlen > 5){
+          unit_font_size -= (unitlen - 5) * 5;
         }
         int slot_x = s->scene.measure_slots_rect.x + (scene.measure_cur_num_slots <= 5 ? 0 : (i < 5 ? slots_r * 2 : 0));
         int x = slot_x + slots_r - unit_font_size / 2;
