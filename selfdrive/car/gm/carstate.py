@@ -34,7 +34,7 @@ class CarState(CarStateBase):
     
     
     self.t = 0.
-    self.is_ev = (self.car_fingerprint in [CAR.VOLT, CAR.VOLT18])
+    self.is_ev = (self.car_fingerprint in [CAR.VOLT, CAR.VOLT18, CAR.BOLT_EUV])
     self.do_sng = (self.car_fingerprint in [CAR.VOLT])
     
     self.prev_distance_button = 0
