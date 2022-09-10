@@ -351,7 +351,7 @@ static void update_state(UIState *s) {
     float cur_kWh = cur_kW * (t - scene.ev_eff_last_time) * 2.8e-4; // [kJ converted to kWh]
     scene.ev_eff_total_kWh += cur_kWh;
 
-    if (cur_dist > 0.0){
+    if (cur_dist > 0.f){
       if (scene.ev_eff_stopped_kWh != 0.){
         cur_kWh += scene.ev_eff_stopped_kWh;
         scene.ev_eff_stopped_kWh = 0.;
