@@ -628,6 +628,8 @@ static void update_status(UIState *s) {
         s->scene.percentGradeIterRolled = false;
         s->scene.percentGradeRollingIter = 0;
       }
+      s->scene.ev_eff_total_kWh = 0.;
+      s->scene.ev_eff_total_dist = 0.;
 
       s->scene.measure_cur_num_slots = std::stoi(Params().get("MeasureNumSlots"));
       for (int i = 0; i < QUIState::ui_state.scene.measure_max_num_slots; ++i){
