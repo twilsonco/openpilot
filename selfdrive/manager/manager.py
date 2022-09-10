@@ -85,17 +85,17 @@ def manager_init():
     ("DisableOnroadUploads", "0"),
     ("LowOverheadMode", "0"),
     ("FPVolt", "0"),
-    ("MeasureNumSlots", "0"),
-    ("MeasureSlot00", "0"), # steering angle
-    ("MeasureSlot01", "11"), # percent grade
-    ("MeasureSlot02", "10"), # altitude
-    ("MeasureSlot03", "5"), # engine rpm + coolant temp °F
-    ("MeasureSlot04", "13"), # follow gap level
-    ("MeasureSlot05", "16"), # lead dist [s]
-    ("MeasureSlot06", "15"), # lead dist [m]
-    ("MeasureSlot07", "20"), # lead rel spd [mph]
-    ("MeasureSlot08", "21"),# lead spd [mph]
-    ("MeasureSlot09", "23"),# device cpu percent and temp °F
+    ("MeasureConfigNum", "0"),
+    ("MeasureSlot00", "12"), # bearing 
+    ("MeasureSlot01", "11"), # altitude 
+    ("MeasureSlot02", "14"), # percent grade
+    ("MeasureSlot03", "9"), # Acceleration
+    ("MeasureSlot04", "6"), # engine RPM + coolant temp F
+    ("MeasureSlot05", "34"), # Trip EV efficiency 
+    ("MeasureSlot06", "33"), # 5mi EV efficiency
+    ("MeasureSlot07", "32"), # Instantaneous EV efficiency
+    ("MeasureSlot08", "52"),# GPS accuracy
+    ("MeasureSlot09", "39"),# device cpu percent and temp °C
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))

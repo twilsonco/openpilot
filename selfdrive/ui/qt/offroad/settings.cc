@@ -76,8 +76,8 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   this));
 
   toggles.append(new ParamControl("EVConsumptionReset",
-                                  "Reset EV consumption metrics",
-                                  "Upon the next vehicle start, reset the EV consumption and efficiency trip and 5mi/8km metrics to 0.",
+                                  "Reset trip/EV metrics",
+                                  "Upon the next vehicle start, reset the distance travelled and EV consumption and efficiency trip and 5mi/8km metrics to 0.",
                                   "../assets/offroad/icon_calibration.png",
                                   this));
   

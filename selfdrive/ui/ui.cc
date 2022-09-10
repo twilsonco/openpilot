@@ -263,25 +263,26 @@ static void update_state(UIState *s) {
     }
   }
 
-  if (sm.frame % scene.ev_eff_params_write_freq == 0) {
-    char val_str[18];
-    sprintf(val_str, "%.3f", scene.ev_recip_eff_wa[1]);
-    Params().put("EVConsumption5Mi", val_str, strlen(val_str));
-    sprintf(val_str, "%.3f", scene.ev_eff_total_kWh);
-    Params().put("EVConsumptionTripkWh", val_str, strlen(val_str));
-    sprintf(val_str, "%.3f", scene.ev_eff_total_dist);
-    Params().put("EVConsumptionTripDistance", val_str, strlen(val_str));
-  }
-  
-  if (scene.lane_pos != 0 && !s->scene.auto_lane_pos_active && scene.lane_pos_dist_since_set > scene.lane_pos_timeout_dist){
-    scene.lane_pos = 0;
-    scene.lane_pos_timeout_dist = scene.lane_pos_dist_short;
-    Params().put("LanePosition", "0", 1);
-  }
-  
-  // fade screen brightness
-  // update screen dim
   if (scene.started){
+
+    if (scene.ev_eff_total_dist > 10. && sm.frame % scene.ev_eff_params_write_freq == 0) {
+      char val_str[18];
+      sprintf(val_str, "%.3f", scene.ev_recip_eff_wa[1]);
+      Params().put("EVConsumption5Mi", val_str, strlen(val_str));
+      sprintf(val_str, "%.3f", scene.ev_eff_total_kWh);
+      Params().put("EVConsumptionTripkWh", val_str, strlen(val_str));
+      sprintf(val_str, "%.3f", scene.ev_eff_total_dist);
+      Params().put("EVConsumptionTripDistance", val_str, strlen(val_str));
+    }
+    
+    if (scene.lane_pos != 0 && !s->scene.auto_lane_pos_active && scene.lane_pos_dist_since_set > scene.lane_pos_timeout_dist){
+      scene.lane_pos = 0;
+      scene.lane_pos_timeout_dist = scene.lane_pos_dist_short;
+      Params().put("LanePosition", "0", 1);
+    }
+  
+    // fade screen brightness
+    // update screen dim
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
     const int radius = 96;
     const int center_x = maxspeed_rect.centerX();
@@ -636,12 +637,18 @@ static void update_status(UIState *s) {
         Params().put("EVConsumptionTripkWh", val_str, strlen(val_str));
         Params().put("EVConsumptionTripDistance", val_str, strlen(val_str));
         Params().putBool("EVConsumptionReset", false);
+        s->scene.ev_recip_eff_wa[1] = 0.0;
+        s->scene.ev_eff_total_dist = 0.0;
+        s->scene.ev_eff_total_kWh = 0.0;
+        s->scene.ev_eff_total = 0.0;
       }
       else{
         s->scene.ev_recip_eff_wa[1] = std::stof(Params().get("EVConsumption5Mi"));
         s->scene.ev_eff_total_dist = std::stof(Params().get("EVConsumptionTripDistance"));
         s->scene.ev_eff_total_kWh = std::stof(Params().get("EVConsumptionTripkWh"));
+        s->scene.ev_eff_total = (s->scene.ev_eff_total_kWh != 0.f ? s->scene.ev_eff_total_dist / s->scene.ev_eff_total_kWh : 0.0);
       }
+      s->scene.ev_recip_eff_wa[0] = 0.0;
 
       s->scene.sessionInitTime = seconds_since_boot();
       s->scene.percentGrade = 0;
@@ -655,8 +662,14 @@ static void update_status(UIState *s) {
       s->scene.ev_eff_total_kWh = 0.;
       s->scene.ev_eff_total_dist = 0.;
 
-      s->scene.measure_cur_num_slots = std::stoi(Params().get("MeasureNumSlots"));
-      for (int i = 0; i < QUIState::ui_state.scene.measure_max_num_slots; ++i){
+      s->scene.measure_config_num = std::stoi(Params().get("MeasureConfigNum"));
+      s->scene.measure_cur_num_slots = s->scene.measure_config_list[s->scene.measure_config_num];
+      s->scene.measure_num_rows = s->scene.measure_cur_num_slots;
+      if (s->scene.measure_num_rows > s->scene.measure_max_rows){
+        s->scene.measure_num_rows /= 2;
+      }
+      s->scene.measure_row_offset = s->scene.measure_max_rows - s->scene.measure_num_rows;
+      for (int i = 0; i < s->scene.measure_max_num_slots; ++i){
         char slotName[16];
         snprintf(slotName, sizeof(slotName), "MeasureSlot%.2d", i);
         s->scene.measure_slots[i] = std::stoi(Params().get(slotName));
