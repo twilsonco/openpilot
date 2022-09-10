@@ -262,6 +262,16 @@ static void update_state(UIState *s) {
       scene.dynamic_follow_active = std::stoi(Params().get("DynamicFollow"));
     }
   }
+
+  if (sm.frame % scene.ev_eff_params_write_freq == 0) {
+    char val_str[18];
+    sprintf(val_str, "%.3f", scene.ev_recip_eff_wa[1]);
+    Params().put("EVConsumption5Mi", val_str, strlen(val_str));
+    sprintf(val_str, "%.3f", scene.ev_eff_total_kWh);
+    Params().put("EVConsumptionTripkWh", val_str, strlen(val_str));
+    sprintf(val_str, "%.3f", scene.ev_eff_total_dist);
+    Params().put("EVConsumptionTripDistance", val_str, strlen(val_str));
+  }
   
   if (scene.lane_pos != 0 && !s->scene.auto_lane_pos_active && scene.lane_pos_dist_since_set > scene.lane_pos_timeout_dist){
     scene.lane_pos = 0;
@@ -351,7 +361,7 @@ static void update_state(UIState *s) {
     float cur_kWh = cur_kW * (t - scene.ev_eff_last_time) * 2.8e-4; // [kJ converted to kWh]
     scene.ev_eff_total_kWh += cur_kWh;
 
-    if (cur_dist > 0.0){
+    if (cur_dist > 1e-4){
       if (scene.ev_eff_stopped_kWh != 0.){
         cur_kWh += scene.ev_eff_stopped_kWh;
         scene.ev_eff_stopped_kWh = 0.;
@@ -619,6 +629,20 @@ static void update_status(UIState *s) {
         s->scene.dynamic_follow_mode_touch_rect = {1,1,1,1};
       }
 
+      if (Params().getBool("EVConsumptionReset")) {
+        char val_str[18];
+        sprintf(val_str, "0.0");
+        Params().put("EVConsumption5Mi", val_str, strlen(val_str));
+        Params().put("EVConsumptionTripkWh", val_str, strlen(val_str));
+        Params().put("EVConsumptionTripDistance", val_str, strlen(val_str));
+        Params().putBool("EVConsumptionReset", false);
+      }
+      else{
+        s->scene.ev_recip_eff_wa[1] = std::stof(Params().get("EVConsumption5Mi"));
+        s->scene.ev_eff_total_dist = std::stof(Params().get("EVConsumptionTripDistance"));
+        s->scene.ev_eff_total_kWh = std::stof(Params().get("EVConsumptionTripkWh"));
+      }
+
       s->scene.sessionInitTime = seconds_since_boot();
       s->scene.percentGrade = 0;
       for (int i = 0; i < 5; ++i){
@@ -628,6 +652,8 @@ static void update_status(UIState *s) {
         s->scene.percentGradeIterRolled = false;
         s->scene.percentGradeRollingIter = 0;
       }
+      s->scene.ev_eff_total_kWh = 0.;
+      s->scene.ev_eff_total_dist = 0.;
 
       s->scene.measure_cur_num_slots = std::stoi(Params().get("MeasureNumSlots"));
       for (int i = 0; i < QUIState::ui_state.scene.measure_max_num_slots; ++i){

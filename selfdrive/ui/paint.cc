@@ -1599,7 +1599,7 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::EV_EFF_NOW: 
             {
               snprintf(name, sizeof(name), "EV EFF NOW");
-              if (scene.ev_recip_eff_wa[0] == 0.){
+              if (scene.ev_recip_eff_wa[0] == 0.f){
                 snprintf(val, sizeof(val), "--");
               }
               else{
@@ -1621,7 +1621,7 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::EV_EFF_RECENT: 
             {
               snprintf(name, sizeof(name), (scene.is_metric ? "EV EFF 8km" : "EV EFF 5mi"));
-              if (scene.ev_recip_eff_wa[1] == 0.){
+              if (scene.ev_recip_eff_wa[1] == 0.f){
                 snprintf(val, sizeof(val), "--");
               }
               else{
@@ -1657,6 +1657,56 @@ static void ui_draw_measures(UIState *s){
                 snprintf(val, sizeof(val), "%.2f", temp);
               }
               snprintf(unit, sizeof(unit), (scene.is_metric ? "km/kWh" : "mi/kWh"));
+            }
+            break;
+
+          case UIMeasure::EV_CONSUM_NOW: 
+            {
+              snprintf(name, sizeof(name), "EV CONSUM NOW");
+              float temp = scene.ev_recip_eff_wa[0]*1000.;
+              if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "Wh/km" : "Wh/mi"));
+            }
+            break;
+
+          case UIMeasure::EV_CONSUM_RECENT: 
+            {
+              snprintf(name, sizeof(name), (scene.is_metric ? "EV CONSUM 8km" : "EV CONSUM 5mi"));
+              float temp = scene.ev_recip_eff_wa[1]*1000.;
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "Wh/km" : "Wh/mi"));
+            }
+            break;
+
+          case UIMeasure::EV_CONSUM_TRIP: 
+            {
+              snprintf(name, sizeof(name), "EV CONSUM TRIP");
+              if (scene.ev_eff_total == 0.f){
+                snprintf(val, sizeof(val), "--");
+              }
+              else{
+                float temp = 0.001/scene.ev_eff_total;
+                if (abs(temp) >= 100.){
+                  snprintf(val, sizeof(val), "%.0f", temp);
+                }
+                else if (abs(temp) >= 10.){
+                  snprintf(val, sizeof(val), "%.1f", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.2f", temp);
+                }
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "Wh/km" : "Wh/mi"));
             }
             break;
             

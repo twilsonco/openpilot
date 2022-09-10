@@ -74,6 +74,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
                                   "../assets/offroad/icon_road.png",
                                   this));
+
+  toggles.append(new ParamControl("EVConsumptionReset",
+                                  "Reset EV consumption metrics",
+                                  "Upon the next vehicle start, reset the EV consumption and efficiency trip and 5mi/8km metrics to 0.",
+                                  "../assets/offroad/icon_calibration.png",
+                                  this));
   
   toggles.append(new ParamControl("LongRangeLeadsEnabled",
                                   "Longer-range lead detection (alpha)",

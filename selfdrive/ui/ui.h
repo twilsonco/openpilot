@@ -199,6 +199,9 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   EV_EFF_NOW,
   EV_EFF_RECENT,
   EV_EFF_TRIP,
+  EV_CONSUM_NOW,
+  EV_CONSUM_RECENT,
+  EV_CONSUM_TRIP,
   VISION_CURLATACCEL,
   VISION_MAXVFORCURCURV,
   VISION_MAXPREDLATACCEL,
@@ -315,6 +318,7 @@ typedef struct UIScene {
   float ev_eff_total = 0.;
   float ev_recip_eff_wa_max = 250.;
   float ev_eff_last_time = 0.;
+  int ev_eff_params_write_freq = 500; // save trip and 5mi efficiencies every 5s
 
 
   // gps
