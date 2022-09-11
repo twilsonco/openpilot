@@ -1815,7 +1815,7 @@ static void ui_draw_measures(UIState *s){
         if (i >= scene.measure_max_rows){
           x = slot_x + slots_r + unit_font_size / 2;
         }
-        int slot_y = scene.measure_slots_rect.y + (i % 5) * slot_y_rng;
+        int slot_y = scene.measure_slots_rect.y + (i % scene.measure_num_rows) * slot_y_rng;
         int slot_y_mid = slot_y + slot_y_rng / 2;
         int y = slot_y_mid + slot_y_rng / 2 - 8 - label_font_size;
         if (strlen(name) == 0){
