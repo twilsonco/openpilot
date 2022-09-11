@@ -153,6 +153,7 @@ typedef struct {
 } line_vertices_data;
 
 typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
+  // Vehicle info
   STEERING_ANGLE = 0,
   DESIRED_STEERING_ANGLE,
   STEERING_ANGLE_ERROR,
@@ -164,10 +165,16 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   COOLANT_TEMPF,
   ACCELERATION,
   LAT_ACCEL,//JERK,
+  // Location/road info
   ALTITUDE,
   BEARING,
   PERCENT_GRADE,
   PERCENT_GRADE_DEVICE,
+  ROLL,
+  ROLL_DEVICE,
+  LANE_WIDTH,
+  DISTANCE_TRAVELLED,
+  // Lead info
   FOLLOW_LEVEL,
   LEAD_TTC,
   LEAD_DISTANCE_LENGTH,
@@ -177,7 +184,18 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   LEAD_COSTS,
   LEAD_VELOCITY_RELATIVE,
   LEAD_VELOCITY_ABS,
-  GPS_ACCURACY,
+  // EV info
+  HVB_VOLTAGE,
+  HVB_CURRENT,
+  HVB_WATTAGE,
+  HVB_WATTVOLT,
+  EV_EFF_NOW,
+  EV_EFF_RECENT,
+  EV_EFF_TRIP,
+  EV_CONSUM_NOW,
+  EV_CONSUM_RECENT,
+  EV_CONSUM_TRIP,
+  // Device info
   CPU_TEMP_AND_PERCENTF,
   CPU_TEMP_AND_PERCENTC,
   CPU_TEMPF,
@@ -192,23 +210,12 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   MEMORY_USAGE_PERCENT,
   FREESPACE_STORAGE,
   DEVICE_BATTERY,
-  HVB_VOLTAGE,
-  HVB_CURRENT,
-  HVB_WATTAGE,
-  HVB_WATTVOLT,
-  EV_EFF_NOW,
-  EV_EFF_RECENT,
-  EV_EFF_TRIP,
-  EV_CONSUM_NOW,
-  EV_CONSUM_RECENT,
-  EV_CONSUM_TRIP,
+  GPS_ACCURACY,
+  // vision turn speed controller
   VISION_CURLATACCEL,
   VISION_MAXVFORCURCURV,
   VISION_MAXPREDLATACCEL,
   VISION_VF,
-  LANE_WIDTH,
-  ROLL,
-  ROLL_DEVICE,
   
   NUM_MEASURES
 } UIMeasure;
@@ -274,11 +281,16 @@ typedef struct UIScene {
 // measures
   int measure_min_num_slots = 0;
   int measure_max_num_slots = 10;
+  int measure_max_rows = measure_max_num_slots / 2;
   int measure_cur_num_slots = 3;
   int measure_slots[10];
   Rect measure_slots_rect;
   Rect measure_slot_touch_rects[10];
   int num_measures = UIMeasure::NUM_MEASURES; // the number of cases handled in ui_draw_measures() in paint.cc
+  std::vector<int> measure_config_list = {0,1,2,3,4,5,6,8,10}; // 6,8,10 are 3x2, 4x2, and 5x2
+  int measure_config_num = 0;
+  int measure_num_rows = 0;
+  int measure_row_offset = 0;
   float measures_touch_timeout = 10.;
   float measures_last_tap_t = -measures_touch_timeout;
   
@@ -318,6 +330,7 @@ typedef struct UIScene {
   float ev_eff_total = 0.;
   float ev_recip_eff_wa_max = 250.;
   float ev_eff_last_time = 0.;
+  int ev_eff_params_write_freq = 500; // save trip and 5mi efficiencies every 5s
 
 
   // gps

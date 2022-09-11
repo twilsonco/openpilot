@@ -617,6 +617,7 @@ NVGcolor color_from_thermal_status(int thermalStatus){
 static void ui_draw_measures(UIState *s){
   if (s->scene.measure_cur_num_slots){
     SubMaster &sm = *(s->sm);
+    UIScene &scene = s->scene;
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
     int center_x = s->fb_w - face_wheel_radius - bdr_s * 2;
     const int brake_y = s->fb_h - footer_h / 2;
@@ -624,16 +625,16 @@ static void ui_draw_measures(UIState *s){
     const int y_max = brake_y - brake_size - bdr_s / 2;
     const int y_rng = y_max - y_min;
     int slot_y_rng;
-    if (s->scene.measure_cur_num_slots > 4 || s->scene.map_open){
-      slot_y_rng = y_rng / s->scene.measure_max_num_slots * 2;
+    if (scene.measure_num_rows > 4 || scene.map_open){
+      slot_y_rng = y_rng / scene.measure_max_rows;
     }
     else{
-      slot_y_rng = y_rng / (s->scene.measure_cur_num_slots < 3 ? 3 : s->scene.measure_cur_num_slots);
+      slot_y_rng = y_rng / (scene.measure_num_rows < 3 ? 3 : scene.measure_num_rows);
     }
-    const int slot_y_rng_orig = y_rng / s->scene.measure_max_num_slots * 2; // two columns
+    const int slot_y_rng_orig = y_rng / scene.measure_max_rows; // two columns
     const float slot_aspect_ratio_ratio = float(slot_y_rng) / float(slot_y_rng_orig);
     const int y_mid = (y_max + y_min) / 2;
-    const int slots_y_rng = slot_y_rng * (s->scene.measure_cur_num_slots <= 5 ? s->scene.measure_cur_num_slots : 5);
+    const int slots_y_rng = slot_y_rng * (scene.measure_num_rows <= scene.measure_max_rows ? scene.measure_num_rows : scene.measure_max_rows);
     const int slots_y_min = y_mid - (slots_y_rng / 2);
   
     NVGcolor default_name_color = nvgRGBA(255, 255, 255, 200);
@@ -645,22 +646,17 @@ static void ui_draw_measures(UIState *s){
   
     // determine bounding rectangle
     int slots_r, slots_w, slots_x;
-    if (s->scene.measure_cur_num_slots <= 4){
-      const int slots_r_orig = brake_size + 6 + (s->scene.measure_cur_num_slots <= 5 ? 6 : 0);
-      slots_r = float(brake_size) * slot_aspect_ratio_ratio + 12.;
-      center_x -= slots_r - slots_r_orig;
-      slots_w = 2 * slots_r;
-      slots_x = center_x - slots_r;
-    }
-    else{
-      slots_r = brake_size + 6 + (s->scene.measure_cur_num_slots <= 5 ? 6 : 0);
-      slots_w = (s->scene.measure_cur_num_slots <= 5 ? 2 : 4) * slots_r;
-      slots_x = (s->scene.measure_cur_num_slots <= 5 ? center_x - slots_r : center_x - 3 * slots_r);
-    }
-    s->scene.measure_slots_rect = {slots_x, slots_y_min, slots_w, slots_y_rng};
+
+    const int slots_r_orig = brake_size + 6 + (s->scene.measure_cur_num_slots <= 5 ? 6 : 0);
+    slots_r = brake_size * slot_aspect_ratio_ratio + 6 + (scene.measure_cur_num_slots <= scene.measure_max_rows ? 6 : 0);
+    center_x -= slots_r - slots_r_orig;
+    slots_w = (scene.measure_cur_num_slots <= scene.measure_max_rows ? 2 : 4) * slots_r;
+    slots_x = (scene.measure_cur_num_slots <= scene.measure_max_rows ? center_x - slots_r : center_x - 3 * slots_r);
+
+    scene.measure_slots_rect = {slots_x, slots_y_min, slots_w, slots_y_rng};
     // draw bounding rectangle
     nvgBeginPath(s->vg);
-    nvgRoundedRect(s->vg, s->scene.measure_slots_rect.x, s->scene.measure_slots_rect.y, s->scene.measure_slots_rect.w, s->scene.measure_slots_rect.h, 20);
+    nvgRoundedRect(s->vg, scene.measure_slots_rect.x, scene.measure_slots_rect.y, scene.measure_slots_rect.w, scene.measure_slots_rect.h, 20);
     if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.measures_last_tap_t > QUIState::ui_state.scene.measures_touch_timeout){
       nvgStrokeColor(s->vg, nvgRGBA(200,200,200,200));
     }
@@ -672,13 +668,16 @@ static void ui_draw_measures(UIState *s){
     nvgFillColor(s->vg, nvgRGBA(0,0,0,100));
     nvgFill(s->vg);
 
-    UIScene &scene = s->scene;
-
     char const * deg = Hardware::EON() ? "°" : "°";
     
     // now start from the top and draw the current set of metrics
-    for (int i = 0; i < scene.measure_cur_num_slots; ++i){
+    for (int ii = 0; ii < scene.measure_cur_num_slots; ++ii){
       try{
+        int i = ii;
+        if (scene.measure_cur_num_slots > scene.measure_max_rows && i >= scene.measure_num_rows){
+          i += scene.measure_row_offset;
+        }
+
         char name[16], val[16], unit[8];
         snprintf(name, sizeof(name), "");
         snprintf(val, sizeof(val), "");
@@ -912,23 +911,23 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::BEARING:
             {
               snprintf(name, sizeof(name), "BEARING");
-              if (s->scene.bearingAccuracy != 180.00) {
-                snprintf(unit, sizeof(unit), "%.0d%s", (int)s->scene.bearingDeg, "°");
-                if (((s->scene.bearingDeg >= 337.5) && (s->scene.bearingDeg <= 360)) || ((s->scene.bearingDeg >= 0) && (s->scene.bearingDeg <= 22.5))) {
+              if (scene.bearingAccuracy != 180.00) {
+                snprintf(unit, sizeof(unit), "%.0d%s", (int)scene.bearingDeg, "°");
+                if (((scene.bearingDeg >= 337.5) && (scene.bearingDeg <= 360)) || ((scene.bearingDeg >= 0) && (scene.bearingDeg <= 22.5))) {
                   snprintf(val, sizeof(val), "N");
-                } else if ((s->scene.bearingDeg > 22.5) && (s->scene.bearingDeg < 67.5)) {
+                } else if ((scene.bearingDeg > 22.5) && (scene.bearingDeg < 67.5)) {
                   snprintf(val, sizeof(val), "NE");
-                } else if ((s->scene.bearingDeg >= 67.5) && (s->scene.bearingDeg <= 112.5)) {
+                } else if ((scene.bearingDeg >= 67.5) && (scene.bearingDeg <= 112.5)) {
                   snprintf(val, sizeof(val), "E");
-                } else if ((s->scene.bearingDeg > 112.5) && (s->scene.bearingDeg < 157.5)) {
+                } else if ((scene.bearingDeg > 112.5) && (scene.bearingDeg < 157.5)) {
                   snprintf(val, sizeof(val), "SE");
-                } else if ((s->scene.bearingDeg >= 157.5) && (s->scene.bearingDeg <= 202.5)) {
+                } else if ((scene.bearingDeg >= 157.5) && (scene.bearingDeg <= 202.5)) {
                   snprintf(val, sizeof(val), "S");
-                } else if ((s->scene.bearingDeg > 202.5) && (s->scene.bearingDeg < 247.5)) {
+                } else if ((scene.bearingDeg > 202.5) && (scene.bearingDeg < 247.5)) {
                   snprintf(val, sizeof(val), "SW");
-                } else if ((s->scene.bearingDeg >= 247.5) && (s->scene.bearingDeg <= 292.5)) {
+                } else if ((scene.bearingDeg >= 247.5) && (scene.bearingDeg <= 292.5)) {
                   snprintf(val, sizeof(val), "W");
-                } else if ((s->scene.bearingDeg > 292.5) && (s->scene.bearingDeg < 337.5)) {
+                } else if ((scene.bearingDeg > 292.5) && (scene.bearingDeg < 337.5)) {
                   snprintf(val, sizeof(val), "NW");
                 }
               } else {
@@ -1642,8 +1641,9 @@ static void ui_draw_measures(UIState *s){
 
           case UIMeasure::EV_EFF_TRIP: 
             {
-              snprintf(name, sizeof(name), "EV EFF TRIP");
+              snprintf(name, sizeof(name), (scene.is_metric ? "EV EFF km/kWh" : "EV EFF mi/kWh"));
               float temp = scene.ev_eff_total;
+              float dist = scene.ev_eff_total_dist * (scene.is_metric ? 1000. : 1609.);
               if (abs(temp) == scene.ev_recip_eff_wa_max){
                 snprintf(val, sizeof(val), (temp > 0. ? "%.0f+" : "%.0f-"), temp);
               }
@@ -1656,7 +1656,68 @@ static void ui_draw_measures(UIState *s){
               else{
                 snprintf(val, sizeof(val), "%.2f", temp);
               }
-              snprintf(unit, sizeof(unit), (scene.is_metric ? "km/kWh" : "mi/kWh"));
+              if (dist >= 100.){
+                snprintf(unit, sizeof(unit), "%.0f%s", dist, (scene.is_metric ? "km" : "mi"));
+              }
+              else{
+                snprintf(unit, sizeof(unit), "%.1f%s", dist, (scene.is_metric ? "km" : "mi"));
+              }
+            }
+            break;
+
+          case UIMeasure::EV_CONSUM_NOW: 
+            {
+              snprintf(name, sizeof(name), "EV CONSUM NOW");
+              float temp = scene.ev_recip_eff_wa[0]*1000.;
+              if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "Wh/km" : "Wh/mi"));
+            }
+            break;
+
+          case UIMeasure::EV_CONSUM_RECENT: 
+            {
+              snprintf(name, sizeof(name), (scene.is_metric ? "EV CONSUM 8km" : "EV CONSUM 5mi"));
+              float temp = scene.ev_recip_eff_wa[1]*1000.;
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "Wh/km" : "Wh/mi"));
+            }
+            break;
+
+          case UIMeasure::EV_CONSUM_TRIP: 
+            {
+              snprintf(name, sizeof(name), (scene.is_metric ? "EV CON Wh/km" : "EV CONSUM Wh/mi"));
+              float dist = scene.ev_eff_total_dist * (scene.is_metric ? 1000. : 1609.);
+              if (scene.ev_eff_total == 0.f){
+                snprintf(val, sizeof(val), "--");
+              }
+              else{
+                float temp = 0.001/scene.ev_eff_total;
+                if (abs(temp) >= 100.){
+                  snprintf(val, sizeof(val), "%.0f", temp);
+                }
+                else if (abs(temp) >= 10.){
+                  snprintf(val, sizeof(val), "%.1f", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.2f", temp);
+                }
+              }
+              if (dist >= 100.){
+                snprintf(unit, sizeof(unit), "%.0f%s", dist, (scene.is_metric ? "km" : "mi"));
+              }
+              else{
+                snprintf(unit, sizeof(unit), "%.1f%s", dist, (scene.is_metric ? "km" : "mi"));
+              }
             }
             break;
 
@@ -1723,6 +1784,23 @@ static void ui_draw_measures(UIState *s){
               }
             }
             break;
+
+          case UIMeasure::DISTANCE_TRAVELLED: 
+            {
+              snprintf(name, sizeof(name), "TRIP DIST.");
+              float temp = scene.ev_eff_total_dist * (scene.is_metric ? 1000. : 1609.);
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "km" : "mi"));
+            }
+            break;
             
           case UIMeasure::DEVICE_BATTERY: 
             {
@@ -1757,12 +1835,12 @@ static void ui_draw_measures(UIState *s){
         if (unitlen > 5){
           unit_font_size -= (unitlen - 5) * 5;
         }
-        int slot_x = s->scene.measure_slots_rect.x + (scene.measure_cur_num_slots <= 5 ? 0 : (i < 5 ? slots_r * 2 : 0));
+        int slot_x = scene.measure_slots_rect.x + (scene.measure_cur_num_slots <= scene.measure_max_rows ? 0 : (i < scene.measure_max_rows ? slots_r * 2 : 0));
         int x = slot_x + slots_r - unit_font_size / 2;
-        if (i >= 5){
+        if (i >= scene.measure_max_rows){
           x = slot_x + slots_r + unit_font_size / 2;
         }
-        int slot_y = s->scene.measure_slots_rect.y + (i % 5) * slot_y_rng;
+        int slot_y = scene.measure_slots_rect.y + (i % 5) * slot_y_rng;
         int slot_y_mid = slot_y + slot_y_rng / 2;
         int y = slot_y_mid + slot_y_rng / 2 - 8 - label_font_size;
         if (strlen(name) == 0){

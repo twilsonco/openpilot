@@ -97,7 +97,11 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   }
   
   // presses of measure boxes
-  for (int i = 0; i < QUIState::ui_state.scene.measure_cur_num_slots; ++i){
+  for (int ii = 0; ii < QUIState::ui_state.scene.measure_cur_num_slots; ++ii){
+    int i = ii;
+    if (QUIState::ui_state.scene.measure_cur_num_slots > QUIState::ui_state.scene.measure_max_rows && i >= QUIState::ui_state.scene.measure_num_rows){
+      i += QUIState::ui_state.scene.measure_row_offset;
+    }
     if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.measures_last_tap_t < QUIState::ui_state.scene.measures_touch_timeout && QUIState::ui_state.scene.started && QUIState::ui_state.scene.measure_slot_touch_rects[i].ptInRect(e->x(), e->y())){
       // user pressed one of the measure boxes. Need to increment the data shown.
       char slotName[16];
@@ -116,18 +120,17 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   if (QUIState::ui_state.scene.started 
     && QUIState::ui_state.scene.speed_rect.ptInRect(e->x(), e->y())){
     if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.measures_last_tap_t < QUIState::ui_state.scene.measures_touch_timeout
-        || QUIState::ui_state.scene.measure_cur_num_slots == 0){
-      int num_slots = QUIState::ui_state.scene.measure_cur_num_slots + 1; 
-      if (num_slots > QUIState::ui_state.scene.measure_max_num_slots){
-        num_slots = QUIState::ui_state.scene.measure_min_num_slots;
+        || QUIState::ui_state.scene.measure_config_num == 0){
+      QUIState::ui_state.scene.measure_config_num = (QUIState::ui_state.scene.measure_config_num + 1) % QUIState::ui_state.scene.measure_config_list.size();
+      QUIState::ui_state.scene.measure_cur_num_slots = QUIState::ui_state.scene.measure_config_list[QUIState::ui_state.scene.measure_config_num];
+      QUIState::ui_state.scene.measure_num_rows = QUIState::ui_state.scene.measure_cur_num_slots;
+      if (QUIState::ui_state.scene.measure_num_rows > QUIState::ui_state.scene.measure_max_rows){
+        QUIState::ui_state.scene.measure_num_rows /= 2;
       }
-      else if (num_slots > QUIState::ui_state.scene.measure_max_num_slots / 2){
-        num_slots = QUIState::ui_state.scene.measure_max_num_slots;
-      }
-      QUIState::ui_state.scene.measure_cur_num_slots = num_slots;
+      QUIState::ui_state.scene.measure_row_offset = QUIState::ui_state.scene.measure_max_rows - QUIState::ui_state.scene.measure_num_rows;
       char val_str[6];
-      sprintf(val_str, "%1d", num_slots);
-      Params().put("MeasureNumSlots", val_str, strlen(val_str));
+      sprintf(val_str, "%1d", QUIState::ui_state.scene.measure_config_num);
+      Params().put("MeasureConfigNum", val_str, strlen(val_str));
     }
     QUIState::ui_state.scene.measures_last_tap_t = QUIState::ui_state.scene.lastTime;
     return;

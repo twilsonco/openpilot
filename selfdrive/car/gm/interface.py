@@ -329,7 +329,7 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.4
       tire_stiffness_factor = 1.0
       ret.steerActuatorDelay = 0.2
-      if (Params().get_bool("LateralTorqueControl")):
+      if (Params().get_bool("EnableTorqueControl")):
         max_lateral_accel = 3.0
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True

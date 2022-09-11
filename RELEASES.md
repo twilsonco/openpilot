@@ -6,7 +6,9 @@ Version tw-0.8.12-5_tws (2022-09-09)
   * Slightly better accuracy with lead tracking, but otherwise you won't notice a difference
  * NEW: [toggle] Longer-range lead-detection! (use with caution and report problems, please!)
   * Before, OP only considered a lead if it agreed with the model, but now it will use the long range voacc information, compared to model-predicted path and lanelines, in order to detect leads up to 600ft+ away
- * NEW: UI metrics: EV efficiency (three metrics: instantaneous, 5mi, and trip efficiency)
+ * NEW: UI metrics: EV efficiency (three metrics: instantaneous, 5mi, and trip efficiency), and EV consumption (another three for instant, 5mi, and trip)
+  * Use the "Reset EV consumption metrics" toggle to reset values back to zero.
+ * IMPROVED: UI metrics: additional 2-column layouts
  * IMPROVED: Completely redone one-pedal mode logic. Smoother and more consistent braking.
   * No more mixed openpilot + one-pedal braking: you're in charge of braking!
 
