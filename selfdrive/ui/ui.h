@@ -195,6 +195,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   EV_CONSUM_NOW,
   EV_CONSUM_RECENT,
   EV_CONSUM_TRIP,
+  EV_BOTH_NOW,
   // Device info
   CPU_TEMP_AND_PERCENTF,
   CPU_TEMP_AND_PERCENTC,

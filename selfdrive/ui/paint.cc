@@ -1595,6 +1595,31 @@ static void ui_draw_measures(UIState *s){
             }
             break;
 
+          case UIMeasure::EV_BOTH_NOW: 
+            {
+              snprintf(name, sizeof(name), "EV NOW");
+              float temp;
+              if (scene.ev_recip_eff_wa[0] <= 0.f){
+                temp = scene.ev_recip_eff_wa[0] * 1000.;
+                snprintf(val, sizeof(val), "--");
+                snprintf(unit, sizeof(unit), (scene.is_metric ? "Wh/km" : "Wh/mi"));
+              }
+              else{
+                temp = 1. / scene.ev_recip_eff_wa[0];
+                if (abs(temp) >= scene.ev_recip_eff_wa_max){
+                  snprintf(val, sizeof(val), (temp > 0. ? "%.0f+" : "%.0f-"), scene.ev_recip_eff_wa_max);
+                }
+                else if (abs(temp) >= 10.){
+                  snprintf(val, sizeof(val), "%.0f", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.1f", temp);
+                }
+                snprintf(unit, sizeof(unit), (scene.is_metric ? "km/kWh" : "mi/kWh"));
+              }
+            }
+            break;
+
           case UIMeasure::EV_EFF_NOW: 
             {
               snprintf(name, sizeof(name), "EV EFF NOW");
