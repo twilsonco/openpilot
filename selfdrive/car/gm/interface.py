@@ -179,7 +179,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelayUpperBound = 0.42
 
     # Default lateral controller params.
-    ret.minSteerSpeed = 10 * CV.KPH_TO_MS
+    ret.minSteerSpeed = 7 * CV.MPH_TO_MS
     ret.lateralTuning.pid.kpBP = [0.]
     ret.lateralTuning.pid.kpV = [0.2]
     ret.lateralTuning.pid.kiBP = [0.]
