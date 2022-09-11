@@ -270,8 +270,13 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     }
   }
 
+  // if metrics are in edit mode, then don't switch to map or sidebar
+  if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.measures_last_tap_t < QUIState::ui_state.scene.measures_touch_timeout && QUIState::ui_state.scene.started){
+    return;
+  }
+
   // Handle sidebar collapsing
-  else if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {
+  if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {
     sidebar->setVisible(!sidebar->isVisible() && !onroad->isMapVisible());
   }
 }

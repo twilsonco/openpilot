@@ -94,9 +94,9 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
     ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.dynamic_follow_mode_touch_rect, e);
     ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.lane_pos_left_touch_rect, e);
     ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.lane_pos_right_touch_rect, e);
-    for (int i = 0; i < QUIState::ui_state.scene.measure_cur_num_slots && !ignorePress; ++i){
-      ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.measure_slot_touch_rects[i], e);
-    }
+    ignorePress = ignorePress || QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.measures_last_tap_t < QUIState::ui_state.scene.measures_touch_timeout 
+                                  && QUIState::ui_state.scene.started
+                                  && ptInBiggerRect(QUIState::ui_state.scene.measure_slots_rect, e);
     if (!ignorePress){
       map->setVisible(!sidebarVisible && !map->isVisible());
     }

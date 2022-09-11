@@ -93,9 +93,9 @@ def manager_init():
     ("MeasureSlot04", "6"), # engine RPM + coolant temp F
     ("MeasureSlot05", "34"), # Trip EV efficiency 
     ("MeasureSlot06", "33"), # 5mi EV efficiency
-    ("MeasureSlot07", "32"), # Instantaneous EV efficiency
-    ("MeasureSlot08", "52"),# GPS accuracy
-    ("MeasureSlot09", "39"),# device cpu percent and temp °C
+    ("MeasureSlot07", "38"), # Instantaneous EV efficiency/consuption
+    ("MeasureSlot08", "53"),# GPS accuracy
+    ("MeasureSlot09", "40"),# device cpu percent and temp °C
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))

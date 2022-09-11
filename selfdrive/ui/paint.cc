@@ -1595,6 +1595,31 @@ static void ui_draw_measures(UIState *s){
             }
             break;
 
+          case UIMeasure::EV_BOTH_NOW: 
+            {
+              snprintf(name, sizeof(name), "EV NOW");
+              float temp;
+              if (scene.ev_recip_eff_wa[0] <= 0.f){
+                temp = scene.ev_recip_eff_wa[0] * 1000.;
+                snprintf(val, sizeof(val), "--");
+                snprintf(unit, sizeof(unit), (scene.is_metric ? "Wh/km" : "Wh/mi"));
+              }
+              else{
+                temp = 1. / scene.ev_recip_eff_wa[0];
+                if (abs(temp) >= scene.ev_recip_eff_wa_max){
+                  snprintf(val, sizeof(val), (temp > 0. ? "%.0f+" : "%.0f-"), scene.ev_recip_eff_wa_max);
+                }
+                else if (abs(temp) >= 10.){
+                  snprintf(val, sizeof(val), "%.0f", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.1f", temp);
+                }
+                snprintf(unit, sizeof(unit), (scene.is_metric ? "km/kWh" : "mi/kWh"));
+              }
+            }
+            break;
+
           case UIMeasure::EV_EFF_NOW: 
             {
               snprintf(name, sizeof(name), "EV EFF NOW");
@@ -1790,7 +1815,7 @@ static void ui_draw_measures(UIState *s){
         if (i >= scene.measure_max_rows){
           x = slot_x + slots_r + unit_font_size / 2;
         }
-        int slot_y = scene.measure_slots_rect.y + (i % 5) * slot_y_rng;
+        int slot_y = scene.measure_slots_rect.y + (i % scene.measure_num_rows) * slot_y_rng;
         int slot_y_mid = slot_y + slot_y_rng / 2;
         int y = slot_y_mid + slot_y_rng / 2 - 8 - label_font_size;
         if (strlen(name) == 0){
@@ -2127,7 +2152,10 @@ static void draw_lane_pos_buttons(UIState *s) {
     const int right_x = (s->scene.measure_cur_num_slots > 0 
                           ? s->scene.measure_slots_rect.x - 4 * radius / 3
                           : 4 * s->fb_w / 5);
-    const int left_x = s->fb_w / 5 + 100;
+    int left_x = s->fb_w / 5 + 100;
+    if (left_x > right_x - 2 * radius - 40){
+      left_x = right_x - 2 * radius - 40;
+    }
     const int y = offset_button_y(s, s->fb_h / 2, radius);
 
     // left button
@@ -2186,6 +2214,8 @@ static void draw_lane_pos_buttons(UIState *s) {
       nvgStrokeColor(s->vg, s->scene.auto_lane_pos_active ? COLOR_GRACE_BLUE_ALPHA(100) : COLOR_WHITE_ALPHA(200));
       nvgStroke(s->vg);
     }
+
+    
   }
 }
 
