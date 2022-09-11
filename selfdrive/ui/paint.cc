@@ -2151,7 +2151,10 @@ static void draw_lane_pos_buttons(UIState *s) {
     const int right_x = (s->scene.measure_cur_num_slots > 0 
                           ? s->scene.measure_slots_rect.x - 4 * radius / 3
                           : 4 * s->fb_w / 5);
-    const int left_x = s->fb_w / 5 + 100;
+    int left_x = s->fb_w / 5 + 100;
+    if (left_x > right_x - 2 * radius - 40){
+      left_x = right_x - 2 * radius - 40;
+    }
     const int y = offset_button_y(s, s->fb_h / 2, radius);
 
     // left button
@@ -2210,6 +2213,8 @@ static void draw_lane_pos_buttons(UIState *s) {
       nvgStrokeColor(s->vg, s->scene.auto_lane_pos_active ? COLOR_GRACE_BLUE_ALPHA(100) : COLOR_WHITE_ALPHA(200));
       nvgStroke(s->vg);
     }
+
+    
   }
 }
 
