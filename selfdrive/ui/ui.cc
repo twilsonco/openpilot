@@ -266,13 +266,21 @@ static void update_state(UIState *s) {
   if (scene.started){
 
     if (scene.ev_eff_total_dist > 10. && sm.frame % scene.ev_eff_params_write_freq == 0) {
-      char val_str[18];
-      sprintf(val_str, "%.3f", scene.ev_recip_eff_wa[1]);
-      Params().put("EVConsumption5Mi", val_str, strlen(val_str));
-      sprintf(val_str, "%.3f", scene.ev_eff_total_kWh);
-      Params().put("EVConsumptionTripkWh", val_str, strlen(val_str));
-      sprintf(val_str, "%.3f", scene.ev_eff_total_dist);
-      Params().put("EVConsumptionTripDistance", val_str, strlen(val_str));
+      {
+        char val_str[18];
+        sprintf(val_str, "%.3f", scene.ev_recip_eff_wa[1]);
+        Params().put("EVConsumption5Mi", val_str, strlen(val_str));
+      }
+      {
+        char val_str[18];
+        sprintf(val_str, "%.3f", scene.ev_eff_total_kWh);
+        Params().put("EVConsumptionTripkWh", val_str, strlen(val_str));
+      }
+      {
+        char val_str[18];
+        sprintf(val_str, "%.3f", scene.ev_eff_total_dist);
+        Params().put("EVConsumptionTripDistance", val_str, strlen(val_str));
+      }
     }
     
     if (scene.lane_pos != 0 && !s->scene.auto_lane_pos_active && scene.lane_pos_dist_since_set > scene.lane_pos_timeout_dist){
