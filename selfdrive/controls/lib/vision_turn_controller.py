@@ -37,7 +37,7 @@ _ENTERING_SMOOTH_DECEL_BP = [1.2, 1.35, 2.3]  # absolute value of lat acc ahead
 # Lookup table for the acceleration for the TURNING state
 # depending on the current lateral acceleration of the vehicle.
 _TURNING_ACC_V = [0.6, 0.0, -1.5]  # acc value
-_TURNING_ACC_BP = [0.8, 1.4, 2.0]  # absolute value of current lat acc
+_TURNING_ACC_BP = [0.8, 1.5, 2.0]  # absolute value of current lat acc
 
 _LEAVING_ACC = 0.7  # Confortable acceleration to regain speed while leaving a turn.
 
@@ -48,7 +48,7 @@ _MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow curvature prediction 
 # This will be a default dict based on road type, allowing for easy adjustment of vision braking based on road type
 # See the list of "highway" types here https://wiki.openstreetmap.org/wiki/Key:highway
 # Also see selfdrive/mapd/lib/WayRelation.py for a list of ranks
-_SPEED_SCALE_V = [1.02, 1.] # [unitless] scales the velocity value used to calculate lateral acceleration
+_SPEED_SCALE_V = [1.04, 1.] # [unitless] scales the velocity value used to calculate lateral acceleration
 _SPEED_SCALE_BP = [8., 25.] # [meters per second] speeds corresponding to scaling values, so you can alter low/high speed behavior for each road type
 def default_speed_scale():
   return [_SPEED_SCALE_BP, _SPEED_SCALE_V]
