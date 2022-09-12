@@ -322,7 +322,7 @@ typedef struct UIScene {
   float lead_d_rel, lead_v_rel, lead_v;
 
   // EV efficiency
-  float ev_eff_distances[2] = {30.f / 20.f, 8046.f / 20.f};
+  float ev_eff_distances[2] = {30.f, 8046.f};
   float ev_eff_distances_recip[2] = {1.f/ev_eff_distances[0], 1.f/ev_eff_distances[1]}; // [m] denominator for weighted average weights
   float ev_eff_stopped_kWh = 0.; // [kWh]
   float ev_eff_total_kWh = 0.; // [kWh]
