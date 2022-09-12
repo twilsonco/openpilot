@@ -1668,7 +1668,7 @@ static void ui_draw_measures(UIState *s){
             {
               snprintf(name, sizeof(name), (scene.is_metric ? "EV EFF km/kWh" : "EV EFF mi/kWh"));
               float temp = scene.ev_eff_total;
-              float dist = scene.ev_eff_total_dist * (scene.is_metric ? 1000. : 1609.);
+              float dist = scene.ev_eff_total_dist / (scene.is_metric ? 1000. : 1609.);
               if (abs(temp) == scene.ev_recip_eff_wa_max){
                 snprintf(val, sizeof(val), (temp > 0. ? "%.0f+" : "%.0f-"), temp);
               }
@@ -1721,7 +1721,7 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::EV_CONSUM_TRIP: 
             {
               snprintf(name, sizeof(name), (scene.is_metric ? "EV CON Wh/km" : "EV CONSUM Wh/mi"));
-              float dist = scene.ev_eff_total_dist * (scene.is_metric ? 1000. : 1609.);
+              float dist = scene.ev_eff_total_dist / (scene.is_metric ? 1000. : 1609.);
               if (scene.ev_eff_total == 0.f){
                 snprintf(val, sizeof(val), "--");
               }
@@ -1763,7 +1763,7 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::DISTANCE_TRAVELLED: 
             {
               snprintf(name, sizeof(name), "TRIP DIST.");
-              float temp = scene.ev_eff_total_dist * (scene.is_metric ? 1000. : 1609.);
+              float temp = scene.ev_eff_total_dist / (scene.is_metric ? 1000. : 1609.);
               if (abs(temp) >= 100.){
                 snprintf(val, sizeof(val), "%.0f", temp);
               }
