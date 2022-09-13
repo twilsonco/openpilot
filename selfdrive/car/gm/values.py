@@ -29,7 +29,7 @@ class CarControllerParams():
     # pedal lookups, only for Volt
     self.MAX_GAS = 4095
     self.ZERO_GAS = 2048
-    self.MAX_BRAKE = 350             # Should be around 3.5m/s^2, including regen
+    self.MAX_BRAKE = 500             # Should be around 3.5m/s^2, including regen
 
     self.ACCEL_MAX = 3.0 # m/s^2 (max accel of sport profile in longitudinal_planner.py)
 
@@ -38,8 +38,7 @@ class CarControllerParams():
     # to apply some more braking if we're on a downhill slope.
     # Our controller should still keep the 2 second average above
     # -3.5 m/s^2 as per planner limits
-    # Decreased to -2.5 (by 1/1.75) based on response of aEgo to brake command
-    self.ACCEL_MIN = -2.5 # m/s^2
+    self.ACCEL_MIN = -3.5 # m/s^2
 
     self.MAX_ACC_REGEN = 1404  # ACC Regen braking is slightly less powerful than max regen paddle
     self.GAS_LOOKUP_BP = [-1.1, 0., self.ACCEL_MAX]
