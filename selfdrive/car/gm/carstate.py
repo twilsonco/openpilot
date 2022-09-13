@@ -353,7 +353,7 @@ class CarState(CarStateBase):
 
     ret.autoHoldActivated = self.autoHoldActivated
     
-    ret.lkMode = self.lkMode and self.lane_change_steer_factor > 0.5
+    ret.lkMode = self.lkMode
     
 
     return ret
