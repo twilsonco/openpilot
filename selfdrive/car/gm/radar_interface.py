@@ -12,7 +12,7 @@ SLOT_1_MSG = RADAR_HEADER_MSG + 1
 RADAR_NUM_SLOTS = 20
 
 VOACC_NUM_SLOTS = 12
-VOACC_MIN_RANGE = 140.
+VOACC_MIN_RANGE = 145.
 
 # Actually it's 0x47f, but can parser only reports
 # messages that are present in DBC
@@ -134,7 +134,7 @@ class RadarInterface(RadarInterfaceBase):
           cptb = self.rcp.vl[f'F_Vision_Obj_Track_{i}_B']
           distance = cpt[f'FwdVsnRngTrk{i}Rev']
           # Zero distance means it's an empty target slot
-          if distance > VOACC_MIN_RANGE or radar_fault:
+          if distance >= VOACC_MIN_RANGE or radar_fault:
             targetId = cpt[f'FVisionObjectIDTrk{i}']
             currentTargets.add(targetId)
             if targetId not in self.pts:
