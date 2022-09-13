@@ -400,12 +400,12 @@ static void ui_draw_vision_lane_lines(UIState *s) {
       if (scene.car_state.getLkMode()){
         if (scene.color_path){
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
-            interp_alert_color(fabs(scene.lateralCorrection), 255), 
+            interp_alert_color(fabs(scene.lateralCorrection), 140), 
             interp_alert_color(fabs(scene.lateralCorrection), 0));
         }
         else{
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
-            interp_alert_color(0., 150), 
+            interp_alert_color(0., 140), 
             interp_alert_color(0., 0));
         }
       }
