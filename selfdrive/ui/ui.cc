@@ -261,6 +261,14 @@ static void update_state(UIState *s) {
     if (scene.dynamic_follow_mode_button_enabled){
       scene.dynamic_follow_active = std::stoi(Params().get("DynamicFollow"));
     }
+    if (scene.ev_eff_total_dist < 10.){
+      float oldDist = std::stof(Params().get("EVConsumptionTripDistance"));
+      if (oldDist > scene.ev_eff_total_dist){
+        scene.ev_eff_total_dist = oldDist;
+        s->scene.ev_recip_eff_wa[1] = std::stof(Params().get("EVConsumption5Mi"));
+        s->scene.ev_eff_total_dist = oldDist;
+        s->scene.ev_eff_total_kWh = std::stof(Params().get("EVConsumptionTripkWh"));
+      }
   }
 
   if (scene.started){
@@ -649,12 +657,6 @@ static void update_status(UIState *s) {
         s->scene.ev_eff_total_dist = 0.0;
         s->scene.ev_eff_total_kWh = 0.0;
         s->scene.ev_eff_total = 0.0;
-      }
-      else{
-        s->scene.ev_recip_eff_wa[1] = std::stof(Params().get("EVConsumption5Mi"));
-        s->scene.ev_eff_total_dist = std::stof(Params().get("EVConsumptionTripDistance"));
-        s->scene.ev_eff_total_kWh = std::stof(Params().get("EVConsumptionTripkWh"));
-        s->scene.ev_eff_total = (s->scene.ev_eff_total_kWh != 0.f ? s->scene.ev_eff_total_dist / s->scene.ev_eff_total_kWh : 0.0);
       }
       s->scene.ev_recip_eff_wa[0] = 0.0;
 
