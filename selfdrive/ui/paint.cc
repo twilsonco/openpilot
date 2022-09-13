@@ -404,7 +404,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
       }
       else{
         track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
-          interp_alert_color(0., 255), 
+          interp_alert_color(0., 150), 
           interp_alert_color(0., 0));
       }
     } 
@@ -415,19 +415,19 @@ static void ui_draw_vision_lane_lines(UIState *s) {
         g = 100 + r;
         g = CLIP(g, 0, 255);
         track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                    nvgRGBA(r, g, 255, 255), 
+                                    nvgRGBA(r, g, 255, 150), 
                                     nvgRGBA(r, g, 255, 0));
       }
       else{
         track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                  COLOR_GRACE_BLUE_ALPHA(255), 
+                                  COLOR_GRACE_BLUE_ALPHA(150), 
                                   COLOR_GRACE_BLUE_ALPHA(0));
       }
     }
   } else {
     // Draw white vision track
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                          COLOR_WHITE_ALPHA(150), COLOR_WHITE_ALPHA(20));
+                                          COLOR_WHITE_ALPHA(130), COLOR_WHITE_ALPHA(0));
   }
   // paint path
   ui_draw_line(s, scene.track_vertices, nullptr, &track_bg);
