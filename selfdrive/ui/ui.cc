@@ -269,6 +269,7 @@ static void update_state(UIState *s) {
         s->scene.ev_eff_total_dist = oldDist;
         s->scene.ev_eff_total_kWh = std::stof(Params().get("EVConsumptionTripkWh"));
       }
+    }
   }
 
   if (scene.started){
