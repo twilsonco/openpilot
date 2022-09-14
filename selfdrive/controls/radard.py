@@ -19,7 +19,7 @@ from selfdrive.hardware import TICI
 LEAD_PATH_YREL_MAX_BP = [100., 200.] # [m] distance to lead
 LEAD_PATH_YREL_MAX_V = [0.5, 1.5] # [m] an increasing tolerance for farther leads 
 LEAD_PATH_DREL_MIN = 110 # [m] only care about far away leads
-MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow curvature prediction based on lanes.
+MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow use.
 
 class KalmanParams():
   def __init__(self, dt):
