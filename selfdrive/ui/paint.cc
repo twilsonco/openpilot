@@ -226,7 +226,13 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
   float sz = std::clamp((25 * 30) / (d_rel * 0.33333f + 30), 15.0f, 30.0f) * 2.35;
   x = std::clamp(x, 0.f, s->fb_w - sz * 0.5f);
   y = std::fmin(s->fb_h - sz * .6, y);
-  draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), is_voacc ? COLOR_BLUE : COLOR_YELLOW);
+  draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
+  if (is_voacc){
+    r=30;
+    nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
+    nvgFillColor(s->vg, COLOR_GRACE_BLUE);
+    nvgFill(s->vg);
+  }
 
   if (s->scene.lead_info_print_enabled && !s->scene.map_open && draw_info){
     // print lead info around chevron
