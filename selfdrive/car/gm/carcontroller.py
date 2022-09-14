@@ -29,8 +29,8 @@ ONE_PEDAL_MODE_DECEL_BP = [
   ] # one speed bp for all three modes
 ONE_PEDAL_MODE_DECEL_V = [
   [-1.0, -1.1],
-  [-1.18, -1.5, 1.7],
-  [-1.4, -2.1, 2.4]
+  [-1.18, -1.5, -1.7],
+  [-1.4, -2.1, -2.4]
 ] # light, medium, and hard one-pedal braking
 ONE_PEDAL_MIN_SPEED = 2.5
 ONE_PEDAL_DECEL_RATE_FACTOR = 0.9 * DT_CTRL * 4 # multiplied by one pedal decel to determine rate
