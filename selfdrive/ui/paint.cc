@@ -1619,7 +1619,12 @@ static void ui_draw_measures(UIState *s){
               float temp;
               if (scene.ev_recip_eff_wa[0] <= 0.f){
                 temp = scene.ev_recip_eff_wa[0] * 1000.;
-                snprintf(val, sizeof(val), "--");
+                if (abs(temp) >= 10.){
+                  snprintf(val, sizeof(val), "%.0f", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.1f", temp);
+                }
                 snprintf(unit, sizeof(unit), (scene.is_metric ? "Wh/km" : "Wh/mi"));
               }
               else{
