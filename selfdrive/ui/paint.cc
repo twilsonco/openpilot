@@ -450,7 +450,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
     auto road_edge_probs = s->scene.lateral_plan.getRoadEdgeProbs();
     if (l_probs.size() == 4 && road_edge_probs.size() == 2){
       const int width_font_size = 25;
-      char cstr[16];
+      char cstr[32];
       int y = s->fb_h - 18;
       nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
 
