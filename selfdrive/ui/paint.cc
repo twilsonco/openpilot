@@ -228,7 +228,7 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
   y = std::fmin(s->fb_h - sz * .6, y);
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
   if (is_voacc){
-    r=30;
+    const int r = 30;
     nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
     nvgFillColor(s->vg, COLOR_GRACE_BLUE);
     nvgFill(s->vg);
