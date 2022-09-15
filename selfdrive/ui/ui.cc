@@ -514,6 +514,7 @@ static void update_state(UIState *s) {
     scene.lateralPlan.lProb = data.getLProb();
     scene.lateralPlan.rProb = data.getRProb();
     scene.lateralPlan.lanelessModeStatus = data.getLanelessMode();
+    scene.auto_lane_pos_active = data.getAutoLanePositionActive();
   }
   if (sm.updated("gpsLocationExternal")) {
     auto data = sm["gpsLocationExternal"].getGpsLocationExternal();
