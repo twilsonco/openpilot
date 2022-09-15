@@ -140,7 +140,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   this));
   toggles.append(new ParamControl("LanePositionEnabled",
                                   "Adjustable lane position",
-                                  "Adds onscreen arrows to the left and right sides of the onroad screen that can be used to adjust lane position temporarily.",
+                                  "Adds onscreen arrows to the left and right sides of the onroad screen that can be used to adjust lane position temporarily. Tap both arrows in succession to enable automatic mode that keeps you away from other traffic when in the far-left or far-right lanes.",
+                                  "../assets/offroad/icon_road.png",
+                                  this));
+  toggles.append(new ParamControl("AutoAutoLanePosition",
+                                  "Highway auto lane position",
+                                  "Automatically enable automatic lane position when you get onto highways or freeways. Must have adjustable lane position enabled. Automatic lane position keeps you away from other traffic when in the far-left or far-right lanes.",
                                   "../assets/offroad/icon_road.png",
                                   this));
   toggles.append(new ParamControl("AccelModeButton",

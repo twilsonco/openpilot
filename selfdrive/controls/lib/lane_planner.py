@@ -4,6 +4,7 @@ from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import interp, clip
 from common.realtime import DT_MDL
 from common.realtime import sec_since_boot
+from selfdrive.config import Conversions as CV
 from selfdrive.hardware import EON, TICI
 from selfdrive.swaglog import cloudlog
 from enum import Enum
@@ -21,6 +22,11 @@ else:
   PATH_OFFSET = 0.0
 
 LANE_WIDTH_DEFAULT = 3.7
+
+class AUTO_AUTO_LANE_MODE:
+  ENGAGE = 1
+  NO_CHANGE = 0
+  DISENGAGE = -1
 
 class LaneOffset: 
   OFFSET = 0.11 # [unitless] offset of the left/right positions as factor of current lane width
@@ -44,6 +50,7 @@ class LaneOffset:
   AUTO_LANE_STATE_MIN_TIME = 3.0 # [s] amount of time the lane state must stay the same before it can be acted upon
   
   AUTO_ENABLE_ROAD_TYPES = {0, 10, 20, 30} # freeway and state highways (see highway ranks in /Users/haiiro/NoSync/optw/openpilot/selfdrive/mapd/lib/WayRelation.py)
+  AUTO_ENABLE_MIN_SPEED = 40. * CV.MPH_TO_MS
   
   def __init__(self, mass=0.):
     self.offset = 0.
@@ -67,6 +74,27 @@ class LaneOffset:
     self._lat_curvature_cur = 0.
     self._lat_curvature_pred = 0.
     self._lane_state_changed_last_t = 0.
+    self._road_type_last = -1
+    self._auto_auto_enabled = False
+    self._v_ego_last = 0.
+  
+  def do_auto_enable(self, road_type):
+    ret = AUTO_AUTO_LANE_MODE.NO_CHANGE
+    v_ego = self._cs.vEgo if self._cs is not None else 0.
+    if road_type != self._road_type_last \
+        or (v_ego >= self.AUTO_ENABLE_MIN_SPEED and self._v_ego_last < self.AUTO_ENABLE_MIN_SPEED) \
+        or (v_ego < self.AUTO_ENABLE_MIN_SPEED and self._v_ego_last >= self.AUTO_ENABLE_MIN_SPEED):
+      if road_type in self.AUTO_ENABLE_ROAD_TYPES and v_ego >= self.AUTO_ENABLE_MIN_SPEED and not self._auto_is_active:
+        ret = AUTO_AUTO_LANE_MODE.ENGAGE
+        self._auto_auto_enabled = True
+      elif self._auto_is_active and self._auto_auto_enabled \
+          and (road_type not in self.AUTO_ENABLE_ROAD_TYPES or v_ego < self.AUTO_ENABLE_MIN_SPEED) :
+        ret = AUTO_AUTO_LANE_MODE.DISENGAGE
+        self._auto_auto_enabled = False
+    self._road_type_last = road_type
+    self._v_ego_last = v_ego
+    
+    return ret
   
   def update_lane_info(self, md, v_ego, lane_width):
     self._lane_width_mean_left_adjacent = 0.
@@ -157,13 +185,15 @@ class LaneOffset:
   def update(self, lane_pos=0., lane_width=LANE_WIDTH_DEFAULT, auto_active=False, md=None, sm=None): # 0., 1., -1. = center, left, right
     t = sec_since_boot()
     
-    if md is not None and sm is not None:
+    if sm is not None:
       if sm.valid.get('carState', False):
         self._cs = sm['carState']
       if sm.valid.get('longitudinalPlan', False):
         self._long_plan = sm['longitudinalPlan']
       if sm.valid.get('lateralPlan', False):
         self._lat_plan = sm['lateralPlan']
+    
+    if md is not None:
       if self._cs is not None:
         self.update_lane_info(md, self._cs.vEgo, lane_width)
         self.update_lane_pos_auto(lane_width)

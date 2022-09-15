@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import print_function
 import math
+import numpy as np
 from cereal import car
 from opendbc.can.parser import CANParser
 from selfdrive.car.gm.values import DBC, CAR, CanBus
@@ -12,6 +13,10 @@ SLOT_1_MSG = RADAR_HEADER_MSG + 1
 RADAR_NUM_SLOTS = 20
 
 VOACC_NUM_SLOTS = 12
+VOACC_MIN_RANGE = 145.
+VOACC_RADAR_TRACK_COMBINE_DIST = 10. # [m]
+VOACC_RADAR_TRACK_COMBINE_VREL = 2. # [m/s]
+VOACC_RADAR_TRACK_COMBINE_DIST_VREL_RATIO = VOACC_RADAR_TRACK_COMBINE_DIST / VOACC_RADAR_TRACK_COMBINE_VREL
 
 # Actually it's 0x47f, but can parser only reports
 # messages that are present in DBC
@@ -131,20 +136,35 @@ class RadarInterface(RadarInterfaceBase):
         for i in range(1,VOACC_NUM_SLOTS+1):
           cpt = self.rcp.vl[f'F_Vision_Obj_Track_{i}']
           cptb = self.rcp.vl[f'F_Vision_Obj_Track_{i}_B']
+          distance = cpt[f'FwdVsnRngTrk{i}Rev']
+          y_rel = cptb[f'FwdVsnLatOfstTrk{i}']
+          v_rel = cptb[f'FwdVsnLongVlctyTrk{i}']
           # Zero distance means it's an empty target slot
-          if cpt[f'FwdVsnRngTrk{i}Rev'] > 0.0:
-            targetId = cpt[f'FVisionObjectIDTrk{i}']
-            currentTargets.add(targetId)
-            if targetId not in self.pts:
-              self.pts[targetId] = car.RadarData.RadarPoint.new_message()
-              self.pts[targetId].trackId = targetId
-            distance = cpt[f'FwdVsnRngTrk{i}Rev']
-            self.pts[targetId].dRel = distance  # from front of car
-            # From driver's pov, left is positive
-            self.pts[targetId].yRel = cptb[f'FwdVsnLatOfstTrk{i}']
-            self.pts[targetId].vRel = cptb[f'FwdVsnLongVlctyTrk{i}']
-            self.pts[targetId].aRel = float('nan')
-            self.pts[targetId].yvRel = float('nan')
+          if distance >= VOACC_MIN_RANGE or radar_fault:
+            # if close enough to existing radar point, move that point to midpoint with this point
+            if len(currentTargets) > 0:
+              closestPt = min([self.pts[i] for i in currentTargets], 
+                              key=lambda x:np.linalg.norm([x.dRel - distance, x.yRel - y_rel, (x.vRel - v_rel) * VOACC_RADAR_TRACK_COMBINE_DIST_VREL_RATIO]))
+            else:
+              closestPt = None
+              
+            if closestPt is not None and np.linalg.norm([closestPt.dRel - distance, closestPt.yRel - y_rel]) <= VOACC_RADAR_TRACK_COMBINE_DIST \
+                and np.fabs(closestPt.vRel - v_rel) <= VOACC_RADAR_TRACK_COMBINE_VREL:
+              self.pts[closestPt.trackId].dRel = (distance + closestPt.dRel) / 2
+              self.pts[closestPt.trackId].yRel = (y_rel + closestPt.yRel) / 2
+              self.pts[closestPt.trackId].vRel = (v_rel + closestPt.vRel) / 2
+            else:
+              targetId = cpt[f'FVisionObjectIDTrk{i}']
+              currentTargets.add(targetId)
+              if targetId not in self.pts:
+                self.pts[targetId] = car.RadarData.RadarPoint.new_message()
+                self.pts[targetId].trackId = targetId
+              self.pts[targetId].dRel = distance  # from front of car
+              # From driver's pov, left is positive
+              self.pts[targetId].yRel = y_rel
+              self.pts[targetId].vRel = v_rel
+              self.pts[targetId].aRel = float('nan')
+              self.pts[targetId].yvRel = float('nan')
 
     for oldTarget in list(self.pts.keys()):
       if oldTarget not in currentTargets:

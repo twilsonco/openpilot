@@ -1,4 +1,18 @@
-Version tw-0.8.12-5_tws (2022-09-09)
+Version tw-0.8.12-7_tws (2022-09-15)
+========================
+ * NEW: Auto automatic lane position when on highways/freeways and 38mph+ [optional]
+ * NEW: UI metric: hybrid EV efficiency/consumption (flips based on sign of consumption)
+ * FIXED: UI metric: EV trip and 5mi efficiency and consumption metrics are correctly preserved between drives
+ * IMPROVED: use dynamic speed-based max brake command value for guaranteed max brake of -3.5m/s^2 as originally intended
+  * Old method produced -3.5m/s^2 only with EV regen included. Now that value is maintained even below regen speeds.
+ * when steering paused with LKA button, stop coloring path
+ * draw transparent path
+ * long range leads now indicated by blue dot
+ * one pedal mode: improved braking profiles and smoother transitions
+ * "communications error" alert now lists the process(es) that failed
+
+
+Version tw-0.8.12-6_twd (2022-09-09)
 ========================
  * NEW: Bolt EUV support
  * NEW: [GM w/ ASCM] Include LKA camera vision data with radar for lead tracking

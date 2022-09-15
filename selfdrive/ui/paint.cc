@@ -226,7 +226,13 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
   float sz = std::clamp((25 * 30) / (d_rel * 0.33333f + 30), 15.0f, 30.0f) * 2.35;
   x = std::clamp(x, 0.f, s->fb_w - sz * 0.5f);
   y = std::fmin(s->fb_h - sz * .6, y);
-  draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), is_voacc ? COLOR_BLUE : COLOR_YELLOW);
+  draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
+  if (is_voacc){
+    const int r = 30;
+    nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
+    nvgFillColor(s->vg, COLOR_GRACE_BLUE);
+    nvgFill(s->vg);
+  }
 
   if (s->scene.lead_info_print_enabled && !s->scene.map_open && draw_info){
     // print lead info around chevron
@@ -397,37 +403,49 @@ static void ui_draw_vision_lane_lines(UIState *s) {
         COLOR_BLACK_ALPHA(80), COLOR_BLACK_ALPHA(20));
     } 
     else if (!scene.lateralPlan.lanelessModeStatus) {
-      if (scene.color_path){
-        track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
-          interp_alert_color(fabs(scene.lateralCorrection), 255), 
-          interp_alert_color(fabs(scene.lateralCorrection), 0));
+      if (scene.car_state.getLkMode()){
+        if (scene.color_path){
+          track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
+            interp_alert_color(fabs(scene.lateralCorrection), 150), 
+            interp_alert_color(fabs(scene.lateralCorrection), 0));
+        }
+        else{
+          track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
+            interp_alert_color(0., 150), 
+            interp_alert_color(0., 0));
+        }
       }
       else{
-        track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
-          interp_alert_color(0., 255), 
-          interp_alert_color(0., 0));
+        track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                          COLOR_WHITE_ALPHA(130), COLOR_WHITE_ALPHA(0));
       }
     } 
     else { // differentiate laneless mode color (Grace blue)
-      if (scene.color_path){
-        int g, r = 255. * fabs(scene.lateralCorrection);
-        r = CLIP(r, 0, 255);
-        g = 100 + r;
-        g = CLIP(g, 0, 255);
-        track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                    nvgRGBA(r, g, 255, 255), 
-                                    nvgRGBA(r, g, 255, 0));
+      if (scene.car_state.getLkMode()){
+        if (scene.color_path){
+          int g, r = 255. * fabs(scene.lateralCorrection);
+          r = CLIP(r, 0, 255);
+          g = 100 + r;
+          g = CLIP(g, 0, 255);
+          track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                      nvgRGBA(r, g, 255, 160), 
+                                      nvgRGBA(r, g, 255, 0));
+        }
+        else{
+          track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                    COLOR_GRACE_BLUE_ALPHA(160), 
+                                    COLOR_GRACE_BLUE_ALPHA(0));
+        }
       }
       else{
         track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                  COLOR_GRACE_BLUE_ALPHA(255), 
-                                  COLOR_GRACE_BLUE_ALPHA(0));
+                                          COLOR_WHITE_ALPHA(130), COLOR_WHITE_ALPHA(0));
       }
     }
   } else {
     // Draw white vision track
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                          COLOR_WHITE_ALPHA(150), COLOR_WHITE_ALPHA(20));
+                                          COLOR_WHITE_ALPHA(130), COLOR_WHITE_ALPHA(0));
   }
   // paint path
   ui_draw_line(s, scene.track_vertices, nullptr, &track_bg);
@@ -438,7 +456,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
     auto road_edge_probs = s->scene.lateral_plan.getRoadEdgeProbs();
     if (l_probs.size() == 4 && road_edge_probs.size() == 2){
       const int width_font_size = 25;
-      char cstr[16];
+      char cstr[32];
       int y = s->fb_h - 18;
       nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
 
@@ -1601,7 +1619,12 @@ static void ui_draw_measures(UIState *s){
               float temp;
               if (scene.ev_recip_eff_wa[0] <= 0.f){
                 temp = scene.ev_recip_eff_wa[0] * 1000.;
-                snprintf(val, sizeof(val), "--");
+                if (abs(temp) >= 10.){
+                  snprintf(val, sizeof(val), "%.0f", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.1f", temp);
+                }
                 snprintf(unit, sizeof(unit), (scene.is_metric ? "Wh/km" : "Wh/mi"));
               }
               else{
