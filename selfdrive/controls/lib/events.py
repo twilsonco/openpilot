@@ -240,6 +240,28 @@ def startup_master_display_fingerprint_alert(CP: car.CarParams, sm: messaging.Su
     f"UNTESTED BRANCH on {CP.carFingerprint.title()[:40]}",
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 10.)
+  
+def comm_issue_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  invalid = [s for s, valid in sm.valid.items() if not valid]
+  not_alive = [s for s, alive in sm.alive.items() if not alive]
+  both = invalid + not_alive
+  return Alert(
+    "Communication Issue between Processes",
+    ", ".join(both),
+    AlertStatus.critical, AlertSize.mid,
+    Priority.MID, VisualAlert.steerRequired,
+    AudibleAlert.chimeWarningRepeat, .1, 2., 2.)
+  
+def comm_issue_alert_no_entry(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  invalid = [s for s, valid in sm.valid.items() if not valid]
+  not_alive = [s for s, alive in sm.alive.items() if not alive]
+  both = invalid + not_alive
+  return Alert(
+    "Communication Issue between Processes",
+    ", ".join(both),
+    AlertStatus.normal,
+    AlertSize.mid, Priority.LOW, VisualAlert.none,
+    AudibleAlert.chimeDisengage, .4, 2., 3.)
     
 
 def stotime(S):
@@ -788,9 +810,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   # is thrown. This can mean a service crashed, did not broadcast a message for
   # ten times the regular interval, or the average interval is more than 10% too high.
   EventName.commIssue: {
-    ET.SOFT_DISABLE: SoftDisableAlert("Communication Issue between Processes"),
-    ET.NO_ENTRY: NoEntryAlert("Communication Issue between Processes",
-                              audible_alert=AudibleAlert.chimeDisengage),
+    ET.SOFT_DISABLE: comm_issue_alert,
+    ET.NO_ENTRY: comm_issue_alert_no_entry,
   },
 
   # Thrown when manager detects a service exited unexpectedly while driving
