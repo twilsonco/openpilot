@@ -406,12 +406,12 @@ static void ui_draw_vision_lane_lines(UIState *s) {
       if (scene.car_state.getLkMode()){
         if (scene.color_path){
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
-            interp_alert_color(fabs(scene.lateralCorrection), 140), 
+            interp_alert_color(fabs(scene.lateralCorrection), 150), 
             interp_alert_color(fabs(scene.lateralCorrection), 0));
         }
         else{
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
-            interp_alert_color(0., 140), 
+            interp_alert_color(0., 150), 
             interp_alert_color(0., 0));
         }
       }
@@ -428,12 +428,12 @@ static void ui_draw_vision_lane_lines(UIState *s) {
           g = 100 + r;
           g = CLIP(g, 0, 255);
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                      nvgRGBA(r, g, 255, 150), 
+                                      nvgRGBA(r, g, 255, 160), 
                                       nvgRGBA(r, g, 255, 0));
         }
         else{
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                    COLOR_GRACE_BLUE_ALPHA(150), 
+                                    COLOR_GRACE_BLUE_ALPHA(160), 
                                     COLOR_GRACE_BLUE_ALPHA(0));
         }
       }
