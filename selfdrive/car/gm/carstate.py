@@ -1,15 +1,28 @@
 from cereal import car
-from common.params import Params
+from common.filter_simple import FirstOrderFilter
+from common.params import Params, put_nonblocking
 from common.numpy_fast import mean, interp
 from common.realtime import sec_since_boot
+from math import sin
 from selfdrive.config import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, \
                                     CruiseButtons, STEER_THRESHOLD
-from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.drive_helpers import set_v_cruise_offset
+from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
+from selfdrive.swaglog import cloudlog
+
+DRAG_FROM_MASS_BP = [1607., 3493.] # [kg; volt to suburban]
+DRAG_Cd_FROM_MASS_V = [0.28, 0.35] # [drag coeffient for volt and suburban from https://www.tesla.com/sites/default/files/blog_attachments/the-slipperiest-car-on-the-road.pdf and https://www.automobile-catalog.com/car/2022/2970545/chevrolet_suburban_6_2l_v8_4wd.html]
+DRAG_FRONTAL_AREA_FROM_MASS_V = [2.2, 3.96] # [m^2 for same cars from same source]
+AIR_DENS_FROM_ELEV_BP = [-1000., 0., 1000., 2000., 3000., 4000., 5000., 6000.] # [m] highest road in the world is ~5800m
+AIR_DENS_FROM_ELEV_V = [1.347, 1.225, 1.112, 1.007, 0.9093, 0.8194, 0.7364, 0.6601] # [kg/m^3] from https://www.engineeringtoolbox.com/standard-atmosphere-d_604.html
+ROLLING_RESISTANCE_FROM_MASS_V = [1.04, 1.07] # [unitless] I used the 4-7% figure in this article and chose to interpret that as Volt = 4%, Suburban = 7%  https://www.tirebuyer.com/education/rolling-resistance-and-fuel-economy
+# following efficiencies taken from https://sciendo.com/pdf/10.2478/rtuect-2020-0041 page 5 (673)
+# EV_ICE_INPUT_EFFICIENCY = 1/0.88
+# EV_DRIVE_EFFICIENCY = 1/0.82
 
 class GEAR_SHIFTER2:
   DRIVE = 4
@@ -32,6 +45,24 @@ class CarState(CarStateBase):
     self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
     self._params = Params()
     
+    self.iter = 0
+    self.uiframe = 5
+    
+    self.cp_mass = CP.mass
+    self.drag_cd = interp(self.cp_mass, DRAG_FROM_MASS_BP, DRAG_Cd_FROM_MASS_V)
+    self.drag_csa = interp(self.cp_mass, DRAG_FROM_MASS_BP, DRAG_FRONTAL_AREA_FROM_MASS_V)
+    self.rolling_resistance = interp(self.cp_mass, DRAG_FROM_MASS_BP, ROLLING_RESISTANCE_FROM_MASS_V)
+    self.altitude = 194. # [m] starts at the median human altitude https://www.pnas.org/doi/10.1073/pnas.95.24.14009
+    
+    self.rho = interp(self.altitude, AIR_DENS_FROM_ELEV_BP, AIR_DENS_FROM_ELEV_V)
+    self.drag_force = 0.
+    self.accel_force = 0. 
+    self.drag_power = 0.
+    self.accel_power = 0. 
+    self.drive_power = 0. 
+    self.ice_power = 0.
+    self.observed_efficiency = FirstOrderFilter(float(self._params.get("EVDriveTrainEfficiency", encoding="utf8")), 50., 0.05)
+    self.brake_cmd = 0
     
     self.t = 0.
     self.is_ev = (self.car_fingerprint in [CAR.VOLT, CAR.VOLT18])
@@ -286,11 +317,47 @@ class CarState(CarStateBase):
       ret.brakePressed = ret.brakePressed or self.regenPaddlePressed
       hvb_current = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryCurrent']
       hvb_voltage = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryVoltage']
-      self.hvb_wattage = hvb_current * hvb_voltage * 0.001
+      self.hvb_wattage = hvb_current * hvb_voltage
       ret.hvbVoltage = hvb_voltage
       ret.hvbCurrent = hvb_current
       ret.hvbWattage = self.hvb_wattage
       self.gear_shifter_ev = pt_cp.vl["ECMPRDNL2"]['PRNDL2']
+    
+    if self.iter % self.uiframe == 0:
+      # drag
+      self.rho = interp(self.altitude, AIR_DENS_FROM_ELEV_BP, AIR_DENS_FROM_ELEV_V) # [kg/m^3]
+      self.drag_force = 0.5 * self.drag_cd * self.drag_csa * self.rho * self.vEgo**2 # [N]
+      pitch_adjusted_accel = ret.aEgo + ACCELERATION_DUE_TO_GRAVITY * sin(self.pitch) # [m/s^2]
+      self.accel_force = self.cp_mass * pitch_adjusted_accel # [N]
+      self.drag_power = self.drag_force * self.vEgo # [W]
+      self.accel_power = self.accel_force * self.vEgo * self.rolling_resistance # [W]
+      self.drive_power = self.drag_power + self.accel_power # [W]
+      if self.is_ev:
+        if self.engineRPM > 0:
+          self.ice_power = self.drive_power + self.hvb_wattage  # [W]
+        else:
+          self.ice_power = 0.
+          if self.vEgo > 0.3:
+            if self.drive_power > 0. and self.hvb_wattage < -1.:
+              self.observed_efficiency.update(self.drive_power / (-self.hvb_wattage))
+            elif self.drive_power < -1. and self.hvb_wattage > 0. and self.brake_cmd == 0:
+              self.observed_efficiency.update(-self.hvb_wattage / self.drive_power)
+      else:
+        self.ice_power = self.drive_power
+        
+      if (self.iter // self.uiframe) % 20 == 0:
+        put_nonblocking("EVDriveTrainEfficiency", str(self.observed_efficiency.x))
+        self.iter = 0
+        
+    
+    ret.dragForce = self.drag_force
+    ret.dragPower = self.drag_power
+    ret.accelForce = self.accel_force
+    ret.accelPower = self.accel_power
+    ret.drivePower = self.drive_power
+    ret.icePower = self.ice_power
+    ret.observedEVDrivetrainEfficiency = self.observed_efficiency.x
+    
     
     if self.is_ev and self.coasting_dl_enabled:
       if not self.coasting_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.DRIVE:
@@ -355,7 +422,7 @@ class CarState(CarStateBase):
     
     ret.lkMode = self.lkMode
     
-
+    self.iter += 1
     return ret
 
   def get_follow_level(self):

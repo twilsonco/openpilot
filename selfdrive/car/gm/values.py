@@ -47,14 +47,23 @@ class CarControllerParams():
     self.BRAKE_LOOKUP_V = [self.MAX_BRAKE, 0]
     
     self.v_ego = 100.
+    self.future_curvature = 0.
+    self.MIN_STEER_DELTA_UP = min(self.STEER_DELTA_UP_V)
+    self.MIN_STEER_DELTA_DOWN = min(self.STEER_DELTA_DOWN_V)
+    self.CURVATURE_STEER_DELTA_FACTOR_BP = [0., 0.015] # [rad/meter]
+    self.CURVATURE_STEER_DELTA_FACTOR_V = [0., 1.] # factor of higher torque rate limit used. when it's 1, the higher limit is used, or the stock value when 0
 
   @property
   def STEER_DELTA_UP(self):
-    return int(round(interp(self.v_ego, self.STEER_DELTA_UP_BP, self.STEER_DELTA_UP_V)))
+    limit = interp(self.v_ego, self.STEER_DELTA_UP_BP, self.STEER_DELTA_UP_V)
+    k = interp(self.future_curvature, self.CURVATURE_STEER_DELTA_FACTOR_BP, self.CURVATURE_STEER_DELTA_FACTOR_V)
+    return int(round(k * limit + (1 - k) * self.MIN_STEER_DELTA_UP))
   
   @property
   def STEER_DELTA_DOWN(self):
-    return int(round(interp(self.v_ego, self.STEER_DELTA_DOWN_BP, self.STEER_DELTA_DOWN_V)))
+    limit = interp(self.v_ego, self.STEER_DELTA_DOWN_BP, self.STEER_DELTA_DOWN_V)
+    k = interp(self.future_curvature, self.CURVATURE_STEER_DELTA_FACTOR_BP, self.CURVATURE_STEER_DELTA_FACTOR_V)
+    return int(round(k * limit + (1 - k) * self.MIN_STEER_DELTA_DOWN))
     
     # determined by letting Volt regen to a stop in L gear from 75mph
   EV_GAS_BRAKE_THRESHOLD_BP = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.29, 1.52, 1.55, 1.6, 1.7, 1.8, 2.0, 2.2, 2.5, 5.52, 9.6, 20.5, 23.5, 35.0] # [m/s]

@@ -4,7 +4,7 @@ import math
 from numbers import Number
 
 from cereal import car, log
-from common.numpy_fast import clip, interp
+from common.numpy_fast import clip, interp, mean
 from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
 from common.params import Params, put_nonblocking
@@ -94,8 +94,8 @@ class Controls:
       ignore = ['driverCameraState', 'managerState'] if SIMULATION else None
       self.sm = messaging.SubMaster(['deviceState', 'pandaState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
-                                     'managerState', 'liveParameters', 'radarState'] + self.camera_packets + joystick_packet,
-                                     ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan'])
+                                     'managerState', 'liveParameters', 'radarState', 'gpsLocationExternal'] + self.camera_packets + joystick_packet,
+                                     ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan', 'gpsLocationExternal'])
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -435,6 +435,11 @@ class Controls:
       v_cruise = self.v_cruise_kph if self.is_metric else int(round((float(self.v_cruise_kph) * 0.6233 + 0.0995)))
       vEgo = getattr(CS, "vEgo", None)
       vEgo = int(round((float(vEgo) * 3.6 if self.is_metric else int(round((float(vEgo) * 3.6 * 0.6233 + 0.0995)))))) if vEgo else v_cruise
+      
+      if self.sm.updated['gpsLocationExternal']:
+        self.CI.CS.altitude = self.sm['gpsLocationExternal'].altitude
+      if self.sm.updated['lateralPlan'] and len(self.sm['lateralPlan'].curvatures) > 0:
+        self.CI.CC.params.future_curvature = mean(self.sm['lateralPlan'].curvatures)
       
       self.CI.CS.speed_limit_active = (self.sm['longitudinalPlan'].speedLimitControlState == log.LongitudinalPlan.SpeedLimitControlState.active)
       if self.CI.CS.speed_limit_active:

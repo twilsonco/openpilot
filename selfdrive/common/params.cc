@@ -152,6 +152,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"EVConsumptionTripkWh", PERSISTENT},
     {"EVConsumptionTripDistance", PERSISTENT},
     {"EVConsumptionReset", PERSISTENT},
+    {"EVDriveTrainEfficiency", PERSISTENT},
     {"EnableWideCamera", CLEAR_ON_MANAGER_START},
     {"DoUninstall", CLEAR_ON_MANAGER_START},
     {"DongleId", PERSISTENT},

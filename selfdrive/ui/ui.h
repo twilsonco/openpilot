@@ -165,6 +165,12 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   COOLANT_TEMPF,
   ACCELERATION,
   LAT_ACCEL,//JERK,
+  DRAG_FORCE,
+  DRAG_POWER,
+  ACCEL_FORCE,
+  ACCEL_POWER,
+  DRIVE_POWER,
+  ICE_POWER,
   // Location/road info
   ALTITUDE,
   BEARING,
@@ -196,6 +202,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   EV_CONSUM_RECENT,
   EV_CONSUM_TRIP,
   EV_BOTH_NOW,
+  EV_OBSERVED_DRIVETRAIN_EFF,
   // Device info
   CPU_TEMP_AND_PERCENTF,
   CPU_TEMP_AND_PERCENTC,

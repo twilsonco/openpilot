@@ -54,6 +54,7 @@ def manager_init():
     ("ScreenDimMode", "2"),
     ("AccelModeButton", "0"),
     ("AccelMode", "0"),
+    ("EVDriveTrainEfficiency", "1"),
     ("EVConsumptionReset", "0"),
     ("EVConsumption5Mi", "0"),
     ("EVConsumptionTripkWh", "0"),
