@@ -1,5 +1,7 @@
-Version tw-0.8.12-7_twd (2022-09-09)
+Version tw-0.8.12-7_twd (2022-09-15)
 ========================
+ * NEW: 7 UI metrics: Drag (resistance) force, drag power, acceleration force (F=ma), acceleration power, drive power (drag + accel + losses), ICE power (for volt when ice is on; untested!), EV drivetrain (plus other stuff) efficiency (power from battery vs drive power)
+ * IMPROVED: dynamic steer rate limit now scales with future curvature, so no more excessive correction to potholes at low speeds on straights
  * NEW: Auto automatic lane position when on highways/freeways and 38mph+ [optional]
  * NEW: UI metric: hybrid EV efficiency/consumption (flips based on sign of consumption)
  * FIXED: UI metric: EV trip and 5mi efficiency and consumption metrics are correctly preserved between drives
