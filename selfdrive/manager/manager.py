@@ -54,6 +54,7 @@ def manager_init():
     ("ScreenDimMode", "2"),
     ("AccelModeButton", "0"),
     ("AccelMode", "0"),
+    ("EVDriveTrainEfficiency", "1"),
     ("EVConsumptionReset", "0"),
     ("EVConsumption5Mi", "0"),
     ("EVConsumptionTripkWh", "0"),
@@ -87,16 +88,16 @@ def manager_init():
     ("LowOverheadMode", "0"),
     ("FPVolt", "0"),
     ("MeasureConfigNum", "0"),
-    ("MeasureSlot00", "12"), # bearing 
-    ("MeasureSlot01", "11"), # altitude 
-    ("MeasureSlot02", "14"), # percent grade
+    ("MeasureSlot00", "18"), # bearing 
+    ("MeasureSlot01", "17"), # altitude 
+    ("MeasureSlot02", "20"), # percent grade
     ("MeasureSlot03", "9"), # Acceleration
     ("MeasureSlot04", "6"), # engine RPM + coolant temp F
-    ("MeasureSlot05", "34"), # Trip EV efficiency 
-    ("MeasureSlot06", "33"), # 5mi EV efficiency
-    ("MeasureSlot07", "38"), # Instantaneous EV efficiency/consuption
-    ("MeasureSlot08", "53"),# GPS accuracy
-    ("MeasureSlot09", "40"),# device cpu percent and temp °C
+    ("MeasureSlot05", "12"), # drag power 
+    ("MeasureSlot06", "45"), # EV drivetrain eff
+    ("MeasureSlot07", "39"), # recent ev efficiency
+    ("MeasureSlot08", "40"),# trip efficiency
+    ("MeasureSlot09", "47"),# device cpu percent and temp °C
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))

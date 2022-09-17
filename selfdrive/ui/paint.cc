@@ -976,7 +976,104 @@ static void ui_draw_measures(UIState *s){
             snprintf(val, sizeof(val), "%.1f", sm["liveLocationKalman"].getLiveLocationKalman().getAccelerationCalibrated().getValue()[1]);
             snprintf(unit, sizeof(unit), "m/s²");
             break;}
+
+          case UIMeasure::DRAG_FORCE:
+            {
+            snprintf(name, sizeof(name), "DRAG FRC");
+            float v = scene.car_state.getDragForce();
+            v /= 1e3;
+            if (fabs(v) > 100.){
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            else if (fabs(v) > 10.){
+              snprintf(val, sizeof(val), "%.1f", v);
+            }
+            else{
+              snprintf(val, sizeof(val), "%.2f", v);
+            }
+            snprintf(unit, sizeof(unit), "kN");
+            break;}
+
+          case UIMeasure::DRAG_POWER:
+            {
+            snprintf(name, sizeof(name), "DRAG POW");
+            float v = scene.car_state.getDragPower() / scene.car_state.getObservedEVDrivetrainEfficiency();
+            v /= 1e3;
+            if (fabs(v) > 100.){
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            else if (fabs(v) > 10.){
+              snprintf(val, sizeof(val), "%.1f", v);
+            }
+            else{
+              snprintf(val, sizeof(val), "%.2f", v);
+            }
+            snprintf(unit, sizeof(unit), "kW");
+            break;}
           
+          case UIMeasure::ACCEL_FORCE:
+            {
+            snprintf(name, sizeof(name), "ACCEL FRC");
+            float v = scene.car_state.getAccelForce();
+            v /= 1e3;
+            if (fabs(v) > 10.){
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            else {
+              snprintf(val, sizeof(val), "%.1f", v);
+            }
+            snprintf(unit, sizeof(unit), "kN");
+            break;}
+
+          case UIMeasure::ACCEL_POWER:
+            {
+            snprintf(name, sizeof(name), "ACCEL POW");
+            float v = scene.car_state.getAccelPower() / scene.car_state.getObservedEVDrivetrainEfficiency();
+            v /= 1e3;
+            if (fabs(v) > 10.){
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            else {
+              snprintf(val, sizeof(val), "%.1f", v);
+            }
+            snprintf(unit, sizeof(unit), "kW");
+            break;}
+
+          case UIMeasure::DRIVE_POWER:
+            {
+            snprintf(name, sizeof(name), "DRIVE POW");
+            float v = scene.car_state.getDrivePower() / scene.car_state.getObservedEVDrivetrainEfficiency();
+            v /= 1e3;
+            if (fabs(v) > 100.){
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            else if (fabs(v) > 10.){
+              snprintf(val, sizeof(val), "%.1f", v);
+            }
+            else{
+              snprintf(val, sizeof(val), "%.2f", v);
+            }
+            snprintf(unit, sizeof(unit), "kW");
+            break;}
+
+          case UIMeasure::ICE_POWER:
+            {
+            snprintf(name, sizeof(name), "ICE POW");
+            float v = scene.car_state.getIcePower();
+            v /= 1e3;
+            if (fabs(v) > 100.){
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            else if (fabs(v) > 10.){
+              snprintf(val, sizeof(val), "%.1f", v);
+            }
+            else{
+              snprintf(val, sizeof(val), "%.2f", v);
+            }
+            snprintf(unit, sizeof(unit), "kW");
+            break;}
+          
+
           case UIMeasure::VISION_CURLATACCEL:
             {
             snprintf(name, sizeof(name), "V:LAT ACC");
@@ -1563,36 +1660,26 @@ static void ui_draw_measures(UIState *s){
               val_color = nvgRGBA(255, g, b, 200);
             }
             break;
-          
-          case UIMeasure::HVB_WATTAGE: 
+
+          case UIMeasure::HVB_WATTAGE:
             {
-              snprintf(name, sizeof(name), "HVB POW");
-              snprintf(unit, sizeof(unit), "kW");
-              float temp = -scene.car_state.getHvbWattage();
-              if (abs(temp) >= 100.){
-                snprintf(val, sizeof(val), "%.0f", temp);
-              }
-              else{
-                snprintf(val, sizeof(val), "%.1f", temp);
-              }
-              g = 255;
-              b = 255;
-              p = scene.car_state.getHvbVoltage() - 360.;
-              p = p > 0 ? p : -p;
-              p *= 0.01666667; // red by the time voltage deviates from nominal voltage (360) by 60V deviation from nominal
-              g -= int(0.5 * p * 255.);
-              b -= int(p * 255.);
-              g = (g >= 0 ? (g <= 255 ? g : 255) : 0);
-              b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
-              val_color = nvgRGBA(255, g, b, 200);
+            snprintf(name, sizeof(name), "HVB POW");
+            float v = -scene.car_state.getHvbWattage();
+            v /= 1e3;
+            if (v > 10){
+              snprintf(val, sizeof(val), "%.1f", v);
             }
-            break;
+            else{
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            snprintf(unit, sizeof(unit), "kW");
+            break;}
           
           case UIMeasure::HVB_WATTVOLT: 
             {
               snprintf(name, sizeof(name), "HVB kW");
               float temp = -scene.car_state.getHvbWattage();
-              if (abs(temp) >= 100.){
+              if (abs(temp) >= 10.){
                 snprintf(val, sizeof(val), "%.0f", temp);
               }
               else{
@@ -1618,12 +1705,17 @@ static void ui_draw_measures(UIState *s){
               snprintf(name, sizeof(name), "EV NOW");
               float temp;
               if (scene.ev_recip_eff_wa[0] <= 0.f){
-                temp = scene.ev_recip_eff_wa[0] * 1000.;
-                if (abs(temp) >= 10.){
-                  snprintf(val, sizeof(val), "%.0f", temp);
+                if (scene.car_state.getVEgo() > 0.1){
+                  temp = scene.ev_recip_eff_wa[0] * 1000.;
+                  if (abs(temp) >= 10.){
+                    snprintf(val, sizeof(val), "%.0f", temp);
+                  }
+                  else{
+                    snprintf(val, sizeof(val), "%.1f", temp);
+                  }
                 }
-                else{
-                  snprintf(val, sizeof(val), "%.1f", temp);
+                else {
+                  snprintf(val, sizeof(val), "--");
                 }
                 snprintf(unit, sizeof(unit), (scene.is_metric ? "Wh/km" : "Wh/mi"));
               }
@@ -1715,13 +1807,18 @@ static void ui_draw_measures(UIState *s){
 
           case UIMeasure::EV_CONSUM_NOW: 
             {
-              snprintf(name, sizeof(name), "EV CONSUM NOW");
-              float temp = scene.ev_recip_eff_wa[0]*1000.;
-              if (abs(temp) >= 10.){
-                snprintf(val, sizeof(val), "%.0f", temp);
+              snprintf(name, sizeof(name), "EV CON NOW");
+              if (scene.car_state.getVEgo() > 0.1){
+                float temp = scene.ev_recip_eff_wa[0]*1000.;
+                if (abs(temp) >= 10.){
+                  snprintf(val, sizeof(val), "%.0f", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.1f", temp);
+                }
               }
               else{
-                snprintf(val, sizeof(val), "%.1f", temp);
+                snprintf(val, sizeof(val), "--");
               }
               snprintf(unit, sizeof(unit), (scene.is_metric ? "Wh/km" : "Wh/mi"));
             }
@@ -1729,7 +1826,7 @@ static void ui_draw_measures(UIState *s){
 
           case UIMeasure::EV_CONSUM_RECENT: 
             {
-              snprintf(name, sizeof(name), (scene.is_metric ? "EV CONSUM 8km" : "EV CONSUM 5mi"));
+              snprintf(name, sizeof(name), (scene.is_metric ? "EV CON 8km" : "EV CON 5mi"));
               float temp = scene.ev_recip_eff_wa[1]*1000.;
               if (abs(temp) >= 100.){
                 snprintf(val, sizeof(val), "%.0f", temp);
@@ -1743,7 +1840,7 @@ static void ui_draw_measures(UIState *s){
 
           case UIMeasure::EV_CONSUM_TRIP: 
             {
-              snprintf(name, sizeof(name), (scene.is_metric ? "EV CON Wh/km" : "EV CONSUM Wh/mi"));
+              snprintf(name, sizeof(name), (scene.is_metric ? "EV CON Wh/km" : "EV CON Wh/mi"));
               float dist = scene.ev_eff_total_dist / (scene.is_metric ? 1000. : 1609.);
               if (scene.ev_eff_total == 0.f){
                 snprintf(val, sizeof(val), "--");
@@ -1766,6 +1863,14 @@ static void ui_draw_measures(UIState *s){
               else{
                 snprintf(unit, sizeof(unit), "%.1f%s", dist, (scene.is_metric ? "km" : "mi"));
               }
+            }
+            break;
+          
+          case UIMeasure::EV_OBSERVED_DRIVETRAIN_EFF: 
+            {
+              snprintf(name, sizeof(name), "EV DRV EFF");
+              float temp = scene.car_state.getObservedEVDrivetrainEfficiency();
+              snprintf(val, sizeof(val), "%.2f", temp);
             }
             break;
             

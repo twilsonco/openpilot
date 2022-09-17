@@ -215,6 +215,7 @@ class CarController():
 
         CS.one_pedal_mode_active_last = CS.one_pedal_mode_active
         CS.coast_one_pedal_mode_active_last = CS.coast_one_pedal_mode_active
+      CS.brake_cmd = self.apply_brake
 
     if CS.showBrakeIndicator:
       CS.apply_brake_percent = 0.

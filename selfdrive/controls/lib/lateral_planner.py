@@ -2,7 +2,7 @@ import math
 import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp
-from common.params import Params
+from common.params import Params, put_nonblocking
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import CONTROL_N, MPC_COST_LAT, LAT_MPC_N, CAR_ROTATION_RADIUS
@@ -363,12 +363,12 @@ class LateralPlanner():
     if self.auto_lane_pos_active:
       if self.LP.lane_offset._lane_pos_auto == -1. and self.lane_pos != -1.:
         self.lane_pos = -1.
-        Params().put("LanePosition", "-1")
+        put_nonblocking("LanePosition", "-1")
       elif self.LP.lane_offset._lane_pos_auto == 1. and self.lane_pos != 1.:
         self.lane_pos = 1.
-        Params().put("LanePosition", "1")
+        put_nonblocking("LanePosition", "1")
       elif self.LP.lane_offset._lane_pos_auto == 0. and self.lane_pos != 0.:
         self.lane_pos = 0.
-        Params().put("LanePosition", "0")
+        put_nonblocking("LanePosition", "0")
 
     pm.send('lateralPlan', plan_send)
