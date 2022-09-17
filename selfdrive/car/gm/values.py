@@ -72,7 +72,7 @@ class CarControllerParams():
   
   def update_gas_brake_threshold(self, v_ego):
     gas_brake_threshold = interp(v_ego, self.EV_GAS_BRAKE_THRESHOLD_BP, self.EV_GAS_BRAKE_THRESHOLD_V)
-    max_brake = int(self.MAX_BRAKE + 100 * (min(0,gas_brake_threshold) - self.EV_GAS_BRAKE_THRESHOLD_MIN_V))
+    max_brake = int(self.MAX_BRAKE + 68 * (min(0,gas_brake_threshold) - self.EV_GAS_BRAKE_THRESHOLD_MIN_V)) # results in max brake command of around 418, based on a brake cmd = 350 test from 55mph to 0
     self.GAS_LOOKUP_BP = [gas_brake_threshold, 0., self.ACCEL_MAX]
     self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, gas_brake_threshold]
     self.BRAKE_LOOKUP_V = [max_brake, 0]
