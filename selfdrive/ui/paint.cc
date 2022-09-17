@@ -1877,7 +1877,7 @@ static void ui_draw_measures(UIState *s){
             {
               snprintf(name, sizeof(name), "EV CON NOW");
               if (scene.car_state.getVEgo() > 0.1){
-                float temp = scene.ev_recip_eff_wa[0]*1000.;
+                float temp = scene.ev_recip_eff_wa[0];
                 if (abs(temp) >= 10.){
                   snprintf(val, sizeof(val), "%.0f", temp);
                 }
@@ -1895,7 +1895,7 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::EV_CONSUM_RECENT: 
             {
               snprintf(name, sizeof(name), (scene.is_metric ? "EV CON 8km" : "EV CON 5mi"));
-              float temp = scene.ev_recip_eff_wa[1]*1000.;
+              float temp = scene.ev_recip_eff_wa[1];
               if (abs(temp) >= 100.){
                 snprintf(val, sizeof(val), "%.0f", temp);
               }
@@ -1914,7 +1914,7 @@ static void ui_draw_measures(UIState *s){
                 snprintf(val, sizeof(val), "--");
               }
               else{
-                float temp = 0.001/scene.ev_eff_total;
+                float temp = 1./scene.ev_eff_total;
                 if (abs(temp) >= 100.){
                   snprintf(val, sizeof(val), "%.0f", temp);
                 }
