@@ -88,16 +88,16 @@ def manager_init():
     ("LowOverheadMode", "0"),
     ("FPVolt", "0"),
     ("MeasureConfigNum", "0"),
-    ("MeasureSlot00", "18"), # bearing 
-    ("MeasureSlot01", "17"), # altitude 
-    ("MeasureSlot02", "20"), # percent grade
+    ("MeasureSlot00", "22"), # bearing 
+    ("MeasureSlot01", "21"), # altitude 
+    ("MeasureSlot02", "24"), # percent grade
     ("MeasureSlot03", "9"), # Acceleration
     ("MeasureSlot04", "6"), # engine RPM + coolant temp F
     ("MeasureSlot05", "12"), # drag power 
-    ("MeasureSlot06", "45"), # EV drivetrain eff
-    ("MeasureSlot07", "39"), # recent ev efficiency
-    ("MeasureSlot08", "40"),# trip efficiency
-    ("MeasureSlot09", "47"),# device cpu percent and temp °C
+    ("MeasureSlot06", "49"), # EV drivetrain eff
+    ("MeasureSlot07", "43"), # recent ev efficiency
+    ("MeasureSlot08", "44"),# trip efficiency
+    ("MeasureSlot09", "51"),# device cpu percent and temp °C
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
