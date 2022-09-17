@@ -12,9 +12,9 @@ class CarControllerParams():
     # self.STEER_DELTA_UP = 14          # ~1s time to peak torque (255/50hz/1s)
     # self.STEER_DELTA_DOWN = 34       # ~0.4s from peak torque to zero
     self.STEER_DELTA_UP_BP = [10., 20.] # [m/s]
-    self.STEER_DELTA_UP_V = [12., 7.] # [steer command]
+    self.STEER_DELTA_UP_V = [15., 7.] # [steer command]
     self.STEER_DELTA_DOWN_BP = [10., 20.] # [m/s]
-    self.STEER_DELTA_DOWN_V = [29., 17.] # [steer command]
+    self.STEER_DELTA_DOWN_V = [32., 17.] # [steer command]
     self.MIN_STEER_SPEED = 3.
     self.STEER_DRIVER_ALLOWANCE = 50   # allowed driver torque before start limiting
     self.STEER_DRIVER_MULTIPLIER = 4   # weight driver torque heavily
@@ -50,7 +50,7 @@ class CarControllerParams():
     self.future_curvature = 0.
     self.MIN_STEER_DELTA_UP = min(self.STEER_DELTA_UP_V)
     self.MIN_STEER_DELTA_DOWN = min(self.STEER_DELTA_DOWN_V)
-    self.CURVATURE_STEER_DELTA_FACTOR_BP = [0., 0.015] # [rad/meter]
+    self.CURVATURE_STEER_DELTA_FACTOR_BP = [0.002, 0.015] # [rad/meter]
     self.CURVATURE_STEER_DELTA_FACTOR_V = [0., 1.] # factor of higher torque rate limit used. when it's 1, the higher limit is used, or the stock value when 0
 
   @property
