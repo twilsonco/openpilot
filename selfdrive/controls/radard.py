@@ -16,8 +16,8 @@ from selfdrive.controls.lib.radar_helpers import Cluster, Track
 from selfdrive.swaglog import cloudlog
 from selfdrive.hardware import TICI
 
-LEAD_PATH_YREL_MAX_BP = [100., 200.] # [m] distance to lead
-LEAD_PATH_YREL_MAX_V = [0.5, 1.5] # [m] an increasing tolerance for farther leads 
+LEAD_PATH_YREL_MAX_BP = [0.] # [m] distance to lead
+LEAD_PATH_YREL_MAX_V = [1.5] # [m] constant tolerance
 LEAD_PATH_DREL_MIN = 110 # [m] only care about far away leads
 MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow use.
 
