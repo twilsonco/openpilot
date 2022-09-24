@@ -338,9 +338,9 @@ class CarState(CarStateBase):
         else:
           self.ice_power = 0.
           if self.vEgo > 0.3:
-            if self.drive_power > 0. and self.hvb_wattage < -1.:
+            if self.drive_power > 0. and self.hvb_wattage < -100.:
               self.observed_efficiency.update(self.drive_power / (-self.hvb_wattage))
-            elif self.drive_power < -1. and self.hvb_wattage > 0. and self.brake_cmd == 0:
+            elif self.drive_power < -100. and self.hvb_wattage > 0. and self.brake_cmd == 0:
               self.observed_efficiency.update(-self.hvb_wattage / self.drive_power)
       else:
         self.ice_power = self.drive_power
