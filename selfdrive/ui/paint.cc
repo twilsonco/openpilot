@@ -1775,11 +1775,31 @@ static void ui_draw_measures(UIState *s){
               if (scene.ev_recip_eff_wa[0] <= 0.f){
                 if (scene.car_state.getVEgo() > 0.1){
                   temp = scene.ev_recip_eff_wa[0] * 1000.;
-                  if (abs(temp) >= 10.){
-                    snprintf(val, sizeof(val), "%.0f", temp);
+                  if (abs(temp) >= 9e5){
+                    temp /= 1e6;
+                    if (abs(temp) >= 10.){
+                      snprintf(val, sizeof(val), "%.0fM", temp);
+                    }
+                    else{
+                      snprintf(val, sizeof(val), "%.1fM", temp);
+                    }
+                  }
+                  else if (abs(temp) >= 9e2){
+                    temp /= 1e3;
+                    if (abs(temp) >= 10.){
+                      snprintf(val, sizeof(val), "%.0fk", temp);
+                    }
+                    else{
+                      snprintf(val, sizeof(val), "%.1fk", temp);
+                    }
                   }
                   else{
-                    snprintf(val, sizeof(val), "%.1f", temp);
+                    if (abs(temp) >= 10.){
+                      snprintf(val, sizeof(val), "%.0f", temp);
+                    }
+                    else{
+                      snprintf(val, sizeof(val), "%.1f", temp);
+                    }
                   }
                 }
                 else {
@@ -1878,11 +1898,31 @@ static void ui_draw_measures(UIState *s){
               snprintf(name, sizeof(name), "EV CON NOW");
               if (scene.car_state.getVEgo() > 0.1){
                 float temp = scene.ev_recip_eff_wa[0] * 1000.;
-                if (abs(temp) >= 10.){
-                  snprintf(val, sizeof(val), "%.0f", temp);
+                if (abs(temp) >= 9e5){
+                  temp /= 1e6;
+                  if (abs(temp) >= 10.){
+                    snprintf(val, sizeof(val), "%.0fM", temp);
+                  }
+                  else{
+                    snprintf(val, sizeof(val), "%.1fM", temp);
+                  }
+                }
+                else if (abs(temp) >= 9e2){
+                  temp /= 1e3;
+                  if (abs(temp) >= 10.){
+                    snprintf(val, sizeof(val), "%.0fk", temp);
+                  }
+                  else{
+                    snprintf(val, sizeof(val), "%.1fk", temp);
+                  }
                 }
                 else{
-                  snprintf(val, sizeof(val), "%.1f", temp);
+                  if (abs(temp) >= 10.){
+                    snprintf(val, sizeof(val), "%.0f", temp);
+                  }
+                  else{
+                    snprintf(val, sizeof(val), "%.1f", temp);
+                  }
                 }
               }
               else{
@@ -1896,11 +1936,31 @@ static void ui_draw_measures(UIState *s){
             {
               snprintf(name, sizeof(name), (scene.is_metric ? "EV CON 8km" : "EV CON 5mi"));
               float temp = scene.ev_recip_eff_wa[1] * 1000.;
-              if (abs(temp) >= 100.){
-                snprintf(val, sizeof(val), "%.0f", temp);
+              if (abs(temp) >= 9e5){
+                temp /= 1e6;
+                if (abs(temp) >= 10.){
+                  snprintf(val, sizeof(val), "%.0fM", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.1fM", temp);
+                }
+              }
+              else if (abs(temp) >= 9e2){
+                temp /= 1e3;
+                if (abs(temp) >= 10.){
+                  snprintf(val, sizeof(val), "%.0fk", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.1fk", temp);
+                }
               }
               else{
-                snprintf(val, sizeof(val), "%.1f", temp);
+                if (abs(temp) >= 10.){
+                  snprintf(val, sizeof(val), "%.0f", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.1f", temp);
+                }
               }
               snprintf(unit, sizeof(unit), (scene.is_metric ? "Wh/km" : "Wh/mi"));
             }
@@ -1915,14 +1975,28 @@ static void ui_draw_measures(UIState *s){
               }
               else{
                 float temp = 1000./scene.ev_eff_total;
-                if (abs(temp) >= 100.){
-                  snprintf(val, sizeof(val), "%.0f", temp);
-                }
-                else if (abs(temp) >= 10.){
-                  snprintf(val, sizeof(val), "%.1f", temp);
+                if (abs(temp) >= 9e2){
+                  temp /= 1e3;
+                  if (abs(temp) >= 100.){
+                    snprintf(val, sizeof(val), "%.0fk", temp);
+                  }
+                  else if (abs(temp) >= 10.){
+                    snprintf(val, sizeof(val), "%.1fk", temp);
+                  }
+                  else{
+                    snprintf(val, sizeof(val), "%.2fk", temp);
+                  }
                 }
                 else{
-                  snprintf(val, sizeof(val), "%.2f", temp);
+                  if (abs(temp) >= 100.){
+                    snprintf(val, sizeof(val), "%.0f", temp);
+                  }
+                  else if (abs(temp) >= 10.){
+                    snprintf(val, sizeof(val), "%.1f", temp);
+                  }
+                  else{
+                    snprintf(val, sizeof(val), "%.2f", temp);
+                  }
                 }
               }
               if (dist >= 100.){
