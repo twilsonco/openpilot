@@ -17,6 +17,7 @@ import bz2
 import numpy as np
 # import seaborn as sns
 from tqdm import tqdm  # type: ignore
+import re
 
 from tools.tuning.lat_settings import *
 if not PREPROCESS_ONLY:
@@ -24,6 +25,22 @@ if not PREPROCESS_ONLY:
   from scipy.signal import correlate, correlation_lags
   import matplotlib.pyplot as plt
   from tools.tuning.lat_plot import fit, plot
+  import sys
+  if not os.path.isdir('plots'):
+    os.mkdir('plots')
+  class Logger(object):
+      def __init__(self):
+          self.terminal = sys.stdout
+          self.log = open("plots/logfile.txt", "a")
+      def write(self, message):
+          self.terminal.write(message)
+          self.log.write(message)  
+      def flush(self):
+          # this flush method is needed for python 3 compatibility.
+          # this handles the flush command by doing nothing.
+          # you might want to specify some extra behavior here.
+          pass    
+  sys.stdout = Logger()
 
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.config import Conversions as CV
@@ -38,7 +55,7 @@ def regularize(speed, angle, steer):
   print("Regularizing...")
   # Bin by rounding
   speed_bin = np.around(speed*2)/2
-  angle_bin = np.around(angle*2)/2
+  angle_bin = np.around(angle*2, decimals=0 if IS_ANGLE_PLOT else 1)/2
 
   i = 0
   std = []
@@ -131,8 +148,11 @@ class Sample():
   # curvature_true: float = np.nan # lag
   curvature_rate: float = np.nan
   lateral_accel: float = np.nan
+  lateral_accel_rate: float = np.nan
+  lateral_accel_rate_no_roll: float = np.nan
   roll: float = np.nan
   lateral_accel_device: float = np.nan
+  steer_cmd: float = np.nan
   
   
 
@@ -155,83 +175,113 @@ def collect(lr):
   lat_angular_velocity = np.nan
   lrd = dict()
   for msg in lr:
-    msgid = f"{msg.logMonoTime}:{msg.which()}"
-    if msgid in lrd:
-      break
-    lrd[msgid] = msg
+    try:
+      msgid = f"{msg.logMonoTime}:{msg.which()}"
+      if msgid in lrd:
+        break
+      lrd[msgid] = msg
+    except:
+      continue
   lr1 = list(lrd.values())
   if not MULTI_FILE: print(f"{len(lr1)} messages")
+  # type_set = set()
   for msg in sorted(lr1, key=lambda msg: msg.logMonoTime) if MULTI_FILE else tqdm(sorted(lr1, key=lambda msg: msg.logMonoTime)):
     # print(f'{msg.which() = }')
-    if msg.which() == 'carState':
-      s.v_ego  = msg.carState.vEgo
-      s.steer_angle = msg.carState.steeringAngleDeg
-      s.steer_rate = msg.carState.steeringRateDeg
-      s.torque_eps = msg.carState.steeringTorqueEps
-      s.torque_driver = msg.carState.steeringTorque
-    elif msg.which() == 'liveParameters':
-      s.steer_offset = msg.liveParameters.angleOffsetDeg
-      s.steer_offset_average = msg.liveParameters.angleOffsetAverageDeg  
-      stiffnessFactor = msg.liveParameters.stiffnessFactor
-      steerRatio = msg.liveParameters.steerRatio
-      s.roll = msg.liveParameters.roll
-      continue
-    elif msg.which() == 'carControl':
-      s.enabled = msg.carControl.enabled
-      continue
-    elif msg.which() == 'liveLocationKalman':
-      lat_angular_velocity = msg.liveLocationKalman.angularVelocityCalibrated.value[2]
-    elif msg.which() == 'lateralPlan':
-      # logs before 2021-05 don't have this field
-      try:
-        s.curvature_rate = msg.lateralPlan.curvatureRates[0]
-      except:
-        s.curvature_rate = 0
-      continue
-    elif VM is None and msg.which() == 'carParams':
-      CP = msg.carParams
-      VM = VehicleModel(CP)
-    else:
-      continue
+    try:
+      # type_set.add(msg.which())
+      if msg.which() == 'carState':
+        s.v_ego  = msg.carState.vEgo
+        s.steer_angle = msg.carState.steeringAngleDeg
+        s.steer_rate = msg.carState.steeringRateDeg
+        s.torque_eps = msg.carState.steeringTorqueEps
+        s.torque_driver = msg.carState.steeringTorque
+      elif msg.which() == 'liveParameters':
+        s.steer_offset = msg.liveParameters.angleOffsetDeg
+        s.steer_offset_average = msg.liveParameters.angleOffsetAverageDeg  
+        stiffnessFactor = msg.liveParameters.stiffnessFactor
+        steerRatio = msg.liveParameters.steerRatio
+        s.roll = msg.liveParameters.roll
+        continue
+      elif msg.which() == 'carControl':
+        s.enabled = msg.carControl.enabled
+        s.steer_cmd = msg.carControl.actuatorsOutput.steer
+        continue
+      elif msg.which() == 'liveLocationKalman':
+        lat_angular_velocity = msg.liveLocationKalman.angularVelocityCalibrated.value[2]
+      elif msg.which() == 'lateralPlan':
+        # logs before 2021-05 don't have this field
+        try:
+          s.curvature_rate = msg.lateralPlan.curvatureRates[0]
+        except:
+          s.curvature_rate = 0
+        continue
+      elif VM is None and msg.which() == 'carParams':
+        CP = msg.carParams
+        VM = VehicleModel(CP)
+      else:
+        continue
 
-    # assert all messages have been received
-    valid = not np.isnan(s.v_ego) and \
-            not np.isnan(s.steer_offset) and \
-            not np.isnan(s.curvature_rate) and \
-            VM is not None and \
-            not np.isnan(lat_angular_velocity)
-    
-    if valid:
-      VM.update_params(max(stiffnessFactor, 0.1), max(steerRatio, 0.1))
-      current_curvature = -VM.calc_curvature(math.radians(s.steer_angle - s.steer_offset), s.v_ego, s.roll)
-      s.lateral_accel = current_curvature * s.v_ego**2
-      s.lateral_accel_device = (lat_angular_velocity / s.v_ego) if s.v_ego > 0.01 else 0.
-    
-    # if valid:
-    #   print(f"{s.v_ego = :0.3f}\t{s.steer_angle = :0.3f}\t{s.steer_rate = :0.3f}\t{s.torque_driver = :0.3f}\t{s.torque_eps = :0.3f}")
-    # else:
-    #   print("invalid")
-    #   pass
+      # assert all messages have been received
+      valid = not np.isnan(s.v_ego) and \
+              not np.isnan(s.steer_offset) and \
+              not np.isnan(s.curvature_rate) and \
+              VM is not None and \
+              not np.isnan(lat_angular_velocity)
+      
+      if valid:
+        VM.update_params(max(stiffnessFactor, 0.1), max(steerRatio, 0.1))
+        current_curvature = -VM.calc_curvature(math.radians(s.steer_angle - s.steer_offset), s.v_ego, s.roll)
+        current_curvature_rate = -VM.calc_curvature(math.radians(s.steer_rate), s.v_ego, s.roll)
+        current_curvature_rate_no_roll = -VM.calc_curvature(math.radians(s.steer_rate), s.v_ego, 0.)
+        s.lateral_accel = current_curvature * s.v_ego**2
+        s.lateral_accel_rate = current_curvature_rate * s.v_ego**2
+        s.lateral_accel_rate_no_roll = current_curvature_rate_no_roll * s.v_ego**2
+        s.lateral_accel_device = (lat_angular_velocity / s.v_ego) if s.v_ego > 0.01 else 0.
+#         if s.steer_cmd != 0 and s.torque_eps != 0 and s.torque_driver == 0:
+#           print(f"""{s.v_ego = }
+# {s.steer_angle = }
+# {s.steer_rate = }
+# {s.torque_eps = }
+# {s.torque_driver = }
+# {s.steer_cmd =}
+# {s.steer_offset = }
+# {s.steer_offset_average = }
+# {s.roll = }
+# {s.enabled = }
+# {s.curvature_rate = }
+# {s.lateral_accel = }
+# {s.lateral_accel_device = }
+# """)
+      
+      # if valid:
+      #   print(f"{s.v_ego = :0.3f}\t{s.steer_angle = :0.3f}\t{s.steer_rate = :0.3f}\t{s.torque_driver = :0.3f}\t{s.torque_eps = :0.3f}")
+      # else:
+      #   print("invalid")
+      #   pass
 
-    # assert continuous section
-    # if last_msg_time:
-    #   valid = valid and 0.1 > abs(msg.logMonoTime - last_msg_time) * 1e-9
-    # last_msg_time = msg.logMonoTime
+      # assert continuous section
+      # if last_msg_time:
+      #   valid = valid and 0.1 > abs(msg.logMonoTime - last_msg_time) * 1e-9
+      # last_msg_time = msg.logMonoTime
 
-    if valid:
-      samples.append(deepcopy(s))
-      s.v_ego = np.nan
-  #     section.append(deepcopy(s))
-  #     section_end = msg.logMonoTime
-  #     if not section_start:
-  #       section_start = msg.logMonoTime
-  #   elif section_start:
-  #     # end of valid section
-  #     if (section_end - section_start) * 1e-9 >= MIN_SECTION_SECONDS:
-  #       samples.extend(section)  
-  #       lat_angular_velocity = np.nan
-  #     section = []
-  #     section_start = section_end = 0
+      if valid:
+        samples.append(deepcopy(s))
+        s.v_ego = np.nan
+    #     section.append(deepcopy(s))
+    #     section_end = msg.logMonoTime
+    #     if not section_start:
+    #       section_start = msg.logMonoTime
+    #   elif section_start:
+    #     # end of valid section
+    #     if (section_end - section_start) * 1e-9 >= MIN_SECTION_SECONDS:
+    #       samples.extend(section)  
+    #       lat_angular_velocity = np.nan
+    #     section = []
+    #     section_start = section_end = 0
+    except:
+      continue
+  
+  # print("message types found:\n" + ", ".join(list(type_set)))
 
   # # Terminated during valid section
   # if (section_end - section_start) * 1e-9 > MIN_SECTION_SECONDS:
@@ -248,19 +298,30 @@ def filter(samples):
   
   # Some rlogs use [-300,300] for torque, others [-3,3]
   # Scale both from STEER_MAX to [-1,1]
-  driver = np.max(np.abs(np.array([s.torque_driver for s in samples])))
-  eps = np.max(np.abs(np.array([s.torque_eps for s in samples])))
-  one_over_three = 1. / 3.
-  one_over_three_hundred = 1. / 300.
+  # driver = np.max(np.abs(np.array([s.torque_driver for s in samples])))
+  # eps = np.max(np.abs(np.array([s.torque_eps for s in samples])))
+  # for s in samples:
+  #   if driver > 40 or eps > 40:
+  #     s.torque_driver /= 300
+  #     s.torque_eps /= 300
+  #   else:
+  #     s.torque_driver /= 3
+  #     s.torque_eps /= 3
+  # print(f'max eps torque = {eps:0.4f}')
+  # print(f"max driver torque = {driver:0.4f}")
+  
+  # VW, str cmd units 0.01Nm, 3.0Nm max
   for s in samples:
-    if driver > 10 or eps > 10:
-      s.torque_driver *= one_over_three_hundred
-      s.torque_eps *= one_over_three_hundred
-    else:
-      s.torque_driver *= one_over_three
-      s.torque_eps *= one_over_three
-  print(f'max eps torque = {eps:0.4f}')
-  print(f"max driver torque = {driver:0.4f}")
+    s.torque_driver /= 300
+    s.torque_eps = s.steer_cmd / 300
+  
+  #hyundai
+  # driver torque units 0.01Nm
+  # eps torque units 0.2Nm
+  # max torque 4.0Nm
+  # for s in samples:
+  #   s.torque_driver /= 100 * 4
+  #   s.torque_eps /= 5 * 4
   
   # No steer pressed
   # data = np.array([s.torque_driver for s in samples])
@@ -272,9 +333,9 @@ def filter(samples):
   samples = samples[mask]
 
   # No steer rate: holding steady curve or straight
-  # data = np.array([s.curvature_rate for s in samples])
-  # mask = np.abs(data) < 0.003 # determined from plotjuggler
-  # samples = samples[mask]
+  data = np.array([s.curvature_rate for s in samples])
+  mask = np.abs(data) < 0.003 # determined from plotjuggler
+  samples = samples[mask]
 
   # No steer rate: holding steady curve or straight
   # data = np.array([s.steer_rate for s in samples])
@@ -288,25 +349,25 @@ def filter(samples):
   samples = samples[mask]
 
   # Not saturated
-  # data = np.array([s.torque_eps for s in samples])
-  # mask = np.abs(data) < 3.0
-  # samples = samples[mask]
+  data = np.array([s.torque_eps for s in samples])
+  mask = np.abs(data) < 4.0
+  samples = samples[mask]
 
   return [CleanSample(
     speed = s.v_ego,
-    angle = -s.lateral_accel, #s.steer_angle - s.steer_offset,
+    angle = -s.lateral_accel if not IS_ANGLE_PLOT else s.steer_angle - s.steer_offset,
     steer = (s.torque_driver + s.torque_eps)
   ) for s in samples]
 
 def load_cache(path):
-  print(f'Loading {path}')
+  # print(f'Loading {path}')
   try:
     with open(path,'rb') as file:
       return pickle.load(file)
   except Exception as e:
     print(e)
 
-def load(path, route=None):
+def load(path, route=None, preprocess=False, dongleid=False):
   global MULTI_FILE
   ext = '.lat'
   latpath = None
@@ -348,7 +409,8 @@ def load(path, route=None):
       data = []
       routes = set()
       latroutes = set()
-      for filename in os.listdir(path):
+      steer_offsets = []
+      for filename in tqdm(os.listdir(path)):
         if filename.endswith(ext):
           latpath = os.path.join(path, filename)
           latroutes.add(filename.replace(ext,''))
@@ -364,20 +426,36 @@ def load(path, route=None):
             try:
               data.extend(filter(tmpdata))
               old_num_points += len(tmpdata)
+              if not PREPROCESS_ONLY:
+                steer_offsets.extend(s.steer_offset for s in tmpdata)
             except Exception as e:
               print(f"failed to load lat file: {latpath}\n{e}")
       if PREPROCESS_ONLY:
-        if "/data/media/0/realdata" in path:
+        if "realdata" in path or (preprocess and dongleid):
           MULTI_FILE = True
           # we're on device going through rlogs
-          with open("/data/params/d/DongleId","r") as df:
-            dongle_id = df.read()
+          if preprocess and dongleid:
+            dongle_id = dongleid
+            rlog_path = "/Users/haiiro/Downloads/latfiles_batch"
+            rlog_log_path = "/Users/haiiro/Downloads/latfiles.txt" # prevents rerunning rlogs
+          else:
+            with open("/data/params/d/DongleId","r") as df:
+              dongle_id = df.read()
+            rlog_path = "/data/media/0/latfiles"
+            rlog_log_path = "/data/media/0/latfiles.txt" # prevents rerunning rlogs
           print(f"{dongle_id = }")
-          rlog_path = "/data/media/0/latfiles"
           if not os.path.exists(rlog_path):
             os.mkdir(rlog_path)
           latsegs = set([f for f in os.listdir(rlog_path) if ".lat" in f])
+          if os.path.exists(rlog_log_path): 
+            # read in lat files saved by running `ls -1 /data/media/0/latfiles >> /data/media/0/latfiles.txt`
+            with open(rlog_log_path, 'r') as rll:
+              latsegs = latsegs | set(list(rll.read().split('\n')))
+          with open(rlog_log_path, 'w') as rll:
+            for ls in sorted(list(latsegs)):
+              rll.write(f"\n{ls}")
           filenames = sorted([filename for filename in os.listdir(path) if len(filename.split('--')) == 3 and f"{dongle_id}|{filename}.lat" not in latsegs])
+          print(f"Preparing fit data from {len(filenames)} rlog segments")
           for filename in tqdm(filenames, desc="Preparing fit data from rlogs"):
             if len(filename.split('--')) == 3 and f"{dongle_id}|{filename}.lat" not in latsegs:
               with tempfile.TemporaryDirectory() as d:
@@ -386,18 +464,22 @@ def load(path, route=None):
                 elif os.path.exists(os.path.join(path,filename,"rlog.bz2")):
                   tmpbz2 = os.path.join(d,f"{dongle_id}_{filename}--rlog.bz2")
                   shutil.copy(os.path.join(path,filename,"rlog.bz2"),tmpbz2)
+                
+                seg_num = f"{dongle_id}|{filename}".split('--')[2]
                 try:
                   route='--'.join(f"{dongle_id}|{filename}".split('--')[:2])
                   r = Route(route, data_dir=d)
                   lr = MultiLogIterator([lp for lp in r.log_paths() if lp])
                   data1 = collect(lr)
                   if len(data1):
-                    seg_num = f"{dongle_id}|{filename}".split('--')[2]
                     with open(os.path.join(rlog_path, f"{route}--{seg_num}.lat"), 'wb') as f:
                       pickle.dump(data1, f)
                 except Exception as e:
-                    print(f"Failed to load segment file {filename}: {e}")
-                    continue
+                  print(f"Failed to load segment file {filename}: {e}")
+                  continue
+                finally:
+                  with open(rlog_log_path, 'a') as rll:
+                    rll.write(f"\n{route}--{seg_num}.lat")
         else:
           # first make per-segment .lat files
           # get previously completed segments
@@ -429,6 +511,7 @@ def load(path, route=None):
               else:
                 os.remove(os.path.join(path,filename))
       else:
+        print(f"{describe(steer_offsets) = }")
         for filename in os.listdir(path):
           if filename.endswith('rlog.bz2'):
             route='--'.join(filename.split('--')[:2]).replace('_','|')
@@ -474,12 +557,32 @@ def load(path, route=None):
 
 
 if __name__ == '__main__':
+  global IS_ANGLE_PLOT
   parser = argparse.ArgumentParser()
   parser.add_argument('--path')
   parser.add_argument('--route')
+  parser.add_argument('--preprocess', action='store_true')
+  parser.add_argument('--dongleid', type=str)
   args = parser.parse_args()
   
 
+  # IS_ANGLE_PLOT = True
+  # regfile = 'regularized'
+  # if REGULARIZED and os.path.isfile(regfile):
+  #   print("Opening regularized data")
+  #   with open(regfile,'rb') as file:
+  #     speed, angle, steer = pickle.load(file)
+  # else:
+  #   print("Loading new data")
+  #   speed, angle, steer = load(args.path, args.route, args.preprocess, args.dongleid)
+  #   speed, angle, steer = regularize(speed, angle, steer)
+  #   with open(regfile, 'wb') as f:
+  #     pickle.dump([speed, angle, steer], f)
+
+  # fit(speed, angle, steer, IS_ANGLE_PLOT)
+  # plot(speed, angle, steer)
+  
+  IS_ANGLE_PLOT = False
   regfile = 'regularized'
   if REGULARIZED and os.path.isfile(regfile):
     print("Opening regularized data")
@@ -487,10 +590,10 @@ if __name__ == '__main__':
       speed, angle, steer = pickle.load(file)
   else:
     print("Loading new data")
-    speed, angle, steer = load(args.path, args.route)
+    speed, angle, steer = load(args.path, args.route, args.preprocess, args.dongleid)
     speed, angle, steer = regularize(speed, angle, steer)
     with open(regfile, 'wb') as f:
       pickle.dump([speed, angle, steer], f)
 
-  fit(speed, angle, steer)
+  fit(speed, angle, steer, IS_ANGLE_PLOT)
   plot(speed, angle, steer)

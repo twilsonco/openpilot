@@ -1,7 +1,8 @@
 import numpy as np
 
-PREPROCESS_ONLY = True
+PREPROCESS_ONLY = False
 REGULARIZED = False
+IS_ANGLE_PLOT = True
 SPEED_PLOTS = True # For all speeds at a fixed angle, plot steer
 ANGLE_PLOTS = True # For all angles at a fixed speed, plot steer
 FIT_EACH_PLOT = False # Print curve fit for each plot
@@ -24,7 +25,7 @@ MAX_COMMAND = 300 # TODO: autodetect from fingerprint
 SECTION_DELAY = 5. # TODO
 MIN_SECTION_SECONDS = 1.0
 
-SPEED_MIN = 8
+SPEED_MIN = 10
 SPEED_MAX = 90
 STEER_PRESSED_MIN = 0.1
 STEER_RATE_MIN = 0.3
