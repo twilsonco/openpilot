@@ -139,6 +139,7 @@ def lag(x, y):
 class Sample():
   enabled: bool = False
   v_ego: float = np.nan
+  a_ego: float = np.nan
   steer_angle: float = np.nan
   steer_rate: float = np.nan
   steer_offset: float = np.nan
@@ -195,6 +196,7 @@ def collect(lr):
       # type_set.add(msg.which())
       if msg.which() == 'carState':
         s.v_ego  = msg.carState.vEgo
+        s.a_ego  = msg.carState.vEgo
         s.steer_angle = msg.carState.steeringAngleDeg
         s.steer_rate = msg.carState.steeringRateDeg
         s.torque_eps = msg.carState.steeringTorqueEps
