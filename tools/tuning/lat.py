@@ -18,6 +18,7 @@ import numpy as np
 # import seaborn as sns
 from tqdm import tqdm  # type: ignore
 import re
+from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 
 from tools.tuning.lat_settings import *
 if not PREPROCESS_ONLY:
@@ -152,6 +153,7 @@ class Sample():
   lateral_accel_rate: float = np.nan
   lateral_accel_rate_no_roll: float = np.nan
   roll: float = np.nan
+  curvature_device: float = np.nan
   lateral_accel_device: float = np.nan
   steer_cmd: float = np.nan
   desired_steer_angle: float = np.nan
@@ -209,7 +211,7 @@ def collect(lr):
         s.steer_cmd = msg.carControl.actuatorsOutput.steer
         continue
       elif msg.which() == 'liveLocationKalman':
-        lat_angular_velocity = msg.liveLocationKalman.angularVelocityCalibrated.value[2]
+        yaw_rate = msg.liveLocationKalman.angularVelocityCalibrated.value[2]
       elif msg.which() == 'lateralPlan':
         # logs before 2021-05 don't have this field
         try:
@@ -230,7 +232,7 @@ def collect(lr):
               not np.isnan(s.desired_curvature_rate) and \
               not np.isnan(s.desired_curvature) and \
               VM is not None and \
-              not np.isnan(lat_angular_velocity)
+              not np.isnan(yaw_rate)
       
       if valid:
         VM.update_params(max(stiffnessFactor, 0.1), max(steerRatio, 0.1))
@@ -240,7 +242,8 @@ def collect(lr):
         s.lateral_accel = current_curvature * s.v_ego**2
         s.lateral_accel_rate = current_curvature_rate * s.v_ego**2
         s.lateral_accel_rate_no_roll = current_curvature_rate_no_roll * s.v_ego**2
-        s.lateral_accel_device = (lat_angular_velocity / s.v_ego) if s.v_ego > 0.01 else 0.
+        s.curvature_device = (yaw_rate / s.v_ego) if s.v_ego > 0.01 else 0.
+        s.lateral_accel_device = yaw_rate * s.v_ego  - (np.sin(s.roll) * ACCELERATION_DUE_TO_GRAVITY)
         s.desired_steer_angle = math.degrees(VM.get_steer_from_curvature(-s.desired_curvature, s.v_ego, s.roll))
         s.desired_steer_rate = math.degrees(VM.get_steer_from_curvature(-s.desired_curvature_rate, s.v_ego, 0))
 #         if s.steer_cmd != 0 and s.torque_eps != 0 and s.torque_driver == 0:
