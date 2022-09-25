@@ -17,7 +17,7 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.hardware import TICI
 
 LEAD_PATH_YREL_MAX_BP = [0.] # [m] distance to lead
-LEAD_PATH_YREL_MAX_V = [1.5] # [m] constant tolerance
+LEAD_PATH_YREL_MAX_V = [1.2] # [m] constant tolerance
 LEAD_PATH_DREL_MIN = 120 # [m] only care about far away leads
 MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow use.
 
