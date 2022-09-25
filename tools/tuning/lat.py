@@ -146,14 +146,16 @@ class Sample():
   torque_driver: float = np.nan # -1,1
   # curvature_plan: float = np.nan # lag
   # curvature_true: float = np.nan # lag
-  curvature_rate: float = np.nan
+  desired_curvature: float = np.nan
+  desired_curvature_rate: float = np.nan
   lateral_accel: float = np.nan
   lateral_accel_rate: float = np.nan
   lateral_accel_rate_no_roll: float = np.nan
   roll: float = np.nan
   lateral_accel_device: float = np.nan
   steer_cmd: float = np.nan
-  
+  desired_steer_angle: float = np.nan
+  desired_steer_rate: float = np.nan
   
 
 class CleanSample(NamedTuple):
@@ -211,9 +213,10 @@ def collect(lr):
       elif msg.which() == 'lateralPlan':
         # logs before 2021-05 don't have this field
         try:
-          s.curvature_rate = msg.lateralPlan.curvatureRates[0]
+          s.desired_curvature_rate = msg.lateralPlan.curvatureRates[0]
+          s.desired_curvature = msg.lateralPlan.curvatures[0]
         except:
-          s.curvature_rate = 0
+          s.desired_curvature_rate = 0
         continue
       elif VM is None and msg.which() == 'carParams':
         CP = msg.carParams
@@ -224,7 +227,8 @@ def collect(lr):
       # assert all messages have been received
       valid = not np.isnan(s.v_ego) and \
               not np.isnan(s.steer_offset) and \
-              not np.isnan(s.curvature_rate) and \
+              not np.isnan(s.desired_curvature_rate) and \
+              not np.isnan(s.desired_curvature) and \
               VM is not None and \
               not np.isnan(lat_angular_velocity)
       
@@ -237,6 +241,8 @@ def collect(lr):
         s.lateral_accel_rate = current_curvature_rate * s.v_ego**2
         s.lateral_accel_rate_no_roll = current_curvature_rate_no_roll * s.v_ego**2
         s.lateral_accel_device = (lat_angular_velocity / s.v_ego) if s.v_ego > 0.01 else 0.
+        s.desired_steer_angle = math.degrees(VM.get_steer_from_curvature(-s.desired_curvature, s.v_ego, s.roll))
+        s.desired_steer_rate = math.degrees(VM.get_steer_from_curvature(-s.desired_curvature_rate, s.v_ego, 0))
 #         if s.steer_cmd != 0 and s.torque_eps != 0 and s.torque_driver == 0:
 #           print(f"""{s.v_ego = }
 # {s.steer_angle = }
@@ -248,7 +254,7 @@ def collect(lr):
 # {s.steer_offset_average = }
 # {s.roll = }
 # {s.enabled = }
-# {s.curvature_rate = }
+# {s.desired_curvature_rate = }
 # {s.lateral_accel = }
 # {s.lateral_accel_device = }
 # """)
@@ -333,7 +339,7 @@ def filter(samples):
   samples = samples[mask]
 
   # No steer rate: holding steady curve or straight
-  data = np.array([s.curvature_rate for s in samples])
+  data = np.array([s.desired_curvature_rate for s in samples])
   mask = np.abs(data) < 0.003 # determined from plotjuggler
   samples = samples[mask]
 
