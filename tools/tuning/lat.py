@@ -196,7 +196,7 @@ def collect(lr):
       # type_set.add(msg.which())
       if msg.which() == 'carState':
         s.v_ego  = msg.carState.vEgo
-        s.a_ego  = msg.carState.vEgo
+        s.a_ego  = msg.carState.aEgo
         s.steer_angle = msg.carState.steeringAngleDeg
         s.steer_rate = msg.carState.steeringRateDeg
         s.torque_eps = msg.carState.steeringTorqueEps
