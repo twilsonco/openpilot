@@ -207,11 +207,13 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
       Params().putBool("AutoLanePositionActive", false);
       QUIState::ui_state.scene.lane_pos = 0;
       Params().put("LanePosition", "0", 1);
+      QUIState::ui_state.scene.lane_pos_set_t = 0;
     }
     else{
       if (QUIState::ui_state.scene.lane_pos == 1){
         if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.lane_pos_set_t < 2.){
           QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_long;
+          QUIState::ui_state.scene.lane_pos_set_t = 0;
         }
         else{
           QUIState::ui_state.scene.lane_pos = 0;
@@ -224,6 +226,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
         Params().putBool("AutoLanePositionActive", true);
         QUIState::ui_state.scene.lane_pos = 0;
         Params().put("LanePosition", "0", 1);
+        QUIState::ui_state.scene.lane_pos_set_t = 0;
       }
       else{
         QUIState::ui_state.scene.lane_pos = 1;
@@ -241,11 +244,13 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
       Params().putBool("AutoLanePositionActive", false);
       QUIState::ui_state.scene.lane_pos = 0;
       Params().put("LanePosition", "0", 1);
+      QUIState::ui_state.scene.lane_pos_set_t = 0;
     }
     else{
       if (QUIState::ui_state.scene.lane_pos == -1){
         if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.lane_pos_set_t < 2.){
           QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_long;
+          QUIState::ui_state.scene.lane_pos_set_t = 0;
         }
         else{
           QUIState::ui_state.scene.lane_pos = 0;
@@ -258,6 +263,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
         Params().putBool("AutoLanePositionActive", true);
         QUIState::ui_state.scene.lane_pos = 0;
         Params().put("LanePosition", "0", 1);
+        QUIState::ui_state.scene.lane_pos_set_t = 0;
       }
       else{
         QUIState::ui_state.scene.lane_pos = -1;
