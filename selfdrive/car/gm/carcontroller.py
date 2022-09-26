@@ -34,7 +34,7 @@ ONE_PEDAL_MODE_DECEL_V = [
 ] # light, medium, and hard one-pedal braking
 ONE_PEDAL_MIN_SPEED = 2.5
 ONE_PEDAL_DECEL_RATE_FACTOR = 0.9 * DT_CTRL * 4 # multiplied by one pedal decel to determine rate
-ONE_PEDAL_DECEL_RATE_K = 0.75 # factor weighting the current one pedal accel over the old
+ONE_PEDAL_DECEL_RATE_K = 0.9 # factor weighting the current one pedal accel over the old
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
