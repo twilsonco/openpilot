@@ -29,7 +29,7 @@ ONE_PEDAL_MODE_DECEL_BP = [
   ] # [mph to meters]
 ONE_PEDAL_MODE_DECEL_V = [
   [-1.0, -1.1],
-  [-1.3, -1.6, -1.8],
+  [-1.3, -1.7, -1.8],
   [-1.8, -2.2, -2.5]
 ] # light, medium, and hard one-pedal braking
 ONE_PEDAL_MIN_SPEED = 2.5
