@@ -1029,6 +1029,19 @@ static void ui_draw_measures(UIState *s){
             }
             snprintf(unit, sizeof(unit), "hp");
             break;}
+
+          case UIMeasure::DRAG_LOSSES:
+            {
+            snprintf(name, sizeof(name), "DRAG LOSS");
+            if (scene.car_state.getDrivePower() > 0.){
+              float v = scene.car_state.getDragPower() / scene.car_state.getDrivePower() * 100.;
+              v = (v > 100. ? 100. : v);
+              snprintf(val, sizeof(val), "%.0f%%", v);
+            }
+            else{
+              snprintf(val, sizeof(val), "--");
+            }
+            break;}
           
           case UIMeasure::ACCEL_FORCE:
             {

@@ -168,6 +168,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   DRAG_FORCE,
   DRAG_POWER,
   DRAG_POWER_HP,
+  DRAG_LOSSES,
   ACCEL_FORCE,
   ACCEL_POWER,
   ACCEL_POWER_HP,
