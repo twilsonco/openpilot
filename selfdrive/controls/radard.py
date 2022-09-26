@@ -74,16 +74,15 @@ def match_model_path_to_cluster(v_ego, md, clusters):
   # 1) closer than the farthest model predicted distance
   # 2) at least near the edge of regular op lead detectability
   # 3) close enough to the predicted path at the cluster distance
-  close_path_clusters = [c for c in clusters if \
+  close_path_clusters = [[c,abs(-c.yRel - interp(c.dRel, md.position.x, md.position.y))] for c in clusters if \
       c.dRel <= md.position.x[-1] and \
-      c.dRel >= LEAD_PATH_DREL_MIN and \
-      abs(-c.yRel - interp(c.dRel, md.position.x, md.position.y)) \
-        <= interp(c.dRel, LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V)]
+      c.dRel >= LEAD_PATH_DREL_MIN]
+  close_path_clusters = [c for c in close_path_clusters if c[1] <= interp(c[0].dRel, LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V)]
   if len(close_path_clusters) == 0:
     return None
 
-  # only care about the closest lead on our path
-  cluster = min(close_path_clusters, key=lambda x: x.dRel)
+  # take the lead that's closest to the "middle"
+  cluster = min(close_path_clusters, key=lambda c: c[1])[0]
 
   # if no 'sane' match is found return None
   # model path gets shorter when you brake, so can't use this for very slow leads
@@ -138,20 +137,18 @@ def match_model_lanelines_to_cluster(v_ego, md, lane_width, clusters):
   # take clusters that are
   # 1) closer than the farthest model predicted distance
   # 2) at least near the edge of regular op lead detectability
-  # 3) close enough to the predicted path at the cluster distance
-  close_path_clusters = [c for c in clusters if \
+  # 3) close enough to the predicted path at the cluster distance  
+  close_path_clusters = [[c,abs(-c.yRel - interp(c.dRel, ll_x, c_y.tolist()))] for c in clusters if \
       c.dRel <= ll_x[-1] and \
-      c.dRel >= LEAD_PATH_DREL_MIN and \
-      abs(-c.yRel - interp(c.dRel, ll_x, c_y.tolist())) \
-        <= interp(c.dRel, LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V)]
+      c.dRel >= LEAD_PATH_DREL_MIN]
+  close_path_clusters = [c for c in close_path_clusters if c[1] <= interp(c[0].dRel, LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V)]
   if len(close_path_clusters) == 0:
     return None
 
-  # only care about the closest lead on our path
-  cluster = min(close_path_clusters, key=lambda x: x.dRel)
+  # take the lead that's closest to the "middle"
+  cluster = min(close_path_clusters, key=lambda c: c[1])[0]
 
   # if no 'sane' match is found return None
-  # model path gets shorter when you brake, so can't use this for very slow leads
   vel_sane = (v_ego + cluster.vRel > -0.5)
   if vel_sane:
     return cluster
