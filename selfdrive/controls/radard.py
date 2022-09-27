@@ -18,6 +18,7 @@ from selfdrive.hardware import TICI
 
 LEAD_PATH_YREL_MAX_BP = [0.] # [m] distance to lead
 LEAD_PATH_YREL_MAX_V = [1.2] # [m] constant tolerance
+LEAD_PATH_YREL_LOW_TOL = 0.5 # if the lead closest to the "middle" is farther away than one that is both closer and within this distance of "middle", use that lead
 LEAD_PATH_DREL_MIN = 120 # [m] only care about far away leads
 MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow use.
 
@@ -77,12 +78,19 @@ def match_model_path_to_cluster(v_ego, md, clusters):
   close_path_clusters = [[c,abs(-c.yRel - interp(c.dRel, md.position.x, md.position.y))] for c in clusters if \
       c.dRel <= md.position.x[-1] and \
       c.dRel >= LEAD_PATH_DREL_MIN]
-  close_path_clusters = [c for c in close_path_clusters if c[1] <= interp(c[0].dRel, LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V)]
+  close_path_clusters = sorted([c for c in close_path_clusters if c[1] <= interp(c[0].dRel, LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V)], key=lambda c:c[1])
   if len(close_path_clusters) == 0:
     return None
 
   # take the lead that's closest to the "middle"
-  cluster = min(close_path_clusters, key=lambda c: c[1])[0]
+  cluster = close_path_clusters[0]
+  for c in close_path_clusters[1:]:
+    if c[1] <= LEAD_PATH_YREL_LOW_TOL:
+      if c[0].dRel < cluster[0].dRel:
+        cluster = c
+    else:
+      break
+  cluster = cluster[0]
 
   # if no 'sane' match is found return None
   # model path gets shorter when you brake, so can't use this for very slow leads
@@ -141,12 +149,19 @@ def match_model_lanelines_to_cluster(v_ego, md, lane_width, clusters):
   close_path_clusters = [[c,abs(-c.yRel - interp(c.dRel, ll_x, c_y.tolist()))] for c in clusters if \
       c.dRel <= ll_x[-1] and \
       c.dRel >= LEAD_PATH_DREL_MIN]
-  close_path_clusters = [c for c in close_path_clusters if c[1] <= interp(c[0].dRel, LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V)]
+  close_path_clusters = sorted([c for c in close_path_clusters if c[1] <= interp(c[0].dRel, LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V)], key=lambda c:c[1])
   if len(close_path_clusters) == 0:
     return None
 
   # take the lead that's closest to the "middle"
-  cluster = min(close_path_clusters, key=lambda c: c[1])[0]
+  cluster = close_path_clusters[0]
+  for c in close_path_clusters[1:]:
+    if c[1] <= LEAD_PATH_YREL_LOW_TOL:
+      if c[0].dRel < cluster[0].dRel:
+        cluster = c
+    else:
+      break
+  cluster = cluster[0]
 
   # if no 'sane' match is found return None
   vel_sane = (v_ego + cluster.vRel > -0.5)
