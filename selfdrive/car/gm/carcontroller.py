@@ -112,9 +112,9 @@ class CarController():
         brake_accel = k * actuators.accelPitchCompensated + (1. - k) * actuators.accel
         if CS.one_pedal_mode_active:
           one_pedal_speed = max(CS.vEgo, ONE_PEDAL_MIN_SPEED)
-          threshold_accel = self.params.update_gas_brake_threshold(one_pedal_speed)
+          threshold_accel = self.params.update_gas_brake_threshold(one_pedal_speed, CS.engineRPM > 0)
         else:
-          threshold_accel = self.params.update_gas_brake_threshold(CS.out.vEgo)
+          threshold_accel = self.params.update_gas_brake_threshold(CS.out.vEgo, CS.engineRPM > 0)
         self.apply_gas = interp(actuators.accelPitchCompensated, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
         no_pitch_apply_gas = interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
         self.apply_brake = interp(brake_accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
