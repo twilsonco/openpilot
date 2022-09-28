@@ -225,12 +225,12 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
 
   float sz = std::clamp((25 * 30) / (d_rel * 0.33333f + 30), 15.0f, 30.0f) * 2.35;
   x = std::clamp(x, 0.f, s->fb_w - sz * 0.5f);
-  y = std::fmin(s->fb_h - sz * .6, y);
+  y = std::fmin(s->fb_h - sz * .6f, y);
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
   if (is_voacc){
-    const int r = 30;
+    const int r = 24;
     nvgBeginPath(s->vg);
-    nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
+    nvgRoundedRect(s->vg, x - r, y + sz/2 - r, 2 * r, 2 * r, r);
     nvgFillColor(s->vg, COLOR_GRACE_BLUE);
     nvgFill(s->vg);
   }
