@@ -1033,10 +1033,25 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::DRAG_LOSSES:
             {
             snprintf(name, sizeof(name), "DRAG LOSS");
-            if (scene.car_state.getDrivePower() > 0.){
+            if (scene.car_state.getDrivePower() != 0.){
               float v = scene.car_state.getDragPower() / scene.car_state.getDrivePower() * 100.;
-              v = (v > 100. ? 100. : v);
-              snprintf(val, sizeof(val), "%.0f%%", v);
+              if (v >= 0. && v <= 100.){
+                snprintf(val, sizeof(val), "%.0f%%", v);
+              }
+              else{
+                float v = scene.car_state.getDragPower();
+                v /= 1e3;
+                if (fabs(v) > 100.){
+                  snprintf(val, sizeof(val), "%.0f", v);
+                }
+                else if (fabs(v) > 10.){
+                  snprintf(val, sizeof(val), "%.1f", v);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.2f", v);
+                }
+                snprintf(unit, sizeof(unit), "kW");
+              }
             }
             else{
               snprintf(val, sizeof(val), "--");
