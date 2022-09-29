@@ -1,3 +1,15 @@
+Version tw-0.8.12-8_twd (2022-09-29)
+========================
+ * IMPROVED: one-pedal mode: smoother everything
+ * IMPROVED: long range leads: 
+  * smooth distance and velocity data for long range leads in proportion to the distance of the lead. So farther leads will be smoothed more to overcome the increased noise in the data at long distances, while the smoothing continuously decreases as the lead approaches, so that there is no added time lag to the data by the time they're within normal distance
+  * improve logic used for qualifying lead, now takes the long range lead that's closest to the "middle" of your path (or center of the lane), but will take a closer lead that is farther from the middle so long as they're within 0.5m of the middle.
+  * blue dot drawing correctly on lead indicator
+ * NEW: UI metric: drag losses (shows percent of power being lost to drag when it makes sense, otherwise it shows kW of drag losses)
+ * IMPROVED: drag, accel, and drive power metrics now come in W and hp units
+ * IMPROVED: instantaneous EV consumption metric will switch to MW when applicable (how fun)
+
+
 Version tw-0.8.12-7_twd (2022-09-15)
 ========================
  * NEW: 7 UI metrics: Drag (resistance) force, drag power, acceleration force (F=ma), acceleration power, drive power (drag + accel + losses), ICE power (for volt when ice is on; untested!), EV drivetrain (plus other stuff) efficiency (power from battery vs drive power)
