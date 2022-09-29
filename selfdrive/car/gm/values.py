@@ -12,7 +12,7 @@ class CarControllerParams():
     # self.STEER_DELTA_UP = 14          # ~1s time to peak torque (255/50hz/1s)
     # self.STEER_DELTA_DOWN = 34       # ~0.4s from peak torque to zero
     self.STEER_DELTA_UP_BP = [10., 20.] # [m/s]
-    self.STEER_DELTA_UP_V = [15., 7.] # [steer command]
+    self.STEER_DELTA_UP_V = [20., 7.] # [steer command]
     self.STEER_DELTA_DOWN_BP = [10., 20.] # [m/s]
     self.STEER_DELTA_DOWN_V = [32., 17.] # [steer command]
     self.MIN_STEER_SPEED = 3.
@@ -50,7 +50,7 @@ class CarControllerParams():
     self.future_curvature = 0.
     self.MIN_STEER_DELTA_UP = min(self.STEER_DELTA_UP_V)
     self.MIN_STEER_DELTA_DOWN = min(self.STEER_DELTA_DOWN_V)
-    self.CURVATURE_STEER_DELTA_FACTOR_BP = [0.002, 0.015] # [rad/meter]
+    self.CURVATURE_STEER_DELTA_FACTOR_BP = [0.001, 0.015] # [rad/meter]
     self.CURVATURE_STEER_DELTA_FACTOR_V = [0., 1.] # factor of higher torque rate limit used. when it's 1, the higher limit is used, or the stock value when 0
 
   @property
@@ -68,10 +68,11 @@ class CarControllerParams():
     # determined by letting Volt regen to a stop in L gear from 75mph
   EV_GAS_BRAKE_THRESHOLD_BP = [1.2, 1.29, 1.52, 1.55, 1.6, 1.7, 1.8, 2.0, 2.2, 2.5, 5.52, 9.6, 20.5, 23.5, 35.0] # [m/s]
   EV_GAS_BRAKE_THRESHOLD_V = [0.13, 0.0, -0.14, -0.16, -0.18, -0.215, -0.255, -0.32, -0.41, -0.5, -0.72, -0.895, -1.125, -1.145, -1.16] # [m/s^s]
+  EV_GAS_BRAKE_THRESHOLD_ICE_V = [i/2 for i in [0.13, 0.0, -0.14, -0.16, -0.18, -0.215, -0.255, -0.32, -0.41, -0.5, -0.72, -0.895, -1.125, -1.145, -1.16]] # [m/s^s] less volt regen braking is available when ice is on
   EV_GAS_BRAKE_THRESHOLD_MIN_V = min(EV_GAS_BRAKE_THRESHOLD_V)
   
-  def update_gas_brake_threshold(self, v_ego):
-    gas_brake_threshold = interp(v_ego, self.EV_GAS_BRAKE_THRESHOLD_BP, self.EV_GAS_BRAKE_THRESHOLD_V)
+  def update_gas_brake_threshold(self, v_ego, ice_on):
+    gas_brake_threshold = interp(v_ego, self.EV_GAS_BRAKE_THRESHOLD_BP, self.EV_GAS_BRAKE_THRESHOLD_ICE_V if ice_on else self.EV_GAS_BRAKE_THRESHOLD_V)
     max_brake = int(self.MAX_BRAKE + 68 * (min(0,gas_brake_threshold) - self.EV_GAS_BRAKE_THRESHOLD_MIN_V)) # results in max brake command of around 418, based on a brake cmd = 350 test from 55mph to 0
     self.GAS_LOOKUP_BP = [gas_brake_threshold, 0., self.ACCEL_MAX]
     self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, gas_brake_threshold]

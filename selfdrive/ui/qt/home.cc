@@ -200,18 +200,30 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     return;
   }
   
-  // lane position buttons
+  // lane position buttons (0., 1., -1. = center, left, right)
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.lane_pos_enabled && QUIState::ui_state.scene.lane_pos_left_touch_rect.ptInRect(e->x(), e->y())){
     if (QUIState::ui_state.scene.auto_lane_pos_active){
       QUIState::ui_state.scene.auto_lane_pos_active = false;
       Params().putBool("AutoLanePositionActive", false);
-      QUIState::ui_state.scene.lane_pos = 0;
-      Params().put("LanePosition", "0", 1);
+      if (QUIState::ui_state.scene.lane_pos == -1){
+        // user pressed left button when auto mode was on right position, so enable left position
+        QUIState::ui_state.scene.lane_pos = 1;
+        QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_short;
+        QUIState::ui_state.scene.lane_pos_set_t = QUIState::ui_state.scene.lastTime;
+        QUIState::ui_state.scene.lane_pos_dist_since_set = 0.;
+        Params().put("LanePosition", "1", 1);
+      }
+      else{
+        QUIState::ui_state.scene.lane_pos = 0;
+        Params().put("LanePosition", "0", 1);
+        QUIState::ui_state.scene.lane_pos_set_t = 0;
+      }
     }
     else{
       if (QUIState::ui_state.scene.lane_pos == 1){
         if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.lane_pos_set_t < 2.){
           QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_long;
+          QUIState::ui_state.scene.lane_pos_set_t = 0;
         }
         else{
           QUIState::ui_state.scene.lane_pos = 0;
@@ -224,6 +236,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
         Params().putBool("AutoLanePositionActive", true);
         QUIState::ui_state.scene.lane_pos = 0;
         Params().put("LanePosition", "0", 1);
+        QUIState::ui_state.scene.lane_pos_set_t = 0;
       }
       else{
         QUIState::ui_state.scene.lane_pos = 1;
@@ -232,20 +245,32 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
         QUIState::ui_state.scene.lane_pos_dist_since_set = 0.;
         Params().put("LanePosition", "1", 1);
       }
-      return;
     }
+    return;
   }
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.lane_pos_enabled && QUIState::ui_state.scene.lane_pos_right_touch_rect.ptInRect(e->x(), e->y())){
     if (QUIState::ui_state.scene.auto_lane_pos_active){
       QUIState::ui_state.scene.auto_lane_pos_active = false;
       Params().putBool("AutoLanePositionActive", false);
-      QUIState::ui_state.scene.lane_pos = 0;
-      Params().put("LanePosition", "0", 1);
+      if (QUIState::ui_state.scene.lane_pos == 1){
+        // user pressed left button when auto mode was on right position, so enable left position
+        QUIState::ui_state.scene.lane_pos = -1;
+        QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_short;
+        QUIState::ui_state.scene.lane_pos_set_t = QUIState::ui_state.scene.lastTime;
+        QUIState::ui_state.scene.lane_pos_dist_since_set = 0.;
+        Params().put("LanePosition", "-1", 2);
+      }
+      else{
+        QUIState::ui_state.scene.lane_pos = 0;
+        Params().put("LanePosition", "0", 1);
+        QUIState::ui_state.scene.lane_pos_set_t = 0;
+      }
     }
     else{
       if (QUIState::ui_state.scene.lane_pos == -1){
         if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.lane_pos_set_t < 2.){
           QUIState::ui_state.scene.lane_pos_timeout_dist = QUIState::ui_state.scene.lane_pos_dist_long;
+          QUIState::ui_state.scene.lane_pos_set_t = 0;
         }
         else{
           QUIState::ui_state.scene.lane_pos = 0;
@@ -258,6 +283,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
         Params().putBool("AutoLanePositionActive", true);
         QUIState::ui_state.scene.lane_pos = 0;
         Params().put("LanePosition", "0", 1);
+        QUIState::ui_state.scene.lane_pos_set_t = 0;
       }
       else{
         QUIState::ui_state.scene.lane_pos = -1;
@@ -266,8 +292,8 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
         QUIState::ui_state.scene.lane_pos_dist_since_set = 0.;
         Params().put("LanePosition", "-1", 2);
       }
-      return;
     }
+    return;
   }
 
   // if metrics are in edit mode, then don't switch to map or sidebar

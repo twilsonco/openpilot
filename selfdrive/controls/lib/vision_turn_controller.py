@@ -48,7 +48,7 @@ _MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow curvature prediction 
 # This will be a default dict based on road type, allowing for easy adjustment of vision braking based on road type
 # See the list of "highway" types here https://wiki.openstreetmap.org/wiki/Key:highway
 # Also see selfdrive/mapd/lib/WayRelation.py for a list of ranks
-_SPEED_SCALE_V = [1.04, 1.] # [unitless] scales the velocity value used to calculate lateral acceleration
+_SPEED_SCALE_V = [1.03, 1.] # [unitless] scales the velocity value used to calculate lateral acceleration
 _SPEED_SCALE_BP = [8., 25.] # [meters per second] speeds corresponding to scaling values, so you can alter low/high speed behavior for each road type
 def default_speed_scale():
   return [_SPEED_SCALE_BP, _SPEED_SCALE_V]

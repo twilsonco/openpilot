@@ -225,11 +225,12 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
 
   float sz = std::clamp((25 * 30) / (d_rel * 0.33333f + 30), 15.0f, 30.0f) * 2.35;
   x = std::clamp(x, 0.f, s->fb_w - sz * 0.5f);
-  y = std::fmin(s->fb_h - sz * .6, y);
+  y = std::fmin(s->fb_h - sz * .6f, y);
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
   if (is_voacc){
-    const int r = 30;
-    nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
+    const int r = 24;
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, x - r, y + sz/2 - r, 2 * r, 2 * r, r);
     nvgFillColor(s->vg, COLOR_GRACE_BLUE);
     nvgFill(s->vg);
   }
@@ -510,7 +511,7 @@ static void ui_draw_world(UIState *s) {
       draw_lead(s, lead_two.getX()[0], lead_two.getV()[0], s->scene.lead_vertices[1], lead_one.getProb() <= .5, false);
     }
     for (int i = 0; i < 2 && !lead_drawn; ++i){
-      if (s->scene.lead_data[i].getStatus()){
+      if (s->scene.lead_data[i].getStatus() && s->scene.lead_data[i].getDRel() > 120.){
         lead_drawn = true;
         draw_lead(s, s->scene.lead_data[i].getDRel(), s->scene.lead_data[i].getVRel(), s->scene.lead_vertices[i], true, true);
       }
@@ -1027,6 +1028,34 @@ static void ui_draw_measures(UIState *s){
               snprintf(val, sizeof(val), "%.2f", v);
             }
             snprintf(unit, sizeof(unit), "hp");
+            break;}
+
+          case UIMeasure::DRAG_LOSSES:
+            {
+            snprintf(name, sizeof(name), "DRAG LOSS");
+            if (scene.car_state.getDrivePower() != 0.){
+              float v = scene.car_state.getDragPower() / scene.car_state.getDrivePower() * 100.;
+              if (v >= 0. && v <= 100.){
+                snprintf(val, sizeof(val), "%.0f%%", v);
+              }
+              else{
+                float v = scene.car_state.getDragPower();
+                v /= 1e3;
+                if (fabs(v) > 100.){
+                  snprintf(val, sizeof(val), "%.0f", v);
+                }
+                else if (fabs(v) > 10.){
+                  snprintf(val, sizeof(val), "%.1f", v);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.2f", v);
+                }
+                snprintf(unit, sizeof(unit), "kW");
+              }
+            }
+            else{
+              snprintf(val, sizeof(val), "--");
+            }
             break;}
           
           case UIMeasure::ACCEL_FORCE:
@@ -1775,11 +1804,31 @@ static void ui_draw_measures(UIState *s){
               if (scene.ev_recip_eff_wa[0] <= 0.f){
                 if (scene.car_state.getVEgo() > 0.1){
                   temp = scene.ev_recip_eff_wa[0] * 1000.;
-                  if (abs(temp) >= 10.){
-                    snprintf(val, sizeof(val), "%.0f", temp);
+                  if (abs(temp) >= 9e5){
+                    temp /= 1e6;
+                    if (abs(temp) >= 10.){
+                      snprintf(val, sizeof(val), "%.0fM", temp);
+                    }
+                    else{
+                      snprintf(val, sizeof(val), "%.1fM", temp);
+                    }
+                  }
+                  else if (abs(temp) >= 9e2){
+                    temp /= 1e3;
+                    if (abs(temp) >= 10.){
+                      snprintf(val, sizeof(val), "%.0fk", temp);
+                    }
+                    else{
+                      snprintf(val, sizeof(val), "%.1fk", temp);
+                    }
                   }
                   else{
-                    snprintf(val, sizeof(val), "%.1f", temp);
+                    if (abs(temp) >= 10.){
+                      snprintf(val, sizeof(val), "%.0f", temp);
+                    }
+                    else{
+                      snprintf(val, sizeof(val), "%.1f", temp);
+                    }
                   }
                 }
                 else {
@@ -1878,11 +1927,31 @@ static void ui_draw_measures(UIState *s){
               snprintf(name, sizeof(name), "EV CON NOW");
               if (scene.car_state.getVEgo() > 0.1){
                 float temp = scene.ev_recip_eff_wa[0] * 1000.;
-                if (abs(temp) >= 10.){
-                  snprintf(val, sizeof(val), "%.0f", temp);
+                if (abs(temp) >= 9e5){
+                  temp /= 1e6;
+                  if (abs(temp) >= 10.){
+                    snprintf(val, sizeof(val), "%.0fM", temp);
+                  }
+                  else{
+                    snprintf(val, sizeof(val), "%.1fM", temp);
+                  }
+                }
+                else if (abs(temp) >= 9e2){
+                  temp /= 1e3;
+                  if (abs(temp) >= 10.){
+                    snprintf(val, sizeof(val), "%.0fk", temp);
+                  }
+                  else{
+                    snprintf(val, sizeof(val), "%.1fk", temp);
+                  }
                 }
                 else{
-                  snprintf(val, sizeof(val), "%.1f", temp);
+                  if (abs(temp) >= 10.){
+                    snprintf(val, sizeof(val), "%.0f", temp);
+                  }
+                  else{
+                    snprintf(val, sizeof(val), "%.1f", temp);
+                  }
                 }
               }
               else{
@@ -1896,11 +1965,31 @@ static void ui_draw_measures(UIState *s){
             {
               snprintf(name, sizeof(name), (scene.is_metric ? "EV CON 8km" : "EV CON 5mi"));
               float temp = scene.ev_recip_eff_wa[1] * 1000.;
-              if (abs(temp) >= 100.){
-                snprintf(val, sizeof(val), "%.0f", temp);
+              if (abs(temp) >= 9e5){
+                temp /= 1e6;
+                if (abs(temp) >= 10.){
+                  snprintf(val, sizeof(val), "%.0fM", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.1fM", temp);
+                }
+              }
+              else if (abs(temp) >= 9e2){
+                temp /= 1e3;
+                if (abs(temp) >= 10.){
+                  snprintf(val, sizeof(val), "%.0fk", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.1fk", temp);
+                }
               }
               else{
-                snprintf(val, sizeof(val), "%.1f", temp);
+                if (abs(temp) >= 10.){
+                  snprintf(val, sizeof(val), "%.0f", temp);
+                }
+                else{
+                  snprintf(val, sizeof(val), "%.1f", temp);
+                }
               }
               snprintf(unit, sizeof(unit), (scene.is_metric ? "Wh/km" : "Wh/mi"));
             }
@@ -1915,14 +2004,28 @@ static void ui_draw_measures(UIState *s){
               }
               else{
                 float temp = 1000./scene.ev_eff_total;
-                if (abs(temp) >= 100.){
-                  snprintf(val, sizeof(val), "%.0f", temp);
-                }
-                else if (abs(temp) >= 10.){
-                  snprintf(val, sizeof(val), "%.1f", temp);
+                if (abs(temp) >= 9e2){
+                  temp /= 1e3;
+                  if (abs(temp) >= 100.){
+                    snprintf(val, sizeof(val), "%.0fk", temp);
+                  }
+                  else if (abs(temp) >= 10.){
+                    snprintf(val, sizeof(val), "%.1fk", temp);
+                  }
+                  else{
+                    snprintf(val, sizeof(val), "%.2fk", temp);
+                  }
                 }
                 else{
-                  snprintf(val, sizeof(val), "%.2f", temp);
+                  if (abs(temp) >= 100.){
+                    snprintf(val, sizeof(val), "%.0f", temp);
+                  }
+                  else if (abs(temp) >= 10.){
+                    snprintf(val, sizeof(val), "%.1f", temp);
+                  }
+                  else{
+                    snprintf(val, sizeof(val), "%.2f", temp);
+                  }
                 }
               }
               if (dist >= 100.){

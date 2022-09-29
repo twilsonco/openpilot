@@ -24,6 +24,7 @@ ROLLING_RESISTANCE_FROM_MASS_V = [1.04, 1.07] # [unitless] I used the 4-7% figur
 # EV_ICE_INPUT_EFFICIENCY = 1/0.88
 # EV_DRIVE_EFFICIENCY = 1/0.82
 
+GearShifter = car.CarState.GearShifter
 class GEAR_SHIFTER2:
   DRIVE = 4
   LOW = 6
@@ -330,17 +331,21 @@ class CarState(CarStateBase):
       pitch_adjusted_accel = ret.aEgo + ACCELERATION_DUE_TO_GRAVITY * sin(self.pitch) # [m/s^2]
       self.accel_force = self.cp_mass * pitch_adjusted_accel # [N]
       self.drag_power = self.drag_force * self.vEgo # [W]
-      self.accel_power = self.accel_force * self.vEgo * self.rolling_resistance # [W]
+      self.accel_power = self.accel_force * self.vEgo  # [W]
+      if self.accel_power > 0: 
+        self.accel_power *= self.rolling_resistance
+      else:
+        self.accel_power /= self.rolling_resistance
       self.drive_power = self.drag_power + self.accel_power # [W]
       if self.is_ev:
         if self.engineRPM > 0:
           self.ice_power = self.drive_power + self.hvb_wattage  # [W]
         else:
           self.ice_power = 0.
-          if self.vEgo > 0.3:
-            if self.drive_power > 0. and self.hvb_wattage < -1.:
+          if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse:
+            if self.drive_power > 1000. and self.hvb_wattage < -1000.:
               self.observed_efficiency.update(self.drive_power / (-self.hvb_wattage))
-            elif self.drive_power < -1. and self.hvb_wattage > 0. and self.brake_cmd == 0:
+            elif self.drive_power < -1000. and self.hvb_wattage > 1000. and self.brake_cmd == 0:
               self.observed_efficiency.update(-self.hvb_wattage / self.drive_power)
       else:
         self.ice_power = self.drive_power
