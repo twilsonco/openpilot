@@ -9,7 +9,7 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, \
-                                    CruiseButtons, STEER_THRESHOLD
+                                    CruiseButtons, STEER_THRESHOLD, CarControllerParams
 from selfdrive.controls.lib.drive_helpers import set_v_cruise_offset
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from selfdrive.swaglog import cloudlog
@@ -28,6 +28,10 @@ GearShifter = car.CarState.GearShifter
 class GEAR_SHIFTER2:
   DRIVE = 4
   LOW = 6
+  
+def ev_regen_accel(v_ego, ice_on):
+  gas_brake_threshold = interp(v_ego, CarControllerParams.EV_GAS_BRAKE_THRESHOLD_BP, CarControllerParams.EV_GAS_BRAKE_THRESHOLD_ICE_V if ice_on else CarControllerParams.EV_GAS_BRAKE_THRESHOLD_V)
+  return gas_brake_threshold
 
 def get_chassis_can_parser(CP, canbus):
   # this function generates lists for signal, messages and initial values
@@ -58,10 +62,14 @@ class CarState(CarStateBase):
     self.rho = interp(self.altitude, AIR_DENS_FROM_ELEV_BP, AIR_DENS_FROM_ELEV_V)
     self.drag_force = 0.
     self.accel_force = 0. 
+    self.regen_force = 0.
+    self.brake_force = 0.
     self.drag_power = 0.
     self.accel_power = 0. 
+    self.regen_power = 0.
     self.drive_power = 0. 
     self.ice_power = 0.
+    self.brake_power = 0.
     self.observed_efficiency = FirstOrderFilter(float(self._params.get("EVDriveTrainEfficiency", encoding="utf8")), 50., 0.05)
     self.brake_cmd = 0
     
@@ -325,30 +333,62 @@ class CarState(CarStateBase):
       self.gear_shifter_ev = pt_cp.vl["ECMPRDNL2"]['PRNDL2']
     
     if self.iter % self.uiframe == 0:
-      # drag
+      # drag, drive, brake, and ice power
       self.rho = interp(self.altitude, AIR_DENS_FROM_ELEV_BP, AIR_DENS_FROM_ELEV_V) # [kg/m^3]
       self.drag_force = 0.5 * self.drag_cd * self.drag_csa * self.rho * self.vEgo**2 # [N]
       pitch_adjusted_accel = ret.aEgo + ACCELERATION_DUE_TO_GRAVITY * sin(self.pitch) # [m/s^2]
       self.accel_force = self.cp_mass * pitch_adjusted_accel # [N]
       self.drag_power = self.drag_force * self.vEgo # [W]
       self.accel_power = self.accel_force * self.vEgo  # [W]
-      if self.accel_power > 0: 
-        self.accel_power *= self.rolling_resistance
-      else:
-        self.accel_power /= self.rolling_resistance
       self.drive_power = self.drag_power + self.accel_power # [W]
       if self.is_ev:
-        if self.engineRPM > 0:
-          self.ice_power = self.drive_power + self.hvb_wattage  # [W]
-        else:
-          self.ice_power = 0.
-          if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse:
-            if self.drive_power > 1000. and self.hvb_wattage < -1000.:
+        if self.drive_power > 0.:
+          self.regen_force = 0.
+          self.regen_power = 0.
+          self.brake_power = 0.
+          if self.engineRPM > 0:
+            self.ice_power = self.drive_power / max(0.1,self.observed_efficiency.x) + self.hvb_wattage  # [W]
+          else:
+            self.ice_power = 0.
+            if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse and self.drive_power > 1000. and self.hvb_wattage < -1000.:
               self.observed_efficiency.update(self.drive_power / (-self.hvb_wattage))
-            elif self.drive_power < -1000. and self.hvb_wattage > 1000. and self.brake_cmd == 0:
-              self.observed_efficiency.update(-self.hvb_wattage / self.drive_power)
-      else:
-        self.ice_power = self.drive_power
+        else:
+          if self.brake_cmd == 0:
+            self.regen_power = self.drive_power * self.observed_efficiency.x
+            self.regen_force = (self.regen_power / self.vEgo) if self.vEgo > 0.3 else 0.
+            self.brake_power = 0.
+          else: # assume full regen from dynamic gas/brake accel threshold which is a measure of available regen brake force
+            self.regen_force = self.cp_mass * ev_regen_accel(self.vEgo, self.engineRPM > 0)
+            self.regen_power = self.regen_force * self.vEgo  # [W]
+            self.brake_power = self.drive_power - self.regen_power
+          if self.engineRPM > 0:
+            self.ice_power = -self.hvb_wattage - self.regen_power
+          else:
+            self.ice_power = 0.
+            if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse and self.drive_power < -1000. and self.hvb_wattage > 1000. and self.brake_cmd == 0:
+                self.observed_efficiency.update(-self.hvb_wattage / self.drive_power)
+        if self.accel_power > 0: 
+          self.accel_power *= self.rolling_resistance
+        else:
+          self.accel_power /= self.rolling_resistance
+        self.drive_power = (self.drag_power + self.accel_power) / self.observed_efficiency.x # [W]
+      else:        
+        if self.accel_power > 0: 
+          self.accel_power *= self.rolling_resistance
+        else:
+          self.accel_power /= self.rolling_resistance
+        self.drive_power = self.drag_power + self.accel_power # [W]
+        if self.drive_power > 0.:
+          self.ice_power = self.drive_power
+          self.brake_power = 0.
+        else:
+          if self.brake_cmd == 0:
+            self.ice_power = self.drive_power
+            self.brake_power = 0.
+          else:
+            self.brake_power = -(self.drive_power - self.ice_power * min([1., self.engineRPM / 6000., self.vEgo / 12.])) # when brakes are in use, assume the ongoing presence of whatever engine brake force was available when brakes were first applied(the last value of ice_power), and then assume it diminishes linearly with speed and engine rpms; whichever is "lower"
+
+      self.brake_force = (self.brake_power / self.vEgo) if self.vEgo > 0.3 else 0.
         
       if (self.iter // self.uiframe) % 20 == 0:
         put_nonblocking("EVDriveTrainEfficiency", str(self.observed_efficiency.x))
@@ -359,6 +399,10 @@ class CarState(CarStateBase):
     ret.dragPower = self.drag_power
     ret.accelForce = self.accel_force
     ret.accelPower = self.accel_power
+    ret.regenForce = self.regen_force
+    ret.regenPower = self.regen_power
+    ret.brakeForce = self.brake_force
+    ret.brakePower = self.brake_power
     ret.drivePower = self.drive_power
     ret.icePower = self.ice_power
     ret.observedEVDrivetrainEfficiency = self.observed_efficiency.x

@@ -1072,10 +1072,66 @@ static void ui_draw_measures(UIState *s){
             snprintf(unit, sizeof(unit), "kN");
             break;}
 
+          case UIMeasure::REGEN_FORCE:
+            {
+            snprintf(name, sizeof(name), "REGEN FRC");
+            float v = scene.car_state.getRegenForce();
+            v /= 1e3;
+            if (fabs(v) > 10.){
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            else {
+              snprintf(val, sizeof(val), "%.1f", v);
+            }
+            snprintf(unit, sizeof(unit), "kN");
+            break;}
+
+          case UIMeasure::BRAKE_FORCE:
+            {
+            snprintf(name, sizeof(name), "BRAKE FRC");
+            float v = scene.car_state.getBrakeForce();
+            v /= 1e3;
+            if (fabs(v) > 10.){
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            else {
+              snprintf(val, sizeof(val), "%.1f", v);
+            }
+            snprintf(unit, sizeof(unit), "kN");
+            break;}
+
           case UIMeasure::ACCEL_POWER:
             {
             snprintf(name, sizeof(name), "ACCEL POW");
             float v = scene.car_state.getAccelPower();
+            v /= 1e3;
+            if (fabs(v) > 10.){
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            else {
+              snprintf(val, sizeof(val), "%.1f", v);
+            }
+            snprintf(unit, sizeof(unit), "kW");
+            break;}
+
+          case UIMeasure::REGEN_POWER:
+            {
+            snprintf(name, sizeof(name), "REGEN POW");
+            float v = scene.car_state.getRegenPower();
+            v /= 1e3;
+            if (fabs(v) > 10.){
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            else {
+              snprintf(val, sizeof(val), "%.1f", v);
+            }
+            snprintf(unit, sizeof(unit), "kW");
+            break;}
+
+          case UIMeasure::BRAKE_POWER:
+            {
+            snprintf(name, sizeof(name), "BRAKE POW");
+            float v = scene.car_state.getBrakePower();
             v /= 1e3;
             if (fabs(v) > 10.){
               snprintf(val, sizeof(val), "%.0f", v);
@@ -1124,6 +1180,36 @@ static void ui_draw_measures(UIState *s){
             {
             snprintf(name, sizeof(name), "ACCEL POW");
             float v = scene.car_state.getAccelPower();
+            v /= 1e3;
+            v *= 1.34;
+            if (fabs(v) > 10.){
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            else {
+              snprintf(val, sizeof(val), "%.1f", v);
+            }
+            snprintf(unit, sizeof(unit), "hp");
+            break;}
+
+          case UIMeasure::REGEN_POWER_HP:
+            {
+            snprintf(name, sizeof(name), "REGEN POW");
+            float v = scene.car_state.getRegenPower();
+            v /= 1e3;
+            v *= 1.34;
+            if (fabs(v) > 10.){
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            else {
+              snprintf(val, sizeof(val), "%.1f", v);
+            }
+            snprintf(unit, sizeof(unit), "hp");
+            break;}
+
+          case UIMeasure::BRAKE_POWER_HP:
+            {
+            snprintf(name, sizeof(name), "BRAKE POW");
+            float v = scene.car_state.getBrakePower();
             v /= 1e3;
             v *= 1.34;
             if (fabs(v) > 10.){
