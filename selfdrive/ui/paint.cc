@@ -1862,6 +1862,7 @@ static void ui_draw_measures(UIState *s){
             {
               snprintf(name, sizeof(name), "HVB kW");
               float temp = -scene.car_state.getHvbWattage();
+              temp /= 1e3;
               if (abs(temp) >= 10.){
                 snprintf(val, sizeof(val), "%.0f", temp);
               }
