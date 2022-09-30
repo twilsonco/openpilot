@@ -1147,15 +1147,13 @@ static void ui_draw_measures(UIState *s){
             snprintf(name, sizeof(name), "DRIVE POW");
             float v = scene.car_state.getDrivePower();
             v /= 1e3;
-            if (fabs(v) > 100.){
+            if (fabs(v) > 10.){
               snprintf(val, sizeof(val), "%.0f", v);
             }
-            else if (fabs(v) > 10.){
+            else{
               snprintf(val, sizeof(val), "%.1f", v);
             }
-            else{
-              snprintf(val, sizeof(val), "%.2f", v);
-            }
+            
             snprintf(unit, sizeof(unit), "kW");
             break;}
 
@@ -1164,15 +1162,13 @@ static void ui_draw_measures(UIState *s){
             snprintf(name, sizeof(name), "ICE POW");
             float v = scene.car_state.getIcePower();
             v /= 1e3;
-            if (fabs(v) > 100.){
+            if (fabs(v) > 10.){
               snprintf(val, sizeof(val), "%.0f", v);
             }
-            else if (fabs(v) > 10.){
+            else{
               snprintf(val, sizeof(val), "%.1f", v);
             }
-            else{
-              snprintf(val, sizeof(val), "%.2f", v);
-            }
+            
             snprintf(unit, sizeof(unit), "kW");
             break;}
           
@@ -1227,14 +1223,11 @@ static void ui_draw_measures(UIState *s){
             float v = scene.car_state.getDrivePower();
             v /= 1e3;
             v *= 1.34;
-            if (fabs(v) > 100.){
+            if (fabs(v) > 10.){
               snprintf(val, sizeof(val), "%.0f", v);
             }
-            else if (fabs(v) > 10.){
-              snprintf(val, sizeof(val), "%.1f", v);
-            }
             else{
-              snprintf(val, sizeof(val), "%.2f", v);
+              snprintf(val, sizeof(val), "%.1f", v);
             }
             snprintf(unit, sizeof(unit), "hp");
             break;}
