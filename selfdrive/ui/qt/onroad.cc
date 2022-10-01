@@ -89,6 +89,8 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
     ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.speed_rect, e);
     ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.wheel_touch_rect, e);
     ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.brake_touch_rect, e);
+    ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.power_meter_rect, e);
+    ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.power_meter_text_rect, e);
     ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.screen_dim_touch_rect, e);
     ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.accel_mode_touch_rect, e);
     ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.dynamic_follow_mode_touch_rect, e);

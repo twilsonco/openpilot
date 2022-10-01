@@ -172,6 +172,9 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   ACCEL_FORCE,
   ACCEL_POWER,
   ACCEL_POWER_HP,
+  EV_FORCE,
+  EV_POWER,
+  EV_POWER_HP,
   REGEN_FORCE,
   REGEN_POWER,
   REGEN_POWER_HP,
@@ -280,6 +283,8 @@ typedef struct UIScene {
   Rect wheel_touch_rect;
   bool wheel_rotates = true;
 
+  bool car_is_ev = false;
+
   bool color_path = false;
   
   float screen_dim_modes_v[3] = {0.01, 0.3, 1.};
@@ -295,6 +300,14 @@ typedef struct UIScene {
 
   std::string network_type_string;
   int network_strength;
+
+  std::vector<float> power_cur {0.,0.,0.,0.}, 
+      power_max {75., 111., 130.,  55.}; // [kW] starting upper limits for ICE, EV, brake, and regen power based on volt (volt has 149hp EV output, 101hp motor, a reported 55-60 kW of regen capacity. Brake is based on volt braking at 3.5m/s^2 at 45mph. these go up if more power is observed
+  float power_meter_pow = 0;
+  Rect power_meter_rect, power_meter_text_rect;
+  int power_meter_mode = 0; // 0/1/2 for meter/meter+number/old style brake indicator
+  bool power_meter_metric = true; // true/false for kW/hp power output
+  float power_meter_ema_k = 0.2;
 
   
 // measures

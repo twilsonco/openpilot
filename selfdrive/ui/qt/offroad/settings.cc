@@ -214,8 +214,8 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
   toggles.append(new ParamControl("BrakeIndicator",
-                                  "[GM] Brake indicator",
-                                  "Brake indicator at bottom-right when driving. Circle at indicator center grows and turns red to indicate the level of braking. Pulses immediately after starting car to let you know it's on.",
+                                  "[GM] Power/Brake indicator",
+                                  "Brake indicator at bottom-right when driving or power meter to right. Tap indicator or meter to change. Circle at indicator center grows and turns red to indicate the level of braking. Pulses immediately after starting car to let you know it's on.",
                                   "../assets/offroad/icon_brake_disc.png",
                                   this));
   toggles.append(new ParamControl("CustomSounds",

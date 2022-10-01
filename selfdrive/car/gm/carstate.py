@@ -3,7 +3,7 @@ from common.filter_simple import FirstOrderFilter
 from common.params import Params, put_nonblocking
 from common.numpy_fast import mean, interp
 from common.realtime import sec_since_boot
-from math import sin
+from math import sin, cos
 from selfdrive.config import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
@@ -343,31 +343,29 @@ class CarState(CarStateBase):
       self.drag_power = self.drag_force * self.vEgo # [W]
       self.accel_power = self.accel_force * self.vEgo  # [W]
       rolling_resistance = interp(self.vEgo, ROLLING_RESISTANCE_FROM_VEGO_BP, ROLLING_RESISTANCE_FROM_VEGO_V)
-      self.rolling_resistance_force = rolling_resistance * self.cp_mass * ACCELERATION_DUE_TO_GRAVITY
+      self.rolling_resistance_force = rolling_resistance * self.cp_mass * ACCELERATION_DUE_TO_GRAVITY * cos(self.pitch)
       self.rolling_resistance_power = self.rolling_resistance_force * self.vEgo
       self.drive_power = self.drag_power + self.accel_power + self.rolling_resistance_power # [W]
       if self.is_ev:
         if self.drive_power > 0.:
-          self.regen_force = 0.
-          self.regen_power = 0.
           self.brake_power = 0.
+          self.regen_power = (self.hvb_wattage * self.observed_efficiency.x) if self.hvb_wattage > 0. else 0.
+          self.regen_force = (self.regen_power / self.vEgo) if self.vEgo > 0.3 else 0.
           if self.engineRPM > 0:
             self.ice_power = self.drive_power / max(0.1,self.observed_efficiency.x) + self.hvb_wattage  # [W]
+            self.ev_power = -((self.hvb_wattage + self.ice_power) * self.observed_efficiency.x) if self.hvb_wattage <= 0. else 0.
           else:
+            self.ev_power = -(self.hvb_wattage * self.observed_efficiency.x) if self.hvb_wattage <= 0. else 0.
             self.ice_power = 0.
             if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse and self.drive_power > 1000. and self.hvb_wattage < -1000.:
               self.observed_efficiency.update(self.drive_power / (-self.hvb_wattage))
         else:
           if self.engineRPM == 0:
             self.ice_power = 0.
-            if self.brake_cmd == 0 and not ret.brakePressed:
-              self.regen_power = self.drive_power * self.observed_efficiency.x
-              self.regen_force = (self.regen_power / self.vEgo) if self.vEgo > 0.3 else 0.
-              self.brake_power = 0.
-            else:
-              self.regen_power = self.hvb_wattage * self.observed_efficiency.x
-              self.regen_force = (self.regen_power / self.vEgo) if self.vEgo > 0.3 else 0.
-              self.brake_power = -(self.drive_power + self.regen_power)
+            self.regen_power = (self.hvb_wattage * self.observed_efficiency.x) if self.hvb_wattage > 0. else 0.
+            self.regen_force = (self.regen_power / self.vEgo) if self.vEgo > 0.3 else 0.
+            self.ev_power = -(self.hvb_wattage * self.observed_efficiency.x) if self.hvb_wattage <= 0. else 0.
+            self.brake_power = -(self.drive_power + self.regen_power)
             if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse and self.drive_power < -1000. and self.hvb_wattage > 1000. and self.brake_cmd == 0 and not ret.brakePressed:
                 self.observed_efficiency.update(-self.hvb_wattage / self.drive_power)
           else: # assume full regen from dynamic gas/brake accel threshold which is a measure of available regen brake force
@@ -375,8 +373,11 @@ class CarState(CarStateBase):
             self.regen_power = self.regen_force * self.vEgo  # [W]
             self.brake_power = self.drive_power - self.regen_power
             self.ice_power = -self.hvb_wattage - self.regen_power
+            self.ev_power = -((self.hvb_wattage + self.ice_power) * self.observed_efficiency.x) if self.hvb_wattage <= 0. else 0.
         self.drive_power /= max(0.1, self.observed_efficiency.x) # [W]
       else:        
+        self.ev_power = 0.
+        self.ev_force = 0.
         if self.drive_power > 0.:
           self.ice_power = self.drive_power
           self.brake_power = 0.
@@ -388,6 +389,7 @@ class CarState(CarStateBase):
             self.brake_power = -(self.drive_power - self.ice_power * min([1., self.engineRPM / 6000., self.vEgo / 12.])) # when brakes are in use, assume the ongoing presence of whatever engine brake force was available when brakes were first applied(the last value of ice_power), and then assume it diminishes linearly with speed and engine rpms; whichever is "lower"
 
       self.brake_force = (self.brake_power / self.vEgo) if self.vEgo > 0.3 else 0.
+      self.ev_force = (self.ev_power / self.vEgo) if self.vEgo > 0.3 else 0.
         
       if (self.iter // self.uiframe) % 20 == 0:
         put_nonblocking("EVDriveTrainEfficiency", str(self.observed_efficiency.x))
@@ -404,6 +406,8 @@ class CarState(CarStateBase):
     ret.brakePower = self.brake_power
     ret.drivePower = self.drive_power
     ret.icePower = self.ice_power
+    ret.evForce = self.ev_force
+    ret.evPower = self.ev_power
     ret.observedEVDrivetrainEfficiency = self.observed_efficiency.x
     
     

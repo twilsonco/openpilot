@@ -83,6 +83,8 @@ def manager_init():
     ("CoastingBrakeOverSpeed", "0"),
     ("FrictionBrakePercent", "0"),
     ("BrakeIndicator", "1"),
+    ("PowerMeterMode", "0"),
+    ("PowerMeterMetric", "1"),
     ("PrintLeadInfo", "1"),
     ("DisableOnroadUploads", "0"),
     ("LowOverheadMode", "0"),
