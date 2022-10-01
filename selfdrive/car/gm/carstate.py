@@ -353,20 +353,18 @@ class CarState(CarStateBase):
             if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse and self.drive_power > 1000. and self.hvb_wattage < -1000.:
               self.observed_efficiency.update(self.drive_power / (-self.hvb_wattage))
         else:
-          if self.brake_cmd == 0:
+          if self.engineRPM == 0:
             self.regen_power = self.drive_power * self.observed_efficiency.x
             self.regen_force = (self.regen_power / self.vEgo) if self.vEgo > 0.3 else 0.
             self.brake_power = 0.
+            self.ice_power = 0.
+            if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse and self.drive_power < -1000. and self.hvb_wattage > 1000. and self.brake_cmd == 0:
+                self.observed_efficiency.update(-self.hvb_wattage / self.drive_power)
           else: # assume full regen from dynamic gas/brake accel threshold which is a measure of available regen brake force
             self.regen_force = self.cp_mass * ev_regen_accel(self.vEgo, self.engineRPM > 0)
             self.regen_power = self.regen_force * self.vEgo  # [W]
             self.brake_power = self.drive_power - self.regen_power
-          if self.engineRPM > 0:
             self.ice_power = -self.hvb_wattage - self.regen_power
-          else:
-            self.ice_power = 0.
-            if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse and self.drive_power < -1000. and self.hvb_wattage > 1000. and self.brake_cmd == 0:
-                self.observed_efficiency.update(-self.hvb_wattage / self.drive_power)
         if self.accel_power > 0: 
           self.accel_power *= self.rolling_resistance
         else:
