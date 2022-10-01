@@ -362,7 +362,7 @@ class CarState(CarStateBase):
             else:
               self.regen_power = self.hvb_wattage * self.observed_efficiency.x
               self.regen_force = (self.regen_power / self.vEgo) if self.vEgo > 0.3 else 0.
-              self.brake_force = -(self.drive_power + self.regen_power)
+              self.brake_power = -(self.drive_power + self.regen_power)
             if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse and self.drive_power < -1000. and self.hvb_wattage > 1000. and self.brake_cmd == 0:
                 self.observed_efficiency.update(-self.hvb_wattage / self.drive_power)
           else: # assume full regen from dynamic gas/brake accel threshold which is a measure of available regen brake force
