@@ -188,6 +188,19 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     Params().putBool("DynamicFollow", !Params().getBool("DynamicFollow"));
     return;
   }
+
+  // power meter text press to change units
+  if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.power_meter_text_rect.ptInRect(e->x(), e->y())){
+    QUIState::ui_state.scene.power_meter_metric = !QUIState::ui_state.scene.power_meter_metric;
+    Params().putBool("PowerMeterMetric", QUIState::ui_state.scene.power_meter_metric);
+    return;
+  }
+  // brake indicator or power meter press
+  if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.brake_touch_rect.ptInRect(e->x(), e->y())){
+    QUIState::ui_state.scene.power_meter_mode = (QUIState::ui_state.scene.power_meter_mode + 1) % 3;
+    Params().put("PowerMeterMode", std::to_string(QUIState::ui_state.scene.power_meter_mode).c_str(), 1);
+    return;
+  }
   
   // screen dim button (dm face icon)
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.screen_dim_touch_rect.ptInRect(e->x(), e->y())){

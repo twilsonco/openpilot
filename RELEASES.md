@@ -1,5 +1,9 @@
 Version tw-0.8.12-8_tws (2022-09-29)
 ========================
+ * NEW: new power meter to replace brake indicator
+  * Enable brake indicator in settings
+  * Tap indicator or meter to toggle between the two or show text
+  * Tap text to switch between kW and hp output
  * IMPROVED: one-pedal mode: smoother everything
  * IMPROVED: long range leads: 
   * smooth distance and velocity data for long range leads in proportion to the distance of the lead. So farther leads will be smoothed more to overcome the increased noise in the data at long distances, while the smoothing continuously decreases as the lead approaches, so that there is no added time lag to the data by the time they're within normal distance

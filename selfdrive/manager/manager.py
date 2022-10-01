@@ -83,20 +83,22 @@ def manager_init():
     ("CoastingBrakeOverSpeed", "0"),
     ("FrictionBrakePercent", "0"),
     ("BrakeIndicator", "1"),
+    ("PowerMeterMode", "0"),
+    ("PowerMeterMetric", "1"),
     ("PrintLeadInfo", "1"),
     ("DisableOnroadUploads", "0"),
     ("LowOverheadMode", "0"),
     ("FPVolt", "0"),
     ("MeasureConfigNum", "0"),
-    ("MeasureSlot00", "23"), # bearing 
-    ("MeasureSlot01", "22"), # altitude 
-    ("MeasureSlot02", "25"), # percent grade
-    ("MeasureSlot03", "9"), # Acceleration
+    ("MeasureSlot00", "31"), # percent grade 
+    ("MeasureSlot01", "9"), # acceleration 
+    ("MeasureSlot02", "48"), # hvb wattage and voltage
+    ("MeasureSlot03", "50"), # ev recent eff
     ("MeasureSlot04", "6"), # engine RPM + coolant temp F
-    ("MeasureSlot05", "14"), # drag losses 
-    ("MeasureSlot06", "50"), # EV drivetrain eff
-    ("MeasureSlot07", "46"), # ev inst. consum.
-    ("MeasureSlot08", "45"),# trip efficiency
+    ("MeasureSlot05", "22"), #  brake power
+    ("MeasureSlot06", "19"), # regen power
+    ("MeasureSlot07", "24"), # drive power
+    ("MeasureSlot08", "56"),# ev drivetrain eff
     ("MeasureSlot09", "52"),# device cpu percent and temp °C
   ]
   if not PC:
