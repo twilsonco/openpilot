@@ -639,6 +639,7 @@ static void ui_draw_measures(UIState *s){
     UIScene &scene = s->scene;
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
     int center_x = s->fb_w - face_wheel_radius - bdr_s * 2;
+    center_x -= s->scene.power_meter_rect.w + s->fb_w / 256;
     const int brake_y = s->fb_h - footer_h / 2;
     const int y_min = maxspeed_rect.bottom() + bdr_s / 2;
     const int y_max = brake_y - brake_size - bdr_s / 2;
@@ -2432,8 +2433,183 @@ static void ui_draw_vision_face(UIState *s) {
   ui_draw_circle_image(s, center_x, center_y, radius, "driver_face", s->scene.dm_active);
 }
 
+static void ui_draw_vision_power_meter(UIState *s) {
+  Rect & outer_rect = s->scene.power_meter_rect;
+  if (s->scene.brake_indicator_enabled && s->scene.power_meter_mode < 2){
+    const int w = s->fb_w * 3 / 128;
+    const int x = s->fb_w * 121 / 128 - 6;
+    const int h = (s->scene.power_meter_mode == 0 ? 22 : 21) * s->fb_h / 32;
+    const int hu = h / 2;
+    const int hl = h - hu;
+    const int y = (s->scene.power_meter_mode == 0 ? 30 : 29) * s->fb_h / 32;
+    const int y_mid = y - hl;
+    outer_rect = {x, y - h/2, 2 * w, h};
+    s->scene.brake_touch_rect = outer_rect;
+    const int y_offset = 2;
+
+    const int stroke_width = 6;
+
+    int ipow = 0;
+    s->scene.power_cur[ipow++] = MAX(0., s->scene.car_state.getIcePower());
+    s->scene.power_cur[ipow++] = MAX(0., s->scene.car_state.getDrivePower() - s->scene.power_cur[0]);
+    s->scene.power_cur[ipow++] = MAX(0., s->scene.car_state.getBrakePower());
+    s->scene.power_cur[ipow++] = MAX(0., s->scene.car_state.getRegenPower());
+    for (ipow = 0; ipow < 4; ++ipow){
+      if (s->scene.power_cur[ipow] > s->scene.power_max[ipow]){
+        s->scene.power_max[ipow] = s->scene.power_cur[ipow];
+      }
+    }
+
+    float pow_rel, pow_rel_max;
+    int hi, wi;
+    int xi = x;
+    if (s->scene.car_is_ev){
+      // ev power
+      pow_rel = s->scene.power_cur[1] / s->scene.power_max[1];
+      hi = hu * pow_rel;
+      wi = (s->scene.car_state.getEngineRPM() == 0 ? 2 : 1) * w;
+
+      // inner bar
+      nvgBeginPath(s->vg);
+      nvgRect(s->vg, xi, y_mid - hi - y_offset, wi, hi);
+      nvgFillColor(s->vg, nvgRGBA(249,240,1,200)); // yellow
+      nvgFill(s->vg);
+      // outer box for bar
+      nvgBeginPath(s->vg);
+      nvgRect(s->vg, xi, y_mid - hu - y_offset, wi, hu);
+      nvgFillColor(s->vg, nvgRGBA(249,240,1,20 + 60 * int(pow_rel > 0.)));
+      nvgFill(s->vg);
+      nvgStrokeColor(s->vg, nvgRGBA(249,240,1,20 + 120 * int(pow_rel > 0.)));
+      nvgStrokeWidth(s->vg, stroke_width + int(MIN(pow_rel * 3., 1.) * 3.));
+      nvgStroke(s->vg);
+
+      xi += wi;
+      pow_rel_max = MAX(pow_rel, pow_rel_max);
+    }
+
+    if (!s->scene.car_is_ev || s->scene.car_state.getEngineRPM() > 0){
+      // ice power
+      pow_rel = s->scene.power_cur[0] / s->scene.power_max[0];
+      hi = hu * pow_rel;
+      wi = (s->scene.car_is_ev ? 1 : 2) * w;
+
+      // inner bar
+      nvgBeginPath(s->vg);
+      nvgRect(s->vg, xi, y_mid - hi - y_offset, wi, hi);
+      nvgFillColor(s->vg, nvgRGBA(33,55,253,200)); // blue 
+      nvgFill(s->vg);
+      // outer box for bar
+      nvgBeginPath(s->vg);
+      nvgRect(s->vg, xi, y_mid - hu - y_offset, wi, hu);
+      nvgFillColor(s->vg, nvgRGBA(33,55,253,20 + 60 * int(pow_rel > 0.)));
+      nvgFill(s->vg);
+      nvgStrokeColor(s->vg, nvgRGBA(33,55,253,20 + 120 * int(pow_rel > 0.)));
+      nvgStrokeWidth(s->vg, stroke_width + 3 * int(pow_rel > 0.));
+      nvgStroke(s->vg);
+      pow_rel_max = MAX(pow_rel, pow_rel_max);
+    }
+    
+
+    // regen/engine braking power
+    pow_rel = s->scene.power_cur[3] / s->scene.power_max[3];
+    hi = hu * pow_rel;
+    wi = w;
+    xi = x;
+
+    // inner bar
+    nvgBeginPath(s->vg);
+    nvgRect(s->vg, xi, y_mid + y_offset, wi, hi);
+    nvgFillColor(s->vg, nvgRGBA(0,230,27,200)); // green
+    nvgFill(s->vg);
+    // outer box for bar
+    nvgBeginPath(s->vg);
+    nvgRect(s->vg, xi, y_mid + y_offset, wi, hl);
+    nvgFillColor(s->vg, nvgRGBA(0,230,27,20 + 60 * int(pow_rel > 0.)));
+    nvgFill(s->vg);
+    nvgStrokeColor(s->vg, nvgRGBA(0,230,27,20 + 120 * int(pow_rel > 0.)));
+    nvgStrokeWidth(s->vg, stroke_width + 3 * int(pow_rel > 0.));
+    nvgStroke(s->vg);
+
+    pow_rel_max = MAX(pow_rel, pow_rel_max);
+    
+    // brake power
+    pow_rel = (s->scene.brake_percent >= 51 ? float(s->scene.brake_percent - 51) * 0.02 : s->scene.power_cur[2] / s->scene.power_max[2]);
+    hi = hu * pow_rel;
+    wi = w;
+    xi += w;
+
+    // inner bar
+    nvgBeginPath(s->vg);
+    nvgRect(s->vg, xi, y_mid + y_offset, wi, hi);
+    nvgFillColor(s->vg, nvgRGBA(255,21,0,200)); // red
+    nvgFill(s->vg);
+    // outer box for bar
+    nvgBeginPath(s->vg);
+    nvgRect(s->vg, xi, y_mid + y_offset, wi, hl);
+    nvgFillColor(s->vg, nvgRGBA(255,21,0,20 + 60 * int(pow_rel > 0.)));
+    nvgFill(s->vg);
+    nvgStrokeColor(s->vg, nvgRGBA(255,21,0, 20 + 120 * int(pow_rel > 0.)));
+    nvgStrokeWidth(s->vg, stroke_width + 3 * int(pow_rel > 0.));
+    nvgStroke(s->vg);
+
+    pow_rel_max = MAX(pow_rel, pow_rel_max);
+
+    float pow = s->scene.car_state.getDrivePower();
+
+
+    // number at bottom
+    if (s->scene.power_meter_mode == 1){
+      char val[16], unit[8];
+      if (s->scene.car_is_ev){
+        float batt_pow = -s->scene.car_state.getHvbWattage();
+        if (abs(pow) < abs(batt_pow)){
+         pow = batt_pow;
+        }
+      }
+      pow *= 1e-3;
+      if (!s->scene.power_meter_metric){
+        pow *= 1.34; // kW to hp
+        snprintf(unit, sizeof(unit), "hp"); 
+      } 
+      else {
+        snprintf(unit, sizeof(unit), "kW"); 
+      }
+      if (s->scene.car_state.getVEgo() < 0.1){
+        nvgFillColor(s->vg, COLOR_WHITE_ALPHA(180));
+      }
+      else if (pow >= 0.1){
+        float f = s->scene.power_cur[1] / (s->scene.power_cur[0] + s->scene.power_cur[1]);
+        int r = 1 * f + 33 * (1 - f),
+            g = 249 * f + 55 * (1 - f),
+            b = 30 * f + 253 * (1 - f);
+        nvgFillColor(s->vg, nvgRGBA(r,g,b,180));
+      }
+      else if (pow <= -0.1){
+        float f = s->scene.power_cur[3] / (s->scene.power_cur[3] + s->scene.power_cur[2]);
+        int r = 0 * f + 255 * (1 - f),
+            g = 135 * f + 21 * (1 - f),
+            b = 7 * f + 0 * (1 - f);
+        nvgFillColor(s->vg, nvgRGBA(r,g,b,180));
+      }
+      else{
+        nvgFillColor(s->vg, COLOR_WHITE_ALPHA(180));
+        pow = 0.;
+      }
+      nvgFontFace(s->vg, (pow < 0 ? "sans-bold" : "sans-semibold"));
+      snprintf(val, sizeof(val), (abs(pow) >= 10 ? "%.0f%s" : "%.1f%s"), abs(pow), unit);
+      nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_TOP);
+      nvgFontSize(s->vg, 100);
+      nvgText(s->vg, outer_rect.right(), y + 5,val,NULL);
+      s->scene.power_meter_text_rect = {outer_rect.x - 200, y, 1000, 1000};
+    }
+    else{
+      s->scene.power_meter_text_rect = {1,1,1,1};
+    }
+  }
+}
+
 static void ui_draw_vision_brake(UIState *s) {
-  if (s->scene.brake_indicator_enabled){
+  if (s->scene.brake_percent >= 0){
     // scene.brake_percent in [0,50] is engine/regen
     // scene.brake_percent in [51,100] is friction
     int brake_x = s->fb_w - face_wheel_radius - bdr_s * 2;
@@ -2520,13 +2696,13 @@ static void ui_draw_vision_brake(UIState *s) {
     else{
       ui_draw_circle_image(s, brake_x, brake_y, brake_size, "brake_disk", nvgRGBA(0, 0, 0, bg_alpha), img_alpha);
     }
-    // s->scene.brake_touch_rect = {1,1,1,1};
+    s->scene.brake_touch_rect = {brake_x - brake_size, brake_y - brake_size, 2 * brake_size, 2 * brake_size};
   }
 }
 
 static void draw_lane_pos_buttons(UIState *s) {
   if (s->vipc_client->connected && s->scene.lane_pos_enabled) {
-    const int radius = ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE && !(s->scene.map_open) ? 190 : 100);
+    const int radius = ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE && !(s->scene.map_open) ? 185 : 100);
     const int right_x = (s->scene.measure_cur_num_slots > 0 
                           ? s->scene.measure_slots_rect.x - 4 * radius / 3
                           : 4 * s->fb_w / 5);
@@ -2602,7 +2778,17 @@ static void draw_accel_mode_button(UIState *s) {
     const int radius = 72;
     int center_x = s->fb_w - face_wheel_radius - bdr_s * 2;
     if (s->scene.brake_percent >= 0){
-      center_x -= brake_size + (s->scene.map_open ? 1.2 : 3) * bdr_s + radius;
+      if (s->scene.power_meter_mode == 2){
+        center_x -= brake_size + (s->scene.map_open ? 1.2 : 3) * bdr_s + radius;
+      }
+      else{
+        if (s->scene.power_meter_mode == 0){
+          center_x -= s->fb_w * 8 / 128;
+        }
+        else{
+          center_x -= s->fb_w * 11 / 128;
+        }
+      }
     }
     int center_y = s->fb_h - footer_h / 2 - radius / 2;
     center_y = offset_button_y(s, center_y, radius);
@@ -2667,7 +2853,17 @@ static void draw_dynamic_follow_mode_button(UIState *s) {
     const int radius = 72;
     int center_x = s->fb_w - face_wheel_radius - bdr_s * 2;
     if (s->scene.brake_percent >= 0){
-      center_x -= brake_size + (s->scene.map_open ? 1.2 : 3) * bdr_s + radius;
+      if (s->scene.power_meter_mode == 2){
+        center_x -= brake_size + (s->scene.map_open ? 1.2 : 3) * bdr_s + radius;
+      }
+      else{
+        if (s->scene.power_meter_mode == 0){
+          center_x -= s->fb_w * 8 / 128;
+        }
+        else{
+          center_x -= s->fb_w * 11 / 128;
+        }
+      }
     }
     if (s->scene.accel_mode_button_enabled){
       center_x -= (s->scene.map_open ? 1.2 : 2) * bdr_s + 2 * radius;
@@ -2830,14 +3026,26 @@ static void ui_draw_vision(UIState *s) {
   if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE
   || (*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL) {
     ui_draw_vision_face(s);
-    ui_draw_vision_brake(s);
+    if (s->scene.power_meter_mode < 2){
+      ui_draw_vision_power_meter(s);
+    }
+    else{
+      ui_draw_vision_brake(s);
+      s->scene.power_meter_rect = {s->fb_w * 125 / 128, 1, 1, 1};
+    }
     if (!s->scene.map_open || (*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE){
       ui_draw_measures(s);
     }
   }
   else if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::MID) {
     ui_draw_vision_face(s);
-    ui_draw_vision_brake(s);
+    if (s->scene.power_meter_mode < 2){
+      ui_draw_vision_power_meter(s);
+    }
+    else{
+      ui_draw_vision_brake(s);
+      s->scene.power_meter_rect = {s->fb_w * 125 / 128, 1, 1, 1};
+    }
   }
   if (s->scene.lane_pos_enabled){
     draw_lane_pos_buttons(s);

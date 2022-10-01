@@ -373,6 +373,8 @@ static void update_state(UIState *s) {
 
     // EV efficiency
     float cur_dist = std::abs(scene.car_state.getVEgo() * (t - scene.ev_eff_last_time));
+
+    scene.car_is_ev = scene.car_is_ev || scene.car_state.getHvbWattage() != 0.0;
     
     scene.ev_eff_total_dist += cur_dist;
     float cur_kW = -scene.car_state.getHvbWattage() * 0.001;
@@ -631,6 +633,8 @@ static void update_status(UIState *s) {
         s->scene.screen_dim_mode_cur -= 1;
         Params().put("ScreenDimMode", std::to_string(s->scene.screen_dim_mode_cur).c_str(), 1);
       }
+      s->scene.power_meter_mode = std::stoi(Params().get("PowerMeterMode"));
+      s->scene.power_meter_metric = Params().getBool("PowerMeterMetric");
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->scene.color_path = Params().getBool("ColorPath");
       if (!s->scene.end_to_end){

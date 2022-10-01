@@ -280,6 +280,8 @@ typedef struct UIScene {
   Rect wheel_touch_rect;
   bool wheel_rotates = true;
 
+  bool car_is_ev = false;
+
   bool color_path = false;
   
   float screen_dim_modes_v[3] = {0.01, 0.3, 1.};
@@ -295,6 +297,13 @@ typedef struct UIScene {
 
   std::string network_type_string;
   int network_strength;
+
+  std::vector<float> power_cur {0.,0.,0.,0.}, 
+      power_max {75., 111., 130.,  55.}; // [kW] starting upper limits for ICE, EV, brake, and regen power based on volt (volt has 149hp EV output, 101hp motor, a reported 55-60. Brake is based on volt braking at 3.5m/s^2 at 45mph. these go up if more power is observed
+  
+  Rect power_meter_rect, power_meter_text_rect;
+  int power_meter_mode = 0; // 0/1/2 for meter/meter+number/old style brake indicator
+  bool power_meter_metric = true; // true/false for kW/hp power output
 
   
 // measures
