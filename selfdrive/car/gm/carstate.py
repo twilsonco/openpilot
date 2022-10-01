@@ -19,7 +19,8 @@ DRAG_Cd_FROM_MASS_V = [0.28, 0.35] # [drag coeffient for volt and suburban from 
 DRAG_FRONTAL_AREA_FROM_MASS_V = [2.2, 3.96] # [m^2 for same cars from same source]
 AIR_DENS_FROM_ELEV_BP = [-1000., 0., 1000., 2000., 3000., 4000., 5000., 6000.] # [m] highest road in the world is ~5800m
 AIR_DENS_FROM_ELEV_V = [1.347, 1.225, 1.112, 1.007, 0.9093, 0.8194, 0.7364, 0.6601] # [kg/m^3] from https://www.engineeringtoolbox.com/standard-atmosphere-d_604.html
-ROLLING_RESISTANCE_FROM_MASS_V = [1.04, 1.07] # [unitless] I used the 4-7% figure in this article and chose to interpret that as Volt = 4%, Suburban = 7%  https://www.tirebuyer.com/education/rolling-resistance-and-fuel-economy
+ROLLING_RESISTANCE_FROM_VEGO_V = [0.04, 0.048, 0.06, 0.076] # [unitless] I used the 4-7% figure in this article and chose to interpret that as Volt = 4%, Suburban = 7%  https://www.tirebuyer.com/education/rolling-resistance-and-fuel-economy
+ROLLING_RESISTANCE_FROM_VEGO_BP = [3., 16., 28., 39.] # [m/s] using plot at https://www.engineeringtoolbox.com/docs/documents/1303/car_tire_pressure_rolling_resistance.png
 # following efficiencies taken from https://sciendo.com/pdf/10.2478/rtuect-2020-0041 page 5 (673)
 # EV_ICE_INPUT_EFFICIENCY = 1/0.88
 # EV_DRIVE_EFFICIENCY = 1/0.82
@@ -56,7 +57,6 @@ class CarState(CarStateBase):
     self.cp_mass = CP.mass
     self.drag_cd = interp(self.cp_mass, DRAG_FROM_MASS_BP, DRAG_Cd_FROM_MASS_V)
     self.drag_csa = interp(self.cp_mass, DRAG_FROM_MASS_BP, DRAG_FRONTAL_AREA_FROM_MASS_V)
-    self.rolling_resistance = interp(self.cp_mass, DRAG_FROM_MASS_BP, ROLLING_RESISTANCE_FROM_MASS_V)
     self.altitude = 194. # [m] starts at the median human altitude https://www.pnas.org/doi/10.1073/pnas.95.24.14009
     
     self.rho = interp(self.altitude, AIR_DENS_FROM_ELEV_BP, AIR_DENS_FROM_ELEV_V)
@@ -70,6 +70,8 @@ class CarState(CarStateBase):
     self.drive_power = 0. 
     self.ice_power = 0.
     self.brake_power = 0.
+    self.rolling_resistance_force = 0.
+    self.rolling_resistance_power = 0.
     self.observed_efficiency = FirstOrderFilter(float(self._params.get("EVDriveTrainEfficiency", encoding="utf8")), 50., 0.05)
     self.brake_cmd = 0
     
@@ -340,7 +342,10 @@ class CarState(CarStateBase):
       self.accel_force = self.cp_mass * pitch_adjusted_accel # [N]
       self.drag_power = self.drag_force * self.vEgo # [W]
       self.accel_power = self.accel_force * self.vEgo  # [W]
-      self.drive_power = self.drag_power + self.accel_power # [W]
+      rolling_resistance = interp(self.vEgo, ROLLING_RESISTANCE_FROM_VEGO_BP, ROLLING_RESISTANCE_FROM_VEGO_V)
+      self.rolling_resistance_force = rolling_resistance * self.cp_mass * ACCELERATION_DUE_TO_GRAVITY
+      self.rolling_resistance_power = self.rolling_resistance_force * self.vEgo
+      self.drive_power = self.drag_power + self.accel_power + self.rolling_resistance_power # [W]
       if self.is_ev:
         if self.drive_power > 0.:
           self.regen_force = 0.
@@ -355,7 +360,7 @@ class CarState(CarStateBase):
         else:
           if self.engineRPM == 0:
             self.ice_power = 0.
-            if self.brake_cmd == 0:
+            if self.brake_cmd == 0 and not ret.brakePressed:
               self.regen_power = self.drive_power * self.observed_efficiency.x
               self.regen_force = (self.regen_power / self.vEgo) if self.vEgo > 0.3 else 0.
               self.brake_power = 0.
@@ -363,29 +368,20 @@ class CarState(CarStateBase):
               self.regen_power = self.hvb_wattage * self.observed_efficiency.x
               self.regen_force = (self.regen_power / self.vEgo) if self.vEgo > 0.3 else 0.
               self.brake_power = -(self.drive_power + self.regen_power)
-            if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse and self.drive_power < -1000. and self.hvb_wattage > 1000. and self.brake_cmd == 0:
+            if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse and self.drive_power < -1000. and self.hvb_wattage > 1000. and self.brake_cmd == 0 and not ret.brakePressed:
                 self.observed_efficiency.update(-self.hvb_wattage / self.drive_power)
           else: # assume full regen from dynamic gas/brake accel threshold which is a measure of available regen brake force
             self.regen_force = self.cp_mass * ev_regen_accel(self.vEgo+2.5, self.engineRPM > 0)
             self.regen_power = self.regen_force * self.vEgo  # [W]
             self.brake_power = self.drive_power - self.regen_power
             self.ice_power = -self.hvb_wattage - self.regen_power
-        if self.accel_power > 0: 
-          self.accel_power *= self.rolling_resistance
-        else:
-          self.accel_power /= self.rolling_resistance
-        self.drive_power = (self.drag_power + self.accel_power) / self.observed_efficiency.x # [W]
+        self.drive_power /= max(0.1, self.observed_efficiency.x) # [W]
       else:        
-        if self.accel_power > 0: 
-          self.accel_power *= self.rolling_resistance
-        else:
-          self.accel_power /= self.rolling_resistance
-        self.drive_power = self.drag_power + self.accel_power # [W]
         if self.drive_power > 0.:
           self.ice_power = self.drive_power
           self.brake_power = 0.
         else:
-          if self.brake_cmd == 0:
+          if self.brake_cmd == 0 and not ret.brakePressed:
             self.ice_power = self.drive_power
             self.brake_power = 0.
           else:
