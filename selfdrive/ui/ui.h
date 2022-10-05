@@ -302,7 +302,7 @@ typedef struct UIScene {
   int network_strength;
 
   std::vector<float> power_cur {0.,0.,0.,0.}, 
-      power_max {75., 111., 130.,  55.}; // [kW] starting upper limits for ICE, EV, brake, and regen power based on volt (volt has 149hp EV output, 101hp motor, a reported 55-60 kW of regen capacity. Brake is based on volt braking at 3.5m/s^2 at 45mph. these go up if more power is observed
+      power_max {75., 100., 100.,  55.}; // [kW] starting upper limits for ICE, EV, brake, and regen power based on volt (volt has 149hp EV output, 101hp motor, a reported 55-60 kW of regen capacity. Brake is based on volt braking at 3.5m/s^2 at 45mph. these go up if more power is observed
   float power_meter_pow = 0;
   Rect power_meter_rect, power_meter_text_rect;
   int power_meter_mode = 0; // 0/1/2 for meter/meter+number/old style brake indicator

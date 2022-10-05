@@ -657,9 +657,9 @@ static void ui_draw_measures(UIState *s){
     const int slots_y_rng = slot_y_rng * (scene.measure_num_rows <= scene.measure_max_rows ? scene.measure_num_rows : scene.measure_max_rows);
     const int slots_y_min = y_mid - (slots_y_rng / 2);
   
-    NVGcolor default_name_color = nvgRGBA(255, 255, 255, 200);
-    NVGcolor default_unit_color = nvgRGBA(255, 255, 255, 200);
-    NVGcolor default_val_color = nvgRGBA(255, 255, 255, 200);
+    NVGcolor default_name_color = COLOR_WHITE_ALPHA(200);
+    NVGcolor default_unit_color = COLOR_WHITE_ALPHA(200);
+    NVGcolor default_val_color = COLOR_WHITE_ALPHA(200);
     int default_val_font_size = 78. * slot_aspect_ratio_ratio;
     int default_name_font_size = 32. * (slot_y_rng_orig > 1. ? 0.9 * slot_aspect_ratio_ratio : 1.);
     int default_unit_font_size = 38. * slot_aspect_ratio_ratio;
@@ -678,14 +678,14 @@ static void ui_draw_measures(UIState *s){
     nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, scene.measure_slots_rect.x, scene.measure_slots_rect.y, scene.measure_slots_rect.w, scene.measure_slots_rect.h, 20);
     if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.measures_last_tap_t > QUIState::ui_state.scene.measures_touch_timeout){
-      nvgStrokeColor(s->vg, nvgRGBA(200,200,200,200));
+      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(160));
     }
     else{
       nvgStrokeColor(s->vg, COLOR_GRACE_BLUE_ALPHA(200));
     }
     nvgStrokeWidth(s->vg, 6);
     nvgStroke(s->vg);
-    nvgFillColor(s->vg, nvgRGBA(0,0,0,100));
+    nvgFillColor(s->vg, COLOR_BLACK_ALPHA(100));
     nvgFill(s->vg);
 
     char const * deg = Hardware::EON() ? "°" : "°";
@@ -2485,14 +2485,14 @@ static void ui_draw_vision_power_meter(UIState *s) {
                     ? s->fb_h * 7 / 32
                      : (*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::MID
                      ? s->fb_h * 6 / 16 : 0;
-    int h = (s->scene.power_meter_mode == 0 || alert_offset ? 22 : 21) * s->fb_h / 32;
+    int h = (s->scene.power_meter_mode == 0 || alert_offset ? 22 : 21) * s->fb_h / 32 - 6;
     h -= alert_offset;
     const int hu = h / 2;
     const int hl = h - hu;
     int y = (s->scene.power_meter_mode == 0 || alert_offset ? 30 : 29) * s->fb_h / 32;
     y -= alert_offset;
     const int y_mid = y - hl;
-    outer_rect = {x, y - h/2, 2 * w, h};
+    outer_rect = {x, y-h, 2 * w, h};
     s->scene.brake_touch_rect = outer_rect;
     const int y_offset = 2;
 
@@ -2502,15 +2502,23 @@ static void ui_draw_vision_power_meter(UIState *s) {
     pow_cur[ipow++] = MAX(0., s->scene.car_state.getEvPower());
     pow_cur[ipow++] = MAX(0., s->scene.car_state.getBrakePower());
     pow_cur[ipow++] = MAX(0., s->scene.car_state.getRegenPower());
+    float drag_power = s->scene.car_state.getDragPower() * 1e-3;
+    float rolling_resistance_power = s->scene.car_state.getRollingPower() * 1e-3;
     for (ipow = 0; ipow < 4; ++ipow){
+      pow_cur[ipow] *= 1e-3; // convert from W to kW
       s->scene.power_cur[ipow] = s->scene.power_meter_ema_k * pow_cur[ipow] + (1. - s->scene.power_meter_ema_k) * s->scene.power_cur[ipow];
-      s->scene.power_cur[ipow] *= 1e-3; // convert from W to kW
-      if (s->scene.power_cur[ipow] > s->scene.power_max[ipow]){
-        s->scene.power_max[ipow] = s->scene.power_cur[ipow];
-      }
     }
 
-    const int inner_fill_alpha = 140;
+    const int inner_fill_alpha = 200;
+    const int outer_fill_alpha = 20;
+    const int rect_r = 10;
+
+    // draw background
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, outer_rect.x, outer_rect.y, outer_rect.w, outer_rect.h, rect_r);
+    nvgFillColor(s->vg, COLOR_BLACK_ALPHA(100)); // blue 
+    nvgFill(s->vg);
+
 
     float pow_rel, pow_rel_max;
     int hi, wi;
@@ -2524,13 +2532,31 @@ static void ui_draw_vision_power_meter(UIState *s) {
       // inner bar
       nvgBeginPath(s->vg);
       nvgRect(s->vg, xi, y_mid - hi - y_offset, wi, hi);
-      nvgFillColor(s->vg, COLOR_GRACE_BLUE_ALPHA(inner_fill_alpha)); // blue 
+      nvgFillColor(s->vg, COLOR_WHITE_ALPHA(inner_fill_alpha)); // blue 
       nvgFill(s->vg);
       // outer box for bar
       nvgBeginPath(s->vg);
-      nvgRect(s->vg, xi, y_mid - hu - y_offset, wi, hu);
-      nvgFillColor(s->vg, COLOR_GRACE_BLUE_ALPHA(20));
+      nvgRoundedRect(s->vg, xi, y_mid - hu - y_offset, wi, hu, rect_r);
+      nvgFillColor(s->vg, COLOR_WHITE_ALPHA(outer_fill_alpha));
       nvgFill(s->vg);
+
+      // add lines to indicate drag and rolling resistance losses
+      if (pow_rel > 0.){
+        if (s->scene.power_cur[0] > 0.){
+          drag_power *= 0.5;
+          rolling_resistance_power *= 0.5;
+        }
+        int h_drag = hu * drag_power / s->scene.power_max[1];
+        int h_rr = h_drag + hu * rolling_resistance_power / s->scene.power_max[1];
+        nvgBeginPath(s->vg);
+        nvgRect(s->vg, xi, y_mid - hu - y - h_drag, wi, 5);
+        nvgFillColor(s->vg, COLOR_GRACE_BLUE_ALPHA(200));
+        nvgFill(s->vg);
+        nvgBeginPath(s->vg);
+        nvgRect(s->vg, xi, y_mid - hu - y - h_rr, wi, 5);
+        nvgFillColor(s->vg, COLOR_GRACE_BLUE_ALPHA(200));
+        nvgFill(s->vg);
+      }
 
       xi += wi;
       pow_rel_max = MAX(pow_rel, pow_rel_max);
@@ -2549,12 +2575,26 @@ static void ui_draw_vision_power_meter(UIState *s) {
       nvgFill(s->vg);
       // outer box for bar
       nvgBeginPath(s->vg);
-      nvgRect(s->vg, xi, y_mid - hu - y_offset, wi, hu);
-      nvgFillColor(s->vg, nvgRGBA(249,240,1,20));
+      nvgRoundedRect(s->vg, xi, y_mid - hu - y_offset, wi, hu, rect_r);
+      nvgFillColor(s->vg, nvgRGBA(249,240,1,outer_fill_alpha));
       nvgFill(s->vg);
       pow_rel_max = MAX(pow_rel, pow_rel_max);
+
+            // add lines to indicate drag and rolling resistance losses
+      if (pow_rel > 0.){
+        int h_drag = hu * drag_power / s->scene.power_max[0];
+        int h_rr = h_drag + hu * rolling_resistance_power / s->scene.power_max[0];
+        nvgBeginPath(s->vg);
+        nvgRect(s->vg, xi, y_mid - hu - y - h_drag, wi, 5);
+        nvgFillColor(s->vg, COLOR_BLACK_ALPHA(200));
+        nvgFill(s->vg);
+        nvgBeginPath(s->vg);
+        nvgRect(s->vg, xi, y_mid - hu - y - h_rr, wi, 5);
+        nvgFillColor(s->vg, COLOR_BLACK_ALPHA(200));
+        nvgFill(s->vg);
+      }
     }
-    
+
 
     // regen/engine braking power
     pow_rel = s->scene.power_cur[3] / s->scene.power_max[3];
@@ -2569,11 +2609,19 @@ static void ui_draw_vision_power_meter(UIState *s) {
     nvgFill(s->vg);
     // outer box for bar
     nvgBeginPath(s->vg);
-    nvgRect(s->vg, xi, y_mid + y_offset, wi, hl);
-    nvgFillColor(s->vg, nvgRGBA(0,230,27,20));
+    nvgRoundedRect(s->vg, xi, y_mid + y_offset, wi, hl, rect_r);
+    nvgFillColor(s->vg, nvgRGBA(0,230,27,outer_fill_alpha));
     nvgFill(s->vg);
 
     pow_rel_max = MAX(pow_rel, pow_rel_max);
+
+
+    // draw outer border here so that brakes can overwrite it
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, outer_rect.x, outer_rect.y, outer_rect.w, outer_rect.h, rect_r);
+    nvgStrokeWidth(s->vg, 5);
+    nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(160));
+    nvgStroke(s->vg);
     
     // brake power
     pow_rel = (s->scene.brake_percent >= 51 ? float(s->scene.brake_percent - 51) * 0.02 : s->scene.power_cur[2] / s->scene.power_max[2]);
@@ -2588,12 +2636,12 @@ static void ui_draw_vision_power_meter(UIState *s) {
     nvgFill(s->vg);
     // outer box for bar
     nvgBeginPath(s->vg);
-    nvgRect(s->vg, xi, y_mid + y_offset, wi, hl);
-    nvgFillColor(s->vg, nvgRGBA(255,21,0,20 + int(pow_rel > 0.) * 60.));
+    nvgRoundedRect(s->vg, xi, y_mid + y_offset, wi, hl, rect_r);
+    nvgFillColor(s->vg, nvgRGBA(255,21,0,outer_fill_alpha + int(pow_rel > 0.) * 40.));
     nvgFill(s->vg);
     if (pow_rel > 0.){
       nvgStrokeWidth(s->vg, 5);
-      nvgStrokeColor(s->vg, nvgRGBA(255,21,0,inner_fill_alpha));
+      nvgStrokeColor(s->vg, nvgRGBA(255,21,0,200));
       nvgStroke(s->vg);
     }
 

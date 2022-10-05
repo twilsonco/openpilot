@@ -19,7 +19,7 @@ DRAG_Cd_FROM_MASS_V = [0.28, 0.35] # [drag coeffient for volt and suburban from 
 DRAG_FRONTAL_AREA_FROM_MASS_V = [2.2, 3.96] # [m^2 for same cars from same source]
 AIR_DENS_FROM_ELEV_BP = [-1000., 0., 1000., 2000., 3000., 4000., 5000., 6000.] # [m] highest road in the world is ~5800m
 AIR_DENS_FROM_ELEV_V = [1.347, 1.225, 1.112, 1.007, 0.9093, 0.8194, 0.7364, 0.6601] # [kg/m^3] from https://www.engineeringtoolbox.com/standard-atmosphere-d_604.html
-ROLLING_RESISTANCE_FROM_VEGO_V = [0.04, 0.048, 0.06, 0.076] # [unitless] I used the 4-7% figure in this article and chose to interpret that as Volt = 4%, Suburban = 7%  https://www.tirebuyer.com/education/rolling-resistance-and-fuel-economy
+ROLLING_RESISTANCE_FROM_VEGO_V = [0.01, 0.012, 0.015, 0.019] # [unitless] I used the 4-7% figure in this article and chose to interpret that as Volt = 4%, Suburban = 7%  https://www.tirebuyer.com/education/rolling-resistance-and-fuel-economy
 ROLLING_RESISTANCE_FROM_VEGO_BP = [3., 16., 28., 39.] # [m/s] using plot at https://www.engineeringtoolbox.com/docs/documents/1303/car_tire_pressure_rolling_resistance.png
 # following efficiencies taken from https://sciendo.com/pdf/10.2478/rtuect-2020-0041 page 5 (673)
 # EV_ICE_INPUT_EFFICIENCY = 1/0.88
@@ -410,6 +410,8 @@ class CarState(CarStateBase):
     ret.icePower = self.ice_power
     ret.evForce = self.ev_force
     ret.evPower = self.ev_power
+    ret.rollingForce = self.rolling_resistance_force
+    ret.rollingPower = self.rolling_resistance_power
     ret.observedEVDrivetrainEfficiency = self.observed_efficiency.x
     
     
