@@ -24,10 +24,7 @@ from selfdrive.swaglog import cloudlog
 
 GearShifter = car.CarState.GearShifter
 
-BRAKE_SOURCES = {'lead0', 
-                 'lead1', 
-                 'lead2',
-                 'turn',
+BRAKE_SOURCES = {'turn',
                  'turnlimit'}
 COAST_SOURCES = {'cruise',
                  'limit'}

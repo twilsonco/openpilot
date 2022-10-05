@@ -188,6 +188,9 @@ class CarController():
             self.stop_distance = 0.
             self.stop_accel = 1.0
           
+          if CS.one_pedal_mode_op_braking_allowed:
+            self.stop_accel = min(self.stop_accel, CS.lead_accel)
+          
           if CS.one_pedal_mode_active or (CS.one_pedal_mode_op_braking_allowed and self.stop_accel < CS.out.aEgo):
             if CS.one_pedal_mode_active:
               one_pedal_decel = interp(CS.vEgo, ONE_PEDAL_MODE_DECEL_BP[CS.one_pedal_brake_mode], ONE_PEDAL_MODE_DECEL_V[CS.one_pedal_brake_mode])
