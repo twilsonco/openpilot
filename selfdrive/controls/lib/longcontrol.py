@@ -1,11 +1,17 @@
-from cereal import car
+from cereal import car, log
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
 from selfdrive.controls.lib.drive_helpers import CONTROL_N, apply_deadzone
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.modeld.constants import T_IDXS
 
+E2E_DEADZONE_BUFFER_BP = [0.0, 35.0]
+E2E_DEADZONE_BUFFER_V = [0.15, 0.05]
+E2E_ERROR_FACTOR_BP = [0.0, 35.0]
+E2E_ERROR_FACTOR_V = [0.8, 1.0]
+
 LongCtrlState = car.CarControl.Actuators.LongControlState
+LongPlanSource = log.LongitudinalPlan.LongitudinalPlanSource
 
 
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
@@ -58,6 +64,7 @@ class LongControl:
     self.long_control_state = LongCtrlState.off  # initialized to off
     self.pid = PIDController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
                              (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
+                             k_d=(CP.longitudinalTuning.kdBP, CP.longitudinalTuning.kdV),
                              k_f=CP.longitudinalTuning.kf, rate=1 / DT_CTRL)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
@@ -124,6 +131,9 @@ class LongControl:
       freeze_integrator = prevent_overshoot
 
       error = self.v_pid - CS.vEgo
+      if long_plan.longitudinalPlanSource == LongPlanSource.e2e:
+        error *= interp(CS.vEgo, E2E_ERROR_FACTOR_BP, E2E_ERROR_FACTOR_V)
+        deadzone += interp(CS.vEgo, E2E_DEADZONE_BUFFER_BP, E2E_DEADZONE_BUFFER_V)
       error_deadzone = apply_deadzone(error, deadzone)
       output_accel = self.pid.update(error_deadzone, speed=CS.vEgo,
                                      feedforward=a_target,

@@ -632,6 +632,7 @@ struct ControlsState @0x97ff69c53601abf1 {
   vCruiseCluster @63 :Float32;  # set speed to display in the UI
   upAccelCmd @4 :Float32;
   uiAccelCmd @5 :Float32;
+  udAccelCmd @66 :Float32;
   ufAccelCmd @33 :Float32;
   aTarget @35 :Float32;
   curvature @37 :Float32;  # path curvature from vehicle model
@@ -708,6 +709,7 @@ struct ControlsState @0x97ff69c53601abf1 {
     angleError @3 :Float32;
     p @4 :Float32;
     i @5 :Float32;
+    d @10 :Float32;
     f @6 :Float32;
     output @7 :Float32;
     saturated @8 :Bool;

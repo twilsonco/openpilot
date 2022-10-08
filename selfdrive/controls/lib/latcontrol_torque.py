@@ -4,6 +4,7 @@ from cereal import log
 from common.numpy_fast import interp
 from common.params import Params
 from decimal import Decimal
+from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
@@ -27,7 +28,7 @@ class LatControlTorque(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
     self.torque_params = CP.lateralTuning.torque
-    self.pid = PIDController(self.torque_params.kp, self.torque_params.ki,
+    self.pid = PIDController(self.torque_params.kp, self.torque_params.ki, k_d=self.torque_params.kd,
                              k_f=self.torque_params.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
     self.use_steering_angle = self.torque_params.useSteeringAngle
@@ -76,6 +77,7 @@ class LatControlTorque(LatControl):
         actual_curvature = interp(CS.vEgo, [2.0, 5.0], [actual_curvature_vm, actual_curvature_llk])
         curvature_deadzone = 0.0
       desired_lateral_accel = desired_curvature * CS.vEgo ** 2
+      desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
 
       # desired rate is the desired rate of change in the setpoint, not the absolute desired curvature
       # desired_lateral_jerk = desired_curvature_rate * CS.vEgo ** 2
@@ -86,12 +88,15 @@ class LatControlTorque(LatControl):
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
-      gravity_adjusted_lateral_accel = desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY
-      pid_log.error = self.torque_from_lateral_accel(error, self.torque_params, error,
-                                                     lateral_accel_deadzone, friction_compensation=False)
-      ff = self.torque_from_lateral_accel(gravity_adjusted_lateral_accel, self.torque_params,
+      gravity_lateral_accel = -params.roll * ACCELERATION_DUE_TO_GRAVITY
+      pid_log.error = CarInterfaceBase.torque_from_lateral_accel_linear(error, self.torque_params, error,
+                                                     lateral_accel_deadzone, friction_compensation=False,
+                                                      v_ego=CS.vEgo, g_lat_accel=0., lateral_jerk_desired=0.0)
+      
+      ff = self.torque_from_lateral_accel(desired_lateral_accel, self.torque_params,
                                           desired_lateral_accel - actual_lateral_accel,
-                                          lateral_accel_deadzone, friction_compensation=True)
+                                          lateral_accel_deadzone, friction_compensation=True,
+                                          v_ego=CS.vEgo, g_lat_accel=gravity_lateral_accel, lateral_jerk_desired=desired_lateral_jerk)
 
       freeze_integrator = steer_limited or CS.steeringPressed or CS.vEgo < 5
       output_torque = self.pid.update(pid_log.error,
