@@ -2624,7 +2624,11 @@ static void ui_draw_vision_power_meter(UIState *s) {
     nvgStroke(s->vg);
     
     // brake power
-    pow_rel = MAX(s->scene.brake_percent >= 51 ? float(s->scene.brake_percent - 51) * 0.02 : 0.), s->scene.power_cur[2] / s->scene.power_max[2]);
+    pow_rel = (s->scene.brake_percent >= 51 ? float(s->scene.brake_percent - 51) * 0.02 : 0.);
+    int pow_rel2 = s->scene.power_cur[2] / s->scene.power_max[2];
+    if (pow_rel2 > pow_rel){
+      pow_rel = pow_rel2;
+    }
     hi = hl * pow_rel;
     wi = w;
     xi += w;
