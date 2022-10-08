@@ -52,7 +52,7 @@ class LatControlTorque(LatControl):
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       actual_lateral_accel = actual_curvature * CS.vEgo**2
 
-      low_speed_factor = interp(CS.vEgo, [0., 25.], [400., 300.])
+      low_speed_factor = interp(CS.vEgo, [10., 25.], [150., 300])
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
