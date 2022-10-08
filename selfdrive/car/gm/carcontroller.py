@@ -46,7 +46,7 @@ ONE_PEDAL_STEER_ANGLE_FACTOR_V = [1., 0.2] # amount of stop accel to be generate
 # constant acceleration necessary to stop at 'd' distance from starting velocity 'vi'
 def accel_to_stop(vi,d,steer_angle):
   steer_angle_factor = interp(abs(steer_angle), ONE_PEDAL_STEER_ANGLE_FACTOR_BP, ONE_PEDAL_STEER_ANGLE_FACTOR_V)
-  one_pedal_hard_brake_accel = interp(CS.vEgo, ONE_PEDAL_MODE_DECEL_BP[-1], ONE_PEDAL_MODE_DECEL_V[-1])
+  one_pedal_hard_brake_accel = interp(vi, ONE_PEDAL_MODE_DECEL_BP[-1], ONE_PEDAL_MODE_DECEL_V[-1])
   return max(one_pedal_hard_brake_accel, -0.5*(vi**2)/max(0.1,d)) * steer_angle_factor
 
 # distance to stop at constant acceleration 'a' from starting velocity 'vl' 
