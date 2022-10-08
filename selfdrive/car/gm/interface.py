@@ -204,7 +204,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.469 # Stock Michelin Energy Saver A/S, LiveParameters
       ret.steerRatioRear = 0.
       ret.centerToFront = 0.45 * ret.wheelbase # from Volt Gen 1
-      ret.steerActuatorDelay = 0.18
+      ret.steerActuatorDelay = 0.22
       if (Params().get_bool("EnableTorqueControl")):
         max_lateral_accel = 3.0
         ret.lateralTuning.init('torque')
