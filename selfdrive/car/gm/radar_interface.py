@@ -15,7 +15,7 @@ RADAR_NUM_SLOTS = 20
 VOACC_NUM_SLOTS = 12
 VOACC_MIN_RANGE = 145. # below this distance, defer to radar
 VOACC_RADAR_TRACK_COMBINE_DIST = 10. # [m]
-VOACC_RADAR_TRACK_COMBINE_VREL = 2. # [m/s]
+VOACC_RADAR_TRACK_COMBINE_VREL = 4. # [m/s]
 VOACC_RADAR_TRACK_COMBINE_DIST_VREL_RATIO = VOACC_RADAR_TRACK_COMBINE_DIST / VOACC_RADAR_TRACK_COMBINE_VREL
 
 # Actually it's 0x47f, but can parser only reports
@@ -149,7 +149,7 @@ class RadarInterface(RadarInterfaceBase):
             
           if closestPt is not None and np.linalg.norm([closestPt.dRel - distance, closestPt.yRel - y_rel]) <= VOACC_RADAR_TRACK_COMBINE_DIST \
               and np.fabs(closestPt.vRel - v_rel) <= VOACC_RADAR_TRACK_COMBINE_VREL:
-            if distance >= VOACC_MIN_RANGE:
+            if closestPt.dRel >= VOACC_MIN_RANGE:
               self.pts[closestPt.trackId].dRel = (distance + closestPt.dRel) / 2
               self.pts[closestPt.trackId].yRel = (y_rel + closestPt.yRel) / 2
               self.pts[closestPt.trackId].vRel = (v_rel + closestPt.vRel) / 2
