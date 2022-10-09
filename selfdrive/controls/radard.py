@@ -20,6 +20,7 @@ LEAD_PATH_YREL_MAX_BP = [0.] # [m] distance to lead
 LEAD_PATH_YREL_MAX_V = [1.2] # [m] constant tolerance
 LEAD_PATH_YREL_LOW_TOL = 0.5 # if the lead closest to the "middle" is farther away than one that is both closer and within this distance of "middle", use that lead
 LEAD_PATH_DREL_MIN = 60 # [m] only care about far away leads
+LEAD_MIN_SMOOTHING_DISTANCE = 145 # [m]
 MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow use.
 
 class KalmanParams():
@@ -208,7 +209,7 @@ def get_lead(v_ego, ready, clusters, lead_msg=None, low_speed_override=True, md=
   return lead_dict
 
 class LongRangeLead():
-  DREL_BP = [LEAD_PATH_DREL_MIN, 220.] # [m] used commonly between distance-based parameters
+  DREL_BP = [LEAD_MIN_SMOOTHING_DISTANCE, 220.] # [m] used commonly between distance-based parameters
   D_DREL_MAX_V = [1.5, 15.] # [m] deviation between old and new leads necessary to trigger reset of values
   ALPHA_V = [0, 1.] # raise/lower second value for more/less smoothing of long-range lead data
   D_YREL_MAX = 0.8 # [m] max yrel deviation
@@ -235,7 +236,7 @@ class LongRangeLead():
     if not lead['status']:
       self.reset()
     else:
-      if lead['checkSource'] == 'modelLead' or \
+      if lead['checkSource'] == 'modelLead' or lead['dRel'] < self.DREL_BP[0] or \
           (self.lead_last is not None and self.lead_last['status'] and \
           (abs(self.lead_last['dRel'] - lead['dRel']) > interp(lead['dRel'], self.DREL_BP, self.D_DREL_MAX_V) or \
           abs(self.lead_last['yRel'] - lead['yRel']) > self.D_YREL_MAX)):
