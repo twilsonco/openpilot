@@ -39,7 +39,7 @@ ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.7 * DT_CTRL * 4 # m/s^2 per second for decre
 ONE_PEDAL_COMFORT_BRAKE_LEAD = -2.5 # [m/s^2] used to 
 ONE_PEDAL_STOP_DISTANCE_BP = [0., 10.] # [m/s] lead velocity
 ONE_PEDAL_STOP_DISTANCE_V = [3.5, 1.] # [m] extra stop distance added based on lead velocity
-ONE_PEDAL_LEAD_BRAKE_ERROR_FACTOR = 1.5 # scales the error between aEgo and one pedal decel
+ONE_PEDAL_LEAD_BRAKE_ERROR_FACTOR = 5.0 # scales the error between aEgo and one pedal decel
 ONE_PEDAL_STEER_ANGLE_FACTOR_BP = [30., 150] # [abs(degrees)] 
 ONE_PEDAL_STEER_ANGLE_FACTOR_V = [1., 0.2] # amount of stop accel to be generated
 
@@ -193,15 +193,14 @@ class CarController():
             self.lead_stop_distance = distance_to_stop(CS.coasting_lead_v, ONE_PEDAL_COMFORT_BRAKE_LEAD)
             self.stop_distance = CS.coasting_lead_d + self.lead_stop_distance
             self.stop_accel = accel_to_stop(CS.vEgo, self.stop_distance, CS.out.steeringAngleDeg)
+            if CS.one_pedal_mode_op_braking_allowed:
+              self.stop_accel = min(self.stop_accel, CS.lead_accel)
             stop_accel_error = (self.stop_accel - CS.out.aEgo) * ONE_PEDAL_LEAD_BRAKE_ERROR_FACTOR
           else:
             self.lead_stop_distance = 0.
             self.stop_distance = 0.
             self.stop_accel = 10
             stop_accel_error = 0.
-          
-          if CS.one_pedal_mode_op_braking_allowed:
-            self.stop_accel = min(self.stop_accel, CS.lead_accel)
           
           if CS.one_pedal_mode_active or (CS.one_pedal_mode_op_braking_allowed and self.stop_accel < CS.out.aEgo):
             if CS.one_pedal_mode_active:
