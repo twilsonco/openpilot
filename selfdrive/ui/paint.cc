@@ -2549,11 +2549,11 @@ static void ui_draw_vision_power_meter(UIState *s) {
         int h_drag = hu * drag_power / s->scene.power_max[1];
         int h_rr = h_drag + hu * rolling_resistance_power / s->scene.power_max[1];
         nvgBeginPath(s->vg);
-        nvgRect(s->vg, xi, y_mid - hu - y - h_drag, wi, 5);
+        nvgRect(s->vg, xi, y_mid - h_drag, wi, 5);
         nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
         nvgFill(s->vg);
         nvgBeginPath(s->vg);
-        nvgRect(s->vg, xi, y_mid - hu - y - h_rr, wi, 5);
+        nvgRect(s->vg, xi, y_mid - h_rr, wi, 5);
         nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
         nvgFill(s->vg);
       }
