@@ -31,7 +31,7 @@ class AUTO_AUTO_LANE_MODE:
 class LaneOffset: 
   OFFSET = 0.11 # [unitless] offset of the left/right positions as factor of current lane width
   AUTO_OFFSET_FACTOR = 0.8 # 20% less offset when auto mode
-  OFFSET_MAX = 0.8 # [m]
+  OFFSET_MAX = 0.7 # [m]
   DUR = 2.0 # [s] time it takes to switch lane positions
   STEP = OFFSET / DUR * DT_MDL * LANE_WIDTH_DEFAULT
   
@@ -47,7 +47,7 @@ class LaneOffset:
   AUTO_MIN_LANELINE_PROB = 0.9
   AUTO_MIN_ADJACENT_LANELINE_PROB = 0.3
   
-  AUTO_LANE_STATE_MIN_TIME = 3.0 # [s] amount of time the lane state must stay the same before it can be acted upon
+  AUTO_LANE_STATE_MIN_TIME = 8.0 # [s] amount of time the lane state must stay the same before it can be acted upon
   
   AUTO_ENABLE_ROAD_TYPES = {0, 10, 20, 30} # freeway and state highways (see highway ranks in /Users/haiiro/NoSync/optw/openpilot/selfdrive/mapd/lib/WayRelation.py)
   AUTO_ENABLE_MIN_SPEED = 40. * CV.MPH_TO_MS
