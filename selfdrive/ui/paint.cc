@@ -511,7 +511,7 @@ static void ui_draw_world(UIState *s) {
       draw_lead(s, lead_two.getX()[0], lead_two.getV()[0], s->scene.lead_vertices[1], lead_one.getProb() <= .5, false);
     }
     for (int i = 0; i < 2 && !lead_drawn; ++i){
-      if (s->scene.lead_data[i].getStatus() && s->scene.lead_data[i].getDRel() > 120.){
+      if (s->scene.lead_data[i].getStatus() && s->scene.lead_data[i].getDRel() > 60.){
         lead_drawn = true;
         draw_lead(s, s->scene.lead_data[i].getDRel(), s->scene.lead_data[i].getVRel(), s->scene.lead_vertices[i], true, true);
       }
