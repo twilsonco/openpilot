@@ -157,12 +157,15 @@ class Planner():
     if self.lead_0.status:
       self.coasting_lead_d = self.lead_0.dRel
       self.coasting_lead_v = self.lead_0.vLead
+      self.coasting_lead_a = self.lead_0.aLead
     elif self.lead_1.status:
       self.coasting_lead_d = self.lead_1.dRel
       self.coasting_lead_v = self.lead_1.vLead
+      self.coasting_lead_a = self.lead_1.aLead
     else:
       self.coasting_lead_d = -1.
       self.coasting_lead_v = -10.
+      self.coasting_lead_a = 10.
     self.tr = self.mpcs['lead0'].tr
     
     

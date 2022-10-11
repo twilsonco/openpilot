@@ -689,7 +689,7 @@ class Controls:
     CC.onePedalF = float(self.CI.CC.one_pedal_pid.f)
     CC.onePedalLeadStopDistance = float(self.CI.CC.lead_stop_distance)
     CC.onePedalStopDistance = float(self.CI.CC.stop_distance)
-    CC.onePedalStopAccel = float(self.CI.CC.stop_accel)
+    CC.onePedalStopAccel = float(self.CI.CC.stop_accel.x)
     
     CC.hudControl.setSpeed = float(self.v_cruise_kph) * CV.KPH_TO_MS
     CC.hudControl.speedVisible = self.enabled

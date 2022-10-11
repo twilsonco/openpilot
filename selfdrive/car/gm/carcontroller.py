@@ -38,7 +38,7 @@ ONE_PEDAL_DECEL_RATE_LIMIT_UP = 1.5 * DT_CTRL * 4 # m/s^2 per second for increas
 ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.7 * DT_CTRL * 4 # m/s^2 per second for decreasing
 
 ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V[-1])
-ONE_PEDAL_COMFORT_BRAKE_LEAD = -2.5 # [m/s^2] used to 
+ONE_PEDAL_COMFORT_BRAKE_LEAD_OFFSET = -1.25 # [m/s^2] used to offset actual lead acceleration
 ONE_PEDAL_STOP_DISTANCE_BP = [0., 10.] # [m/s] lead velocity
 ONE_PEDAL_STOP_DISTANCE_V = [3.5, 1.] # [m] extra stop distance added based on lead velocity
 ONE_PEDAL_LEAD_BRAKE_ERROR_FACTOR_BP = ONE_PEDAL_STOP_DISTANCE_BP
@@ -194,7 +194,7 @@ class CarController():
           pitch_accel *= interp(CS.vEgo, ONE_PEDAL_ACCEL_PITCH_FACTOR_BP, ONE_PEDAL_ACCEL_PITCH_FACTOR_V)
           
           if CS.coasting_lead_d > 0.:
-            self.lead_stop_distance = distance_to_stop(CS.coasting_lead_v, ONE_PEDAL_COMFORT_BRAKE_LEAD)
+            self.lead_stop_distance = distance_to_stop(CS.coasting_lead_v, CS.coasting_lead_a + ONE_PEDAL_COMFORT_BRAKE_LEAD_OFFSET)
             self.stop_distance = CS.coasting_lead_d + self.lead_stop_distance
             stop_accel = accel_to_stop(CS.vEgo, self.stop_distance, CS.out.steeringAngleDeg)
             if CS.one_pedal_mode_op_braking_allowed:

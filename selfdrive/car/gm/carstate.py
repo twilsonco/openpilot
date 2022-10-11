@@ -119,6 +119,7 @@ class CarState(CarStateBase):
     self.coasting_long_plan = ""
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -1.
+    self.coasting_lead_a = 10.
     self.tr = 1.8
     self.coast_one_pedal_mode_active = False
     self.coast_one_pedal_mode_active_last = False
