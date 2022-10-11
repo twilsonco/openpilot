@@ -1,4 +1,5 @@
 from cereal import car, log
+from common.filter_simple import FirstOrderFilter
 from common.realtime import DT_CTRL
 from common.numpy_fast import interp, clip
 from common.realtime import sec_since_boot
@@ -37,7 +38,7 @@ ONE_PEDAL_DECEL_RATE_LIMIT_UP = 1.5 * DT_CTRL * 4 # m/s^2 per second for increas
 ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.7 * DT_CTRL * 4 # m/s^2 per second for decreasing
 
 ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V[-1])
-ONE_PEDAL_COMFORT_BRAKE_LEAD = -1.9 # [m/s^2] used to 
+ONE_PEDAL_COMFORT_BRAKE_LEAD = -2.5 # [m/s^2] used to 
 ONE_PEDAL_STOP_DISTANCE_BP = [0., 10.] # [m/s] lead velocity
 ONE_PEDAL_STOP_DISTANCE_V = [3.5, 1.] # [m] extra stop distance added based on lead velocity
 ONE_PEDAL_LEAD_BRAKE_ERROR_FACTOR_BP = ONE_PEDAL_STOP_DISTANCE_BP
@@ -85,7 +86,7 @@ class CarController():
     self.one_pedal_pid.pos_limit = 0.0
     self.lead_stop_distance = 0.
     self.stop_distance = 0.
-    self.stop_accel = 10
+    self.stop_accel = FirstOrderFilter(0., 0.1, DT_CTRL*4, initialized=False)
     
     self.apply_gas = 0
     self.apply_brake = 0
@@ -180,7 +181,8 @@ class CarController():
           self.one_pedal_pid.reset()
           self.one_pedal_decel = 0.0
           self.one_pedal_decel_in = 0.
-          self.stop_accel = 10.
+          self.stop_accel.initialized = False
+          self.stop_accel.update(CS.out.aEgo)
           self.stop_distance = 0.
         
         if (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active):
@@ -194,24 +196,25 @@ class CarController():
           if CS.coasting_lead_d > 0.:
             self.lead_stop_distance = distance_to_stop(CS.coasting_lead_v, ONE_PEDAL_COMFORT_BRAKE_LEAD)
             self.stop_distance = CS.coasting_lead_d + self.lead_stop_distance
-            self.stop_accel = accel_to_stop(CS.vEgo, self.stop_distance, CS.out.steeringAngleDeg)
+            stop_accel = accel_to_stop(CS.vEgo, self.stop_distance, CS.out.steeringAngleDeg)
             if CS.one_pedal_mode_op_braking_allowed:
-              self.stop_accel = min(self.stop_accel, CS.lead_accel)
-            stop_accel_error = (self.stop_accel - CS.out.aEgo) * interp(CS.coasting_lead_v, ONE_PEDAL_LEAD_BRAKE_ERROR_FACTOR_BP, ONE_PEDAL_LEAD_BRAKE_ERROR_FACTOR_V)
+              self.stop_accel.update(min(stop_accel, CS.lead_accel))
+            stop_accel_error = (self.stop_accel.x - CS.out.aEgo) * interp(CS.coasting_lead_v, ONE_PEDAL_LEAD_BRAKE_ERROR_FACTOR_BP, ONE_PEDAL_LEAD_BRAKE_ERROR_FACTOR_V)
           else:
             self.lead_stop_distance = 0.
             self.stop_distance = 0.
-            self.stop_accel = 10
+            self.stop_accel.initialized = False
+            self.stop_accel.update(CS.out.aEgo)
             stop_accel_error = 0.
           
-          if CS.one_pedal_mode_active or (CS.one_pedal_mode_op_braking_allowed and self.stop_accel < CS.out.aEgo):
+          if CS.one_pedal_mode_active or (CS.one_pedal_mode_op_braking_allowed and self.stop_accel.x < CS.out.aEgo - 0.2):
             if CS.one_pedal_mode_active:
               one_pedal_decel = interp(CS.vEgo, ONE_PEDAL_MODE_DECEL_BP[CS.one_pedal_brake_mode], ONE_PEDAL_MODE_DECEL_V[CS.one_pedal_brake_mode])
               if abs(CS.angle_steers) > CS.one_pedal_angle_steers_cutoff_bp[0]:
                 one_pedal_apply_brake_decel_minus1 = interp(CS.vEgo, ONE_PEDAL_MODE_DECEL_BP[max(0,CS.one_pedal_brake_mode-1)], ONE_PEDAL_MODE_DECEL_V[max(0,CS.one_pedal_brake_mode-1)])
                 one_pedal_decel = interp(abs(CS.angle_steers), CS.one_pedal_angle_steers_cutoff_bp, [one_pedal_decel, one_pedal_apply_brake_decel_minus1])
             else:
-              one_pedal_decel = self.stop_accel
+              one_pedal_decel = self.stop_accel.x
             
             self.one_pedal_decel_in = clip(one_pedal_decel, self.one_pedal_decel_in - ONE_PEDAL_DECEL_RATE_LIMIT_UP * max(1., 0.5 - one_pedal_decel*0.5), self.one_pedal_decel_in + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
             
