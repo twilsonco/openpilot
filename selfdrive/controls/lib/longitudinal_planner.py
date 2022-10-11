@@ -156,12 +156,12 @@ class Planner():
     following = self.lead_0.status and self.lead_0.dRel < 45.0 and self.lead_0.vLeadK > v_ego and self.lead_0.aLeadK > 0.0
     if self.lead_0.status:
       self.coasting_lead_d = self.lead_0.dRel
-      self.coasting_lead_v = self.lead_0.vLead
-      self.coasting_lead_a = self.lead_0.aLead
+      self.coasting_lead_v = self.lead_0.vLeadK
+      self.coasting_lead_a = self.lead_0.aLeadK
     elif self.lead_1.status:
       self.coasting_lead_d = self.lead_1.dRel
-      self.coasting_lead_v = self.lead_1.vLead
-      self.coasting_lead_a = self.lead_1.aLead
+      self.coasting_lead_v = self.lead_1.vLeadK
+      self.coasting_lead_a = self.lead_1.aLeadK
     else:
       self.coasting_lead_d = -1.
       self.coasting_lead_v = -10.
