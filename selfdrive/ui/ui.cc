@@ -132,7 +132,7 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
     if (leads[i].getProb() > 0.5) {
       lead_drawn = true;
       float z = model_position.getZ()[get_path_length_idx(model_position, leads[i].getX()[0])];
-      calib_frame_to_full_frame(s, leads[i].getX()[0], leads[i].getY()[0], z + 1.22, &s->scene.lead_vertices[i]);
+      calib_frame_to_full_frame(s, leads[i].getX()[0], leads[i].getY()[0], z + 1.32, &s->scene.lead_vertices[i]);
     }
   }
   if (!lead_drawn){
@@ -153,7 +153,7 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
             }
           }
         }
-        calib_frame_to_full_frame(s, s->scene.lead_data[i].getDRel(), -(s->scene.lead_data[i].getYRel()), z + 1.22, &s->scene.lead_vertices[i]);
+        calib_frame_to_full_frame(s, s->scene.lead_data[i].getDRel(), -(s->scene.lead_data[i].getYRel()), z + 1.32, &s->scene.lead_vertices[i]);
       }
     }
   }
@@ -221,7 +221,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
   }
   max_idx = get_path_length_idx(model_position, max_distance);
-  update_line_data(s, model_position, scene.end_to_end ? 0.8 : 0.5, 1.22, &scene.track_vertices, max_idx, false);
+  update_line_data(s, model_position, scene.end_to_end ? 0.8 : 0.5, 1.32, &scene.track_vertices, max_idx, false);
 }
 
 static void update_sockets(UIState *s) {
