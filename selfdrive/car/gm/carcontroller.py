@@ -29,13 +29,14 @@ ONE_PEDAL_MODE_DECEL_BP = [
   ] # [mph to meters]
 ONE_PEDAL_MODE_DECEL_V = [
   [-1.0, -1.1],
-  [-1.3, -1.7, -1.8],
-  [-1.8, -2.6, -2.4]
+  [-1.4, -1.7, -1.8],
+  [-2.0, -2.6, -2.4]
 ] # light, medium, and hard one-pedal braking
 ONE_PEDAL_MIN_SPEED = 2.5
 ONE_PEDAL_DECEL_RATE_LIMIT_UP = 1.5 * DT_CTRL * 4 # m/s^2 per second for increasing braking force
 ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.7 * DT_CTRL * 4 # m/s^2 per second for decreasing
 
+ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V[-1])
 ONE_PEDAL_COMFORT_BRAKE_LEAD = -2.5 # [m/s^2] used to 
 ONE_PEDAL_STOP_DISTANCE_BP = [0., 10.] # [m/s] lead velocity
 ONE_PEDAL_STOP_DISTANCE_V = [3.5, 1.] # [m] extra stop distance added based on lead velocity
@@ -44,11 +45,11 @@ ONE_PEDAL_LEAD_BRAKE_ERROR_FACTOR_V = [15.0, 5.0] # scales the error between aEg
 ONE_PEDAL_STEER_ANGLE_FACTOR_BP = [30., 150] # [abs(degrees)] 
 ONE_PEDAL_STEER_ANGLE_FACTOR_V = [1., 0.2] # amount of stop accel to be generated
 
+
 # constant acceleration necessary to stop at 'd' distance from starting velocity 'vi'
 def accel_to_stop(vi,d,steer_angle):
   steer_angle_factor = interp(abs(steer_angle), ONE_PEDAL_STEER_ANGLE_FACTOR_BP, ONE_PEDAL_STEER_ANGLE_FACTOR_V)
-  one_pedal_hard_brake_accel = interp(vi, ONE_PEDAL_MODE_DECEL_BP[-1], ONE_PEDAL_MODE_DECEL_V[-1])
-  return max(one_pedal_hard_brake_accel, -0.5*(vi**2)/max(0.1,d)) * steer_angle_factor
+  return max(ONE_PEDAL_MAX_DECEL, -0.5*(vi**2)/max(0.1,d)) * steer_angle_factor
 
 # distance to stop at constant acceleration 'a' from starting velocity 'vl' 
 def distance_to_stop(vi,a):
