@@ -44,7 +44,7 @@ ONE_PEDAL_STOP_DISTANCE_BP = [0., 10.] # [m/s] lead velocity
 ONE_PEDAL_STOP_DISTANCE_V = [5, 1.] # [m] extra stop distance added based on lead velocity
 ONE_PEDAL_STEER_ANGLE_FACTOR_BP = [30., 150] # [abs(degrees)] 
 ONE_PEDAL_STEER_ANGLE_FACTOR_V = [1., 0.2] # amount of stop accel to be generated
-
+ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V[-1])
 
 # constant acceleration necessary to stop at 'd' distance from starting velocity 'vi'
 def accel_to_stop(vi,d,steer_angle):
@@ -217,7 +217,7 @@ class CarController():
               one_pedal_decel = self.stop_accel.x
             
             self.one_pedal_decel_in = clip(one_pedal_decel, self.one_pedal_decel_in - ONE_PEDAL_DECEL_RATE_LIMIT_UP * max(1., 0.5 - one_pedal_decel*0.5), self.one_pedal_decel_in + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
-            self.one_pedal_decel_in = max(self.one_pedal_decel_in, interp(CS.vEgo, ONE_PEDAL_MODE_DECEL_BP[-1], ONE_PEDAL_MODE_DECEL_V[-1]))
+            self.one_pedal_decel_in = max(self.one_pedal_decel_in, ONE_PEDAL_MAX_DECEL)
             
             self.one_pedal_decel = self.one_pedal_pid.update(self.one_pedal_decel_in, min(0.0, CS.out.aEgo + pitch_accel), speed=CS.out.vEgo, feedforward=self.one_pedal_decel_in)
             one_pedal_apply_brake = interp(self.one_pedal_decel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
