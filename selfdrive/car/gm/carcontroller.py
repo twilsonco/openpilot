@@ -37,7 +37,7 @@ ONE_PEDAL_DECEL_RATE_LIMIT_UP = 1.5 * DT_CTRL * 4 # m/s^2 per second for increas
 ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.7 * DT_CTRL * 4 # m/s^2 per second for decreasing
 
 ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V[-1])
-ONE_PEDAL_COMFORT_BRAKE_LEAD = -2.5 # [m/s^2] used to 
+ONE_PEDAL_COMFORT_BRAKE_LEAD = -1.9 # [m/s^2] used to 
 ONE_PEDAL_STOP_DISTANCE_BP = [0., 10.] # [m/s] lead velocity
 ONE_PEDAL_STOP_DISTANCE_V = [3.5, 1.] # [m] extra stop distance added based on lead velocity
 ONE_PEDAL_LEAD_BRAKE_ERROR_FACTOR_BP = ONE_PEDAL_STOP_DISTANCE_BP
