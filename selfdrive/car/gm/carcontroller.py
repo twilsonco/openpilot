@@ -85,7 +85,7 @@ class CarController():
     self.one_pedal_pid.pos_limit = 0.0
     self.lead_stop_distance = 0.
     self.stop_distance = 0.
-    self.stop_accel = FirstOrderFilter(0., 0.1, DT_CTRL*4, initialized=False)
+    self.stop_accel = FirstOrderFilter(0., 0.02, DT_CTRL*4, initialized=False)
     
     self.apply_gas = 0
     self.apply_brake = 0
