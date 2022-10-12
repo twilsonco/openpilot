@@ -198,7 +198,7 @@ class CarController():
             stop_accel = accel_to_stop(CS.vEgo, self.stop_distance, CS.out.steeringAngleDeg)
             if CS.one_pedal_mode_op_braking_allowed:
               self.stop_accel.update(min(stop_accel, CS.lead_accel))
-            stop_accel_error = min(0., self.stop_accel.x - CS.out.aEgo)
+            stop_accel_error = min(0., (self.stop_accel.x - CS.out.aEgo) * 2.0)
           else:
             self.lead_stop_distance = 0.
             self.stop_distance = 0.
