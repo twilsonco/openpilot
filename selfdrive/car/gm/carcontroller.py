@@ -42,7 +42,7 @@ ONE_PEDAL_COMFORT_BRAKE_LEAD_OFFSET = -1.25 # [m/s^2] used to offset actual lead
 ONE_PEDAL_COMFORT_BRAKE_LEAD_MIN = -2.5
 ONE_PEDAL_STOP_DISTANCE_BP = [0., 10.] # [m/s] lead velocity
 ONE_PEDAL_STOP_DISTANCE_V = [5, 1.] # [m] extra stop distance added based on lead velocity
-ONE_PEDAL_STOP_ACCEL_ALPHA_BP = [0., 30.] # [m/s] lead velocity
+ONE_PEDAL_STOP_ACCEL_ALPHA_BP = [50., 150.] # [m] lead distance
 ONE_PEDAL_STOP_ACCEL_ALPHA_V = [0.02, 0.25] # alpha for filter (larger value is smoother, slower filter)
 ONE_PEDAL_STEER_ANGLE_FACTOR_BP = [30., 150] # [abs(degrees)] 
 ONE_PEDAL_STEER_ANGLE_FACTOR_V = [1., 0.2] # amount of stop accel to be generated
@@ -199,7 +199,7 @@ class CarController():
             self.stop_distance = CS.coasting_lead_d + self.lead_stop_distance
             stop_accel = accel_to_stop(CS.vEgo, self.stop_distance, CS.out.steeringAngleDeg)
             if CS.one_pedal_mode_op_braking_allowed:
-              self.stop_accel.update_alpha(interp(CS.coasting_lead_v, ONE_PEDAL_STOP_ACCEL_ALPHA_BP, ONE_PEDAL_STOP_ACCEL_ALPHA_V))
+              self.stop_accel.update_alpha(interp(CS.coasting_lead_d, ONE_PEDAL_STOP_ACCEL_ALPHA_BP, ONE_PEDAL_STOP_ACCEL_ALPHA_V))
               self.stop_accel.update(min(stop_accel, CS.lead_accel))
             stop_accel_error = min(0., (self.stop_accel.x - CS.out.aEgo) * 2.0)
           else:
