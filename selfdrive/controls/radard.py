@@ -172,6 +172,84 @@ def match_model_lanelines_to_cluster(v_ego, md, lane_width, clusters):
     return None
 
 
+def get_path_adjacent_clusters(v_ego, md, lane_width, clusters):
+  if len(clusters) == 0:
+    return [[],[],[]]
+  
+  if md is not None and lane_width > 0. and len(md.laneLines) == 4 and len(md.laneLines[1].x) == TRAJECTORY_SIZE:
+    # get centerline approximation using one or both lanelines
+    ll_x = md.laneLines[1].x  # left and right ll x is the same
+    lll_y = np.array(md.laneLines[1].y)
+    rll_y = np.array(md.laneLines[2].y)
+    l_prob = md.laneLineProbs[1]
+    r_prob = md.laneLineProbs[2]
+    lll_std = md.laneLineStds[1]
+    rll_std = md.laneLineStds[2]
+
+    if l_prob > MIN_LANE_PROB and r_prob > MIN_LANE_PROB:
+      # Reduce reliance on lanelines that are too far apart or will be in a few seconds
+      width_pts = rll_y - lll_y
+      prob_mods = []
+      for t_check in [0.0, 1.5, 3.0]:
+        width_at_t = interp(t_check * (v_ego + 7), ll_x, width_pts)
+        prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
+      mod = min(prob_mods)
+      l_prob *= mod
+      r_prob *= mod
+
+      # Reduce reliance on uncertain lanelines
+      l_std_mod = interp(lll_std, [.15, .3], [1.0, 0.0])
+      r_std_mod = interp(rll_std, [.15, .3], [1.0, 0.0])
+      l_prob *= l_std_mod
+      r_prob *= r_std_mod
+
+    # Find path from lanes as the average center lane only if min probability on both lanes is above threshold.
+    if l_prob > MIN_LANE_PROB and r_prob > MIN_LANE_PROB:
+      c_y = (lll_y + rll_y) / 2.
+    elif l_prob > MIN_LANE_PROB:
+      c_y = lll_y + (lane_width / 2)
+    elif r_prob > MIN_LANE_PROB:
+      c_y = rll_y - (lane_width / 2)
+    else:
+      c_y = None
+  else:
+    c_y = None
+  
+  if md is not None or len(md.position.x) == TRAJECTORY_SIZE or md.position.x[-1] > LEAD_PATH_DREL_MIN:
+    md_y = md.position.y
+    md_x = md.position.x
+  else:
+    md_y = None
+  
+  leads_left = {}
+  leads_center = {}
+  leads_right = {}
+  half_lane_width = lane_width / 2
+  for c in clusters:
+    if md_y is not None and c.dRel <= md_x[-1] or (c_y is not None and md_x[-1] - c.dRel < ll_x[-1] - c.dRel):
+      yRel = -c.yRel - interp(c.dRel, md_x, md_y)
+      checkSource = 'modelPath'
+    elif c_y is not None:
+      yRel = -c.yRel - interp(c.dRel, ll_x, c_y.tolist())
+      checkSource = 'modelLaneLines'
+    else:
+      yRel = -c.yRel
+      checkSource = 'lowSpeedOverride'
+      
+    source = 'vision' if c.dRel > 145. else 'radar'
+    
+    if abs(yRel) < half_lane_width:
+      leads_center[abs(yRel)] = c.get_RadarState(source=source, checkSource=checkSource)
+    elif yRel < 0.:
+      leads_left[abs(yRel)] = c.get_RadarState(source=source, checkSource=checkSource)
+    else:
+      leads_right[abs(yRel)] = c.get_RadarState(source=source, checkSource=checkSource)
+  
+  ll,lr = [[l[k] for k in sorted(l,key=l.get)] for l in [leads_left,leads_right]]
+  lc = sorted(leads_center.values(), key=lambda c:c.dRel)
+  return [ll,lc,lr]
+
+
 def get_lead(v_ego, ready, clusters, lead_msg=None, low_speed_override=True, md=None, lane_width=-1.):
   # Determine leads, this is where the essential logic happens
   if len(clusters) > 0 and ready and lead_msg is not None and lead_msg.prob > .5:
@@ -372,6 +450,12 @@ class RadarD():
       elif self.long_range_leads_enabled:
         radarState.leadOne = self.lead_one_lr.update(get_lead(self.v_ego, self.ready, clusters, lead_msg=None, low_speed_override=True, md=sm['modelV2'], lane_width=sm['lateralPlan'].laneWidth))
         radarState.leadTwo = self.lead_two_lr.update(get_lead(self.v_ego, self.ready, clusters, lead_msg=None, low_speed_override=False, md=sm['modelV2'], lane_width=sm['lateralPlan'].laneWidth))
+
+      ll,lc,lr = get_path_adjacent_clusters(self.v_ego, sm['modelV2'], sm['lateralPlan'].laneWidth if self.long_range_leads_enabled else None, clusters)
+      radarState.leadsLeft = list(ll)
+      radarState.leadsCenter = list(lc)
+      radarState.leadsRight = list(lr)
+    
     return dat
 
 
