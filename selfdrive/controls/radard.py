@@ -238,15 +238,18 @@ def get_path_adjacent_clusters(v_ego, md, lane_width, clusters):
       
     source = 'vision' if c.dRel > 145. else 'radar'
     
+    ld = c.get_RadarState(source=source, checkSource=checkSource)
+    ld["dPath"] = yRel
+    ld["vLat"] = math.sqrt(yRel**2 + c.dRel**2)
     if abs(yRel) < half_lane_width:
-      leads_center[abs(yRel)] = c.get_RadarState(source=source, checkSource=checkSource)
+      leads_center[abs(yRel)] = ld
     elif yRel < 0.:
-      leads_left[abs(yRel)] = c.get_RadarState(source=source, checkSource=checkSource)
+      leads_left[abs(yRel)] = ld
     else:
-      leads_right[abs(yRel)] = c.get_RadarState(source=source, checkSource=checkSource)
+      leads_right[abs(yRel)] = ld
   
-  ll,lr = [[l[k] for k in sorted(l,key=l.get)] for l in [leads_left,leads_right]]
-  lc = sorted(leads_center.values(), key=lambda c:c.dRel)
+  ll,lr = [[l[k] for k in sorted(list(l.keys()))] for l in [leads_left,leads_right]]
+  lc = sorted(leads_center.values(), key=lambda c:c["dRel"])
   return [ll,lc,lr]
 
 

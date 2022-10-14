@@ -87,6 +87,7 @@ def manager_init():
     ("PowerMeterMode", "0"),
     ("PowerMeterMetric", "1"),
     ("PrintLeadInfo", "1"),
+    ("PrintAdjacentLeadSpeeds", "1"),
     ("DisableOnroadUploads", "0"),
     ("LowOverheadMode", "0"),
     ("FPVolt", "0"),

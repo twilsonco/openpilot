@@ -258,6 +258,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Prints lead car time and length distance, and absolute and relative velocity next to lead indicator",
                                   "../assets/offroad/icon_metric.png",
                                   this));
+  toggles.append(new ParamControl("PrintAdjacentLeadSpeeds",
+                                  "Print all lead speeds",
+                                  "Print speeds of all cars being tracked by radar and/or vision. Speeds are printed along the bottom of the screen, out from the center to the left/right in order of distance, so the numbers closest to the center are for the more immediate cars.",
+                                  "../assets/offroad/icon_metric.png",
+                                  this));
   toggles.append(new ParamControl("ShowDebugUI",
                                   "Show debug UI elements",
                                   "Show UI elements that aid debugging.",

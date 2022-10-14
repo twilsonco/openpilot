@@ -157,16 +157,36 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
       }
     }
   }
+  // all other leads
+  s->scene.lead_vertices_oncoming.clear();
+  s->scene.lead_vertices_ongoing.clear();
+  s->scene.lead_vertices_stopped.clear();
+  for (auto const & rs : {s->scene.radarState.getLeadsLeft(), s->scene.radarState.getLeadsRight()}){
+    for (auto const & l : rs){
+      vertex_data vd;
+      float z = model_position.getZ()[get_path_length_idx(model_position, l.getDRel())];
+      calib_frame_to_full_frame(s, l.getDRel(), -l.getYRel(), z + 1.32, &vd);
+      if (l.getVLeadK() > 5.){
+        s->scene.lead_vertices_ongoing.push_back(vd);
+      }
+      else if (l.getVLeadK() < -5.){
+        s->scene.lead_vertices_oncoming.push_back(vd);
+      }
+      else{
+        s->scene.lead_vertices_stopped.push_back(vd);
+      }
+    }
+  }
 }
 
 static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
-                             float y_off, float z_off, line_vertices_data *pvd, int max_idx, bool allow_invert=true) {
+                             float y_off, float z_off, line_vertices_data *pvd, int max_idx, bool allow_invert=true, float y_offset = 0.) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
   std::vector<vertex_data> left_points, right_points;
   for (int i = 0; i <= max_idx; i++) {
     vertex_data left, right;
-    bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, &left);
-    bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, &right);
+    bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off + y_offset, line_z[i] + z_off, &left);
+    bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off + y_offset, line_z[i] + z_off, &right);
     if (l && r) {
       // For wider lines the drawn polygon will "invert" when going over a hill and cause artifacts
       if (!allow_invert && left_points.size() && left.y > left_points.back().y) {
@@ -222,6 +242,9 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   }
   max_idx = get_path_length_idx(model_position, max_distance);
   update_line_data(s, model_position, scene.end_to_end ? 0.8 : 0.5, 1.32, &scene.track_vertices, max_idx, false);
+  max_idx = get_path_length_idx(model_position, MAX_DRAW_DISTANCE);
+  update_line_data(s, model_position, 1., 1.32, &scene.lane_vertices_left, max_idx, false, -scene.lateral_plan.getLaneWidth());
+  update_line_data(s, model_position, 1., 1.32, &scene.lane_vertices_right, max_idx, false, scene.lateral_plan.getLaneWidth());
 }
 
 static void update_sockets(UIState *s) {
@@ -243,6 +266,7 @@ static void update_state(UIState *s) {
     scene.screen_dim_mode = std::stoi(Params().get("ScreenDimMode"));
     scene.lane_pos_enabled = Params().getBool("LanePositionEnabled");
     scene.lead_info_print_enabled = Params().getBool("PrintLeadInfo");
+    scene.adjacent_lead_info_print_enabled = Params().getBool("PrintAdjacentLeadSpeeds");
     scene.speed_limit_eu_style = int(Params().getBool("EUSpeedLimitStyle"));
     scene.show_debug_ui = Params().getBool("ShowDebugUI");
     scene.brake_indicator_enabled = Params().getBool("BrakeIndicator");
@@ -419,15 +443,82 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("radarState")) {
     auto radar_state = sm["radarState"].getRadarState();
+    scene.radarState = radar_state;
     scene.lead_data[0] = radar_state.getLeadOne();
     scene.lead_data[1] = radar_state.getLeadTwo();
     scene.lead_v_rel = scene.lead_data[0].getVRel();
     scene.lead_d_rel = scene.lead_data[0].getDRel();
-    scene.lead_v = scene.lead_data[0].getVLead();
+    scene.lead_v = scene.lead_data[0].getVLeadK();
     scene.lead_status = scene.lead_data[0].getStatus();
     if (!scene.lead_status){
       scene.lead_x_vals.clear();
       scene.lead_y_vals.clear();
+    }
+    if (scene.adjacent_lead_info_print_enabled){
+      // left leads
+      {
+        auto leads = radar_state.getLeadsLeft();
+        std::vector<LeadData> leads_vec;
+        leads_vec.reserve(leads.size());
+        for (auto const & l : leads){
+          leads_vec.push_back(l);
+        }
+        std::sort(leads_vec.begin(), leads_vec.end(), [](LeadData const & a, LeadData const & b){return a.getVLat() > b.getVLat();});
+        scene.adjacent_leads_left_str = "";
+        char val[16];
+        int cnt = 0;
+        for (int i = 0; i < leads.size(); ++i){
+          if (abs(leads[i].getVLeadK()) > 3.){
+            if (cnt > 0){
+              scene.adjacent_leads_left_str += " ";
+            }
+            snprintf(val, sizeof(val), "%.0f", leads[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
+            scene.adjacent_leads_left_str += val;
+            cnt++;
+          }
+        }
+      }
+      // right leads
+      {
+        auto leads = radar_state.getLeadsRight();
+        std::vector<LeadData> leads_vec;
+        leads_vec.reserve(leads.size());
+        for (auto const & l : leads){
+          leads_vec.push_back(l);
+        }
+        std::sort(leads_vec.begin(), leads_vec.end(), [](LeadData const & a, LeadData const & b){return a.getVLat() < b.getVLat();});
+        scene.adjacent_leads_right_str = "";
+        char val[16];
+        int cnt = 0;
+        for (int i = 0; i < leads.size(); ++i){
+          if (abs(leads[i].getVLeadK()) > 3.){
+            if (cnt > 0){
+              scene.adjacent_leads_right_str += " ";
+            }
+            snprintf(val, sizeof(val), "%.0f", leads[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
+            scene.adjacent_leads_right_str += val;
+            cnt++;
+          }
+        }
+      }
+      // center leads
+      {
+        auto leads = radar_state.getLeadsCenter();
+        std::vector<LeadData> leads_vec;
+        leads_vec.reserve(leads.size());
+        for (auto const & l : leads){
+          leads_vec.push_back(l);
+        }
+        std::sort(leads_vec.begin(), leads_vec.end(), [](LeadData const & a, LeadData const & b){return a.getVLat() > b.getVLat();});
+        scene.adjacent_leads_center_strs.clear();
+        char val[16];
+        for (int i = 1; i < leads.size(); ++i){
+          if (abs(leads[i].getVLeadK()) > 3.){
+            snprintf(val, sizeof(val), "%.0f", leads[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
+            scene.adjacent_leads_center_strs.push_back(val);
+          }
+        }
+      }
     }
   }
   if (sm.updated("modelV2") && s->vg) {
@@ -517,6 +608,8 @@ static void update_state(UIState *s) {
     scene.lateralPlan.rProb = data.getRProb();
     scene.lateralPlan.lanelessModeStatus = data.getLanelessMode();
     scene.auto_lane_pos_active = data.getAutoLanePositionActive();
+    scene.traffic_left = data.getTrafficLeft();
+    scene.traffic_right = data.getTrafficRight();
   }
   if (sm.updated("gpsLocationExternal")) {
     auto data = sm["gpsLocationExternal"].getGpsLocationExternal();

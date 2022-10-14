@@ -254,9 +254,11 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
       lead_x += v;
     }
     lead_x /= float(s->scene.lead_x_vals.size());
+    s->scene.lead_x = lead_x;
     for (int const & v : s->scene.lead_y_vals){
       lead_y += v > y_max ? y_max : v;
     }
+    s->scene.lead_y = lead_y;
     lead_y /= float(s->scene.lead_y_vals.size());
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 180));
     nvgFontFace(s->vg, "sans-semibold");
@@ -334,6 +336,80 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
 
     nvgFontSize(s->vg, 70);
     nvgText(s->vg,lead_x+x_offset+20,lead_y,unit,NULL);
+  }
+}
+
+static void draw_other_leads(UIState *s) {
+  // Draw lead car circle
+  for (auto const & vd : s->scene.lead_vertices_ongoing){
+    auto [x, y] = vd;
+    const int r = 30;
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
+    nvgFillColor(s->vg, interp_alert_color(0., 80));
+    nvgFill(s->vg);
+    nvgStrokeColor(s->vg, interp_alert_color(0., 200));
+    nvgStrokeWidth(s->vg, 10);
+    nvgStroke(s->vg);
+  }
+  for (auto const & vd : s->scene.lead_vertices_oncoming){
+    auto [x, y] = vd;
+    const int r = 30;
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
+    nvgFillColor(s->vg, interp_alert_color(1., 80));
+    nvgFill(s->vg);
+    nvgStrokeColor(s->vg, interp_alert_color(1., 200));
+    nvgStrokeWidth(s->vg, 10);
+    nvgStroke(s->vg);
+  }
+  for (auto const & vd : s->scene.lead_vertices_stopped){
+    auto [x, y] = vd;
+    const int r = 20;
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
+    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(80));
+    nvgFill(s->vg);
+    nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
+    nvgStrokeWidth(s->vg, 10);
+    nvgStroke(s->vg);
+  }
+}
+
+static void draw_adjacent_lead_speeds(UIState *s, bool lead_drawn){
+  if (s->scene.adjacent_lead_info_print_enabled && !s->scene.map_open){
+    nvgFontFace(s->vg, "sans-semibold");
+    nvgBeginPath(s->vg);
+    nvgFontSize(s->vg, 110);
+    int y = s->fb_h * 31 / 32;
+
+    // left leads
+    nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BOTTOM);
+    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+    int x = s->fb_w * 5 / 16;
+    nvgText(s->vg,x,y,s->scene.adjacent_leads_left_str.c_str(),NULL);
+
+    // right leads
+    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BOTTOM);
+    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+    x = s->fb_w * 11 / 16;
+    nvgText(s->vg,x,y,s->scene.adjacent_leads_right_str.c_str(),NULL);
+     
+    // center leads
+    nvgFontSize(s->vg, 100);
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
+    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+    if (lead_drawn){
+      x = s->scene.lead_x;
+      y = s->scene.lead_y - 50;
+    }
+    else{
+      x = s->fb_w / 2;
+    }
+    for (auto const & v : s->scene.adjacent_leads_center_strs){
+      nvgText(s->vg,x,y,v.c_str(),NULL);
+      y -= 110;
+    }
   }
 }
 
@@ -451,6 +527,31 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   // paint path
   ui_draw_line(s, scene.track_vertices, nullptr, &track_bg);
 
+  // now oncoming/ongoing lanes
+  auto tf = scene.lateral_plan.getTrafficLeft();
+  if (tf == LaneTraffic::ONCOMING){
+    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                          interp_alert_color(1., 100), interp_alert_color(1., 0));
+    ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
+  }
+  else if (tf == LaneTraffic::ONGOING){
+    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                          interp_alert_color(0., 100), interp_alert_color(0., 0));
+    ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
+  }
+
+  tf = scene.lateral_plan.getTrafficRight();
+  if (tf == LaneTraffic::ONCOMING){
+    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                          interp_alert_color(1., 100), interp_alert_color(1., 0));
+    ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
+  }
+  else if (tf == LaneTraffic::ONGOING){
+    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                          interp_alert_color(0., 100), interp_alert_color(0., 0));
+    ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
+  }
+
   // print lane and shoulder widths and probabilities
   if (s->scene.show_debug_ui && !s->scene.map_open){
     auto l_probs = s->scene.lateral_plan.getLaneProbs();
@@ -497,11 +598,13 @@ static void ui_draw_world(UIState *s) {
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lane_lines(s);
 
+  draw_other_leads(s);
+
   // Draw lead indicators if openpilot is handling longitudinal
+  bool lead_drawn = false;
   if (s->scene.longitudinal_control) {
     auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[0];
     auto lead_two = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[1];
-    bool lead_drawn = false;
     if (lead_one.getProb() > .5) {
       lead_drawn = true;
       draw_lead(s, lead_one.getX()[0], lead_one.getV()[0], s->scene.lead_vertices[0], true, false);
@@ -517,6 +620,7 @@ static void ui_draw_world(UIState *s) {
       }
     }
   }
+  draw_adjacent_lead_speeds(s, lead_drawn);
   nvgResetScissor(s->vg);
 }
 

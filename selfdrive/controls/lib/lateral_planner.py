@@ -6,7 +6,7 @@ from common.params import Params, put_nonblocking
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import CONTROL_N, MPC_COST_LAT, LAT_MPC_N, CAR_ROTATION_RADIUS
-from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE, AUTO_AUTO_LANE_MODE
+from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE, AUTO_AUTO_LANE_MODE, LANE_TRAFFIC
 from selfdrive.config import Conversions as CV
 import cereal.messaging as messaging
 from cereal import log
@@ -360,6 +360,8 @@ class LateralPlanner():
     plan_send.lateralPlan.shoulderMeanWidthRight = float(self.LP.lane_offset._shoulder_width_mean_right)
     plan_send.lateralPlan.laneProbs = [float(i) for i in self.LP.lane_offset._lane_probs]
     plan_send.lateralPlan.roadEdgeProbs = [float(i) for i in self.LP.lane_offset._road_edge_probs]
+    plan_send.lateralPlan.trafficLeft = LANE_TRAFFIC.to_cereal(self.LP.lane_offset._left_traffic)
+    plan_send.lateralPlan.trafficRight = LANE_TRAFFIC.to_cereal(self.LP.lane_offset._right_traffic)
     if self.auto_lane_pos_active:
       if self.LP.lane_offset._lane_pos_auto == -1. and self.lane_pos != -1.:
         self.lane_pos = -1.
@@ -370,5 +372,6 @@ class LateralPlanner():
       elif self.LP.lane_offset._lane_pos_auto == 0. and self.lane_pos != 0.:
         self.lane_pos = 0.
         put_nonblocking("LanePosition", "0")
+    
 
     pm.send('lateralPlan', plan_send)
