@@ -74,9 +74,9 @@ class CarController():
     self.packer_ch = CANPacker(DBC[CP.carFingerprint]['chassis'])
     
     # pid runs at 25Hz
-    self.one_pedal_pid = PIDController(k_p=([1.5, 6.],[0.05, 0.15]), 
-                                      k_i=([1.5, 6.], [0.001, 0.01]), 
-                                      k_d=([1.5, 6.], [0.2, 0.0]),
+    self.one_pedal_pid = PIDController(k_p=0.5, 
+                                      k_i=0.06, 
+                                      k_d=0.3,
                                       derivative_period=0.1,
                                       k_11 = 0.5, k_12 = 0.5, k_13 = 0.5, k_period=0.1,
                                       rate=1/(DT_CTRL * 4),
@@ -130,8 +130,8 @@ class CarController():
         self.apply_gas = P.MAX_ACC_REGEN
         self.apply_brake = 0
         self.one_pedal_pid.reset()
-        self.one_pedal_decel = 0.0
-        self.one_pedal_decel_in = 0.
+        self.one_pedal_decel = CS.out.aEgo
+        self.one_pedal_decel_in = CS.out.aEgo
       else:
         k = interp(CS.out.vEgo, ACCEL_PITCH_FACTOR_BP, ACCEL_PITCH_FACTOR_V)
         brake_accel = k * actuators.accelPitchCompensated + (1. - k) * actuators.accel
@@ -180,8 +180,8 @@ class CarController():
         
         if not CS.one_pedal_mode_active and not CS.coast_one_pedal_mode_active:
           self.one_pedal_pid.reset()
-          self.one_pedal_decel = 0.0
-          self.one_pedal_decel_in = 0.
+          self.one_pedal_decel = CS.out.aEgo
+          self.one_pedal_decel_in = CS.out.aEgo
           self.stop_accel.initialized = False
           self.stop_accel.update(CS.out.aEgo)
           self.stop_distance = 0.
