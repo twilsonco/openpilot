@@ -46,7 +46,7 @@ ONE_PEDAL_STOP_ACCEL_ALPHA_BP = [50., 150.] # [m] lead distance
 ONE_PEDAL_STOP_ACCEL_ALPHA_V = [0.2, 0.4] # alpha for filter (larger value is smoother, slower filter)
 ONE_PEDAL_STEER_ANGLE_FACTOR_BP = [30., 150] # [abs(degrees)] 
 ONE_PEDAL_STEER_ANGLE_FACTOR_V = [1., 0.2] # amount of stop accel to be generated
-ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V[-1])
+ONE_PEDAL_MAX_DECEL = -3.5
 
 # constant acceleration necessary to stop at 'd' distance from starting velocity 'vi'
 def accel_to_stop(vi,d,steer_angle):
