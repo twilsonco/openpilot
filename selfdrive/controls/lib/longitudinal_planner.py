@@ -128,7 +128,7 @@ class Planner():
     cur_time = sec_since_boot()
     t = cur_time
     
-    if sm.updated['carState'] and sm['carState'].gasPressed:
+    if sm['carState'].gasPressed:
       self.mpcs['lead0'].reset_mpc()
       self.mpcs['lead1'].reset_mpc()
     
