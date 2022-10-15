@@ -267,6 +267,7 @@ static void update_state(UIState *s) {
     scene.lane_pos_enabled = Params().getBool("LanePositionEnabled");
     scene.lead_info_print_enabled = Params().getBool("PrintLeadInfo");
     scene.adjacent_lead_info_print_enabled = Params().getBool("PrintAdjacentLeadSpeeds");
+    scene.adjacent_paths_enabled = Params().getBool("AdjacentPaths");
     scene.speed_limit_eu_style = int(Params().getBool("EUSpeedLimitStyle"));
     scene.show_debug_ui = Params().getBool("ShowDebugUI");
     scene.brake_indicator_enabled = Params().getBool("BrakeIndicator");

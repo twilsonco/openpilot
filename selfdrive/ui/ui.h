@@ -259,7 +259,7 @@ typedef struct UIScene {
   int lead_x, lead_y;
   int const lead_xy_num_vals = 5;
 
-
+  bool adjacent_paths_enabled;
   bool adjacent_lead_info_print_enabled;
   std::string adjacent_leads_left_str, adjacent_leads_right_str;
   std::vector<std::string> adjacent_leads_center_strs;
