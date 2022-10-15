@@ -346,10 +346,10 @@ static void draw_other_leads(UIState *s) {
     const int r = 30;
     nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
-    nvgFillColor(s->vg, interp_alert_color(0., 80));
+    nvgFillColor(s->vg, interp_alert_color(-1., 80));
     nvgFill(s->vg);
-    nvgStrokeColor(s->vg, interp_alert_color(0., 200));
-    nvgStrokeWidth(s->vg, 10);
+    nvgStrokeColor(s->vg, interp_alert_color(-1., 200));
+    nvgStrokeWidth(s->vg, 6);
     nvgStroke(s->vg);
   }
   for (auto const & vd : s->scene.lead_vertices_oncoming){
@@ -357,10 +357,10 @@ static void draw_other_leads(UIState *s) {
     const int r = 30;
     nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
-    nvgFillColor(s->vg, interp_alert_color(1., 80));
+    nvgFillColor(s->vg, interp_alert_color(1.1, 80));
     nvgFill(s->vg);
-    nvgStrokeColor(s->vg, interp_alert_color(1., 200));
-    nvgStrokeWidth(s->vg, 10);
+    nvgStrokeColor(s->vg, interp_alert_color(1.1, 200));
+    nvgStrokeWidth(s->vg, 6);
     nvgStroke(s->vg);
   }
   for (auto const & vd : s->scene.lead_vertices_stopped){
@@ -371,7 +371,7 @@ static void draw_other_leads(UIState *s) {
     nvgFillColor(s->vg, COLOR_WHITE_ALPHA(80));
     nvgFill(s->vg);
     nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
-    nvgStrokeWidth(s->vg, 10);
+    nvgStrokeWidth(s->vg, 6);
     nvgStroke(s->vg);
   }
 }
@@ -380,23 +380,23 @@ static void draw_adjacent_lead_speeds(UIState *s, bool lead_drawn){
   if (s->scene.adjacent_lead_info_print_enabled && !s->scene.map_open){
     nvgFontFace(s->vg, "sans-semibold");
     nvgBeginPath(s->vg);
-    nvgFontSize(s->vg, 110);
-    int y = s->fb_h * 31 / 32;
+    nvgFontSize(s->vg, 90);
+    int y = s->fb_h * 63 / 64;
 
     // left leads
     nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BOTTOM);
     nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
-    int x = s->fb_w * 5 / 16;
+    int x = s->fb_w * 11 / 32;
     nvgText(s->vg,x,y,s->scene.adjacent_leads_left_str.c_str(),NULL);
 
     // right leads
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BOTTOM);
     nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
-    x = s->fb_w * 11 / 16;
+    x = s->fb_w * 21 / 32;
     nvgText(s->vg,x,y,s->scene.adjacent_leads_right_str.c_str(),NULL);
      
     // center leads
-    nvgFontSize(s->vg, 100);
+    nvgFontSize(s->vg, 90);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
     nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
     if (lead_drawn){
@@ -531,25 +531,25 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   auto tf = scene.lateral_plan.getTrafficLeft();
   if (tf == LaneTraffic::ONCOMING){
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                          interp_alert_color(1., 100), interp_alert_color(1., 0));
+                                          nvgRGBA(255, 30, 30, 100), nvgRGBA(255, 30, 30, 0));
     ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
   }
   else if (tf == LaneTraffic::ONGOING){
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                          interp_alert_color(0., 100), interp_alert_color(0., 0));
+                                          interp_alert_color(-1., 100), interp_alert_color(-1., 0));
     ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
   }
 
   tf = scene.lateral_plan.getTrafficRight();
   if (tf == LaneTraffic::ONCOMING){
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                          interp_alert_color(1., 100), interp_alert_color(1., 0));
-    ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
+                                          nvgRGBA(255, 30, 30, 100), nvgRGBA(255, 30, 30, 0));
+    ui_draw_line(s, scene.lane_vertices_right, nullptr, &track_bg);
   }
   else if (tf == LaneTraffic::ONGOING){
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                          interp_alert_color(0., 100), interp_alert_color(0., 0));
-    ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
+                                          interp_alert_color(-1., 100), interp_alert_color(-1., 0));
+    ui_draw_line(s, scene.lane_vertices_right, nullptr, &track_bg);
   }
 
   // print lane and shoulder widths and probabilities

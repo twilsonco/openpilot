@@ -165,7 +165,7 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
     for (auto const & l : rs){
       vertex_data vd;
       float z = model_position.getZ()[get_path_length_idx(model_position, l.getDRel())];
-      calib_frame_to_full_frame(s, l.getDRel(), -l.getYRel(), z + 1.32, &vd);
+      calib_frame_to_full_frame(s, l.getDRel(), -l.getYRel(), z + 2.5, &vd);
       if (l.getVLeadK() > 5.){
         s->scene.lead_vertices_ongoing.push_back(vd);
       }
@@ -467,12 +467,12 @@ static void update_state(UIState *s) {
         scene.adjacent_leads_left_str = "";
         char val[16];
         int cnt = 0;
-        for (int i = 0; i < leads.size(); ++i){
-          if (abs(leads[i].getVLeadK()) > 3.){
+        for (int i = 0; i < leads_vec.size(); ++i){
+          if (abs(leads_vec[i].getVLeadK()) > 3.){
             if (cnt > 0){
               scene.adjacent_leads_left_str += " ";
             }
-            snprintf(val, sizeof(val), "%.0f", leads[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
+            snprintf(val, sizeof(val), "%.0f", leads_vec[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
             scene.adjacent_leads_left_str += val;
             cnt++;
           }
@@ -490,12 +490,12 @@ static void update_state(UIState *s) {
         scene.adjacent_leads_right_str = "";
         char val[16];
         int cnt = 0;
-        for (int i = 0; i < leads.size(); ++i){
-          if (abs(leads[i].getVLeadK()) > 3.){
+        for (int i = 0; i < leads_vec.size(); ++i){
+          if (abs(leads_vec[i].getVLeadK()) > 3.){
             if (cnt > 0){
               scene.adjacent_leads_right_str += " ";
             }
-            snprintf(val, sizeof(val), "%.0f", leads[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
+            snprintf(val, sizeof(val), "%.0f", leads_vec[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
             scene.adjacent_leads_right_str += val;
             cnt++;
           }
@@ -512,9 +512,9 @@ static void update_state(UIState *s) {
         std::sort(leads_vec.begin(), leads_vec.end(), [](LeadData const & a, LeadData const & b){return a.getVLat() > b.getVLat();});
         scene.adjacent_leads_center_strs.clear();
         char val[16];
-        for (int i = 1; i < leads.size(); ++i){
-          if (abs(leads[i].getVLeadK()) > 3.){
-            snprintf(val, sizeof(val), "%.0f", leads[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
+        for (int i = 1; i < leads_vec.size(); ++i){
+          if (abs(leads_vec[i].getVLeadK()) > 3.){
+            snprintf(val, sizeof(val), "%.0f", leads_vec[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
             scene.adjacent_leads_center_strs.push_back(val);
           }
         }

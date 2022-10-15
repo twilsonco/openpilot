@@ -240,7 +240,7 @@ def get_path_adjacent_clusters(v_ego, md, lane_width, clusters):
     
     ld = c.get_RadarState(source=source, checkSource=checkSource)
     ld["dPath"] = yRel
-    ld["vLat"] = math.sqrt(yRel**2 + c.dRel**2)
+    ld["vLat"] = math.sqrt((10*yRel)**2 + c.dRel**2)
     if abs(yRel) < half_lane_width:
       leads_center[abs(yRel)] = ld
     elif yRel < 0.:

@@ -1,3 +1,4 @@
+from turtle import left
 import numpy as np
 from cereal import log
 from common.filter_simple import FirstOrderFilter
@@ -68,6 +69,7 @@ class LaneOffset:
   AUTO_ENABLE_MIN_SPEED = 40. * CV.MPH_TO_MS
   
   AUTO_TRAFFIC_TIMEOUT = 60. # [s] amount of time auto lane position will be kept after last car is seen
+  AUTO_TRAFFIC_MIN_TIME = 0.8 # [s] time an oncoming/ongoing car needs to be observed before it will be taken to indicate traffic
   AUTO_TRAFFIC_MIN_SPEED = 5. # [m/s] need to go faster than this to be considered moving
   AUTO_CUTOFF_STEER_ANGLE = 110. # [degrees] auto lane position reset traffic monitoring after this
   
@@ -99,8 +101,12 @@ class LaneOffset:
     
     self._left_traffic = LANE_TRAFFIC.NONE
     self._right_traffic = LANE_TRAFFIC.NONE
+    self._left_traffic_temp = LANE_TRAFFIC.NONE
+    self._right_traffic_temp = LANE_TRAFFIC.NONE
     self._right_traffic_last_seen_t = 0.
     self._left_traffic_last_seen_t = 0.
+    self._left_traffic_temp_t = 0.
+    self._right_traffic_temp_t = 0.
   
   def do_auto_enable(self, road_type):
     ret = AUTO_AUTO_LANE_MODE.NO_CHANGE
@@ -203,16 +209,26 @@ class LaneOffset:
         right_traffic = LANE_TRAFFIC.ONCOMING
     
     if left_traffic != LANE_TRAFFIC.NONE:
-      self._left_traffic_last_seen_t = self._t
-      self._left_traffic = left_traffic
+      if self._left_traffic_temp != left_traffic:
+        self._left_traffic_temp_t = self._t
+      elif self._t - self._left_traffic_temp_t >= self.AUTO_TRAFFIC_MIN_TIME:
+        self._left_traffic_last_seen_t = self._t
+        self._left_traffic = left_traffic
     elif self._t - self._left_traffic_last_seen_t > self.AUTO_TRAFFIC_TIMEOUT:
       self._left_traffic = left_traffic
+    
+    self._left_traffic_temp = left_traffic
       
     if right_traffic != LANE_TRAFFIC.NONE:
-      self._right_traffic_last_seen_t = self._t
-      self._right_traffic = right_traffic
+      if self._right_traffic_temp != right_traffic:
+        self._right_traffic_temp_t = self._t
+      elif self._t - self._right_traffic_temp_t >= self.AUTO_TRAFFIC_MIN_TIME:
+        self._right_traffic_last_seen_t = self._t
+        self._right_traffic = right_traffic
     elif self._t - self._right_traffic_last_seen_t > self.AUTO_TRAFFIC_TIMEOUT:
       self._right_traffic = right_traffic
+    
+    self._right_traffic_temp = right_traffic
       
     return
   
@@ -220,10 +236,10 @@ class LaneOffset:
     lane_pos_auto = 0.
     timeout_override = False
     
-    if self._left_traffic == LANE_TRAFFIC.ONCOMING and self._right_traffic != LANE_TRAFFIC.ONCOMING:
+    if self._left_traffic != LANE_TRAFFIC.NONE and self._right_traffic == LANE_TRAFFIC.NONE:
       lane_pos_auto = -1.
       timeout_override = True
-    elif self._right_traffic == LANE_TRAFFIC.ONCOMING and self._left_traffic != LANE_TRAFFIC.ONCOMING:
+    elif self._right_traffic != LANE_TRAFFIC.NONE and self._left_traffic == LANE_TRAFFIC.NONE:
       lane_pos_auto = 1.
       timeout_override = True
     elif self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB \
@@ -264,9 +280,11 @@ class LaneOffset:
     if md is not None:
       if self._cs is not None:
         self.update_lane_info(md, self._cs.vEgo, lane_width)
-        if self._cs.steeringAngleDeg > self.AUTO_CUTOFF_STEER_ANGLE:
+        if abs(self._cs.steeringAngleDeg) > self.AUTO_CUTOFF_STEER_ANGLE:
           self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
           self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
+          self._right_traffic = LANE_TRAFFIC.NONE
+          self._left_traffic = LANE_TRAFFIC.NONE
         self.update_traffic_info(sm['radarState'], lane_width)
         self.update_lane_pos_auto(lane_width)
       if self._long_plan is not None:
