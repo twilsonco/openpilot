@@ -341,38 +341,48 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
 
 static void draw_other_leads(UIState *s) {
   // Draw lead car circle
-  for (auto const & vd : s->scene.lead_vertices_ongoing){
-    auto [x, y] = vd;
-    const int r = 30;
-    nvgBeginPath(s->vg);
-    nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
-    nvgFillColor(s->vg, interp_alert_color(-1., 80));
-    nvgFill(s->vg);
-    nvgStrokeColor(s->vg, interp_alert_color(-1., 200));
-    nvgStrokeWidth(s->vg, 6);
-    nvgStroke(s->vg);
-  }
-  for (auto const & vd : s->scene.lead_vertices_oncoming){
-    auto [x, y] = vd;
-    const int r = 30;
-    nvgBeginPath(s->vg);
-    nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
-    nvgFillColor(s->vg, interp_alert_color(1.1, 80));
-    nvgFill(s->vg);
-    nvgStrokeColor(s->vg, interp_alert_color(1.1, 200));
-    nvgStrokeWidth(s->vg, 6);
-    nvgStroke(s->vg);
-  }
-  for (auto const & vd : s->scene.lead_vertices_stopped){
-    auto [x, y] = vd;
-    const int r = 20;
-    nvgBeginPath(s->vg);
-    nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(80));
-    nvgFill(s->vg);
-    nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
-    nvgStrokeWidth(s->vg, 6);
-    nvgStroke(s->vg);
+  if (s->scene.adjacent_lead_info_print_enabled){
+    int r1 = 15, r2 = 140;
+    int dr = r2 - r1;
+    int i = 0;
+    for (auto const & vd : s->scene.lead_vertices_ongoing){
+      auto [x, y] = vd;
+      int r = r2 - int(float(dr) * s->scene.lead_distances_ongoing[i++] / 180.);
+      r = (r < r1 ? r1 : r);
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
+      nvgFillColor(s->vg, interp_alert_color(-1., 80));
+      nvgFill(s->vg);
+      nvgStrokeColor(s->vg, interp_alert_color(-1., 200));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+    }
+    i = 0;
+    for (auto const & vd : s->scene.lead_vertices_oncoming){
+      auto [x, y] = vd;
+      int r = r2 - int(float(dr) * s->scene.lead_distances_oncoming[i++] / 180.);
+      r = (r < r1 ? r1 : r);
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
+      nvgFillColor(s->vg, interp_alert_color(1.1, 80));
+      nvgFill(s->vg);
+      nvgStrokeColor(s->vg, interp_alert_color(1.1, 200));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+    }
+    i = 0;
+    for (auto const & vd : s->scene.lead_vertices_stopped){
+      auto [x, y] = vd;
+      int r = r2 - int(float(dr) * s->scene.lead_distances_stopped[i++] / 180.);
+      r = (r < r1 ? r1 : r);
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
+      nvgFillColor(s->vg, COLOR_WHITE_ALPHA(80));
+      nvgFill(s->vg);
+      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+    }
   }
 }
 
@@ -528,6 +538,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   ui_draw_line(s, scene.track_vertices, nullptr, &track_bg);
 
   // now oncoming/ongoing lanes
+
   auto tf = scene.lateral_plan.getTrafficLeft();
   if (tf == LaneTraffic::ONCOMING){
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,

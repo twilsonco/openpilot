@@ -253,14 +253,19 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Color path according to the amount of lateral (steering) correction being applied",
                                   "../assets/offroad/icon_road.png",
                                   this));
+  toggles.append(new ParamControl("AdjacentPaths",
+                                  "Adjacent oncoming/ongoing paths",
+                                  "Draw paths to indicate whether adjacent lanes contain oncoming (red) or ongoing (green) traffic.",
+                                  "../assets/offroad/icon_road.png",
+                                  this));
   toggles.append(new ParamControl("PrintLeadInfo",
                                   "Print lead car info",
                                   "Prints lead car time and length distance, and absolute and relative velocity next to lead indicator",
                                   "../assets/offroad/icon_metric.png",
                                   this));
   toggles.append(new ParamControl("PrintAdjacentLeadSpeeds",
-                                  "Print all lead speeds",
-                                  "Print speeds of all cars being tracked by radar and/or vision. Speeds are printed along the bottom of the screen, out from the center to the left/right in order of distance, so the numbers closest to the center are for the more immediate cars.",
+                                  "Indicate all cars",
+                                  "Print speeds of all cars being tracked by radar and/or vision. Speeds are printed along the bottom of the screen, out from the center to the left/right in order of distance, so the numbers closest to the center are for the more immediate cars. Cars are also indicated onscreen as oncoming (red) or ongoing (green).",
                                   "../assets/offroad/icon_metric.png",
                                   this));
   toggles.append(new ParamControl("ShowDebugUI",

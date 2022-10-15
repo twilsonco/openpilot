@@ -161,6 +161,9 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
   s->scene.lead_vertices_oncoming.clear();
   s->scene.lead_vertices_ongoing.clear();
   s->scene.lead_vertices_stopped.clear();
+  s->scene.lead_distances_oncoming.clear();
+  s->scene.lead_distances_ongoing.clear();
+  s->scene.lead_distances_stopped.clear();
   for (auto const & rs : {s->scene.radarState.getLeadsLeft(), s->scene.radarState.getLeadsRight()}){
     for (auto const & l : rs){
       vertex_data vd;
@@ -168,12 +171,15 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
       calib_frame_to_full_frame(s, l.getDRel(), -l.getYRel(), z + 2.5, &vd);
       if (l.getVLeadK() > 5.){
         s->scene.lead_vertices_ongoing.push_back(vd);
+        s->scene.lead_distances_ongoing.push_back(l.getDRel());
       }
       else if (l.getVLeadK() < -5.){
         s->scene.lead_vertices_oncoming.push_back(vd);
+        s->scene.lead_distances_oncoming.push_back(l.getDRel());
       }
       else{
         s->scene.lead_vertices_stopped.push_back(vd);
+        s->scene.lead_distances_stopped.push_back(l.getDRel());
       }
     }
   }
@@ -267,6 +273,7 @@ static void update_state(UIState *s) {
     scene.lane_pos_enabled = Params().getBool("LanePositionEnabled");
     scene.lead_info_print_enabled = Params().getBool("PrintLeadInfo");
     scene.adjacent_lead_info_print_enabled = Params().getBool("PrintAdjacentLeadSpeeds");
+    scene.adjacent_paths_enabled = Params().getBool("AdjacentPaths");
     scene.speed_limit_eu_style = int(Params().getBool("EUSpeedLimitStyle"));
     scene.show_debug_ui = Params().getBool("ShowDebugUI");
     scene.brake_indicator_enabled = Params().getBool("BrakeIndicator");
