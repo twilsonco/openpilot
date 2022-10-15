@@ -360,7 +360,7 @@ static void draw_other_leads(UIState *s) {
     i = 0;
     for (auto const & vd : s->scene.lead_vertices_oncoming){
       auto [x, y] = vd;
-      int r = r2 - int(float(dr) * s->scene.lead_distances_ongoing[i++] / 180.);
+      int r = r2 - int(float(dr) * s->scene.lead_distances_oncoming[i++] / 180.);
       r = (r < r1 ? r1 : r);
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
@@ -373,7 +373,7 @@ static void draw_other_leads(UIState *s) {
     i = 0;
     for (auto const & vd : s->scene.lead_vertices_stopped){
       auto [x, y] = vd;
-      int r = r2 - int(float(dr) * s->scene.lead_distances_ongoing[i++] / 180.);
+      int r = r2 - int(float(dr) * s->scene.lead_distances_stopped[i++] / 180.);
       r = (r < r1 ? r1 : r);
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
