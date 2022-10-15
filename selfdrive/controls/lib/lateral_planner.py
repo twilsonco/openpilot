@@ -165,21 +165,28 @@ class LateralPlanner():
         
         # ignore nudgeless lane change if adjacent lane not present
         adjacentLaneWidth = 0.
-        if self.nudgeless_enabled and \
-            len(md.laneLines) == 4 and len(md.laneLines[0].t) == TRAJECTORY_SIZE \
+        adjacentLaneTraffic = LANE_TRAFFIC.NONE
+        if self.nudgeless_enabled:
+          if len(md.laneLines) == 4 and len(md.laneLines[0].t) == TRAJECTORY_SIZE \
             and len(md.roadEdges) >= 2 and len(md.roadEdges[0].t) == TRAJECTORY_SIZE:
+            if self.lane_change_direction == LaneChangeDirection.left:
+              if md.laneLineProbs[0] > LANE_CHANGE_MIN_ADJACENT_LANE_LINE_PROB \
+                  and md.laneLineProbs[1] > LANE_CHANGE_MIN_ADJACENT_LANE_LINE_PROB:
+                adjacentLaneWidth = md.laneLines[1].y[0] - md.laneLines[0].y[0]
+            elif self.lane_change_direction == LaneChangeDirection.right:
+              if md.laneLineProbs[3] > LANE_CHANGE_MIN_ADJACENT_LANE_LINE_PROB \
+                  and md.laneLineProbs[2] > LANE_CHANGE_MIN_ADJACENT_LANE_LINE_PROB:
+                adjacentLaneWidth = md.laneLines[3].y[0] - md.laneLines[2].y[0]
           if self.lane_change_direction == LaneChangeDirection.left:
-            if md.laneLineProbs[0] > LANE_CHANGE_MIN_ADJACENT_LANE_LINE_PROB \
-                and md.laneLineProbs[1] > LANE_CHANGE_MIN_ADJACENT_LANE_LINE_PROB:
-              adjacentLaneWidth = md.laneLines[1].y[0] - md.laneLines[0].y[0]
+            adjacentLaneTraffic = self.LP.lane_offset._left_traffic
           elif self.lane_change_direction == LaneChangeDirection.right:
-            if md.laneLineProbs[3] > LANE_CHANGE_MIN_ADJACENT_LANE_LINE_PROB \
-                and md.laneLineProbs[2] > LANE_CHANGE_MIN_ADJACENT_LANE_LINE_PROB:
-              adjacentLaneWidth = md.laneLines[3].y[0] - md.laneLines[2].y[0]
+            adjacentLaneTraffic = self.LP.lane_offset._right_traffic
+          
         
         torque_applied = torque_applied or \
           ( self.nudgeless_enabled \
             and adjacentLaneWidth > self.LP.lane_width * LANE_CHANGE_ADJACENT_LANE_MIN_WIDTH_FACTOR \
+            and adjacentLaneTraffic != LANE_TRAFFIC.ONCOMING \
             and t - self.nudgeless_lane_change_start_t > self.nudgeless_delay \
             and t - self.nudgeless_blinker_press_t < 3. \
             and v_ego > self.nudgeless_min_speed \
