@@ -437,6 +437,7 @@ typedef struct UIScene {
   // lead
   vertex_data lead_vertices[2];
   std::vector<vertex_data> lead_vertices_oncoming, lead_vertices_ongoing, lead_vertices_stopped;
+  std::vector<float> lead_distances_oncoming, lead_distances_ongoing, lead_distances_stopped;
 
   float light_sensor, accel_sensor, gyro_sensor;
   bool started, ignition, is_metric, longitudinal_control, end_to_end;
