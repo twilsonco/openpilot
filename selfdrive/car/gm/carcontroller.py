@@ -40,6 +40,9 @@ ONE_PEDAL_MAX_DECEL = -3.5
 ONE_PEDAL_SPEED_ERROR_FACTOR_BP = [1.5, 20.] # [m/s] 
 ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.05, 0.3] # factor of error for non-lead braking decel
 
+ONE_PEDAL_THROTTLE_FACTOR_BP = [0.0, 0.5] # [amount of CS.out.gas]
+ONE_PEDAL_THROTTLE_FACTOR_V = [1.0, 0.1] # amount of one pedal braking applied
+
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.start_time = 0.
@@ -180,6 +183,9 @@ class CarController():
                 self.one_pedal_decel_in = min(self.one_pedal_decel_in, CS.lead_accel)
             else:
               self.one_pedal_decel_in = CS.lead_accel
+            
+            throttle_factor = interp(CS.out.gas, ONE_PEDAL_THROTTLE_FACTOR_BP, ONE_PEDAL_THROTTLE_FACTOR_V)
+            self.one_pedal_decel_in = throttle_factor * self.one_pedal_decel_in + (1. - throttle_factor) * CS.out.aEgo
             
             if not CS.one_pedal_mode_op_braking_allowed or CS.lead_accel != self.one_pedal_decel_in:
               error_factor = interp(CS.vEgo, ONE_PEDAL_SPEED_ERROR_FACTOR_BP, ONE_PEDAL_SPEED_ERROR_FACTOR_V)
