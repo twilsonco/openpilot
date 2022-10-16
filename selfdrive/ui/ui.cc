@@ -293,12 +293,12 @@ static void update_state(UIState *s) {
       scene.dynamic_follow_active = 0;
     }
     if (scene.ev_eff_total_dist < 10.){
-      float oldDist = std::stof(Params().get("EVConsumptionTripDistance"));
+      float oldDist = 0.;
       if (oldDist > scene.ev_eff_total_dist){
         scene.ev_eff_total_dist = oldDist;
-        s->scene.ev_recip_eff_wa[1] = std::stof(Params().get("EVConsumption5Mi"));
+        s->scene.ev_recip_eff_wa[1] = 0.;
         s->scene.ev_eff_total_dist = oldDist;
-        s->scene.ev_eff_total_kWh = std::stof(Params().get("EVConsumptionTripkWh"));
+        s->scene.ev_eff_total_kWh = 0.;
       }
     }
   }
