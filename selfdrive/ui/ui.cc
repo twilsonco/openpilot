@@ -733,7 +733,7 @@ static void update_status(UIState *s) {
         s->scene.screen_dim_mode_cur -= 1;
         Params().put("ScreenDimMode", std::to_string(s->scene.screen_dim_mode_cur).c_str(), 1);
       }
-      s->scene.power_meter_mode = 2;
+      s->scene.power_meter_mode = 1;
       s->scene.power_meter_metric = Params().getBool("PowerMeterMetric");
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->scene.color_path = Params().getBool("ColorPath");
