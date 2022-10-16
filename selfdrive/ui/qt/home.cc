@@ -179,7 +179,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   
   // accel_mode button
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.accel_mode_touch_rect.ptInRect(e->x(), e->y())){
-    Params().put("AccelMode", std::to_string((std::stoi(Params().get("AccelMode")) + 1) % 3).c_str(), 1);
+    Params().put("AccelMode", std::to_string((1) % 3).c_str(), 1);
     return;
   }
   
@@ -204,7 +204,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   
   // screen dim button (dm face icon)
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.screen_dim_touch_rect.ptInRect(e->x(), e->y())){
-    int dim_mode = std::stoi(Params().get("ScreenDimMode")) - 1;
+    int dim_mode = 2;
     if (dim_mode < 0){
       dim_mode = QUIState::ui_state.scene.screen_dim_mode_max;
     }
