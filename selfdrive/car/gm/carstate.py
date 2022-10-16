@@ -70,6 +70,7 @@ class CarState(CarStateBase):
     self.drive_power = 0. 
     self.ice_power = 0.
     self.brake_power = 0.
+    self.pitch_power = 0.
     self.rolling_resistance_force = 0.
     self.rolling_resistance_power = 0.
     self.observed_efficiency = FirstOrderFilter(float(self._params.get("EVDriveTrainEfficiency", encoding="utf8")), 50., 0.05)
@@ -341,7 +342,10 @@ class CarState(CarStateBase):
       # drag, drive, brake, and ice power
       self.rho = interp(self.altitude, AIR_DENS_FROM_ELEV_BP, AIR_DENS_FROM_ELEV_V) # [kg/m^3]
       self.drag_force = 0.5 * self.drag_cd * self.drag_csa * self.rho * self.vEgo**2 # [N]
-      pitch_adjusted_accel = ret.aEgo + ACCELERATION_DUE_TO_GRAVITY * sin(self.pitch) # [m/s^2]
+      pitch_accel = ACCELERATION_DUE_TO_GRAVITY * sin(self.pitch)
+      pitch_force = pitch_accel * self.cp_mass
+      self.pitch_power = pitch_force * ret.aEgo
+      pitch_adjusted_accel = ret.aEgo + pitch_accel # [m/s^2]
       self.accel_force = self.cp_mass * pitch_adjusted_accel # [N]
       self.drag_power = self.drag_force * self.vEgo # [W]
       self.accel_power = self.accel_force * self.vEgo  # [W]
@@ -412,6 +416,7 @@ class CarState(CarStateBase):
     ret.brakeForce = self.brake_force
     ret.brakePower = self.brake_power
     ret.drivePower = self.drive_power
+    ret.pitchPower = self.pitch_power
     ret.icePower = self.ice_power
     ret.evForce = self.ev_force
     ret.evPower = self.ev_power
