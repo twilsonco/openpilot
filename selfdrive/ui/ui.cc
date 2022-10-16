@@ -269,7 +269,7 @@ static void update_state(UIState *s) {
     scene.paramsCheckLast = t;
     scene.disableDisengageOnGasEnabled = Params().getBool("DisableDisengageOnGas");
     scene.speed_limit_control_enabled = Params().getBool("SpeedLimitControl");
-    scene.screen_dim_mode = std::stoi(Params().get("ScreenDimMode"));
+    scene.screen_dim_mode = 2;
     scene.lane_pos_enabled = Params().getBool("LanePositionEnabled");
     scene.lead_info_print_enabled = Params().getBool("PrintLeadInfo");
     scene.adjacent_lead_info_print_enabled = Params().getBool("PrintAdjacentLeadSpeeds");
@@ -278,7 +278,7 @@ static void update_state(UIState *s) {
     scene.show_debug_ui = Params().getBool("ShowDebugUI");
     scene.brake_indicator_enabled = Params().getBool("BrakeIndicator");
     if (scene.auto_lane_pos_active){
-      scene.lane_pos = std::stoi(Params().get("LanePosition"));
+      scene.lane_pos = 0;
     }
     if (scene.disableDisengageOnGasEnabled){
       scene.onePedalModeActive = Params().getBool("OnePedalMode");
@@ -287,10 +287,10 @@ static void update_state(UIState *s) {
       scene.mapBrakingEnabled = Params().getBool("TurnSpeedControl");
     }
     if (scene.accel_mode_button_enabled){
-      scene.accel_mode = std::stoi(Params().get("AccelMode"));
+      scene.accel_mode = 0;
     }
     if (scene.dynamic_follow_mode_button_enabled){
-      scene.dynamic_follow_active = std::stoi(Params().get("DynamicFollow"));
+      scene.dynamic_follow_active = 0;
     }
     if (scene.ev_eff_total_dist < 10.){
       float oldDist = std::stof(Params().get("EVConsumptionTripDistance"));
@@ -733,15 +733,15 @@ static void update_status(UIState *s) {
         s->scene.screen_dim_mode_cur -= 1;
         Params().put("ScreenDimMode", std::to_string(s->scene.screen_dim_mode_cur).c_str(), 1);
       }
-      s->scene.power_meter_mode = std::stoi(Params().get("PowerMeterMode"));
+      s->scene.power_meter_mode = 2;
       s->scene.power_meter_metric = Params().getBool("PowerMeterMetric");
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->scene.color_path = Params().getBool("ColorPath");
       if (!s->scene.end_to_end){
         s->scene.laneless_btn_touch_rect = {1,1,1,1};
       }
-      s->scene.laneless_mode = std::stoi(Params().get("LanelessMode"));
-      s->scene.brake_percent = std::stoi(Params().get("FrictionBrakePercent"));
+      s->scene.laneless_mode = 0;
+      s->scene.brake_percent = 0;
 
       s->scene.accel_mode_button_enabled = Params().getBool("AccelModeButton");
       if (!s->scene.accel_mode_button_enabled){
@@ -778,7 +778,7 @@ static void update_status(UIState *s) {
       s->scene.ev_eff_total_kWh = 0.;
       s->scene.ev_eff_total_dist = 0.;
 
-      s->scene.measure_config_num = std::stoi(Params().get("MeasureConfigNum"));
+      s->scene.measure_config_num = 6;
       s->scene.measure_cur_num_slots = s->scene.measure_config_list[s->scene.measure_config_num];
       s->scene.measure_num_rows = s->scene.measure_cur_num_slots;
       if (s->scene.measure_num_rows > s->scene.measure_max_rows){
@@ -788,7 +788,7 @@ static void update_status(UIState *s) {
       for (int i = 0; i < s->scene.measure_max_num_slots; ++i){
         char slotName[16];
         snprintf(slotName, sizeof(slotName), "MeasureSlot%.2d", i);
-        s->scene.measure_slots[i] = std::stoi(Params().get(slotName));
+        s->scene.measure_slots[i] = i;
       }
 
       s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
