@@ -254,12 +254,12 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
       lead_x += v;
     }
     lead_x /= float(s->scene.lead_x_vals.size());
-    s->scene.lead_x = lead_x;
     for (int const & v : s->scene.lead_y_vals){
       lead_y += v > y_max ? y_max : v;
     }
-    s->scene.lead_y = lead_y;
     lead_y /= float(s->scene.lead_y_vals.size());
+    s->scene.lead_x = lead_x;
+    s->scene.lead_y = lead_y;
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 180));
     nvgFontFace(s->vg, "sans-semibold");
     nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_MIDDLE);
@@ -391,7 +391,7 @@ static void draw_adjacent_lead_speeds(UIState *s, bool lead_drawn){
     nvgFontFace(s->vg, "sans-semibold");
     nvgBeginPath(s->vg);
     nvgFontSize(s->vg, 90);
-    int y = s->fb_h * 63 / 64;
+    int y = s->fb_h + 10;
 
     // left leads
     nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BOTTOM);
@@ -410,15 +410,16 @@ static void draw_adjacent_lead_speeds(UIState *s, bool lead_drawn){
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
     nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
     if (lead_drawn){
+      nvgFontFace(s->vg, "sans-semibold");
       x = s->scene.lead_x;
-      y = s->scene.lead_y - 50;
+      y = s->scene.lead_y - 20;
     }
     else{
       x = s->fb_w / 2;
     }
     for (auto const & v : s->scene.adjacent_leads_center_strs){
       nvgText(s->vg,x,y,v.c_str(),NULL);
-      y -= 110;
+      y -= 60;
     }
   }
 }
