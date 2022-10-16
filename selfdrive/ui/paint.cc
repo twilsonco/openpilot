@@ -342,7 +342,7 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
 static void draw_other_leads(UIState *s) {
   // Draw lead car circle
   if (s->scene.adjacent_lead_info_print_enabled){
-    int r1 = 15, r2 = 140;
+    int r1 = 8, r2 = 90;
     int dr = r2 - r1;
     int i = 0;
     for (auto const & vd : s->scene.lead_vertices_ongoing){
