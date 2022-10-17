@@ -2790,12 +2790,6 @@ static void ui_draw_vision_power_meter(UIState *s) {
     nvgStrokeWidth(s->vg, 5);
     nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(160));
     nvgStroke(s->vg);
-
-    // middle bar between +/- power
-    nvgBeginPath(s->vg);
-    nvgRect(s->vg, outer_rect.x, y_mid-4, outer_rect.w, 8);
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
-    nvgFill(s->vg);
     
     // brake power
     pow_rel = (s->scene.brake_percent >= 51 ? float(s->scene.brake_percent - 51) * 0.02 : 0.);
@@ -2819,9 +2813,15 @@ static void ui_draw_vision_power_meter(UIState *s) {
     nvgFill(s->vg);
     if (pow_rel > 0.){
       nvgStrokeWidth(s->vg, 5);
-      nvgStrokeColor(s->vg, nvgRGBA(255,21,0,200));
+      nvgStrokeColor(s->vg, nvgRGBA(255,21,0,180));
       nvgStroke(s->vg);
     }
+
+    // middle bar between +/- power
+    nvgBeginPath(s->vg);
+    nvgRect(s->vg, outer_rect.x, y_mid-8, outer_rect.w, 16);
+    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+    nvgFill(s->vg);
 
     pow_rel_max = MAX(pow_rel, pow_rel_max);
 
