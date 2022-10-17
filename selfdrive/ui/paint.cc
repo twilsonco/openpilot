@@ -339,47 +339,74 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
   }
 }
 
-static void draw_other_leads(UIState *s) {
+static void draw_other_leads(UIState *s, bool lead_drawn) {
   // Draw lead car circle
   if (s->scene.adjacent_lead_info_print_enabled){
-    int r1 = 8, r2 = 90;
+    int r1 = 8, r2 = 75;
     int dr = r2 - r1;
     int i = 0;
     for (auto const & vd : s->scene.lead_vertices_ongoing){
       auto [x, y] = vd;
+      // fade leads too close to the actual lead
+      int alpha_fill = 80;
+      int alpha_stroke = 200;
+      if (lead_drawn){
+        float screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - 50., 0., 200.);
+        float alpha_factor = 1. - float(screen_dist) / 400.;
+        alpha_fill -= 60. * alpha_factor;
+        alpha_stroke -= 160. * alpha_factor;
+      }
       int r = r2 - int(float(dr) * s->scene.lead_distances_ongoing[i++] / 180.);
       r = (r < r1 ? r1 : r);
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
-      nvgFillColor(s->vg, interp_alert_color(-1., 80));
+      nvgFillColor(s->vg, interp_alert_color(-1., alpha_fill));
       nvgFill(s->vg);
-      nvgStrokeColor(s->vg, interp_alert_color(-1., 200));
+      nvgStrokeColor(s->vg, interp_alert_color(-1., alpha_stroke));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
     }
     i = 0;
     for (auto const & vd : s->scene.lead_vertices_oncoming){
       auto [x, y] = vd;
+      // fade leads too close to the actual lead
+      int alpha_fill = 80;
+      int alpha_stroke = 200;
+      if (lead_drawn){
+        float screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - 50., 0., 200.);
+        float alpha_factor = 1. - float(screen_dist) / 400.;
+        alpha_fill -= 60. * alpha_factor;
+        alpha_stroke -= 160. * alpha_factor;
+      }
       int r = r2 - int(float(dr) * s->scene.lead_distances_oncoming[i++] / 180.);
       r = (r < r1 ? r1 : r);
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
-      nvgFillColor(s->vg, interp_alert_color(1.1, 80));
+      nvgFillColor(s->vg, interp_alert_color(1.1, alpha_fill));
       nvgFill(s->vg);
-      nvgStrokeColor(s->vg, interp_alert_color(1.1, 200));
+      nvgStrokeColor(s->vg, interp_alert_color(1.1, alpha_stroke));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
     }
     i = 0;
     for (auto const & vd : s->scene.lead_vertices_stopped){
       auto [x, y] = vd;
+      // fade leads too close to the actual lead
+      int alpha_fill = 80;
+      int alpha_stroke = 200;
+      if (lead_drawn){
+        float screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - 50., 0., 200.);
+        float alpha_factor = 1. - float(screen_dist) / 400.;
+        alpha_fill -= 60. * alpha_factor;
+        alpha_stroke -= 160. * alpha_factor;
+      }
       int r = r2 - int(float(dr) * s->scene.lead_distances_stopped[i++] / 180.);
       r = (r < r1 ? r1 : r);
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
-      nvgFillColor(s->vg, COLOR_WHITE_ALPHA(80));
+      nvgFillColor(s->vg, COLOR_WHITE_ALPHA(alpha_fill));
       nvgFill(s->vg);
-      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
+      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(alpha_stroke));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
     }
@@ -610,8 +637,6 @@ static void ui_draw_world(UIState *s) {
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lane_lines(s);
 
-  draw_other_leads(s);
-
   // Draw lead indicators if openpilot is handling longitudinal
   bool lead_drawn = false;
   if (s->scene.longitudinal_control) {
@@ -632,6 +657,7 @@ static void ui_draw_world(UIState *s) {
       }
     }
   }
+  draw_other_leads(s, lead_drawn);
   draw_adjacent_lead_speeds(s, lead_drawn);
   nvgResetScissor(s->vg);
 }
