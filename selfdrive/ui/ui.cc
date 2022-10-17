@@ -301,6 +301,11 @@ static void update_state(UIState *s) {
         s->scene.ev_eff_total_kWh = std::stof(Params().get("EVConsumptionTripkWh"));
       }
     }
+    if (s->sm->frame - s->scene.started_frame > 100 && s->sm->frame - s->scene.started_frame < 105 && !s->scene.car_is_ev){
+      while (s->scene.EVMeasures.count(static_cast<UIMeasure>(s->scene.measure_slots[i]))){
+        s->scene.measure_slots[i] = (s->scene.measure_slots[i]+1) % s->scene.num_measures;
+      }
+    }
   }
 
   if (scene.started){
@@ -789,11 +794,6 @@ static void update_status(UIState *s) {
         char slotName[16];
         snprintf(slotName, sizeof(slotName), "MeasureSlot%.2d", i);
         s->scene.measure_slots[i] = std::stoi(Params().get(slotName));
-        if (!s->scene.car_is_ev){
-          while (s->scene.EVMeasures.count(static_cast<UIMeasure>(s->scene.measure_slots[i]))){
-            s->scene.measure_slots[i] = (s->scene.measure_slots[i]+1) % s->scene.num_measures;
-          }
-        }
       }
 
       s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
