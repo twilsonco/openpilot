@@ -108,8 +108,29 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
       snprintf(slotName, sizeof(slotName), "MeasureSlot%.2d", i);
       int slot_val = (QUIState::ui_state.scene.measure_slots[i] + 1) % QUIState::ui_state.scene.num_measures;
       if (!QUIState::ui_state.scene.car_is_ev){
-        while (QUIState::ui_state.scene.EVMeasures.count(static_cast<UIMeasure>(slot_val))){
+        bool metric_is_dup = false;
+        for (int j = 0; j < i && !metric_is_dup; ++j){
+          metric_is_dup = (slot_val == QUIState::ui_state.scene.measure_slots[i]);
+        }
+        while (metric_is_dup || QUIState::ui_state.scene.EVMeasures.count(static_cast<UIMeasure>(slot_val))){
           slot_val = (QUIState::ui_state.scene.measure_slots[i]+1) % QUIState::ui_state.scene.num_measures;
+          metric_is_dup = false;
+          for (int j = 0; j < i && !metric_is_dup; ++j){
+            metric_is_dup = (slot_val == QUIState::ui_state.scene.measure_slots[i]);
+          }
+        }
+      }
+      else{
+        bool metric_is_dup = false;
+        for (int j = 0; j < i && !metric_is_dup; ++j){
+          metric_is_dup = (slot_val == QUIState::ui_state.scene.measure_slots[i]);
+        }
+        while (metric_is_dup){
+          slot_val = (QUIState::ui_state.scene.measure_slots[i]+1) % QUIState::ui_state.scene.num_measures;
+          metric_is_dup = false;
+          for (int j = 0; j < i && !metric_is_dup; ++j){
+            metric_is_dup = (slot_val == QUIState::ui_state.scene.measure_slots[i]);
+          }
         }
       }
       QUIState::ui_state.scene.measure_slots[i] = slot_val;
