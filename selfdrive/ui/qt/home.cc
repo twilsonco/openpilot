@@ -107,6 +107,11 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
       char slotName[16];
       snprintf(slotName, sizeof(slotName), "MeasureSlot%.2d", i);
       int slot_val = (QUIState::ui_state.scene.measure_slots[i] + 1) % QUIState::ui_state.scene.num_measures;
+      if (!QUIState::ui_state.scene.car_is_ev){
+        while (QUIState::ui_state.scene.EVMeasures.count(static_cast<UIMeasure>(slot_val))){
+          slot_val = (QUIState::ui_state.scene.measure_slots[i]+1) % QUIState::ui_state.scene.num_measures;
+        }
+      }
       QUIState::ui_state.scene.measure_slots[i] = slot_val;
       char val_str[6];
       sprintf(val_str, "%1d", slot_val);

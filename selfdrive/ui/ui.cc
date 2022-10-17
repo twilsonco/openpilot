@@ -789,6 +789,11 @@ static void update_status(UIState *s) {
         char slotName[16];
         snprintf(slotName, sizeof(slotName), "MeasureSlot%.2d", i);
         s->scene.measure_slots[i] = std::stoi(Params().get(slotName));
+        if (!s->scene.car_is_ev){
+          while (s->scene.EVMeasures.count(static_cast<UIMeasure>(s->scene.measure_slots[i]))){
+            s->scene.measure_slots[i] = (s->scene.measure_slots[i]+1) % s->scene.num_measures;
+          }
+        }
       }
 
       s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;

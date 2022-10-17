@@ -6,6 +6,7 @@
 #include <string>
 #include <deque>
 #include <vector>
+#include <set>
 
 #include <QObject>
 #include <QTimer>
@@ -335,6 +336,26 @@ typedef struct UIScene {
   int measure_row_offset = 0;
   float measures_touch_timeout = 10.;
   float measures_last_tap_t = -measures_touch_timeout;
+  std::set<UIMeasure> EVMeasures = {
+    UIMeasure::EV_FORCE,
+    UIMeasure::EV_POWER,
+    UIMeasure::EV_POWER_HP,
+    UIMeasure::REGEN_FORCE,
+    UIMeasure::REGEN_POWER,
+    UIMeasure::REGEN_POWER_HP,
+    UIMeasure::HVB_VOLTAGE,
+    UIMeasure::HVB_CURRENT,
+    UIMeasure::HVB_WATTAGE,
+    UIMeasure::HVB_WATTVOLT,
+    UIMeasure::EV_EFF_NOW,
+    UIMeasure::EV_EFF_RECENT,
+    UIMeasure::EV_EFF_TRIP,
+    UIMeasure::EV_CONSUM_NOW,
+    UIMeasure::EV_CONSUM_RECENT,
+    UIMeasure::EV_CONSUM_TRIP,
+    UIMeasure::EV_BOTH_NOW,
+    UIMeasure::EV_OBSERVED_DRIVETRAIN_EFF
+  };
   
   Rect speed_rect;
   float road_roll, device_roll;
