@@ -21,6 +21,7 @@ ACCEL_PITCH_FACTOR_V = [0., 1.] # [unitless in [0-1]]
 
 ONE_PEDAL_ACCEL_PITCH_FACTOR_BP = [4., 8.] # [m/s]
 ONE_PEDAL_ACCEL_PITCH_FACTOR_V = [0.4, 1.] # [unitless in [0-1]]
+ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V = [0.2, 1.] # [unitless in [0-1]]
 
 ONE_PEDAL_MODE_DECEL_BP = [
   [i * CV.MPH_TO_MS for i in [4., 9.]],
@@ -171,7 +172,7 @@ class CarController():
           else:
             self.apply_gas = self.apply_gas * lead_long_gas_lockout_factor + float(P.MAX_ACC_REGEN) * (1. - lead_long_gas_lockout_factor)
           pitch_accel = CS.pitch * ACCELERATION_DUE_TO_GRAVITY
-          pitch_accel *= interp(CS.vEgo, ONE_PEDAL_ACCEL_PITCH_FACTOR_BP, ONE_PEDAL_ACCEL_PITCH_FACTOR_V)
+          pitch_accel *= interp(CS.vEgo, ONE_PEDAL_ACCEL_PITCH_FACTOR_BP, ONE_PEDAL_ACCEL_PITCH_FACTOR_V if pitch_accel <= 0 else ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V)
           
           if CS.one_pedal_mode_active or (CS.one_pedal_mode_op_braking_allowed and CS.lead_accel < CS.out.aEgo):
             if CS.one_pedal_mode_active:
