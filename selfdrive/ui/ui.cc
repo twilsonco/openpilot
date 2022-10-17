@@ -305,13 +305,13 @@ static void update_state(UIState *s) {
       for (int i = 0; i < s->scene.measure_max_num_slots; ++i){
         bool metric_is_dup = false;
         for (int j = 0; j < i && !metric_is_dup; ++j){
-          metric_is_dup = (s->scene.measure_slots[i] == s->scene.measure_slots[i]);
+          metric_is_dup = (s->scene.measure_slots[i] == s->scene.measure_slots[j]);
         }
         while (metric_is_dup || s->scene.EVMeasures.count(static_cast<UIMeasure>(s->scene.measure_slots[i]))){
           s->scene.measure_slots[i] = (s->scene.measure_slots[i]+1) % s->scene.num_measures;
           metric_is_dup = false;
           for (int j = 0; j < i && !metric_is_dup; ++j){
-            metric_is_dup = (s->scene.measure_slots[i] == s->scene.measure_slots[i]);
+            metric_is_dup = (s->scene.measure_slots[i] == s->scene.measure_slots[j]);
           }
         }
       }
