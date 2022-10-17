@@ -693,7 +693,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
       nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(int(s->scene.one_pedal_fade * 255.)));
       nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
       nvgFill(s->vg);
-      nvgStrokeWidth(s->vg, 6);
+      nvgStrokeWidth(s->vg, 7);
       nvgStroke(s->vg);
     }
   }
@@ -2546,7 +2546,7 @@ static void ui_draw_vision_event(UIState *s) {
       nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(255));
       nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
       nvgFill(s->vg);
-      nvgStrokeWidth(s->vg, 6);
+      nvgStrokeWidth(s->vg, 7);
       nvgStroke(s->vg);
     }
     else if (s->scene.visionBrakingEnabled and s->scene.mapBrakingEnabled){
@@ -2556,7 +2556,7 @@ static void ui_draw_vision_event(UIState *s) {
       nvgStrokeColor(s->vg, s->scene.network_strength > 0 ? COLOR_GREEN_ALPHA(255) : COLOR_RED_ALPHA(255));
       nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
       nvgFill(s->vg);
-      nvgStrokeWidth(s->vg, 6);
+      nvgStrokeWidth(s->vg, 7);
       nvgStroke(s->vg);
     }
     
