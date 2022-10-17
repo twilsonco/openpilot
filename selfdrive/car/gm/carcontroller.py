@@ -40,6 +40,8 @@ ONE_PEDAL_MAX_DECEL = -3.5
 ONE_PEDAL_SPEED_ERROR_FACTOR_BP = [1.5, 20.] # [m/s] 
 ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.05, 0.3] # factor of error for non-lead braking decel
 
+ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T = 3. # [s]
+
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.start_time = 0.
@@ -67,6 +69,7 @@ class CarController():
     self.one_pedal_decel_in = 0.
     self.one_pedal_pid.neg_limit = -3.5
     self.one_pedal_pid.pos_limit = 0.0
+    self.lead_accel_last_t = 0.
     
     self.apply_gas = 0
     self.apply_brake = 0
@@ -181,6 +184,9 @@ class CarController():
             else:
               self.one_pedal_decel_in = CS.lead_accel
             
+            if CS.lead_accel == self.one_pedal_decel_in:
+              self.lead_accel_last_t = t
+            
             if not CS.one_pedal_mode_op_braking_allowed or CS.lead_accel != self.one_pedal_decel_in:
               error_factor = interp(CS.vEgo, ONE_PEDAL_SPEED_ERROR_FACTOR_BP, ONE_PEDAL_SPEED_ERROR_FACTOR_V)
             else:
@@ -188,7 +194,10 @@ class CarController():
             error = self.one_pedal_decel_in - min(0.0, CS.out.aEgo + pitch_accel)
             error *= error_factor
             one_pedal_decel = self.one_pedal_pid.update(self.one_pedal_decel_in, self.one_pedal_decel_in - error, speed=CS.out.vEgo, feedforward=self.one_pedal_decel_in)
-            self.one_pedal_decel = clip(one_pedal_decel, self.one_pedal_decel - ONE_PEDAL_DECEL_RATE_LIMIT_UP * max(1., 0.5 - one_pedal_decel*0.5), self.one_pedal_decel + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
+            if t - self.lead_accel_last_t > ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T:
+              self.one_pedal_decel = clip(one_pedal_decel, self.one_pedal_decel - ONE_PEDAL_DECEL_RATE_LIMIT_UP * max(1., 0.5 - one_pedal_decel*0.5), self.one_pedal_decel + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
+            else:
+              self.one_pedal_decel = one_pedal_decel
             self.one_pedal_decel = max(self.one_pedal_decel, ONE_PEDAL_MAX_DECEL)
             one_pedal_apply_brake = interp(self.one_pedal_decel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
           else:
