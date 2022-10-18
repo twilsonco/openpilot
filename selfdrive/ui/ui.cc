@@ -132,7 +132,7 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
     if (leads[i].getProb() > 0.5) {
       lead_drawn = true;
       float z = model_position.getZ()[get_path_length_idx(model_position, leads[i].getX()[0])];
-      calib_frame_to_full_frame(s, leads[i].getX()[0], leads[i].getY()[0], z + 1.32, &s->scene.lead_vertices[i]);
+      calib_frame_to_full_frame(s, leads[i].getX()[0], leads[i].getY()[0], z + 1.22, &s->scene.lead_vertices[i]);
     }
   }
   if (!lead_drawn){
@@ -153,7 +153,7 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
             }
           }
         }
-        calib_frame_to_full_frame(s, s->scene.lead_data[i].getDRel(), -(s->scene.lead_data[i].getYRel()), z + 1.32, &s->scene.lead_vertices[i]);
+        calib_frame_to_full_frame(s, s->scene.lead_data[i].getDRel(), -(s->scene.lead_data[i].getYRel()), z + 1.22, &s->scene.lead_vertices[i]);
       }
     }
   }
@@ -168,7 +168,7 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
     for (auto const & l : rs){
       vertex_data vd;
       float z = model_position.getZ()[get_path_length_idx(model_position, l.getDRel())];
-      calib_frame_to_full_frame(s, l.getDRel(), -l.getYRel(), z, &vd);
+      calib_frame_to_full_frame(s, l.getDRel(), -l.getYRel(), z + 0.61, &vd);
       if (l.getVLeadK() > 5.){
         s->scene.lead_vertices_ongoing.push_back(vd);
         s->scene.lead_distances_ongoing.push_back(l.getDRel());
