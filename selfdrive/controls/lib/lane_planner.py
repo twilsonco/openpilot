@@ -6,7 +6,7 @@ from common.numpy_fast import interp, clip, mean
 from common.realtime import DT_MDL
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
-from selfdrive.controls import LANE_DEPARTURE_THRESHOLD
+from selfdrive.controls.controlsd import LANE_DEPARTURE_THRESHOLD
 from selfdrive.hardware import EON, TICI
 from selfdrive.swaglog import cloudlog
 from enum import Enum
