@@ -6,13 +6,15 @@ from common.numpy_fast import interp, clip, mean
 from common.realtime import DT_MDL
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
+from selfdrive.controls.lib.lane_planner import TRAJECTORY_SIZE
+from selfdrive.controls import LANE_DEPARTURE_THRESHOLD
 from selfdrive.hardware import EON, TICI
 from selfdrive.swaglog import cloudlog
 from enum import Enum
 
 LaneTraffic = log.LateralPlan.LaneTraffic
+Desire = log.LateralPlan.Desire
 
-TRAJECTORY_SIZE = 33
 # camera offset is meters from center car to camera
 if EON:
   CAMERA_OFFSET = 0.06
@@ -280,8 +282,20 @@ class LaneOffset:
     if md is not None:
       if self._cs is not None:
         self.update_lane_info(md, self._cs.vEgo, lane_width)
+        lane_depart = False
+        if self._lat_plan is not None:
+          right_lane_visible = self._lat_plan.rProb > 0.5
+          left_lane_visible = self._lat_plan.lProb > 0.5
+          l_lane_change_prob = md.meta.desirePrediction[Desire.laneChangeLeft - 1]
+          r_lane_change_prob = md.meta.desirePrediction[Desire.laneChangeRight - 1]
+          l_lane_close = left_lane_visible and (self.sm['modelV2'].laneLines[1].y[0] > -(0.5 + CAMERA_OFFSET))
+          r_lane_close = right_lane_visible and (self.sm['modelV2'].laneLines[2].y[0] < (0.5 - CAMERA_OFFSET))
+          l_lane_depart = l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close
+          r_lane_depart = r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close
+          lane_depart = l_lane_depart or r_lane_depart
         if abs(self._cs.steeringAngleDeg) > self.AUTO_CUTOFF_STEER_ANGLE \
-            or self._cs.leftBlinker or self._cs.rightBlinker:
+            or self._cs.leftBlinker or self._cs.rightBlinker \
+            or lane_depart:
           self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
           self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
           self._right_traffic = LANE_TRAFFIC.NONE
