@@ -500,12 +500,18 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   NVGpaint track_bg;
   int steerOverride = scene.car_state.getSteeringPressed();
   //if (!scene.end_to_end) {
-  if (!scene.lateralPlan.lanelessModeStatus) {
-    // paint lanelines
-    for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
-      NVGcolor color = interp_alert_color(1.f - scene.lane_line_probs[i], 255);
-      ui_draw_line(s, scene.lane_line_vertices[i], &color, nullptr);
+  // paint lanelines
+  for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
+    NVGcolor color;
+    if (!scene.lateralPlan.lanelessModeStatus) {
+      color = interp_alert_color(1.f - scene.lane_line_probs[i], 255);
     }
+    else{
+       color = COLOR_WHITE_ALPHA(int(scene.lane_line_probs[i] * 255.));
+    }
+    ui_draw_line(s, scene.lane_line_vertices[i], &color, nullptr);
+  }
+  if (!scene.lateralPlan.lanelessModeStatus) {
     // paint road edges
     for (int i = 0; i < std::size(scene.road_edge_vertices); i++) {
       NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0));
