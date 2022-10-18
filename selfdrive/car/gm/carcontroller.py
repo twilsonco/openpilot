@@ -59,9 +59,9 @@ class CarController():
     self.packer_ch = CANPacker(DBC[CP.carFingerprint]['chassis'])
     
     # pid runs at 25Hz
-    self.one_pedal_pid = PIDController(k_p=0.8, 
-                                      k_i=([3., 20.], [0.1, 0.01]), 
-                                      k_d=0.4,
+    self.one_pedal_pid = PIDController(k_p=(CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV), 
+                                      k_i=(CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV), 
+                                      k_d=(CP.longitudinalTuning.kdBP, CP.longitudinalTuning.kdV),
                                       derivative_period=0.1,
                                       k_11 = 0.5, k_12 = 0.5, k_13 = 0.5, k_period=0.1,
                                       rate=1/(DT_CTRL * 4),
