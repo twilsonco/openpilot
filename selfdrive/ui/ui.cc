@@ -168,7 +168,7 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
     for (auto const & l : rs){
       vertex_data vd;
       float z = model_position.getZ()[get_path_length_idx(model_position, l.getDRel())];
-      calib_frame_to_full_frame(s, l.getDRel(), -l.getYRel(), z + 2.5, &vd);
+      calib_frame_to_full_frame(s, l.getDRel(), -l.getYRel(), z, &vd);
       if (l.getVLeadK() > 5.){
         s->scene.lead_vertices_ongoing.push_back(vd);
         s->scene.lead_distances_ongoing.push_back(l.getDRel());
