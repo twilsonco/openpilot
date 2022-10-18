@@ -280,7 +280,8 @@ class LaneOffset:
     if md is not None:
       if self._cs is not None:
         self.update_lane_info(md, self._cs.vEgo, lane_width)
-        if abs(self._cs.steeringAngleDeg) > self.AUTO_CUTOFF_STEER_ANGLE:
+        if abs(self._cs.steeringAngleDeg) > self.AUTO_CUTOFF_STEER_ANGLE \
+            or self._cs.leftBlinker or self._cs.rightBlinker:
           self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
           self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
           self._right_traffic = LANE_TRAFFIC.NONE
