@@ -249,8 +249,8 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   max_idx = get_path_length_idx(model_position, max_distance);
   update_line_data(s, model_position, scene.end_to_end ? 0.8 : 0.5, 1.32, &scene.track_vertices, max_idx, false);
   max_idx = get_path_length_idx(model_position, MAX_DRAW_DISTANCE);
-  update_line_data(s, model_position, 1., 1.32, &scene.lane_vertices_left, max_idx, false, -scene.lateral_plan.getLaneWidth());
-  update_line_data(s, model_position, 1., 1.32, &scene.lane_vertices_right, max_idx, false, scene.lateral_plan.getLaneWidth());
+  update_line_data(s, model_position, 1., 1.32, &scene.lane_vertices_left, max_idx, false, -scene.lateralPlan.laneWidth * 1.1);
+  update_line_data(s, model_position, 1., 1.32, &scene.lane_vertices_right, max_idx, false, scene.lateralPlan.laneWidth * 1.1);
 }
 
 static void update_sockets(UIState *s) {
