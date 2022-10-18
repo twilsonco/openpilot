@@ -6,7 +6,6 @@ from common.numpy_fast import interp, clip, mean
 from common.realtime import DT_MDL
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.lane_planner import TRAJECTORY_SIZE
 from selfdrive.controls import LANE_DEPARTURE_THRESHOLD
 from selfdrive.hardware import EON, TICI
 from selfdrive.swaglog import cloudlog
@@ -14,6 +13,8 @@ from enum import Enum
 
 LaneTraffic = log.LateralPlan.LaneTraffic
 Desire = log.LateralPlan.Desire
+
+TRAJECTORY_SIZE = 33
 
 # camera offset is meters from center car to camera
 if EON:
