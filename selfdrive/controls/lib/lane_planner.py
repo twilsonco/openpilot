@@ -38,14 +38,17 @@ class LANE_TRAFFIC:
   NONE = 0
   ONCOMING = 1
   ONGOING = 2
+  STOPPED = 3
   
   def to_cereal(lt):
     if lt == LANE_TRAFFIC.NONE:
       return LaneTraffic.none
     elif lt == LANE_TRAFFIC.ONCOMING:
       return LaneTraffic.oncoming
-    else:
+    elif lt == LANE_TRAFFIC.ONGOING:
       return LaneTraffic.ongoing
+    else:
+      return LaneTraffic.stopped
 
 class LaneOffset: 
   OFFSET = 0.11 # [unitless] offset of the left/right positions as factor of current lane width
@@ -202,6 +205,8 @@ class LaneOffset:
         left_traffic = LANE_TRAFFIC.ONGOING
       elif mean_v < -self.AUTO_TRAFFIC_MIN_SPEED:
         left_traffic = LANE_TRAFFIC.ONCOMING
+      else:
+        left_traffic = LANE_TRAFFIC.STOPPED
     
     lv = [l.vLeadK for l in rs.leadsRight if abs(l.dPath < check_lane_width)]
     if len(lv) > 0:
@@ -210,6 +215,8 @@ class LaneOffset:
         right_traffic = LANE_TRAFFIC.ONGOING
       elif mean_v < -self.AUTO_TRAFFIC_MIN_SPEED:
         right_traffic = LANE_TRAFFIC.ONCOMING
+      else:
+        left_traffic = LANE_TRAFFIC.STOPPED
     
     if left_traffic != LANE_TRAFFIC.NONE:
       if self._left_traffic_temp != left_traffic:

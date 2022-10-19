@@ -584,6 +584,11 @@ static void ui_draw_vision_lane_lines(UIState *s) {
                                           interp_alert_color(-1., 100), interp_alert_color(-1., 0));
     ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
   }
+  else if (tf == LaneTraffic::STOPPED){
+    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                          interp_alert_color(-1., 100), interp_alert_color(-1., 0));
+    ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
+  }
 
   tf = scene.lateral_plan.getTrafficRight();
   if (tf == LaneTraffic::ONCOMING){
