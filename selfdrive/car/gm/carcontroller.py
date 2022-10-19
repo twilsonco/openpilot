@@ -30,8 +30,8 @@ ONE_PEDAL_MODE_DECEL_BP = [
   ] # [mph to meters]
 ONE_PEDAL_MODE_DECEL_V = [
   [-1.0, -1.1],
-  [-1.2, -1.7, -1.8],
-  [-1.6, -2.6, -2.4]
+  [-1.3, -1.7, -1.8],
+  [-1.7, -2.6, -2.4]
 ] # light, medium, and hard one-pedal braking
 ONE_PEDAL_MIN_SPEED = 1.0
 ONE_PEDAL_DECEL_RATE_LIMIT_UP = 0.8 * DT_CTRL * 4 # m/s^2 per second for increasing braking force
