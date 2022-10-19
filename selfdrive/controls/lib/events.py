@@ -294,7 +294,7 @@ def pre_lane_change(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) ->
   str2 = ""
   if alert == LaneChangeAlert.nudgelessBlockedNoLane:
     str2 = f"(auto lane change blocked: no {dir_str} lane)"
-  elif alert == LaneChangeAlert.nudgelessBlockedCountdown:
+  elif alert == LaneChangeAlert.nudgelessCountdown:
     str1 = "Steer or wait for {} lane change in {:.1f}s".format(dir_str, sm['lateralPlan'].laneChangeCountdown)
   elif alert == LaneChangeAlert.nudgelessBlockedOncoming:
     str2 = f"(auto lane change blocked: oncoming traffic in {dir_str} lane)"
