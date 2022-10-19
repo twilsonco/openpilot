@@ -252,10 +252,11 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   for (int i = 0; i < 2; ++i){
     float k = (i == 0 ? -1.f : 1.f);
     if (lane_line_probs[i] > 0.5){
-      update_line_data(s, lane_lines[i], 1., 1.32, &scene.lane_vertices_left, max_idx, false, k * scene.lateralPlan.laneWidth * 0.5);
+      max_idx = get_path_length_idx(lane_lines[i], max_distance);
+      update_line_data(s, lane_lines[i], 1., 1.32, (i == 0 ? &scene.lane_vertices_left : &scene.lane_vertices_right), max_idx, false, k * scene.lateralPlan.laneWidth * 0.5);
     }
     else{
-      update_line_data(s, model_position, 1., 1.32, &scene.lane_vertices_left, max_idx, false, k * scene.lateralPlan.laneWidth * 1.05);
+      update_line_data(s, model_position, 1., 1.32, (i == 0 ? &scene.lane_vertices_left : &scene.lane_vertices_right), max_idx, false, k * scene.lateralPlan.laneWidth * 1.05);
     }
   }
 }
