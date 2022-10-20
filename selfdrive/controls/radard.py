@@ -458,6 +458,10 @@ class RadarD():
       radarState.leadsLeft = list(ll)
       radarState.leadsCenter = list(lc)
       radarState.leadsRight = list(lr)
+      
+      # get the lead+1 car
+      if len(lc) > 0 and radarState.leadOne.status:
+        radarState.leadOnePlus = next(l for l in sorted(lc, key=lambda x:x["dRel"]) if l["dRel"] > radarState.leadOne.dRel)
     
     return dat
 
