@@ -192,10 +192,6 @@ class LateralPlanner():
         if nudgeless_allowed and v_ego < self.nudgeless_min_speed:
           nudgeless_allowed = False
           self.lane_change_alert = LaneChangeAlert.nudgelessBlockedMinSpeed
-        if nudgeless_allowed and t - self.nudgeless_lane_change_start_t < self.nudgeless_delay:
-          nudgeless_allowed = False
-          self.lane_change_alert = LaneChangeAlert.nudgelessCountdown
-          self.lane_change_countdown = self.nudgeless_delay - (t - self.nudgeless_lane_change_start_t)
         if nudgeless_allowed and t - self.nudgeless_blinker_press_t > 3.:
           nudgeless_allowed = False
           self.lane_change_alert = LaneChangeAlert.nudgelessBlockedTimeout
@@ -208,6 +204,10 @@ class LateralPlanner():
         if nudgeless_allowed and self.adjacentLaneWidth < self.LP.lane_width * LANE_CHANGE_ADJACENT_LANE_MIN_WIDTH_FACTOR:
           nudgeless_allowed = False
           self.lane_change_alert = LaneChangeAlert.nudgelessBlockedNoLane
+        if nudgeless_allowed and t - self.nudgeless_lane_change_start_t < self.nudgeless_delay:
+          nudgeless_allowed = False
+          self.lane_change_alert = LaneChangeAlert.nudgelessCountdown
+          self.lane_change_countdown = self.nudgeless_delay - (t - self.nudgeless_lane_change_start_t)
         
         torque_applied = torque_applied or nudgeless_allowed
 
