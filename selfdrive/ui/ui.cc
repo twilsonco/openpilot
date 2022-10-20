@@ -138,7 +138,7 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
   if (!lead_drawn){
     // draw VOACC leads
     for (int i = 0; i < 2; ++i) {
-      if (s->scene.lead_data[i].getStatus() && s->scene.lead_data[i].getDRel() >= 120.) {
+      if (s->scene.lead_data[i].getStatus() && s->scene.lead_data[i].getDRel() >= 60.) {
         int path_ind = get_path_length_idx(model_position, s->scene.lead_data[i].getDRel());
         float z = model_position.getZ()[path_ind];
         if (path_ind == TRAJECTORY_SIZE-1){
@@ -169,11 +169,11 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
       vertex_data vd;
       float z = model_position.getZ()[get_path_length_idx(model_position, l.getDRel())];
       calib_frame_to_full_frame(s, l.getDRel(), -l.getYRel(), z + 0.61, &vd);
-      if (l.getVLeadK() > 5.){
+      if (l.getVLeadK() > 7.){
         s->scene.lead_vertices_ongoing.push_back(vd);
         s->scene.lead_distances_ongoing.push_back(l.getDRel());
       }
-      else if (l.getVLeadK() < -5.){
+      else if (l.getVLeadK() < -7.){
         s->scene.lead_vertices_oncoming.push_back(vd);
         s->scene.lead_distances_oncoming.push_back(l.getDRel());
       }
