@@ -172,7 +172,7 @@ def match_model_lanelines_to_cluster(v_ego, md, lane_width, clusters):
     return None
 
 
-def get_path_adjacent_clusters(v_ego, md, lane_width, clusters):
+def get_path_adjacent_leads(v_ego, md, lane_width, clusters):
   if len(clusters) == 0:
     return [[],[],[]]
   
@@ -454,7 +454,7 @@ class RadarD():
         radarState.leadOne = self.lead_one_lr.update(get_lead(self.v_ego, self.ready, clusters, lead_msg=None, low_speed_override=True, md=sm['modelV2'], lane_width=sm['lateralPlan'].laneWidth))
         radarState.leadTwo = self.lead_two_lr.update(get_lead(self.v_ego, self.ready, clusters, lead_msg=None, low_speed_override=False, md=sm['modelV2'], lane_width=sm['lateralPlan'].laneWidth))
 
-      ll,lc,lr = get_path_adjacent_clusters(self.v_ego, sm['modelV2'], sm['lateralPlan'].laneWidth if self.long_range_leads_enabled else None, clusters)
+      ll,lc,lr = get_path_adjacent_leads(self.v_ego, sm['modelV2'], sm['lateralPlan'].laneWidth if self.long_range_leads_enabled else None, clusters)
       radarState.leadsLeft = list(ll)
       radarState.leadsCenter = list(lc)
       radarState.leadsRight = list(lr)
