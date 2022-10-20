@@ -250,7 +250,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   update_line_data(s, model_position, scene.end_to_end ? 0.8 : 0.5, 1.32, &scene.track_vertices, max_idx, false);
   max_idx = get_path_length_idx(model_position, MAX_DRAW_DISTANCE);
   for (int i = 0; i < 2; ++i){
-    float k = (i == 0 ? 1.f : -1.f);
+    float k = (i == 0 ? -1.f : 1.f);
     auto & lane = (i == 0 ? scene.lane_vertices_left : scene.lane_vertices_right);
     if (lane_line_probs[i+1] > 0.5){
       update_line_data(s, lane_lines[i+1], 2., 1.32, &lane, max_idx, false, k * scene.lateralPlan.laneWidth * 0.5);
