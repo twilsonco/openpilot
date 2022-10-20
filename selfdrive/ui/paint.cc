@@ -507,7 +507,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
       color = interp_alert_color(1.f - scene.lane_line_probs[i], 255);
     }
     else{
-       color = COLOR_WHITE_ALPHA(int(scene.lane_line_probs[i] * 255.));
+       color = COLOR_WHITE_ALPHA(int(scene.lane_line_probs[i] * 200.));
     }
     ui_draw_line(s, scene.lane_line_vertices[i], &color, nullptr);
   }
