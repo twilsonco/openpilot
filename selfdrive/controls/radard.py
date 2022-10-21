@@ -284,15 +284,15 @@ def get_lead(v_ego, ready, clusters, lead_msg=None, low_speed_override=True, md=
       closest_cluster = min(low_speed_clusters, key=lambda c: c.dRel)
 
       # Only choose new cluster if it is actually closer than the previous one
-      if (not lead_dict['status']) or (closest_cluster.dRel < lead_dict['dRel']):
+      if (not lead_dict['status']) or (closest_cluster.dRel + LEAD_PLUS_ONE_MIN_REL_DIST < lead_dict['dRel']):
         lead_dict = closest_cluster.get_RadarState(source=lead_dict['source'], checkSource='lowSpeedOverride')
 
   return lead_dict
 
 class LongRangeLead():
   DREL_BP = [LEAD_MIN_SMOOTHING_DISTANCE, 220.] # [m] used commonly between distance-based parameters
-  D_DREL_MAX_V = [1.5, 15.] # [m] deviation between old and new leads necessary to trigger reset of values
-  ALPHA_V = [0, 1.] # raise/lower second value for more/less smoothing of long-range lead data
+  D_DREL_MAX_V = [8., 20.] # [m] deviation between old and new leads necessary to trigger reset of values
+  ALPHA_V = [0, 3.] # raise/lower second value for more/less smoothing of long-range lead data
   D_YREL_MAX = 0.8 # [m] max yrel deviation
   
   def __init__(self, dt):
