@@ -23,6 +23,8 @@ LEAD_PATH_DREL_MIN = 60 # [m] only care about far away leads
 LEAD_MIN_SMOOTHING_DISTANCE = 145 # [m]
 MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow use.
 
+LEAD_PLUS_ONE_MIN_REL_DIST = 1.5 # [m] min distance between lead+1 and lead
+
 class KalmanParams():
   def __init__(self, dt):
     # Lead Kalman Filter params, calculating K from A, C, Q, R requires the control library.
