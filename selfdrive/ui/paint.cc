@@ -528,7 +528,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
       color = interp_alert_color(1.f - scene.lane_line_probs[i], 255);
     }
     else{
-       color = COLOR_WHITE_ALPHA(int(scene.lane_line_probs[i] * 200.));
+       color = COLOR_WHITE_ALPHA(int(scene.lane_line_probs[i] * 180.));
     }
     ui_draw_line(s, scene.lane_line_vertices[i], &color, nullptr);
   }
@@ -566,12 +566,12 @@ static void ui_draw_vision_lane_lines(UIState *s) {
       if (scene.car_state.getLkMode()){
         if (scene.color_path){
           int g, r = 255. * fabs(scene.lateralCorrection);
-          r = CLIP(r, 0, 255);
-          g = 100 + r;
+          r = CLIP(r, COLOR_GRACE_BLUE.red(), 255);
+          g = COLOR_GRACE_BLUE.green() + r;
           g = CLIP(g, 0, 255);
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                      nvgRGBA(r, g, 255, 160), 
-                                      nvgRGBA(r, g, 255, 0));
+                                      nvgRGBA(r, g, COLOR_GRACE_BLUE.blue(), 160), 
+                                      nvgRGBA(r, g, COLOR_GRACE_BLUE.blue(), 0));
         }
         else{
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
