@@ -26,7 +26,7 @@ GearShifter = car.CarState.GearShifter
 
 BRAKE_SOURCES = {'lead0',
                  'lead1',
-                 'lead0+'}
+                 'lead0p1'}
 COAST_SOURCES = {'cruise',
                  'limit'}
 
@@ -86,7 +86,7 @@ class Planner():
     self.mpcs = {}
     self.mpcs['lead0'] = LeadMpc(0)
     self.mpcs['lead1'] = LeadMpc(1)
-    self.mpcs['lead0+'] = LeadMpc(2)
+    self.mpcs['lead0p1'] = LeadMpc(2)
     self.mpcs['cruise'] = LongitudinalMpc()
     self.mpcs['custom'] = LimitsLongitudinalMpc()
 
@@ -132,7 +132,7 @@ class Planner():
     if sm['carState'].gasPressed:
       self.mpcs['lead0'].reset_mpc()
       self.mpcs['lead1'].reset_mpc()
-      self.mpcs['lead0+'].reset_mpc()
+      self.mpcs['lead0p1'].reset_mpc()
     
     v_ego = sm['carState'].vEgo
     a_ego = sm['carState'].aEgo
@@ -346,7 +346,7 @@ class Planner():
       'cruise': a_ego,  # Irrelevant
       'lead0': a_ego,   # Irrelevant
       'lead1': a_ego,   # Irrelevant
-      'lead0+': a_ego,   # Irrelevant
+      'lead0p1': a_ego,   # Irrelevant
       'custom': 0. if source is None else a_solutions[source],
     }
 
@@ -354,7 +354,7 @@ class Planner():
       'cruise': True,  # Irrelevant
       'lead0': True,   # Irrelevant
       'lead1': True,   # Irrelevant
-      'lead0+': True,   # Irrelevant
+      'lead0p1': True,   # Irrelevant
       'custom': source is not None,
     }
 
