@@ -304,22 +304,23 @@ static void update_state(UIState *s) {
       float oldDist = std::stof(Params().get("EVConsumptionTripDistance"));
       if (oldDist > scene.ev_eff_total_dist){
         scene.ev_eff_total_dist = oldDist;
-        s->scene.ev_recip_eff_wa[1] = std::stof(Params().get("EVConsumption5Mi"));
-        s->scene.ev_eff_total_dist = oldDist;
-        s->scene.ev_eff_total_kWh = std::stof(Params().get("EVConsumptionTripkWh"));
+        scene.ev_recip_eff_wa[1] = std::stof(Params().get("EVConsumption5Mi"));
+        scene.ev_eff_total_dist = oldDist;
+        scene.ev_eff_total_kWh = std::stof(Params().get("EVConsumptionTripkWh"));
       }
     }
-    if (s->sm->frame - s->scene.started_frame > 300 && s->sm->frame - s->scene.started_frame < 330 && !s->scene.car_is_ev){
-      for (int i = 0; i < s->scene.measure_max_num_slots; ++i){
+    scene.car_is_ev = Params().getBool("CarIsEV");
+    if (s->sm->frame - scene.started_frame > 100 && s->sm->frame - scene.started_frame < 130 && !scene.car_is_ev){
+      for (int i = 0; i < scene.measure_max_num_slots; ++i){
         bool metric_is_dup = false;
         for (int j = 0; j < i && !metric_is_dup; ++j){
-          metric_is_dup = (s->scene.measure_slots[i] == s->scene.measure_slots[j]);
+          metric_is_dup = (scene.measure_slots[i] == scene.measure_slots[j]);
         }
-        while (metric_is_dup || s->scene.EVMeasures.count(static_cast<UIMeasure>(s->scene.measure_slots[i]))){
-          s->scene.measure_slots[i] = (s->scene.measure_slots[i]+1) % s->scene.num_measures;
+        while (metric_is_dup || scene.EVMeasures.count(static_cast<UIMeasure>(scene.measure_slots[i]))){
+          scene.measure_slots[i] = (scene.measure_slots[i]+1) % scene.num_measures;
           metric_is_dup = false;
           for (int j = 0; j < i && !metric_is_dup; ++j){
-            metric_is_dup = (s->scene.measure_slots[i] == s->scene.measure_slots[j]);
+            metric_is_dup = (scene.measure_slots[i] == scene.measure_slots[j]);
           }
         }
       }
@@ -428,7 +429,11 @@ static void update_state(UIState *s) {
     // EV efficiency
     float cur_dist = std::abs(scene.car_state.getVEgo() * (t - scene.ev_eff_last_time));
 
-    scene.car_is_ev = scene.car_is_ev || scene.car_state.getHvbWattage() != 0.0;
+    bool car_is_ev = scene.car_state.getHvbWattage() != 0.0;
+    if (car_is_ev && !scene.car_is_ev){
+      Params().putBool("CarIsEV", true);
+    }
+    scene.car_is_ev = scene.car_is_ev || car_is_ev;
     
     scene.ev_eff_total_dist += cur_dist;
     float cur_kW = -scene.car_state.getHvbWattage() * 0.001;
