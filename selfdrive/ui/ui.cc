@@ -37,13 +37,24 @@ static const float voacc_lead_min_laneline_prob = 0.6; // should match MIN_LANE_
 NVGcolor interp_alert_color(float p, int a){
   char c1, c2;
   if (p <= 0.){
-    return (a < 0 ? nvgRGBA(bg_colors[STATUS_ENGAGED].red(), 
-                            bg_colors[STATUS_ENGAGED].green(), 
-                            bg_colors[STATUS_ENGAGED].blue(), 
-                            bg_colors[STATUS_ENGAGED].alpha()) 
-                  : nvgRGBA(bg_colors[STATUS_ENGAGED].red(), 
-                            bg_colors[STATUS_ENGAGED].green(), 
-                            bg_colors[STATUS_ENGAGED].blue(), a));
+    if (QUIState::ui_state.scene.alt_engage_color_enabled){
+      return (a < 0 ? nvgRGBA(alt_engage_color.red(), 
+                              alt_engage_color.green(), 
+                              alt_engage_color.blue(), 
+                              alt_engage_color.alpha()) 
+                    : nvgRGBA(alt_engage_color.red(), 
+                              alt_engage_color.green(), 
+                              alt_engage_color.blue(), a));
+    }
+    else{
+      return (a < 0 ? nvgRGBA(bg_colors[STATUS_ENGAGED].red(), 
+                              bg_colors[STATUS_ENGAGED].green(), 
+                              bg_colors[STATUS_ENGAGED].blue(), 
+                              bg_colors[STATUS_ENGAGED].alpha()) 
+                    : nvgRGBA(bg_colors[STATUS_ENGAGED].red(), 
+                              bg_colors[STATUS_ENGAGED].green(), 
+                              bg_colors[STATUS_ENGAGED].blue(), a));
+    }
   }
   else if (p <= 0.5){
     c1 = STATUS_ENGAGED; // lower color index
@@ -68,11 +79,21 @@ NVGcolor interp_alert_color(float p, int a){
   
   int r, g, b;
   float complement = (1.f - p);
-  r = bg_colors[c1].red() * complement + bg_colors[c2].red() * p;
-  g = bg_colors[c1].green() * complement + bg_colors[c2].green() * p;
-  b = bg_colors[c1].blue() * complement + bg_colors[c2].blue() * p;
-  if (a < 0){
-    a = bg_colors[c1].alpha() * complement + bg_colors[c2].alpha() * p;
+  if (QUIState::ui_state.scene.alt_engage_color_enabled && c1 == STATUS_ENGAGED){
+    r = alt_engage_color.red() * complement + bg_colors[c2].red() * p;
+    g = alt_engage_color.green() * complement + bg_colors[c2].green() * p;
+    b = alt_engage_color.blue() * complement + bg_colors[c2].blue() * p;
+    if (a < 0){
+      a = alt_engage_color.alpha() * complement + bg_colors[c2].alpha() * p;
+    }
+  }
+  else{
+    r = bg_colors[c1].red() * complement + bg_colors[c2].red() * p;
+    g = bg_colors[c1].green() * complement + bg_colors[c2].green() * p;
+    b = bg_colors[c1].blue() * complement + bg_colors[c2].blue() * p;
+    if (a < 0){
+      a = bg_colors[c1].alpha() * complement + bg_colors[c2].alpha() * p;
+    }
   }
   
   NVGcolor out = nvgRGBA(r, g, b, a);
@@ -765,6 +786,7 @@ static void update_status(UIState *s) {
       s->scene.power_meter_metric = Params().getBool("PowerMeterMetric");
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->scene.color_path = Params().getBool("ColorPath");
+      s->scene.alt_engage_color_enabled = Params().getBool("AlternateEngageColor");
       if (!s->scene.end_to_end){
         s->scene.laneless_btn_touch_rect = {1,1,1,1};
       }

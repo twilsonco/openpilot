@@ -45,6 +45,9 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 void OnroadWindow::updateState(const UIState &s) {
   SubMaster &sm = *(s.sm);
   QColor bgColor = bg_colors[s.status];
+  if (QUIState::ui_state.scene.alt_engage_color_enabled && s.status == UIStatus::STATUS_ENGAGED){
+    bgColor = alt_engage_color;
+  }
   if (sm.updated("controlsState")) {
     const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
     alerts->updateAlert({QString::fromStdString(cs.getAlertText1()),
