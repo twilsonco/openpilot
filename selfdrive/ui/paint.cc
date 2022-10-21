@@ -593,30 +593,35 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   auto tf = scene.lateral_plan.getTrafficLeft();
   if (tf == LaneTraffic::ONCOMING){
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                          nvgRGBA(255, 30, 30, 100), nvgRGBA(255, 30, 30, 0));
+                                          nvgRGBA(255, 30, 30, 200), nvgRGBA(255, 30, 30, 0));
     ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
   }
   else if (tf == LaneTraffic::ONGOING){
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                          interp_alert_color(-1., 100), interp_alert_color(-1., 0));
+                                          interp_alert_color(-1., 200), interp_alert_color(-1., 0));
     ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
   }
   else if (tf == LaneTraffic::STOPPED){
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                          interp_alert_color(-1., 100), interp_alert_color(-1., 0));
+                                          COLOR_WHITE_ALPHA(150), COLOR_WHITE_ALPHA(0));
     ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
   }
 
   tf = scene.lateral_plan.getTrafficRight();
   if (tf == LaneTraffic::ONCOMING){
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                          nvgRGBA(255, 30, 30, 100), nvgRGBA(255, 30, 30, 0));
+                                          nvgRGBA(255, 30, 30, 200), nvgRGBA(255, 30, 30, 0));
     ui_draw_line(s, scene.lane_vertices_right, nullptr, &track_bg);
   }
   else if (tf == LaneTraffic::ONGOING){
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                          interp_alert_color(-1., 100), interp_alert_color(-1., 0));
+                                          interp_alert_color(-1., 200), interp_alert_color(-1., 0));
     ui_draw_line(s, scene.lane_vertices_right, nullptr, &track_bg);
+  }
+  else if (tf == LaneTraffic::STOPPED){
+    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                          COLOR_WHITE_ALPHA(150), COLOR_WHITE_ALPHA(0));
+    ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
   }
 
   // print lane and shoulder widths and probabilities
