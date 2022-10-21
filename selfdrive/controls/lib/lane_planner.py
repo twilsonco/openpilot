@@ -199,33 +199,35 @@ class LaneOffset:
   def update_traffic_info(self, rs, lane_width):
     left_traffic = LANE_TRAFFIC.NONE
     right_traffic = LANE_TRAFFIC.NONE
-    check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
-    lv = [l.vLeadK for l in rs.leadsLeft if abs(l.dPath) < check_lane_width]
-    if len(lv) > 0:
-      mean_v = mean(lv)
-      if mean_v > self.AUTO_TRAFFIC_MIN_SPEED:
-        left_traffic = LANE_TRAFFIC.ONGOING
-      elif mean_v < -self.AUTO_TRAFFIC_MIN_SPEED:
-        left_traffic = LANE_TRAFFIC.ONCOMING
-      else:
-        check_lane_width = lane_width * self.AUTO_TRAFFIC_STOPPED_MIN_DIST_LANE_WIDTH_FACTOR
-        lv = [l.vLeadK for l in rs.leadsLeft if abs(l.dPath) < check_lane_width]
-        if len(lv) > 0:
-          left_traffic = LANE_TRAFFIC.STOPPED
+    if self._lane_width_mean_left_adjacent > 0.:
+      check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
+      lv = [l.vLeadK for l in rs.leadsLeft if abs(l.dPath) < check_lane_width]
+      if len(lv) > 0:
+        mean_v = mean(lv)
+        if mean_v > self.AUTO_TRAFFIC_MIN_SPEED:
+          left_traffic = LANE_TRAFFIC.ONGOING
+        elif mean_v < -self.AUTO_TRAFFIC_MIN_SPEED:
+          left_traffic = LANE_TRAFFIC.ONCOMING
+        else:
+          check_lane_width = lane_width * self.AUTO_TRAFFIC_STOPPED_MIN_DIST_LANE_WIDTH_FACTOR
+          lv = [l.vLeadK for l in rs.leadsLeft if abs(l.dPath) < check_lane_width]
+          if len(lv) > 0:
+            left_traffic = LANE_TRAFFIC.STOPPED
     
-    check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
-    lv = [l.vLeadK for l in rs.leadsRight if abs(l.dPath) < check_lane_width]
-    if len(lv) > 0:
-      mean_v = mean(lv)
-      if mean_v > self.AUTO_TRAFFIC_MIN_SPEED:
-        right_traffic = LANE_TRAFFIC.ONGOING
-      elif mean_v < -self.AUTO_TRAFFIC_MIN_SPEED:
-        right_traffic = LANE_TRAFFIC.ONCOMING
-      else:
-        check_lane_width = lane_width * self.AUTO_TRAFFIC_STOPPED_MIN_DIST_LANE_WIDTH_FACTOR
-        lv = [l.vLeadK for l in rs.leadsRight if abs(l.dPath) < check_lane_width]
-        if len(lv) > 0:
-          right_traffic = LANE_TRAFFIC.STOPPED
+    if self._lane_width_mean_right_adjacent > 0.:
+      check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
+      lv = [l.vLeadK for l in rs.leadsRight if abs(l.dPath) < check_lane_width]
+      if len(lv) > 0:
+        mean_v = mean(lv)
+        if mean_v > self.AUTO_TRAFFIC_MIN_SPEED:
+          right_traffic = LANE_TRAFFIC.ONGOING
+        elif mean_v < -self.AUTO_TRAFFIC_MIN_SPEED:
+          right_traffic = LANE_TRAFFIC.ONCOMING
+        else:
+          check_lane_width = lane_width * self.AUTO_TRAFFIC_STOPPED_MIN_DIST_LANE_WIDTH_FACTOR
+          lv = [l.vLeadK for l in rs.leadsRight if abs(l.dPath) < check_lane_width]
+          if len(lv) > 0:
+            right_traffic = LANE_TRAFFIC.STOPPED
     
     if left_traffic != LANE_TRAFFIC.NONE:
       if self._left_traffic_temp != left_traffic:
@@ -255,10 +257,14 @@ class LaneOffset:
     lane_pos_auto = 0.
     timeout_override = False
     
-    if self._left_traffic != LANE_TRAFFIC.NONE and self._right_traffic == LANE_TRAFFIC.NONE:
+    if self._left_traffic != LANE_TRAFFIC.NONE \
+        and self._right_traffic == LANE_TRAFFIC.NONE \
+        and self._lane_width_mean_left_adjacent > 0.:
       lane_pos_auto = -1.
       timeout_override = True
-    elif self._right_traffic != LANE_TRAFFIC.NONE and self._left_traffic == LANE_TRAFFIC.NONE:
+    elif self._right_traffic != LANE_TRAFFIC.NONE \
+        and self._left_traffic == LANE_TRAFFIC.NONE \
+        and self._lane_width_mean_right_adjacent > 0.:
       lane_pos_auto = 1.
       timeout_override = True
     elif self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB \
