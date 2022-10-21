@@ -272,13 +272,13 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   max_idx = get_path_length_idx(model_position, MAX_DRAW_DISTANCE);
   for (int i = 0; i < 2; ++i){
     float k = (i == 0 ? -1.f : 1.f);
-    float lw = (i == 0 ? scene.lateral_plan.getLaneWidthMeanLeftAdjacent() : scene.lateral_plan.getLaneWidthMeanRightAdjacent());
+    float lw = 0.5 * (i == 0 ? scene.lateral_plan.getLaneWidthMeanLeftAdjacent() : scene.lateral_plan.getLaneWidthMeanRightAdjacent());
     auto & lane = (i == 0 ? scene.lane_vertices_left : scene.lane_vertices_right);
     if (lw > 0.){
-      update_line_data(s, lane_lines[i+1], lw * 0.5, 1.32, &lane, max_idx, false, lane_lines[i+1].getY()[0]);
+      update_line_data(s, lane_lines[i+1], lw, 1.32, &lane, max_idx, false, k * lw);
     }
     else{
-      update_line_data(s, model_position, 2., 1.32, &lane, max_idx, false, k * scene.lateralPlan.laneWidth * 1.);
+      update_line_data(s, model_position, 1.5, 1.32, &lane, max_idx, false, k * scene.lateralPlan.laneWidth * 1.);
     }
   }
 }
