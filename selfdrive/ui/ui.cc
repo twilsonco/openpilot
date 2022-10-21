@@ -569,7 +569,14 @@ static void update_state(UIState *s) {
         std::sort(leads_vec.begin(), leads_vec.end(), [](LeadData const & a, LeadData const & b){return a.getVLat() > b.getVLat();});
         scene.adjacent_leads_center_strs.clear();
         char val[16];
-        for (int i = 1; i < leads_vec.size(); ++i){
+        auto lead_one_plus = radar_state.getLeadOnePlus();
+        int start_i = 1;
+        if (lead_one_plus.getStatus()){
+          start_i++;
+          snprintf(val, sizeof(val), "%.0f", lead_one_plus.getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
+          scene.adjacent_leads_center_strs.push_back(val);
+        }
+        for (int i = start_i; i < leads_vec.size(); ++i){
           if (abs(leads_vec[i].getVLeadK()) > 3.){
             snprintf(val, sizeof(val), "%.0f", leads_vec[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
             scene.adjacent_leads_center_strs.push_back(val);

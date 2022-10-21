@@ -444,9 +444,26 @@ static void draw_adjacent_lead_speeds(UIState *s, bool lead_drawn){
     else{
       x = s->fb_w / 2;
     }
+    bool first = false;
     for (auto const & v : s->scene.adjacent_leads_center_strs){
-      nvgText(s->vg,x,y,v.c_str(),NULL);
-      y -= 60;
+      if (first && lead_drawn){
+        auto l1p_v = s->scene.radarState.getLeadOnePlus().getVLeadK();
+        if (s->scene.lead_v - l1p_v > 7.){
+          nvgFontFace(s->vg, "sans-bold");
+          nvgFillColor(s->vg, COLOR_RED_ALPHA(200));
+          nvgFontSize(s->vg, 110);
+          nvgText(s->vg,x,y,v.c_str(),NULL);
+          y -= 75;
+          nvgFontFace(s->vg, "sans-semibold");
+          nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+          nvgFontSize(s->vg, 90);
+        }
+        else{
+          nvgText(s->vg,x,y,v.c_str(),NULL);
+          y -= 60;
+        }
+      }
+      first = false;
     }
   }
 }
