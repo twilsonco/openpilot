@@ -64,11 +64,11 @@ const float ZOOM = Hardware::TICI() ? 2912.8 : 2138.5;
 const std::vector<std::string> ui_network_type = {
   "--",
   "WiFi",
-  "ETH",
   "2G",
   "3G",
   "LTE",
-  "5G"
+  "5G",
+  "ETH"
 };
   // above vector based on this cereal enum
   // enum NetworkType { 
