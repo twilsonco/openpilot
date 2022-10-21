@@ -23,7 +23,7 @@ LEAD_PATH_DREL_MIN = 60 # [m] only care about far away leads
 LEAD_MIN_SMOOTHING_DISTANCE = 145 # [m]
 MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow use.
 
-LEAD_PLUS_ONE_MIN_REL_DIST = 1.5 # [m] min distance between lead+1 and lead
+LEAD_PLUS_ONE_MIN_REL_DIST = 2.0 # [m] min distance between lead+1 and lead
 
 class KalmanParams():
   def __init__(self, dt):
@@ -286,7 +286,7 @@ def get_lead(v_ego, ready, clusters, lead_msg=None, low_speed_override=True, md=
       closest_cluster = min(low_speed_clusters, key=lambda c: c.dRel)
 
       # Only choose new cluster if it is actually closer than the previous one
-      if (not lead_dict['status']) or (closest_cluster.dRel + LEAD_PLUS_ONE_MIN_REL_DIST < lead_dict['dRel']):
+      if (not lead_dict['status']) or (closest_cluster.dRel < lead_dict['dRel']):
         lead_dict = closest_cluster.get_RadarState(source=lead_dict['source'], checkSource='lowSpeedOverride')
 
   return lead_dict
@@ -463,7 +463,7 @@ class RadarD():
       
       # get the lead+1 car
       if len(lc) > 0 and radarState.leadOne.status:
-        radarState.leadOnePlus = next(l for l in sorted(lc, key=lambda x:x["dRel"]) if l["dRel"] > radarState.leadOne.dRel)
+        radarState.leadOnePlus = next(l for l in sorted(lc, key=lambda x:x["dRel"]) if l["dRel"] > radarState.leadOne.dRel + LEAD_PLUS_ONE_MIN_REL_DIST)
     
     return dat
 

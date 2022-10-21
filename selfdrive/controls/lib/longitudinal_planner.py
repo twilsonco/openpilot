@@ -25,7 +25,8 @@ from selfdrive.swaglog import cloudlog
 GearShifter = car.CarState.GearShifter
 
 BRAKE_SOURCES = {'lead0',
-                 'lead1'}
+                 'lead1',
+                 'lead0+'}
 COAST_SOURCES = {'cruise',
                  'limit'}
 
@@ -85,6 +86,7 @@ class Planner():
     self.mpcs = {}
     self.mpcs['lead0'] = LeadMpc(0)
     self.mpcs['lead1'] = LeadMpc(1)
+    self.mpcs['lead0+'] = LeadMpc(2)
     self.mpcs['cruise'] = LongitudinalMpc()
     self.mpcs['custom'] = LimitsLongitudinalMpc()
 
@@ -97,6 +99,7 @@ class Planner():
     self.alpha = np.exp(-CP.radarTimeStep/2.0)
     self.lead_0 = log.RadarState.LeadData.new_message()
     self.lead_1 = log.RadarState.LeadData.new_message()
+    self.lead_0_plus = log.RadarState.LeadData.new_message()
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
@@ -129,6 +132,7 @@ class Planner():
     if sm['carState'].gasPressed:
       self.mpcs['lead0'].reset_mpc()
       self.mpcs['lead1'].reset_mpc()
+      self.mpcs['lead0+'].reset_mpc()
     
     v_ego = sm['carState'].vEgo
     a_ego = sm['carState'].aEgo
@@ -151,6 +155,7 @@ class Planner():
 
     self.lead_0 = sm['radarState'].leadOne
     self.lead_1 = sm['radarState'].leadTwo
+    self.lead_0_plus = sm['radarState'].leadOnePlus
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = self.lead_0.status and self.lead_0.dRel < 45.0 and self.lead_0.vLeadK > v_ego and self.lead_0.aLeadK > 0.0
@@ -341,6 +346,7 @@ class Planner():
       'cruise': a_ego,  # Irrelevant
       'lead0': a_ego,   # Irrelevant
       'lead1': a_ego,   # Irrelevant
+      'lead0+': a_ego,   # Irrelevant
       'custom': 0. if source is None else a_solutions[source],
     }
 
@@ -348,6 +354,7 @@ class Planner():
       'cruise': True,  # Irrelevant
       'lead0': True,   # Irrelevant
       'lead1': True,   # Irrelevant
+      'lead0+': True,   # Irrelevant
       'custom': source is not None,
     }
 
