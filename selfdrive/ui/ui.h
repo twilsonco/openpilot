@@ -54,6 +54,7 @@
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 typedef cereal::RadarState::LeadData::Reader LeadData;
 typedef cereal::LateralPlan::LaneTraffic LaneTraffic;
+typedef cereal::LateralPlan::LanePosition LanePosition;
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
