@@ -457,11 +457,15 @@ static void draw_adjacent_lead_speeds(UIState *s, bool lead_drawn){
           nvgFontFace(s->vg, "sans-semibold");
           nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
           nvgFontSize(s->vg, 90);
-        }
+        }      
         else{
           nvgText(s->vg,x,y,v.c_str(),NULL);
           y -= 60;
         }
+      }
+      else{
+        nvgText(s->vg,x,y,v.c_str(),NULL);
+        y -= 60;
       }
       first = false;
     }
