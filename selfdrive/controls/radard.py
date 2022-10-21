@@ -371,6 +371,7 @@ class RadarD():
     
     self.lead_one_lr = LongRangeLead(radar_ts)
     self.lead_two_lr = LongRangeLead(radar_ts)
+    self.lead_one_plus_lr = LongRangeLead(radar_ts)
 
     self.ready = False
 
@@ -463,7 +464,10 @@ class RadarD():
       
       # get the lead+1 car
       if len(lc) > 0 and radarState.leadOne.status:
-        radarState.leadOnePlus = next(l for l in sorted(lc, key=lambda x:x["dRel"]) if l["dRel"] > radarState.leadOne.dRel + LEAD_PLUS_ONE_MIN_REL_DIST)
+        try:
+          radarState.leadOnePlus = self.lead_one_plus_lr.update(next(l for l in sorted(lc, key=lambda x:x["dRel"]) if l["dRel"] > radarState.leadOne.dRel + LEAD_PLUS_ONE_MIN_REL_DIST))
+        except StopIteration: # no lead one plus found
+          self.lead_one_plus_lr.reset()
     
     return dat
 
