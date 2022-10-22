@@ -217,9 +217,16 @@ class Planner():
     self.lead_accel = np.inf
     for key in self.mpcs:
       if key == 'lead0p1':
-        lead0_or_1 = self.mpcs['lead0'] if self.lead_0.status else self.mpcs['lead1'] if self.lead_1.status else None
-        if self.lead_0_plus.status and lead0_or_1 is not None:
-          tr = lead0_or_1.tr * LEAD_ONE_PLUS_TR_FACTOR
+        if self.lead_0.status:
+          lead0_or_1mpc = self.mpcs['lead0']
+          lead0_or_1 = self.lead_0
+        elif self.lead_1.status:
+          lead0_or_1mpc = self.mpcs['lead1']
+          lead0_or_1 = self.lead_1
+        else:
+          lead0_or_1mpc = None
+        if self.lead_0_plus.status and lead0_or_1mpc is not None:
+          tr = lead0_or_1.dRel / max(v_ego,0.1) * LEAD_ONE_PLUS_TR_FACTOR
           self.mpcs[key].tr_override = True
           self.mpcs[key].tr = tr
         else:
