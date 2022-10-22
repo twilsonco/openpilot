@@ -155,10 +155,6 @@ class LaneOffset:
             and ((i == 2 and r_prob > self.AUTO_MIN_ADJACENT_LANELINE_PROB) or r_prob > self.AUTO_MIN_LANELINE_PROB):
           # Reduce reliance on uncertain lanelines (less stringent for adjacent lanelines)
           rll_y, lll_y = np.array(md.laneLines[i+1].y), np.array(md.laneLines[i].y)
-          l_std_mod = interp(md.laneLineStds[i], [.15, .3 if i > 0 else .6], [1.0, 0.0])
-          r_std_mod = interp(md.laneLineStds[i+1], [.15, .3 if i < 2 else .6], [1.0, 0.0])
-          l_prob *= l_std_mod
-          r_prob *= r_std_mod
           
           if i == 0: # set left adjacent 
             self._lane_probs[0] = l_prob
