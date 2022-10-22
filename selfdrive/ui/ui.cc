@@ -36,7 +36,7 @@ static const float voacc_lead_min_laneline_prob = 0.6; // should match MIN_LANE_
 // If a < 0, interpolate that too based on bg color alpha, else pass through.
 NVGcolor interp_alert_color(float p, int a){
   char c1, c2;
-  auto const & bg_colors_ = (s->scene.alt_engage_color_enabled ? alt_bg_colors : bg_colors);
+  auto const & bg_colors_ = (QUIState::ui_state.scene.alt_engage_color_enabled ? alt_bg_colors : bg_colors);
   if (p <= 0.){
     return (a < 0 ? nvgRGBA(bg_colors_[STATUS_ENGAGED].red(), 
                               bg_colors_[STATUS_ENGAGED].green(), 
