@@ -65,7 +65,7 @@ def calc_cruise_accel_limits(v_ego, following, accelMode):
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_MODE_LIST[accelMode])
   return [a_cruise_min, a_cruise_max]
 
-
+LEAD_ONE_PLUS_TR_FACTOR = 1.75 # factor of tr to lead used to run the lead+1 mpc
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
@@ -216,6 +216,14 @@ class Planner():
     next_a = np.inf
     self.lead_accel = np.inf
     for key in self.mpcs:
+      if key == 'lead0p1':
+        lead0_or_1 = self.mpcs['lead0'] if self.lead_0.status else self.mpcs['lead1'] if self.lead_1.status else None
+        if self.lead_0_plus.status and lead0_or_1 is not None:
+          tr = lead0_or_1.tr * LEAD_ONE_PLUS_TR_FACTOR
+          self.mpcs[key].tr_override = True
+          self.mpcs[key].tr = tr
+        else:
+          continue
       self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
       self.mpcs[key].update(sm['carState'], sm['radarState'], v_cruise, a_mpc[key], active_mpc[key])
       # picks slowest solution from accel in ~0.2 seconds
