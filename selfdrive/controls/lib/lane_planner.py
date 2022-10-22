@@ -169,18 +169,6 @@ class LaneOffset:
             self._lane_width_mean_right_adjacent = np.mean(rll_y - lll_y)
             if self._road_edge_probs[1] > 0.:
               self._shoulder_width_mean_right = np.mean(np.array(md.roadEdges[1].y) - rll_y)
-        else:
-          l_std_mod = interp(md.laneLineStds[i], [.15, .3 if i > 0 else .6], [1.0, 0.0])
-          r_std_mod = interp(md.laneLineStds[i+1], [.15, .3 if i < 2 else .6], [1.0, 0.0])
-          l_prob *= l_std_mod
-          r_prob *= r_std_mod
-          if i == 0: # set left adjacent 
-            self._lane_probs[0] = l_prob
-          elif i == 1: # set center
-            self._lane_probs[1] = l_prob
-            self._lane_probs[2] = r_prob
-          else: # set right 
-            self._lane_probs[3] = r_prob
 
       
       # see if adjacent lane can be treated as shoulder because it's too narrow
