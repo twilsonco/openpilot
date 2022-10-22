@@ -74,7 +74,7 @@ class LaneOffset:
   AUTO_ENABLE_ROAD_TYPES = {0, 10, 20, 30} # freeway and state highways (see highway ranks in /Users/haiiro/NoSync/optw/openpilot/selfdrive/mapd/lib/WayRelation.py)
   AUTO_ENABLE_MIN_SPEED = 40. * CV.MPH_TO_MS
   
-  AUTO_TRAFFIC_TIMEOUT = 60. # [s] amount of time auto lane position will be kept after last car is seen
+  AUTO_TRAFFIC_TIMEOUT = 15. # [s] amount of time auto lane position will be kept after last car is seen
   AUTO_TRAFFIC_MIN_TIME = 0.8 # [s] time an oncoming/ongoing car needs to be observed before it will be taken to indicate traffic
   AUTO_TRAFFIC_MIN_SPEED = 7. # [m/s] need to go faster than this to be considered moving
   AUTO_CUTOFF_STEER_ANGLE = 110. # [degrees] auto lane position reset traffic monitoring after this
