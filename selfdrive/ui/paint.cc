@@ -703,14 +703,15 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   const int SET_SPEED_NA = 255;
   float maxspeed = (*s->sm)["controlsState"].getControlsState().getVCruise();
   const Rect rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
+  auto const & bg_colors_ = (s->scene.alt_engage_color_enabled ? alt_bg_colors : bg_colors);
   if (s->scene.one_pedal_fade > 0.){
     NVGcolor nvg_color;
     if(s->status == UIStatus::STATUS_DISENGAGED){
-          const QColor &color = bg_colors[UIStatus::STATUS_DISENGAGED];
+          const QColor &color = bg_colors_[UIStatus::STATUS_DISENGAGED];
           nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
         }
     else if (s->scene.car_state.getOnePedalModeActive()){
-      const QColor &color = bg_colors[s->scene.car_state.getOnePedalBrakeMode() + 1];
+      const QColor &color = bg_colors_[s->scene.car_state.getOnePedalBrakeMode() + 1];
       nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
     }
     else {
@@ -2559,7 +2560,8 @@ static void ui_draw_vision_event(UIState *s) {
     const int radius = 88;
     const int center_x = s->fb_w - radius - bdr_s * 2;
     const int center_y = radius  + (bdr_s * 1.5);
-    const QColor &color = bg_colors[(s->scene.car_state.getLkMode() ? s->status : UIStatus::STATUS_DISENGAGED)];
+    auto const & bg_colors_ = (s->scene.alt_engage_color_enabled ? alt_bg_colors : bg_colors);
+    const QColor &color = bg_colors_[(s->scene.car_state.getLkMode() ? s->status : UIStatus::STATUS_DISENGAGED)];
     NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), color.alpha());
   
     // draw circle behind wheel

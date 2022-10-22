@@ -253,9 +253,9 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Color path according to the amount of lateral (steering) correction being applied",
                                   "../assets/offroad/icon_road.png",
                                   this));
-  toggles.append(new ParamControl("AlternateEngageColor",
-                                  "Alternate engage color",
-                                  "Use blue instead of green for the engaged color",
+  toggles.append(new ParamControl("AlternateColors",
+                                  "Alternate colors",
+                                  "Use alternate color set.",
                                   "../assets/offroad/icon_road.png",
                                   this));
   toggles.append(new ParamControl("AdjacentPaths",

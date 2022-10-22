@@ -139,7 +139,12 @@ const QColor bg_colors [] = {
   [STATUS_ALERT] = QColor(0xC9, 0x22, 0x31, 0xf1),
 };
 
-const QColor alt_engage_color = QColor(0x36, 0x4C, 0xE4, 0xf1);
+const QColor alt_bg_colors [] = {
+  [STATUS_DISENGAGED] =  QColor(0x00, 0x30, 0x4A, 0xc8),
+  [STATUS_ENGAGED] = QColor(0x36, 0x3A, 0xE4, 0xf1),
+  [STATUS_WARNING] = QColor(0x93, 0x00, 0xA3, 0xf1),
+  [STATUS_ALERT] = QColor(0xC9, 0x22, 0x31, 0xf1),
+};
 
 const QColor tcs_colors [] = {
   [int(cereal::LongitudinalPlan::VisionTurnControllerState::DISABLED)] =  QColor(0x0, 0x0, 0x0, 0xff),
