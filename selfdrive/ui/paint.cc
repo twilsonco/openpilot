@@ -3111,20 +3111,20 @@ static void draw_accel_mode_button(UIState *s) {
       nvgText(s->vg,btn_xc1,btn_yc-20,"Stock",NULL);
       nvgText(s->vg,btn_xc1,btn_yc+20,"accel",NULL);
     } else if (s->scene.accel_mode == 1) { // sport
-      nvgStrokeColor(s->vg, nvgRGBA(142,0,11,255));
+      nvgStrokeColor(s->vg, interp_alert_color(2.,255));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
-      NVGcolor fillColor = nvgRGBA(142,0,11,80);
+      NVGcolor fillColor = interp_alert_color(2.,80);
       nvgFillColor(s->vg, fillColor);
       nvgFill(s->vg);
       nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
       nvgText(s->vg,btn_xc1,btn_yc-20,"Sport",NULL);
       nvgText(s->vg,btn_xc1,btn_yc+20,"accel",NULL);
     } else if (s->scene.accel_mode == 2) { // eco
-      nvgStrokeColor(s->vg, nvgRGBA(74,132,23,255));
+      nvgStrokeColor(s->vg, interp_alert_color(-1.,255));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
-      NVGcolor fillColor = nvgRGBA(74,132,23,80);
+      NVGcolor fillColor = interp_alert_color(-1.,80);
       nvgFillColor(s->vg, fillColor);
       nvgFill(s->vg);
       nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
@@ -3258,30 +3258,30 @@ static void draw_laneless_button(UIState *s) {
     nvgFontSize(s->vg, 54);
 
     if (s->scene.laneless_mode == 0) {
-      nvgStrokeColor(s->vg, nvgRGBA(0,125,0,255));
+      nvgStrokeColor(s->vg, (s->scene.alt_engage_color_enabled ? interp_alert_color(0.5,255): nvgRGBA(0,125,0,255)));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
-      NVGcolor fillColor = nvgRGBA(0,125,0,80);
+      NVGcolor fillColor = (s->scene.alt_engage_color_enabled ? interp_alert_color(0.5,255): nvgRGBA(0,125,0,80));
       nvgFillColor(s->vg, fillColor);
       nvgFill(s->vg);
       nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
       nvgText(s->vg,btn_xc1,btn_yc-20,"Lane",NULL);
       nvgText(s->vg,btn_xc1,btn_yc+20,"only",NULL);
     } else if (s->scene.laneless_mode == 1) {
-      nvgStrokeColor(s->vg, nvgRGBA(0,100,255,255));
+      nvgStrokeColor(s->vg, (s->scene.alt_engage_color_enabled ? interp_alert_color(-1.,255): nvgRGBA(0,100,255,255)));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
-      NVGcolor fillColor = nvgRGBA(0,100,255,80);
+      NVGcolor fillColor = (s->scene.alt_engage_color_enabled ? interp_alert_color(-1.,255): nvgRGBA(0,100,255,255));
       nvgFillColor(s->vg, fillColor);
       nvgFill(s->vg);
       nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
       nvgText(s->vg,btn_xc1,btn_yc-20,"Lane",NULL);
       nvgText(s->vg,btn_xc1,btn_yc+20,"less",NULL);
     } else if (s->scene.laneless_mode == 2) {
-      nvgStrokeColor(s->vg, nvgRGBA(125,0,125,255));
+      nvgStrokeColor(s->vg, nvgRGBA(200,200,200,255));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
-      NVGcolor fillColor = nvgRGBA(125,0,125,80);
+      NVGcolor fillColor = nvgRGBA(0,0,0,80);
       nvgFillColor(s->vg, fillColor);
       nvgFill(s->vg);
       nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
