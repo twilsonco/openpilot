@@ -3176,24 +3176,24 @@ static void draw_dynamic_follow_mode_button(UIState *s) {
     // nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, 100);
     const bool df_active = s->scene.dynamic_follow_active && !(s->scene.car_state.getOnePedalModeActive() || s->scene.car_state.getCoastOnePedalModeActive());
     if (df_active){
-      int r, b, g;
-      int bg_r, bg_b, bg_g;
+      int r, g, b;
+      int bg_r, bg_g, bg_b;
       for (int i = 1; i < 3; ++i){
         if (df_level <= i){
           float c = float(i) - df_level;
           r = float(s->scene.dynamic_follow_r[i-1]) * c + float(s->scene.dynamic_follow_r[i]) * (1. - c);
-          b = float(s->scene.dynamic_follow_b[i-1]) * c + float(s->scene.dynamic_follow_b[i]) * (1. - c);
           g = float(s->scene.dynamic_follow_g[i-1]) * c + float(s->scene.dynamic_follow_g[i]) * (1. - c);
+          b = float(s->scene.dynamic_follow_b[i-1]) * c + float(s->scene.dynamic_follow_b[i]) * (1. - c);
           bg_r = float(s->scene.dynamic_follow_bg_r[i-1]) * c + float(s->scene.dynamic_follow_bg_r[i]) * (1. - c);
-          bg_b = float(s->scene.dynamic_follow_bg_b[i-1]) * c + float(s->scene.dynamic_follow_bg_b[i]) * (1. - c);
           bg_g = float(s->scene.dynamic_follow_bg_g[i-1]) * c + float(s->scene.dynamic_follow_bg_g[i]) * (1. - c);
+          bg_b = float(s->scene.dynamic_follow_bg_b[i-1]) * c + float(s->scene.dynamic_follow_bg_b[i]) * (1. - c);
           break;
         }
       }
-      nvgStrokeColor(s->vg, nvgRGBA(r,b,g,255));
+      nvgStrokeColor(s->vg, nvgRGBA(r,g,b,255));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
-      nvgFillColor(s->vg, nvgRGBA(bg_r,bg_b,bg_g,80));
+      nvgFillColor(s->vg, nvgRGBA(bg_r,bg_g,bg_b,80));
       nvgFill(s->vg);
     } else{
       nvgStrokeColor(s->vg, nvgRGBA(0,0,0,80));
