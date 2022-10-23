@@ -69,7 +69,7 @@ class LaneOffset:
   AUTO_MIN_LANELINE_PROB = 0.9
   AUTO_MIN_ADJACENT_LANELINE_PROB = 0.3
   
-  AUTO_LANE_STATE_MIN_TIME = 8.0 # [s] amount of time the lane state must stay the same before it can be acted upon
+  AUTO_LANE_STATE_MIN_TIME = 4.0 # [s] amount of time the lane state must stay the same before it can be acted upon
   
   AUTO_ENABLE_ROAD_TYPES = {0, 10, 20, 30} # freeway and state highways (see highway ranks in /Users/haiiro/NoSync/optw/openpilot/selfdrive/mapd/lib/WayRelation.py)
   AUTO_ENABLE_MIN_SPEED = 40. * CV.MPH_TO_MS
@@ -242,13 +242,11 @@ class LaneOffset:
     timeout_override = False
     
     if self._left_traffic != LANE_TRAFFIC.NONE \
-        and self._right_traffic == LANE_TRAFFIC.NONE \
-        and self._lane_width_mean_left_adjacent > 0.:
+        and self._right_traffic == LANE_TRAFFIC.NONE:
       lane_pos_auto = -1.
       timeout_override = True
     elif self._right_traffic != LANE_TRAFFIC.NONE \
-        and self._left_traffic == LANE_TRAFFIC.NONE \
-        and self._lane_width_mean_right_adjacent > 0.:
+        and self._left_traffic == LANE_TRAFFIC.NONE:
       lane_pos_auto = 1.
       timeout_override = True
     elif self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB \
@@ -307,6 +305,12 @@ class LaneOffset:
           self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
           self._right_traffic = LANE_TRAFFIC.NONE
           self._left_traffic = LANE_TRAFFIC.NONE
+        if self._lat_plan.lProb < 0.2 and self._left_traffic == LANE_TRAFFIC.NONE \
+            and self._t - self._lane_state_changed_last_t < self.AUTO_LANE_STATE_MIN_TIME:
+          self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
+        if self._lat_plan.rProb < 0.2 and self._right_traffic == LANE_TRAFFIC.NONE \
+            and self._t - self._lane_state_changed_last_t < self.AUTO_LANE_STATE_MIN_TIME:
+          self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
         self.update_traffic_info(sm['radarState'], lane_width)
         self.update_lane_pos_auto(lane_width)
       if self._long_plan is not None:
