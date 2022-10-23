@@ -56,7 +56,7 @@ Please show your support by contributing to the ongoing development of this proj
 
 **Additional fork features:**
 
-- [x] Running old but proud openpilot 0.8.12 lateral and 0.8.10 driver monitoring models
+- [x] Running openpilot 0.8.12 lateral (last of the medium-models) and 0.8.10 driver monitoring models
 - [x] [Comma3] AGNOS4 OS
 - [x] [Volt/Acadia] Alternate lateral (steering) tunes using the new "torque" controller
 - [Volt] Much improved steering control over stock (working on upstreaming)
@@ -224,14 +224,15 @@ If you're device stays connected to your car all the time, you'll be presented w
 Commaai Table of Contents
 =======================
 
-* [What is openpilot?](#what-is-openpilot)
-* [Running in a car](#running-in-a-car)
-* [Running on PC](#running-on-pc)
-* [Community and Contributing](#community-and-contributing)
-* [User Data and comma Account](#user-data-and-comma-account)
-* [Safety and Testing](#safety-and-testing)
-* [Directory Structure](#directory-structure)
-* [Licensing](#licensing)
+- [Commaai Table of Contents](#commaai-table-of-contents)
+  - [What is openpilot?](#what-is-openpilot)
+  - [Running in a car](#running-in-a-car)
+  - [Running on PC](#running-on-pc)
+  - [Community and Contributing](#community-and-contributing)
+  - [User Data and comma Account](#user-data-and-comma-account)
+  - [Safety and Testing](#safety-and-testing)
+  - [Directory Structure](#directory-structure)
+  - [Licensing](#licensing)
 
 ---
 
