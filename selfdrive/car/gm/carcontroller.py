@@ -39,7 +39,7 @@ ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.5 * DT_CTRL * 4 # m/s^2 per second for decre
 
 ONE_PEDAL_MAX_DECEL = -3.5
 ONE_PEDAL_SPEED_ERROR_FACTOR_BP = [1.5, 20.] # [m/s] 
-ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.1, 0.3] # factor of error for non-lead braking decel
+ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.04, 0.3] # factor of error for non-lead braking decel
 
 ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T = 3. # [s]
 
@@ -119,7 +119,7 @@ class CarController():
       else:
         k = interp(CS.out.vEgo, ACCEL_PITCH_FACTOR_BP, ACCEL_PITCH_FACTOR_V)
         brake_accel = k * actuators.accelPitchCompensated + (1. - k) * actuators.accel
-        if CS.one_pedal_mode_active:
+        if CS.one_pedal_mode_active and not CS.one_pedal_mode_op_braking_allowed or CS.lead_accel > CS.out.aEgo:
           one_pedal_speed = max(CS.vEgo, ONE_PEDAL_MIN_SPEED)
           threshold_accel = self.params.update_gas_brake_threshold(one_pedal_speed, CS.engineRPM > 0)
         else:
@@ -186,7 +186,7 @@ class CarController():
             else:
               self.one_pedal_decel_in = CS.lead_accel
             
-            if CS.lead_accel == self.one_pedal_decel_in:
+            if CS.lead_accel < self.one_pedal_decel_in:
               self.lead_accel_last_t = t
             
             if not CS.one_pedal_mode_op_braking_allowed or CS.lead_accel != self.one_pedal_decel_in:
