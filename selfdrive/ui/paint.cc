@@ -565,13 +565,13 @@ static void ui_draw_vision_lane_lines(UIState *s) {
     else { // differentiate laneless mode color (Grace blue)
       if (scene.car_state.getLkMode()){
         if (scene.color_path){
-          int g, r = float(COLOR_GRACE_BLUE.b) * fabs(scene.lateralCorrection);
-          r = CLIP(r, COLOR_GRACE_BLUE.r, COLOR_GRACE_BLUE.b);
-          g = COLOR_GRACE_BLUE.g + r;
-          g = CLIP(g, COLOR_GRACE_BLUE.g, COLOR_GRACE_BLUE.b);
+          int g, r = 255.f * float(COLOR_GRACE_BLUE.b) * fabs(scene.lateralCorrection);
+          r = CLIP(r, 255.f * COLOR_GRACE_BLUE.r, 255.f * COLOR_GRACE_BLUE.b);
+          g = 255.f * COLOR_GRACE_BLUE.g + r;
+          g = CLIP(g, 255.f * COLOR_GRACE_BLUE.g, 255.f * COLOR_GRACE_BLUE.b);
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                      nvgRGBA(r, g, COLOR_GRACE_BLUE.b, 160), 
-                                      nvgRGBA(r, g, COLOR_GRACE_BLUE.b, 0));
+                                      nvgRGBA(r, g, 255.f * COLOR_GRACE_BLUE.b, 160), 
+                                      nvgRGBA(r, g, 255.f * COLOR_GRACE_BLUE.b, 0));
         }
         else{
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
