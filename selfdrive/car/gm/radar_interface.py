@@ -3,6 +3,7 @@ from __future__ import print_function
 import math
 import numpy as np
 from cereal import car
+from common.params import Params
 from opendbc.can.parser import CANParser
 from selfdrive.car.gm.values import DBC, CAR, CanBus
 from selfdrive.config import Conversions as CV
@@ -22,7 +23,7 @@ VOACC_RADAR_TRACK_COMBINE_DIST_VREL_RATIO = VOACC_RADAR_TRACK_COMBINE_DIST / VOA
 # messages that are present in DBC
 LAST_RADAR_MSG = RADAR_HEADER_MSG + RADAR_NUM_SLOTS
 
-def create_radar_can_parser(car_fingerprint):
+def create_radar_can_parser(car_fingerprint, voacc_enabled):
   if car_fingerprint not in (CAR.VOLT, CAR.VOLT18, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS, CAR.ESCALADE, CAR.ESCALADE_ESV):
     return None
   
@@ -42,18 +43,19 @@ def create_radar_can_parser(car_fingerprint):
   signals += [('TrkAzimuth', f'LRRObject{i:02}', 0.0) for i in range(1, RADAR_NUM_SLOTS+1)]
   signals += [('TrkObjectID', f'LRRObject{i:02}', 0.0) for i in range(1, RADAR_NUM_SLOTS+1)]
   
-  # VOACC header and VOACC_NUM_SLOTS tracks
-  signals += [
-    ('FVisionNumValidTrgts', 'F_Vision_Obj_Header', 0),
-    ('FVsnSnsrBlckd', 'F_Vision_Obj_Header', 0),
-    ('FrtVsnFld', 'F_Vision_Obj_Header', 0),
-    ('FrtVsnUnvlbl', 'F_Vision_Obj_Header', 0),
-    ('FrtVsnSrvAlgnInPrcs', 'F_Vision_Obj_Header', 0),
-  ]
-  signals += [(f'FwdVsnRngTrk{i}Rev', f'F_Vision_Obj_Track_{i}', 0.0) for i in range(1, VOACC_NUM_SLOTS+1)]
-  signals += [(f'FwdVsnLongVlctyTrk{i}', f'F_Vision_Obj_Track_{i}_B', 0.0) for i in range(1, VOACC_NUM_SLOTS+1)]
-  signals += [(f'FwdVsnLatOfstTrk{i}', f'F_Vision_Obj_Track_{i}_B', 0.0) for i in range(1, VOACC_NUM_SLOTS+1)]
-  signals += [(f'FVisionObjectIDTrk{i}', f'F_Vision_Obj_Track_{i}', 0.0) for i in range(1, VOACC_NUM_SLOTS+1)]
+  if voacc_enabled:
+    # VOACC header and VOACC_NUM_SLOTS tracks
+    signals += [
+      ('FVisionNumValidTrgts', 'F_Vision_Obj_Header', 0),
+      ('FVsnSnsrBlckd', 'F_Vision_Obj_Header', 0),
+      ('FrtVsnFld', 'F_Vision_Obj_Header', 0),
+      ('FrtVsnUnvlbl', 'F_Vision_Obj_Header', 0),
+      ('FrtVsnSrvAlgnInPrcs', 'F_Vision_Obj_Header', 0),
+    ]
+    signals += [(f'FwdVsnRngTrk{i}Rev', f'F_Vision_Obj_Track_{i}', 0.0) for i in range(1, VOACC_NUM_SLOTS+1)]
+    signals += [(f'FwdVsnLongVlctyTrk{i}', f'F_Vision_Obj_Track_{i}_B', 0.0) for i in range(1, VOACC_NUM_SLOTS+1)]
+    signals += [(f'FwdVsnLatOfstTrk{i}', f'F_Vision_Obj_Track_{i}_B', 0.0) for i in range(1, VOACC_NUM_SLOTS+1)]
+    signals += [(f'FVisionObjectIDTrk{i}', f'F_Vision_Obj_Track_{i}', 0.0) for i in range(1, VOACC_NUM_SLOTS+1)]
 
   checks = list({(s[1], 14) for s in signals})
 
@@ -63,7 +65,10 @@ class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
 
-    self.rcp = create_radar_can_parser(CP.carFingerprint)
+
+    self.voacc_enabled = Params().get_bool("LongRangeLeadsEnabled")
+
+    self.rcp = create_radar_can_parser(CP.carFingerprint, self.voacc_enabled)
 
     self.trigger_msg = LAST_RADAR_MSG
     self.updated_messages = set()
@@ -86,17 +91,18 @@ class RadarInterface(RadarInterfaceBase):
       radar_header['FLRRAntTngFltPrsnt'] or radar_header['FLRRAlgnFltPrsnt']
 
     # for voacc data, if one or the other faults, it's ok
-    voacc_header = self.rcp.vl['F_Vision_Obj_Header']
-    voacc_fault = voacc_header['FVsnSnsrBlckd'] or \
-            voacc_header['FrtVsnFld'] or \
-            voacc_header['FrtVsnUnvlbl']
+    if self.voacc_enabled:
+      voacc_header = self.rcp.vl['F_Vision_Obj_Header']
+      voacc_fault = voacc_header['FVsnSnsrBlckd'] or \
+              voacc_header['FrtVsnFld'] or \
+              voacc_header['FrtVsnUnvlbl']
 
     errors = []
     errorStrs = []
     if not self.rcp.can_valid:
       errors.append("canError")
       errorStrs.append("can error")
-    if radar_fault and voacc_fault:
+    if radar_fault and (not self.voacc_enabled or voacc_fault):
       errors.append("fault")
       errorStrs += [k for k in ['FLRRSnsrBlckd','FLRRSnstvFltPrsntInt','FLRRYawRtPlsblityFlt','FLRRHWFltPrsntInt','FLRRAntTngFltPrsnt','FLRRAlgnFltPrsnt'] if radar_header[k]]
       errorStrs += [k for k in ['FVsnSnsrBlckd','FrtVsnFld','FrtVsnUnvlbl'] if voacc_header[k]]
@@ -135,7 +141,7 @@ class RadarInterface(RadarInterfaceBase):
           self.pts[targetId].aRel = cpt['TrkRangeAccel']
           self.pts[targetId].yvRel = float('nan')
             
-    if not voacc_fault:
+    if self.voacc_enabled and not voacc_fault:
       num_targets = voacc_header['FVisionNumValidTrgts']
       if num_targets > 0:
         for i in range(1,VOACC_NUM_SLOTS+1):

@@ -365,9 +365,6 @@ class RadarD():
     
     self._params = Params()
     self.long_range_leads_enabled = self._params.get_bool("LongRangeLeadsEnabled")
-    self.params_check_dur = 5. # [s]
-    self.params_check_t = 0.
-    self.dt = radar_ts
     
     self.lead_one_lr = LongRangeLead(radar_ts)
     self.lead_two_lr = LongRangeLead(radar_ts)
@@ -442,11 +439,6 @@ class RadarD():
     radarState.radarErrors = list(rr.errors)
     radarState.radarErrorStrs = list(rr.errorStrs)
     radarState.carStateMonoTime = sm.logMonoTime['carState']
-    
-    if self.params_check_t > self.params_check_dur:
-      self.params_check_t = 0.
-      self.long_range_leads_enabled = self._params.get_bool("LongRangeLeadsEnabled")
-    self.params_check_t += self.dt
 
     if enable_lead:
       if len(sm['modelV2'].leadsV3) > 1:
