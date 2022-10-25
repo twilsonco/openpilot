@@ -192,7 +192,6 @@ class LaneOffset:
   def update_traffic_info(self, rs, lane_width, md):
     left_traffic = LANE_TRAFFIC.NONE
     right_traffic = LANE_TRAFFIC.NONE
-    lv = []
     leads = rs.leadsLeft
     check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
     if self._lane_width_mean_left_adjacent > 0.:
@@ -214,7 +213,6 @@ class LaneOffset:
         if len(lv) > 0:
           left_traffic = LANE_TRAFFIC.STOPPED
     
-    lv = []
     leads = rs.leadsRight
     check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
     if self._lane_width_mean_right_adjacent > 0.:
