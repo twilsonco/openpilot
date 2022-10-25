@@ -285,6 +285,22 @@ def comm_issue_alert_no_entry(CP: car.CarParams, sm: messaging.SubMaster, metric
     AlertStatus.normal,
     AlertSize.mid, Priority.LOW, VisualAlert.none,
     AudibleAlert.chimeDisengage, .4, 2., 3.)
+  
+def radar_fault_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  return Alert(
+    "Radar Error: Restart the Car",
+    ", ".join(sm['radarState'].radarErrorStrs),
+    AlertStatus.critical, AlertSize.full,
+    Priority.MID, VisualAlert.steerRequired,
+    AudibleAlert.chimeWarningRepeat, .1, 2., 2.)
+  
+def radar_fault_alert_no_entry(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  return Alert(
+    "Radar Error: Restart the Car",
+    ", ".join(sm['radarState'].radarErrorStrs),
+    AlertStatus.normal,
+    AlertSize.mid, Priority.LOW, VisualAlert.none,
+    AudibleAlert.chimeError, .4, 2., 3.)
 
 def pre_lane_change(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   alert = sm['lateralPlan'].laneChangeAlert
@@ -858,8 +874,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.radarFault: {
-    ET.SOFT_DISABLE: SoftDisableAlert("Radar Error: Restart the Car"),
-    ET.NO_ENTRY: NoEntryAlert("Radar Error: Restart the Car"),
+    ET.SOFT_DISABLE: radar_fault_alert,
+    ET.NO_ENTRY: radar_fault_alert_no_entry,
   },
 
   # Every frame from the camera should be processed by the model. If modeld

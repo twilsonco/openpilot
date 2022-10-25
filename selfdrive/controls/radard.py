@@ -440,6 +440,7 @@ class RadarD():
     radarState.mdMonoTime = sm.logMonoTime['modelV2']
     radarState.canMonoTimes = list(rr.canMonoTimes)
     radarState.radarErrors = list(rr.errors)
+    radarState.radarErrorStrs = list(rr.errorStrs)
     radarState.carStateMonoTime = sm.logMonoTime['carState']
     
     if self.params_check_t > self.params_check_dur:

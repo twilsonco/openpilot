@@ -92,11 +92,16 @@ class RadarInterface(RadarInterfaceBase):
             voacc_header['FrtVsnUnvlbl']
 
     errors = []
+    errorStrs = []
     if not self.rcp.can_valid:
       errors.append("canError")
+      errorStrs.append("can error")
     if radar_fault and voacc_fault:
       errors.append("fault")
+      errorStrs += [k for k in ['FLRRSnsrBlckd','FLRRSnstvFltPrsntInt','FLRRYawRtPlsblityFlt','FLRRHWFltPrsntInt','FLRRAntTngFltPrsnt','FLRRAlgnFltPrsnt'] if radar_header[k]]
+      errorStrs += [k for k in ['FVsnSnsrBlckd','FrtVsnFld','FrtVsnUnvlbl'] if voacc_header[k]]
     ret.errors = errors
+    ret.errorStrs = errorStrs
 
     currentTargets = set()
     if not radar_fault:
