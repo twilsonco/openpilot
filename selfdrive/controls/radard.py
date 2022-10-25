@@ -364,7 +364,8 @@ class RadarD():
     self.v_ego_hist = deque([0], maxlen=delay+1)
     
     self._params = Params()
-    self.long_range_leads_enabled = self._params.get_bool("LongRangeLeadsEnabled")
+    self.extended_radar_enabled = self._params.get_bool("ExtendedRadar")
+    self.long_range_leads_enabled = self.extended_radar_enabled and self._params.get_bool("LongRangeLeadsEnabled")
     
     self.lead_one_lr = LongRangeLead(radar_ts)
     self.lead_two_lr = LongRangeLead(radar_ts)
@@ -449,16 +450,17 @@ class RadarD():
       elif self.long_range_leads_enabled:
         radarState.leadOne = self.lead_one_lr.update(get_lead(self.v_ego, self.ready, clusters, lead_msg=None, low_speed_override=True, md=sm['modelV2'], lane_width=sm['lateralPlan'].laneWidth))
         radarState.leadTwo = self.lead_two_lr.update(get_lead(self.v_ego, self.ready, clusters, lead_msg=None, low_speed_override=False, md=sm['modelV2'], lane_width=sm['lateralPlan'].laneWidth))
-
-      ll,lc,lr = get_path_adjacent_leads(self.v_ego, sm['modelV2'], sm['lateralPlan'].laneWidth if self.long_range_leads_enabled else None, clusters)
-      if radarState.leadOne.status:
-        lc = [l for l in lc if l["dRel"] > radarState.leadOne.dRel + LEAD_PLUS_ONE_MIN_REL_DIST]
-      radarState.leadsLeft = list(ll)
-      radarState.leadsCenter = list(lc)
-      radarState.leadsRight = list(lr)
+      
+      if self.extended_radar_enabled:
+        ll,lc,lr = get_path_adjacent_leads(self.v_ego, sm['modelV2'], sm['lateralPlan'].laneWidth if self.long_range_leads_enabled else None, clusters)
+        if radarState.leadOne.status:
+          lc = [l for l in lc if l["dRel"] > radarState.leadOne.dRel + LEAD_PLUS_ONE_MIN_REL_DIST]
+        radarState.leadsLeft = list(ll)
+        radarState.leadsCenter = list(lc)
+        radarState.leadsRight = list(lr)
       
       # get the lead+1 car
-      if len(lc) > 0 and radarState.leadOne.status:
+      if self.extended_radar_enabled and len(lc) > 0 and radarState.leadOne.status:
         try:
           radarState.leadOnePlus = self.lead_one_plus_lr.update(lc[0])
         except StopIteration: # no lead one plus found

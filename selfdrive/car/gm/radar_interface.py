@@ -66,7 +66,8 @@ class RadarInterface(RadarInterfaceBase):
     super().__init__(CP)
 
 
-    self.voacc_enabled = Params().get_bool("LongRangeLeadsEnabled")
+    self.extended_radar_enabled = Params().get_bool("ExtendedRadar")
+    self.voacc_enabled = self.extended_radar_enabled and Params().get_bool("LongRangeLeadsEnabled")
 
     self.rcp = create_radar_can_parser(CP.carFingerprint, self.voacc_enabled)
 
