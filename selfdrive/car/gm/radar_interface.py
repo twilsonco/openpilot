@@ -165,7 +165,7 @@ class RadarInterface(RadarInterfaceBase):
               self.pts[closestPt.trackId].dRel = (distance + closestPt.dRel) / 2
               self.pts[closestPt.trackId].yRel = (y_rel + closestPt.yRel) / 2
               self.pts[closestPt.trackId].vRel = (v_rel + closestPt.vRel) / 2
-          else:
+          elif distance >= VOACC_MIN_RANGE or radar_fault:
             targetId = cpt[f'FVisionObjectIDTrk{i}']
             currentTargets.add(targetId)
             if targetId not in self.pts:
