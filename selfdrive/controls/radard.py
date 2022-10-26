@@ -451,20 +451,19 @@ class RadarD():
         radarState.leadOne = self.lead_one_lr.update(get_lead(self.v_ego, self.ready, clusters, lead_msg=None, low_speed_override=True, md=sm['modelV2'], lane_width=sm['lateralPlan'].laneWidth))
         radarState.leadTwo = self.lead_two_lr.update(get_lead(self.v_ego, self.ready, clusters, lead_msg=None, low_speed_override=False, md=sm['modelV2'], lane_width=sm['lateralPlan'].laneWidth))
       
-      if self.extended_radar_enabled:
+      if self.extended_radar_enabled and self.ready:
         ll,lc,lr = get_path_adjacent_leads(self.v_ego, sm['modelV2'], sm['lateralPlan'].laneWidth if self.long_range_leads_enabled else None, clusters)
-        if radarState.leadOne.status:
-          lc = [l for l in lc if l["dRel"] > radarState.leadOne.dRel + LEAD_PLUS_ONE_MIN_REL_DIST]
+        try:
+          if radarState.leadOne.status:
+            lc = [l for l in lc if l["dRel"] > radarState.leadOne.dRel + LEAD_PLUS_ONE_MIN_REL_DIST]
+            if len(lc) > 0: # get the lead+1 car
+              radarState.leadOnePlus = self.lead_one_plus_lr.update(lc[0])
+        except AttributeError:
+          lc = []
+          self.lead_one_plus_lr.reset()
         radarState.leadsLeft = list(ll)
         radarState.leadsCenter = list(lc)
         radarState.leadsRight = list(lr)
-      
-      # get the lead+1 car
-      if self.extended_radar_enabled and len(lc) > 0 and radarState.leadOne.status:
-        try:
-          radarState.leadOnePlus = self.lead_one_plus_lr.update(lc[0])
-        except StopIteration: # no lead one plus found
-          self.lead_one_plus_lr.reset()
     
     return dat
 
