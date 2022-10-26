@@ -131,12 +131,16 @@ class LaneOffset:
     
     self._left_traffic = LANE_TRAFFIC.NONE
     self._right_traffic = LANE_TRAFFIC.NONE
+    self._left_traffic_last = LANE_TRAFFIC.NONE
+    self._right_traffic_last = LANE_TRAFFIC.NONE
     self._left_traffic_temp = LANE_TRAFFIC.NONE
     self._right_traffic_temp = LANE_TRAFFIC.NONE
     self._right_traffic_last_seen_t = 0.
     self._left_traffic_last_seen_t = 0.
     self._left_traffic_temp_t = 0.
     self._right_traffic_temp_t = 0.
+    self._lprob_last = 0.
+    self._rprob_last = 0.
   
   def do_auto_enable(self, road_type):
     ret = AUTO_AUTO_LANE_MODE.NO_CHANGE
@@ -151,18 +155,30 @@ class LaneOffset:
         and (road_type not in self.AUTO_ENABLE_ROAD_TYPES or v_ego < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED) :
           ret = AUTO_AUTO_LANE_MODE.DISENGAGE
           self._auto_auto_enabled = False
-    if AUTO_AUTO_LANE_MODE.NO_CHANGE and not self._auto_is_active and v_ego >= self.AUTO_ENABLE_TRAFFIC_MIN_SPEED \
-      and (self._left_traffic != LANE_TRAFFIC.NONE or self._right_traffic != LANE_TRAFFIC.NONE) \
-      and self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB and self._lane_probs[2] > self.AUTO_MIN_LANELINE_PROB:
-        ret = AUTO_AUTO_LANE_MODE.ENGAGE
-        self._auto_auto_enabled = True
-    elif AUTO_AUTO_LANE_MODE.NO_CHANGE and self._auto_is_active and self._auto_auto_enabled \
-      and (self._left_traffic == LANE_TRAFFIC.NONE and self._right_traffic == LANE_TRAFFIC.NONE \
-        or v_ego < self.AUTO_ENABLE_TRAFFIC_MIN_SPEED \
-        or (self._lane_probs[1] < self.AUTO_MIN_LANELINE_PROB and self._lane_probs[2] < self.AUTO_MIN_LANELINE_PROB)):
-          ret = AUTO_AUTO_LANE_MODE.DISENGAGE
-          self._auto_auto_enabled = False
-        
+    
+    if ret != AUTO_AUTO_LANE_MODE.ENGAGE and (self._left_traffic_last != self._left_traffic or self._right_traffic != self._right_traffic_last \
+        or (v_ego >= self.AUTO_ENABLE_TRAFFIC_MIN_SPEED and self._v_ego_last < self.AUTO_ENABLE_TRAFFIC_MIN_SPEED) \
+        or (v_ego < self.AUTO_ENABLE_TRAFFIC_MIN_SPEED and self._v_ego_last >= self.AUTO_ENABLE_TRAFFIC_MIN_SPEED) \
+        or (self._lane_probs[1] >= self.AUTO_MIN_LANELINE_PROB and self._lprob_last <= self.AUTO_MIN_LANELINE_PROB) \
+        or (self._lane_probs[1] < self.AUTO_MIN_LANELINE_PROB and self._lprob_last >= self.AUTO_MIN_LANELINE_PROB) \
+        or (self._lane_probs[2] >= self.AUTO_MIN_LANELINE_PROB and self._rprob_last <= self.AUTO_MIN_LANELINE_PROB) \
+        or (self._lane_probs[2] < self.AUTO_MIN_LANELINE_PROB and self._rprob_last >= self.AUTO_MIN_LANELINE_PROB)):  
+      if not self._auto_is_active and v_ego >= self.AUTO_ENABLE_TRAFFIC_MIN_SPEED \
+        and (self._left_traffic != LANE_TRAFFIC.NONE or self._right_traffic != LANE_TRAFFIC.NONE) \
+        and self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB and self._lane_probs[2] > self.AUTO_MIN_LANELINE_PROB:
+          ret = AUTO_AUTO_LANE_MODE.ENGAGE
+          self._auto_auto_enabled = True
+      elif self._auto_is_active and self._auto_auto_enabled \
+        and (self._left_traffic == LANE_TRAFFIC.NONE and self._right_traffic == LANE_TRAFFIC.NONE \
+          or v_ego < self.AUTO_ENABLE_TRAFFIC_MIN_SPEED \
+          or (self._lane_probs[1] < self.AUTO_MIN_LANELINE_PROB and self._lane_probs[2] < self.AUTO_MIN_LANELINE_PROB)):
+            ret = AUTO_AUTO_LANE_MODE.DISENGAGE
+            self._auto_auto_enabled = False
+
+    self._lprob_last = self._lane_probs[1]
+    self._rprob_last = self._lane_probs[2]
+    self._left_traffic_last = self._left_traffic
+    self._right_traffic_last = self._right_traffic
     self._road_type_last = road_type
     self._v_ego_last = v_ego
     
@@ -351,7 +367,6 @@ class LaneOffset:
           r_lane_depart = r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close
           lane_depart = l_lane_depart or r_lane_depart
         if abs(self._cs.steeringAngleDeg) > self.AUTO_CUTOFF_STEER_ANGLE \
-            or self._cs.leftBlinker or self._cs.rightBlinker \
             or lane_depart:
           self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
           self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
