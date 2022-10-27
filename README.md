@@ -56,7 +56,7 @@ Please show your support by contributing to the ongoing development of this proj
 
 **Additional fork features:**
 
-- [x] Running old but proud openpilot 0.8.12 lateral and 0.8.10 driver monitoring models
+- [x] Running openpilot 0.8.12 lateral (last of the medium-models) and 0.8.10 driver monitoring models
 - [x] [Comma3] AGNOS4 OS
 - [x] [Volt/Acadia] Alternate lateral (steering) tunes using the new "torque" controller
 - [Volt] Much improved steering control over stock (working on upstreaming)
@@ -64,24 +64,37 @@ Please show your support by contributing to the ongoing development of this proj
 - [x] [Volt 2018] Auto-creep behind stopped lead car as they pull away (tap gas or resume button to resume)
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
+- [x] [✅] Extended radar capabilities (ALPHA)
+    * Brake for car in front of lead, avoiding pile-ups and able to brake when lead changes lanes right in front of a column of stopped cars
+    * Indicate adjacent oncoming/ongoing traffic
+    * Indicate all tracked cars, including those in front of the lead, and print all speeds
+- [x] [✅] Longer range lead detection, indicated by blue dot over lead indicator
+    * 10% more range using radar, or
+    * up to 40% more range using the Volt LKA camera's VOACC capabilities, which have been incorporated into openpilot
+- [x] [✅] Print lead info: lead distance (length and time) and speed (absolute and relative) are printed to the sides of the lead indicator
 - [x] [✅] Adjustable lane position using onscreen buttons
     * Tap buttons to change lane position for 1/3 mile; double-tap to change for 10 miles
     * Tap again to go back to center position
-- [x] Automatic lane position: if in right lane, assume right position, or left position if in left lane.
+- [x] Automatic lane position: if adjacent traffic on one side and not the other, assume opposite lane position; or if in right lane, assume right position, or left position if in left lane.
     * To activate, enable adjustable lane position, then while onroad, tap left then right (or right then left) lane position button within 2s.
     * Tap either button to deactivate
     * Requires clear lanelines, and a straight road
-- [x] [GM] [✅] Dynamic follow mode
+- [x] [✅] Automatic automatic lane position (you heard me)
+    * Turns on automatic lane positioning automatically when on interstate or state highway at 40mph+ with clear lanelines, or
+    * when at 22mph+ with clear lanelines and adjacent traffic is present
+- [x] [GM] [✅] Dynamic follow mode (WIP)
 - [x] [GM] Toggle steering with LKAS button (wheel color changes to indicate disengagement)
 - [x] [GM] One-pedal driving a.k.a. autosteering only a.k.a. toggle longitudinal control: using regen (volt) and/or light/moderate/heavy braking, control OP all the way to a stop, without a lead, and without disengaging, with just the gas pedal (see below) (application of friction brakes originally suggested by cybertronicify — 10/06/2021)
+    * extra braking is applied automatically for stopping behind leads
 - [x] [✅] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only. must enable "Disable use of lanelines" for button to appear* (ported from sunnyhaibin)
 - [x] [✅] Normal/sport/eco acceleration modes [cycle with on-screen button] (adapted from kegman implementation)
     * Eco mode is great for
       * the environment (you pig),
       * not over-accelerating behind a jumpy lead in traffic, and 
       * softer acceleration when exiting curves (if curve braking is enabled).
-- [x] [✅] 1/5 mph changes for tap/hold of the inc/dec buttons (ported from Spector56; different from that of newer stock OP)
+- [x] [✅] Reverse speed adjustment; tap/hold for 5mph/1mph increments (ported from Spector56; different from that of newer stock OP)
 - [x] [✅] 3mph cruise speed offset: speed will be 23/28/33/38/etc.
+- [x] [✅] Alternate color scheme
 - [x] [✅] Alternate sound effect set (inspired by sunnyhaibin implementation of mute sounds)
 - [x] [✅] Mute engage and disengage sounds (inspired by sunnyhaibin implementation)
 - [x] Brightness control: Tap driver monitoring icon to cycle stock/medium/low brightness (most recently suggested by veryluckyguy)
@@ -100,16 +113,23 @@ Please show your support by contributing to the ongoing development of this proj
     * (Inspired by the implementation in sunnyhaibin's fork)
 - [x] [✅] Brake when 15% over set speed when coasting enabled
 - [x] [Volt] [✅] Coasting D/L control: Tie the above option to the D/L gear shifter position. Coast in D; maintain set speed exactly in L.
-- [x] [✅] Nudgeless lane change: OP will start lane change automatically in direction of blinker after blinker on for 3s
-- [x] [✅] Braking indicator shows level of regenerative/engine and friction braking
+- [x] [✅] Auto "nudgeless" lane change: OP will start lane change automatically in direction of blinker after blinker on for 1.5s
+    * Won't auto lane change if adjacent lane is not detected, or if oncoming traffic in adjacent lanes
+    * Alert will tell you when/why auto lane change is blocked
+- [x] Lane change alerts warn you if changing lanes when adjacent lane not detected or when oncoming traffic in adjacent lane
+- [x] [✅] Power meter (or brake indicator) shows level of regenerative/engine and friction braking
+    * Power meter shows lines for losses due to drag, rolling resistance, and elevation gain (in that order from bottom to top on the meter), and differentiates between regen and brake power
+    * Tap brake indicator or power meter to switch between indicator, meter, or meter + power readout
+    * Tap power readout to switch units from kw to hp
 - [x] **Customizable, dynamic vehicle/device metrics** (adapted from kegman)
     * To use:
         * Tap the current speed on the openpilot display to cycle the number of metrics
         * Tap any metric to cycle its content (sorry for all the god-forsaken tapping, a better metric display with vehicle, following, position, and device widgets is a WIP)
-    * Metrics (35 to choose from):
+    * Metrics (79 to choose from):
         * Device info: CPU temperature (°C and °F), CPU percent, CPU temp + percent (°C and °F), memory temperature (°C and °F), memory used, free storage, ambient temperature (°C and °F), fanspeed (as percent of max), GPS accuracy (and number of satelites), altitude
-        * Vehicle info: Engine RPM, engine coolant temperature (°C and °F), engine RPM + coolant temperature (°C and °F), steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road (one based on GPS, one based on device accelerometer), Volt high-voltage battery wattage [kW], voltage [V], current [A], and voltage+wattage 
+        * Vehicle info: Engine RPM, engine coolant temperature (°C and °F), engine RPM + coolant temperature (°C and °F), steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road (one based on GPS, one based on device accelerometer), Volt high-voltage battery wattage [kW], voltage [V], current [A], voltage+wattage, drag force/power, brake force/power, regen force/power, electric motor force/power, gas engine power, total acceleration force/power, EV efficiency (instantaneous, 5 mile average, total), EV power consumption (instant/5mi/total), EV instantaneous efficiency/consumption (depending on sign), EV drivetrain efficiency (amount of power making it to the tires),  
         * Lead-following info: follow distance level, lead distance [length], desired lead distance [length], lead distance [time], desired lead distance [time], follow distance and acceleration mpc costs [in units of the stock OP costs; i.e. 2.5 means 2.5× the stock OP value], relative lead velocity, absolute lead velocity
+        * ...and others
 - [x] [GM] [✅] **One-pedal driving**: OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
     * **Not necessary to enable the one-pedal toggle; you engage/disengage while driving**
     * Engage in three ways
@@ -224,14 +244,15 @@ If you're device stays connected to your car all the time, you'll be presented w
 Commaai Table of Contents
 =======================
 
-* [What is openpilot?](#what-is-openpilot)
-* [Running in a car](#running-in-a-car)
-* [Running on PC](#running-on-pc)
-* [Community and Contributing](#community-and-contributing)
-* [User Data and comma Account](#user-data-and-comma-account)
-* [Safety and Testing](#safety-and-testing)
-* [Directory Structure](#directory-structure)
-* [Licensing](#licensing)
+- [Commaai Table of Contents](#commaai-table-of-contents)
+  - [What is openpilot?](#what-is-openpilot)
+  - [Running in a car](#running-in-a-car)
+  - [Running on PC](#running-on-pc)
+  - [Community and Contributing](#community-and-contributing)
+  - [User Data and comma Account](#user-data-and-comma-account)
+  - [Safety and Testing](#safety-and-testing)
+  - [Directory Structure](#directory-structure)
+  - [Licensing](#licensing)
 
 ---
 

@@ -258,6 +258,8 @@ class LeadMpc():
     self.accel_cost_last = MPC_COST_LONG.ACCELERATION
     self.stopping_distance = 0.
 
+    self.tr_override = False
+    
     self.v_solution = np.zeros(CONTROL_N)
     self.a_solution = np.zeros(CONTROL_N)
     self.j_solution = np.zeros(CONTROL_N)
@@ -369,7 +371,10 @@ class LeadMpc():
       self.dist_cost_last = dist_cost
       self.accel_cost_last = accel_cost
     
-    self.tr = tr
+    
+    if not self.tr_override:
+      self.tr = tr
+      
     self.dist_cost = dist_cost / MPC_COST_LONG.DISTANCE
     self.accel_cost = accel_cost / MPC_COST_LONG.ACCELERATION
     self.stopping_distance = stopping_distance
@@ -377,7 +382,7 @@ class LeadMpc():
       
     t = sec_since_boot()
     self.n_its = 0
-    self.n_its += self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, tr)
+    self.n_its += self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, self.tr)
     
     self.v_solution = interp(T_IDXS[:CONTROL_N], MPC_T, self.mpc_solution.v_ego)
     self.a_solution = interp(T_IDXS[:CONTROL_N], MPC_T, self.mpc_solution.a_ego)

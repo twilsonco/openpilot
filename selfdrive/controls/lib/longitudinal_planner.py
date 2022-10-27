@@ -24,11 +24,9 @@ from selfdrive.swaglog import cloudlog
 
 GearShifter = car.CarState.GearShifter
 
-BRAKE_SOURCES = {'lead0', 
-                 'lead1', 
-                 'lead2',
-                 'turn',
-                 'turnlimit'}
+BRAKE_SOURCES = {'lead0',
+                 'lead1',
+                 'lead0p1'}
 COAST_SOURCES = {'cruise',
                  'limit'}
 
@@ -67,7 +65,7 @@ def calc_cruise_accel_limits(v_ego, following, accelMode):
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_MODE_LIST[accelMode])
   return [a_cruise_min, a_cruise_max]
 
-
+LEAD_ONE_PLUS_TR_BUFFER = 0.4 # [s] follow distance between lead and lead+1 to run the lead+1 mpc
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
@@ -88,6 +86,7 @@ class Planner():
     self.mpcs = {}
     self.mpcs['lead0'] = LeadMpc(0)
     self.mpcs['lead1'] = LeadMpc(1)
+    self.mpcs['lead0p1'] = LeadMpc(2)
     self.mpcs['cruise'] = LongitudinalMpc()
     self.mpcs['custom'] = LimitsLongitudinalMpc()
 
@@ -100,6 +99,7 @@ class Planner():
     self.alpha = np.exp(-CP.radarTimeStep/2.0)
     self.lead_0 = log.RadarState.LeadData.new_message()
     self.lead_1 = log.RadarState.LeadData.new_message()
+    self.lead_0_plus = log.RadarState.LeadData.new_message()
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
@@ -129,9 +129,10 @@ class Planner():
     cur_time = sec_since_boot()
     t = cur_time
     
-    if sm.updated['carState'] and sm['carState'].onePedalModeActive or sm['carState'].coastOnePedalModeActive:
+    if sm['carState'].gasPressed:
       self.mpcs['lead0'].reset_mpc()
       self.mpcs['lead1'].reset_mpc()
+      self.mpcs['lead0p1'].reset_mpc()
     
     v_ego = sm['carState'].vEgo
     a_ego = sm['carState'].aEgo
@@ -154,18 +155,22 @@ class Planner():
 
     self.lead_0 = sm['radarState'].leadOne
     self.lead_1 = sm['radarState'].leadTwo
+    self.lead_0_plus = sm['radarState'].leadOnePlus
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = self.lead_0.status and self.lead_0.dRel < 45.0 and self.lead_0.vLeadK > v_ego and self.lead_0.aLeadK > 0.0
     if self.lead_0.status:
       self.coasting_lead_d = self.lead_0.dRel
-      self.coasting_lead_v = self.lead_0.vLead
+      self.coasting_lead_v = self.lead_0.vLeadK
+      self.coasting_lead_a = self.lead_0.aLeadK
     elif self.lead_1.status:
       self.coasting_lead_d = self.lead_1.dRel
-      self.coasting_lead_v = self.lead_1.vLead
+      self.coasting_lead_v = self.lead_1.vLeadK
+      self.coasting_lead_a = self.lead_1.aLeadK
     else:
       self.coasting_lead_d = -1.
       self.coasting_lead_v = -10.
+      self.coasting_lead_a = 10.
     self.tr = self.mpcs['lead0'].tr
     
     
@@ -211,6 +216,21 @@ class Planner():
     next_a = np.inf
     self.lead_accel = np.inf
     for key in self.mpcs:
+      if key == 'lead0p1':
+        if self.lead_0.status:
+          lead0_or_1mpc = self.mpcs['lead0']
+          lead0_or_1 = self.lead_0
+        elif self.lead_1.status:
+          lead0_or_1mpc = self.mpcs['lead1']
+          lead0_or_1 = self.lead_1
+        else:
+          lead0_or_1mpc = None
+        if self.lead_0_plus.status and lead0_or_1mpc is not None:
+          tr = lead0_or_1mpc.tr + LEAD_ONE_PLUS_TR_BUFFER
+          self.mpcs[key].tr_override = True
+          self.mpcs[key].tr = tr
+        else:
+          continue
       self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
       self.mpcs[key].update(sm['carState'], sm['radarState'], v_cruise, a_mpc[key], active_mpc[key])
       # picks slowest solution from accel in ~0.2 seconds
@@ -341,6 +361,7 @@ class Planner():
       'cruise': a_ego,  # Irrelevant
       'lead0': a_ego,   # Irrelevant
       'lead1': a_ego,   # Irrelevant
+      'lead0p1': a_ego,   # Irrelevant
       'custom': 0. if source is None else a_solutions[source],
     }
 
@@ -348,6 +369,7 @@ class Planner():
       'cruise': True,  # Irrelevant
       'lead0': True,   # Irrelevant
       'lead1': True,   # Irrelevant
+      'lead0p1': True,   # Irrelevant
       'custom': source is not None,
     }
 

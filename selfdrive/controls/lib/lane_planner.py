@@ -1,7 +1,7 @@
 import numpy as np
 from cereal import log
 from common.filter_simple import FirstOrderFilter
-from common.numpy_fast import interp, clip
+from common.numpy_fast import interp, clip, mean
 from common.realtime import DT_MDL
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
@@ -9,7 +9,24 @@ from selfdrive.hardware import EON, TICI
 from selfdrive.swaglog import cloudlog
 from enum import Enum
 
+LaneTraffic = log.LateralPlan.LaneTraffic
+Desire = log.LateralPlan.Desire
+
 TRAJECTORY_SIZE = 33
+LANE_DEPARTURE_THRESHOLD = 0.1
+
+def min_max_mean(lst):
+  mi, ma, me = 0,0,0
+  for i in lst:
+    if i < mi:
+      mi = i
+    if i > ma:
+      ma = i
+    me += i
+  if len(lst):
+    me /= len(lst)
+  return mi,ma,me
+
 # camera offset is meters from center car to camera
 if EON:
   CAMERA_OFFSET = 0.06
@@ -28,29 +45,63 @@ class AUTO_AUTO_LANE_MODE:
   NO_CHANGE = 0
   DISENGAGE = -1
 
+class LANE_TRAFFIC:
+  NONE = 0
+  ONCOMING = 1
+  ONGOING = 2
+  STOPPED = 3
+  
+  def to_cereal(lt):
+    if lt == LANE_TRAFFIC.NONE:
+      return LaneTraffic.none
+    elif lt == LANE_TRAFFIC.ONCOMING:
+      return LaneTraffic.oncoming
+    elif lt == LANE_TRAFFIC.ONGOING:
+      return LaneTraffic.ongoing
+    else:
+      return LaneTraffic.stopped
+
+
+def lead_between_lines(lll, rll, lead):
+  return interp(lead.dRel, lll.x, lll.y) < lead.yRel < interp(lead.dRel, rll.x, rll.y)
+
+def lead_close_to_line(ll, lead, offset, is_left):
+  if is_left:
+    return interp(lead.dRel, ll.x, ll.y) - offset < lead.yRel < interp(lead.dRel, ll.x, ll.y)
+  else:
+    return interp(lead.dRel, ll.x, ll.y) < lead.yRel < interp(lead.dRel, ll.x, ll.y) + offset
+
 class LaneOffset: 
   OFFSET = 0.11 # [unitless] offset of the left/right positions as factor of current lane width
   AUTO_OFFSET_FACTOR = 0.8 # 20% less offset when auto mode
-  OFFSET_MAX = 0.8 # [m]
+  OFFSET_MAX = 0.7 # [m]
   DUR = 2.0 # [s] time it takes to switch lane positions
   STEP = OFFSET / DUR * DT_MDL * LANE_WIDTH_DEFAULT
   
   DUR_SLOW = 8.0 # [s] same, but slower for when position change is caused by auto lane offset
   STEP_SLOW = OFFSET / DUR_SLOW * DT_MDL * LANE_WIDTH_DEFAULT
   
-  AUTO_MIN_SHOULDER_WIDTH_FACTOR = 0.00 # [unitless] shoulder width must be as this this factor of lane width
+  AUTO_MIN_SHOULDER_WIDTH_FACTOR = 0.05 # [unitless] shoulder width must be as this this factor of lane width
   AUTO_MAX_LANE_WIDTH_FACTOR = 0.6 # [unitless] adjacent lanes whose width is narrower than this factor of lane width are considered a shoulder
   
   AUTO_MAX_PRED_LAT_ACCEL = 0.9 # [m/s^2] more than this predicted amount of lateral accel causes instant resuming of center position
   AUTO_MAX_CUR_LAT_ACCEL = 0.7 # same but for instantaneous vehicle lateral accel
   
-  AUTO_MIN_LANELINE_PROB = 0.9
+  AUTO_MIN_LANELINE_PROB = 0.5
   AUTO_MIN_ADJACENT_LANELINE_PROB = 0.3
   
-  AUTO_LANE_STATE_MIN_TIME = 3.0 # [s] amount of time the lane state must stay the same before it can be acted upon
+  AUTO_LANE_STATE_MIN_TIME = 4.0 # [s] amount of time the lane state must stay the same before it can be acted upon
   
   AUTO_ENABLE_ROAD_TYPES = {0, 10, 20, 30} # freeway and state highways (see highway ranks in /Users/haiiro/NoSync/optw/openpilot/selfdrive/mapd/lib/WayRelation.py)
-  AUTO_ENABLE_MIN_SPEED = 40. * CV.MPH_TO_MS
+  AUTO_ENABLE_ROAD_TYPE_MIN_SPEED = 40. * CV.MPH_TO_MS
+  AUTO_ENABLE_TRAFFIC_MIN_SPEED = 10. * CV.MPH_TO_MS
+  
+  AUTO_TRAFFIC_TIMEOUT = 15. # [s] amount of time auto lane position will be kept after last car is seen
+  AUTO_TRAFFIC_MIN_TIME = 0.8 # [s] time an oncoming/ongoing car needs to be observed before it will be taken to indicate traffic
+  AUTO_TRAFFIC_MIN_SPEED = 9. # [m/s] need to go faster than this to be considered moving
+  AUTO_CUTOFF_STEER_ANGLE = 110. # [degrees] auto lane position reset traffic monitoring after this
+  AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR = 1.25 # [unitless] factor of current lane width used to check against adjacent lead distance
+  AUTO_TRAFFIC_STOPPED_MIN_DIST_LANE_WIDTH_FACTOR = 0.9 # [unitless] factor of current lane width used to check against adjacent lead distance, but for stopped objects
   
   def __init__(self, mass=0.):
     self.offset = 0.
@@ -77,20 +128,57 @@ class LaneOffset:
     self._road_type_last = -1
     self._auto_auto_enabled = False
     self._v_ego_last = 0.
+    
+    self._left_traffic = LANE_TRAFFIC.NONE
+    self._right_traffic = LANE_TRAFFIC.NONE
+    self._left_traffic_last = LANE_TRAFFIC.NONE
+    self._right_traffic_last = LANE_TRAFFIC.NONE
+    self._left_traffic_temp = LANE_TRAFFIC.NONE
+    self._right_traffic_temp = LANE_TRAFFIC.NONE
+    self._right_traffic_last_seen_t = 0.
+    self._left_traffic_last_seen_t = 0.
+    self._left_traffic_temp_t = 0.
+    self._right_traffic_temp_t = 0.
+    self._lprob_last = 0.
+    self._rprob_last = 0.
   
   def do_auto_enable(self, road_type):
     ret = AUTO_AUTO_LANE_MODE.NO_CHANGE
     v_ego = self._cs.vEgo if self._cs is not None else 0.
     if road_type != self._road_type_last \
-        or (v_ego >= self.AUTO_ENABLE_MIN_SPEED and self._v_ego_last < self.AUTO_ENABLE_MIN_SPEED) \
-        or (v_ego < self.AUTO_ENABLE_MIN_SPEED and self._v_ego_last >= self.AUTO_ENABLE_MIN_SPEED):
-      if road_type in self.AUTO_ENABLE_ROAD_TYPES and v_ego >= self.AUTO_ENABLE_MIN_SPEED and not self._auto_is_active:
+        or (v_ego >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and self._v_ego_last < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED) \
+        or (v_ego < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and self._v_ego_last >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED):
+      if (road_type in self.AUTO_ENABLE_ROAD_TYPES and v_ego >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and not self._auto_is_active):
         ret = AUTO_AUTO_LANE_MODE.ENGAGE
         self._auto_auto_enabled = True
       elif self._auto_is_active and self._auto_auto_enabled \
-          and (road_type not in self.AUTO_ENABLE_ROAD_TYPES or v_ego < self.AUTO_ENABLE_MIN_SPEED) :
-        ret = AUTO_AUTO_LANE_MODE.DISENGAGE
-        self._auto_auto_enabled = False
+        and (road_type not in self.AUTO_ENABLE_ROAD_TYPES or v_ego < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED) :
+          ret = AUTO_AUTO_LANE_MODE.DISENGAGE
+          self._auto_auto_enabled = False
+    
+    if ret != AUTO_AUTO_LANE_MODE.ENGAGE and (self._left_traffic_last != self._left_traffic or self._right_traffic != self._right_traffic_last \
+        or (v_ego >= self.AUTO_ENABLE_TRAFFIC_MIN_SPEED and self._v_ego_last < self.AUTO_ENABLE_TRAFFIC_MIN_SPEED) \
+        or (v_ego < self.AUTO_ENABLE_TRAFFIC_MIN_SPEED and self._v_ego_last >= self.AUTO_ENABLE_TRAFFIC_MIN_SPEED) \
+        or (self._lane_probs[1] >= self.AUTO_MIN_LANELINE_PROB and self._lprob_last <= self.AUTO_MIN_LANELINE_PROB) \
+        or (self._lane_probs[1] < self.AUTO_MIN_LANELINE_PROB and self._lprob_last >= self.AUTO_MIN_LANELINE_PROB) \
+        or (self._lane_probs[2] >= self.AUTO_MIN_LANELINE_PROB and self._rprob_last <= self.AUTO_MIN_LANELINE_PROB) \
+        or (self._lane_probs[2] < self.AUTO_MIN_LANELINE_PROB and self._rprob_last >= self.AUTO_MIN_LANELINE_PROB)):  
+      if not self._auto_is_active and v_ego >= self.AUTO_ENABLE_TRAFFIC_MIN_SPEED \
+        and (self._left_traffic != LANE_TRAFFIC.NONE or self._right_traffic != LANE_TRAFFIC.NONE) \
+        and self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB and self._lane_probs[2] > self.AUTO_MIN_LANELINE_PROB:
+          ret = AUTO_AUTO_LANE_MODE.ENGAGE
+          self._auto_auto_enabled = True
+      elif self._auto_is_active and self._auto_auto_enabled \
+        and (self._left_traffic == LANE_TRAFFIC.NONE and self._right_traffic == LANE_TRAFFIC.NONE \
+          or v_ego < self.AUTO_ENABLE_TRAFFIC_MIN_SPEED \
+          or (self._lane_probs[1] < self.AUTO_MIN_LANELINE_PROB and self._lane_probs[2] < self.AUTO_MIN_LANELINE_PROB)):
+            ret = AUTO_AUTO_LANE_MODE.DISENGAGE
+            self._auto_auto_enabled = False
+
+    self._lprob_last = self._lane_probs[1]
+    self._rprob_last = self._lane_probs[2]
+    self._left_traffic_last = self._left_traffic
+    self._right_traffic_last = self._right_traffic
     self._road_type_last = road_type
     self._v_ego_last = v_ego
     
@@ -100,7 +188,9 @@ class LaneOffset:
     self._lane_width_mean_left_adjacent = 0.
     self._lane_width_mean_right_adjacent = 0.
     self._shoulder_width_mean_left = 0.
-    self._shoulder_width_mean_right = 0.
+    self._shoulder_width_mean_right = 0.    
+    self._lane_probs = np.zeros(4) # [left adjacent, left, right, right adjacent]
+    self._road_edge_probs = np.zeros(2) # [left, right]
     if len(md.laneLines) == 4 and len(md.laneLines[0].t) == TRAJECTORY_SIZE \
         and len(md.roadEdges) >= 2 and len(md.roadEdges[0].t) == TRAJECTORY_SIZE:
       
@@ -117,10 +207,6 @@ class LaneOffset:
             and ((i == 2 and r_prob > self.AUTO_MIN_ADJACENT_LANELINE_PROB) or r_prob > self.AUTO_MIN_LANELINE_PROB):
           # Reduce reliance on uncertain lanelines (less stringent for adjacent lanelines)
           rll_y, lll_y = np.array(md.laneLines[i+1].y), np.array(md.laneLines[i].y)
-          l_std_mod = interp(md.laneLineStds[i], [.15, .3 if i > 0 else .6], [1.0, 0.0])
-          r_std_mod = interp(md.laneLineStds[i+1], [.15, .3 if i < 2 else .6], [1.0, 0.0])
-          l_prob *= l_std_mod
-          r_prob *= r_std_mod
           
           if i == 0: # set left adjacent 
             self._lane_probs[0] = l_prob
@@ -135,18 +221,6 @@ class LaneOffset:
             self._lane_width_mean_right_adjacent = np.mean(rll_y - lll_y)
             if self._road_edge_probs[1] > 0.:
               self._shoulder_width_mean_right = np.mean(np.array(md.roadEdges[1].y) - rll_y)
-        else:
-          l_std_mod = interp(md.laneLineStds[i], [.15, .3 if i > 0 else .6], [1.0, 0.0])
-          r_std_mod = interp(md.laneLineStds[i+1], [.15, .3 if i < 2 else .6], [1.0, 0.0])
-          l_prob *= l_std_mod
-          r_prob *= r_std_mod
-          if i == 0: # set left adjacent 
-            self._lane_probs[0] = l_prob
-          elif i == 1: # set center
-            self._lane_probs[1] = l_prob
-            self._lane_probs[2] = r_prob
-          else: # set right 
-            self._lane_probs[3] = r_prob
 
       
       # see if adjacent lane can be treated as shoulder because it's too narrow
@@ -158,9 +232,92 @@ class LaneOffset:
         self._lane_width_mean_right_adjacent = 0.
     return
   
+  def update_traffic_info(self, rs, lane_width, md):
+    left_traffic = LANE_TRAFFIC.NONE
+    right_traffic = LANE_TRAFFIC.NONE
+    leads = rs.leadsLeft
+    if len(leads) > 0:
+      check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
+      if self._lane_width_mean_left_adjacent > 0.:
+        lv = [l.vLeadK for l in leads if lead_between_lines(md.laneLines[0], md.laneLines[1], l)]
+      elif self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB:
+        lv = [l.vLeadK for l in leads if lead_close_to_line(md.laneLines[1], l, lane_width, True)]
+      else:
+        lv = [l.vLeadK for l in leads if abs(l.dPath) < check_lane_width]
+        
+      if len(lv) > 0:
+        min_v, max_v, mean_v = min_max_mean(lv)
+        check_v = min_v if abs(min_v - mean_v) < abs(max_v - mean_v) else max_v
+        if check_v > self.AUTO_TRAFFIC_MIN_SPEED:
+          left_traffic = LANE_TRAFFIC.ONGOING
+        elif check_v < -self.AUTO_TRAFFIC_MIN_SPEED:
+          left_traffic = LANE_TRAFFIC.ONCOMING
+        else:
+          check_lane_width = lane_width * self.AUTO_TRAFFIC_STOPPED_MIN_DIST_LANE_WIDTH_FACTOR
+          lv = [l.vLeadK for l in rs.leadsLeft if abs(l.dPath) < check_lane_width]
+          if len(lv) > 0:
+            left_traffic = LANE_TRAFFIC.STOPPED
+    
+    leads = rs.leadsRight
+    if len(leads) > 0:
+      check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
+      if self._lane_width_mean_right_adjacent > 0.:
+        lv = [l.vLeadK for l in leads if lead_between_lines(md.laneLines[2], md.laneLines[3], l)]
+      elif self._lane_probs[2] > self.AUTO_MIN_LANELINE_PROB:
+        lv = [l.vLeadK for l in leads if lead_close_to_line(md.laneLines[2], l, lane_width, False)]
+      else:
+        lv = [l.vLeadK for l in leads if abs(l.dPath) < check_lane_width]
+      
+      if len(lv) > 0:
+        min_v, max_v, mean_v = min_max_mean(lv)
+        check_v = min_v if abs(min_v - mean_v) < abs(max_v - mean_v) else max_v
+        if check_v > self.AUTO_TRAFFIC_MIN_SPEED:
+          right_traffic = LANE_TRAFFIC.ONGOING
+        elif check_v < -self.AUTO_TRAFFIC_MIN_SPEED:
+          right_traffic = LANE_TRAFFIC.ONCOMING
+        else:
+          check_lane_width = lane_width * self.AUTO_TRAFFIC_STOPPED_MIN_DIST_LANE_WIDTH_FACTOR
+          lv = [l.vLeadK for l in rs.leadsRight if abs(l.dPath) < check_lane_width]
+          if len(lv) > 0:
+            right_traffic = LANE_TRAFFIC.STOPPED
+    
+    if left_traffic != LANE_TRAFFIC.NONE:
+      if self._left_traffic_temp != left_traffic:
+        self._left_traffic_temp_t = self._t
+      elif self._t - self._left_traffic_temp_t >= self.AUTO_TRAFFIC_MIN_TIME:
+        self._left_traffic_last_seen_t = self._t
+        self._left_traffic = left_traffic
+    elif self._t - self._left_traffic_last_seen_t > self.AUTO_TRAFFIC_TIMEOUT:
+      self._left_traffic = left_traffic
+    
+    self._left_traffic_temp = left_traffic
+      
+    if right_traffic != LANE_TRAFFIC.NONE:
+      if self._right_traffic_temp != right_traffic:
+        self._right_traffic_temp_t = self._t
+      elif self._t - self._right_traffic_temp_t >= self.AUTO_TRAFFIC_MIN_TIME:
+        self._right_traffic_last_seen_t = self._t
+        self._right_traffic = right_traffic
+    elif self._t - self._right_traffic_last_seen_t > self.AUTO_TRAFFIC_TIMEOUT:
+      self._right_traffic = right_traffic
+    
+    self._right_traffic_temp = right_traffic
+      
+    return
+  
   def update_lane_pos_auto(self, lane_width):
     lane_pos_auto = 0.
-    if self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB \
+    timeout_override = False
+    
+    if self._left_traffic != LANE_TRAFFIC.NONE \
+        and self._right_traffic == LANE_TRAFFIC.NONE:
+      lane_pos_auto = -1.
+      timeout_override = True
+    elif self._right_traffic != LANE_TRAFFIC.NONE \
+        and self._left_traffic == LANE_TRAFFIC.NONE:
+      lane_pos_auto = 1.
+      timeout_override = True
+    elif self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB \
         and self._lane_probs[2] > self.AUTO_MIN_LANELINE_PROB:
       if (self._lane_width_mean_left_adjacent > 0. and self._lane_width_mean_right_adjacent > 0.) \
           or (self._lane_width_mean_left_adjacent == 0. and self._lane_width_mean_right_adjacent == 0.):
@@ -171,19 +328,21 @@ class LaneOffset:
         lane_pos_auto = 1.
     if lane_pos_auto != 0. \
         and ((self._lat_accel_cur >= self.AUTO_MAX_CUR_LAT_ACCEL \
-        and np.sign(self._lat_curvature_cur) == np.sign(lane_pos_auto)) \
+          and np.sign(self._lat_curvature_cur) == np.sign(lane_pos_auto)) \
         or (self._lat_accel_pred >= self.AUTO_MAX_PRED_LAT_ACCEL \
-        and np.sign(self._lat_curvature_pred) == np.sign(lane_pos_auto))):
+          and np.sign(self._lat_curvature_pred) == np.sign(lane_pos_auto))):
       lane_pos_auto = 0.
     
     if lane_pos_auto != self._lane_pos_auto:
-      self._lane_state_changed_last_t = sec_since_boot()
+      self._lane_state_changed_last_t = self._t
+      if timeout_override:
+        self._lane_state_changed_last_t -= self.AUTO_LANE_STATE_MIN_TIME + 1.
     
     self._lane_pos_auto = lane_pos_auto
     return lane_pos_auto
     
   def update(self, lane_pos=0., lane_width=LANE_WIDTH_DEFAULT, auto_active=False, md=None, sm=None): # 0., 1., -1. = center, left, right
-    t = sec_since_boot()
+    self._t = sec_since_boot()
     
     if sm is not None:
       if sm.valid.get('carState', False):
@@ -196,6 +355,30 @@ class LaneOffset:
     if md is not None:
       if self._cs is not None:
         self.update_lane_info(md, self._cs.vEgo, lane_width)
+        lane_depart = False
+        if self._lat_plan is not None:
+          right_lane_visible = self._lat_plan.rProb > 0.5
+          left_lane_visible = self._lat_plan.lProb > 0.5
+          l_lane_change_prob = md.meta.desirePrediction[Desire.laneChangeLeft - 1]
+          r_lane_change_prob = md.meta.desirePrediction[Desire.laneChangeRight - 1]
+          l_lane_close = left_lane_visible and (md.laneLines[1].y[0] > -(0.5 + CAMERA_OFFSET))
+          r_lane_close = right_lane_visible and (md.laneLines[2].y[0] < (0.5 - CAMERA_OFFSET))
+          l_lane_depart = l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close
+          r_lane_depart = r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close
+          lane_depart = l_lane_depart or r_lane_depart
+        if abs(self._cs.steeringAngleDeg) > self.AUTO_CUTOFF_STEER_ANGLE \
+            or lane_depart:
+          self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
+          self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
+          self._right_traffic = LANE_TRAFFIC.NONE
+          self._left_traffic = LANE_TRAFFIC.NONE
+        if self._lat_plan.lProb < 0.2 and self._left_traffic == LANE_TRAFFIC.NONE \
+            and self._t - self._lane_state_changed_last_t < self.AUTO_LANE_STATE_MIN_TIME:
+          self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
+        if self._lat_plan.rProb < 0.2 and self._right_traffic == LANE_TRAFFIC.NONE \
+            and self._t - self._lane_state_changed_last_t < self.AUTO_LANE_STATE_MIN_TIME:
+          self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
+        self.update_traffic_info(sm['radarState'], lane_width, md)
         self.update_lane_pos_auto(lane_width)
       if self._long_plan is not None:
         self._lat_accel_cur = self._long_plan.visionCurrentLateralAcceleration
@@ -209,7 +392,7 @@ class LaneOffset:
       
     do_slow = self._auto_is_active # and self._lane_pos_auto != 0.
     if self._auto_is_active:
-      if t - self._lane_state_changed_last_t > self.AUTO_LANE_STATE_MIN_TIME:
+      if self._t - self._lane_state_changed_last_t > self.AUTO_LANE_STATE_MIN_TIME:
         self.lane_pos = self._lane_pos_auto
       else:
         self.lane_pos = 0.

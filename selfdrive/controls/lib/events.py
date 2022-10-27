@@ -12,7 +12,30 @@ AlertStatus = log.ControlsState.AlertStatus
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 EventName = car.CarEvent.EventName
+LaneChangeAlert = log.LateralPlan.LaneChangeAlert
+LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
+def stotime(S):
+
+  S = int(S)
+  if S == -2:
+    return '?'
+  elif S == -1:
+    return 'N/A'
+  elif S < 0:
+    return 'N/A'
+    
+  
+  M = 60
+  H = M * 60
+  
+  h,S = divmod(S,H)
+  m,S = divmod(S,M)
+  
+  if h > 0:
+    return f"{h:02d}:{m:02d}:{S:02d}"
+  else:
+    return f"{m:02d}:{S:02d}"
 
 # Alert priorities
 class Priority(IntEnum):
@@ -262,29 +285,71 @@ def comm_issue_alert_no_entry(CP: car.CarParams, sm: messaging.SubMaster, metric
     AlertStatus.normal,
     AlertSize.mid, Priority.LOW, VisualAlert.none,
     AudibleAlert.chimeDisengage, .4, 2., 3.)
-    
+  
+def radar_fault_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  return Alert(
+    "Radar Error: Restart the Car",
+    ", ".join(sm['radarState'].radarErrorStrs),
+    AlertStatus.critical, AlertSize.full,
+    Priority.MID, VisualAlert.steerRequired,
+    AudibleAlert.chimeWarningRepeat, .1, 2., 2.)
+  
+def radar_fault_alert_no_entry(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  return Alert(
+    "Radar Error: Restart the Car",
+    ", ".join(sm['radarState'].radarErrorStrs),
+    AlertStatus.normal,
+    AlertSize.mid, Priority.LOW, VisualAlert.none,
+    AudibleAlert.chimeError, .4, 2., 3.)
 
-def stotime(S):
-
-  S = int(S)
-  if S == -2:
-    return '?'
-  elif S == -1:
-    return 'N/A'
-  elif S < 0:
-    return 'N/A'
-    
+def pre_lane_change(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  alert = sm['lateralPlan'].laneChangeAlert
+  direction = sm['lateralPlan'].laneChangeDirection
+  dir_str = "left" if direction == LaneChangeDirection.left else "right"
+  str1 = f"Steer {dir_str} to Start Lane Change Once Safe"
+  str2 = ""
+  if alert == LaneChangeAlert.nudgelessBlockedNoLane:
+    str2 = f"(auto lane change blocked: no {dir_str} lane)"
+  elif alert == LaneChangeAlert.nudgelessCountdown:
+    str1 = "Steer or wait for {} lane change in {:.1f}s".format(dir_str, sm['lateralPlan'].laneChangeCountdown)
+  elif alert == LaneChangeAlert.nudgelessBlockedOncoming:
+    str2 = f"(auto lane change blocked: oncoming traffic in {dir_str} lane)"
+  elif alert == LaneChangeAlert.nudgelessBlockedTimeout:
+    str2 = "(auto lane change timed out)"
+  elif alert == LaneChangeAlert.nudgelessBlockedMinSpeed:
+    str2 = "(no auto lane change below {})".format("40mph" if metric else "65kph")
+  elif alert == LaneChangeAlert.nudgelessBlockedOnePedal:
+    str2 = "(no auto lane change in one-pedal mode)"
   
-  M = 60
-  H = M * 60
-  
-  h,S = divmod(S,H)
-  m,S = divmod(S,M)
-  
-  if h > 0:
-    return f"{h:02d}:{m:02d}:{S:02d}"
+  if str2 == "":
+    return Alert(
+      str1, str2,AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .1, .1, alert_rate=0.75)
   else:
-    return f"{m:02d}:{S:02d}"
+    return Alert(
+      str1, str2, AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .1, .1)
+
+
+def lane_change(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  alert = sm['lateralPlan'].laneChangeAlert
+  direction = sm['lateralPlan'].laneChangeDirection
+  dir_str = "left" if direction == LaneChangeDirection.left else "right"
+  str1 = "Changing Lanes"
+  str2 = ""
+  if alert == LaneChangeAlert.nudgeWarningNoLane:
+    str2 = f"(Warning: no {dir_str} lane)"
+  elif alert == LaneChangeAlert.nudgeWarningOncoming:
+    str2 = f"(Warning: oncoming traffic in {dir_str} lane)"
+  
+  if str2 == "":
+    return Alert(
+      str1, str2, AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .1, .1)
+  else:
+    return Alert(
+      str1, str2, AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .1, .1)
 
 def autohold_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   return Alert(
@@ -561,19 +626,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.preLaneChangeLeft: {
-    ET.WARNING: Alert(
-      "Steer Left to Start Lane Change Once Safe",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .1, .1, alert_rate=0.75),
+    ET.WARNING: pre_lane_change,
   },
 
   EventName.preLaneChangeRight: {
-    ET.WARNING: Alert(
-      "Steer Right to Start Lane Change Once Safe",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .1, .1, alert_rate=0.75),
+    ET.WARNING: pre_lane_change,
   },
 
   EventName.laneChangeBlocked: {
@@ -585,11 +642,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.laneChange: {
-    ET.WARNING: Alert(
-      "Changing Lanes",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .1, .1),
+    ET.WARNING: lane_change,
   },
 
   EventName.steerSaturated: {
@@ -821,8 +874,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.radarFault: {
-    ET.SOFT_DISABLE: SoftDisableAlert("Radar Error: Restart the Car"),
-    ET.NO_ENTRY: NoEntryAlert("Radar Error: Restart the Car"),
+    ET.SOFT_DISABLE: radar_fault_alert,
+    ET.NO_ENTRY: radar_fault_alert_no_entry,
   },
 
   # Every frame from the camera should be processed by the model. If modeld

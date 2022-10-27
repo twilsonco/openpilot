@@ -27,7 +27,7 @@ TEST_ROUTE = "99c94dc769b5d96e|2019-08-03--14-19-59"
 def replace_calib(msg, calib):
   msg = msg.as_builder()
   if calib is not None:
-    msg.liveCalibration.extrinsicMatrix = get_view_frame_from_road_frame(*calib, 1.22).flatten().tolist()
+    msg.liveCalibration.extrinsicMatrix = get_view_frame_from_road_frame(*calib, 1.32).flatten().tolist()
   return msg
 
 

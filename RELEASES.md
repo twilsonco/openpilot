@@ -1,4 +1,53 @@
-Version tw-0.8.12-8_tws (2022-09-29)
+Version tw-0.8.12-9_tws (2022-10-27)
+========================
+ * NEW: [toggle] Extended radar capabilities
+   * (VERY ALPHA) brake for lead+1 car (the car in front of the lead)
+     * if the lead+1 brakes and the lead doesn't see it and slams into them, openpilot will avoid the crash
+       * when lead+1 is going 15mph+ *slower* than the lead, their speed (printed above lead indicator) will print larger and in red
+     * if the lead changes lanes right before a stopped column of cars (prick), openpilot can still react in time
+   * [toggle] Indicate oncoming/ongoing traffic in adjacent lanes: gray indicates stopped adjacent traffic (or "objects"), red for oncoming, and *engaged* color for ongoing
+   * [toggle] Indicate *all* cars, marking them with transparent circles using the same color scheme
+     * also prints speeds of all detected cars
+     * speed of cars in your own lane are printed above the lead indicator, or at screen bottom-center if no "lead" is detected
+ * IMPROVED: [toggle] Traffic-based auto lane position
+   * if there's only adjacent traffic on one side and clear lanelines, keeps you away from the traffic
+   * same auto lane position but also uses traffic to adjust if extended radar capabilities are enabled
+ * IMPROVED: [toggle] Traffic-based auto auto lane position (two autos)
+   * Auto lane position comes on automatically if speed > 22mph, adjacent traffic present, and clear lanelines on both sides of car
+   * As before, also comes on automatically if speed > 40mph, clear lanelines, and you're on a state highway or interstate
+ * IMPROVED: auto "nudgeless" lane changes
+   * will NOT auto lane change if adjacent lane is not detected
+   * will NOT auto lane change if oncoming traffic in adjacent lane
+   * on-screen alert will show countdown before starting auto lane change, or
+   * if auto lane change is blocked, it will tell you why
+ * IMPROVED: lane change alerts
+   * lane change alert now warns if changing lanes when adjacent lane isn't detected or if oncoming traffic in adjacent lane
+ * (RE)NEW: [toggle] One pedal mode lead braking, better than ever, but still WIP as it doesn't act identically to stopping behind lead when op-long enabled
+   * To *disable*, enable the one-pedal pro brakes toggle which turns off lead braking
+ * IMPROVED: better lead tracking 
+   * by raising model height to typical Volt mounting height
+ * IMPROVED: [toggle] long range lead detection 
+   * fewer false positives and more consistent tracking
+   * use filtered lead velocity and acceleration values
+ * IMPROVED: [toggle] Volt torque lateral control
+   * increased linear component of feedforward to right closer to inside of curves
+   * no more roll *over*compensation
+ * NEW: [toggle] alternate color scheme
+   * instead of green/orange/red it's blue/purple/red
+ * IMPROVED: [toggle] onscreen power meter
+   * includes bars to indicate power losses to drag, rolling resistance, and elevation gain
+   * good luck remembering which is which FML
+   * if you're doing 80mph uphill, the first bar is drag losses, then rolling resistance losses above that, then power to gain elevation on top
+   * tap meter/brake indicator to switch between brake indicator or power meter w/ or w/o readout
+   * tap readout to switch units
+ * (RE)NEW: print temperature in sidebar
+ * IMPROVED: lanelines drawn as white when in laneless
+ * IMPROVED: UI metrics: less tapping
+   * EV metrics only show if you have an EV
+   * Prevented from showing duplicate metrics
+   * 9 new metrics: electric motor force/power (kw or hp), regen force/power (kw or hp), brake force/power (kw or hp)
+
+Version tw-0.8.12-8_twd (2022-09-29)
 ========================
  * NEW: new power meter to replace brake indicator
   * Enable brake indicator in settings

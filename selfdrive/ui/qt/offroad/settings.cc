@@ -87,6 +87,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_plus.png",
                                   this));
 
+  toggles.append(new ParamControl("ExtendedRadar",
+                                  "Extended radar capabilities (alpha)",
+                                  "Enables tracking of all cars; not just the one openpilot lead. Necessary for braking for car in front of lead, longer-range lead detection, traffic-based auto lane position, drawing of oncoming/ongoing lanes, and indication of non-lead cars.",
+                                  "../assets/offroad/icon_plus.png",
+                                  this));
+
   toggles.append(new ParamControl("EnableTorqueControl",
                                   "Enable \"torque\" steering control",
                                   "(Restart car to take effect) Use the newer torque-based steering control that steers by achieving a target amount of lateral acceleration rather than achieving a target steering angle. Torque tune is only available in the Volt.",
@@ -190,9 +196,14 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   this));
   toggles.append(new ParamControl("OnePedalMode",
                                   "[GM] One-pedal mode (tap me)",
-                                  "In combination with the \"Disable disengage on gas\" option, you control speed with gas pedal (with optional, adjustable braking) while OP continues to steer and brake for curves and lead car following. To activate, ① (see \"One-pedal/Always-on-steering engage on gas\" below) set cruise speed to 1 and pedal icon will replace max speed indicator; set/resume button to return to normal cruise. ② Tap pedal icon to toggle one-pedal mode (see below). If one-pedal mode is active, then vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = (⚫️)/🟢/🟠/🔴 = (regen/engine)/light/moderate/heavy braking. ③ Press follow distance button to toggle between persistent light/moderate braking; hold for temporary heavy braking. ④ Toggle between friction 🟢/🟠/🔴 and regen/engine ⚫️ braking by tapping the pedal icon or by using the follow distance button; one press will activating friction braking if not active, and a double press while the gas pedal is pressed, or while stopped, will deactivate friction braking.",
+                                  "In combination with the \"Disable disengage on gas\" option, you control speed with gas pedal (with optional, adjustable braking) while OP continues to steer and brake for lead car following. To activate, ① (see \"One-pedal/Always-on-steering engage on gas\" below) set cruise speed to 1 and pedal icon will replace max speed indicator; set/resume button to return to normal cruise. ② Tap pedal icon to toggle one-pedal mode (see below). If one-pedal mode is active, then vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = (⚫️)/🟢/🟠/🔴 = (regen/engine)/light/moderate/heavy braking. ③ Press follow distance button to toggle between persistent light/moderate braking; hold for temporary heavy braking. ④ Toggle between friction 🟢/🟠/🔴 and regen/engine ⚫️ braking by tapping the pedal icon or by using the follow distance button; one press will activating friction braking if not active, and a double press while the gas pedal is pressed, or while stopped, will deactivate friction braking.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
+  toggles.append(new ParamControl("OnePedalModeSimple",
+                                   "[GM] One-pedal pro brakes ⚠️",
+                                   "When using one-pedal mode, COMPLETELY DISABLE ALL OTHER FORMS OF OPENPILOT BRAKING. No additional braking will be automatically applied to slow/stop you behind a lead car, or to slow for a curve. You are solely responsible for applying brakes using adjustable one-pedal braking with the follow button or using the actual brakes.",
+                                   "../assets/offroad/icon_car_pedal.png",
+                                   this));
   toggles.append(new ParamControl("OnePedalDLCoasting",
                                   "[Volt] One-pedal D/L coast",
                                   "When in one-pedal mode with regen braking ⚫️ active, regen will only be used when in L mode. In D, no braking whatsoever will be applied while you are not pressing the gas. (In fact a light press will result in more braking than no press at all)",
@@ -248,9 +259,24 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Color path according to the amount of lateral (steering) correction being applied",
                                   "../assets/offroad/icon_road.png",
                                   this));
+  toggles.append(new ParamControl("AlternateColors",
+                                  "Alternate colors",
+                                  "Use alternate color set.",
+                                  "../assets/offroad/icon_road.png",
+                                  this));
+  toggles.append(new ParamControl("AdjacentPaths",
+                                  "Adjacent oncoming/ongoing paths",
+                                  "[Requires extended radar toggle] Draw paths to indicate whether adjacent lanes contain oncoming (red) or ongoing (green) traffic.",
+                                  "../assets/offroad/icon_road.png",
+                                  this));
   toggles.append(new ParamControl("PrintLeadInfo",
                                   "Print lead car info",
                                   "Prints lead car time and length distance, and absolute and relative velocity next to lead indicator",
+                                  "../assets/offroad/icon_metric.png",
+                                  this));
+  toggles.append(new ParamControl("PrintAdjacentLeadSpeeds",
+                                  "Indicate all cars",
+                                  "[Requires extended radar toggle] Print speeds of all cars being tracked by radar and/or vision. Speeds are printed along the bottom of the screen, out from the center to the left/right in order of distance, so the numbers closest to the center are for the more immediate cars. Cars are also indicated onscreen as oncoming (red) or ongoing (green).",
                                   "../assets/offroad/icon_metric.png",
                                   this));
   toggles.append(new ParamControl("ShowDebugUI",

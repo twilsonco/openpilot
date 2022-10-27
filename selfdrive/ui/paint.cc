@@ -258,6 +258,8 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
       lead_y += v > y_max ? y_max : v;
     }
     lead_y /= float(s->scene.lead_y_vals.size());
+    s->scene.lead_x = lead_x;
+    s->scene.lead_y = lead_y;
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 180));
     nvgFontFace(s->vg, "sans-semibold");
     nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_MIDDLE);
@@ -337,6 +339,139 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
   }
 }
 
+static void draw_other_leads(UIState *s, bool lead_drawn) {
+  // Draw lead car circle
+  if (s->scene.adjacent_lead_info_print_enabled){
+    int r1 = 8, r2 = 75;
+    int dr = r2 - r1;
+    int i = 0;
+    for (auto const & vd : s->scene.lead_vertices_ongoing){
+      auto [x, y] = vd;
+      // fade leads too close to the actual lead
+      int alpha_fill = 80;
+      int alpha_stroke = 200;
+      if (lead_drawn){
+        float screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - 50., 0., 200.);
+        float alpha_factor = 1. - float(screen_dist) / 400.;
+        alpha_fill -= 60. * alpha_factor;
+        alpha_stroke -= 160. * alpha_factor;
+      }
+      int r = r2 - int(float(dr) * s->scene.lead_distances_ongoing[i++] / 180.);
+      r = (r < r1 ? r1 : r);
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
+      nvgFillColor(s->vg, interp_alert_color(-1., alpha_fill));
+      nvgFill(s->vg);
+      nvgStrokeColor(s->vg, interp_alert_color(-1., alpha_stroke));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+    }
+    i = 0;
+    for (auto const & vd : s->scene.lead_vertices_oncoming){
+      auto [x, y] = vd;
+      // fade leads too close to the actual lead
+      int alpha_fill = 80;
+      int alpha_stroke = 200;
+      if (lead_drawn){
+        float screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - 50., 0., 200.);
+        float alpha_factor = 1. - float(screen_dist) / 400.;
+        alpha_fill -= 60. * alpha_factor;
+        alpha_stroke -= 160. * alpha_factor;
+      }
+      int r = r2 - int(float(dr) * s->scene.lead_distances_oncoming[i++] / 180.);
+      r = (r < r1 ? r1 : r);
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
+      nvgFillColor(s->vg, interp_alert_color(1.1, alpha_fill));
+      nvgFill(s->vg);
+      nvgStrokeColor(s->vg, interp_alert_color(1.1, alpha_stroke));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+    }
+    i = 0;
+    for (auto const & vd : s->scene.lead_vertices_stopped){
+      auto [x, y] = vd;
+      // fade leads too close to the actual lead
+      int alpha_fill = 80;
+      int alpha_stroke = 200;
+      if (lead_drawn){
+        float screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - 50., 0., 200.);
+        float alpha_factor = 1. - float(screen_dist) / 400.;
+        alpha_fill -= 60. * alpha_factor;
+        alpha_stroke -= 160. * alpha_factor;
+      }
+      int r = r2 - int(float(dr) * s->scene.lead_distances_stopped[i++] / 180.);
+      r = (r < r1 ? r1 : r);
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
+      nvgFillColor(s->vg, COLOR_WHITE_ALPHA(alpha_fill));
+      nvgFill(s->vg);
+      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(alpha_stroke));
+      nvgStrokeWidth(s->vg, 6);
+      nvgStroke(s->vg);
+    }
+  }
+}
+
+static void draw_adjacent_lead_speeds(UIState *s, bool lead_drawn){
+  if (s->scene.adjacent_lead_info_print_enabled && !s->scene.map_open){
+    nvgFontFace(s->vg, "sans-semibold");
+    nvgBeginPath(s->vg);
+    nvgFontSize(s->vg, 90);
+    int y = s->fb_h + 10;
+
+    // left leads
+    nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BOTTOM);
+    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+    int x = s->fb_w * 11 / 32;
+    nvgText(s->vg,x,y,s->scene.adjacent_leads_left_str.c_str(),NULL);
+
+    // right leads
+    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BOTTOM);
+    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+    x = s->fb_w * 21 / 32;
+    nvgText(s->vg,x,y,s->scene.adjacent_leads_right_str.c_str(),NULL);
+     
+    // center leads
+    nvgFontSize(s->vg, 90);
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
+    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+    if (lead_drawn){
+      nvgFontFace(s->vg, "sans-semibold");
+      x = s->scene.lead_x;
+      y = s->scene.lead_y - 20;
+    }
+    else{
+      x = s->fb_w / 2;
+    }
+    bool first = false;
+    for (auto const & v : s->scene.adjacent_leads_center_strs){
+      if (first && lead_drawn){
+        auto l1p_v = s->scene.radarState.getLeadOnePlus().getVLeadK();
+        if (s->scene.lead_v - l1p_v > 7.){
+          nvgFontFace(s->vg, "sans-bold");
+          nvgFillColor(s->vg, COLOR_RED_ALPHA(200));
+          nvgFontSize(s->vg, 110);
+          nvgText(s->vg,x,y,v.c_str(),NULL);
+          y -= 75;
+          nvgFontFace(s->vg, "sans-semibold");
+          nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+          nvgFontSize(s->vg, 90);
+        }      
+        else{
+          nvgText(s->vg,x,y,v.c_str(),NULL);
+          y -= 60;
+        }
+      }
+      else{
+        nvgText(s->vg,x,y,v.c_str(),NULL);
+        y -= 60;
+      }
+      first = false;
+    }
+  }
+}
+
 static void ui_draw_line(UIState *s, const line_vertices_data &vd, NVGcolor *color, NVGpaint *paint) {
   if (vd.cnt == 0) return;
 
@@ -386,12 +521,18 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   NVGpaint track_bg;
   int steerOverride = scene.car_state.getSteeringPressed();
   //if (!scene.end_to_end) {
-  if (!scene.lateralPlan.lanelessModeStatus) {
-    // paint lanelines
-    for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
-      NVGcolor color = interp_alert_color(1.f - scene.lane_line_probs[i], 255);
-      ui_draw_line(s, scene.lane_line_vertices[i], &color, nullptr);
+  // paint lanelines
+  for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
+    NVGcolor color;
+    if (!scene.lateralPlan.lanelessModeStatus) {
+      color = interp_alert_color(1.f - scene.lane_line_probs[i], 255);
     }
+    else{
+       color = COLOR_WHITE_ALPHA(int(scene.lane_line_probs[i] * 180.));
+    }
+    ui_draw_line(s, scene.lane_line_vertices[i], &color, nullptr);
+  }
+  if (!scene.lateralPlan.lanelessModeStatus) {
     // paint road edges
     for (int i = 0; i < std::size(scene.road_edge_vertices); i++) {
       NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0));
@@ -424,13 +565,13 @@ static void ui_draw_vision_lane_lines(UIState *s) {
     else { // differentiate laneless mode color (Grace blue)
       if (scene.car_state.getLkMode()){
         if (scene.color_path){
-          int g, r = 255. * fabs(scene.lateralCorrection);
-          r = CLIP(r, 0, 255);
-          g = 100 + r;
-          g = CLIP(g, 0, 255);
+          int g, r = 255.f * float(COLOR_GRACE_BLUE.b) * fabs(scene.lateralCorrection);
+          r = CLIP(r, 255.f * COLOR_GRACE_BLUE.r, 255.f * COLOR_GRACE_BLUE.b);
+          g = 255.f * COLOR_GRACE_BLUE.g + r;
+          g = CLIP(g, 255.f * COLOR_GRACE_BLUE.g, 255.f * COLOR_GRACE_BLUE.b);
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                      nvgRGBA(r, g, 255, 160), 
-                                      nvgRGBA(r, g, 255, 0));
+                                      nvgRGBA(r, g, 255.f * COLOR_GRACE_BLUE.b, 160), 
+                                      nvgRGBA(r, g, 255.f * COLOR_GRACE_BLUE.b, 0));
         }
         else{
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
@@ -450,6 +591,42 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   }
   // paint path
   ui_draw_line(s, scene.track_vertices, nullptr, &track_bg);
+
+  // now oncoming/ongoing lanes
+
+  auto tf = scene.lateral_plan.getTrafficLeft();
+  if (tf == LaneTraffic::ONCOMING){
+    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                          nvgRGBA(255, 30, 30, 200), nvgRGBA(255, 30, 30, 0));
+    ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
+  }
+  else if (tf == LaneTraffic::ONGOING){
+    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                          interp_alert_color(-1., 200), interp_alert_color(-1., 0));
+    ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
+  }
+  else if (tf == LaneTraffic::STOPPED){
+    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                          COLOR_WHITE_ALPHA(150), COLOR_WHITE_ALPHA(0));
+    ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
+  }
+
+  tf = scene.lateral_plan.getTrafficRight();
+  if (tf == LaneTraffic::ONCOMING){
+    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                          nvgRGBA(255, 30, 30, 200), nvgRGBA(255, 30, 30, 0));
+    ui_draw_line(s, scene.lane_vertices_right, nullptr, &track_bg);
+  }
+  else if (tf == LaneTraffic::ONGOING){
+    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                          interp_alert_color(-1., 200), interp_alert_color(-1., 0));
+    ui_draw_line(s, scene.lane_vertices_right, nullptr, &track_bg);
+  }
+  else if (tf == LaneTraffic::STOPPED){
+    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                          COLOR_WHITE_ALPHA(150), COLOR_WHITE_ALPHA(0));
+    ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
+  }
 
   // print lane and shoulder widths and probabilities
   if (s->scene.show_debug_ui && !s->scene.map_open){
@@ -498,10 +675,10 @@ static void ui_draw_world(UIState *s) {
   ui_draw_vision_lane_lines(s);
 
   // Draw lead indicators if openpilot is handling longitudinal
+  bool lead_drawn = false;
   if (s->scene.longitudinal_control) {
     auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[0];
     auto lead_two = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[1];
-    bool lead_drawn = false;
     if (lead_one.getProb() > .5) {
       lead_drawn = true;
       draw_lead(s, lead_one.getX()[0], lead_one.getV()[0], s->scene.lead_vertices[0], true, false);
@@ -511,12 +688,14 @@ static void ui_draw_world(UIState *s) {
       draw_lead(s, lead_two.getX()[0], lead_two.getV()[0], s->scene.lead_vertices[1], lead_one.getProb() <= .5, false);
     }
     for (int i = 0; i < 2 && !lead_drawn; ++i){
-      if (s->scene.lead_data[i].getStatus() && s->scene.lead_data[i].getDRel() > 120.){
+      if (s->scene.lead_data[i].getStatus() && s->scene.lead_data[i].getDRel() > 60.){
         lead_drawn = true;
         draw_lead(s, s->scene.lead_data[i].getDRel(), s->scene.lead_data[i].getVRel(), s->scene.lead_vertices[i], true, true);
       }
     }
   }
+  draw_other_leads(s, lead_drawn);
+  draw_adjacent_lead_speeds(s, lead_drawn);
   nvgResetScissor(s->vg);
 }
 
@@ -524,14 +703,15 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   const int SET_SPEED_NA = 255;
   float maxspeed = (*s->sm)["controlsState"].getControlsState().getVCruise();
   const Rect rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
+  auto const & bg_colors_ = (s->scene.alt_engage_color_enabled ? alt_bg_colors : bg_colors);
   if (s->scene.one_pedal_fade > 0.){
     NVGcolor nvg_color;
     if(s->status == UIStatus::STATUS_DISENGAGED){
-          const QColor &color = bg_colors[UIStatus::STATUS_DISENGAGED];
+          const QColor &color = bg_colors_[UIStatus::STATUS_DISENGAGED];
           nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
         }
     else if (s->scene.car_state.getOnePedalModeActive()){
-      const QColor &color = bg_colors[s->scene.car_state.getOnePedalBrakeMode() + 1];
+      const QColor &color = bg_colors_[s->scene.car_state.getOnePedalBrakeMode() + 1];
       nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
     }
     else {
@@ -551,7 +731,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
       nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(int(s->scene.one_pedal_fade * 255.)));
       nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
       nvgFill(s->vg);
-      nvgStrokeWidth(s->vg, 6);
+      nvgStrokeWidth(s->vg, 7);
       nvgStroke(s->vg);
     }
   }
@@ -657,9 +837,9 @@ static void ui_draw_measures(UIState *s){
     const int slots_y_rng = slot_y_rng * (scene.measure_num_rows <= scene.measure_max_rows ? scene.measure_num_rows : scene.measure_max_rows);
     const int slots_y_min = y_mid - (slots_y_rng / 2);
   
-    NVGcolor default_name_color = nvgRGBA(255, 255, 255, 200);
-    NVGcolor default_unit_color = nvgRGBA(255, 255, 255, 200);
-    NVGcolor default_val_color = nvgRGBA(255, 255, 255, 200);
+    NVGcolor default_name_color = COLOR_WHITE_ALPHA(200);
+    NVGcolor default_unit_color = COLOR_WHITE_ALPHA(200);
+    NVGcolor default_val_color = COLOR_WHITE_ALPHA(200);
     int default_val_font_size = 78. * slot_aspect_ratio_ratio;
     int default_name_font_size = 32. * (slot_y_rng_orig > 1. ? 0.9 * slot_aspect_ratio_ratio : 1.);
     int default_unit_font_size = 38. * slot_aspect_ratio_ratio;
@@ -678,14 +858,14 @@ static void ui_draw_measures(UIState *s){
     nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, scene.measure_slots_rect.x, scene.measure_slots_rect.y, scene.measure_slots_rect.w, scene.measure_slots_rect.h, 20);
     if (QUIState::ui_state.scene.lastTime - QUIState::ui_state.scene.measures_last_tap_t > QUIState::ui_state.scene.measures_touch_timeout){
-      nvgStrokeColor(s->vg, nvgRGBA(200,200,200,200));
+      nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(160));
     }
     else{
       nvgStrokeColor(s->vg, COLOR_GRACE_BLUE_ALPHA(200));
     }
     nvgStrokeWidth(s->vg, 6);
     nvgStroke(s->vg);
-    nvgFillColor(s->vg, nvgRGBA(0,0,0,100));
+    nvgFillColor(s->vg, COLOR_BLACK_ALPHA(100));
     nvgFill(s->vg);
 
     char const * deg = Hardware::EON() ? "°" : "°";
@@ -1073,6 +1253,20 @@ static void ui_draw_measures(UIState *s){
             snprintf(unit, sizeof(unit), "kN");
             break;}
 
+          case UIMeasure::EV_FORCE:
+            {
+            snprintf(name, sizeof(name), "EV FRC");
+            float v = scene.car_state.getEvForce();
+            v /= 1e3;
+            if (fabs(v) > 10.){
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            else {
+              snprintf(val, sizeof(val), "%.1f", v);
+            }
+            snprintf(unit, sizeof(unit), "kN");
+            break;}
+
           case UIMeasure::REGEN_FORCE:
             {
             snprintf(name, sizeof(name), "REGEN FRC");
@@ -1105,6 +1299,20 @@ static void ui_draw_measures(UIState *s){
             {
             snprintf(name, sizeof(name), "ACCEL POW");
             float v = scene.car_state.getAccelPower();
+            v /= 1e3;
+            if (fabs(v) > 10.){
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            else {
+              snprintf(val, sizeof(val), "%.1f", v);
+            }
+            snprintf(unit, sizeof(unit), "kW");
+            break;}
+
+          case UIMeasure::EV_POWER:
+            {
+            snprintf(name, sizeof(name), "EV POW");
+            float v = scene.car_state.getEvPower();
             v /= 1e3;
             if (fabs(v) > 10.){
               snprintf(val, sizeof(val), "%.0f", v);
@@ -1177,6 +1385,21 @@ static void ui_draw_measures(UIState *s){
             {
             snprintf(name, sizeof(name), "ACCEL POW");
             float v = scene.car_state.getAccelPower();
+            v /= 1e3;
+            v *= 1.34;
+            if (fabs(v) > 10.){
+              snprintf(val, sizeof(val), "%.0f", v);
+            }
+            else {
+              snprintf(val, sizeof(val), "%.1f", v);
+            }
+            snprintf(unit, sizeof(unit), "hp");
+            break;}
+
+          case UIMeasure::EV_POWER_HP:
+            {
+            snprintf(name, sizeof(name), "EV POW");
+            float v = scene.car_state.getEvPower();
             v /= 1e3;
             v *= 1.34;
             if (fabs(v) > 10.){
@@ -2338,7 +2561,8 @@ static void ui_draw_vision_event(UIState *s) {
     const int radius = 88;
     const int center_x = s->fb_w - radius - bdr_s * 2;
     const int center_y = radius  + (bdr_s * 1.5);
-    const QColor &color = bg_colors[(s->scene.car_state.getLkMode() ? s->status : UIStatus::STATUS_DISENGAGED)];
+    auto const & bg_colors_ = (s->scene.alt_engage_color_enabled ? alt_bg_colors : bg_colors);
+    const QColor &color = bg_colors_[(s->scene.car_state.getLkMode() ? s->status : UIStatus::STATUS_DISENGAGED)];
     NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), color.alpha());
   
     // draw circle behind wheel
@@ -2362,7 +2586,7 @@ static void ui_draw_vision_event(UIState *s) {
       nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(255));
       nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
       nvgFill(s->vg);
-      nvgStrokeWidth(s->vg, 6);
+      nvgStrokeWidth(s->vg, 7);
       nvgStroke(s->vg);
     }
     else if (s->scene.visionBrakingEnabled and s->scene.mapBrakingEnabled){
@@ -2372,7 +2596,7 @@ static void ui_draw_vision_event(UIState *s) {
       nvgStrokeColor(s->vg, s->scene.network_strength > 0 ? COLOR_GREEN_ALPHA(255) : COLOR_RED_ALPHA(255));
       nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
       nvgFill(s->vg);
-      nvgStrokeWidth(s->vg, 6);
+      nvgStrokeWidth(s->vg, 7);
       nvgStroke(s->vg);
     }
     
@@ -2439,27 +2663,45 @@ static void ui_draw_vision_power_meter(UIState *s) {
   if (s->scene.brake_indicator_enabled && s->scene.power_meter_mode < 2){
     const int w = s->fb_w * 3 / 128;
     const int x = s->fb_w * 121 / 128 - 6;
-    const int h = (s->scene.power_meter_mode == 0 ? 22 : 21) * s->fb_h / 32;
+    int alert_offset = (*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL
+                    ? s->fb_h * 7 / 32
+                     : (*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::MID
+                     ? s->fb_h * 6 / 16 : 0;
+    int h = (s->scene.power_meter_mode == 0 || alert_offset ? 22 : 21) * s->fb_h / 32 - 6;
+    h -= alert_offset;
     const int hu = h / 2;
     const int hl = h - hu;
-    const int y = (s->scene.power_meter_mode == 0 ? 30 : 29) * s->fb_h / 32;
+    int y = (s->scene.power_meter_mode == 0 || alert_offset ? 30 : 29) * s->fb_h / 32;
+    y -= alert_offset;
     const int y_mid = y - hl;
-    outer_rect = {x, y - h/2, 2 * w, h};
+    outer_rect = {x, y-h, 2 * w, h};
     s->scene.brake_touch_rect = outer_rect;
     const int y_offset = 2;
 
-    const int stroke_width = 6;
-
     int ipow = 0;
-    s->scene.power_cur[ipow++] = MAX(0., s->scene.car_state.getIcePower());
-    s->scene.power_cur[ipow++] = MAX(0., s->scene.car_state.getDrivePower() - s->scene.power_cur[0]);
-    s->scene.power_cur[ipow++] = MAX(0., s->scene.car_state.getBrakePower());
-    s->scene.power_cur[ipow++] = MAX(0., s->scene.car_state.getRegenPower());
+    float pow_cur[4];
+    pow_cur[ipow++] = MAX(0., s->scene.car_state.getIcePower());
+    pow_cur[ipow++] = MAX(0., s->scene.car_state.getEvPower());
+    pow_cur[ipow++] = MAX(0., s->scene.car_state.getBrakePower());
+    pow_cur[ipow++] = MAX(0., s->scene.car_state.getRegenPower());
+    float drag_power = s->scene.car_state.getDragPower() * 1e-3;
+    float rolling_resistance_power = s->scene.car_state.getRollingPower() * 1e-3;
+    float pitch_power = s->scene.car_state.getPitchPower() * 1e-3;
     for (ipow = 0; ipow < 4; ++ipow){
-      if (s->scene.power_cur[ipow] > s->scene.power_max[ipow]){
-        s->scene.power_max[ipow] = s->scene.power_cur[ipow];
-      }
+      pow_cur[ipow] *= 1e-3; // convert from W to kW
+      s->scene.power_cur[ipow] = s->scene.power_meter_ema_k * pow_cur[ipow] + (1. - s->scene.power_meter_ema_k) * s->scene.power_cur[ipow];
     }
+
+    const int inner_fill_alpha = 200;
+    const int outer_fill_alpha = 20;
+    const int rect_r = 10;
+
+    // draw background
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, outer_rect.x, outer_rect.y, outer_rect.w, outer_rect.h, rect_r);
+    nvgFillColor(s->vg, COLOR_BLACK_ALPHA(100)); // blue 
+    nvgFill(s->vg);
+
 
     float pow_rel, pow_rel_max;
     int hi, wi;
@@ -2473,16 +2715,41 @@ static void ui_draw_vision_power_meter(UIState *s) {
       // inner bar
       nvgBeginPath(s->vg);
       nvgRect(s->vg, xi, y_mid - hi - y_offset, wi, hi);
-      nvgFillColor(s->vg, nvgRGBA(249,240,1,200)); // yellow
+      nvgFillColor(s->vg, COLOR_GRACE_BLUE_ALPHA(inner_fill_alpha)); // blue 
       nvgFill(s->vg);
       // outer box for bar
       nvgBeginPath(s->vg);
-      nvgRect(s->vg, xi, y_mid - hu - y_offset, wi, hu);
-      nvgFillColor(s->vg, nvgRGBA(249,240,1,20 + 60 * int(pow_rel > 0.)));
+      nvgRoundedRect(s->vg, xi, y_mid - hu - y_offset, wi, hu, rect_r);
+      nvgFillColor(s->vg, COLOR_GRACE_BLUE_ALPHA(outer_fill_alpha));
       nvgFill(s->vg);
-      nvgStrokeColor(s->vg, nvgRGBA(249,240,1,20 + 120 * int(pow_rel > 0.)));
-      nvgStrokeWidth(s->vg, stroke_width + int(MIN(pow_rel * 3., 1.) * 3.));
-      nvgStroke(s->vg);
+
+      // add lines to indicate drag and rolling resistance losses
+      if (pow_rel > 0.){
+        int h_drag = hu * drag_power / s->scene.power_max[1];
+        int h_rr = h_drag + hu * rolling_resistance_power / s->scene.power_max[1];
+        int h_pitch = h_rr + hu * pitch_power / s->scene.power_max[1];
+        nvgBeginPath(s->vg);
+        nvgRect(s->vg, xi+2, y_mid - h_rr - h_pitch / 2, wi-4, h_pitch);
+        nvgFillColor(s->vg, nvgRGBA(0, 140, 255, inner_fill_alpha/2));
+        nvgFill(s->vg);
+        nvgStrokeWidth(s->vg, 5);
+        nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
+        nvgStroke(s->vg);
+        nvgBeginPath(s->vg);
+        nvgRect(s->vg, xi+2, y_mid - h_drag - h_rr / 2, wi-4, h_rr);
+        nvgFillColor(s->vg, nvgRGBA(0, 180, 255, inner_fill_alpha/2));
+        nvgFill(s->vg);
+        nvgStrokeWidth(s->vg, 5);
+        nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
+        nvgStroke(s->vg);
+        nvgBeginPath(s->vg);
+        nvgRect(s->vg, xi+2, y_mid - h_drag / 2, wi-4, h_drag);
+        nvgFillColor(s->vg, nvgRGBA(0, 230, 255, inner_fill_alpha/2));
+        nvgFill(s->vg);    
+        nvgStrokeWidth(s->vg, 5);
+        nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
+        nvgStroke(s->vg);
+      }
 
       xi += wi;
       pow_rel_max = MAX(pow_rel, pow_rel_max);
@@ -2491,67 +2758,110 @@ static void ui_draw_vision_power_meter(UIState *s) {
     if (!s->scene.car_is_ev || s->scene.car_state.getEngineRPM() > 0){
       // ice power
       pow_rel = s->scene.power_cur[0] / s->scene.power_max[0];
-      hi = hu * pow_rel;
+      int hu_ice = (s->scene.car_is_ev ? int(float(hu) * s->scene.power_max[0] / s->scene.power_max[1]) : hu);
+      hi = hu_ice * pow_rel;
       wi = (s->scene.car_is_ev ? 1 : 2) * w;
 
       // inner bar
       nvgBeginPath(s->vg);
       nvgRect(s->vg, xi, y_mid - hi - y_offset, wi, hi);
-      nvgFillColor(s->vg, nvgRGBA(33,55,253,200)); // blue 
+      nvgFillColor(s->vg, nvgRGBA(249,240,1,inner_fill_alpha)); // yellow
       nvgFill(s->vg);
       // outer box for bar
       nvgBeginPath(s->vg);
-      nvgRect(s->vg, xi, y_mid - hu - y_offset, wi, hu);
-      nvgFillColor(s->vg, nvgRGBA(33,55,253,20 + 60 * int(pow_rel > 0.)));
+      nvgRoundedRect(s->vg, xi, y_mid - hu_ice - y_offset, wi, hu_ice, rect_r);
+      nvgFillColor(s->vg, nvgRGBA(249,240,1,outer_fill_alpha));
       nvgFill(s->vg);
-      nvgStrokeColor(s->vg, nvgRGBA(33,55,253,20 + 120 * int(pow_rel > 0.)));
-      nvgStrokeWidth(s->vg, stroke_width + 3 * int(pow_rel > 0.));
-      nvgStroke(s->vg);
       pow_rel_max = MAX(pow_rel, pow_rel_max);
+
+            // add lines to indicate drag and rolling resistance losses
+      if (pow_rel > 0.){
+        int h_drag = hu_ice * drag_power / s->scene.power_max[0];
+        int h_rr = h_drag + hu_ice * rolling_resistance_power / s->scene.power_max[0];
+        int h_pitch = h_rr + hu * pitch_power / s->scene.power_max[0];
+        nvgBeginPath(s->vg);
+        nvgRect(s->vg, xi+2, y_mid - h_rr - h_pitch / 2, wi-4, h_pitch);
+        nvgFillColor(s->vg, nvgRGBA(249,240,100,inner_fill_alpha/2));
+        nvgFill(s->vg);
+        nvgStrokeWidth(s->vg, 5);
+        nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
+        nvgStroke(s->vg);
+        nvgBeginPath(s->vg);
+        nvgRect(s->vg, xi+2, y_mid - h_drag - h_rr / 2, wi-4, h_rr);
+        nvgFillColor(s->vg, nvgRGBA(249,240,150,inner_fill_alpha/2));
+        nvgFill(s->vg);
+        nvgStrokeWidth(s->vg, 5);
+        nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
+        nvgStroke(s->vg);
+        nvgBeginPath(s->vg);
+        nvgRect(s->vg, xi+2, y_mid - h_drag / 2, wi-4, h_drag);
+        nvgFillColor(s->vg, nvgRGBA(249,240,200,inner_fill_alpha/2));
+        nvgFill(s->vg);    
+        nvgStrokeWidth(s->vg, 5);
+        nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
+        nvgStroke(s->vg);
+      }
     }
-    
+
 
     // regen/engine braking power
     pow_rel = s->scene.power_cur[3] / s->scene.power_max[3];
-    hi = hu * pow_rel;
+    hi = hl * pow_rel;
     wi = w;
     xi = x;
 
     // inner bar
     nvgBeginPath(s->vg);
     nvgRect(s->vg, xi, y_mid + y_offset, wi, hi);
-    nvgFillColor(s->vg, nvgRGBA(0,230,27,200)); // green
+    nvgFillColor(s->vg, nvgRGBA(0,230,27,inner_fill_alpha)); // green
     nvgFill(s->vg);
     // outer box for bar
     nvgBeginPath(s->vg);
-    nvgRect(s->vg, xi, y_mid + y_offset, wi, hl);
-    nvgFillColor(s->vg, nvgRGBA(0,230,27,20 + 60 * int(pow_rel > 0.)));
+    nvgRoundedRect(s->vg, xi, y_mid + y_offset, wi, hl, rect_r);
+    nvgFillColor(s->vg, nvgRGBA(0,230,27,outer_fill_alpha));
     nvgFill(s->vg);
-    nvgStrokeColor(s->vg, nvgRGBA(0,230,27,20 + 120 * int(pow_rel > 0.)));
-    nvgStrokeWidth(s->vg, stroke_width + 3 * int(pow_rel > 0.));
-    nvgStroke(s->vg);
 
     pow_rel_max = MAX(pow_rel, pow_rel_max);
+
+
+    // draw outer border here so that brakes can overwrite it
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, outer_rect.x, outer_rect.y, outer_rect.w, outer_rect.h, rect_r);
+    nvgStrokeWidth(s->vg, 5);
+    nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(160));
+    nvgStroke(s->vg);
     
     // brake power
-    pow_rel = (s->scene.brake_percent >= 51 ? float(s->scene.brake_percent - 51) * 0.02 : s->scene.power_cur[2] / s->scene.power_max[2]);
-    hi = hu * pow_rel;
+    pow_rel = (s->scene.brake_percent >= 51 ? float(s->scene.brake_percent - 51) * 0.02 : 0.);
+    int pow_rel2 = s->scene.power_cur[2] / s->scene.power_max[2];
+    if (pow_rel2 > pow_rel){
+      pow_rel = pow_rel2;
+    }
+    hi = hl * pow_rel;
     wi = w;
     xi += w;
 
     // inner bar
     nvgBeginPath(s->vg);
     nvgRect(s->vg, xi, y_mid + y_offset, wi, hi);
-    nvgFillColor(s->vg, nvgRGBA(255,21,0,200)); // red
+    nvgFillColor(s->vg, nvgRGBA(255,21,0,inner_fill_alpha)); // red
     nvgFill(s->vg);
     // outer box for bar
     nvgBeginPath(s->vg);
-    nvgRect(s->vg, xi, y_mid + y_offset, wi, hl);
-    nvgFillColor(s->vg, nvgRGBA(255,21,0,20 + 60 * int(pow_rel > 0.)));
+    nvgRoundedRect(s->vg, xi, y_mid + y_offset, wi, hl, rect_r);
+    nvgFillColor(s->vg, nvgRGBA(255,21,0,outer_fill_alpha + int(pow_rel > 0.) * 40.));
     nvgFill(s->vg);
-    nvgStrokeColor(s->vg, nvgRGBA(255,21,0, 20 + 120 * int(pow_rel > 0.)));
-    nvgStrokeWidth(s->vg, stroke_width + 3 * int(pow_rel > 0.));
-    nvgStroke(s->vg);
+    if (pow_rel > 0.){
+      nvgStrokeWidth(s->vg, 5);
+      nvgStrokeColor(s->vg, nvgRGBA(255,21,0,180));
+      nvgStroke(s->vg);
+    }
+
+    // middle bar between +/- power
+    nvgBeginPath(s->vg);
+    nvgRect(s->vg, outer_rect.x, y_mid-8, outer_rect.w, 16);
+    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+    nvgFill(s->vg);
 
     pow_rel_max = MAX(pow_rel, pow_rel_max);
 
@@ -2559,7 +2869,7 @@ static void ui_draw_vision_power_meter(UIState *s) {
 
 
     // number at bottom
-    if (s->scene.power_meter_mode == 1){
+    if (s->scene.power_meter_mode == 1 && !alert_offset){
       char val[16], unit[8];
       if (s->scene.car_is_ev){
         float batt_pow = -s->scene.car_state.getHvbWattage();
@@ -2567,6 +2877,8 @@ static void ui_draw_vision_power_meter(UIState *s) {
          pow = batt_pow;
         }
       }
+      s->scene.power_meter_pow = s->scene.power_meter_ema_k * pow + (1. - s->scene.power_meter_ema_k) * pow;
+      pow = s->scene.power_meter_pow;
       pow *= 1e-3;
       if (!s->scene.power_meter_metric){
         pow *= 1.34; // kW to hp
@@ -2575,29 +2887,9 @@ static void ui_draw_vision_power_meter(UIState *s) {
       else {
         snprintf(unit, sizeof(unit), "kW"); 
       }
-      if (s->scene.car_state.getVEgo() < 0.1){
-        nvgFillColor(s->vg, COLOR_WHITE_ALPHA(180));
-      }
-      else if (pow >= 0.1){
-        float f = s->scene.power_cur[1] / (s->scene.power_cur[0] + s->scene.power_cur[1]);
-        int r = 1 * f + 33 * (1 - f),
-            g = 249 * f + 55 * (1 - f),
-            b = 30 * f + 253 * (1 - f);
-        nvgFillColor(s->vg, nvgRGBA(r,g,b,180));
-      }
-      else if (pow <= -0.1){
-        float f = s->scene.power_cur[3] / (s->scene.power_cur[3] + s->scene.power_cur[2]);
-        int r = 0 * f + 255 * (1 - f),
-            g = 135 * f + 21 * (1 - f),
-            b = 7 * f + 0 * (1 - f);
-        nvgFillColor(s->vg, nvgRGBA(r,g,b,180));
-      }
-      else{
-        nvgFillColor(s->vg, COLOR_WHITE_ALPHA(180));
-        pow = 0.;
-      }
-      nvgFontFace(s->vg, (pow < 0 ? "sans-bold" : "sans-semibold"));
-      snprintf(val, sizeof(val), (abs(pow) >= 10 ? "%.0f%s" : "%.1f%s"), abs(pow), unit);
+      nvgFillColor(s->vg, COLOR_WHITE_ALPHA(180));
+      nvgFontFace(s->vg, "sans-semibold");
+      snprintf(val, sizeof(val), (abs(pow) >= 10 ? "%.0f%s" : "%.1f%s"), pow, unit);
       nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_TOP);
       nvgFontSize(s->vg, 100);
       nvgText(s->vg, outer_rect.right(), y + 5,val,NULL);
@@ -2716,7 +3008,7 @@ static void draw_lane_pos_buttons(UIState *s) {
     // left button
     s->scene.lane_pos_left_touch_rect = {left_x - radius, y - radius, 2 * radius, 2 * radius};
     int radius_inner = 0;
-    if (s->scene.lane_pos == 1){
+    if (s->scene.lane_pos == 1 && s->scene.lateral_plan.getLanePosition() == LanePosition::LEFT){
       radius_inner = s->scene.auto_lane_pos_active ? radius : int(float(s->scene.lane_pos_timeout_dist - s->scene.lane_pos_dist_since_set) / float(s->scene.lane_pos_timeout_dist) * float(radius));
       if (radius_inner < 1){
         radius_inner = 1;
@@ -2731,7 +3023,7 @@ static void draw_lane_pos_buttons(UIState *s) {
       ui_draw_circle_image(s, left_x, y, radius, "lane_pos_left", COLOR_BLACK_ALPHA(80), 0.4);
     }
     
-    if (s->scene.lane_pos == 1 || s->scene.auto_lane_pos_active){
+    if ((s->scene.lane_pos == 1 && s->scene.lateral_plan.getLanePosition() == LanePosition::LEFT) || s->scene.auto_lane_pos_active){
       // outline of button when active
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, left_x - radius, y - radius, 2 * radius, 2 * radius, radius);
@@ -2745,7 +3037,7 @@ static void draw_lane_pos_buttons(UIState *s) {
     // right button
     s->scene.lane_pos_right_touch_rect = {right_x - radius, y - radius, 2 * radius, 2 * radius};
     radius_inner = 0;
-    if (s->scene.lane_pos == -1){
+    if (s->scene.lane_pos == -1 && s->scene.lateral_plan.getLanePosition() == LanePosition::RIGHT){
       radius_inner = s->scene.auto_lane_pos_active ? radius : int(float(s->scene.lane_pos_timeout_dist - s->scene.lane_pos_dist_since_set) / float(s->scene.lane_pos_timeout_dist) * float(radius));
       if (radius_inner < 1){
         radius_inner = 1;
@@ -2759,7 +3051,7 @@ static void draw_lane_pos_buttons(UIState *s) {
     else{
       ui_draw_circle_image(s, right_x, y, radius, "lane_pos_right", COLOR_BLACK_ALPHA(80), 0.4);
     }
-    if (s->scene.lane_pos == -1 || s->scene.auto_lane_pos_active){
+    if ((s->scene.lane_pos == -1 && s->scene.lateral_plan.getLanePosition() == LanePosition::RIGHT) || s->scene.auto_lane_pos_active){
       // outline of button when active
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, right_x - radius, y - radius, 2 * radius, 2 * radius, radius);
@@ -2820,20 +3112,20 @@ static void draw_accel_mode_button(UIState *s) {
       nvgText(s->vg,btn_xc1,btn_yc-20,"Stock",NULL);
       nvgText(s->vg,btn_xc1,btn_yc+20,"accel",NULL);
     } else if (s->scene.accel_mode == 1) { // sport
-      nvgStrokeColor(s->vg, nvgRGBA(142,0,11,255));
+      nvgStrokeColor(s->vg, interp_alert_color(2.,255));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
-      NVGcolor fillColor = nvgRGBA(142,0,11,80);
+      NVGcolor fillColor = interp_alert_color(2.,80);
       nvgFillColor(s->vg, fillColor);
       nvgFill(s->vg);
       nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
       nvgText(s->vg,btn_xc1,btn_yc-20,"Sport",NULL);
       nvgText(s->vg,btn_xc1,btn_yc+20,"accel",NULL);
     } else if (s->scene.accel_mode == 2) { // eco
-      nvgStrokeColor(s->vg, nvgRGBA(74,132,23,255));
+      nvgStrokeColor(s->vg, interp_alert_color(-1.,255));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
-      NVGcolor fillColor = nvgRGBA(74,132,23,80);
+      NVGcolor fillColor = interp_alert_color(-1.,80);
       nvgFillColor(s->vg, fillColor);
       nvgFill(s->vg);
       nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
@@ -2885,24 +3177,24 @@ static void draw_dynamic_follow_mode_button(UIState *s) {
     // nvgRoundedRect(s->vg, btn_x1, btn_y, btn_w, btn_h, 100);
     const bool df_active = s->scene.dynamic_follow_active && !(s->scene.car_state.getOnePedalModeActive() || s->scene.car_state.getCoastOnePedalModeActive());
     if (df_active){
-      int r, b, g;
-      int bg_r, bg_b, bg_g;
+      int r, g, b;
+      int bg_r, bg_g, bg_b;
       for (int i = 1; i < 3; ++i){
         if (df_level <= i){
           float c = float(i) - df_level;
           r = float(s->scene.dynamic_follow_r[i-1]) * c + float(s->scene.dynamic_follow_r[i]) * (1. - c);
-          b = float(s->scene.dynamic_follow_b[i-1]) * c + float(s->scene.dynamic_follow_b[i]) * (1. - c);
           g = float(s->scene.dynamic_follow_g[i-1]) * c + float(s->scene.dynamic_follow_g[i]) * (1. - c);
+          b = float(s->scene.dynamic_follow_b[i-1]) * c + float(s->scene.dynamic_follow_b[i]) * (1. - c);
           bg_r = float(s->scene.dynamic_follow_bg_r[i-1]) * c + float(s->scene.dynamic_follow_bg_r[i]) * (1. - c);
-          bg_b = float(s->scene.dynamic_follow_bg_b[i-1]) * c + float(s->scene.dynamic_follow_bg_b[i]) * (1. - c);
           bg_g = float(s->scene.dynamic_follow_bg_g[i-1]) * c + float(s->scene.dynamic_follow_bg_g[i]) * (1. - c);
+          bg_b = float(s->scene.dynamic_follow_bg_b[i-1]) * c + float(s->scene.dynamic_follow_bg_b[i]) * (1. - c);
           break;
         }
       }
-      nvgStrokeColor(s->vg, nvgRGBA(r,b,g,255));
+      nvgStrokeColor(s->vg, nvgRGBA(r,g,b,255));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
-      nvgFillColor(s->vg, nvgRGBA(bg_r,bg_b,bg_g,80));
+      nvgFillColor(s->vg, nvgRGBA(bg_r,bg_g,bg_b,80));
       nvgFill(s->vg);
     } else{
       nvgStrokeColor(s->vg, nvgRGBA(0,0,0,80));
@@ -2967,30 +3259,30 @@ static void draw_laneless_button(UIState *s) {
     nvgFontSize(s->vg, 54);
 
     if (s->scene.laneless_mode == 0) {
-      nvgStrokeColor(s->vg, nvgRGBA(0,125,0,255));
+      nvgStrokeColor(s->vg, (s->scene.alt_engage_color_enabled ? interp_alert_color(0.5,255): nvgRGBA(0,125,0,255)));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
-      NVGcolor fillColor = nvgRGBA(0,125,0,80);
+      NVGcolor fillColor = (s->scene.alt_engage_color_enabled ? interp_alert_color(0.5,255): nvgRGBA(0,125,0,80));
       nvgFillColor(s->vg, fillColor);
       nvgFill(s->vg);
       nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
       nvgText(s->vg,btn_xc1,btn_yc-20,"Lane",NULL);
       nvgText(s->vg,btn_xc1,btn_yc+20,"only",NULL);
     } else if (s->scene.laneless_mode == 1) {
-      nvgStrokeColor(s->vg, nvgRGBA(0,100,255,255));
+      nvgStrokeColor(s->vg, (s->scene.alt_engage_color_enabled ? interp_alert_color(-1.,255): nvgRGBA(0,100,255,255)));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
-      NVGcolor fillColor = nvgRGBA(0,100,255,80);
+      NVGcolor fillColor = (s->scene.alt_engage_color_enabled ? interp_alert_color(-1.,255): nvgRGBA(0,100,255,255));
       nvgFillColor(s->vg, fillColor);
       nvgFill(s->vg);
       nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
       nvgText(s->vg,btn_xc1,btn_yc-20,"Lane",NULL);
       nvgText(s->vg,btn_xc1,btn_yc+20,"less",NULL);
     } else if (s->scene.laneless_mode == 2) {
-      nvgStrokeColor(s->vg, nvgRGBA(125,0,125,255));
+      nvgStrokeColor(s->vg, nvgRGBA(200,200,200,255));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
-      NVGcolor fillColor = nvgRGBA(125,0,125,80);
+      NVGcolor fillColor = nvgRGBA(0,0,0,80);
       nvgFillColor(s->vg, fillColor);
       nvgFill(s->vg);
       nvgFillColor(s->vg, nvgRGBA(255,255,255,200));

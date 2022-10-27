@@ -52,14 +52,14 @@ class LatControlTorque(LatControl):
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       actual_lateral_accel = actual_curvature * CS.vEgo**2
 
-      low_speed_factor = interp(CS.vEgo, [0., 25.], [180., 100.])
+      low_speed_factor = interp(CS.vEgo, [10., 25.], [80., 50.])
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
       pid_log.error = error
       
       ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
-      ff_roll_a = 0.8
+      ff_roll_a = 0.0
       ff = self.get_steer_feedforward(desired_lateral_accel - ff_roll_a * ff_roll, CS.vEgo) - (1. - ff_roll_a) * ff_roll
       friction_compensation = interp(desired_lateral_jerk, [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], [-self.friction, self.friction])
       ff += friction_compensation

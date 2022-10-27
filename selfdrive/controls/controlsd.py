@@ -687,7 +687,7 @@ class Controls:
     CC.onePedalI = float(self.CI.CC.one_pedal_pid.i)
     CC.onePedalD = float(self.CI.CC.one_pedal_pid.d)
     CC.onePedalF = float(self.CI.CC.one_pedal_pid.f)
-
+    
     CC.hudControl.setSpeed = float(self.v_cruise_kph) * CV.KPH_TO_MS
     CC.hudControl.speedVisible = self.enabled
     CC.hudControl.lanesVisible = self.enabled

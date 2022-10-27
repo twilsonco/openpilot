@@ -98,7 +98,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_steer_feedforward_volt_torque(desired_lateral_accel, v_ego):
     ANGLE_COEF = 0.08617848
-    ANGLE_COEF2 = 0.12568428
+    ANGLE_COEF2 = 0.21
     ANGLE_OFFSET = 0.00205026
     SPEED_OFFSET = -3.48009247
     SIGMOID_COEF_RIGHT = 0.56664089
@@ -204,16 +204,16 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.469 # Stock Michelin Energy Saver A/S, LiveParameters
       ret.steerRatioRear = 0.
       ret.centerToFront = 0.45 * ret.wheelbase # from Volt Gen 1
-      ret.steerActuatorDelay = 0.18
+      ret.steerActuatorDelay = 0.22
       if (Params().get_bool("EnableTorqueControl")):
         max_lateral_accel = 3.0
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 1.8 / max_lateral_accel
-        ret.lateralTuning.torque.ki = 0.45 / max_lateral_accel
-        ret.lateralTuning.torque.kd = 6.0 / max_lateral_accel
+        ret.lateralTuning.torque.kp = 0.85
+        ret.lateralTuning.torque.ki = 0.15
+        ret.lateralTuning.torque.kd = 2.2
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
-        ret.lateralTuning.torque.friction = 0.005
+        ret.lateralTuning.torque.friction = 0.02
       else:
         ret.lateralTuning.pid.kpBP = [0., 40.]
         ret.lateralTuning.pid.kpV = [0., .16]
@@ -226,11 +226,11 @@ class CarInterface(CarInterfaceBase):
 
       # Only tuned to reduce oscillations. TODO.
       ret.longitudinalTuning.kpBP = [5., 15., 35.]
-      ret.longitudinalTuning.kpV = [0.9, .9, 0.8]
+      ret.longitudinalTuning.kpV = [0.8, .9, 0.8]
       ret.longitudinalTuning.kiBP = [5., 15., 35.]
-      ret.longitudinalTuning.kiV = [0.14, 0.13, 0.13]
+      ret.longitudinalTuning.kiV = [0.08, 0.13, 0.13]
       ret.longitudinalTuning.kdBP = [5., 25.]
-      ret.longitudinalTuning.kdV = [0.4, 0.0]
+      ret.longitudinalTuning.kdV = [0.3, 0.0]
       ret.stoppingDecelRate = 0.2 # brake_travel/s while trying to stop
 
     elif candidate == CAR.MALIBU:

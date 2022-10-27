@@ -6,6 +6,7 @@
 #include <string>
 #include <deque>
 #include <vector>
+#include <set>
 
 #include <QObject>
 #include <QTimer>
@@ -38,8 +39,8 @@
 #define COLOR_GREEN_ALPHA(x) nvgRGBA(0, 255, 0, x)
 #define COLOR_BLUE nvgRGBA(0, 0, 255, 255)
 #define COLOR_BLUE_ALPHA(x) nvgRGBA(0, 0, 255, x)
-#define COLOR_GRACE_BLUE nvgRGBA(0, 100, 255, 255)
-#define COLOR_GRACE_BLUE_ALPHA(x) nvgRGBA(0, 100, 255, x)
+#define COLOR_GRACE_BLUE nvgRGBA(0,4,167, 255)
+#define COLOR_GRACE_BLUE_ALPHA(x) nvgRGBA(0,4,167, x)
 #define COLOR_ORANGE nvgRGBA(255, 175, 3, 255)
 #define COLOR_ORANGE_ALPHA(x) nvgRGBA(255, 175, 3, x)
 #define COLOR_YELLOW_ALPHA(x) nvgRGBA(218, 202, 37, x)
@@ -51,6 +52,9 @@
 #define CLIP(A,L,H) A < L ? L : (A > H ? H : A)
 
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
+typedef cereal::RadarState::LeadData::Reader LeadData;
+typedef cereal::LateralPlan::LaneTraffic LaneTraffic;
+typedef cereal::LateralPlan::LanePosition LanePosition;
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
@@ -60,11 +64,11 @@ const float ZOOM = Hardware::TICI() ? 2912.8 : 2138.5;
 const std::vector<std::string> ui_network_type = {
   "--",
   "WiFi",
-  "ETH",
   "2G",
   "3G",
   "LTE",
-  "5G"
+  "5G",
+  "ETH"
 };
   // above vector based on this cereal enum
   // enum NetworkType { 
@@ -135,12 +139,18 @@ const QColor bg_colors [] = {
   [STATUS_ALERT] = QColor(0xC9, 0x22, 0x31, 0xf1),
 };
 
+const QColor alt_bg_colors [] = {
+  [STATUS_DISENGAGED] =  QColor(0x00, 0x30, 0x4A, 0xc8),
+  [STATUS_ENGAGED] = QColor(0x00, 0x04, 0xA7, 0xf1),
+  [STATUS_WARNING] = QColor(0x6A, 0x00, 0x7E, 0xf1),
+  [STATUS_ALERT] = QColor(0x92, 0x00, 0x0D, 0xf1),
+};
+
 const QColor tcs_colors [] = {
   [int(cereal::LongitudinalPlan::VisionTurnControllerState::DISABLED)] =  QColor(0x0, 0x0, 0x0, 0xff),
   [int(cereal::LongitudinalPlan::VisionTurnControllerState::ENTERING)] = QColor(0xC9, 0x22, 0x31, 0xf1),
   [int(cereal::LongitudinalPlan::VisionTurnControllerState::TURNING)] = QColor(0xDA, 0x6F, 0x25, 0xf1),
-  [int(cereal::LongitudinalPlan::VisionTurnControllerState::LEAVING)
-  ] = QColor(0x17, 0x86, 0x44, 0xf1),
+  [int(cereal::LongitudinalPlan::VisionTurnControllerState::LEAVING)] = QColor(0x17, 0x86, 0x44, 0xf1),
 };
 
 typedef struct {
@@ -172,6 +182,9 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   ACCEL_FORCE,
   ACCEL_POWER,
   ACCEL_POWER_HP,
+  EV_FORCE,
+  EV_POWER,
+  EV_POWER_HP,
   REGEN_FORCE,
   REGEN_POWER,
   REGEN_POWER_HP,
@@ -251,7 +264,15 @@ typedef struct UIScene {
 
   bool lead_info_print_enabled;
   std::deque<int> lead_x_vals, lead_y_vals;
+  int lead_x, lead_y;
   int const lead_xy_num_vals = 5;
+
+  bool adjacent_paths_enabled;
+  bool adjacent_lead_info_print_enabled;
+  std::string adjacent_leads_left_str, adjacent_leads_right_str;
+  std::vector<std::string> adjacent_leads_center_strs;
+
+  LaneTraffic traffic_left, traffic_right;
 
   bool is_using_torque_control = false;
 
@@ -283,6 +304,7 @@ typedef struct UIScene {
   bool car_is_ev = false;
 
   bool color_path = false;
+  bool alt_engage_color_enabled = false;
   
   float screen_dim_modes_v[3] = {0.01, 0.3, 1.};
   int screen_dim_mode_max = 2;
@@ -299,11 +321,12 @@ typedef struct UIScene {
   int network_strength;
 
   std::vector<float> power_cur {0.,0.,0.,0.}, 
-      power_max {75., 111., 130.,  55.}; // [kW] starting upper limits for ICE, EV, brake, and regen power based on volt (volt has 149hp EV output, 101hp motor, a reported 55-60. Brake is based on volt braking at 3.5m/s^2 at 45mph. these go up if more power is observed
-  
+      power_max {75., 100., 100.,  55.}; // [kW] starting upper limits for ICE, EV, brake, and regen power based on volt (volt has 149hp EV output, 101hp motor, a reported 55-60 kW of regen capacity. Brake is based on volt braking at 3.5m/s^2 at 45mph. these go up if more power is observed
+  float power_meter_pow = 0;
   Rect power_meter_rect, power_meter_text_rect;
   int power_meter_mode = 0; // 0/1/2 for meter/meter+number/old style brake indicator
   bool power_meter_metric = true; // true/false for kW/hp power output
+  float power_meter_ema_k = 0.2;
 
   
 // measures
@@ -321,6 +344,26 @@ typedef struct UIScene {
   int measure_row_offset = 0;
   float measures_touch_timeout = 10.;
   float measures_last_tap_t = -measures_touch_timeout;
+  std::set<UIMeasure> EVMeasures = {
+    UIMeasure::EV_FORCE,
+    UIMeasure::EV_POWER,
+    UIMeasure::EV_POWER_HP,
+    UIMeasure::REGEN_FORCE,
+    UIMeasure::REGEN_POWER,
+    UIMeasure::REGEN_POWER_HP,
+    UIMeasure::HVB_VOLTAGE,
+    UIMeasure::HVB_CURRENT,
+    UIMeasure::HVB_WATTAGE,
+    UIMeasure::HVB_WATTVOLT,
+    UIMeasure::EV_EFF_NOW,
+    UIMeasure::EV_EFF_RECENT,
+    UIMeasure::EV_EFF_TRIP,
+    UIMeasure::EV_CONSUM_NOW,
+    UIMeasure::EV_CONSUM_RECENT,
+    UIMeasure::EV_CONSUM_TRIP,
+    UIMeasure::EV_BOTH_NOW,
+    UIMeasure::EV_OBSERVED_DRIVETRAIN_EFF
+  };
   
   Rect speed_rect;
   float road_roll, device_roll;
@@ -383,12 +426,12 @@ typedef struct UIScene {
   bool dynamic_follow_active;
   float dynamic_follow_level, dynamic_follow_level_ui, dynamic_follow_last_t;
   std::string dynamic_follow_strs[3] = {"Close","Med.","Far"};
-  int dynamic_follow_r[3] = {0, 157, 74};
-  int dynamic_follow_b[3] = {100, 157, 132};
-  int dynamic_follow_g[3] = {255, 157, 23};
-  int dynamic_follow_bg_r[3] = {0, 0, 74};
-  int dynamic_follow_bg_b[3] = {100, 0, 132};
-  int dynamic_follow_bg_g[3] = {255, 0, 23};
+  int dynamic_follow_r[3] = {201, 157, 0};
+  int dynamic_follow_g[3] = {34, 157, 4};
+  int dynamic_follow_b[3] = {49, 157, 196};
+  int dynamic_follow_bg_r[3] = {201, 0, 0};
+  int dynamic_follow_bg_g[3] = {34, 0, 4};
+  int dynamic_follow_bg_b[3] = {49, 0, 196};
   
   // one-pedal mode fading. maxspeed rect at -1, fades away by 0, and one-pedal icon fades in by 1
   float one_pedal_fade = -1., one_pedal_fade_last_t = 0.;
@@ -400,6 +443,7 @@ typedef struct UIScene {
   Rect laneless_btn_touch_rect;
 
   cereal::DeviceState::Reader deviceState;
+  cereal::RadarState::Reader radarState;
   cereal::RadarState::LeadData::Reader lead_data[2];
   cereal::CarState::Reader car_state;
   cereal::ControlsState::Reader controls_state;
@@ -415,10 +459,14 @@ typedef struct UIScene {
   line_vertices_data lane_line_vertices[4];
   line_vertices_data road_edge_vertices[2];
 
+  line_vertices_data lane_vertices_left, lane_vertices_right;
+
   bool dm_active, engageable;
 
   // lead
   vertex_data lead_vertices[2];
+  std::vector<vertex_data> lead_vertices_oncoming, lead_vertices_ongoing, lead_vertices_stopped;
+  std::vector<float> lead_distances_oncoming, lead_distances_ongoing, lead_distances_stopped;
 
   float light_sensor, accel_sensor, gyro_sensor;
   bool started, ignition, is_metric, longitudinal_control, end_to_end;

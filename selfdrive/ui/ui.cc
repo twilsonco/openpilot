@@ -36,14 +36,15 @@ static const float voacc_lead_min_laneline_prob = 0.6; // should match MIN_LANE_
 // If a < 0, interpolate that too based on bg color alpha, else pass through.
 NVGcolor interp_alert_color(float p, int a){
   char c1, c2;
+  auto const & bg_colors_ = (QUIState::ui_state.scene.alt_engage_color_enabled ? alt_bg_colors : bg_colors);
   if (p <= 0.){
-    return (a < 0 ? nvgRGBA(bg_colors[STATUS_ENGAGED].red(), 
-                            bg_colors[STATUS_ENGAGED].green(), 
-                            bg_colors[STATUS_ENGAGED].blue(), 
-                            bg_colors[STATUS_ENGAGED].alpha()) 
-                  : nvgRGBA(bg_colors[STATUS_ENGAGED].red(), 
-                            bg_colors[STATUS_ENGAGED].green(), 
-                            bg_colors[STATUS_ENGAGED].blue(), a));
+    return (a < 0 ? nvgRGBA(bg_colors_[STATUS_ENGAGED].red(), 
+                              bg_colors_[STATUS_ENGAGED].green(), 
+                              bg_colors_[STATUS_ENGAGED].blue(), 
+                              bg_colors_[STATUS_ENGAGED].alpha()) 
+                    : nvgRGBA(bg_colors_[STATUS_ENGAGED].red(), 
+                              bg_colors_[STATUS_ENGAGED].green(), 
+                              bg_colors_[STATUS_ENGAGED].blue(), a));
   }
   else if (p <= 0.5){
     c1 = STATUS_ENGAGED; // lower color index
@@ -55,24 +56,24 @@ NVGcolor interp_alert_color(float p, int a){
     c2 = STATUS_ALERT;
   }
   else{
-    return (a < 0 ? nvgRGBA(bg_colors[STATUS_ALERT].red(), 
-                            bg_colors[STATUS_ALERT].green(), 
-                            bg_colors[STATUS_ALERT].blue(), 
-                            bg_colors[STATUS_ALERT].alpha()) 
-                  : nvgRGBA(bg_colors[STATUS_ALERT].red(), 
-                            bg_colors[STATUS_ALERT].green(), 
-                            bg_colors[STATUS_ALERT].blue(), a));
+    return (a < 0 ? nvgRGBA(bg_colors_[STATUS_ALERT].red(), 
+                            bg_colors_[STATUS_ALERT].green(), 
+                            bg_colors_[STATUS_ALERT].blue(), 
+                            bg_colors_[STATUS_ALERT].alpha()) 
+                  : nvgRGBA(bg_colors_[STATUS_ALERT].red(), 
+                            bg_colors_[STATUS_ALERT].green(), 
+                            bg_colors_[STATUS_ALERT].blue(), a));
   }
   
   p *= 2.; // scale to 1
   
   int r, g, b;
   float complement = (1.f - p);
-  r = bg_colors[c1].red() * complement + bg_colors[c2].red() * p;
-  g = bg_colors[c1].green() * complement + bg_colors[c2].green() * p;
-  b = bg_colors[c1].blue() * complement + bg_colors[c2].blue() * p;
+  r = bg_colors_[c1].red() * complement + bg_colors_[c2].red() * p;
+  g = bg_colors_[c1].green() * complement + bg_colors_[c2].green() * p;
+  b = bg_colors_[c1].blue() * complement + bg_colors_[c2].blue() * p;
   if (a < 0){
-    a = bg_colors[c1].alpha() * complement + bg_colors[c2].alpha() * p;
+    a = bg_colors_[c1].alpha() * complement + bg_colors_[c2].alpha() * p;
   }
   
   NVGcolor out = nvgRGBA(r, g, b, a);
@@ -138,7 +139,7 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
   if (!lead_drawn){
     // draw VOACC leads
     for (int i = 0; i < 2; ++i) {
-      if (s->scene.lead_data[i].getStatus() && s->scene.lead_data[i].getDRel() >= 120.) {
+      if (s->scene.lead_data[i].getStatus() && s->scene.lead_data[i].getDRel() >= 60.) {
         int path_ind = get_path_length_idx(model_position, s->scene.lead_data[i].getDRel());
         float z = model_position.getZ()[path_ind];
         if (path_ind == TRAJECTORY_SIZE-1){
@@ -157,16 +158,42 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
       }
     }
   }
+  // all other leads
+  s->scene.lead_vertices_oncoming.clear();
+  s->scene.lead_vertices_ongoing.clear();
+  s->scene.lead_vertices_stopped.clear();
+  s->scene.lead_distances_oncoming.clear();
+  s->scene.lead_distances_ongoing.clear();
+  s->scene.lead_distances_stopped.clear();
+  for (auto const & rs : {s->scene.radarState.getLeadsLeft(), s->scene.radarState.getLeadsRight()}){
+    for (auto const & l : rs){
+      vertex_data vd;
+      float z = model_position.getZ()[get_path_length_idx(model_position, l.getDRel())];
+      calib_frame_to_full_frame(s, l.getDRel(), -l.getYRel(), z + 0.61, &vd);
+      if (l.getVLeadK() > 7.){
+        s->scene.lead_vertices_ongoing.push_back(vd);
+        s->scene.lead_distances_ongoing.push_back(l.getDRel());
+      }
+      else if (l.getVLeadK() < -7.){
+        s->scene.lead_vertices_oncoming.push_back(vd);
+        s->scene.lead_distances_oncoming.push_back(l.getDRel());
+      }
+      else{
+        s->scene.lead_vertices_stopped.push_back(vd);
+        s->scene.lead_distances_stopped.push_back(l.getDRel());
+      }
+    }
+  }
 }
 
 static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
-                             float y_off, float z_off, line_vertices_data *pvd, int max_idx, bool allow_invert=true) {
+                             float y_off, float z_off, line_vertices_data *pvd, int max_idx, bool allow_invert=true, float y_offset = 0.) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
   std::vector<vertex_data> left_points, right_points;
   for (int i = 0; i <= max_idx; i++) {
     vertex_data left, right;
-    bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, &left);
-    bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, &right);
+    bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off + y_offset, line_z[i] + z_off, &left);
+    bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off + y_offset, line_z[i] + z_off, &right);
     if (l && r) {
       // For wider lines the drawn polygon will "invert" when going over a hill and cause artifacts
       if (!allow_invert && left_points.size() && left.y > left_points.back().y) {
@@ -221,7 +248,19 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
   }
   max_idx = get_path_length_idx(model_position, max_distance);
-  update_line_data(s, model_position, scene.end_to_end ? 0.8 : 0.5, 1.22, &scene.track_vertices, max_idx, false);
+  update_line_data(s, model_position, scene.end_to_end ? 0.8 : 0.5, 1.32, &scene.track_vertices, max_idx, false);
+  max_idx = get_path_length_idx(model_position, MAX_DRAW_DISTANCE);
+  for (int i = 0; i < 2; ++i){
+    float k = (i == 0 ? -1.f : 1.f);
+    float lw = 0.45 * scene.lateralPlan.laneWidth;
+    auto & lane = (i == 0 ? scene.lane_vertices_left : scene.lane_vertices_right);
+    if (lane_line_probs[i+1] > 0.1){
+      update_line_data(s, lane_lines[i+1], lw, 0, &lane, max_idx, false, k * lw * 1.1);
+    }
+    else{
+      update_line_data(s, model_position, lw, 0, &lane, max_idx, false, k * lw * 2.2);
+    }
+  }
 }
 
 static void update_sockets(UIState *s) {
@@ -243,6 +282,8 @@ static void update_state(UIState *s) {
     scene.screen_dim_mode = std::stoi(Params().get("ScreenDimMode"));
     scene.lane_pos_enabled = Params().getBool("LanePositionEnabled");
     scene.lead_info_print_enabled = Params().getBool("PrintLeadInfo");
+    scene.adjacent_lead_info_print_enabled = Params().getBool("PrintAdjacentLeadSpeeds");
+    scene.adjacent_paths_enabled = Params().getBool("AdjacentPaths");
     scene.speed_limit_eu_style = int(Params().getBool("EUSpeedLimitStyle"));
     scene.show_debug_ui = Params().getBool("ShowDebugUI");
     scene.brake_indicator_enabled = Params().getBool("BrakeIndicator");
@@ -265,9 +306,25 @@ static void update_state(UIState *s) {
       float oldDist = std::stof(Params().get("EVConsumptionTripDistance"));
       if (oldDist > scene.ev_eff_total_dist){
         scene.ev_eff_total_dist = oldDist;
-        s->scene.ev_recip_eff_wa[1] = std::stof(Params().get("EVConsumption5Mi"));
-        s->scene.ev_eff_total_dist = oldDist;
-        s->scene.ev_eff_total_kWh = std::stof(Params().get("EVConsumptionTripkWh"));
+        scene.ev_recip_eff_wa[1] = std::stof(Params().get("EVConsumption5Mi"));
+        scene.ev_eff_total_dist = oldDist;
+        scene.ev_eff_total_kWh = std::stof(Params().get("EVConsumptionTripkWh"));
+      }
+    }
+    scene.car_is_ev = Params().getBool("CarIsEV");
+    if (s->sm->frame - scene.started_frame > 100 && s->sm->frame - scene.started_frame < 130 && !scene.car_is_ev){
+      for (int i = 0; i < scene.measure_max_num_slots; ++i){
+        bool metric_is_dup = false;
+        for (int j = 0; j < i && !metric_is_dup; ++j){
+          metric_is_dup = (scene.measure_slots[i] == scene.measure_slots[j]);
+        }
+        while (metric_is_dup || scene.EVMeasures.count(static_cast<UIMeasure>(scene.measure_slots[i]))){
+          scene.measure_slots[i] = (scene.measure_slots[i]+1) % scene.num_measures;
+          metric_is_dup = false;
+          for (int j = 0; j < i && !metric_is_dup; ++j){
+            metric_is_dup = (scene.measure_slots[i] == scene.measure_slots[j]);
+          }
+        }
       }
     }
   }
@@ -374,7 +431,11 @@ static void update_state(UIState *s) {
     // EV efficiency
     float cur_dist = std::abs(scene.car_state.getVEgo() * (t - scene.ev_eff_last_time));
 
-    scene.car_is_ev = scene.car_is_ev || scene.car_state.getHvbWattage() != 0.0;
+    bool car_is_ev = scene.car_state.getHvbWattage() != 0.0;
+    if (car_is_ev && !scene.car_is_ev){
+      Params().putBool("CarIsEV", true);
+    }
+    scene.car_is_ev = scene.car_is_ev || car_is_ev;
     
     scene.ev_eff_total_dist += cur_dist;
     float cur_kW = -scene.car_state.getHvbWattage() * 0.001;
@@ -419,15 +480,89 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("radarState")) {
     auto radar_state = sm["radarState"].getRadarState();
+    scene.radarState = radar_state;
     scene.lead_data[0] = radar_state.getLeadOne();
     scene.lead_data[1] = radar_state.getLeadTwo();
     scene.lead_v_rel = scene.lead_data[0].getVRel();
     scene.lead_d_rel = scene.lead_data[0].getDRel();
-    scene.lead_v = scene.lead_data[0].getVLead();
+    scene.lead_v = scene.lead_data[0].getVLeadK();
     scene.lead_status = scene.lead_data[0].getStatus();
     if (!scene.lead_status){
       scene.lead_x_vals.clear();
       scene.lead_y_vals.clear();
+    }
+    if (scene.adjacent_lead_info_print_enabled){
+      // left leads
+      {
+        auto leads = radar_state.getLeadsLeft();
+        std::vector<LeadData> leads_vec;
+        leads_vec.reserve(leads.size());
+        for (auto const & l : leads){
+          leads_vec.push_back(l);
+        }
+        std::sort(leads_vec.begin(), leads_vec.end(), [](LeadData const & a, LeadData const & b){return a.getVLat() > b.getVLat();});
+        scene.adjacent_leads_left_str = "";
+        char val[16];
+        int cnt = 0;
+        for (int i = 0; i < leads_vec.size(); ++i){
+          if (abs(leads_vec[i].getVLeadK()) > 3.){
+            if (cnt > 0){
+              scene.adjacent_leads_left_str += " ";
+            }
+            snprintf(val, sizeof(val), "%.0f", leads_vec[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
+            scene.adjacent_leads_left_str += val;
+            cnt++;
+          }
+        }
+      }
+      // right leads
+      {
+        auto leads = radar_state.getLeadsRight();
+        std::vector<LeadData> leads_vec;
+        leads_vec.reserve(leads.size());
+        for (auto const & l : leads){
+          leads_vec.push_back(l);
+        }
+        std::sort(leads_vec.begin(), leads_vec.end(), [](LeadData const & a, LeadData const & b){return a.getVLat() < b.getVLat();});
+        scene.adjacent_leads_right_str = "";
+        char val[16];
+        int cnt = 0;
+        for (int i = 0; i < leads_vec.size(); ++i){
+          if (abs(leads_vec[i].getVLeadK()) > 3.){
+            if (cnt > 0){
+              scene.adjacent_leads_right_str += " ";
+            }
+            snprintf(val, sizeof(val), "%.0f", leads_vec[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
+            scene.adjacent_leads_right_str += val;
+            cnt++;
+          }
+        }
+      }
+      // center leads
+      {
+        auto leads = radar_state.getLeadsCenter();
+        std::vector<LeadData> leads_vec;
+        leads_vec.reserve(leads.size());
+        for (auto const & l : leads){
+          leads_vec.push_back(l);
+        }
+        std::sort(leads_vec.begin(), leads_vec.end(), [](LeadData const & a, LeadData const & b){return a.getVLat() > b.getVLat();});
+        scene.adjacent_leads_center_strs.clear();
+        char val[16];
+        auto lead_one_plus = radar_state.getLeadOnePlus();
+        int start_i = 1;
+        if (lead_one_plus.getStatus()){
+          start_i++;
+          snprintf(val, sizeof(val), "%.0f", lead_one_plus.getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
+          scene.adjacent_leads_center_strs.push_back(val);
+        }
+        for (int i = start_i; i < leads_vec.size(); ++i){
+          if (abs(leads_vec[i].getVLeadK()) > 3.){
+            snprintf(val, sizeof(val), "%.0f", leads_vec[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
+            scene.adjacent_leads_center_strs.push_back(val);
+          }
+        }
+      }
     }
   }
   if (sm.updated("modelV2") && s->vg) {
@@ -517,6 +652,8 @@ static void update_state(UIState *s) {
     scene.lateralPlan.rProb = data.getRProb();
     scene.lateralPlan.lanelessModeStatus = data.getLanelessMode();
     scene.auto_lane_pos_active = data.getAutoLanePositionActive();
+    scene.traffic_left = data.getTrafficLeft();
+    scene.traffic_right = data.getTrafficRight();
   }
   if (sm.updated("gpsLocationExternal")) {
     auto data = sm["gpsLocationExternal"].getGpsLocationExternal();
@@ -637,6 +774,7 @@ static void update_status(UIState *s) {
       s->scene.power_meter_metric = Params().getBool("PowerMeterMetric");
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->scene.color_path = Params().getBool("ColorPath");
+      s->scene.alt_engage_color_enabled = Params().getBool("AlternateColors");
       if (!s->scene.end_to_end){
         s->scene.laneless_btn_touch_rect = {1,1,1,1};
       }

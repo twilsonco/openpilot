@@ -154,8 +154,8 @@ class Cluster():
     return ret
 
   def potential_low_speed_lead(self, v_ego):
-    # stop for stuff in front of you and low speed, even without model confirmation
-    return abs(self.yRel) < 1.5 and (v_ego < v_ego_stationary) and self.dRel < 25
+    # stop for stuff in front of you at low speed, even without model confirmation
+    return abs(self.yRel) < 1.5 and (v_ego < v_ego_stationary) and self.dRel < 25 and self.dRel > 0.
 
   def is_potential_fcw(self, model_prob):
     return model_prob > .9

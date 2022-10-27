@@ -139,7 +139,7 @@ class PIDController:
     self.f = feedforward * self.k_f
     
     if self.outputs is not None and len(self.outputs) == int(self._d_period):  # makes sure we have enough history for period
-      self.d = clip((self.outputs[-1] - self.outputs[0]) * self._d_period_recip * self.kd, -abs(self.p), abs(self.p))
+      self.d = clip((self.outputs[-1] - self.outputs[0]) * self._d_period_recip * self.kd, -abs(0.7*self.p), abs(0.7*self.p))
     else:
       self.d = 0.
 
