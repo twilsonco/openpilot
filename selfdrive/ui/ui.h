@@ -39,8 +39,8 @@
 #define COLOR_GREEN_ALPHA(x) nvgRGBA(0, 255, 0, x)
 #define COLOR_BLUE nvgRGBA(0, 0, 255, 255)
 #define COLOR_BLUE_ALPHA(x) nvgRGBA(0, 0, 255, x)
-#define COLOR_GRACE_BLUE nvgRGBA(0,4,196, 255)
-#define COLOR_GRACE_BLUE_ALPHA(x) nvgRGBA(0,4,196, x)
+#define COLOR_GRACE_BLUE nvgRGBA(0,4,167, 255)
+#define COLOR_GRACE_BLUE_ALPHA(x) nvgRGBA(0,4,167, x)
 #define COLOR_ORANGE nvgRGBA(255, 175, 3, 255)
 #define COLOR_ORANGE_ALPHA(x) nvgRGBA(255, 175, 3, x)
 #define COLOR_YELLOW_ALPHA(x) nvgRGBA(218, 202, 37, x)
@@ -141,9 +141,9 @@ const QColor bg_colors [] = {
 
 const QColor alt_bg_colors [] = {
   [STATUS_DISENGAGED] =  QColor(0x00, 0x30, 0x4A, 0xc8),
-  [STATUS_ENGAGED] = QColor(0x00, 0x04, 0xC4, 0xf1),
-  [STATUS_WARNING] = QColor(0x93, 0x00, 0xA3, 0xf1),
-  [STATUS_ALERT] = QColor(0xC9, 0x22, 0x31, 0xf1),
+  [STATUS_ENGAGED] = QColor(0x00, 0x04, 0xA7, 0xf1),
+  [STATUS_WARNING] = QColor(0x6A, 0x00, 0x7E, 0xf1),
+  [STATUS_ALERT] = QColor(0x92, 0x00, 0x0D, 0xf1),
 };
 
 const QColor tcs_colors [] = {
