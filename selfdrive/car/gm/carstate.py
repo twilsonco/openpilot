@@ -428,25 +428,25 @@ class CarState(CarStateBase):
     if self.is_ev and self.coasting_dl_enabled:
       if not self.coasting_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.DRIVE:
         self.coasting_enabled = True
-        self._params.put_bool("Coasting", True)
+        put_nonblocking("Coasting", "1")
       elif self.coasting_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.LOW and (self.vEgo <= self.v_cruise_kph * CV.KPH_TO_MS or self.no_friction_braking):
         self.coasting_enabled = False
-        self._params.put_bool("Coasting", False)
+        put_nonblocking("Coasting", "0")
     else:
       if self.coasting_enabled != self.coasting_enabled_last:
         if not self.coasting_enabled and self.vEgo > self.v_cruise_kph * CV.KPH_TO_MS and not self.no_friction_braking:
           # prevent disable of coasting if over set speed and friction brakes not disabled.
-          self._params.put_bool("Coasting", True)
+          put_nonblocking("Coasting", "1")
           self.coasting_enabled = True
     ret.coastingActive = self.coasting_enabled
     
     if self.is_ev and self.one_pedal_dl_engage_on_gas_enabled:
       if not self.one_pedal_mode_engage_on_gas_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.LOW:
         self.one_pedal_mode_engage_on_gas_enabled = True
-        self._params.put_bool("OnePedalModeEngageOnGas", True)
+        put_nonblocking("OnePedalModeEngageOnGas", "1")
       elif self.one_pedal_mode_engage_on_gas_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.DRIVE:
         self.one_pedal_mode_engage_on_gas_enabled = False
-        self._params.put_bool("OnePedalModeEngageOnGas", False)
+        put_nonblocking("OnePedalModeEngageOnGas", "0")
 
     
     cruise_enabled = self.pcm_acc_status != AccState.OFF

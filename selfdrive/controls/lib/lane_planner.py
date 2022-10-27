@@ -1,7 +1,7 @@
 import numpy as np
 from cereal import log
 from common.filter_simple import FirstOrderFilter
-from common.numpy_fast import interp, clip, mean
+from common.numpy_fast import interp, clip
 from common.realtime import DT_MDL
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
@@ -63,13 +63,13 @@ class LANE_TRAFFIC:
 
 
 def lead_between_lines(lll, rll, lead):
-  return interp(lead.dRel, lll.x, lll.y) < lead.yRel < interp(lead.dRel, rll.x, rll.y)
+  return interp(lead.dRel, lll.x, lll.y) < -lead.yRel < interp(lead.dRel, rll.x, rll.y)
 
 def lead_close_to_line(ll, lead, offset, is_left):
   if is_left:
-    return interp(lead.dRel, ll.x, ll.y) - offset < lead.yRel < interp(lead.dRel, ll.x, ll.y)
+    return interp(lead.dRel, ll.x, ll.y) - offset < -lead.yRel < interp(lead.dRel, ll.x, ll.y)
   else:
-    return interp(lead.dRel, ll.x, ll.y) < lead.yRel < interp(lead.dRel, ll.x, ll.y) + offset
+    return interp(lead.dRel, ll.x, ll.y) < -lead.yRel < interp(lead.dRel, ll.x, ll.y) + offset
 
 class LaneOffset: 
   OFFSET = 0.11 # [unitless] offset of the left/right positions as factor of current lane width
@@ -87,8 +87,8 @@ class LaneOffset:
   AUTO_MAX_PRED_LAT_ACCEL = 0.9 # [m/s^2] more than this predicted amount of lateral accel causes instant resuming of center position
   AUTO_MAX_CUR_LAT_ACCEL = 0.7 # same but for instantaneous vehicle lateral accel
   
-  AUTO_MIN_LANELINE_PROB = 0.5
-  AUTO_MIN_ADJACENT_LANELINE_PROB = 0.3
+  AUTO_MIN_LANELINE_PROB = 0.1
+  AUTO_MIN_ADJACENT_LANELINE_PROB = 0.05
   
   AUTO_LANE_STATE_MIN_TIME = 4.0 # [s] amount of time the lane state must stay the same before it can be acted upon
   
@@ -238,9 +238,9 @@ class LaneOffset:
     leads = rs.leadsLeft
     if len(leads) > 0:
       check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
-      if self._lane_width_mean_left_adjacent > 0.:
+      if md.laneLineProbs[0] >= self.AUTO_MIN_ADJACENT_LANELINE_PROB and md.laneLineProbs[1] >= self.AUTO_MIN_LANELINE_PROB:
         lv = [l.vLeadK for l in leads if lead_between_lines(md.laneLines[0], md.laneLines[1], l)]
-      elif self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB:
+      elif md.laneLineProbs[1] >= self.AUTO_MIN_LANELINE_PROB:
         lv = [l.vLeadK for l in leads if lead_close_to_line(md.laneLines[1], l, lane_width, True)]
       else:
         lv = [l.vLeadK for l in leads if abs(l.dPath) < check_lane_width]
@@ -261,9 +261,9 @@ class LaneOffset:
     leads = rs.leadsRight
     if len(leads) > 0:
       check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
-      if self._lane_width_mean_right_adjacent > 0.:
+      if md.laneLineProbs[3] >= self.AUTO_MIN_ADJACENT_LANELINE_PROB and md.laneLineProbs[2] >= self.AUTO_MIN_LANELINE_PROB:
         lv = [l.vLeadK for l in leads if lead_between_lines(md.laneLines[2], md.laneLines[3], l)]
-      elif self._lane_probs[2] > self.AUTO_MIN_LANELINE_PROB:
+      elif md.laneLineProbs[2] >= self.AUTO_MIN_LANELINE_PROB:
         lv = [l.vLeadK for l in leads if lead_close_to_line(md.laneLines[2], l, lane_width, False)]
       else:
         lv = [l.vLeadK for l in leads if abs(l.dPath) < check_lane_width]
