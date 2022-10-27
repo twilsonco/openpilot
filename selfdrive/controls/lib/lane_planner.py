@@ -63,13 +63,13 @@ class LANE_TRAFFIC:
 
 
 def lead_between_lines(lll, rll, lead):
-  return interp(lead.dRel, lll.x, lll.y) < lead.yRel < interp(lead.dRel, rll.x, rll.y)
+  return interp(lead.dRel, lll.x, lll.y) < -lead.yRel < interp(lead.dRel, rll.x, rll.y)
 
 def lead_close_to_line(ll, lead, offset, is_left):
   if is_left:
-    return interp(lead.dRel, ll.x, ll.y) - offset < lead.yRel < interp(lead.dRel, ll.x, ll.y)
+    return interp(lead.dRel, ll.x, ll.y) - offset < -lead.yRel < interp(lead.dRel, ll.x, ll.y)
   else:
-    return interp(lead.dRel, ll.x, ll.y) < lead.yRel < interp(lead.dRel, ll.x, ll.y) + offset
+    return interp(lead.dRel, ll.x, ll.y) < -lead.yRel < interp(lead.dRel, ll.x, ll.y) + offset
 
 class LaneOffset: 
   OFFSET = 0.11 # [unitless] offset of the left/right positions as factor of current lane width
