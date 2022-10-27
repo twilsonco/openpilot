@@ -120,12 +120,12 @@ class LateralPlanner():
     measured_curvature = sm['controlsState'].curvature
 
     md = sm['modelV2']
-    activate_auto_lane_pos = self.auto_auto_lane_pos_enabled and self.LP.lane_offset.do_auto_enable(int(sm['liveMapData'].currentRoadType))
+    activate_auto_lane_pos = self.LP.lane_offset.do_auto_enable(int(sm['liveMapData'].currentRoadType)) if self.auto_auto_lane_pos_enabled else AUTO_AUTO_LANE_MODE.NO_CHANGE
     if activate_auto_lane_pos == AUTO_AUTO_LANE_MODE.ENGAGE:
-      self._params.put_bool("AutoLanePositionActive", True)
+      put_nonblocking("AutoLanePositionActive", "1")
       self.auto_lane_pos_active = True
     elif activate_auto_lane_pos == AUTO_AUTO_LANE_MODE.DISENGAGE:
-      self._params.put_bool("AutoLanePositionActive", False)
+      put_nonblocking("AutoLanePositionActive", "0")
       self.auto_lane_pos_active = False
     self.LP.parse_model(sm['modelV2'], self.lane_pos, sm, self.auto_lane_pos_active)
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
