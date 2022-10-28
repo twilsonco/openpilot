@@ -361,8 +361,8 @@ class LaneOffset:
         self.update_lane_info(md, self._cs.vEgo, lane_width)
         lane_depart = False
         if self._lat_plan is not None:
-          right_lane_visible = self._lat_plan.rProb > 0.5
-          left_lane_visible = self._lat_plan.lProb > 0.5
+          right_lane_visible = self._lat_plan.rProb > 0.3
+          left_lane_visible = self._lat_plan.lProb > 0.3
           l_lane_change_prob = md.meta.desirePrediction[Desire.laneChangeLeft - 1]
           r_lane_change_prob = md.meta.desirePrediction[Desire.laneChangeRight - 1]
           l_lane_close = left_lane_visible and (md.laneLines[1].y[0] > -(0.5 + CAMERA_OFFSET))
@@ -370,18 +370,29 @@ class LaneOffset:
           l_lane_depart = l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close
           r_lane_depart = r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close
           lane_depart = l_lane_depart or r_lane_depart
-        if abs(self._cs.steeringAngleDeg) > self.AUTO_CUTOFF_STEER_ANGLE \
-            or lane_depart:
+          
+        if abs(self._cs.steeringAngleDeg) > self.AUTO_CUTOFF_STEER_ANGLE or lane_depart:
           self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
           self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
           self._right_traffic = LANE_TRAFFIC.NONE
           self._left_traffic = LANE_TRAFFIC.NONE
+          
+        if self._right_traffic == LANE_TRAFFIC.ONGOING and self._lane_width_mean_right_adjacent == 0.:
+          self._right_traffic = LANE_TRAFFIC.NONE
+          self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
+          
+        if self._left_traffic == LANE_TRAFFIC.ONGOING and self._lane_width_mean_left_adjacent == 0.:
+          self._left_traffic = LANE_TRAFFIC.NONE
+          self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
+          
         if self._lat_plan.lProb < 0.2 and self._left_traffic == LANE_TRAFFIC.NONE \
             and self._t - self._lane_state_changed_last_t < self.AUTO_LANE_STATE_MIN_TIME:
           self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
+          
         if self._lat_plan.rProb < 0.2 and self._right_traffic == LANE_TRAFFIC.NONE \
             and self._t - self._lane_state_changed_last_t < self.AUTO_LANE_STATE_MIN_TIME:
           self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
+          
         self.update_traffic_info(sm['radarState'], lane_width, md)
         self.update_lane_pos_auto(lane_width)
       if self._long_plan is not None:
