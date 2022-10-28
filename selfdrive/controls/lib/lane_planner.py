@@ -143,27 +143,15 @@ class LaneOffset:
     self._lprob_last = 0.
     self._rprob_last = 0.
   
-  def do_auto_enable(self, road_type):
-    ret = AUTO_AUTO_LANE_MODE.NO_CHANGE
-    v_ego = self._cs.vEgo if self._cs is not None else 0.
-    if road_type != self._road_type_last \
-        or (v_ego >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and self._v_ego_last < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED) \
-        or (v_ego < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and self._v_ego_last >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED):
-      if (road_type in self.AUTO_ENABLE_ROAD_TYPES and v_ego >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and not self._auto_is_active):
-        ret = AUTO_AUTO_LANE_MODE.ENGAGE
-        self._auto_auto_enabled = True
-      elif self._auto_is_active and self._auto_auto_enabled \
-        and (road_type not in self.AUTO_ENABLE_ROAD_TYPES or v_ego < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED) :
-          ret = AUTO_AUTO_LANE_MODE.DISENGAGE
-          self._auto_auto_enabled = False
-    
+  
+  def do_auto_enable_traffic(self, ret, v_ego):
     if ret != AUTO_AUTO_LANE_MODE.ENGAGE and (self._left_traffic_last != self._left_traffic or self._right_traffic != self._right_traffic_last \
-        or (v_ego >= self.AUTO_ENABLE_TRAFFIC_MIN_SPEED and self._v_ego_last < self.AUTO_ENABLE_TRAFFIC_MIN_SPEED) \
-        or (v_ego < self.AUTO_ENABLE_TRAFFIC_MIN_SPEED and self._v_ego_last >= self.AUTO_ENABLE_TRAFFIC_MIN_SPEED) \
-        or (self._lane_probs[1] >= self.AUTO_MIN_LANELINE_PROB and self._lprob_last <= self.AUTO_MIN_LANELINE_PROB) \
-        or (self._lane_probs[1] < self.AUTO_MIN_LANELINE_PROB and self._lprob_last >= self.AUTO_MIN_LANELINE_PROB) \
-        or (self._lane_probs[2] >= self.AUTO_MIN_LANELINE_PROB and self._rprob_last <= self.AUTO_MIN_LANELINE_PROB) \
-        or (self._lane_probs[2] < self.AUTO_MIN_LANELINE_PROB and self._rprob_last >= self.AUTO_MIN_LANELINE_PROB)):  
+      or (v_ego >= self.AUTO_ENABLE_TRAFFIC_MIN_SPEED and self._v_ego_last < self.AUTO_ENABLE_TRAFFIC_MIN_SPEED) \
+      or (v_ego < self.AUTO_ENABLE_TRAFFIC_MIN_SPEED and self._v_ego_last >= self.AUTO_ENABLE_TRAFFIC_MIN_SPEED) \
+      or (self._lane_probs[1] >= self.AUTO_MIN_LANELINE_PROB and self._lprob_last <= self.AUTO_MIN_LANELINE_PROB) \
+      or (self._lane_probs[1] < self.AUTO_MIN_LANELINE_PROB and self._lprob_last >= self.AUTO_MIN_LANELINE_PROB) \
+      or (self._lane_probs[2] >= self.AUTO_MIN_LANELINE_PROB and self._rprob_last <= self.AUTO_MIN_LANELINE_PROB) \
+      or (self._lane_probs[2] < self.AUTO_MIN_LANELINE_PROB and self._rprob_last >= self.AUTO_MIN_LANELINE_PROB)):  
       if not self._auto_is_active and v_ego >= self.AUTO_ENABLE_TRAFFIC_MIN_SPEED \
         and (self._left_traffic != LANE_TRAFFIC.NONE or self._right_traffic != LANE_TRAFFIC.NONE) \
         and self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB and self._lane_probs[2] > self.AUTO_MIN_LANELINE_PROB:
@@ -175,6 +163,28 @@ class LaneOffset:
           or (self._lane_probs[1] < self.AUTO_MIN_LANELINE_PROB and self._lane_probs[2] < self.AUTO_MIN_LANELINE_PROB)):
             ret = AUTO_AUTO_LANE_MODE.DISENGAGE
             self._auto_auto_enabled = False
+    return ret
+
+  def do_auto_enable_lanelines(self, ret, road_type, v_ego):
+    if road_type != self._road_type_last or ret == AUTO_AUTO_LANE_MODE.DISENGAGE \
+        or (v_ego >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and self._v_ego_last < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED) \
+        or (v_ego < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and self._v_ego_last >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED):
+      if (road_type in self.AUTO_ENABLE_ROAD_TYPES and v_ego >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and not self._auto_is_active):
+        ret = AUTO_AUTO_LANE_MODE.NO_CHANGE if ret == AUTO_AUTO_LANE_MODE.DISENGAGE else AUTO_AUTO_LANE_MODE.ENGAGE
+        self._auto_auto_enabled = True
+      elif self._auto_is_active and self._auto_auto_enabled \
+        and (road_type not in self.AUTO_ENABLE_ROAD_TYPES or v_ego < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED) :
+          ret = AUTO_AUTO_LANE_MODE.DISENGAGE
+          self._auto_auto_enabled = False
+    return ret
+            
+  def do_auto_enable(self, road_type):
+    ret = AUTO_AUTO_LANE_MODE.NO_CHANGE
+    v_ego = self._cs.vEgo if self._cs is not None else 0.
+    
+    ret = self.do_auto_enable_traffic(ret, v_ego)
+    if ret != AUTO_AUTO_LANE_MODE.ENGAGE:
+      ret = self.do_auto_enable_lanelines(ret, road_type, v_ego)
 
     self._lprob_last = self._lane_probs[1]
     self._rprob_last = self._lane_probs[2]
