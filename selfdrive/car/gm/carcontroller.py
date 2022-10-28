@@ -24,12 +24,12 @@ ONE_PEDAL_ACCEL_PITCH_FACTOR_V = [0.4, 1.] # [unitless in [0-1]]
 ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V = [0.2, 1.] # [unitless in [0-1]]
 
 ONE_PEDAL_MODE_DECEL_BP = [
-  [i * CV.MPH_TO_MS for i in [4., 9.]],
+  [i * CV.MPH_TO_MS for i in [0.5, 9.]],
   [i * CV.MPH_TO_MS for i in [4., 12., 30.]],
   [i * CV.MPH_TO_MS for i in [4., 16., 30.]]
   ] # [mph to meters]
 ONE_PEDAL_MODE_DECEL_V = [
-  [-0.85, -1.1],
+  [-0.8, -1.1],
   [-1.3, -1.7, -1.8],
   [-1.7, -2.6, -2.4]
 ] # light, medium, and hard one-pedal braking
