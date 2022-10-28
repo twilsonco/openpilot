@@ -87,8 +87,8 @@ class LaneOffset:
   AUTO_MAX_PRED_LAT_ACCEL = 0.9 # [m/s^2] more than this predicted amount of lateral accel causes instant resuming of center position
   AUTO_MAX_CUR_LAT_ACCEL = 0.7 # same but for instantaneous vehicle lateral accel
   
-  AUTO_MIN_LANELINE_PROB = 0.1
-  AUTO_MIN_ADJACENT_LANELINE_PROB = 0.05
+  AUTO_MIN_LANELINE_PROB = 0.3
+  AUTO_MIN_ADJACENT_LANELINE_PROB = 0.15
   
   AUTO_LANE_STATE_MIN_TIME = 4.0 # [s] amount of time the lane state must stay the same before it can be acted upon
   
