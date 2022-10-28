@@ -96,10 +96,11 @@ class LaneOffset:
   AUTO_ENABLE_ROAD_TYPE_MIN_SPEED = 40. * CV.MPH_TO_MS
   AUTO_ENABLE_TRAFFIC_MIN_SPEED = 10. * CV.MPH_TO_MS
   
-  AUTO_TRAFFIC_TIMEOUT = 15. # [s] amount of time auto lane position will be kept after last car is seen
+  AUTO_TRAFFIC_TIMEOUT = 30. # [s] amount of time auto lane position will be kept after last car is seen
   AUTO_TRAFFIC_MIN_TIME = 0.8 # [s] time an oncoming/ongoing car needs to be observed before it will be taken to indicate traffic
   AUTO_TRAFFIC_MIN_SPEED = 9. # [m/s] need to go faster than this to be considered moving
   AUTO_CUTOFF_STEER_ANGLE = 110. # [degrees] auto lane position reset traffic monitoring after this
+  TRAFFIC_NEW_DETECT_STEER_CUTOFF = 9. # [degrees] instantaneous traffic isn't detected if steer angle greater than this
   AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR = 1.25 # [unitless] factor of current lane width used to check against adjacent lead distance
   AUTO_TRAFFIC_STOPPED_MIN_DIST_LANE_WIDTH_FACTOR = 0.9 # [unitless] factor of current lane width used to check against adjacent lead distance, but for stopped objects
   
@@ -235,6 +236,9 @@ class LaneOffset:
   def update_traffic_info(self, rs, lane_width, md):
     left_traffic = LANE_TRAFFIC.NONE
     right_traffic = LANE_TRAFFIC.NONE
+    if self._cs is None or abs(self._cs.steeringAngleDeg) > self.TRAFFIC_NEW_DETECT_STEER_CUTOFF:
+      return
+    
     leads = rs.leadsLeft
     if len(leads) > 0:
       check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
@@ -248,7 +252,7 @@ class LaneOffset:
       if len(lv) > 0:
         min_v, max_v, mean_v = min_max_mean(lv)
         check_v = min_v if abs(min_v - mean_v) < abs(max_v - mean_v) else max_v
-        if check_v > self.AUTO_TRAFFIC_MIN_SPEED:
+        if check_v > self.AUTO_TRAFFIC_MIN_SPEED and self._lane_width_mean_left_adjacent > 0.:
           left_traffic = LANE_TRAFFIC.ONGOING
         elif check_v < -self.AUTO_TRAFFIC_MIN_SPEED:
           left_traffic = LANE_TRAFFIC.ONCOMING
@@ -271,7 +275,7 @@ class LaneOffset:
       if len(lv) > 0:
         min_v, max_v, mean_v = min_max_mean(lv)
         check_v = min_v if abs(min_v - mean_v) < abs(max_v - mean_v) else max_v
-        if check_v > self.AUTO_TRAFFIC_MIN_SPEED:
+        if check_v > self.AUTO_TRAFFIC_MIN_SPEED and self._lane_width_mean_right_adjacent > 0.:
           right_traffic = LANE_TRAFFIC.ONGOING
         elif check_v < -self.AUTO_TRAFFIC_MIN_SPEED:
           right_traffic = LANE_TRAFFIC.ONCOMING
