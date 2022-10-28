@@ -243,7 +243,7 @@ class LaneOffset:
     if len(leads) > 0:
       check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
       if md.laneLineProbs[0] >= self.AUTO_MIN_ADJACENT_LANELINE_PROB and md.laneLineProbs[1] >= self.AUTO_MIN_LANELINE_PROB \
-        and md.laneLines[1].y[0] > -2.:
+        and md.laneLines[1].y[0] > -2.2:
           lv = [l.vLeadK for l in leads if lead_between_lines(md.laneLines[0], md.laneLines[1], l)]
       elif md.laneLineProbs[1] >= self.AUTO_MIN_LANELINE_PROB and md.laneLines[1].y[0] > -2.:
         lv = [l.vLeadK for l in leads if lead_close_to_line(md.laneLines[1], l, lane_width, True)]
@@ -267,7 +267,7 @@ class LaneOffset:
     if len(leads) > 0:
       check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
       if md.laneLineProbs[3] >= self.AUTO_MIN_ADJACENT_LANELINE_PROB and md.laneLineProbs[2] >= self.AUTO_MIN_LANELINE_PROB \
-        and md.laneLines[2].y[0] < 2.:
+        and md.laneLines[2].y[0] < 2.2:
           lv = [l.vLeadK for l in leads if lead_between_lines(md.laneLines[2], md.laneLines[3], l)]
       elif md.laneLineProbs[2] >= self.AUTO_MIN_LANELINE_PROB and md.laneLines[2].y[0] < 2.:
         lv = [l.vLeadK for l in leads if lead_close_to_line(md.laneLines[2], l, lane_width, False)]
