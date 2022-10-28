@@ -142,6 +142,8 @@ class LaneOffset:
     self._right_traffic_temp_t = 0.
     self._lprob_last = 0.
     self._rprob_last = 0.
+    
+    self._auto_auto_lane_position_action = AUTO_AUTO_LANE_MODE.NO_CHANGE
   
   
   def do_auto_enable_traffic(self, ret, v_ego):
@@ -186,6 +188,7 @@ class LaneOffset:
     if ret != AUTO_AUTO_LANE_MODE.ENGAGE:
       ret = self.do_auto_enable_lanelines(ret, road_type, v_ego)
 
+    self._auto_auto_lane_position_action = ret
     self._lprob_last = self._lane_probs[1]
     self._rprob_last = self._lane_probs[2]
     self._left_traffic_last = self._left_traffic
@@ -423,6 +426,8 @@ class LaneOffset:
         self.lane_pos = self._lane_pos_auto
       else:
         self.lane_pos = 0.
+    elif self._auto_auto_lane_position_action == AUTO_AUTO_LANE_MODE.DISENGAGE:
+      self.lane_pos = 0.
     else:
       self.lane_pos = lane_pos
     offset = self.OFFSET * self.offset_scale * self.lane_pos * lane_width * (self.AUTO_OFFSET_FACTOR if self._auto_is_active else 1.)

@@ -126,7 +126,9 @@ class LateralPlanner():
       self.auto_lane_pos_active = True
     elif activate_auto_lane_pos == AUTO_AUTO_LANE_MODE.DISENGAGE:
       put_nonblocking("AutoLanePositionActive", "0")
+      put_nonblocking("LanePosition", "0")
       self.auto_lane_pos_active = False
+      self.lane_pos = 0.
     self.LP.parse_model(sm['modelV2'], self.lane_pos, sm, self.auto_lane_pos_active)
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
