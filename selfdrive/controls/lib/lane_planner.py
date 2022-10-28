@@ -97,7 +97,7 @@ class LaneOffset:
   AUTO_ENABLE_TRAFFIC_MIN_SPEED = 10. * CV.MPH_TO_MS
   
   AUTO_TRAFFIC_TIMEOUT = 30. # [s] amount of time auto lane position will be kept after last car is seen
-  AUTO_TRAFFIC_MIN_TIME = 0.8 # [s] time an oncoming/ongoing car needs to be observed before it will be taken to indicate traffic
+  AUTO_TRAFFIC_MIN_TIME = 1.1 # [s] time an oncoming/ongoing car needs to be observed before it will be taken to indicate traffic
   AUTO_TRAFFIC_MIN_SPEED = 9. # [m/s] need to go faster than this to be considered moving
   AUTO_CUTOFF_STEER_ANGLE = 110. # [degrees] auto lane position reset traffic monitoring after this
   TRAFFIC_NEW_DETECT_STEER_CUTOFF = 9. # [degrees] instantaneous traffic isn't detected if steer angle greater than this
