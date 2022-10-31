@@ -124,7 +124,7 @@ class LateralPlanner():
 
     if not auto_lane_pos_active and self.auto_lane_pos_active:
       # user cancelled auto lane position
-      # if user_disabled is already true, then this is them cancelling their own activation of auto lane position, so we'll allow auto auto mode to run again.
+      # if user_enabled is true, then this is them cancelling their own activation of auto lane position, so we'll allow auto auto mode to run again.
       # if user_disabled is false, then they're cancelling auto auto mode and it wont' turn itself on again
       if self.auto_lane_user_enabled:
         self.auto_lane_user_disabled = False
