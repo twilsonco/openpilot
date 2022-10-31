@@ -747,7 +747,12 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
     NVGcolor max_color;
     if (is_cruise_set){
-      max_color = nvgRGBA(0x80, 0xd8, 0xa6, int(-s->scene.one_pedal_fade * 255.));
+      if (s->scene.alt_engage_color_enabled){
+        max_color = COLOR_GRACE_BLUE_ALPHA(int(-s->scene.one_pedal_fade * 255.));
+      }
+      else{
+        max_color = nvgRGBA(0x80, 0xd8, 0xa6, int(-s->scene.one_pedal_fade * 255.));
+      }
     }
     else{
       max_color = nvgRGBA(0xa6, 0xa6, 0xa6, int(-s->scene.one_pedal_fade * 255.));
