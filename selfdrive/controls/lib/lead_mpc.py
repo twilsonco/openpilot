@@ -79,7 +79,7 @@ def calc_follow_profile(v_ego, v_lead, x_lead, fpi):
   lead_sng_factor = interp(v_lead, [0., SNG_SPEED], [1., 0.])
   tr = interp(v_rel, fp[0], fp[1]) + hwy_shift # calculate objective distance in seconds(ish)
   tr = tr_equil * lead_sng_factor + tr * (1.0 - lead_sng_factor)
-  tr = min(tr_equil,TR_DEFAULT) * sng_factor + tr * (1.0 - sng_factor)
+  tr = max(tr_equil,TR_DEFAULT) * sng_factor + tr * (1.0 - sng_factor)
   
   # then distance cost
   dist_cost = max(interp(d_lead, fp[5], fp[6]), interp(x_lead, fp[7], fp[8]))
