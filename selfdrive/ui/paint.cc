@@ -625,7 +625,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   else if (tf == LaneTraffic::STOPPED){
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
                                           COLOR_WHITE_ALPHA(150), COLOR_WHITE_ALPHA(0));
-    ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
+    ui_draw_line(s, scene.lane_vertices_right, nullptr, &track_bg);
   }
 
   // print lane and shoulder widths and probabilities
