@@ -140,11 +140,11 @@ class LateralPlanner():
       self.auto_lane_user_enabled = False
     
     md = sm['modelV2']
-    activate_auto_lane_pos = (not self.auto_lane_user_disabled and not self.auto_lane_user_enabled and self.LP.lane_offset.do_auto_enable(int(sm['liveMapData'].currentRoadType))) if self.auto_auto_lane_pos_enabled else AUTO_AUTO_LANE_MODE.NO_CHANGE
-    if activate_auto_lane_pos == AUTO_AUTO_LANE_MODE.ENGAGE:
+    activate_auto_lane_pos = self.LP.lane_offset.do_auto_enable(int(sm['liveMapData'].currentRoadType)) if self.auto_auto_lane_pos_enabled else AUTO_AUTO_LANE_MODE.NO_CHANGE
+    if activate_auto_lane_pos == AUTO_AUTO_LANE_MODE.ENGAGE and not self.auto_lane_user_disabled:
       put_nonblocking("AutoLanePositionActive", "1")
       self.auto_lane_pos_active = True
-    elif activate_auto_lane_pos == AUTO_AUTO_LANE_MODE.DISENGAGE:
+    elif activate_auto_lane_pos == AUTO_AUTO_LANE_MODE.DISENGAGE and not self.auto_lane_user_enabled:
       put_nonblocking("AutoLanePositionActive", "0")
       put_nonblocking("LanePosition", "0")
       self.auto_lane_pos_active = False
@@ -403,9 +403,6 @@ class LateralPlanner():
     plan_send.lateralPlan.lanelessMode = bool(self.laneless_mode_status)
     
     plan_send.lateralPlan.autoLanePositionActive = bool(self.LP.lane_offset._auto_is_active)
-    plan_send.lateralPlan.lanePosition = log.LateralPlan.LanePosition.left if self.LP.lane_offset.lane_pos == 1. \
-                                    else log.LateralPlan.LanePosition.right if self.LP.lane_offset.lane_pos == -1. \
-                                    else log.LateralPlan.LanePosition.center
     plan_send.lateralPlan.laneOffset = float(self.LP.lane_offset.offset)
     plan_send.lateralPlan.laneWidthMeanLeftAdjacent = float(self.LP.lane_offset._lane_width_mean_left_adjacent)
     plan_send.lateralPlan.laneWidthMeanRightAdjacent = float(self.LP.lane_offset._lane_width_mean_right_adjacent)
@@ -425,6 +422,10 @@ class LateralPlanner():
       elif self.LP.lane_offset._lane_pos_auto == 0. and self.lane_pos != 0.:
         self.lane_pos = 0.
         put_nonblocking("LanePosition", "0")
+        
+    plan_send.lateralPlan.lanePosition = log.LateralPlan.LanePosition.left if self.LP.lane_offset.lane_pos == 1. \
+                                    else log.LateralPlan.LanePosition.right if self.LP.lane_offset.lane_pos == -1. \
+                                    else log.LateralPlan.LanePosition.center
     
 
     pm.send('lateralPlan', plan_send)
