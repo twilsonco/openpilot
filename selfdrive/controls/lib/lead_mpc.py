@@ -257,6 +257,7 @@ class LeadMpc():
     self.dist_cost_last = MPC_COST_LONG.DISTANCE
     self.accel_cost_last = MPC_COST_LONG.ACCELERATION
     self.stopping_distance = 0.
+    self.stopping_distance_offset = 0.
 
     self.tr_override = False
     
@@ -326,7 +327,7 @@ class LeadMpc():
     if follow_level < 0 or follow_level > 2:
       follow_level = 1
     fp = FOLLOW_PROFILES[follow_level]
-    stopping_distance = fp[4]
+    stopping_distance = fp[4] + self.stopping_distance_offset
     
     if lead is not None and lead.status:
       x_lead = max(0, lead.dRel - stopping_distance)  # increase stopping distance to car by X [m]
