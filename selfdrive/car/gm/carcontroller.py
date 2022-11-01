@@ -29,7 +29,7 @@ ONE_PEDAL_MODE_DECEL_BP = [
   [i * CV.MPH_TO_MS for i in [4., 16., 30.]]
   ] # [mph to meters]
 ONE_PEDAL_MODE_DECEL_V = [
-  [-0.7, -1.1],
+  [-0.6, -1.1],
   [-1.3, -1.7, -1.8],
   [-1.7, -2.6, -2.4]
 ] # light, medium, and hard one-pedal braking
@@ -39,7 +39,7 @@ ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.5 * DT_CTRL * 4 # m/s^2 per second for decre
 
 ONE_PEDAL_MAX_DECEL = -3.5
 ONE_PEDAL_SPEED_ERROR_FACTOR_BP = [1.5, 20.] # [m/s] 
-ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.02, 0.3] # factor of error for non-lead braking decel
+ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.04, 0.3] # factor of error for non-lead braking decel
 
 ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T = 3. # [s]
 
