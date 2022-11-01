@@ -317,7 +317,7 @@ def pre_lane_change(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) ->
   elif alert == LaneChangeAlert.nudgelessBlockedTimeout:
     str2 = "(auto lane change timed out)"
   elif alert == LaneChangeAlert.nudgelessBlockedMinSpeed:
-    str2 = "(no auto lane change below {})".format("40mph" if metric else "65kph")
+    str2 = "(no auto lane change below {})".format("40mph" if not metric else "65kph")
   elif alert == LaneChangeAlert.nudgelessBlockedOnePedal:
     str2 = "(no auto lane change in one-pedal mode)"
   

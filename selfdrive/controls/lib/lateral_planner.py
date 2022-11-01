@@ -70,6 +70,8 @@ class LateralPlanner():
 
     self.auto_lane_pos_active = False
     self.auto_auto_lane_pos_enabled = self._params.get_bool("AutoAutoLanePosition")
+    self.auto_lane_user_enabled = False
+    self.auto_lane_user_disabled = False
     
     self.lane_change_state = LaneChangeState.off
     self.prev_lane_change_state = self.lane_change_state
@@ -107,24 +109,42 @@ class LateralPlanner():
 
   def update(self, sm, CP):
     self.second += DT_MDL
+    auto_lane_pos_active = self.auto_lane_pos_active
     if self.second > 1.0:
       self.use_lanelines = not Params().get_bool("EndToEndToggle")
       self.laneless_mode = int(Params().get("LanelessMode", encoding="utf8"))
       self.lane_pos = float(Params().get("LanePosition", encoding="utf8"))
       self.nudgeless_enabled = self._params.get_bool("NudgelessLaneChange")
-      self.auto_lane_pos_active = self._params.get_bool("AutoLanePositionActive")
+      auto_lane_pos_active = self._params.get_bool("AutoLanePositionActive")
       self.auto_auto_lane_pos_enabled = self._params.get_bool("AutoAutoLanePosition")
       self.second = 0.0
     v_ego = sm['carState'].vEgo
     active = sm['controlsState'].active
     measured_curvature = sm['controlsState'].curvature
 
+    if not auto_lane_pos_active and self.auto_lane_pos_active:
+      # user cancelled auto lane position
+      # if user_enabled is true, then this is them cancelling their own activation of auto lane position, so we'll allow auto auto mode to run again.
+      # if user_disabled is false, then they're cancelling auto auto mode and it wont' turn itself on again
+      if self.auto_lane_user_enabled:
+        self.auto_lane_user_disabled = False
+      else:
+        self.auto_lane_user_disabled = True
+    elif auto_lane_pos_active and not self.auto_lane_pos_active:
+      # user activated
+      self.auto_lane_user_enabled = True
+    
+    self.auto_lane_pos_active = auto_lane_pos_active
+    
+    if not self.auto_lane_pos_active:
+      self.auto_lane_user_enabled = False
+    
     md = sm['modelV2']
     activate_auto_lane_pos = self.LP.lane_offset.do_auto_enable(int(sm['liveMapData'].currentRoadType)) if self.auto_auto_lane_pos_enabled else AUTO_AUTO_LANE_MODE.NO_CHANGE
-    if activate_auto_lane_pos == AUTO_AUTO_LANE_MODE.ENGAGE:
+    if activate_auto_lane_pos == AUTO_AUTO_LANE_MODE.ENGAGE and not self.auto_lane_user_disabled:
       put_nonblocking("AutoLanePositionActive", "1")
       self.auto_lane_pos_active = True
-    elif activate_auto_lane_pos == AUTO_AUTO_LANE_MODE.DISENGAGE:
+    elif activate_auto_lane_pos == AUTO_AUTO_LANE_MODE.DISENGAGE and not self.auto_lane_user_enabled:
       put_nonblocking("AutoLanePositionActive", "0")
       put_nonblocking("LanePosition", "0")
       self.auto_lane_pos_active = False
@@ -383,9 +403,6 @@ class LateralPlanner():
     plan_send.lateralPlan.lanelessMode = bool(self.laneless_mode_status)
     
     plan_send.lateralPlan.autoLanePositionActive = bool(self.LP.lane_offset._auto_is_active)
-    plan_send.lateralPlan.lanePosition = log.LateralPlan.LanePosition.left if self.LP.lane_offset.lane_pos == 1. \
-                                    else log.LateralPlan.LanePosition.right if self.LP.lane_offset.lane_pos == -1. \
-                                    else log.LateralPlan.LanePosition.center
     plan_send.lateralPlan.laneOffset = float(self.LP.lane_offset.offset)
     plan_send.lateralPlan.laneWidthMeanLeftAdjacent = float(self.LP.lane_offset._lane_width_mean_left_adjacent)
     plan_send.lateralPlan.laneWidthMeanRightAdjacent = float(self.LP.lane_offset._lane_width_mean_right_adjacent)
@@ -405,6 +422,10 @@ class LateralPlanner():
       elif self.LP.lane_offset._lane_pos_auto == 0. and self.lane_pos != 0.:
         self.lane_pos = 0.
         put_nonblocking("LanePosition", "0")
+        
+    plan_send.lateralPlan.lanePosition = log.LateralPlan.LanePosition.left if self.LP.lane_offset.lane_pos == 1. \
+                                    else log.LateralPlan.LanePosition.right if self.LP.lane_offset.lane_pos == -1. \
+                                    else log.LateralPlan.LanePosition.center
     
 
     pm.send('lateralPlan', plan_send)

@@ -625,7 +625,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   else if (tf == LaneTraffic::STOPPED){
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
                                           COLOR_WHITE_ALPHA(150), COLOR_WHITE_ALPHA(0));
-    ui_draw_line(s, scene.lane_vertices_left, nullptr, &track_bg);
+    ui_draw_line(s, scene.lane_vertices_right, nullptr, &track_bg);
   }
 
   // print lane and shoulder widths and probabilities
@@ -747,7 +747,12 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
     NVGcolor max_color;
     if (is_cruise_set){
-      max_color = nvgRGBA(0x80, 0xd8, 0xa6, int(-s->scene.one_pedal_fade * 255.));
+      if (s->scene.alt_engage_color_enabled){
+        max_color = nvgRGBA(0x00, 0x9F, 0xFF, int(-s->scene.one_pedal_fade * 255.));
+      }
+      else{
+        max_color = nvgRGBA(0x80, 0xd8, 0xa6, int(-s->scene.one_pedal_fade * 255.));
+      }
     }
     else{
       max_color = nvgRGBA(0xa6, 0xa6, 0xa6, int(-s->scene.one_pedal_fade * 255.));
@@ -2593,7 +2598,7 @@ static void ui_draw_vision_event(UIState *s) {
       nvgBeginPath(s->vg);
       const int r = int(float(radius) * 1.15);
       nvgRoundedRect(s->vg, center_x - r, center_y - r, 2 * r, 2 * r, r);
-      nvgStrokeColor(s->vg, s->scene.network_strength > 0 ? COLOR_GREEN_ALPHA(255) : COLOR_RED_ALPHA(255));
+      nvgStrokeColor(s->vg, s->scene.network_strength > 0 ? (s->scene.alt_engage_color_enabled ? nvgRGBA(0,255,255,255) : COLOR_GREEN_ALPHA(255)) : COLOR_RED_ALPHA(255));
       nvgFillColor(s->vg, nvgRGBA(0,0,0,0));
       nvgFill(s->vg);
       nvgStrokeWidth(s->vg, 7);

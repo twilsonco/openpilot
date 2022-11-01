@@ -454,7 +454,7 @@ class RadarD():
       if self.extended_radar_enabled and self.ready:
         ll,lc,lr = get_path_adjacent_leads(self.v_ego, sm['modelV2'], sm['lateralPlan'].laneWidth, clusters)
         try:
-          if radarState.leadOne.status:
+          if abs(sm['carState'].steeringAngleDeg) < 15 and radarState.leadOne.status and radarState.leadOne.modelProb > 0.5:
             lc = [l for l in lc if l["dRel"] > radarState.leadOne.dRel + LEAD_PLUS_ONE_MIN_REL_DIST]
             if len(lc) > 0: # get the lead+1 car
               radarState.leadOnePlus = self.lead_one_plus_lr.update(lc[0])
