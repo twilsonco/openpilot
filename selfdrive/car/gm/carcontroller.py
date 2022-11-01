@@ -41,7 +41,7 @@ ONE_PEDAL_MAX_DECEL = -3.5
 ONE_PEDAL_SPEED_ERROR_FACTOR_BP = [1.5, 20.] # [m/s] 
 ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.04, 0.3] # factor of error for non-lead braking decel
 
-ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T = 3. # [s]
+ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T = 0.6 # [s]
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
@@ -186,7 +186,7 @@ class CarController():
             else:
               self.one_pedal_decel_in = CS.lead_accel
             
-            if CS.lead_accel < self.one_pedal_decel_in:
+            if CS.lead_accel <= self.one_pedal_decel_in:
               self.lead_accel_last_t = t
             
             if not CS.one_pedal_mode_op_braking_allowed or CS.lead_accel != self.one_pedal_decel_in:
