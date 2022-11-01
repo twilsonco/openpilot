@@ -162,25 +162,24 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
   s->scene.lead_vertices_oncoming.clear();
   s->scene.lead_vertices_ongoing.clear();
   s->scene.lead_vertices_stopped.clear();
-  s->scene.lead_distances_oncoming.clear();
-  s->scene.lead_distances_ongoing.clear();
-  s->scene.lead_distances_stopped.clear();
   for (auto const & rs : {s->scene.radarState.getLeadsLeft(), s->scene.radarState.getLeadsRight()}){
     for (auto const & l : rs){
-      vertex_data vd;
+      lead_vertex_data vd;
+      vertex_data vtmp;
       float z = model_position.getZ()[get_path_length_idx(model_position, l.getDRel())];
-      calib_frame_to_full_frame(s, l.getDRel(), -l.getYRel(), z + 0.61, &vd);
-      if (l.getVLeadK() > 7.){
+      calib_frame_to_full_frame(s, l.getDRel(), -l.getYRel(), z + 0.61, &vtmp);
+      vd.x = vtmp.x;
+      vd.y = vtmp.y;
+      vd.d = l.getDRel();
+      vd.v = l.getVLeadK();
+      if (vd.v > 7.){
         s->scene.lead_vertices_ongoing.push_back(vd);
-        s->scene.lead_distances_ongoing.push_back(l.getDRel());
       }
-      else if (l.getVLeadK() < -7.){
+      else if (vd.v < -7.){
         s->scene.lead_vertices_oncoming.push_back(vd);
-        s->scene.lead_distances_oncoming.push_back(l.getDRel());
       }
       else{
         s->scene.lead_vertices_stopped.push_back(vd);
-        s->scene.lead_distances_stopped.push_back(l.getDRel());
       }
     }
   }
@@ -492,20 +491,20 @@ static void update_state(UIState *s) {
       scene.lead_y_vals.clear();
     }
     if (scene.adjacent_lead_info_print_enabled){
-      // left leads
-      {
-        auto leads = radar_state.getLeadsLeft();
-        std::vector<LeadData> leads_vec;
-        leads_vec.reserve(leads.size());
-        for (auto const & l : leads){
-          leads_vec.push_back(l);
-        }
-        std::sort(leads_vec.begin(), leads_vec.end(), [](LeadData const & a, LeadData const & b){return a.getVLat() > b.getVLat();});
-        scene.adjacent_leads_left_str = "";
-        char val[16];
-        int cnt = 0;
-        for (int i = 0; i < leads_vec.size(); ++i){
-          if (abs(leads_vec[i].getVLeadK()) > 3.){
+      if (!scene.adjacent_lead_info_print_at_lead){
+        // left leads
+        {
+          auto leads = radar_state.getLeadsLeft();
+          std::vector<LeadData> leads_vec;
+          leads_vec.reserve(leads.size());
+          for (auto const & l : leads){
+            leads_vec.push_back(l);
+          }
+          std::sort(leads_vec.begin(), leads_vec.end(), [](LeadData const & a, LeadData const & b){return a.getVLat() > b.getVLat();});
+          scene.adjacent_leads_left_str = "";
+          char val[16];
+          int cnt = 0;
+          for (int i = 0; i < leads_vec.size(); ++i){
             if (cnt > 0){
               scene.adjacent_leads_left_str += " ";
             }
@@ -514,21 +513,19 @@ static void update_state(UIState *s) {
             cnt++;
           }
         }
-      }
-      // right leads
-      {
-        auto leads = radar_state.getLeadsRight();
-        std::vector<LeadData> leads_vec;
-        leads_vec.reserve(leads.size());
-        for (auto const & l : leads){
-          leads_vec.push_back(l);
-        }
-        std::sort(leads_vec.begin(), leads_vec.end(), [](LeadData const & a, LeadData const & b){return a.getVLat() < b.getVLat();});
-        scene.adjacent_leads_right_str = "";
-        char val[16];
-        int cnt = 0;
-        for (int i = 0; i < leads_vec.size(); ++i){
-          if (abs(leads_vec[i].getVLeadK()) > 3.){
+        // right leads
+        {
+          auto leads = radar_state.getLeadsRight();
+          std::vector<LeadData> leads_vec;
+          leads_vec.reserve(leads.size());
+          for (auto const & l : leads){
+            leads_vec.push_back(l);
+          }
+          std::sort(leads_vec.begin(), leads_vec.end(), [](LeadData const & a, LeadData const & b){return a.getVLat() < b.getVLat();});
+          scene.adjacent_leads_right_str = "";
+          char val[16];
+          int cnt = 0;
+          for (int i = 0; i < leads_vec.size(); ++i){
             if (cnt > 0){
               scene.adjacent_leads_right_str += " ";
             }
@@ -539,28 +536,27 @@ static void update_state(UIState *s) {
         }
       }
       // center leads
+      // printed the same despite adjacent lead printing style
       {
         auto leads = radar_state.getLeadsCenter();
         std::vector<LeadData> leads_vec;
-        leads_vec.reserve(leads.size());
-        for (auto const & l : leads){
-          leads_vec.push_back(l);
-        }
-        std::sort(leads_vec.begin(), leads_vec.end(), [](LeadData const & a, LeadData const & b){return a.getVLat() > b.getVLat();});
         scene.adjacent_leads_center_strs.clear();
+        leads_vec.reserve(leads.size()+1);
         char val[16];
         auto lead_one_plus = radar_state.getLeadOnePlus();
-        int start_i = 1;
+        int start_i = 0;
         if (lead_one_plus.getStatus()){
           start_i++;
           snprintf(val, sizeof(val), "%.0f", lead_one_plus.getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
           scene.adjacent_leads_center_strs.push_back(val);
         }
+        for (auto const & l : leads){
+          leads_vec.push_back(l);
+        }
+        std::sort(leads_vec.begin(), leads_vec.end(), [](LeadData const & a, LeadData const & b){return a.getDRel() < b.getDRel();});
         for (int i = start_i; i < leads_vec.size(); ++i){
-          if (abs(leads_vec[i].getVLeadK()) > 3.){
-            snprintf(val, sizeof(val), "%.0f", leads_vec[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
-            scene.adjacent_leads_center_strs.push_back(val);
-          }
+          snprintf(val, sizeof(val), "%.0f", leads_vec[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
+          scene.adjacent_leads_center_strs.push_back(val);
         }
       }
     }
@@ -775,6 +771,7 @@ static void update_status(UIState *s) {
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->scene.color_path = Params().getBool("ColorPath");
       s->scene.alt_engage_color_enabled = Params().getBool("AlternateColors");
+      s->scene.adjacent_lead_info_print_at_lead = Params().getBool("PrintAdjacentLeadSpeedsAtLead");
       if (!s->scene.end_to_end){
         s->scene.laneless_btn_touch_rect = {1,1,1,1};
       }

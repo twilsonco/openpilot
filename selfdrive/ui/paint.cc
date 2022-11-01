@@ -235,7 +235,7 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
     nvgFill(s->vg);
   }
 
-  if (s->scene.lead_info_print_enabled && !s->scene.map_open && draw_info){
+  if ((s->scene.lead_info_print_enabled || s->scene.adjacent_lead_info_print_enabled) && !s->scene.map_open && draw_info){
     // print lead info around chevron
     // Print relative distances to the left of the chevron
     int const x_offset = 100;
@@ -262,80 +262,96 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
     s->scene.lead_y = lead_y;
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 180));
     nvgFontFace(s->vg, "sans-semibold");
-    nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_MIDDLE);
-    nvgBeginPath(s->vg);
-    nvgFontSize(s->vg, 120);
-    char val[16], unit[8];
+    if (s->scene.lead_info_print_enabled){
+      nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_MIDDLE);
+      nvgBeginPath(s->vg);
+      nvgFontSize(s->vg, 120);
+      char val[16], unit[8];
 
-    // first time distance
-    if (s->scene.car_state.getVEgo() > 0.5){
-      snprintf(unit, sizeof(unit), "s"); 
-      float follow_t = d_rel / s->scene.car_state.getVEgo();
-      snprintf(val, sizeof(val), "%.1f%s", follow_t, unit);
-    }
-    else{
-      snprintf(val, sizeof(val), "-");
-    }
-    nvgText(s->vg,lead_x-x_offset,lead_y-y_offset,val,NULL);
-
-    // then length distance
-    if (s->is_metric){
-      snprintf(unit, sizeof(unit), "m"); 
-      if (s->scene.lead_d_rel < 10.){
-        snprintf(val, sizeof(val), "%.1f%s", s->scene.lead_d_rel, unit);
+      // first time distance
+      if (s->scene.car_state.getVEgo() > 0.5){
+        snprintf(unit, sizeof(unit), "s"); 
+        float follow_t = d_rel / s->scene.car_state.getVEgo();
+        snprintf(val, sizeof(val), "%.1f%s", follow_t, unit);
       }
       else{
-        snprintf(val, sizeof(val), "%.0f%s", s->scene.lead_d_rel, unit);
+        snprintf(val, sizeof(val), "-");
       }
-    }
-    else{
-      snprintf(unit, sizeof(unit), "ft"); 
-      float d_ft = s->scene.lead_d_rel * 3.281;
-      if (d_ft < 10.){
-        snprintf(val, sizeof(val), "%.1f%s", d_ft, unit);
+      nvgText(s->vg,lead_x-x_offset,lead_y-y_offset,val,NULL);
+
+      // then length distance
+      if (s->is_metric){
+        snprintf(unit, sizeof(unit), "m"); 
+        if (s->scene.lead_d_rel < 10.){
+          snprintf(val, sizeof(val), "%.1f%s", s->scene.lead_d_rel, unit);
+        }
+        else{
+          snprintf(val, sizeof(val), "%.0f%s", s->scene.lead_d_rel, unit);
+        }
       }
       else{
-        snprintf(val, sizeof(val), "%.0f%s", d_ft, unit);
+        snprintf(unit, sizeof(unit), "ft"); 
+        float d_ft = s->scene.lead_d_rel * 3.281;
+        if (d_ft < 10.){
+          snprintf(val, sizeof(val), "%.1f%s", d_ft, unit);
+        }
+        else{
+          snprintf(val, sizeof(val), "%.0f%s", d_ft, unit);
+        }
       }
+      nvgText(s->vg,lead_x-x_offset,lead_y+y_offset,val,NULL);
+
+      // now abs and relative speed to the right
+
+      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+      // first abs speed
+      if (s->is_metric){
+        snprintf(unit, sizeof(unit), "kph"); 
+        float v = (s->scene.lead_v * 3.6);
+        if (v < 100.){
+          snprintf(val, sizeof(val), "%.1f", v);
+        }
+        else{
+          snprintf(val, sizeof(val), "%.0f", v);
+        }
+      }
+      else{
+        snprintf(unit, sizeof(unit), "mph"); 
+        float v = (s->scene.lead_v * 2.2374144);
+        if (v < 100.){
+          snprintf(val, sizeof(val), "%.1f", v);
+        }
+        else{
+          snprintf(val, sizeof(val), "%.0f", v);
+        }
+      }
+      nvgText(s->vg,lead_x+x_offset,lead_y-(y_offset*1.3),val,NULL);
+
+      // then relative speed
+      if (s->is_metric) {
+          snprintf(val, sizeof(val), "%s%.1f", s->scene.lead_v_rel >= 0. ? "+" : "", (s->scene.lead_v_rel * 3.6));
+      } else {
+          snprintf(val, sizeof(val), "%s%.1f", s->scene.lead_v_rel >= 0. ? "+" : "", (s->scene.lead_v_rel * 2.2374144));
+      }
+      nvgText(s->vg,lead_x+x_offset,lead_y+(y_offset*1.4),val,NULL);
+
+      nvgFontSize(s->vg, 70);
+      nvgText(s->vg,lead_x+x_offset+20,lead_y,unit,NULL);
     }
-    nvgText(s->vg,lead_x-x_offset,lead_y+y_offset,val,NULL);
-
-    // now abs and relative speed to the right
-
-    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-    // first abs speed
-    if (s->is_metric){
-      snprintf(unit, sizeof(unit), "kph"); 
-      float v = (s->scene.lead_v * 3.6);
+    else{
+      nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
+      nvgBeginPath(s->vg);
+      nvgFontSize(s->vg, 90);
+      char val[16];
+      float v = (s->scene.lead_v * (s->is_metric ? 3.6 : 2.2374144));
       if (v < 100.){
         snprintf(val, sizeof(val), "%.1f", v);
       }
       else{
         snprintf(val, sizeof(val), "%.0f", v);
       }
+      nvgText(s->vg,lead_x,lead_y+60,val,NULL);
     }
-    else{
-      snprintf(unit, sizeof(unit), "mph"); 
-      float v = (s->scene.lead_v * 2.2374144);
-      if (v < 100.){
-        snprintf(val, sizeof(val), "%.1f", v);
-      }
-      else{
-        snprintf(val, sizeof(val), "%.0f", v);
-      }
-    }
-    nvgText(s->vg,lead_x+x_offset,lead_y-(y_offset*1.3),val,NULL);
-
-    // then relative speed
-    if (s->is_metric) {
-        snprintf(val, sizeof(val), "%s%.1f", s->scene.lead_v_rel >= 0. ? "+" : "", (s->scene.lead_v_rel * 3.6));
-    } else {
-        snprintf(val, sizeof(val), "%s%.1f", s->scene.lead_v_rel >= 0. ? "+" : "", (s->scene.lead_v_rel * 2.2374144));
-    }
-    nvgText(s->vg,lead_x+x_offset,lead_y+(y_offset*1.4),val,NULL);
-
-    nvgFontSize(s->vg, 70);
-    nvgText(s->vg,lead_x+x_offset+20,lead_y,unit,NULL);
   }
 }
 
@@ -346,17 +362,22 @@ static void draw_other_leads(UIState *s, bool lead_drawn) {
     int dr = r2 - r1;
     int i = 0;
     for (auto const & vd : s->scene.lead_vertices_ongoing){
-      auto [x, y] = vd;
+      auto [x, y, d, v] = vd;
       // fade leads too close to the actual lead
       int alpha_fill = 80;
       int alpha_stroke = 200;
+      int alpha_text = 200;
       if (lead_drawn){
-        float screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - 50., 0., 200.);
+        float screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - 50., 0., 400.);
         float alpha_factor = 1. - float(screen_dist) / 400.;
         alpha_fill -= 60. * alpha_factor;
         alpha_stroke -= 160. * alpha_factor;
+
+        screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - 100., 0., 300.);
+        alpha_factor = 1. - float(screen_dist) / 300.;
+        alpha_text -= 190. * alpha_factor;
       }
-      int r = r2 - int(float(dr) * s->scene.lead_distances_ongoing[i++] / 180.);
+      int r = r2 - int(float(dr) * d / 180.);
       r = (r < r1 ? r1 : r);
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
@@ -365,20 +386,37 @@ static void draw_other_leads(UIState *s, bool lead_drawn) {
       nvgStrokeColor(s->vg, interp_alert_color(-1., alpha_stroke));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
+
+      if (s->scene.adjacent_lead_info_print_at_lead){
+        nvgFontFace(s->vg, "sans-semibold");
+        nvgBeginPath(s->vg);
+        nvgFontSize(s->vg, 3 * r / 2);
+        nvgTextAlign(s->vg, NVG_ALIGN_MIDDLE | NVG_ALIGN_CENTER);
+        nvgFillColor(s->vg, COLOR_WHITE_ALPHA(alpha_text));
+        char val[16];
+        snprintf(val, sizeof(val), "%.0f", v * (s->is_metric ? 3.6 : 2.2374144));
+        nvgText(s->vg,x,y,val,NULL);
+      }
+      i++;
     }
     i = 0;
     for (auto const & vd : s->scene.lead_vertices_oncoming){
-      auto [x, y] = vd;
+      auto [x, y, d, v] = vd;
       // fade leads too close to the actual lead
       int alpha_fill = 80;
       int alpha_stroke = 200;
+      int alpha_text = 200;
       if (lead_drawn){
-        float screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - 50., 0., 200.);
+        float screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - 50., 0., 400.);
         float alpha_factor = 1. - float(screen_dist) / 400.;
         alpha_fill -= 60. * alpha_factor;
         alpha_stroke -= 160. * alpha_factor;
+
+        screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - 100., 0., 300.);
+        alpha_factor = 1. - float(screen_dist) / 300.;
+        alpha_text -= 190. * alpha_factor;
       }
-      int r = r2 - int(float(dr) * s->scene.lead_distances_oncoming[i++] / 180.);
+      int r = r2 - int(float(dr) * d / 180.);
       r = (r < r1 ? r1 : r);
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
@@ -387,20 +425,37 @@ static void draw_other_leads(UIState *s, bool lead_drawn) {
       nvgStrokeColor(s->vg, interp_alert_color(1.1, alpha_stroke));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
+
+      if (s->scene.adjacent_lead_info_print_at_lead){
+        nvgFontFace(s->vg, "sans-semibold");
+        nvgBeginPath(s->vg);
+        nvgFontSize(s->vg, 3 * r / 2);
+        nvgTextAlign(s->vg, NVG_ALIGN_MIDDLE | NVG_ALIGN_CENTER);
+        nvgFillColor(s->vg, COLOR_WHITE_ALPHA(alpha_text));
+        char val[16];
+        snprintf(val, sizeof(val), "%.0f", v * (s->is_metric ? 3.6 : 2.2374144));
+        nvgText(s->vg,x,y,val,NULL);
+      }
+      i++;
     }
     i = 0;
     for (auto const & vd : s->scene.lead_vertices_stopped){
-      auto [x, y] = vd;
+      auto [x, y, d, v] = vd;
       // fade leads too close to the actual lead
       int alpha_fill = 80;
       int alpha_stroke = 200;
+      int alpha_text = 200;
       if (lead_drawn){
-        float screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - 50., 0., 200.);
+        float screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - 50., 0., 400.);
         float alpha_factor = 1. - float(screen_dist) / 400.;
         alpha_fill -= 60. * alpha_factor;
         alpha_stroke -= 160. * alpha_factor;
+
+        screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - 100., 0., 300.);
+        alpha_factor = 1. - float(screen_dist) / 300.;
+        alpha_text -= 190. * alpha_factor;
       }
-      int r = r2 - int(float(dr) * s->scene.lead_distances_stopped[i++] / 180.);
+      int r = r2 - int(float(dr) * d / 180.);
       r = (r < r1 ? r1 : r);
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, x - r, y - r, 2 * r, 2 * r, r);
@@ -409,6 +464,18 @@ static void draw_other_leads(UIState *s, bool lead_drawn) {
       nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(alpha_stroke));
       nvgStrokeWidth(s->vg, 6);
       nvgStroke(s->vg);
+
+      if (s->scene.adjacent_lead_info_print_at_lead){
+        nvgFontFace(s->vg, "sans-semibold");
+        nvgBeginPath(s->vg);
+        nvgFontSize(s->vg, 3 * r / 2);
+        nvgTextAlign(s->vg, NVG_ALIGN_MIDDLE | NVG_ALIGN_CENTER);
+        nvgFillColor(s->vg, COLOR_WHITE_ALPHA(alpha_text));
+        char val[16];
+        snprintf(val, sizeof(val), "%.0f", v * (s->is_metric ? 3.6 : 2.2374144));
+        nvgText(s->vg,x,y,val,NULL);
+      }
+      i++;
     }
   }
 }
@@ -419,18 +486,21 @@ static void draw_adjacent_lead_speeds(UIState *s, bool lead_drawn){
     nvgBeginPath(s->vg);
     nvgFontSize(s->vg, 90);
     int y = s->fb_h + 10;
+    int x;
 
-    // left leads
-    nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BOTTOM);
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
-    int x = s->fb_w * 11 / 32;
-    nvgText(s->vg,x,y,s->scene.adjacent_leads_left_str.c_str(),NULL);
+    if (!s->scene.adjacent_lead_info_print_at_lead){
+      // left leads
+      nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BOTTOM);
+      nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+      int x = s->fb_w * 11 / 32;
+      nvgText(s->vg,x,y,s->scene.adjacent_leads_left_str.c_str(),NULL);
 
-    // right leads
-    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BOTTOM);
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
-    x = s->fb_w * 21 / 32;
-    nvgText(s->vg,x,y,s->scene.adjacent_leads_right_str.c_str(),NULL);
+      // right leads
+      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BOTTOM);
+      nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+      x = s->fb_w * 21 / 32;
+      nvgText(s->vg,x,y,s->scene.adjacent_leads_right_str.c_str(),NULL);
+    }
      
     // center leads
     nvgFontSize(s->vg, 90);
@@ -469,6 +539,10 @@ static void draw_adjacent_lead_speeds(UIState *s, bool lead_drawn){
       }
       first = false;
     }
+
+    x = s->fb_w / 2;
+    y = s->fb_h;
+    s->scene.adjacent_lead_info_touch_rect = {x-150,y-300,300,300};
   }
 }
 

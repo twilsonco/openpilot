@@ -158,6 +158,10 @@ typedef struct {
 } vertex_data;
 
 typedef struct {
+  float x, y, d, v;
+} lead_vertex_data;
+
+typedef struct {
   vertex_data v[TRAJECTORY_SIZE * 2];
   int cnt;
 } line_vertices_data;
@@ -269,8 +273,10 @@ typedef struct UIScene {
 
   bool adjacent_paths_enabled;
   bool adjacent_lead_info_print_enabled;
+  bool adjacent_lead_info_print_at_lead;
   std::string adjacent_leads_left_str, adjacent_leads_right_str;
   std::vector<std::string> adjacent_leads_center_strs;
+  Rect adjacent_lead_info_touch_rect = {1,1,1,1};
 
   LaneTraffic traffic_left, traffic_right;
 
@@ -465,8 +471,7 @@ typedef struct UIScene {
 
   // lead
   vertex_data lead_vertices[2];
-  std::vector<vertex_data> lead_vertices_oncoming, lead_vertices_ongoing, lead_vertices_stopped;
-  std::vector<float> lead_distances_oncoming, lead_distances_ongoing, lead_distances_stopped;
+  std::vector<lead_vertex_data> lead_vertices_oncoming, lead_vertices_ongoing, lead_vertices_stopped;
 
   float light_sensor, accel_sensor, gyro_sensor;
   bool started, ignition, is_metric, longitudinal_control, end_to_end;
