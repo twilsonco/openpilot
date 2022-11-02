@@ -68,6 +68,7 @@ Please show your support by contributing to the ongoing development of this proj
     * Brake for car in front of lead, avoiding pile-ups and able to brake when lead changes lanes right in front of a column of stopped cars
     * Indicate adjacent oncoming/ongoing traffic
     * Indicate all tracked cars, including those in front of the lead, and print all speeds
+    * Tap at screen bottom-center (middle of path) to switch where speeds are printed
 - [x] [✅] Longer range lead detection, indicated by blue dot over lead indicator
     * 10% more range using radar, or
     * up to 40% more range using the Volt LKA camera's VOACC capabilities, which have been incorporated into openpilot

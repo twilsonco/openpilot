@@ -276,7 +276,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   this));
   toggles.append(new ParamControl("PrintAdjacentLeadSpeeds",
                                   "Indicate all cars",
-                                  "[Requires extended radar toggle] Print speeds of all cars being tracked by radar and/or vision. Speeds are printed along the bottom of the screen, out from the center to the left/right in order of distance, so the numbers closest to the center are for the more immediate cars. Cars are also indicated onscreen as oncoming (red) or ongoing (green).",
+                                  "[Requires extended radar toggle] Print speeds of all cars being tracked by radar and/or vision. Tap at screen bottom in the middle of the path to toggle display modes between printing inside the indicator or along the bottom of the screen, out from the center to the left/right in order of distance, so the numbers closest to the center are for the more immediate cars. Cars are also indicated onscreen as oncoming (red) or ongoing (green).",
                                   "../assets/offroad/icon_metric.png",
                                   this));
   toggles.append(new ParamControl("ShowDebugUI",

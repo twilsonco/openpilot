@@ -216,6 +216,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PrimeRedirected", PERSISTENT},
     {"PrintLeadInfo", PERSISTENT},
     {"PrintAdjacentLeadSpeeds", PERSISTENT},
+    {"PrintAdjacentLeadSpeedsAtLead", PERSISTENT},
     {"ExtendedRadar", PERSISTENT},
     {"AdjacentPaths", PERSISTENT},
     {"RecordFront", PERSISTENT},

@@ -7,7 +7,7 @@ Version tw-0.8.12-9_tws (2022-10-27)
      * if the lead changes lanes right before a stopped column of cars (prick), openpilot can still react in time
    * [toggle] Indicate oncoming/ongoing traffic in adjacent lanes: gray indicates stopped adjacent traffic (or "objects"), red for oncoming, and *engaged* color for ongoing
    * [toggle] Indicate *all* cars, marking them with transparent circles using the same color scheme
-     * also prints speeds of all detected cars
+     * also prints speeds of all detected cars; tap at screen bottom at center of path to switch where speeds are printed
      * speed of cars in your own lane are printed above the lead indicator, or at screen bottom-center if no "lead" is detected
  * IMPROVED: [toggle] Traffic-based auto lane position
    * if there's only adjacent traffic on one side and clear lanelines, keeps you away from the traffic

@@ -78,6 +78,15 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     Params().putBool("SpeedLimitControl", QUIState::ui_state.scene.speed_limit_control_enabled);
 		return;
   }
+
+  // toggle adjacent lead info printing style
+  if (QUIState::ui_state.scene.started  &&
+    QUIState::ui_state.scene.adjacent_lead_info_touch_rect.ptInRect(e->x(), e->y())) {
+    // If touching the speed limit sign area when visible
+    QUIState::ui_state.scene.adjacent_lead_info_print_at_lead = !QUIState::ui_state.scene.adjacent_lead_info_print_at_lead;
+    Params().putBool("PrintAdjacentLeadSpeedsAtLead", QUIState::ui_state.scene.adjacent_lead_info_print_at_lead);
+		return;
+  }
   
   // Laneless mode
   touch_rect = QUIState::ui_state.scene.laneless_btn_touch_rect;
