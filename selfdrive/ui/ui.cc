@@ -257,7 +257,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
       update_line_data(s, lane_lines[i+1], lw, 0, &lane, max_idx, false, k * lw * 1.1);
     }
     else{
-      update_line_data(s, model_position, lw, 0, &lane, max_idx, false, k * lw * 2.);
+      update_line_data(s, model_position, 1.6, 0, &lane, max_idx, false, k * 4.0);
     }
   }
 }
