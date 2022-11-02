@@ -392,7 +392,7 @@ static void draw_other_leads(UIState *s, bool lead_drawn) {
         nvgBeginPath(s->vg);
         nvgFontSize(s->vg, 3 * r / 2);
         nvgTextAlign(s->vg, NVG_ALIGN_MIDDLE | NVG_ALIGN_CENTER);
-        nvgFillColor(s->vg, COLOR_WHITE_ALPHA(alpha_text));
+        nvgFillColor(s->vg, COLOR_WHITE_ALPHA(s->scene.lead_info_print_enabled ? alpha_stroke : alpha_text));
         char val[16];
         snprintf(val, sizeof(val), "%.0f", v * (s->is_metric ? 3.6 : 2.2374144));
         nvgText(s->vg,x,y,val,NULL);
@@ -431,7 +431,7 @@ static void draw_other_leads(UIState *s, bool lead_drawn) {
         nvgBeginPath(s->vg);
         nvgFontSize(s->vg, 3 * r / 2);
         nvgTextAlign(s->vg, NVG_ALIGN_MIDDLE | NVG_ALIGN_CENTER);
-        nvgFillColor(s->vg, COLOR_WHITE_ALPHA(alpha_text));
+        nvgFillColor(s->vg, COLOR_WHITE_ALPHA(s->scene.lead_info_print_enabled ? alpha_stroke : alpha_text));
         char val[16];
         snprintf(val, sizeof(val), "%.0f", v * (s->is_metric ? 3.6 : 2.2374144));
         nvgText(s->vg,x,y,val,NULL);
@@ -470,7 +470,7 @@ static void draw_other_leads(UIState *s, bool lead_drawn) {
         nvgBeginPath(s->vg);
         nvgFontSize(s->vg, 3 * r / 2);
         nvgTextAlign(s->vg, NVG_ALIGN_MIDDLE | NVG_ALIGN_CENTER);
-        nvgFillColor(s->vg, COLOR_WHITE_ALPHA(alpha_text));
+        nvgFillColor(s->vg, COLOR_WHITE_ALPHA(s->scene.lead_info_print_enabled ? alpha_stroke : alpha_text));
         char val[16];
         snprintf(val, sizeof(val), "%.0f", v * (s->is_metric ? 3.6 : 2.2374144));
         nvgText(s->vg,x,y,val,NULL);
