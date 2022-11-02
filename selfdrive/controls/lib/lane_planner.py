@@ -171,7 +171,7 @@ class LaneOffset:
     if road_type != self._road_type_last or ret == AUTO_AUTO_LANE_MODE.DISENGAGE \
         or (v_ego >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and self._v_ego_last < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED) \
         or (v_ego < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and self._v_ego_last >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED):
-      if (road_type in self.AUTO_ENABLE_ROAD_TYPES and v_ego >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and not self._auto_is_active):
+      if (road_type in self.AUTO_ENABLE_ROAD_TYPES and v_ego >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and (not self._auto_is_active or ret == AUTO_AUTO_LANE_MODE.DISENGAGE)):
         ret = AUTO_AUTO_LANE_MODE.NO_CHANGE if ret == AUTO_AUTO_LANE_MODE.DISENGAGE else AUTO_AUTO_LANE_MODE.ENGAGE
         self._auto_auto_enabled = True
       elif self._auto_is_active and self._auto_auto_enabled \
