@@ -361,10 +361,10 @@ static void draw_other_leads(UIState *s, bool lead_drawn) {
     int r1 = 8, r2 = 75;
     int dr = r2 - r1;
     int i = 0;
-    int fill_screen_dist_offset = (s->scene.lead_info_print_enabled ? 50 : 10);
-    int fill_screen_dist_max = 400;
-    int text_screen_dist_offset = (s->scene.lead_info_print_enabled ? 100 : 10);
-    int text_screen_dist_max = 300;
+    float fill_screen_dist_offset = (s->scene.lead_info_print_enabled ? 50 : 10);
+    float fill_screen_dist_max = 400;
+    float text_screen_dist_offset = (s->scene.lead_info_print_enabled ? 100 : 10);
+    float text_screen_dist_max = 300;
     for (auto const & vd : s->scene.lead_vertices_ongoing){
       auto [x, y, d, v] = vd;
       // fade leads too close to the actual lead
