@@ -171,7 +171,7 @@ class LaneOffset:
     if road_type != self._road_type_last or ret == AUTO_AUTO_LANE_MODE.DISENGAGE \
         or (v_ego >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and self._v_ego_last < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED) \
         or (v_ego < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and self._v_ego_last >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED):
-      if (road_type in self.AUTO_ENABLE_ROAD_TYPES and v_ego >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and not self._auto_is_active):
+      if (road_type in self.AUTO_ENABLE_ROAD_TYPES and v_ego >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and (not self._auto_is_active or ret == AUTO_AUTO_LANE_MODE.DISENGAGE)):
         ret = AUTO_AUTO_LANE_MODE.NO_CHANGE if ret == AUTO_AUTO_LANE_MODE.DISENGAGE else AUTO_AUTO_LANE_MODE.ENGAGE
         self._auto_auto_enabled = True
       elif self._auto_is_active and self._auto_auto_enabled \
@@ -374,6 +374,7 @@ class LaneOffset:
     if md is not None:
       if self._cs is not None:
         self.update_lane_info(md, self._cs.vEgo, lane_width)
+        self.update_traffic_info(sm['radarState'], lane_width, md)
         lane_depart = False
         if self._lat_plan is not None:
           right_lane_visible = self._lat_plan.rProb > 0.3
@@ -408,7 +409,6 @@ class LaneOffset:
             and self._t - self._lane_state_changed_last_t < self.AUTO_LANE_STATE_MIN_TIME:
           self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
           
-        self.update_traffic_info(sm['radarState'], lane_width, md)
         self.update_lane_pos_auto(lane_width)
       if self._long_plan is not None:
         self._lat_accel_cur = self._long_plan.visionCurrentLateralAcceleration
@@ -421,7 +421,7 @@ class LaneOffset:
       self._auto_is_active = False
       
     do_slow = self._auto_is_active # and self._lane_pos_auto != 0.
-    if self._auto_is_active:
+    if self._auto_is_active and self._auto_auto_lane_position_action != AUTO_AUTO_LANE_MODE.DISENGAGE:
       if self._t - self._lane_state_changed_last_t > self.AUTO_LANE_STATE_MIN_TIME:
         self.lane_pos = self._lane_pos_auto
       else:

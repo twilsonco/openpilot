@@ -164,9 +164,6 @@ class CarInterface(CarInterfaceBase):
     ret.startAccel = 0.8
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 1/15  # GM radar runs at 15Hz instead of standard 20Hz
-    
-    ret.longitudinalTuning.deadzoneBP = [0.]
-    ret.longitudinalTuning.deadzoneV = [0.15]
 
     # GM port is a community feature
     # TODO: make a port that uses a car harness and it only intercepts the camera
