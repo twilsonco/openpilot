@@ -7,9 +7,11 @@ from itertools import chain
 from tools.lib.auth_config import get_token
 from tools.lib.api import CommaApi
 
+SEGMENT_DIR_NAME_RE = r'[0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2}--[0-9]+'
 SEGMENT_NAME_RE = r'[a-z0-9]{16}[|_][0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2}--[0-9]+'
 EXPLORER_FILE_RE = r'^({})--([a-z]+\.[a-z0-9]+)$'.format(SEGMENT_NAME_RE)
 OP_SEGMENT_DIR_RE = r'^({})$'.format(SEGMENT_NAME_RE)
+OP_SEGMENT_DIR_SHORT_RE = r'^({})$'.format(SEGMENT_DIR_NAME_RE)
 
 QLOG_FILENAMES = ['qlog.bz2']
 QCAMERA_FILENAMES = ['qcamera.ts']
@@ -77,9 +79,11 @@ class Route(object):
     segment_files = defaultdict(list)
 
     for f in files:
+      
       fullpath = os.path.join(data_dir, f)
       explorer_match = re.match(EXPLORER_FILE_RE, f)
       op_match = re.match(OP_SEGMENT_DIR_RE, f)
+      op_short_match = re.match(OP_SEGMENT_DIR_SHORT_RE, f)
 
       if explorer_match:
         segment_name, fn = explorer_match.groups()
@@ -87,6 +91,11 @@ class Route(object):
           segment_files[segment_name].append((fullpath, fn))
       elif op_match and os.path.isdir(fullpath):
         segment_name, = op_match.groups()
+        if segment_name.startswith(self.route_name):
+          for seg_f in os.listdir(fullpath):
+            segment_files[segment_name].append((os.path.join(fullpath, seg_f), seg_f))
+      elif op_short_match and os.path.isdir(fullpath):
+        segment_name, = op_short_match.groups()
         if segment_name.startswith(self.route_name):
           for seg_f in os.listdir(fullpath):
             segment_files[segment_name].append((os.path.join(fullpath, seg_f), seg_f))
@@ -99,6 +108,8 @@ class Route(object):
           for seg_f in os.listdir(os.path.join(fullpath, seg_num)):
             segment_files[segment_name].append((os.path.join(fullpath, seg_num, seg_f), seg_f))
 
+    print('\n'.join([f"{k}: {v}" for k,v in segment_files.items()]))
+    
     segments = []
     for segment, files in segment_files.items():
 
