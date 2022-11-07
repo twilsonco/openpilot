@@ -65,8 +65,8 @@ def calc_cruise_accel_limits(v_ego, following, accelMode):
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_MODE_LIST[accelMode])
   return [a_cruise_min, a_cruise_max]
 
-LEAD_ONE_PLUS_TR_BUFFER = 0.4 # [s] follow distance between lead and lead+1 to run the lead+1 mpc
-LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER = 8.0 # [m]
+LEAD_ONE_PLUS_TR_BUFFER = 0.3 # [s] follow distance between lead and lead+1 to run the lead+1 mpc
+LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER = 3.0 # [m]
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
@@ -90,6 +90,8 @@ class Planner():
     self.mpcs['lead0p1'] = LeadMpc(2)
     self.mpcs['cruise'] = LongitudinalMpc()
     self.mpcs['custom'] = LimitsLongitudinalMpc()
+    
+    self.mpcs['lead0p1'].stopping_distance_offset = LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER
 
     self.fcw = False
     self.fcw_checker = FCWChecker()
@@ -219,10 +221,9 @@ class Planner():
     for key in self.mpcs:
       if key == 'lead0p1':
         if self.lead_0_plus.status and self.lead_0.status:
-          tr = self.mpcs['lead0'].tr + LEAD_ONE_PLUS_TR_BUFFER
+          tr = self.lead_0.dRel / v_ego + LEAD_ONE_PLUS_TR_BUFFER
           self.mpcs['lead0p1'].tr_override = True
           self.mpcs['lead0p1'].tr = tr
-          self.mpcs['lead0p1'].stopping_distance_offset = min(LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER, self.lead_0_plus.dRel - self.lead_0.dRel)
         else:
           continue
       self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
