@@ -221,7 +221,7 @@ class Planner():
     for key in self.mpcs:
       if key == 'lead0p1':
         if self.lead_0_plus.status and self.lead_0.status:
-          tr = self.lead_0.dRel / v_ego + LEAD_ONE_PLUS_TR_BUFFER
+          tr = self.mpcs['lead0'].tr + LEAD_ONE_PLUS_TR_BUFFER
           self.mpcs['lead0p1'].tr_override = True
           self.mpcs['lead0p1'].tr = tr
         else:
