@@ -23,7 +23,8 @@ LEAD_PATH_DREL_MIN = 60 # [m] only care about far away leads
 LEAD_MIN_SMOOTHING_DISTANCE = 145 # [m]
 MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow use.
 
-LEAD_PLUS_ONE_MIN_REL_DIST = 2.0 # [m] min distance between lead+1 and lead
+LEAD_PLUS_ONE_MIN_REL_DIST_V = [2.0, 6.0] # [m] min distance between lead+1 and lead at low and high distance
+LEAD_PLUS_ONE_MIN_REL_DIST_BP = [0., 100.] # [m] min distance between lead+1 and lead at low and high distance
 
 class KalmanParams():
   def __init__(self, dt):
@@ -455,7 +456,8 @@ class RadarD():
         ll,lc,lr = get_path_adjacent_leads(self.v_ego, sm['modelV2'], sm['lateralPlan'].laneWidth, clusters)
         try:
           if abs(sm['carState'].steeringAngleDeg) < 15 and radarState.leadOne.status and radarState.leadOne.modelProb > 0.5:
-            lc = [l for l in lc if l["dRel"] > radarState.leadOne.dRel + LEAD_PLUS_ONE_MIN_REL_DIST]
+            check_dist = interp(radarState.leadOne.dRel, LEAD_PLUS_ONE_MIN_REL_DIST_BP, LEAD_PLUS_ONE_MIN_REL_DIST_V)
+            lc = [l for l in lc if l["dRel"] > radarState.leadOne.dRel + check_dist]
             if len(lc) > 0: # get the lead+1 car
               radarState.leadOnePlus = self.lead_one_plus_lr.update(lc[0])
         except AttributeError:
