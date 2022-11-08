@@ -24,22 +24,22 @@ ONE_PEDAL_ACCEL_PITCH_FACTOR_V = [0.4, 1.] # [unitless in [0-1]]
 ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V = [0.2, 1.] # [unitless in [0-1]]
 
 ONE_PEDAL_MODE_DECEL_BP = [
-  [i * CV.MPH_TO_MS for i in [0.5, 2.]],
+  [i * CV.MPH_TO_MS for i in [0.5, 6.]],
   [i * CV.MPH_TO_MS for i in [4., 12., 30.]],
   [i * CV.MPH_TO_MS for i in [4., 16., 30.]]
   ] # [mph to meters]
 ONE_PEDAL_MODE_DECEL_V = [
-  [-0.9, -1.1],
+  [-1.0, -1.1],
   [-1.3, -1.7, -1.8],
   [-1.7, -2.6, -2.4]
 ] # light, medium, and hard one-pedal braking
 ONE_PEDAL_MIN_SPEED = 2.5
 ONE_PEDAL_DECEL_RATE_LIMIT_UP = 0.8 * DT_CTRL * 4 # m/s^2 per second for increasing braking force
-ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.5 * DT_CTRL * 4 # m/s^2 per second for decreasing
+ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.8 * DT_CTRL * 4 # m/s^2 per second for decreasing
 
 ONE_PEDAL_MAX_DECEL = -3.5
 ONE_PEDAL_SPEED_ERROR_FACTOR_BP = [1.5, 20.] # [m/s] 
-ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.15, 0.3] # factor of error for non-lead braking decel
+ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.25, 0.4] # factor of error for non-lead braking decel
 
 ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T = 0.6 # [s]
 
@@ -117,9 +117,10 @@ class CarController():
         self.one_pedal_decel_in = CS.out.aEgo
         self.lead_accel_last_t = 0.
       else:
+        t = sec_since_boot()
         k = interp(CS.out.vEgo, ACCEL_PITCH_FACTOR_BP, ACCEL_PITCH_FACTOR_V)
         brake_accel = k * actuators.accelPitchCompensated + (1. - k) * actuators.accel
-        if CS.one_pedal_mode_active and (not CS.one_pedal_mode_op_braking_allowed or CS.lead_accel > self.one_pedal_decel + 0.2):
+        if CS.one_pedal_mode_active and (not CS.one_pedal_mode_op_braking_allowed or t - self.lead_accel_last_t > ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T):
           one_pedal_speed = max(CS.vEgo, ONE_PEDAL_MIN_SPEED)
           threshold_accel = self.params.update_gas_brake_threshold(one_pedal_speed, CS.engineRPM > 0)
         else:
@@ -127,7 +128,6 @@ class CarController():
         self.apply_gas = interp(actuators.accelPitchCompensated, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
         no_pitch_apply_gas = interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
         self.apply_brake = interp(brake_accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
-        t = sec_since_boot()
         
         v_rel = CS.coasting_lead_v - CS.vEgo
         ttc = min(-CS.coasting_lead_d / v_rel if (CS.coasting_lead_d > 0. and v_rel < 0.) else 100.,100.)

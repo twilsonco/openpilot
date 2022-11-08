@@ -36,8 +36,10 @@ class RouteFrameReader(object):
         kwargs: Forwarded to the FrameReader function. If cache_prefix is included, that path
                 will also be used for frame position indices.
     """
+    print(camera_paths)
     if not isinstance(camera_paths, dict):
-      camera_paths = {int(k.split('?')[0].split('/')[-2]): k for k in camera_paths if k is not None}
+      # camera_paths = {int(k.split('?')[0].split('/')[-2]): k for k in camera_paths if k is not None}
+      camera_paths = {int(k.split('?')[0].split('/')[-2].split('--')[-1]): k for k in camera_paths if k is not None}
 
     self._first_camera_idx = min(camera_paths.keys())
     self._frame_readers = _FrameReaderDict(camera_paths, cache_paths, kwargs)
