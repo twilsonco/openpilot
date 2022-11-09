@@ -328,23 +328,24 @@ class LaneOffset:
     lane_pos_auto = 0.
     timeout_override = False
     
-    if self._left_traffic != LANE_TRAFFIC.NONE \
-        and self._right_traffic == LANE_TRAFFIC.NONE:
-      lane_pos_auto = -1.
-      timeout_override = True
-    elif self._right_traffic != LANE_TRAFFIC.NONE \
-        and self._left_traffic == LANE_TRAFFIC.NONE:
-      lane_pos_auto = 1.
-      timeout_override = True
-    elif self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB \
-        and self._lane_probs[2] > self.AUTO_MIN_LANELINE_PROB:
-      if (self._lane_width_mean_left_adjacent > 0. and self._lane_width_mean_right_adjacent > 0.) \
-          or (self._lane_width_mean_left_adjacent == 0. and self._lane_width_mean_right_adjacent == 0.):
-        lane_pos_auto = 0.
-      elif self._lane_width_mean_left_adjacent > 0. and self._shoulder_width_mean_right >= self.AUTO_MIN_SHOULDER_WIDTH_FACTOR * lane_width:
+    if not (self._cs is None or self._cs.leftBlinker or self._cs.rightBlinker):
+      if self._left_traffic != LANE_TRAFFIC.NONE \
+          and self._right_traffic == LANE_TRAFFIC.NONE:
         lane_pos_auto = -1.
-      elif self._lane_width_mean_right_adjacent > 0. and self._shoulder_width_mean_left >= self.AUTO_MIN_SHOULDER_WIDTH_FACTOR * lane_width:
+        timeout_override = True
+      elif self._right_traffic != LANE_TRAFFIC.NONE \
+          and self._left_traffic == LANE_TRAFFIC.NONE:
         lane_pos_auto = 1.
+        timeout_override = True
+      elif self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB \
+          and self._lane_probs[2] > self.AUTO_MIN_LANELINE_PROB:
+        if (self._lane_width_mean_left_adjacent > 0. and self._lane_width_mean_right_adjacent > 0.) \
+            or (self._lane_width_mean_left_adjacent == 0. and self._lane_width_mean_right_adjacent == 0.):
+          lane_pos_auto = 0.
+        elif self._lane_width_mean_left_adjacent > 0. and self._shoulder_width_mean_right >= self.AUTO_MIN_SHOULDER_WIDTH_FACTOR * lane_width:
+          lane_pos_auto = -1.
+        elif self._lane_width_mean_right_adjacent > 0. and self._shoulder_width_mean_left >= self.AUTO_MIN_SHOULDER_WIDTH_FACTOR * lane_width:
+          lane_pos_auto = 1.
     if lane_pos_auto != 0. \
         and ((self._lat_accel_cur >= self.AUTO_MAX_CUR_LAT_ACCEL \
           and np.sign(self._lat_curvature_cur) == np.sign(lane_pos_auto)) \
