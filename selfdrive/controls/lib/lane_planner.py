@@ -5,6 +5,7 @@ from common.numpy_fast import interp, clip
 from common.realtime import DT_MDL
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
+from selfdrive.controls.lib.drive_helpers import apply_deadzone
 from selfdrive.hardware import EON, TICI
 from selfdrive.swaglog import cloudlog
 from enum import Enum
@@ -95,6 +96,7 @@ class LaneOffset:
   AUTO_ENABLE_ROAD_TYPES = {0, 10, 20, 30} # freeway and state highways (see highway ranks in /Users/haiiro/NoSync/optw/openpilot/selfdrive/mapd/lib/WayRelation.py)
   AUTO_ENABLE_ROAD_TYPE_MIN_SPEED = 40. * CV.MPH_TO_MS
   AUTO_ENABLE_TRAFFIC_MIN_SPEED = 10. * CV.MPH_TO_MS
+  AUTO_ENABLE_MIN_SPEED_DEADZONE = 2. # [m/s]
   
   AUTO_TRAFFIC_TIMEOUT = 30. # [s] amount of time auto lane position will be kept after last car is seen
   AUTO_TRAFFIC_MIN_TIME = 1.1 # [s] time an oncoming/ongoing car needs to be observed before it will be taken to indicate traffic
@@ -147,35 +149,39 @@ class LaneOffset:
   
   
   def do_auto_enable_traffic(self, ret, v_ego):
+    v_ego_diff = apply_deadzone(v_ego - self.AUTO_ENABLE_TRAFFIC_MIN_SPEED, self.AUTO_ENABLE_MIN_SPEED_DEADZONE)
+    v_ego_diff_last = apply_deadzone(self._v_ego_last - self.AUTO_ENABLE_TRAFFIC_MIN_SPEED, self.AUTO_ENABLE_MIN_SPEED_DEADZONE)
     if ret != AUTO_AUTO_LANE_MODE.ENGAGE and (self._left_traffic_last != self._left_traffic or self._right_traffic != self._right_traffic_last \
-      or (v_ego >= self.AUTO_ENABLE_TRAFFIC_MIN_SPEED and self._v_ego_last < self.AUTO_ENABLE_TRAFFIC_MIN_SPEED) \
-      or (v_ego < self.AUTO_ENABLE_TRAFFIC_MIN_SPEED and self._v_ego_last >= self.AUTO_ENABLE_TRAFFIC_MIN_SPEED) \
+      or (v_ego_diff > 0. and v_ego_diff_last <= 0.) \
+      or (v_ego_diff < 0. and v_ego_diff_last >= 0.) \
       or (self._lane_probs[1] >= self.AUTO_MIN_LANELINE_PROB and self._lprob_last <= self.AUTO_MIN_LANELINE_PROB) \
       or (self._lane_probs[1] < self.AUTO_MIN_LANELINE_PROB and self._lprob_last >= self.AUTO_MIN_LANELINE_PROB) \
       or (self._lane_probs[2] >= self.AUTO_MIN_LANELINE_PROB and self._rprob_last <= self.AUTO_MIN_LANELINE_PROB) \
       or (self._lane_probs[2] < self.AUTO_MIN_LANELINE_PROB and self._rprob_last >= self.AUTO_MIN_LANELINE_PROB)):  
-      if not self._auto_is_active and v_ego >= self.AUTO_ENABLE_TRAFFIC_MIN_SPEED \
+      if not self._auto_is_active and v_ego_diff > 0. \
         and (self._left_traffic != LANE_TRAFFIC.NONE or self._right_traffic != LANE_TRAFFIC.NONE) \
         and self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB and self._lane_probs[2] > self.AUTO_MIN_LANELINE_PROB:
           ret = AUTO_AUTO_LANE_MODE.ENGAGE
           self._auto_auto_enabled = True
       elif self._auto_is_active and self._auto_auto_enabled \
         and (self._left_traffic == LANE_TRAFFIC.NONE and self._right_traffic == LANE_TRAFFIC.NONE \
-          or v_ego < self.AUTO_ENABLE_TRAFFIC_MIN_SPEED \
+          or v_ego_diff < 0. \
           or (self._lane_probs[1] < self.AUTO_MIN_LANELINE_PROB and self._lane_probs[2] < self.AUTO_MIN_LANELINE_PROB)):
             ret = AUTO_AUTO_LANE_MODE.DISENGAGE
             self._auto_auto_enabled = False
     return ret
 
   def do_auto_enable_lanelines(self, ret, road_type, v_ego):
+    v_ego_diff = apply_deadzone(v_ego - self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED, self.AUTO_ENABLE_MIN_SPEED_DEADZONE)
+    v_ego_diff_last = apply_deadzone(self._v_ego_last - self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED, self.AUTO_ENABLE_MIN_SPEED_DEADZONE)
     if road_type != self._road_type_last or ret == AUTO_AUTO_LANE_MODE.DISENGAGE \
-        or (v_ego >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and self._v_ego_last < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED) \
-        or (v_ego < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and self._v_ego_last >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED):
-      if (road_type in self.AUTO_ENABLE_ROAD_TYPES and v_ego >= self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED and (not self._auto_is_active or ret == AUTO_AUTO_LANE_MODE.DISENGAGE)):
+        or (v_ego_diff > 0. and v_ego_diff_last <= 0.) \
+        or (v_ego_diff < 0. and v_ego_diff_last >= 0.):
+      if (road_type in self.AUTO_ENABLE_ROAD_TYPES and v_ego_diff > 0. and (not self._auto_is_active or ret == AUTO_AUTO_LANE_MODE.DISENGAGE)):
         ret = AUTO_AUTO_LANE_MODE.NO_CHANGE if ret == AUTO_AUTO_LANE_MODE.DISENGAGE else AUTO_AUTO_LANE_MODE.ENGAGE
         self._auto_auto_enabled = True
       elif self._auto_is_active and self._auto_auto_enabled \
-        and (road_type not in self.AUTO_ENABLE_ROAD_TYPES or v_ego < self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED) :
+        and (road_type not in self.AUTO_ENABLE_ROAD_TYPES or v_ego_diff < 0.) :
           ret = AUTO_AUTO_LANE_MODE.DISENGAGE
           self._auto_auto_enabled = False
     return ret
