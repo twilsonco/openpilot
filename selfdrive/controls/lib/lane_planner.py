@@ -164,9 +164,9 @@ class LaneOffset:
           ret = AUTO_AUTO_LANE_MODE.ENGAGE
           self._auto_auto_enabled = True
       elif self._auto_is_active and self._auto_auto_enabled \
-        and (self._left_traffic == LANE_TRAFFIC.NONE and self._right_traffic == LANE_TRAFFIC.NONE \
+        and (self._left_traffic == LANE_TRAFFIC.NONE and self._right_traffic == LANE_TRAFFIC.NONE) \
           or v_ego_diff < 0. \
-          or (self._lane_probs[1] < self.AUTO_MIN_LANELINE_PROB and self._lane_probs[2] < self.AUTO_MIN_LANELINE_PROB)):
+          or (self._lane_probs[1] < self.AUTO_MIN_LANELINE_PROB and self._lane_probs[2] < self.AUTO_MIN_LANELINE_PROB):
             ret = AUTO_AUTO_LANE_MODE.DISENGAGE
             self._auto_auto_enabled = False
     return ret
