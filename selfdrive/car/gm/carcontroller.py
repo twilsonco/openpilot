@@ -7,7 +7,7 @@ import math
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons, EV_CAR
+from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons, AccState, EV_CAR
 from selfdrive.controls.lib.drive_helpers import apply_deadzone
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 
@@ -116,18 +116,37 @@ class CarController:
 
         idx = (self.frame // 4) % 4
 
-        at_full_stop = CC.longActive and CS.out.standstill
-        near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
-        friction_brake_bus = CanBus.CHASSIS
-        # GM Camera exceptions
-        # TODO: can we always check the longControlState?
-        if self.CP.networkLocation == NetworkLocation.fwdCamera:
-          at_full_stop = at_full_stop and actuators.longControlState == LongCtrlState.stopping
-          friction_brake_bus = CanBus.POWERTRAIN
+        if CS.out.cruiseState.available and not CC.longActive and CS.autoHold and CS.autoHoldActive and not CS.out.gasPressed and CS.out.gearShifter in ['drive','low'] and CS.out.vEgo < 0.02 and not CS.regenPaddlePressed:
+          # Auto Hold State
+          car_stopping = self.apply_gas < self.params.ZERO_GAS
+          at_full_stop = CS.out.standstill and car_stopping
+          friction_brake_bus = CanBus.CHASSIS
+          # GM Camera exceptions
+          # TODO: can we always check the longControlState?
+          if self.CP.networkLocation == NetworkLocation.fwdCamera:
+            friction_brake_bus = CanBus.POWERTRAIN
+          near_stop = (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE) and car_stopping
+          can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake, idx, CC.enabled, near_stop, at_full_stop, self.CP))
+          CS.autoHoldActivated = True
+        else:  
+          if CS.out.gasPressed:
+            at_full_stop = False
+            near_stop = False
+            car_stopping = False
+          else:
+            at_full_stop = CC.longActive and CS.out.standstill
+            near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
+          friction_brake_bus = CanBus.CHASSIS
+          # GM Camera exceptions
+          # TODO: can we always check the longControlState?
+          if self.CP.networkLocation == NetworkLocation.fwdCamera:
+            at_full_stop = at_full_stop and actuators.longControlState == LongCtrlState.stopping
+            friction_brake_bus = CanBus.POWERTRAIN
 
-        # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
-        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled and CS.out.cruiseState.enabled, at_full_stop))
-        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake, idx, CC.enabled, near_stop, at_full_stop, self.CP))
+          # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
+          can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled and CS.out.cruiseState.enabled, at_full_stop))
+          can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake, idx, CC.enabled, near_stop, at_full_stop, self.CP))
+          CS.autoHoldActivated = False
 
         gac_set = CS.gap_adjust_cruise_tr
 

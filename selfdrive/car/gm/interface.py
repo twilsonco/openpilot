@@ -315,6 +315,8 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback)
+    
+    t = sec_since_boot()
 
     ret.madsEnabled = self.CS.madsEnabled
     ret.accEnabled = self.CS.accEnabled
@@ -356,6 +358,13 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.resumeRequired)
     if ret.vEgo < self.CP.minSteerSpeed and self.CS.madsEnabled and ret.vEgo > 0.05:
       events.add(EventName.belowSteerSpeed)
+
+    if self.CS.autoHoldActivated:
+      self.CS.lastAutoHoldTime = t
+    if EventName.accFaulted in events.events and \
+        (t - self.CS.sessionInitTime < 10.0 or
+        t - self.CS.lastAutoHoldTime < 1.0):
+      events.events.remove(EventName.accFaulted)
 
     self.CS.disengageByBrake = self.CS.disengageByBrake or ret.disengageByBrake
 
@@ -410,4 +419,15 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   def apply(self, c):
-    return self.CC.update(c, self.CS)
+    can_sends = self.CC.update(c, self.CS)
+    # Release Auto Hold and creep smoothly when regenpaddle pressed
+    if self.CS.regenPaddlePressed and self.CS.autoHold:
+      self.CS.autoHoldActive = False
+
+    if self.CS.autoHold and not self.CS.autoHoldActive and not self.CS.regenPaddlePressed:
+      if self.CS.out.vEgo > 0.03:
+        self.CS.autoHoldActive = True
+      elif self.CS.out.vEgo < 0.02 and self.CS.out.brakePressed:
+        self.CS.autoHoldActive = True
+        
+    return can_sends
