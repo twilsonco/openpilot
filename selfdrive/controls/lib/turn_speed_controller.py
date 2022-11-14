@@ -70,7 +70,7 @@ class TurnSpeedController():
 
     self._next_speed_limit_prev = 0.
 
-    self._a_target = FirstOrderFilter(0., 1.0, DT_CTRL)
+    self._a_target = FirstOrderFilter(0., 0.5, DT_CTRL)
 
   @property
   def a_target(self):
