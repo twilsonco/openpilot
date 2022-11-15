@@ -219,28 +219,19 @@ class LaneOffset:
       
       # get road edge "probabilities"
       self._road_edge_probs = [ interp(md.roadEdgeStds[i], [.3, 1.], [1.0, 0.0]) for i in range(2) ]
+      self._lane_probs = md.laneLineProbs
             
       # get laneline probabilities
-      for i in range(3): 
-        l_prob, r_prob = md.laneLineProbs[i], md.laneLineProbs[i+1]
-        if ((i == 0 and l_prob > self.AUTO_MIN_ADJACENT_LANELINE_PROB) or l_prob > self.AUTO_MIN_LANELINE_PROB) \
-            and ((i == 2 and r_prob > self.AUTO_MIN_ADJACENT_LANELINE_PROB) or r_prob > self.AUTO_MIN_LANELINE_PROB):
-          # Reduce reliance on uncertain lanelines (less stringent for adjacent lanelines)
-          rll_y, lll_y = np.array(md.laneLines[i+1].y), np.array(md.laneLines[i].y)
-          
-          if i == 0: # set left adjacent 
-            self._lane_probs[0] = l_prob
-            self._lane_width_mean_left_adjacent = np.mean(rll_y - lll_y)
-            if self._road_edge_probs[0] > 0.:
-              self._shoulder_width_mean_left = np.mean(lll_y - np.array(md.roadEdges[0].y))
-          elif i == 1: # set center
-            self._lane_probs[1] = l_prob
-            self._lane_probs[2] = r_prob
-          else: # set right 
-            self._lane_probs[3] = r_prob
-            self._lane_width_mean_right_adjacent = np.mean(rll_y - lll_y)
-            if self._road_edge_probs[1] > 0.:
-              self._shoulder_width_mean_right = np.mean(np.array(md.roadEdges[1].y) - rll_y)
+      for i in [0,2]: 
+        rll_y, lll_y = np.array(md.laneLines[i+1].y), np.array(md.laneLines[i].y)
+        if i == 0: # set left adjacent 
+          self._lane_width_mean_left_adjacent = np.mean(rll_y - lll_y)
+          if self._road_edge_probs[0] > 0.:
+            self._shoulder_width_mean_left = np.mean(lll_y - np.array(md.roadEdges[0].y))
+        elif i == 2: # set right 
+          self._lane_width_mean_right_adjacent = np.mean(rll_y - lll_y)
+          if self._road_edge_probs[1] > 0.:
+            self._shoulder_width_mean_right = np.mean(np.array(md.roadEdges[1].y) - rll_y)
 
       
       # see if adjacent lane can be treated as shoulder because it's too narrow
