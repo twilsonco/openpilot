@@ -1,7 +1,7 @@
 import math
 import numpy as np
 from common.numpy_fast import interp, clip
-from common.realtime import sec_since_boot
+from common.realtime import sec_since_boot, DT_MDL
 from common.params import Params
 from selfdrive.config import Conversions as CV
 from selfdrive.modeld.constants import T_IDXS
@@ -156,6 +156,12 @@ class DynamicFollow():
   cutin_rescind_t_bp = [2.,6.] # [s] time since last cut-in
   cutin_rescind_t_v = [1., 0.] # [unitless] factor of cut-in penalty that is rescinded
   
+  ############################################
+  #    PENALIZING BASED ON ADJACENT TRAFFIC
+  ############################################
+  
+  traffic_penalty_factor = 0.05 * DT_MDL # amount of penalty per second. 0.05 means it takes 20 seconds for it to go from medium to close follow (this is scaled by the number of adjacent cars)
+  
   def __init__(self,fpi = 1):
     self.points_cur = fpi # [follow profile number 0-based] number of current points. corresponds to follow level
     self.t_last = 0. # sec_since_boot() on last iteration
@@ -172,6 +178,9 @@ class DynamicFollow():
     self.penalty = 0.
     self.last_cutin_factor = 0.
     self.rescinded_penalty = 0.
+    self.traffic_penalty = 0.
+    
+    self.lateralPlan = None
   
   def update_init(self):
     self.new_lead = False
@@ -183,8 +192,20 @@ class DynamicFollow():
     self.last_cutin_factor = 0.
     self.rescinded_penalty = 0.
   
-  def update(self, has_lead, lead_d, lead_v, v_ego):
+  def update(self, has_lead, lead_d, lead_v, v_ego, tr):
     self.update_init()
+    
+    self.traffic_penalty = 0.0
+    if self.lateralPlan is not None:
+      if self.lateralPlan.trafficCountLeft > 1:
+        error = self.lateralPlan.trafficMinSeperationLeft - tr
+        error *= (self.lateralPlan.trafficCountLeft - 1)
+        self.traffic_penalty = self.traffic_penalty_factor * error
+      if self.lateralPlan.trafficCountRight > 1:
+        error = self.lateralPlan.trafficMinSeperationRight - tr
+        error *= (self.lateralPlan.trafficCountRight - 1)
+        self.traffic_penalty = max(self.traffic_penalty_factor * error, self.traffic_penalty)
+    
     t = sec_since_boot()
     dur = t - self.t_last
     self.t_last = t
@@ -208,7 +229,7 @@ class DynamicFollow():
       self.penalty *= self.last_cutin_factor
       points_old = self.points_cur
       if t - self.user_timeout_last_t > self.user_timeout_t:
-        self.points_cur = max(self.points_bounds[0], self.points_cur - self.penalty)
+        self.points_cur = max(self.points_bounds[0], self.points_cur - self.penalty - self.traffic_penalty)
       self.cutin_t_last = t
       self.cutin_penalty_last = points_old - self.points_cur
       return self.points_cur
@@ -217,12 +238,14 @@ class DynamicFollow():
       self.points_cur += max(0,self.rescinded_penalty)
       self.cutin_t_last = t - self.cutin_rescind_t_bp[-1] - 1.
       
+
+    
   
     rate = interp(self.points_cur, self.fp_point_rate_bp, self.fp_point_rate_v)
     speed_factor = interp(v_ego, self.speed_rate_factor_bp, self.speed_rate_factor_v)
     step = rate * dur * speed_factor
     if t - self.user_timeout_last_t > self.user_timeout_t:
-      self.points_cur = min(interp(v_ego, self.speed_fp_limit_bp, self.speed_fp_limit_v), self.points_cur + step)
+      self.points_cur = min(interp(v_ego, self.speed_fp_limit_bp, self.speed_fp_limit_v), self.points_cur + step) - self.traffic_penalty
 
 
     return self.points_cur
@@ -352,7 +375,7 @@ class LeadMpc():
       # Setup mpc
       # dynamic follow 
       if self.dynamic_follow_active:
-        self.follow_level_df = self.df.update(lead.status, lead.dRel, v_lead, v_ego)
+        self.follow_level_df = self.df.update(lead.status, lead.dRel, v_lead, v_ego, self.tr)
         tr, dist_cost, accel_cost = interp_follow_profile(v_ego, v_lead, lead.dRel, self.follow_level_df)
       else:
         tr, dist_cost, accel_cost = calc_follow_profile(v_ego, v_lead, lead.dRel, follow_level)
