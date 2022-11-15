@@ -91,7 +91,7 @@ class LaneOffset:
   AUTO_MIN_LANELINE_PROB = 0.3
   AUTO_MIN_ADJACENT_LANELINE_PROB = 0.15
   
-  AUTO_LANE_STATE_MIN_TIME = 4.0 # [s] amount of time the lane state must stay the same before it can be acted upon
+  AUTO_LANE_STATE_MIN_TIME = 3.0 # [s] amount of time the lane state must stay the same before it can be acted upon
   
   AUTO_ENABLE_ROAD_TYPES = {0, 10, 20, 30} # freeway and state highways (see highway ranks in /Users/haiiro/NoSync/optw/openpilot/selfdrive/mapd/lib/WayRelation.py)
   AUTO_ENABLE_ROAD_TYPE_MIN_SPEED = 40. * CV.MPH_TO_MS
