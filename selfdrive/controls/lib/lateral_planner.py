@@ -412,6 +412,10 @@ class LateralPlanner():
     plan_send.lateralPlan.roadEdgeProbs = [float(i) for i in self.LP.lane_offset._road_edge_probs]
     plan_send.lateralPlan.trafficLeft = LANE_TRAFFIC.to_cereal(self.LP.lane_offset._left_traffic)
     plan_send.lateralPlan.trafficRight = LANE_TRAFFIC.to_cereal(self.LP.lane_offset._right_traffic)
+    plan_send.lateralPlan.trafficCountLeft = self.LP.lane_offset._left_traffic_count
+    plan_send.lateralPlan.trafficCountRight = self.LP.lane_offset._right_traffic_count
+    plan_send.lateralPlan.trafficMinSeperationLeft = self.LP.lane_offset._left_traffic_min_sep_dist
+    plan_send.lateralPlan.trafficMinSeperationRight = self.LP.lane_offset._right_traffic_min_sep_dist
     if self.auto_lane_pos_active:
       if self.LP.lane_offset._lane_pos_auto == -1. and self.lane_pos != -1.:
         self.lane_pos = -1.

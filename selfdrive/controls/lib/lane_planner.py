@@ -1,7 +1,7 @@
 import numpy as np
 from cereal import log
 from common.filter_simple import FirstOrderFilter
-from common.numpy_fast import interp, clip
+from common.numpy_fast import interp, clip, mean
 from common.realtime import DT_MDL
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
@@ -138,8 +138,12 @@ class LaneOffset:
     self._right_traffic_last = LANE_TRAFFIC.NONE
     self._left_traffic_temp = LANE_TRAFFIC.NONE
     self._right_traffic_temp = LANE_TRAFFIC.NONE
-    self._right_traffic_last_seen_t = 0.
+    self._left_traffic_count = 0
+    self._right_traffic_count = 0
+    self._left_traffic_mean_sep_dist = 2.5
+    self._right_traffic_mean_sep_dist = 2.5
     self._left_traffic_last_seen_t = 0.
+    self._right_traffic_last_seen_t = 0.
     self._left_traffic_temp_t = 0.
     self._right_traffic_temp_t = 0.
     self._lprob_last = 0.
@@ -249,22 +253,29 @@ class LaneOffset:
     if self._cs is None or abs(self._cs.steeringAngleDeg) > self.TRAFFIC_NEW_DETECT_STEER_CUTOFF:
       return
     
+    no_sep_dist = 2.5 # [s] if <= 1 adjacent cars, this is the "separation" between them
+    
     leads = rs.leadsLeft
     if len(leads) > 0:
       check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
       if md.laneLineProbs[0] >= self.AUTO_MIN_ADJACENT_LANELINE_PROB and md.laneLineProbs[1] >= self.AUTO_MIN_LANELINE_PROB \
         and md.laneLines[1].y[0] > -2.2:
-          lv = [l.vLeadK for l in leads if lead_between_lines(md.laneLines[0], md.laneLines[1], l)]
+          l1 = [l for l in leads if lead_between_lines(md.laneLines[0], md.laneLines[1], l)]
       elif md.laneLineProbs[1] >= self.AUTO_MIN_LANELINE_PROB and md.laneLines[1].y[0] > -2.:
-        lv = [l.vLeadK for l in leads if lead_close_to_line(md.laneLines[1], l, lane_width, True)]
+        l1 = [l for l in leads if lead_close_to_line(md.laneLines[1], l, lane_width, True)]
       else:
-        lv = [l.vLeadK for l in leads if abs(l.dPath) < check_lane_width]
+        l1 = [l for l in leads if abs(l.dPath) < check_lane_width]
         
-      if len(lv) > 0:
+      self._left_traffic_count = len(l1)
+      if len(l1) > 0:
+        lv = [l.vLeadK for l in l1]
         min_v, max_v, mean_v = min_max_mean(lv)
         check_v = min_v if abs(min_v - mean_v) < abs(max_v - mean_v) else max_v
+        self._left_traffic_mean_sep_dist = no_sep_dist
         if check_v > self.AUTO_TRAFFIC_MIN_SPEED and self._lane_width_mean_left_adjacent > 0.:
           left_traffic = LANE_TRAFFIC.ONGOING
+          if len(l1 > 1):
+            self._left_traffic_mean_sep_dist = mean([abs(ldj.dRel - ldi.dRel) / (abs(ldi.vLeadK) + 0.1) for ldi,ldj in zip(l1[:-1], l1[1:])])
         elif check_v < -self.AUTO_TRAFFIC_MIN_SPEED:
           left_traffic = LANE_TRAFFIC.ONCOMING
         else:
@@ -272,23 +283,29 @@ class LaneOffset:
           lv = [l.vLeadK for l in rs.leadsLeft if abs(l.dPath) < check_lane_width]
           if len(lv) > 0:
             left_traffic = LANE_TRAFFIC.STOPPED
+          
     
     leads = rs.leadsRight
     if len(leads) > 0:
       check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
       if md.laneLineProbs[3] >= self.AUTO_MIN_ADJACENT_LANELINE_PROB and md.laneLineProbs[2] >= self.AUTO_MIN_LANELINE_PROB \
         and md.laneLines[2].y[0] < 2.2:
-          lv = [l.vLeadK for l in leads if lead_between_lines(md.laneLines[2], md.laneLines[3], l)]
+          l1 = [l for l in leads if lead_between_lines(md.laneLines[2], md.laneLines[3], l)]
       elif md.laneLineProbs[2] >= self.AUTO_MIN_LANELINE_PROB and md.laneLines[2].y[0] < 2.:
-        lv = [l.vLeadK for l in leads if lead_close_to_line(md.laneLines[2], l, lane_width, False)]
+        l1 = [l for l in leads if lead_close_to_line(md.laneLines[2], l, lane_width, True)]
       else:
-        lv = [l.vLeadK for l in leads if abs(l.dPath) < check_lane_width]
+        l1 = [l for l in leads if abs(l.dPath) < check_lane_width]
       
-      if len(lv) > 0:
+      self._right_traffic_count = len(l1)
+      if len(l1) > 0:
+        lv = [l.vLeadK for l in l1]
         min_v, max_v, mean_v = min_max_mean(lv)
         check_v = min_v if abs(min_v - mean_v) < abs(max_v - mean_v) else max_v
+        self._right_traffic_mean_sep_dist = no_sep_dist
         if check_v > self.AUTO_TRAFFIC_MIN_SPEED and self._lane_width_mean_right_adjacent > 0.:
           right_traffic = LANE_TRAFFIC.ONGOING
+          if len(l1 > 1):
+            self._right_traffic_mean_sep_dist = mean([abs(ldj.dRel - ldi.dRel) / (abs(ldi.vLeadK) + 0.1) for ldi,ldj in zip(l1[:-1], l1[1:])])
         elif check_v < -self.AUTO_TRAFFIC_MIN_SPEED:
           right_traffic = LANE_TRAFFIC.ONCOMING
         else:
