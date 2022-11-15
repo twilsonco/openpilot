@@ -211,26 +211,26 @@ def get_path_adjacent_leads(v_ego, md, lane_width, clusters):
   half_lane_width = lane_width / 2
   for c in clusters:
     if md_y is not None and c.dRel <= md_x[-1] or (c_y is not None and md_x[-1] - c.dRel < ll_x[-1] - c.dRel):
-      yRel = -c.yRel - interp(c.dRel, md_x, md_y)
+      dPath = -c.yRel - interp(c.dRel, md_x, md_y)
       checkSource = 'modelPath'
     elif c_y is not None:
-      yRel = -c.yRel - interp(c.dRel, ll_x, c_y.tolist())
+      dPath = -c.yRel - interp(c.dRel, ll_x, c_y.tolist())
       checkSource = 'modelLaneLines'
     else:
-      yRel = -c.yRel
+      dPath = -c.yRel
       checkSource = 'lowSpeedOverride'
       
     source = 'vision' if c.dRel > 145. else 'radar'
     
     ld = c.get_RadarState(source=source, checkSource=checkSource)
-    ld["dPath"] = yRel
-    ld["vLat"] = math.sqrt((10*yRel)**2 + c.dRel**2)
-    if abs(yRel) < half_lane_width and ld["vLeadK"] > -1.: # want to still get stopped leads, so put in wiggle-room for radar noise
-      leads_center[abs(yRel)] = ld
-    elif yRel < 0.:
-      leads_left[abs(yRel)] = ld
+    ld["dPath"] = dPath
+    ld["vLat"] = math.sqrt((10*dPath)**2 + c.dRel**2)
+    if abs(dPath) < half_lane_width and ld["vLeadK"] > -1.: # want to still get stopped leads, so put in wiggle-room for radar noise
+      leads_center[abs(dPath)] = ld
+    elif dPath < 0.:
+      leads_left[abs(dPath)] = ld
     else:
-      leads_right[abs(yRel)] = ld
+      leads_right[abs(dPath)] = ld
   
   ll,lr = [[l[k] for k in sorted(list(l.keys()))] for l in [leads_left,leads_right]]
   lc = sorted(leads_center.values(), key=lambda c:c["dRel"])
