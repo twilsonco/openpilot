@@ -186,25 +186,6 @@ def get_path_adjacent_leads(v_ego, md, lane_width, clusters):
     rll_y = np.array(md.laneLines[2].y)
     l_prob = md.laneLineProbs[1]
     r_prob = md.laneLineProbs[2]
-    lll_std = md.laneLineStds[1]
-    rll_std = md.laneLineStds[2]
-
-    if l_prob > MIN_LANE_PROB and r_prob > MIN_LANE_PROB:
-      # Reduce reliance on lanelines that are too far apart or will be in a few seconds
-      width_pts = rll_y - lll_y
-      prob_mods = []
-      for t_check in [0.0, 1.5, 3.0]:
-        width_at_t = interp(t_check * (v_ego + 7), ll_x, width_pts)
-        prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
-      mod = min(prob_mods)
-      l_prob *= mod
-      r_prob *= mod
-
-      # Reduce reliance on uncertain lanelines
-      l_std_mod = interp(lll_std, [.15, .3], [1.0, 0.0])
-      r_std_mod = interp(rll_std, [.15, .3], [1.0, 0.0])
-      l_prob *= l_std_mod
-      r_prob *= r_std_mod
 
     # Find path from lanes as the average center lane only if min probability on both lanes is above threshold.
     if l_prob > MIN_LANE_PROB and r_prob > MIN_LANE_PROB:
