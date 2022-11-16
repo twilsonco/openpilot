@@ -106,6 +106,8 @@ class LaneOffset:
   AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR = 1.25 # [unitless] factor of current lane width used to check against adjacent lead distance
   AUTO_TRAFFIC_STOPPED_MIN_DIST_LANE_WIDTH_FACTOR = 0.9 # [unitless] factor of current lane width used to check against adjacent lead distance, but for stopped objects
   
+  ADJACENT_TRAFFIC_SEP_DIST_NONE = 2.5 # [s] separation follow distance used when <= 1 adjacent ongoing car
+  
   def __init__(self, mass=0.):
     self.offset = 0.
     self.lane_pos = 0.
@@ -140,8 +142,8 @@ class LaneOffset:
     self._right_traffic_temp = LANE_TRAFFIC.NONE
     self._left_traffic_count = 0
     self._right_traffic_count = 0
-    self._left_traffic_mean_sep_dist = 2.5
-    self._right_traffic_mean_sep_dist = 2.5
+    self._left_traffic_mean_sep_dist = FirstOrderFilter(self.ADJACENT_TRAFFIC_SEP_DIST_NONE, 2.0, DT_MDL)
+    self._right_traffic_mean_sep_dist = FirstOrderFilter(self.ADJACENT_TRAFFIC_SEP_DIST_NONE, 2.0, DT_MDL)
     self._left_traffic_last_seen_t = 0.
     self._right_traffic_last_seen_t = 0.
     self._left_traffic_temp_t = 0.
@@ -253,7 +255,7 @@ class LaneOffset:
     if self._cs is None or abs(self._cs.steeringAngleDeg) > self.TRAFFIC_NEW_DETECT_STEER_CUTOFF:
       return
     
-    no_sep_dist = 2.5 # [s] if <= 1 adjacent cars, this is the "separation" between them
+    sep_dist = self.ADJACENT_TRAFFIC_SEP_DIST_NONE # [s] if <= 1 adjacent cars, this is the "separation" between them
     
     leads = rs.leadsLeft
     if len(leads) > 0:
@@ -271,12 +273,11 @@ class LaneOffset:
         lv = [l.vLeadK for l in l1]
         min_v, max_v, mean_v = min_max_mean(lv)
         check_v = min_v if abs(min_v - mean_v) < abs(max_v - mean_v) else max_v
-        self._left_traffic_mean_sep_dist = no_sep_dist
         if check_v > self.AUTO_TRAFFIC_MIN_SPEED and self._lane_width_mean_left_adjacent > 0.:
           left_traffic = LANE_TRAFFIC.ONGOING
           if len(l1) > 1:
             l1.sort(key= lambda x:x.dRel)
-            self._left_traffic_mean_sep_dist = mean([(ldj.dRel - ldi.dRel) / (abs(ldi.vLeadK) + 0.1) for ldi,ldj in zip(l1[:-1], l1[1:])])
+            sep_dist = mean([(ldj.dRel - ldi.dRel) / (abs(ldi.vLeadK) + 0.1) for ldi,ldj in zip(l1[:-1], l1[1:])])
         elif check_v < -self.AUTO_TRAFFIC_MIN_SPEED:
           left_traffic = LANE_TRAFFIC.ONCOMING
         else:
@@ -284,8 +285,9 @@ class LaneOffset:
           lv = [l.vLeadK for l in rs.leadsLeft if abs(l.dPath) < check_lane_width]
           if len(lv) > 0:
             left_traffic = LANE_TRAFFIC.STOPPED
+    self._left_traffic_mean_sep_dist.update(sep_dist)
           
-    
+    sep_dist = self.ADJACENT_TRAFFIC_SEP_DIST_NONE # [s] if <= 1 adjacent cars, this is the "separation" between them
     leads = rs.leadsRight
     if len(leads) > 0:
       check_lane_width = lane_width * self.AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR
@@ -302,12 +304,11 @@ class LaneOffset:
         lv = [l.vLeadK for l in l1]
         min_v, max_v, mean_v = min_max_mean(lv)
         check_v = min_v if abs(min_v - mean_v) < abs(max_v - mean_v) else max_v
-        self._right_traffic_mean_sep_dist = no_sep_dist
         if check_v > self.AUTO_TRAFFIC_MIN_SPEED and self._lane_width_mean_right_adjacent > 0.:
           right_traffic = LANE_TRAFFIC.ONGOING
           if len(l1) > 1:
             l1.sort(key= lambda x:x.dRel)
-            self._right_traffic_mean_sep_dist = mean([(ldj.dRel - ldi.dRel) / (abs(ldi.vLeadK) + 0.1) for ldi,ldj in zip(l1[:-1], l1[1:])])
+            sep_dist = mean([(ldj.dRel - ldi.dRel) / (abs(ldi.vLeadK) + 0.1) for ldi,ldj in zip(l1[:-1], l1[1:])])
         elif check_v < -self.AUTO_TRAFFIC_MIN_SPEED:
           right_traffic = LANE_TRAFFIC.ONCOMING
         else:
@@ -315,6 +316,7 @@ class LaneOffset:
           lv = [l.vLeadK for l in rs.leadsRight if abs(l.dPath) < check_lane_width]
           if len(lv) > 0:
             right_traffic = LANE_TRAFFIC.STOPPED
+    self._right_traffic_mean_sep_dist.update(sep_dist)
     
     if left_traffic != LANE_TRAFFIC.NONE:
       if self._left_traffic_temp != left_traffic:
