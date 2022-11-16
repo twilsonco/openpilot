@@ -2,7 +2,6 @@ from cereal import car, log
 from common.realtime import DT_CTRL
 from common.numpy_fast import interp, clip
 from common.realtime import sec_since_boot
-from math import sin 
 from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
