@@ -198,11 +198,11 @@ class DynamicFollow():
     self.traffic_penalty = 0.0
     if self.lateralPlan is not None:
       if self.lateralPlan.trafficCountLeft > 1:
-        error = self.lateralPlan.trafficMinSeperationLeft - tr
+        error = max(0.0, self.lateralPlan.trafficMinSeperationLeft - tr)
         error *= (self.lateralPlan.trafficCountLeft - 1)
         self.traffic_penalty = self.traffic_penalty_factor * error
       if self.lateralPlan.trafficCountRight > 1:
-        error = self.lateralPlan.trafficMinSeperationRight - tr
+        error = max(0.0, self.lateralPlan.trafficMinSeperationRight - tr)
         error *= (self.lateralPlan.trafficCountRight - 1)
         self.traffic_penalty = max(self.traffic_penalty_factor * error, self.traffic_penalty)
     
