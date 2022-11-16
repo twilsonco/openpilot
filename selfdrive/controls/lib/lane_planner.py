@@ -275,7 +275,8 @@ class LaneOffset:
         if check_v > self.AUTO_TRAFFIC_MIN_SPEED and self._lane_width_mean_left_adjacent > 0.:
           left_traffic = LANE_TRAFFIC.ONGOING
           if len(l1) > 1:
-            self._left_traffic_mean_sep_dist = mean([abs(ldj.dRel - ldi.dRel) / (abs(ldi.vLeadK) + 0.1) for ldi,ldj in zip(l1[:-1], l1[1:])])
+            l1.sort(key= lambda x:x.dRel)
+            self._left_traffic_mean_sep_dist = mean([(ldj.dRel - ldi.dRel) / (abs(ldi.vLeadK) + 0.1) for ldi,ldj in zip(l1[:-1], l1[1:])])
         elif check_v < -self.AUTO_TRAFFIC_MIN_SPEED:
           left_traffic = LANE_TRAFFIC.ONCOMING
         else:
@@ -305,7 +306,8 @@ class LaneOffset:
         if check_v > self.AUTO_TRAFFIC_MIN_SPEED and self._lane_width_mean_right_adjacent > 0.:
           right_traffic = LANE_TRAFFIC.ONGOING
           if len(l1) > 1:
-            self._right_traffic_mean_sep_dist = mean([abs(ldj.dRel - ldi.dRel) / (abs(ldi.vLeadK) + 0.1) for ldi,ldj in zip(l1[:-1], l1[1:])])
+            l1.sort(key= lambda x:x.dRel)
+            self._right_traffic_mean_sep_dist = mean([(ldj.dRel - ldi.dRel) / (abs(ldi.vLeadK) + 0.1) for ldi,ldj in zip(l1[:-1], l1[1:])])
         elif check_v < -self.AUTO_TRAFFIC_MIN_SPEED:
           right_traffic = LANE_TRAFFIC.ONCOMING
         else:
