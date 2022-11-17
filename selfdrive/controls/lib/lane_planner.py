@@ -142,8 +142,8 @@ class LaneOffset:
     self._right_traffic_temp = LANE_TRAFFIC.NONE
     self._left_traffic_count = 0
     self._right_traffic_count = 0
-    self._left_traffic_min_sep_dist = FirstOrderFilter(self.ADJACENT_TRAFFIC_SEP_DIST_NONE, 2.0, DT_MDL)
-    self._right_traffic_min_sep_dist = FirstOrderFilter(self.ADJACENT_TRAFFIC_SEP_DIST_NONE, 2.0, DT_MDL)
+    self._left_traffic_min_sep_dist = FirstOrderFilter(self.ADJACENT_TRAFFIC_SEP_DIST_NONE, 5.0, DT_MDL)
+    self._right_traffic_min_sep_dist = FirstOrderFilter(self.ADJACENT_TRAFFIC_SEP_DIST_NONE, 5.0, DT_MDL)
     self._left_traffic_last_seen_t = 0.
     self._right_traffic_last_seen_t = 0.
     self._left_traffic_temp_t = 0.
