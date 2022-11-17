@@ -142,8 +142,8 @@ class LaneOffset:
     self._right_traffic_temp = LANE_TRAFFIC.NONE
     self._left_traffic_count = 0
     self._right_traffic_count = 0
-    self._left_traffic_mean_sep_dist = FirstOrderFilter(self.ADJACENT_TRAFFIC_SEP_DIST_NONE, 2.0, DT_MDL)
-    self._right_traffic_mean_sep_dist = FirstOrderFilter(self.ADJACENT_TRAFFIC_SEP_DIST_NONE, 2.0, DT_MDL)
+    self._left_traffic_min_sep_dist = FirstOrderFilter(self.ADJACENT_TRAFFIC_SEP_DIST_NONE, 2.0, DT_MDL)
+    self._right_traffic_min_sep_dist = FirstOrderFilter(self.ADJACENT_TRAFFIC_SEP_DIST_NONE, 2.0, DT_MDL)
     self._left_traffic_last_seen_t = 0.
     self._right_traffic_last_seen_t = 0.
     self._left_traffic_temp_t = 0.
@@ -277,7 +277,7 @@ class LaneOffset:
           left_traffic = LANE_TRAFFIC.ONGOING
           if len(l1) > 1:
             l1.sort(key= lambda x:x.dRel)
-            sep_dist = mean([(ldj.dRel - ldi.dRel) / (abs(ldi.vLeadK) + 0.1) for ldi,ldj in zip(l1[:-1], l1[1:])])
+            sep_dist = min([(ldj.dRel - ldi.dRel) / (abs(ldi.vLeadK) + 0.1) for ldi,ldj in zip(l1[:-1], l1[1:])])
         elif check_v < -self.AUTO_TRAFFIC_MIN_SPEED:
           left_traffic = LANE_TRAFFIC.ONCOMING
         else:
@@ -285,7 +285,7 @@ class LaneOffset:
           lv = [l.vLeadK for l in rs.leadsLeft if abs(l.dPath) < check_lane_width]
           if len(lv) > 0:
             left_traffic = LANE_TRAFFIC.STOPPED
-    self._left_traffic_mean_sep_dist.update(sep_dist)
+    self._left_traffic_min_sep_dist.update(sep_dist)
           
     sep_dist = self.ADJACENT_TRAFFIC_SEP_DIST_NONE # [s] if <= 1 adjacent cars, this is the "separation" between them
     leads = rs.leadsRight
@@ -308,7 +308,7 @@ class LaneOffset:
           right_traffic = LANE_TRAFFIC.ONGOING
           if len(l1) > 1:
             l1.sort(key= lambda x:x.dRel)
-            sep_dist = mean([(ldj.dRel - ldi.dRel) / (abs(ldi.vLeadK) + 0.1) for ldi,ldj in zip(l1[:-1], l1[1:])])
+            sep_dist = min([(ldj.dRel - ldi.dRel) / (abs(ldi.vLeadK) + 0.1) for ldi,ldj in zip(l1[:-1], l1[1:])])
         elif check_v < -self.AUTO_TRAFFIC_MIN_SPEED:
           right_traffic = LANE_TRAFFIC.ONCOMING
         else:
@@ -316,7 +316,7 @@ class LaneOffset:
           lv = [l.vLeadK for l in rs.leadsRight if abs(l.dPath) < check_lane_width]
           if len(lv) > 0:
             right_traffic = LANE_TRAFFIC.STOPPED
-    self._right_traffic_mean_sep_dist.update(sep_dist)
+    self._right_traffic_min_sep_dist.update(sep_dist)
     
     if left_traffic != LANE_TRAFFIC.NONE:
       if self._left_traffic_temp != left_traffic:
