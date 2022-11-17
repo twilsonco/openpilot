@@ -5,7 +5,7 @@ from collections import defaultdict
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import interp
 from common.params import Params
-from common.realtime import sec_since_boot, DT_CTRL
+from common.realtime import sec_since_boot, DT_MDL
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.lane_planner import TRAJECTORY_SIZE
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
@@ -113,7 +113,7 @@ class VisionTurnController():
     self._v_cruise_setpoint = 0.
     self._v_ego = 0.
     self._a_ego = 0.
-    self._a_target = FirstOrderFilter(0., 0.7, DT_CTRL)
+    self._a_target = FirstOrderFilter(0., 0.7, DT_MDL)
     self._v_overshoot = 0.
     self._state = VisionTurnControllerState.disabled
     self._CS = None

@@ -4,7 +4,7 @@ from collections import defaultdict
 from common.filter_simple import FirstOrderFilter
 from common.params import Params
 from cereal import log
-from common.realtime import sec_since_boot, DT_CTRL
+from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import LIMIT_ADAPT_ACC, LIMIT_MIN_SPEED, LIMIT_MAX_MAP_DATA_AGE, \
@@ -70,7 +70,7 @@ class TurnSpeedController():
 
     self._next_speed_limit_prev = 0.
 
-    self._a_target = FirstOrderFilter(0., 0.7, DT_CTRL)
+    self._a_target = FirstOrderFilter(0., 0.7, DT_MDL)
 
   @property
   def a_target(self):
