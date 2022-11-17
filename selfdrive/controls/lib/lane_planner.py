@@ -285,7 +285,7 @@ class LaneOffset:
           lv = [l.vLeadK for l in rs.leadsLeft if abs(l.dPath) < check_lane_width]
           if len(lv) > 0:
             left_traffic = LANE_TRAFFIC.STOPPED
-    self._left_traffic_min_sep_dist.update(sep_dist)
+    self._left_traffic_min_sep_dist.update(min(sep_dist, self.ADJACENT_TRAFFIC_SEP_DIST_NONE))
           
     sep_dist = self.ADJACENT_TRAFFIC_SEP_DIST_NONE # [s] if <= 1 adjacent cars, this is the "separation" between them
     leads = rs.leadsRight
@@ -316,7 +316,7 @@ class LaneOffset:
           lv = [l.vLeadK for l in rs.leadsRight if abs(l.dPath) < check_lane_width]
           if len(lv) > 0:
             right_traffic = LANE_TRAFFIC.STOPPED
-    self._right_traffic_min_sep_dist.update(sep_dist)
+    self._right_traffic_min_sep_dist.update(min(sep_dist, self.ADJACENT_TRAFFIC_SEP_DIST_NONE))
     
     if left_traffic != LANE_TRAFFIC.NONE:
       if self._left_traffic_temp != left_traffic:
