@@ -1648,7 +1648,7 @@ static void ui_draw_measures(UIState *s){
             snprintf(name, sizeof(name), "ADJ ONGOING");
             int dat1 = scene.lateral_plan.getTrafficCountLeft();
             int dat2 = scene.lateral_plan.getTrafficCountRight();
-            snprintf(val, sizeof(val), "%d|%d", dat1, dat2);
+            snprintf(val, sizeof(val), "%d:%d", dat1, dat2);
             snprintf(unit, sizeof(unit), "cars");
             break;}
 
@@ -1657,7 +1657,7 @@ static void ui_draw_measures(UIState *s){
             snprintf(name, sizeof(name), "MIN ADJ SEP");
             float dat1 = scene.lateral_plan.getTrafficMinSeperationLeft();
             float dat2 = scene.lateral_plan.getTrafficMinSeperationRight();
-            snprintf(val, sizeof(val), "%.1f|%.1f", dat1, dat2);
+            snprintf(val, sizeof(val), "%.1f:%.1f", dat1, dat2);
             snprintf(unit, sizeof(unit), "s");
             break;}
 
@@ -2573,7 +2573,7 @@ static void ui_draw_measures(UIState *s){
         
         int vallen = strlen(val);
         if (vallen > 4){
-          val_font_size -= (vallen - 6) * 6;
+          val_font_size -= (vallen - 4) * 8;
         }
         int unitlen = strlen(unit);
         if (unitlen > 5){
