@@ -208,7 +208,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   ROLL_DEVICE,
   LANE_WIDTH,
   DISTANCE_TRAVELLED,
-  // Lead info
+  // Lead/traffic info
   FOLLOW_LEVEL,
   LEAD_TTC,
   LEAD_DISTANCE_LENGTH,
@@ -218,6 +218,14 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   LEAD_COSTS,
   LEAD_VELOCITY_RELATIVE,
   LEAD_VELOCITY_ABS,
+  LANE_POSITION,
+  LANE_OFFSET,
+  TRAFFIC_COUNT_TOTAL,
+  TRAFFIC_COUNT_ONCOMING,
+  TRAFFIC_COUNT_ONGOING,
+  TRAFFIC_COUNT_STOPPED,
+  TRAFFIC_COUNT_ADJACENT_ONGOING,
+  TRAFFIC_ADJ_ONGOING_MIN_DISTANCE,
   // EV info
   HVB_VOLTAGE,
   HVB_CURRENT,

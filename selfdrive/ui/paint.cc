@@ -1577,7 +1577,90 @@ static void ui_draw_measures(UIState *s){
             snprintf(val, sizeof(val), "%.1f", sm["longitudinalPlan"].getLongitudinalPlan().getVisionMaxPredictedLateralAcceleration());
             snprintf(unit, sizeof(unit), "m/s²");
             break;}
+
+          case UIMeasure::LANE_POSITION:
+            {
+            snprintf(name, sizeof(name), "LANE POS");
+            auto dat = scene.lateral_plan.getLanePosition();
+            if (dat == LanePosition::LEFT){
+              snprintf(val, sizeof(val), "left");
+            }
+            else if (dat == LanePosition::RIGHT){
+              snprintf(val, sizeof(val), "right");
+            }
+            else{
+              snprintf(val, sizeof(val), "center");
+            }
+            break;}
+
+          case UIMeasure::LANE_OFFSET:
+            {
+            snprintf(name, sizeof(name), "LN OFFSET");
+            auto dat = scene.lateral_plan.getLaneOffset();
+            snprintf(val, sizeof(val), "%.1f", dat);
+            snprintf(unit, sizeof(unit), "m");
+            break;}
           
+          case UIMeasure::TRAFFIC_COUNT_TOTAL:
+            {
+            snprintf(name, sizeof(name), "TOTAL");
+            int dat = scene.lead_vertices_oncoming.size()
+                      + scene.lead_vertices_ongoing.size()
+                      + scene.lead_vertices_stopped.size()
+                      + (scene.lead_data[0].getStatus() ? 1 : 0)
+                      + (scene.radarState.getLeadsCenter()).size();
+            snprintf(val, sizeof(val), "%d", dat);
+            snprintf(unit, sizeof(unit), "cars");
+            break;}
+
+          case UIMeasure::TRAFFIC_COUNT_ONCOMING:
+            {
+            snprintf(name, sizeof(name), "ONCOMING");
+            int dat = scene.lead_vertices_oncoming.size();
+            snprintf(val, sizeof(val), "%d", dat);
+            snprintf(unit, sizeof(unit), "cars");
+            break;}
+
+          case UIMeasure::TRAFFIC_COUNT_ONGOING:
+            {
+            snprintf(name, sizeof(name), "ONGOING");
+            int dat = scene.lead_vertices_ongoing.size()
+                      + (scene.lead_data[0].getStatus() ? 1 : 0)
+                      + (scene.radarState.getLeadsCenter()).size();
+            snprintf(val, sizeof(val), "%d", dat);
+            snprintf(unit, sizeof(unit), "cars");
+            break;}
+
+          case UIMeasure::TRAFFIC_COUNT_STOPPED:
+            {
+            snprintf(name, sizeof(name), "STOPPED");
+            int dat = scene.lead_vertices_stopped.size()
+                      + (scene.lead_data[0].getStatus() 
+                        && scene.lead_data[0].getVLeadK() < 3 
+                          ? 1 + (scene.radarState.getLeadsCenter()).size() 
+                          : 0);
+            snprintf(val, sizeof(val), "%d", dat);
+            snprintf(unit, sizeof(unit), "cars");
+            break;}
+
+          case UIMeasure::TRAFFIC_COUNT_ADJACENT_ONGOING:
+            {
+            snprintf(name, sizeof(name), "ADJ ONGOING");
+            int dat1 = scene.lateral_plan.getTrafficCountLeft();
+            int dat2 = scene.lateral_plan.getTrafficCountRight();
+            snprintf(val, sizeof(val), "%d|%d", dat1, dat2);
+            snprintf(unit, sizeof(unit), "cars");
+            break;}
+
+          case UIMeasure::TRAFFIC_ADJ_ONGOING_MIN_DISTANCE:
+            {
+            snprintf(name, sizeof(name), "MIN ADJ SEP");
+            float dat1 = scene.lateral_plan.getTrafficMinSeperationLeft();
+            float dat2 = scene.lateral_plan.getTrafficMinSeperationRight();
+            snprintf(val, sizeof(val), "%.1f|%.1f", dat1, dat2);
+            snprintf(unit, sizeof(unit), "s");
+            break;}
+
           case UIMeasure::LEAD_TTC:
             {
             snprintf(name, sizeof(name), "TTC");
