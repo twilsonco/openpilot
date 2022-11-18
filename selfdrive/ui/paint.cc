@@ -2573,7 +2573,7 @@ static void ui_draw_measures(UIState *s){
         
         int vallen = strlen(val);
         if (vallen > 4){
-          val_font_size -= (vallen - 4) * 5;
+          val_font_size -= (vallen - 6) * 6;
         }
         int unitlen = strlen(unit);
         if (unitlen > 5){
