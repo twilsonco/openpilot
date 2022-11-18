@@ -245,7 +245,10 @@ class DynamicFollow():
     speed_factor = interp(v_ego, self.speed_rate_factor_bp, self.speed_rate_factor_v)
     step = rate * dur * speed_factor
     if t - self.user_timeout_last_t > self.user_timeout_t:
-      self.points_cur = min(interp(v_ego, self.speed_fp_limit_bp, self.speed_fp_limit_v), self.points_cur + step) - self.traffic_penalty
+      if self.traffic_penalty > 0.0:
+        self.points_cur = min(interp(v_ego, self.speed_fp_limit_bp, self.speed_fp_limit_v), self.points_cur - self.traffic_penalty)
+      else:
+        self.points_cur = min(interp(v_ego, self.speed_fp_limit_bp, self.speed_fp_limit_v), self.points_cur + step)
 
 
     return self.points_cur
