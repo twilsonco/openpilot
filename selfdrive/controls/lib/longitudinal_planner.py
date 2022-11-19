@@ -65,7 +65,7 @@ def calc_cruise_accel_limits(v_ego, following, accelMode):
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_MODE_LIST[accelMode])
   return [a_cruise_min, a_cruise_max]
 
-LEAD_ONE_PLUS_TR_BUFFER = 0.15 # [s] follow distance between lead and lead+1 to run the lead+1 mpc
+LEAD_ONE_PLUS_TR_BUFFER = 0.1 # [s] follow distance between lead and lead+1 to run the lead+1 mpc
 LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER = 2.0 # [m]
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
