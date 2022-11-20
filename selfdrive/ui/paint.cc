@@ -2722,7 +2722,8 @@ static void ui_draw_vision_event(UIState *s) {
   s->scene.wheel_touch_rect = {1,1,1,1};
   if (s->scene.engageable) {
     // draw steering wheel
-    const float rot_angle = -s->scene.angleSteers * 0.01745329252;
+    const float rot_angle_multiplier = s->scene.car_state.getVEgo() / 15.0;
+    const float rot_angle = -s->scene.angleSteers * 0.01745329252 * (rot_angle_multiplier > 1.0 ? rot_angle_multiplier : 1.0);
     const int radius = 88;
     const int center_x = s->fb_w - radius - bdr_s * 2;
     const int center_y = radius  + (bdr_s * 1.5);
