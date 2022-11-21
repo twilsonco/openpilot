@@ -198,11 +198,11 @@ class DynamicFollow():
     self.traffic_penalty = 0.0
     if self.lateralPlan is not None:
       if self.lateralPlan.trafficCountLeft > 1:
-        error = max(0.0, self.lateralPlan.trafficMinSeperationLeft - tr)
+        error = max(0.0, tr - self.lateralPlan.trafficMinSeperationLeft)
         error *= (self.lateralPlan.trafficCountLeft - 1)
         self.traffic_penalty = self.traffic_penalty_factor * error
       if self.lateralPlan.trafficCountRight > 1:
-        error = max(0.0, self.lateralPlan.trafficMinSeperationRight - tr)
+        error = max(0.0, tr - self.lateralPlan.trafficMinSeperationRight)
         error *= (self.lateralPlan.trafficCountRight - 1)
         self.traffic_penalty = max(self.traffic_penalty_factor * error, self.traffic_penalty)
     
@@ -237,9 +237,6 @@ class DynamicFollow():
       self.rescinded_penalty = self.cutin_penalty_last * interp(t - self.cutin_t_last, self.cutin_rescind_t_bp, self.cutin_rescind_t_v)
       self.points_cur += max(0,self.rescinded_penalty)
       self.cutin_t_last = t - self.cutin_rescind_t_bp[-1] - 1.
-      
-
-    
   
     rate = interp(self.points_cur, self.fp_point_rate_bp, self.fp_point_rate_v)
     speed_factor = interp(v_ego, self.speed_rate_factor_bp, self.speed_rate_factor_v)
@@ -249,7 +246,6 @@ class DynamicFollow():
         self.points_cur = min(interp(v_ego, self.speed_fp_limit_bp, self.speed_fp_limit_v), self.points_cur - self.traffic_penalty)
       else:
         self.points_cur = min(interp(v_ego, self.speed_fp_limit_bp, self.speed_fp_limit_v), self.points_cur + step)
-
 
     return self.points_cur
   
