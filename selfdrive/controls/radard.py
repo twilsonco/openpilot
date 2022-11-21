@@ -21,6 +21,7 @@ LEAD_PATH_YREL_MAX_V = [1.2] # [m] constant tolerance
 LEAD_PATH_YREL_LOW_TOL = 0.5 # if the lead closest to the "middle" is farther away than one that is both closer and within this distance of "middle", use that lead
 LEAD_PATH_DREL_MIN = 60 # [m] only care about far away leads
 LEAD_MIN_SMOOTHING_DISTANCE = 145 # [m]
+LEAD_MAX_DISTANCE = 180 # [m] beyond this distance, lead data is too noisy to use
 MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow use.
 
 LEAD_PLUS_ONE_MIN_REL_DIST_V = [3.0, 6.0] # [m] min distance between lead+1 and lead at low and high distance
@@ -80,7 +81,7 @@ def match_model_path_to_cluster(v_ego, md, clusters):
   # 2) at least near the edge of regular op lead detectability
   # 3) close enough to the predicted path at the cluster distance
   close_path_clusters = [[c,abs(-c.yRel - interp(c.dRel, md.position.x, md.position.y))] for c in clusters if \
-      c.dRel <= md.position.x[-1] and \
+      c.dRel <= min(md.position.x[-1], LEAD_MAX_DISTANCE) and \
       c.dRel >= LEAD_PATH_DREL_MIN]
   close_path_clusters = sorted([c for c in close_path_clusters if c[1] <= interp(c[0].dRel, LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V)], key=lambda c:c[1])
   if len(close_path_clusters) == 0:
@@ -151,7 +152,7 @@ def match_model_lanelines_to_cluster(v_ego, md, lane_width, clusters):
   # 2) at least near the edge of regular op lead detectability
   # 3) close enough to the predicted path at the cluster distance  
   close_path_clusters = [[c,abs(-c.yRel - interp(c.dRel, ll_x, c_y.tolist()))] for c in clusters if \
-      c.dRel <= ll_x[-1] and \
+      c.dRel <= min(ll_x[-1], LEAD_MAX_DISTANCE) and \
       c.dRel >= LEAD_PATH_DREL_MIN]
   close_path_clusters = sorted([c for c in close_path_clusters if c[1] <= interp(c[0].dRel, LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V)], key=lambda c:c[1])
   if len(close_path_clusters) == 0:
@@ -274,7 +275,7 @@ def get_lead(v_ego, ready, clusters, lead_msg=None, low_speed_override=True, md=
   return lead_dict
 
 class LongRangeLead():
-  DREL_BP = [LEAD_MIN_SMOOTHING_DISTANCE, 220.] # [m] used commonly between distance-based parameters
+  DREL_BP = [LEAD_MIN_SMOOTHING_DISTANCE, LEAD_MAX_DISTANCE] # [m] used commonly between distance-based parameters
   D_DREL_MAX_V = [8., 20.] # [m] deviation between old and new leads necessary to trigger reset of values
   ALPHA_V = [0, 5.] # raise/lower second value for more/less smoothing of long-range lead data
   D_YREL_MAX = 0.8 # [m] max yrel deviation
