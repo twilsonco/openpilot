@@ -306,6 +306,7 @@ class Planner():
     longitudinalPlan.dynamicFollowState0.penalty = self.mpcs['lead0'].df.penalty
     longitudinalPlan.dynamicFollowState0.lastCutinFactor = self.mpcs['lead0'].df.last_cutin_factor
     longitudinalPlan.dynamicFollowState0.rescindedPenalty = self.mpcs['lead0'].df.rescinded_penalty
+    longitudinalPlan.dynamicFollowState0.penaltyTraffic = self.mpcs['lead0'].df.traffic_penalty
 
     longitudinalPlan.dynamicFollowState1.pointsCurrent = self.mpcs['lead1'].df.points_cur
     longitudinalPlan.dynamicFollowState1.newLead = self.mpcs['lead1'].df.new_lead
@@ -316,6 +317,7 @@ class Planner():
     longitudinalPlan.dynamicFollowState1.penalty = self.mpcs['lead1'].df.penalty
     longitudinalPlan.dynamicFollowState1.lastCutinFactor = self.mpcs['lead1'].df.last_cutin_factor
     longitudinalPlan.dynamicFollowState1.rescindedPenalty = self.mpcs['lead1'].df.rescinded_penalty
+    longitudinalPlan.dynamicFollowState1.penaltyTraffic = self.mpcs['lead1'].df.traffic_penalty
 
     longitudinalPlan.speedLimitControlState = self.speed_limit_controller.state
     longitudinalPlan.speedLimit = float(self.speed_limit_controller.speed_limit)
