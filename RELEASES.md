@@ -1,3 +1,16 @@
+Version tw-0.8.12-9_twd (2022-11-22)
+========================
+  * Dynamic follow mode:
+    * should work now!
+    * now uses cut-ins **and adjacent traffic** to change (continuously) between close/medium/far follow 
+      * traffc-based dynamic follow requires extended radar capabilities
+  * Smoother application of curve braking
+  * Auto lane position: various improvements
+  * New UI metrics:
+    * number of cars being tracked by radar/long range vision (oncoming/ongoing/stopped/total/ongoing adjacent lane)
+    * minimum separation between ongoing adjacent traffic (in seconds)
+  * Print bearing above current speed (next to street name)
+
 Version tw-0.8.12-8_twd (2022-09-29)
 ========================
  * NEW: [toggle] Extended radar capabilities
