@@ -82,13 +82,13 @@ class LaneOffset:
   DUR_SLOW = 8.0 # [s] same, but slower for when position change is caused by auto lane offset
   STEP_SLOW = OFFSET / DUR_SLOW * DT_MDL * LANE_WIDTH_DEFAULT
   
-  AUTO_MIN_SHOULDER_WIDTH_FACTOR = 0.05 # [unitless] shoulder width must be as this this factor of lane width
+  AUTO_MIN_SHOULDER_WIDTH_FACTOR = 0.0 # [unitless] shoulder width must be as this this factor of lane width
   AUTO_MAX_LANE_WIDTH_FACTOR = 0.6 # [unitless] adjacent lanes whose width is narrower than this factor of lane width are considered a shoulder
   
   AUTO_MAX_PRED_LAT_ACCEL = 0.9 # [m/s^2] more than this predicted amount of lateral accel causes instant resuming of center position
   AUTO_MAX_CUR_LAT_ACCEL = 0.7 # same but for instantaneous vehicle lateral accel
   
-  AUTO_MIN_LANELINE_PROB = 0.3
+  AUTO_MIN_LANELINE_PROB = 0.6
   AUTO_MIN_ADJACENT_LANELINE_PROB = 0.15
   
   AUTO_LANE_STATE_MIN_TIME = 3.0 # [s] amount of time the lane state must stay the same before it can be acted upon
