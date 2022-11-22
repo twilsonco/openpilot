@@ -1,15 +1,27 @@
 # Table of Contents
 ------
-* [Appreciate my work?](#appreciate-my-work)
-* [Infographics](#infographics)
-* [Fork Details](#fork-details)
-  * [Current Fork Features](#current-fork-features---optional-via-toggle)
-  * [Planned Fork Features](#planned-fork-features-in-no-particular-order)
-  * [Supported Hardware](#supported-hardware)
-  * [Installation Instructions](#installation-instructions)
-  * [Automatic Updates](#automatic-updates)
-  * [Tuning](#tuning)
-* [Commaai Table of Contents](#commaai-table-of-contents)
+- [Table of Contents](#table-of-contents)
+    - [Infographics](#infographics)
+    - [Appreciate My Work?](#appreciate-my-work)
+- [Fork Details](#fork-details)
+      - [Current Fork Features \[✅ = optional via toggle\]:](#current-fork-features---optional-via-toggle)
+      - [Planned Fork Features (in no particular order):](#planned-fork-features-in-no-particular-order)
+    - [Supported Hardware](#supported-hardware)
+    - [Installation Instructions](#installation-instructions)
+      - [Easy: using sshane's openpilot-installer-generator](#easy-using-sshanes-openpilot-installer-generator)
+      - [Less easy](#less-easy)
+    - [Automatic Updates](#automatic-updates)
+    - [Tuning](#tuning)
+      - [Lateral Tuning](#lateral-tuning)
+- [Commaai Table of Contents](#commaai-table-of-contents)
+  - [What is openpilot?](#what-is-openpilot)
+  - [Running in a car](#running-in-a-car)
+  - [Running on PC](#running-on-pc)
+  - [Community and Contributing](#community-and-contributing)
+  - [User Data and comma Account](#user-data-and-comma-account)
+  - [Safety and Testing](#safety-and-testing)
+  - [Directory Structure](#directory-structure)
+  - [Licensing](#licensing)
 
 ### Infographics
 ------
@@ -129,7 +141,7 @@ Please show your support by contributing to the ongoing development of this proj
     * Metrics (79 to choose from):
         * Device info: CPU temperature (°C and °F), CPU percent, CPU temp + percent (°C and °F), memory temperature (°C and °F), memory used, free storage, ambient temperature (°C and °F), fanspeed (as percent of max), GPS accuracy (and number of satelites), altitude
         * Vehicle info: Engine RPM, engine coolant temperature (°C and °F), engine RPM + coolant temperature (°C and °F), steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, percent grade of current road (one based on GPS, one based on device accelerometer), Volt high-voltage battery wattage [kW], voltage [V], current [A], voltage+wattage, drag force/power, brake force/power, regen force/power, electric motor force/power, gas engine power, total acceleration force/power, EV efficiency (instantaneous, 5 mile average, total), EV power consumption (instant/5mi/total), EV instantaneous efficiency/consumption (depending on sign), EV drivetrain efficiency (amount of power making it to the tires),  
-        * Lead-following info: follow distance level, lead distance [length], desired lead distance [length], lead distance [time], desired lead distance [time], follow distance and acceleration mpc costs [in units of the stock OP costs; i.e. 2.5 means 2.5× the stock OP value], relative lead velocity, absolute lead velocity
+        * Lead/traffic info: follow distance level, lead distance [length], desired lead distance [length], lead distance [time], desired lead distance [time], follow distance and acceleration mpc costs [in units of the stock OP costs; i.e. 2.5 means 2.5× the stock OP value], relative lead velocity, absolute lead velocity, number of cars (total, ongoing, oncoming, stopped, ongoing in adjacent lanes), minimum follow distance of ongoing cars in adjacent lanes
         * ...and others
 - [x] [GM] [✅] **One-pedal driving**: OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
     * **Not necessary to enable the one-pedal toggle; you engage/disengage while driving**
@@ -245,6 +257,19 @@ If you're device stays connected to your car all the time, you'll be presented w
 Commaai Table of Contents
 =======================
 
+- [Table of Contents](#table-of-contents)
+    - [Infographics](#infographics)
+    - [Appreciate My Work?](#appreciate-my-work)
+- [Fork Details](#fork-details)
+      - [Current Fork Features \[✅ = optional via toggle\]:](#current-fork-features---optional-via-toggle)
+      - [Planned Fork Features (in no particular order):](#planned-fork-features-in-no-particular-order)
+    - [Supported Hardware](#supported-hardware)
+    - [Installation Instructions](#installation-instructions)
+      - [Easy: using sshane's openpilot-installer-generator](#easy-using-sshanes-openpilot-installer-generator)
+      - [Less easy](#less-easy)
+    - [Automatic Updates](#automatic-updates)
+    - [Tuning](#tuning)
+      - [Lateral Tuning](#lateral-tuning)
 - [Commaai Table of Contents](#commaai-table-of-contents)
   - [What is openpilot?](#what-is-openpilot)
   - [Running in a car](#running-in-a-car)

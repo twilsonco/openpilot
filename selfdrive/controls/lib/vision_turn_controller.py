@@ -2,9 +2,10 @@ import numpy as np
 import math
 from cereal import log
 from collections import defaultdict
+from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import interp
 from common.params import Params
-from common.realtime import sec_since_boot
+from common.realtime import sec_since_boot, DT_MDL
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.lane_planner import TRAJECTORY_SIZE
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
@@ -112,7 +113,7 @@ class VisionTurnController():
     self._v_cruise_setpoint = 0.
     self._v_ego = 0.
     self._a_ego = 0.
-    self._a_target = 0.
+    self._a_target = FirstOrderFilter(0., 1.0, DT_MDL)
     self._v_overshoot = 0.
     self._state = VisionTurnControllerState.disabled
     self._CS = None
@@ -136,7 +137,7 @@ class VisionTurnController():
 
   @property
   def a_target(self):
-    return self._a_target if self.is_active else self._a_ego
+    return self._a_target.x if self.is_active else self._a_ego
 
   @property
   def v_turn(self):
@@ -420,7 +421,7 @@ class VisionTurnController():
       a_target = _LEAVING_ACC
 
     # update solution values.
-    self._a_target = a_target
+    self._a_target.update(a_target)
 
   def update(self, enabled, v_ego, a_ego, v_cruise_setpoint, sm):
     self._op_enabled = enabled

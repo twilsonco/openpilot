@@ -2,7 +2,6 @@ from cereal import car, log
 from common.realtime import DT_CTRL
 from common.numpy_fast import interp, clip
 from common.realtime import sec_since_boot
-from math import sin 
 from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
@@ -34,12 +33,12 @@ ONE_PEDAL_MODE_DECEL_V = [
   [-1.7, -2.6, -2.4]
 ] # light, medium, and hard one-pedal braking
 ONE_PEDAL_MIN_SPEED = 2.5
-ONE_PEDAL_DECEL_RATE_LIMIT_UP = 0.8 * DT_CTRL * 4 # m/s^2 per second for increasing braking force
+ONE_PEDAL_DECEL_RATE_LIMIT_UP = 0.4 * DT_CTRL * 4 # m/s^2 per second for increasing braking force
 ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.8 * DT_CTRL * 4 # m/s^2 per second for decreasing
 
 ONE_PEDAL_MAX_DECEL = -3.5
 ONE_PEDAL_SPEED_ERROR_FACTOR_BP = [1.5, 20.] # [m/s] 
-ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.25, 0.4] # factor of error for non-lead braking decel
+ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.4, 0.2] # factor of error for non-lead braking decel
 
 ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T = 0.6 # [s]
 

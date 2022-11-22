@@ -1577,7 +1577,90 @@ static void ui_draw_measures(UIState *s){
             snprintf(val, sizeof(val), "%.1f", sm["longitudinalPlan"].getLongitudinalPlan().getVisionMaxPredictedLateralAcceleration());
             snprintf(unit, sizeof(unit), "m/s²");
             break;}
+
+          case UIMeasure::LANE_POSITION:
+            {
+            snprintf(name, sizeof(name), "LANE POS");
+            auto dat = scene.lateral_plan.getLanePosition();
+            if (dat == LanePosition::LEFT){
+              snprintf(val, sizeof(val), "left");
+            }
+            else if (dat == LanePosition::RIGHT){
+              snprintf(val, sizeof(val), "right");
+            }
+            else{
+              snprintf(val, sizeof(val), "center");
+            }
+            break;}
+
+          case UIMeasure::LANE_OFFSET:
+            {
+            snprintf(name, sizeof(name), "LN OFFSET");
+            auto dat = scene.lateral_plan.getLaneOffset();
+            snprintf(val, sizeof(val), "%.1f", dat);
+            snprintf(unit, sizeof(unit), "m");
+            break;}
           
+          case UIMeasure::TRAFFIC_COUNT_TOTAL:
+            {
+            snprintf(name, sizeof(name), "TOTAL");
+            int dat = scene.lead_vertices_oncoming.size()
+                      + scene.lead_vertices_ongoing.size()
+                      + scene.lead_vertices_stopped.size()
+                      + (scene.lead_data[0].getStatus() ? 1 : 0)
+                      + (scene.radarState.getLeadsCenter()).size();
+            snprintf(val, sizeof(val), "%d", dat);
+            snprintf(unit, sizeof(unit), "cars");
+            break;}
+
+          case UIMeasure::TRAFFIC_COUNT_ONCOMING:
+            {
+            snprintf(name, sizeof(name), "ONCOMING");
+            int dat = scene.lead_vertices_oncoming.size();
+            snprintf(val, sizeof(val), "%d", dat);
+            snprintf(unit, sizeof(unit), "cars");
+            break;}
+
+          case UIMeasure::TRAFFIC_COUNT_ONGOING:
+            {
+            snprintf(name, sizeof(name), "ONGOING");
+            int dat = scene.lead_vertices_ongoing.size()
+                      + (scene.lead_data[0].getStatus() ? 1 : 0)
+                      + (scene.radarState.getLeadsCenter()).size();
+            snprintf(val, sizeof(val), "%d", dat);
+            snprintf(unit, sizeof(unit), "cars");
+            break;}
+
+          case UIMeasure::TRAFFIC_COUNT_STOPPED:
+            {
+            snprintf(name, sizeof(name), "STOPPED");
+            int dat = scene.lead_vertices_stopped.size()
+                      + (scene.lead_data[0].getStatus() 
+                        && scene.lead_data[0].getVLeadK() < 3 
+                          ? 1 + (scene.radarState.getLeadsCenter()).size() 
+                          : 0);
+            snprintf(val, sizeof(val), "%d", dat);
+            snprintf(unit, sizeof(unit), "cars");
+            break;}
+
+          case UIMeasure::TRAFFIC_COUNT_ADJACENT_ONGOING:
+            {
+            snprintf(name, sizeof(name), "ADJ ONGOING");
+            int dat1 = scene.lateral_plan.getTrafficCountLeft();
+            int dat2 = scene.lateral_plan.getTrafficCountRight();
+            snprintf(val, sizeof(val), "%d:%d", dat1, dat2);
+            snprintf(unit, sizeof(unit), "cars");
+            break;}
+
+          case UIMeasure::TRAFFIC_ADJ_ONGOING_MIN_DISTANCE:
+            {
+            snprintf(name, sizeof(name), "MIN ADJ SEP");
+            float dat1 = scene.lateral_plan.getTrafficMinSeperationLeft();
+            float dat2 = scene.lateral_plan.getTrafficMinSeperationRight();
+            snprintf(val, sizeof(val), "%.1f:%.1f", dat1, dat2);
+            snprintf(unit, sizeof(unit), "s");
+            break;}
+
           case UIMeasure::LEAD_TTC:
             {
             snprintf(name, sizeof(name), "TTC");
@@ -2490,7 +2573,7 @@ static void ui_draw_measures(UIState *s){
         
         int vallen = strlen(val);
         if (vallen > 4){
-          val_font_size -= (vallen - 4) * 5;
+          val_font_size -= (vallen - 4) * 8;
         }
         int unitlen = strlen(unit);
         if (unitlen > 5){
@@ -2640,7 +2723,8 @@ static void ui_draw_vision_event(UIState *s) {
   s->scene.wheel_touch_rect = {1,1,1,1};
   if (s->scene.engageable) {
     // draw steering wheel
-    const float rot_angle = -s->scene.angleSteers * 0.01745329252;
+    const float rot_angle_multiplier = s->scene.car_state.getVEgo() / 15.0;
+    const float rot_angle = -s->scene.angleSteers * 0.01745329252 * (rot_angle_multiplier > 1.0 ? rot_angle_multiplier : 1.0);
     const int radius = 88;
     const int center_x = s->fb_w - radius - bdr_s * 2;
     const int center_y = radius  + (bdr_s * 1.5);
@@ -2721,14 +2805,38 @@ static void ui_draw_vision_event(UIState *s) {
     }
   }
 
-  // current road name
-  if (s->scene.network_strength > 0 && !s->scene.map_open){//} && s->scene.current_road_name != ""){
-    nvgBeginPath(s->vg);
-    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
-    nvgFontFace(s->vg, "sans-regular");
-    nvgFontSize(s->vg, 75);
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(255));
-    nvgText(s->vg, s->fb_w / 2, bdr_s - 31, s->scene.current_road_name.c_str(), NULL);
+  // current road name and heading
+
+  nvgBeginPath(s->vg);
+  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
+  nvgFontFace(s->vg, "sans-regular");
+  nvgFontSize(s->vg, 75);
+  nvgFillColor(s->vg, COLOR_WHITE_ALPHA(255));
+  char val[16];
+  if (s->scene.bearingAccuracy != 180.00) {
+    if (((s->scene.bearingDeg >= 337.5) && (s->scene.bearingDeg <= 360)) || ((s->scene.bearingDeg >= 0) && (s->scene.bearingDeg <= 22.5))) {
+      snprintf(val, sizeof(val), "(N)");
+    } else if ((s->scene.bearingDeg > 22.5) && (s->scene.bearingDeg < 67.5)) {
+      snprintf(val, sizeof(val), "(NE)");
+    } else if ((s->scene.bearingDeg >= 67.5) && (s->scene.bearingDeg <= 112.5)) {
+      snprintf(val, sizeof(val), "(E)");
+    } else if ((s->scene.bearingDeg > 112.5) && (s->scene.bearingDeg < 157.5)) {
+      snprintf(val, sizeof(val), "(SE)");
+    } else if ((s->scene.bearingDeg >= 157.5) && (s->scene.bearingDeg <= 202.5)) {
+      snprintf(val, sizeof(val), "(S)");
+    } else if ((s->scene.bearingDeg > 202.5) && (s->scene.bearingDeg < 247.5)) {
+      snprintf(val, sizeof(val), "(SW)");
+    } else if ((s->scene.bearingDeg >= 247.5) && (s->scene.bearingDeg <= 292.5)) {
+      snprintf(val, sizeof(val), "(W)");
+    } else if ((s->scene.bearingDeg > 292.5) && (s->scene.bearingDeg < 337.5)) {
+      snprintf(val, sizeof(val), "(NW)");
+    }
+  }
+  if (s->scene.network_strength > 0 && !s->scene.map_open){
+    nvgText(s->vg, s->fb_w / 2, bdr_s - 31, (s->scene.current_road_name + " " + val + " ").c_str(), NULL);
+  }
+  else {
+    nvgText(s->vg, s->fb_w / 2, bdr_s - 31, val, NULL);
   }
 }
 

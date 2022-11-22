@@ -65,7 +65,7 @@ def calc_cruise_accel_limits(v_ego, following, accelMode):
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_MODE_LIST[accelMode])
   return [a_cruise_min, a_cruise_max]
 
-LEAD_ONE_PLUS_TR_BUFFER = 0.15 # [s] follow distance between lead and lead+1 to run the lead+1 mpc
+LEAD_ONE_PLUS_TR_BUFFER = 0.1 # [s] follow distance between lead and lead+1 to run the lead+1 mpc
 LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER = 2.0 # [m]
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
@@ -306,6 +306,7 @@ class Planner():
     longitudinalPlan.dynamicFollowState0.penalty = self.mpcs['lead0'].df.penalty
     longitudinalPlan.dynamicFollowState0.lastCutinFactor = self.mpcs['lead0'].df.last_cutin_factor
     longitudinalPlan.dynamicFollowState0.rescindedPenalty = self.mpcs['lead0'].df.rescinded_penalty
+    longitudinalPlan.dynamicFollowState0.penaltyTraffic = self.mpcs['lead0'].df.traffic_penalty
 
     longitudinalPlan.dynamicFollowState1.pointsCurrent = self.mpcs['lead1'].df.points_cur
     longitudinalPlan.dynamicFollowState1.newLead = self.mpcs['lead1'].df.new_lead
@@ -316,6 +317,7 @@ class Planner():
     longitudinalPlan.dynamicFollowState1.penalty = self.mpcs['lead1'].df.penalty
     longitudinalPlan.dynamicFollowState1.lastCutinFactor = self.mpcs['lead1'].df.last_cutin_factor
     longitudinalPlan.dynamicFollowState1.rescindedPenalty = self.mpcs['lead1'].df.rescinded_penalty
+    longitudinalPlan.dynamicFollowState1.penaltyTraffic = self.mpcs['lead1'].df.traffic_penalty
 
     longitudinalPlan.speedLimitControlState = self.speed_limit_controller.state
     longitudinalPlan.speedLimit = float(self.speed_limit_controller.speed_limit)

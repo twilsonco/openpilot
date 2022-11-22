@@ -1,9 +1,10 @@
 import numpy as np
 import time
 from collections import defaultdict
+from common.filter_simple import FirstOrderFilter
 from common.params import Params
 from cereal import log
-from common.realtime import sec_since_boot
+from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import LIMIT_ADAPT_ACC, LIMIT_MIN_SPEED, LIMIT_MAX_MAP_DATA_AGE, \
@@ -69,13 +70,11 @@ class TurnSpeedController():
 
     self._next_speed_limit_prev = 0.
 
-    self._a_target = 0.
-    
-    self._a_target_ema_k = 1/15
+    self._a_target = FirstOrderFilter(0., 1.0, DT_MDL)
 
   @property
   def a_target(self):
-    return self._a_target if self.is_active else self._a_ego
+    return self._a_target.x if self.is_active else self._a_ego
 
   @property
   def state(self):
@@ -244,18 +243,16 @@ class TurnSpeedController():
     elif self.state == TurnSpeedControlState.adapting:
       # When adapting we target to achieve the speed limit on the distance.
       a_target = (self.speed_limit**2 - self._v_ego**2) / (2. * self.distance)
-      a_target = self._a_target_ema_k * a_target + (1. - self._a_target_ema_k) * self._a_target
       a_target = np.clip(a_target, LIMIT_MIN_ACC, LIMIT_MAX_ACC)
     # active
     elif self.state == TurnSpeedControlState.active:
       # When active we are trying to keep the speed constant around the control time horizon.
       # but under constrained acceleration limits since we are in a turn.
       a_target = self._v_offset / T_IDXS[CONTROL_N]
-      a_target = self._a_target_ema_k * a_target + (1. - self._a_target_ema_k) * self._a_target
       a_target = np.clip(a_target, _ACTIVE_LIMIT_MIN_ACC, _ACTIVE_LIMIT_MAX_ACC)
 
     # update solution values.
-    self._a_target = a_target
+    self._a_target.update(a_target)
 
   def update(self, enabled, v_ego, a_ego, sm):
     self._op_enabled = enabled

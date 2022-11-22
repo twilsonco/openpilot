@@ -21,6 +21,7 @@ LEAD_PATH_YREL_MAX_V = [1.2] # [m] constant tolerance
 LEAD_PATH_YREL_LOW_TOL = 0.5 # if the lead closest to the "middle" is farther away than one that is both closer and within this distance of "middle", use that lead
 LEAD_PATH_DREL_MIN = 60 # [m] only care about far away leads
 LEAD_MIN_SMOOTHING_DISTANCE = 145 # [m]
+LEAD_MAX_DISTANCE = 170 # [m] beyond this distance, lead data is too noisy to use
 MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow use.
 
 LEAD_PLUS_ONE_MIN_REL_DIST_V = [3.0, 6.0] # [m] min distance between lead+1 and lead at low and high distance
@@ -80,7 +81,7 @@ def match_model_path_to_cluster(v_ego, md, clusters):
   # 2) at least near the edge of regular op lead detectability
   # 3) close enough to the predicted path at the cluster distance
   close_path_clusters = [[c,abs(-c.yRel - interp(c.dRel, md.position.x, md.position.y))] for c in clusters if \
-      c.dRel <= md.position.x[-1] and \
+      c.dRel <= min(md.position.x[-1], LEAD_MAX_DISTANCE) and \
       c.dRel >= LEAD_PATH_DREL_MIN]
   close_path_clusters = sorted([c for c in close_path_clusters if c[1] <= interp(c[0].dRel, LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V)], key=lambda c:c[1])
   if len(close_path_clusters) == 0:
@@ -116,25 +117,6 @@ def match_model_lanelines_to_cluster(v_ego, md, lane_width, clusters):
   rll_y = np.array(md.laneLines[2].y)
   l_prob = md.laneLineProbs[1]
   r_prob = md.laneLineProbs[2]
-  lll_std = md.laneLineStds[1]
-  rll_std = md.laneLineStds[2]
-
-  if l_prob > MIN_LANE_PROB and r_prob > MIN_LANE_PROB:
-    # Reduce reliance on lanelines that are too far apart or will be in a few seconds
-    width_pts = rll_y - lll_y
-    prob_mods = []
-    for t_check in [0.0, 1.5, 3.0]:
-      width_at_t = interp(t_check * (v_ego + 7), ll_x, width_pts)
-      prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
-    mod = min(prob_mods)
-    l_prob *= mod
-    r_prob *= mod
-
-    # Reduce reliance on uncertain lanelines
-    l_std_mod = interp(lll_std, [.15, .3], [1.0, 0.0])
-    r_std_mod = interp(rll_std, [.15, .3], [1.0, 0.0])
-    l_prob *= l_std_mod
-    r_prob *= r_std_mod
 
   # Find path from lanes as the average center lane only if min probability on both lanes is above threshold.
   if l_prob > MIN_LANE_PROB and r_prob > MIN_LANE_PROB:
@@ -151,7 +133,7 @@ def match_model_lanelines_to_cluster(v_ego, md, lane_width, clusters):
   # 2) at least near the edge of regular op lead detectability
   # 3) close enough to the predicted path at the cluster distance  
   close_path_clusters = [[c,abs(-c.yRel - interp(c.dRel, ll_x, c_y.tolist()))] for c in clusters if \
-      c.dRel <= ll_x[-1] and \
+      c.dRel <= min(ll_x[-1], LEAD_MAX_DISTANCE) and \
       c.dRel >= LEAD_PATH_DREL_MIN]
   close_path_clusters = sorted([c for c in close_path_clusters if c[1] <= interp(c[0].dRel, LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V)], key=lambda c:c[1])
   if len(close_path_clusters) == 0:
@@ -186,25 +168,6 @@ def get_path_adjacent_leads(v_ego, md, lane_width, clusters):
     rll_y = np.array(md.laneLines[2].y)
     l_prob = md.laneLineProbs[1]
     r_prob = md.laneLineProbs[2]
-    lll_std = md.laneLineStds[1]
-    rll_std = md.laneLineStds[2]
-
-    if l_prob > MIN_LANE_PROB and r_prob > MIN_LANE_PROB:
-      # Reduce reliance on lanelines that are too far apart or will be in a few seconds
-      width_pts = rll_y - lll_y
-      prob_mods = []
-      for t_check in [0.0, 1.5, 3.0]:
-        width_at_t = interp(t_check * (v_ego + 7), ll_x, width_pts)
-        prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
-      mod = min(prob_mods)
-      l_prob *= mod
-      r_prob *= mod
-
-      # Reduce reliance on uncertain lanelines
-      l_std_mod = interp(lll_std, [.15, .3], [1.0, 0.0])
-      r_std_mod = interp(rll_std, [.15, .3], [1.0, 0.0])
-      l_prob *= l_std_mod
-      r_prob *= r_std_mod
 
     # Find path from lanes as the average center lane only if min probability on both lanes is above threshold.
     if l_prob > MIN_LANE_PROB and r_prob > MIN_LANE_PROB:
@@ -230,26 +193,26 @@ def get_path_adjacent_leads(v_ego, md, lane_width, clusters):
   half_lane_width = lane_width / 2
   for c in clusters:
     if md_y is not None and c.dRel <= md_x[-1] or (c_y is not None and md_x[-1] - c.dRel < ll_x[-1] - c.dRel):
-      yRel = -c.yRel - interp(c.dRel, md_x, md_y)
+      dPath = -c.yRel - interp(c.dRel, md_x, md_y)
       checkSource = 'modelPath'
     elif c_y is not None:
-      yRel = -c.yRel - interp(c.dRel, ll_x, c_y.tolist())
+      dPath = -c.yRel - interp(c.dRel, ll_x, c_y.tolist())
       checkSource = 'modelLaneLines'
     else:
-      yRel = -c.yRel
+      dPath = -c.yRel
       checkSource = 'lowSpeedOverride'
       
     source = 'vision' if c.dRel > 145. else 'radar'
     
     ld = c.get_RadarState(source=source, checkSource=checkSource)
-    ld["dPath"] = yRel
-    ld["vLat"] = math.sqrt((10*yRel)**2 + c.dRel**2)
-    if abs(yRel) < half_lane_width and ld["vLeadK"] > -1.: # want to still get stopped leads, so put in wiggle-room for radar noise
-      leads_center[abs(yRel)] = ld
-    elif yRel < 0.:
-      leads_left[abs(yRel)] = ld
+    ld["dPath"] = dPath
+    ld["vLat"] = math.sqrt((10*dPath)**2 + c.dRel**2)
+    if abs(dPath) < half_lane_width and ld["vLeadK"] > -1.: # want to still get stopped leads, so put in wiggle-room for radar noise
+      leads_center[abs(dPath)] = ld
+    elif dPath < 0.:
+      leads_left[abs(dPath)] = ld
     else:
-      leads_right[abs(yRel)] = ld
+      leads_right[abs(dPath)] = ld
   
   ll,lr = [[l[k] for k in sorted(list(l.keys()))] for l in [leads_left,leads_right]]
   lc = sorted(leads_center.values(), key=lambda c:c["dRel"])
@@ -293,9 +256,9 @@ def get_lead(v_ego, ready, clusters, lead_msg=None, low_speed_override=True, md=
   return lead_dict
 
 class LongRangeLead():
-  DREL_BP = [LEAD_MIN_SMOOTHING_DISTANCE, 220.] # [m] used commonly between distance-based parameters
+  DREL_BP = [LEAD_MIN_SMOOTHING_DISTANCE, LEAD_MAX_DISTANCE] # [m] used commonly between distance-based parameters
   D_DREL_MAX_V = [8., 20.] # [m] deviation between old and new leads necessary to trigger reset of values
-  ALPHA_V = [0, 3.] # raise/lower second value for more/less smoothing of long-range lead data
+  ALPHA_V = [0, 4.] # raise/lower second value for more/less smoothing of long-range lead data
   D_YREL_MAX = 0.8 # [m] max yrel deviation
   
   def __init__(self, dt):

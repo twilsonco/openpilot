@@ -142,7 +142,7 @@ const QColor bg_colors [] = {
 const QColor alt_bg_colors [] = {
   [STATUS_DISENGAGED] =  QColor(0x00, 0x30, 0x4A, 0xc8),
   [STATUS_ENGAGED] = QColor(0x00, 0x04, 0xA7, 0xf1),
-  [STATUS_WARNING] = QColor(0x6A, 0x00, 0x7E, 0xf1),
+  [STATUS_WARNING] = QColor(0xAB, 0x00, 0xAE, 0xf1),
   [STATUS_ALERT] = QColor(0x92, 0x00, 0x0D, 0xf1),
 };
 
@@ -208,7 +208,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   ROLL_DEVICE,
   LANE_WIDTH,
   DISTANCE_TRAVELLED,
-  // Lead info
+  // Lead/traffic info
   FOLLOW_LEVEL,
   LEAD_TTC,
   LEAD_DISTANCE_LENGTH,
@@ -218,6 +218,14 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   LEAD_COSTS,
   LEAD_VELOCITY_RELATIVE,
   LEAD_VELOCITY_ABS,
+  LANE_POSITION,
+  LANE_OFFSET,
+  TRAFFIC_COUNT_TOTAL,
+  TRAFFIC_COUNT_ONCOMING,
+  TRAFFIC_COUNT_ONGOING,
+  TRAFFIC_COUNT_STOPPED,
+  TRAFFIC_COUNT_ADJACENT_ONGOING,
+  TRAFFIC_ADJ_ONGOING_MIN_DISTANCE,
   // EV info
   HVB_VOLTAGE,
   HVB_CURRENT,

@@ -1,8 +1,10 @@
 # flake8: noqa
 
 from cereal import car
+from collections import defaultdict
 from common.numpy_fast import interp
 from selfdrive.car import dbc_dict
+from typing import Dict
 Ecu = car.CarParams.Ecu
 
 class CarControllerParams():
@@ -167,15 +169,4 @@ FINGERPRINTS = {
 
 STEER_THRESHOLD = 1.0
 
-DBC = {
-  CAR.HOLDEN_ASTRA: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.VOLT: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.VOLT18: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.BOLT_EUV: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.MALIBU: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.ACADIA: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.CADILLAC_ATS: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.BUICK_REGAL: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.ESCALADE: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.ESCALADE_ESV: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-}
+DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
