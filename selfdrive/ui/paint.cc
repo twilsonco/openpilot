@@ -2804,14 +2804,38 @@ static void ui_draw_vision_event(UIState *s) {
     }
   }
 
-  // current road name
-  if (s->scene.network_strength > 0 && !s->scene.map_open){//} && s->scene.current_road_name != ""){
-    nvgBeginPath(s->vg);
-    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
-    nvgFontFace(s->vg, "sans-regular");
-    nvgFontSize(s->vg, 75);
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(255));
-    nvgText(s->vg, s->fb_w / 2, bdr_s - 31, s->scene.current_road_name.c_str(), NULL);
+  // current road name and heading
+
+  nvgBeginPath(s->vg);
+  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
+  nvgFontFace(s->vg, "sans-regular");
+  nvgFontSize(s->vg, 75);
+  nvgFillColor(s->vg, COLOR_WHITE_ALPHA(255));
+  char val[16];
+  if (s->scene.bearingAccuracy != 180.00) {
+    if (((s->scene.bearingDeg >= 337.5) && (s->scene.bearingDeg <= 360)) || ((s->scene.bearingDeg >= 0) && (s->scene.bearingDeg <= 22.5))) {
+      snprintf(val, sizeof(val), "(N)");
+    } else if ((s->scene.bearingDeg > 22.5) && (s->scene.bearingDeg < 67.5)) {
+      snprintf(val, sizeof(val), "(NE)");
+    } else if ((s->scene.bearingDeg >= 67.5) && (s->scene.bearingDeg <= 112.5)) {
+      snprintf(val, sizeof(val), "(E)");
+    } else if ((s->scene.bearingDeg > 112.5) && (s->scene.bearingDeg < 157.5)) {
+      snprintf(val, sizeof(val), "(SE)");
+    } else if ((s->scene.bearingDeg >= 157.5) && (s->scene.bearingDeg <= 202.5)) {
+      snprintf(val, sizeof(val), "(S)");
+    } else if ((s->scene.bearingDeg > 202.5) && (s->scene.bearingDeg < 247.5)) {
+      snprintf(val, sizeof(val), "(SW)");
+    } else if ((s->scene.bearingDeg >= 247.5) && (s->scene.bearingDeg <= 292.5)) {
+      snprintf(val, sizeof(val), "(W)");
+    } else if ((s->scene.bearingDeg > 292.5) && (s->scene.bearingDeg < 337.5)) {
+      snprintf(val, sizeof(val), "(NW)");
+    }
+  }
+  if (s->scene.network_strength > 0 && !s->scene.map_open){
+    nvgText(s->vg, s->fb_w / 2, bdr_s - 31, (s->scene.current_road_name + " " + val + " ").c_str(), NULL);
+  }
+  else {
+    nvgText(s->vg, s->fb_w / 2, bdr_s - 31, val, NULL);
   }
 }
 
