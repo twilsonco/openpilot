@@ -38,7 +38,7 @@ ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.8 * DT_CTRL * 4 # m/s^2 per second for decre
 
 ONE_PEDAL_MAX_DECEL = -3.5
 ONE_PEDAL_SPEED_ERROR_FACTOR_BP = [1.5, 20.] # [m/s] 
-ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.3, 0.6] # factor of error for non-lead braking decel
+ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.4, 0.2] # factor of error for non-lead braking decel
 
 ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T = 0.6 # [s]
 
