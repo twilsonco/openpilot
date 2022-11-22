@@ -212,6 +212,7 @@ class DynamicFollow():
     self.lead_gone = (self.has_lead_last and not has_lead) \
                 or (has_lead and self.lead_d_last - lead_d < -5.0)
     self.new_lead = has_lead and (not self.has_lead_last or self.lead_d_last - lead_d > 5.0)
+    self.lead_d_last = lead_d if has_lead else 1000.0
     self.has_lead_last = has_lead
     if self.new_lead:
       if v_ego > 0.:
