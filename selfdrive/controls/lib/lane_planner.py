@@ -98,7 +98,8 @@ class LaneOffset:
   AUTO_ENABLE_TRAFFIC_MIN_SPEED = 10. * CV.MPH_TO_MS
   AUTO_ENABLE_MIN_SPEED_DEADZONE = 2. # [m/s]
   
-  AUTO_TRAFFIC_TIMEOUT = 30. # [s] amount of time auto lane position will be kept after last car is seen
+  AUTO_TRAFFIC_TIMEOUT_ONCOMING = 60. # [s] amount of time auto lane position will be kept after last car is seen
+  AUTO_TRAFFIC_TIMEOUT_ONGOING = 5. # [s] amount of time auto lane position will be kept after last car is seen
   AUTO_TRAFFIC_MIN_TIME = 1.1 # [s] time an oncoming/ongoing car needs to be observed before it will be taken to indicate traffic
   AUTO_TRAFFIC_MIN_SPEED = 9. # [m/s] need to go faster than this to be considered moving
   AUTO_CUTOFF_STEER_ANGLE = 110. # [degrees] auto lane position reset traffic monitoring after this
@@ -146,6 +147,8 @@ class LaneOffset:
     self._right_traffic_min_sep_dist = FirstOrderFilter(self.ADJACENT_TRAFFIC_SEP_DIST_NONE, 10.0, DT_MDL)
     self._left_traffic_last_seen_t = 0.
     self._right_traffic_last_seen_t = 0.
+    self._left_traffic_last_seen = LANE_TRAFFIC.NONE
+    self._right_traffic_last_seen = LANE_TRAFFIC.NONE
     self._left_traffic_temp_t = 0.
     self._right_traffic_temp_t = 0.
     self._lprob_last = 0.
@@ -328,9 +331,14 @@ class LaneOffset:
         self._left_traffic_temp_t = self._t
       elif self._t - self._left_traffic_temp_t >= self.AUTO_TRAFFIC_MIN_TIME:
         self._left_traffic_last_seen_t = self._t
+        self._left_traffic_last_seen = left_traffic
         self._left_traffic = left_traffic
-    elif self._t - self._left_traffic_last_seen_t > self.AUTO_TRAFFIC_TIMEOUT:
-      self._left_traffic = left_traffic
+    else:
+      if (self._left_traffic_last_seen == LANE_TRAFFIC.ONCOMING \
+          and self._t - self._left_traffic_last_seen_t > self.AUTO_TRAFFIC_TIMEOUT_ONCOMING) \
+        or (self._left_traffic_last_seen != LANE_TRAFFIC.ONCOMING \
+          and self._t - self._left_traffic_last_seen_t > self.AUTO_TRAFFIC_TIMEOUT_ONGOING):
+        self._left_traffic = left_traffic
     
     self._left_traffic_temp = left_traffic
       
@@ -339,9 +347,14 @@ class LaneOffset:
         self._right_traffic_temp_t = self._t
       elif self._t - self._right_traffic_temp_t >= self.AUTO_TRAFFIC_MIN_TIME:
         self._right_traffic_last_seen_t = self._t
+        self._left_traffic_last_seen = right_traffic
         self._right_traffic = right_traffic
-    elif self._t - self._right_traffic_last_seen_t > self.AUTO_TRAFFIC_TIMEOUT:
-      self._right_traffic = right_traffic
+    else:
+      if (self._right_traffic_last_seen == LANE_TRAFFIC.ONCOMING \
+          and self._t - self._right_traffic_last_seen_t > self.AUTO_TRAFFIC_TIMEOUT_ONCOMING) \
+        or (self._right_traffic_last_seen != LANE_TRAFFIC.ONCOMING \
+          and self._t - self._right_traffic_last_seen_t > self.AUTO_TRAFFIC_TIMEOUT_ONGOING):
+        self._right_traffic = right_traffic
     
     self._right_traffic_temp = right_traffic
       
@@ -412,26 +425,26 @@ class LaneOffset:
           lane_depart = l_lane_depart or r_lane_depart
           
         if abs(self._cs.steeringAngleDeg) > self.AUTO_CUTOFF_STEER_ANGLE or lane_depart:
-          self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
-          self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
+          self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT_ONCOMING + 1
+          self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT_ONCOMING + 1
           self._right_traffic = LANE_TRAFFIC.NONE
           self._left_traffic = LANE_TRAFFIC.NONE
           
         if self._right_traffic == LANE_TRAFFIC.ONGOING and self._lane_width_mean_right_adjacent == 0.:
           self._right_traffic = LANE_TRAFFIC.NONE
-          self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
+          self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT_ONCOMING + 1
           
         if self._left_traffic == LANE_TRAFFIC.ONGOING and self._lane_width_mean_left_adjacent == 0.:
           self._left_traffic = LANE_TRAFFIC.NONE
-          self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
+          self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT_ONCOMING + 1
           
         if self._lat_plan.lProb < 0.2 and self._left_traffic == LANE_TRAFFIC.NONE \
             and self._t - self._lane_state_changed_last_t < self.AUTO_LANE_STATE_MIN_TIME:
-          self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
+          self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT_ONCOMING + 1
           
         if self._lat_plan.rProb < 0.2 and self._right_traffic == LANE_TRAFFIC.NONE \
             and self._t - self._lane_state_changed_last_t < self.AUTO_LANE_STATE_MIN_TIME:
-          self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT + 1
+          self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT_ONCOMING + 1
           
         self.update_lane_pos_auto(lane_width)
       if self._long_plan is not None:
