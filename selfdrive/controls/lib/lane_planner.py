@@ -449,6 +449,18 @@ class LaneOffset:
     else:
       self.lane_pos = lane_pos
     offset = self.OFFSET * self.offset_scale * self.lane_pos * lane_width * (self.AUTO_OFFSET_FACTOR if self._auto_is_active else 1.)
+    
+    if offset > 0. and self._left_traffic == LANE_TRAFFIC.ONCOMING:
+      offset = 0.
+      do_slow = False
+      if not self._auto_is_active:
+        self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT_ONCOMING - 5.0
+    elif offset < 0. and self._right_traffic == LANE_TRAFFIC.ONCOMING:
+      offset = 0.
+      do_slow = False
+      if not self._auto_is_active:
+        self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT_ONCOMING - 5.0
+      
     if offset > self.offset:
       self.offset = min(offset, self.offset + (self.STEP_SLOW if do_slow else self.STEP))
     elif offset < self.offset:
