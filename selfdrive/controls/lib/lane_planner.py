@@ -250,10 +250,11 @@ class LaneOffset:
     return
   
   def update_traffic_info(self, rs, lane_width, md):
-    left_traffic = LANE_TRAFFIC.NONE
-    right_traffic = LANE_TRAFFIC.NONE
     if self._cs is None or abs(self._cs.steeringAngleDeg) > self.TRAFFIC_NEW_DETECT_STEER_CUTOFF:
       return
+    
+    left_traffic = LANE_TRAFFIC.NONE
+    right_traffic = LANE_TRAFFIC.NONE
     
     sep_dist = self.ADJACENT_TRAFFIC_SEP_DIST_NONE # [s] if <= 1 adjacent cars, this is the "separation" between them
     
