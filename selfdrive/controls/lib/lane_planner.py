@@ -179,29 +179,12 @@ class LaneOffset:
             ret = AUTO_AUTO_LANE_MODE.DISENGAGE
             self._auto_auto_enabled = False
     return ret
-
-  def do_auto_enable_lanelines(self, ret, road_type, v_ego):
-    v_ego_diff = apply_deadzone(v_ego - self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED, self.AUTO_ENABLE_MIN_SPEED_DEADZONE)
-    v_ego_diff_last = apply_deadzone(self._v_ego_last - self.AUTO_ENABLE_ROAD_TYPE_MIN_SPEED, self.AUTO_ENABLE_MIN_SPEED_DEADZONE)
-    if road_type != self._road_type_last or ret == AUTO_AUTO_LANE_MODE.DISENGAGE \
-        or (v_ego_diff > 0. and v_ego_diff_last <= 0.) \
-        or (v_ego_diff < 0. and v_ego_diff_last >= 0.):
-      if (road_type in self.AUTO_ENABLE_ROAD_TYPES and v_ego_diff > 0. and (not self._auto_is_active or ret == AUTO_AUTO_LANE_MODE.DISENGAGE)):
-        ret = AUTO_AUTO_LANE_MODE.NO_CHANGE if ret == AUTO_AUTO_LANE_MODE.DISENGAGE else AUTO_AUTO_LANE_MODE.ENGAGE
-        self._auto_auto_enabled = True
-      elif self._auto_is_active and self._auto_auto_enabled \
-        and (road_type not in self.AUTO_ENABLE_ROAD_TYPES or v_ego_diff < 0.) :
-          ret = AUTO_AUTO_LANE_MODE.DISENGAGE
-          self._auto_auto_enabled = False
-    return ret
             
   def do_auto_enable(self, road_type):
     ret = AUTO_AUTO_LANE_MODE.NO_CHANGE
     v_ego = self._cs.vEgo if self._cs is not None else 0.
     
     ret = self.do_auto_enable_traffic(ret, v_ego)
-    if ret != AUTO_AUTO_LANE_MODE.ENGAGE:
-      ret = self.do_auto_enable_lanelines(ret, road_type, v_ego)
 
     self._auto_auto_lane_position_action = ret
     self._lprob_last = self._lane_probs[1]
@@ -373,15 +356,6 @@ class LaneOffset:
           and self._left_traffic == LANE_TRAFFIC.NONE:
         lane_pos_auto = 1.
         timeout_override = True
-      elif self._lane_probs[1] > self.AUTO_MIN_LANELINE_PROB \
-          and self._lane_probs[2] > self.AUTO_MIN_LANELINE_PROB:
-        if (self._lane_width_mean_left_adjacent > 0. and self._lane_width_mean_right_adjacent > 0.) \
-            or (self._lane_width_mean_left_adjacent == 0. and self._lane_width_mean_right_adjacent == 0.):
-          lane_pos_auto = 0.
-        elif self._lane_width_mean_left_adjacent > 0. and self._shoulder_width_mean_right >= self.AUTO_MIN_SHOULDER_WIDTH_FACTOR * lane_width:
-          lane_pos_auto = -1.
-        elif self._lane_width_mean_right_adjacent > 0. and self._shoulder_width_mean_left >= self.AUTO_MIN_SHOULDER_WIDTH_FACTOR * lane_width:
-          lane_pos_auto = 1.
     if lane_pos_auto != 0. \
         and ((self._lat_accel_cur >= self.AUTO_MAX_CUR_LAT_ACCEL \
           and np.sign(self._lat_curvature_cur) == np.sign(lane_pos_auto)) \
