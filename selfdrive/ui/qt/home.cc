@@ -67,6 +67,7 @@ void HomeWindow::showDriverView(bool show) {
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
+  Params().putBool("ScreenTapped", true);
   // Toggle speed limit control enabled
   Rect touch_rect = QUIState::ui_state.scene.speed_limit_sign_touch_rect;
   SubMaster &sm = *(QUIState::ui_state.sm);

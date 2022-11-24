@@ -178,6 +178,11 @@ class Controls:
     self.a_target = 0.0
     self.pitch = 0.0
     self.pitch_accel_deadzone = 0.01 # [radians] ≈ 1% grade
+    self.interaction_timer = 0.0 # [s] time since screen tap or steering/gas/brake interaction
+    self.interaction_last_t = 0.0
+    self.params_check_last_t = 0.0
+    self.params_check_freq = 1.0
+    self._params = params
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -221,6 +226,17 @@ class Controls:
     
     # Alert when network drops, but only if map braking or speed limit control is enabled
     t = sec_since_boot()
+    
+    if t - self.params_check_last_t > self.params_check_freq:
+      self.params_check_last_t = t
+      screen_tapped = self._params.get_bool("ScreenTapped")
+      if screen_tapped:
+        put_nonblocking("ScreenTapped", "0")
+      car_interaction = self.CI.CS.out.brakePressed or self.CI.CS.out.gasPressed or self.CI.CS.out.steeringPressed
+      if screen_tapped or car_interaction:
+        self.interaction_last_t = t
+      self.interaction_timer = t - self.interaction_last_t
+    
     network_strength = self.sm['deviceState'].networkStrength
     if network_strength != self.network_strength_last:
       if network_strength == log.DeviceState.NetworkStrength.unknown:
@@ -764,6 +780,7 @@ class Controls:
     controlsState.startMonoTime = int(start_time * 1e9)
     controlsState.forceDecel = bool(force_decel)
     controlsState.canErrorCounter = self.can_error_counter
+    controlsState.interactionTimer = int(self.interaction_timer)
 
     lat_tuning = self.CP.lateralTuning.which()
     if self.joystick_mode:
