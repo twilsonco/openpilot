@@ -258,7 +258,7 @@ def get_lead(v_ego, ready, clusters, lead_msg=None, low_speed_override=True, md=
 class LongRangeLead():
   DREL_BP = [LEAD_MIN_SMOOTHING_DISTANCE, LEAD_MAX_DISTANCE] # [m] used commonly between distance-based parameters
   D_DREL_MAX_V = [8., 20.] # [m] deviation between old and new leads necessary to trigger reset of values
-  ALPHA_V = [0, 4.] # raise/lower second value for more/less smoothing of long-range lead data
+  ALPHA_V = [0, 1.] # raise/lower second value for more/less smoothing of long-range lead data
   D_YREL_MAX = 0.8 # [m] max yrel deviation
   
   def __init__(self, dt):
