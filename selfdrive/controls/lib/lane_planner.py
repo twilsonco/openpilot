@@ -273,7 +273,9 @@ class LaneOffset:
         lv = [l.vLeadK for l in l1]
         min_v, max_v, mean_v = min_max_mean(lv)
         check_v = min_v if abs(min_v - mean_v) < abs(max_v - mean_v) else max_v
-        if check_v > self.AUTO_TRAFFIC_MIN_SPEED and self._lane_width_mean_left_adjacent > 0.:
+        if check_v > self.AUTO_TRAFFIC_MIN_SPEED \
+            and self._lane_probs[0] > self.AUTO_MIN_ADJACENT_LANELINE_PROB \
+            and self._lane_width_mean_left_adjacent > 0.:
           left_traffic = LANE_TRAFFIC.ONGOING
           if len(l1) > 1:
             l1.sort(key= lambda x:x.dRel)
@@ -304,7 +306,9 @@ class LaneOffset:
         lv = [l.vLeadK for l in l1]
         min_v, max_v, mean_v = min_max_mean(lv)
         check_v = min_v if abs(min_v - mean_v) < abs(max_v - mean_v) else max_v
-        if check_v > self.AUTO_TRAFFIC_MIN_SPEED and self._lane_width_mean_right_adjacent > 0.:
+        if check_v > self.AUTO_TRAFFIC_MIN_SPEED \
+            and self._lane_probs[3] > self.AUTO_MIN_ADJACENT_LANELINE_PROB \
+            and self._lane_width_mean_right_adjacent > 0.:
           right_traffic = LANE_TRAFFIC.ONGOING
           if len(l1) > 1:
             l1.sort(key= lambda x:x.dRel)
