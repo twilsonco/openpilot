@@ -21,7 +21,7 @@ LEAD_PATH_YREL_MAX_V = [1.2] # [m] constant tolerance
 LEAD_PATH_YREL_LOW_TOL = 0.5 # if the lead closest to the "middle" is farther away than one that is both closer and within this distance of "middle", use that lead
 LEAD_PATH_DREL_MIN = 60 # [m] only care about far away leads
 LEAD_MIN_SMOOTHING_DISTANCE = 145 # [m]
-LEAD_MAX_DISTANCE = 170 # [m] beyond this distance, lead data is too noisy to use
+LEAD_MAX_DISTANCE = 152 # [m] beyond this distance, lead data is too noisy to use
 MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow use.
 
 LEAD_PLUS_ONE_MIN_REL_DIST_V = [3.0, 6.0] # [m] min distance between lead+1 and lead at low and high distance
