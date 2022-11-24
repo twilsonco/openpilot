@@ -429,6 +429,13 @@ class LaneOffset:
           self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT_ONCOMING + 1
           self._right_traffic = LANE_TRAFFIC.NONE
           self._left_traffic = LANE_TRAFFIC.NONE
+        else:
+          if self._left_traffic == LANE_TRAFFIC.ONCOMING and \
+            (md.laneLines[1].y[0] > -(0.5 + self.offset) or md.laneLines[1].y[0] < -(2.5 + self.offset)):
+            self._left_traffic = LANE_TRAFFIC.NONE
+          if self._right_traffic == LANE_TRAFFIC.ONCOMING and \
+            (md.laneLines[2].y[0] < (0.5 + self.offset) or md.laneLines[2].y[0] > (2.5 + self.offset)):
+            self._right_traffic = LANE_TRAFFIC.NONE 
           
         if self._right_traffic == LANE_TRAFFIC.ONGOING and self._lane_width_mean_right_adjacent == 0.:
           self._right_traffic = LANE_TRAFFIC.NONE
