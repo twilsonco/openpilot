@@ -209,6 +209,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   LANE_WIDTH,
   DISTANCE_TRAVELLED,
   INTERACTION_TIMER,
+  INTERVENTION_TIMER,
   // Lead/traffic info
   FOLLOW_LEVEL,
   LEAD_TTC,

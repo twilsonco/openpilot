@@ -34,6 +34,7 @@ class CarInterfaceBase():
     self.steer_warning = 0
     self.steering_unpressed = 0
     self.low_speed_alert = False
+    self.driver_interacted = False
 
     self.disengage_on_gas = not Params().get_bool("DisableDisengageOnGas")
 
