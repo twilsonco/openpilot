@@ -2013,10 +2013,10 @@ static void ui_draw_measures(UIState *s){
               }
               else {
                 snprintf(val, sizeof(val), "%d", scene.engineRPM);
-                if (temp < 87){
+                if (temp < 74){
                   unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
                 }
-                else if (temp > 120){
+                else if (temp > 115){
                   unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
                 else if (temp > 105){
@@ -2036,10 +2036,10 @@ static void ui_draw_measures(UIState *s){
               }
               else {
                 snprintf(val, sizeof(val), "%d", scene.engineRPM);
-                if (temp < 190){
+                if (temp < 165){
                   unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
                 }
-                else if (temp > 250){
+                else if (temp > 240){
                   unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
                 else if (temp > 220){
@@ -2056,10 +2056,10 @@ static void ui_draw_measures(UIState *s){
               int temp = scene.car_state.getEngineCoolantTemp();
               snprintf(val, sizeof(val), "%d", temp);
               if(scene.engineRPM > 0 || temp >= 55) {
-                if (temp < 87){
+                if (temp < 74){
                   val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
                 }
-                else if (temp > 120){
+                else if (temp > 115){
                   val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
                 else if (temp > 105){
@@ -2076,10 +2076,10 @@ static void ui_draw_measures(UIState *s){
               int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
               snprintf(val, sizeof(val), "%d", temp);
               if(scene.engineRPM > 0 || temp >= 130) {
-                if (temp < 190){
+                if (temp < 165){
                   val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
                 }
-                else if (temp > 250){
+                else if (temp > 240){
                   val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
                 else if (temp > 220){
