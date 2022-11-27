@@ -159,6 +159,8 @@ class Planner():
     self.lead_0 = sm['radarState'].leadOne
     self.lead_1 = sm['radarState'].leadTwo
     self.lead_0_plus = sm['radarState'].leadOnePlus
+    
+    self.mpcs['lead0'].df.lateralPlan = sm['lateralPlan']
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = self.lead_0.status and self.lead_0.dRel < 45.0 and self.lead_0.vLeadK > v_ego and self.lead_0.aLeadK > 0.0
