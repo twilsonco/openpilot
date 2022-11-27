@@ -213,7 +213,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torque.ki = 0.15
         ret.lateralTuning.torque.kd = 2.0
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
-        ret.lateralTuning.torque.friction = 0.1
+        ret.lateralTuning.torque.friction = 0.06
       else:
         ret.lateralTuning.pid.kpBP = [0., 40.]
         ret.lateralTuning.pid.kpV = [0., .16]
