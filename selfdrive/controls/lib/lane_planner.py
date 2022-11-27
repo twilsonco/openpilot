@@ -462,7 +462,7 @@ class LaneOffset:
     else:
       self.offset_min = -self.OFFSET_MAX
     
-    offset = clip(self.offset, self.offset_min, self.offset_max)
+    offset = clip(offset, self.offset_min, self.offset_max)
     
     if offset > self.offset:
       self.offset = min(offset, self.offset + (self.STEP_SLOW if do_slow else self.STEP))
