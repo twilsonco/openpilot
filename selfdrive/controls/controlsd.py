@@ -180,8 +180,8 @@ class Controls:
     self.pitch_accel_deadzone = 0.01 # [radians] ≈ 1% grade
     self.interaction_timer = 0.0 # [s] time since any interaction
     self.intervention_timer = 0.0 # [s] time since screen steering/gas/brake interaction
-    self.interaction_last_t = 0.0
-    self.intervention_last_t = 0.0
+    self.interaction_last_t = sec_since_boot()
+    self.intervention_last_t = sec_since_boot()
     self.params_check_last_t = 0.0
     self.params_check_freq = 1.0
     self._params = params
@@ -237,6 +237,7 @@ class Controls:
       car_interaction = self.CI.CS.out.brakePressed or self.CI.CS.out.gasPressed or self.CI.CS.out.steeringPressed
       if screen_tapped or car_interaction or self.CI.driver_interacted:
         self.interaction_last_t = t
+        self.CI.driver_interacted = False
       if car_interaction:
         self.intervention_last_t = t
       self.interaction_timer = t - self.interaction_last_t

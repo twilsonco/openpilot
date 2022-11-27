@@ -371,13 +371,15 @@ class CarInterface(CarInterfaceBase):
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     ret.engineRPM = self.CS.engineRPM
-    
-    self.driver_interacted = False
 
     buttonEvents = []
+    
+    self.driver_interacted = self.driver_interacted \
+                            or self.CS.out.leftBlinker or self.CS.out.rightBlinker \
+                            or self.CS.distance_button != self.CS.prev_distance_button \
+                            or self.CS.cruise_buttons != self.CS.prev_cruise_buttons
 
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
-      self.driver_interacted = True
       be = car.CarState.ButtonEvent.new_message()
       be.type = ButtonType.unknown
       if self.CS.cruise_buttons != CruiseButtons.UNPRESS:
@@ -406,7 +408,6 @@ class CarInterface(CarInterfaceBase):
     ret.buttonEvents = buttonEvents
 
     if cruiseEnabled and self.CS.lka_button and self.CS.lka_button != self.CS.prev_lka_button:
-      self.driver_interacted = True
       self.CS.lkMode = not self.CS.lkMode
       cloudlog.info("button press event: LKA button. new value: %i" % self.CS.lkMode)
     
@@ -470,7 +471,6 @@ class CarInterface(CarInterfaceBase):
       self.CS.follow_level = self.CS.one_pedal_brake_mode + 1
     else: # cruis is active, so just modify follow distance
       if self.CS.distance_button != self.CS.prev_distance_button:
-        self.driver_interacted = True
         if self.CS.distance_button:
           self.CS.distance_button_last_press_t = t
           cloudlog.info("button press event: Distance button pressed in cruise mode.")
