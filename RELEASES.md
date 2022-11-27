@@ -5,8 +5,12 @@ Version tw-0.8.12-9_twd (2022-11-22)
     * now uses cut-ins **and adjacent traffic** to change (continuously) between close/medium/far follow 
       * traffc-based dynamic follow requires extended radar capabilities
   * Smoother application of curve braking
-  * Auto lane position: various improvements
+  * Auto lane position: 
+    * various improvements
+    * exclusively uses traffic to run (no more use of laneline presense)
   * New UI metrics:
+    * time since driver intervention (gas, brake, or steering)
+    * time since driver interaction (intervention, screen tap, blinker, cruise speed adjust, follow distance adjust)
     * number of cars being tracked by radar/long range vision (oncoming/ongoing/stopped/total/ongoing adjacent lane)
     * minimum separation between ongoing adjacent traffic (in seconds)
   * Print bearing above current speed (next to street name)
