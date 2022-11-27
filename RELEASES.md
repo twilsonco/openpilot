@@ -3,11 +3,11 @@ Version tw-0.8.12-9_twd (2022-11-22)
   * Dynamic follow mode:
     * should work now!
     * now uses cut-ins **and adjacent traffic** to change (continuously) between close/medium/far follow 
-      * traffc-based dynamic follow requires extended radar capabilities
+      * traffic-based dynamic follow requires extended radar capabilities
   * Smoother application of curve braking
   * Auto lane position: 
     * various improvements
-    * exclusively uses traffic to run (no more use of laneline presense)
+    * exclusively uses traffic to run (no more use of laneline presence)
   * New UI metrics:
     * time since driver intervention (gas, brake, or steering)
     * time since driver interaction (intervention, screen tap, blinker, cruise speed adjust, follow distance adjust)
