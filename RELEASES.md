@@ -11,6 +11,8 @@ Version tw-0.8.12-9_twd (2022-11-22)
   * New UI metrics:
     * time since driver intervention (gas, brake, or steering)
     * time since driver interaction (intervention, screen tap, blinker, cruise speed adjust, follow distance adjust)
+    * time simce driver distraction
+    * distance from lane center
     * number of cars being tracked by radar/long range vision (oncoming/ongoing/stopped/total/ongoing adjacent lane)
     * minimum separation between ongoing adjacent traffic (in seconds)
   * Print bearing above current speed (next to street name)
