@@ -209,11 +209,11 @@ class CarInterface(CarInterfaceBase):
         max_lateral_accel = 3.0
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 0.85
+        ret.lateralTuning.torque.kp = 0.6
         ret.lateralTuning.torque.ki = 0.15
-        ret.lateralTuning.torque.kd = 2.2
+        ret.lateralTuning.torque.kd = 2.0
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
-        ret.lateralTuning.torque.friction = 0.02
+        ret.lateralTuning.torque.friction = 0.055
       else:
         ret.lateralTuning.pid.kpBP = [0., 40.]
         ret.lateralTuning.pid.kpV = [0., .16]
@@ -373,6 +373,12 @@ class CarInterface(CarInterfaceBase):
     ret.engineRPM = self.CS.engineRPM
 
     buttonEvents = []
+    
+    self.driver_interacted = self.driver_interacted \
+                            or self.CS.out.leftBlinker or self.CS.out.rightBlinker \
+                            or self.CS.distance_button != self.CS.prev_distance_button \
+                            or self.CS.cruise_buttons != self.CS.prev_cruise_buttons \
+                            or self.CS.gear_shifter_ev != self.CS.gear_shifter_ev_last
 
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
       be = car.CarState.ButtonEvent.new_message()

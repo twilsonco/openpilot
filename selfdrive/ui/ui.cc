@@ -544,8 +544,9 @@ static void update_state(UIState *s) {
         leads_vec.reserve(leads.size()+1);
         char val[16];
         auto lead_one_plus = radar_state.getLeadOnePlus();
+        auto lead_one = radar_state.getLeadOne();
         int start_i = 0;
-        if (lead_one_plus.getStatus()){
+        if (lead_one_plus.getStatus() && lead_one_plus.getDRel() - lead_one.getDRel() > 3.0){
           start_i++;
           snprintf(val, sizeof(val), "%.0f", lead_one_plus.getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
           scene.adjacent_leads_center_strs.push_back(val);
@@ -555,8 +556,10 @@ static void update_state(UIState *s) {
         }
         std::sort(leads_vec.begin(), leads_vec.end(), [](LeadData const & a, LeadData const & b){return a.getDRel() < b.getDRel();});
         for (int i = start_i; i < leads_vec.size(); ++i){
-          snprintf(val, sizeof(val), "%.0f", leads_vec[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
-          scene.adjacent_leads_center_strs.push_back(val);
+          if (!lead_one.getStatus() || leads_vec[i].getDRel() - lead_one.getDRel() > 3.0){
+            snprintf(val, sizeof(val), "%.0f", leads_vec[i].getVLeadK() * (s->is_metric ? 3.6 : 2.2374144));
+            scene.adjacent_leads_center_strs.push_back(val);
+          }
         }
       }
     }
@@ -643,6 +646,7 @@ static void update_state(UIState *s) {
     auto data = sm["lateralPlan"].getLateralPlan();
 
     scene.lateralPlan.laneWidth = data.getLaneWidth();
+    scene.lateralPlan.laneCenter = data.getLaneDistFromCenter();
     scene.lateralPlan.dProb = data.getDProb();
     scene.lateralPlan.lProb = data.getLProb();
     scene.lateralPlan.rProb = data.getRProb();

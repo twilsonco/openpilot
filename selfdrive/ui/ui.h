@@ -207,7 +207,11 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   ROLL,
   ROLL_DEVICE,
   LANE_WIDTH,
+  LANE_DIST_FROM_CENTER,
   DISTANCE_TRAVELLED,
+  INTERACTION_TIMER,
+  INTERVENTION_TIMER,
+  DISTRACTION_TIMER,
   // Lead/traffic info
   FOLLOW_LEVEL,
   LEAD_TTC,
@@ -488,6 +492,7 @@ typedef struct UIScene {
   struct _LateralPlan
   {
     float laneWidth;
+    float laneCenter;
 
     float dProb;
     float lProb;

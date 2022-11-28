@@ -19,8 +19,8 @@ SNG_ACCEL_COST = MPC_COST_LONG.ACCELERATION
 
 FOLLOW_PROFILES = [
   [ # one-bar
-    [-1.1, 2.3], # bp0 and bp1; lead car relative velocities [m/s] (set both to 0.0 to disable dynamic brakepoints)
-    [0.5, 2.0], # follow distances corresponding to bp0 and bp1 [s]
+    [-1.4, 2.8], # bp0 and bp1; lead car relative velocities [m/s] (set both to 0.0 to disable dynamic brakepoints)
+    [0.6, 2.0], # follow distances corresponding to bp0 and bp1 [s]
     [0.0, 1.892, 3.7432, 5.8632, 8.0727, 10.7301, 14.343, 17.6275, 22.4049, 28.6752, 34.8858, 40.35], # lookup table of speeds for additional follow distances [m/s] (stolen from shane)
     [0.0, 0.00099, -0.0324, -0.0647, -0.0636, -0.0601, -0.0296, -0.1211, -0.2141, -0.3691, -0.38, -0.40], # additional follow distances based on speed [s]
     0., # stopping distance behind stopped lead car [m]
@@ -34,7 +34,7 @@ FOLLOW_PROFILES = [
   ],
   [ # two-bar
     [-2.0, -0.15],
-    [0.5, 1.5],
+    [0.8, 1.5],
     [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336],
     [0.0, 0.0034975, 0.008495, 0.015, 0.025, 0.03945, 0.06195, 0.0745, 0.08895, 0.1005, 0.10495, 0.11045, 0.11845],
     0.,

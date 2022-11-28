@@ -184,6 +184,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"UploadRaw", PERSISTENT},
     {"LanelessMode", PERSISTENT},
     {"LanePosition", CLEAR_ON_MANAGER_START},
+    {"ScreenTapped", CLEAR_ON_MANAGER_START},
     {"LanePositionEnabled", PERSISTENT},
     {"AutoAutoLanePosition", PERSISTENT},
     {"AutoLanePositionActive", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},

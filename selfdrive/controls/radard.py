@@ -21,7 +21,7 @@ LEAD_PATH_YREL_MAX_V = [1.2] # [m] constant tolerance
 LEAD_PATH_YREL_LOW_TOL = 0.5 # if the lead closest to the "middle" is farther away than one that is both closer and within this distance of "middle", use that lead
 LEAD_PATH_DREL_MIN = 60 # [m] only care about far away leads
 LEAD_MIN_SMOOTHING_DISTANCE = 145 # [m]
-LEAD_MAX_DISTANCE = 170 # [m] beyond this distance, lead data is too noisy to use
+LEAD_MAX_DISTANCE = 152 # [m] beyond this distance, lead data is too noisy to use
 MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow use.
 
 LEAD_PLUS_ONE_MIN_REL_DIST_V = [3.0, 6.0] # [m] min distance between lead+1 and lead at low and high distance
@@ -258,7 +258,7 @@ def get_lead(v_ego, ready, clusters, lead_msg=None, low_speed_override=True, md=
 class LongRangeLead():
   DREL_BP = [LEAD_MIN_SMOOTHING_DISTANCE, LEAD_MAX_DISTANCE] # [m] used commonly between distance-based parameters
   D_DREL_MAX_V = [8., 20.] # [m] deviation between old and new leads necessary to trigger reset of values
-  ALPHA_V = [0, 4.] # raise/lower second value for more/less smoothing of long-range lead data
+  ALPHA_V = [0, 1.] # raise/lower second value for more/less smoothing of long-range lead data
   D_YREL_MAX = 0.8 # [m] max yrel deviation
   
   def __init__(self, dt):

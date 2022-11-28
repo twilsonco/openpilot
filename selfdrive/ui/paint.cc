@@ -1021,6 +1021,63 @@ static void ui_draw_measures(UIState *s){
             snprintf(unit, sizeof(unit), "%sF", deg);
             snprintf(name, sizeof(name), "AMB TEMP");}
             break;
+          
+          case UIMeasure::INTERACTION_TIMER: 
+            {
+            int s = scene.controls_state.getInteractionTimer();
+            if (s < 5){
+              val_color = nvgRGBA(255, 0, 0, 200);
+            }
+            int h = s / 3600;
+            s = s % 3600;
+            int m = s / 60;
+            s = s % 60;
+            if (h > 0){
+              snprintf(val, sizeof(val), "%d:%02d:%02d", h, m, s);
+            }
+            else{
+              snprintf(val, sizeof(val), "%d:%02d", m, s);
+            }
+            snprintf(name, sizeof(name), "INTERACT");}
+            break;
+
+          case UIMeasure::INTERVENTION_TIMER: 
+            {
+            int s = scene.controls_state.getInterventionTimer();
+            if (s < 5){
+              val_color = nvgRGBA(255, 0, 0, 200);
+            }
+            int h = s / 3600;
+            s = s % 3600;
+            int m = s / 60;
+            s = s % 60;
+            if (h > 0){
+              snprintf(val, sizeof(val), "%d:%02d:%02d", h, m, s);
+            }
+            else{
+              snprintf(val, sizeof(val), "%d:%02d", m, s);
+            }
+            snprintf(name, sizeof(name), "INTERVENE");}
+            break;
+          
+          case UIMeasure::DISTRACTION_TIMER: 
+            {
+            int s = scene.controls_state.getDistractionTimer();
+            if (s < 5){
+              val_color = nvgRGBA(255, 0, 0, 200);
+            }
+            int h = s / 3600;
+            s = s % 3600;
+            int m = s / 60;
+            s = s % 60;
+            if (h > 0){
+              snprintf(val, sizeof(val), "%d:%02d:%02d", h, m, s);
+            }
+            else{
+              snprintf(val, sizeof(val), "%d:%02d", m, s);
+            }
+            snprintf(name, sizeof(name), "DISTRACT");}
+            break;
             
           case UIMeasure::CPU_TEMP_AND_PERCENTC: 
             {
@@ -1173,7 +1230,7 @@ static void ui_draw_measures(UIState *s){
               scene.altitudeUblox = data2.getAltitude();
               scene.gpsAccuracyUblox = data2.getAccuracy();
             }
-            snprintf(name, sizeof(name), "ALTITUDE");
+            snprintf(name, sizeof(name), "ELEVATION");
             if (scene.gpsAccuracyUblox != 0.00) {
               float tmp_val;
               if (s->is_metric) {
@@ -1981,10 +2038,10 @@ static void ui_draw_measures(UIState *s){
               }
               else {
                 snprintf(val, sizeof(val), "%d", scene.engineRPM);
-                if (temp < 87){
+                if (temp < 74){
                   unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
                 }
-                else if (temp > 120){
+                else if (temp > 115){
                   unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
                 else if (temp > 105){
@@ -2004,10 +2061,10 @@ static void ui_draw_measures(UIState *s){
               }
               else {
                 snprintf(val, sizeof(val), "%d", scene.engineRPM);
-                if (temp < 190){
+                if (temp < 165){
                   unit_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
                 }
-                else if (temp > 250){
+                else if (temp > 240){
                   unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
                 else if (temp > 220){
@@ -2024,10 +2081,10 @@ static void ui_draw_measures(UIState *s){
               int temp = scene.car_state.getEngineCoolantTemp();
               snprintf(val, sizeof(val), "%d", temp);
               if(scene.engineRPM > 0 || temp >= 55) {
-                if (temp < 87){
+                if (temp < 74){
                   val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
                 }
-                else if (temp > 120){
+                else if (temp > 115){
                   val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
                 else if (temp > 105){
@@ -2044,10 +2101,10 @@ static void ui_draw_measures(UIState *s){
               int temp = int(float(scene.car_state.getEngineCoolantTemp()) * 1.8 + 32.5);
               snprintf(val, sizeof(val), "%d", temp);
               if(scene.engineRPM > 0 || temp >= 130) {
-                if (temp < 190){
+                if (temp < 165){
                   val_color = nvgRGBA(84, 207, 249, 200); // cyan if too cool
                 }
-                else if (temp > 250){
+                else if (temp > 240){
                   val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
                 else if (temp > 220){
@@ -2520,11 +2577,25 @@ static void ui_draw_measures(UIState *s){
               snprintf(name, sizeof(name), "LANE W");
               if (s->is_metric){
                 snprintf(unit, sizeof(unit), "m");
-                snprintf(val, sizeof(val), "%f.1", scene.lateralPlan.laneWidth);
+                snprintf(val, sizeof(val), "%.1f", scene.lateralPlan.laneWidth);
               }
               else{
                 snprintf(unit, sizeof(unit), "ft");
                 snprintf(val, sizeof(val), "%.1f", scene.lateralPlan.laneWidth * 3.281);
+              }
+            }
+            break;
+
+          case UIMeasure::LANE_DIST_FROM_CENTER: 
+            {
+              snprintf(name, sizeof(name), "LANE CENTER");
+              if (s->is_metric){
+                snprintf(unit, sizeof(unit), "m");
+                snprintf(val, sizeof(val), "%.1f", scene.lateralPlan.laneCenter);
+              }
+              else{
+                snprintf(unit, sizeof(unit), "ft");
+                snprintf(val, sizeof(val), "%.1f", scene.lateralPlan.laneCenter * 3.281);
               }
             }
             break;
@@ -2723,7 +2794,7 @@ static void ui_draw_vision_event(UIState *s) {
   s->scene.wheel_touch_rect = {1,1,1,1};
   if (s->scene.engageable) {
     // draw steering wheel
-    const float rot_angle_multiplier = s->scene.car_state.getVEgo() / 15.0;
+    const float rot_angle_multiplier = s->scene.car_state.getVEgo() / 5.0;
     const float rot_angle = -s->scene.angleSteers * 0.01745329252 * (rot_angle_multiplier > 1.0 ? rot_angle_multiplier : 1.0);
     const int radius = 88;
     const int center_x = s->fb_w - radius - bdr_s * 2;
@@ -2921,22 +2992,16 @@ static void ui_draw_vision_power_meter(UIState *s) {
         int h_pitch = h_rr + hu * pitch_power / s->scene.power_max[1];
         nvgBeginPath(s->vg);
         nvgRect(s->vg, xi+2, y_mid - h_rr - h_pitch / 2, wi-4, h_pitch);
-        nvgFillColor(s->vg, nvgRGBA(0, 140, 255, inner_fill_alpha/2));
-        nvgFill(s->vg);
         nvgStrokeWidth(s->vg, 5);
         nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
         nvgStroke(s->vg);
         nvgBeginPath(s->vg);
         nvgRect(s->vg, xi+2, y_mid - h_drag - h_rr / 2, wi-4, h_rr);
-        nvgFillColor(s->vg, nvgRGBA(0, 180, 255, inner_fill_alpha/2));
-        nvgFill(s->vg);
         nvgStrokeWidth(s->vg, 5);
         nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
         nvgStroke(s->vg);
         nvgBeginPath(s->vg);
         nvgRect(s->vg, xi+2, y_mid - h_drag / 2, wi-4, h_drag);
-        nvgFillColor(s->vg, nvgRGBA(0, 230, 255, inner_fill_alpha/2));
-        nvgFill(s->vg);    
         nvgStrokeWidth(s->vg, 5);
         nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
         nvgStroke(s->vg);
@@ -2972,22 +3037,16 @@ static void ui_draw_vision_power_meter(UIState *s) {
         int h_pitch = h_rr + hu * pitch_power / s->scene.power_max[0];
         nvgBeginPath(s->vg);
         nvgRect(s->vg, xi+2, y_mid - h_rr - h_pitch / 2, wi-4, h_pitch);
-        nvgFillColor(s->vg, nvgRGBA(249,240,100,inner_fill_alpha/2));
-        nvgFill(s->vg);
         nvgStrokeWidth(s->vg, 5);
         nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
         nvgStroke(s->vg);
         nvgBeginPath(s->vg);
         nvgRect(s->vg, xi+2, y_mid - h_drag - h_rr / 2, wi-4, h_rr);
-        nvgFillColor(s->vg, nvgRGBA(249,240,150,inner_fill_alpha/2));
-        nvgFill(s->vg);
         nvgStrokeWidth(s->vg, 5);
         nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
         nvgStroke(s->vg);
         nvgBeginPath(s->vg);
         nvgRect(s->vg, xi+2, y_mid - h_drag / 2, wi-4, h_drag);
-        nvgFillColor(s->vg, nvgRGBA(249,240,200,inner_fill_alpha/2));
-        nvgFill(s->vg);    
         nvgStrokeWidth(s->vg, 5);
         nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(150));
         nvgStroke(s->vg);
