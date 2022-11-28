@@ -1221,7 +1221,7 @@ static void ui_draw_measures(UIState *s){
               scene.altitudeUblox = data2.getAltitude();
               scene.gpsAccuracyUblox = data2.getAccuracy();
             }
-            snprintf(name, sizeof(name), "ALTITUDE");
+            snprintf(name, sizeof(name), "ELEVATION");
             if (scene.gpsAccuracyUblox != 0.00) {
               float tmp_val;
               if (s->is_metric) {
