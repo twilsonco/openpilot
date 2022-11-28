@@ -14,6 +14,7 @@ Version tw-0.8.12-9_twd (2022-11-22)
     * number of cars being tracked by radar/long range vision (oncoming/ongoing/stopped/total/ongoing adjacent lane)
     * minimum separation between ongoing adjacent traffic (in seconds)
   * Print bearing above current speed (next to street name)
+  * [Volt] Improved "torque" lateral control
 
 Version tw-0.8.12-8_twd (2022-09-29)
 ========================
