@@ -160,6 +160,7 @@ class CarState(CarStateBase):
     self.drive_mode_button = False
     self.drive_mode_button_last = False
     self.gear_shifter_ev = None
+    self.gear_shifter_ev_last = None
           
     self.pitch = 0. # radians
     self.pitch_raw = 0. # radians
@@ -336,6 +337,7 @@ class CarState(CarStateBase):
       ret.hvbVoltage = hvb_voltage
       ret.hvbCurrent = hvb_current
       ret.hvbWattage = self.hvb_wattage
+      self.gear_shifter_ev_last = self.gear_shifter_ev
       self.gear_shifter_ev = pt_cp.vl["ECMPRDNL2"]['PRNDL2']
     
     if self.iter % self.uiframe == 0:

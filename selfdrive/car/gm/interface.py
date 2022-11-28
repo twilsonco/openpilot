@@ -377,7 +377,8 @@ class CarInterface(CarInterfaceBase):
     self.driver_interacted = self.driver_interacted \
                             or self.CS.out.leftBlinker or self.CS.out.rightBlinker \
                             or self.CS.distance_button != self.CS.prev_distance_button \
-                            or self.CS.cruise_buttons != self.CS.prev_cruise_buttons
+                            or self.CS.cruise_buttons != self.CS.prev_cruise_buttons \
+                            or self.CS.gear_shifter_ev != self.CS.gear_shifter_ev_last
 
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
       be = car.CarState.ButtonEvent.new_message()
