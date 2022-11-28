@@ -646,6 +646,7 @@ static void update_state(UIState *s) {
     auto data = sm["lateralPlan"].getLateralPlan();
 
     scene.lateralPlan.laneWidth = data.getLaneWidth();
+    scene.lateralPlan.laneCenter = data.getLaneDistFromCenter();
     scene.lateralPlan.dProb = data.getDProb();
     scene.lateralPlan.lProb = data.getLProb();
     scene.lateralPlan.rProb = data.getRProb();

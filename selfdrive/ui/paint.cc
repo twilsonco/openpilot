@@ -2568,11 +2568,25 @@ static void ui_draw_measures(UIState *s){
               snprintf(name, sizeof(name), "LANE W");
               if (s->is_metric){
                 snprintf(unit, sizeof(unit), "m");
-                snprintf(val, sizeof(val), "%f.1", scene.lateralPlan.laneWidth);
+                snprintf(val, sizeof(val), "%.1f", scene.lateralPlan.laneWidth);
               }
               else{
                 snprintf(unit, sizeof(unit), "ft");
                 snprintf(val, sizeof(val), "%.1f", scene.lateralPlan.laneWidth * 3.281);
+              }
+            }
+            break;
+
+          case UIMeasure::LANE_DIST_FROM_CENTER: 
+            {
+              snprintf(name, sizeof(name), "LANE CENTER");
+              if (s->is_metric){
+                snprintf(unit, sizeof(unit), "m");
+                snprintf(val, sizeof(val), "%.1f", scene.lateralPlan.laneCenter);
+              }
+              else{
+                snprintf(unit, sizeof(unit), "ft");
+                snprintf(val, sizeof(val), "%.1f", scene.lateralPlan.laneCenter * 3.281);
               }
             }
             break;

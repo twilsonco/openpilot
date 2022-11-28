@@ -480,6 +480,7 @@ class LanePlanner:
     self.lane_width_certainty = FirstOrderFilter(1.0, 0.95, DT_MDL)
     self.lane_width = LANE_WIDTH_DEFAULT
     self.lane_offset = LaneOffset(mass)
+    self.lane_dist_from_center = FirstOrderFilter(0.0, 5.0, DT_MDL)
 
     self.lll_prob = 0.
     self.rll_prob = 0.
@@ -501,8 +502,11 @@ class LanePlanner:
       # left and right ll x is the same
       self.ll_x = md.laneLines[1].x
       # only offset left and right lane lines; offsetting path does not make sense
-      self.lll_y = np.array(md.laneLines[1].y) - self.camera_offset - offset
-      self.rll_y = np.array(md.laneLines[2].y) - self.camera_offset - offset
+      self.lll_y = np.array(md.laneLines[1].y) - self.camera_offset
+      self.rll_y = np.array(md.laneLines[2].y) - self.camera_offset
+      self.lane_dist_from_center.update((self.rll_y[0] + self.lll_y[0]) * 0.5)
+      self.lll_y -= offset
+      self.rll_y -= offset
       self.lll_prob = md.laneLineProbs[1]
       self.rll_prob = md.laneLineProbs[2]
       self.lll_std = md.laneLineStds[1]
