@@ -1025,6 +1025,9 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::INTERACTION_TIMER: 
             {
             int s = scene.controls_state.getInteractionTimer();
+            if (s < 5){
+              val_color = nvgRGBA(255, 0, 0, 200);
+            }
             int h = s / 3600;
             s = s % 3600;
             int m = s / 60;
@@ -1041,6 +1044,9 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::INTERVENTION_TIMER: 
             {
             int s = scene.controls_state.getInterventionTimer();
+            if (s < 5){
+              val_color = nvgRGBA(255, 0, 0, 200);
+            }
             int h = s / 3600;
             s = s % 3600;
             int m = s / 60;
@@ -1057,6 +1063,9 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::DISTRACTION_TIMER: 
             {
             int s = scene.controls_state.getDistractionTimer();
+            if (s < 5){
+              val_color = nvgRGBA(255, 0, 0, 200);
+            }
             int h = s / 3600;
             s = s % 3600;
             int m = s / 60;
