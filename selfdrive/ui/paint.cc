@@ -1053,6 +1053,22 @@ static void ui_draw_measures(UIState *s){
             }
             snprintf(name, sizeof(name), "INTERVENE");}
             break;
+          
+          case UIMeasure::DISTRACTION_TIMER: 
+            {
+            int s = scene.controls_state.getDistractionTimer();
+            int h = s / 3600;
+            s = s % 3600;
+            int m = s / 60;
+            s = s % 60;
+            if (h > 0){
+              snprintf(val, sizeof(val), "%d:%02d:%02d", h, m, s);
+            }
+            else{
+              snprintf(val, sizeof(val), "%d:%02d", m, s);
+            }
+            snprintf(name, sizeof(name), "DISTRACT");}
+            break;
             
           case UIMeasure::CPU_TEMP_AND_PERCENTC: 
             {
