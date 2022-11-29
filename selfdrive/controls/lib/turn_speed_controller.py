@@ -16,11 +16,11 @@ _ACTIVE_LIMIT_MIN_ACC = -0.5  # m/s^2 Maximum deceleration allowed while active.
 _ACTIVE_LIMIT_MAX_ACC = 0.5   # m/s^2 Maximum acelration allowed while active.
 
 _SPEED_LIMIT_SCALE_BY_SPEED_BP = [0.]
-_SPEED_LIMIT_SCALE_BY_SPEED_V = [1.08]
+_SPEED_LIMIT_SCALE_BY_SPEED_V = [1.1]
 def default_speed_scale():
   return [_SPEED_LIMIT_SCALE_BY_SPEED_BP, _SPEED_LIMIT_SCALE_BY_SPEED_V]
 _SPEED_LIMIT_SCALE_FOR_ROAD_RANK = defaultdict(default_speed_scale)
-_SPEED_LIMIT_SCALE_FOR_ROAD_RANK[1] = [[0.],[1.25]] # motorway_link (freeway interchange)
+_SPEED_LIMIT_SCALE_FOR_ROAD_RANK[1] = [[0.],[1.3]] # motorway_link (freeway interchange)
 _SPEED_LIMIT_SCALE_FOR_ROAD_RANK[11] = _SPEED_LIMIT_SCALE_FOR_ROAD_RANK[1] # trunk_link (other interchange)
 
 def default_min_cutoff_speed_limit():
