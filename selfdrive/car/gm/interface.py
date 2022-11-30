@@ -98,7 +98,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_steer_feedforward_volt_torque(desired_lateral_accel, v_ego):
     ANGLE_COEF = 0.08617848
-    ANGLE_COEF2 = 0.21
+    ANGLE_COEF2 = 0.16
     ANGLE_OFFSET = 0.00205026
     SPEED_OFFSET = -3.48009247
     SIGMOID_COEF_RIGHT = 0.56664089
@@ -213,7 +213,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torque.ki = 0.15
         ret.lateralTuning.torque.kd = 2.0
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
-        ret.lateralTuning.torque.friction = 0.055
+        ret.lateralTuning.torque.friction = 0.052
       else:
         ret.lateralTuning.pid.kpBP = [0., 40.]
         ret.lateralTuning.pid.kpV = [0., .16]
