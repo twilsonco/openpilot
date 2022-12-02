@@ -93,8 +93,6 @@ class LaneOffset:
   
   AUTO_LANE_STATE_MIN_TIME = 3.0 # [s] amount of time the lane state must stay the same before it can be acted upon
   
-  AUTO_ENABLE_ROAD_TYPES = {0, 10, 20, 30} # freeway and state highways (see highway ranks in /Users/haiiro/NoSync/optw/openpilot/selfdrive/mapd/lib/WayRelation.py)
-  AUTO_ENABLE_ROAD_TYPE_MIN_SPEED = 40. * CV.MPH_TO_MS
   AUTO_ENABLE_TRAFFIC_MIN_SPEED = 10. * CV.MPH_TO_MS
   AUTO_ENABLE_MIN_SPEED_DEADZONE = 2. # [m/s]
   
@@ -131,7 +129,6 @@ class LaneOffset:
     self._lat_curvature_cur = 0.
     self._lat_curvature_pred = 0.
     self._lane_state_changed_last_t = 0.
-    self._road_type_last = -1
     self._auto_auto_enabled = False
     self._v_ego_last = 0.
     
@@ -183,7 +180,7 @@ class LaneOffset:
             self._auto_auto_enabled = False
     return ret
             
-  def do_auto_enable(self, road_type):
+  def do_auto_enable(self):
     ret = AUTO_AUTO_LANE_MODE.NO_CHANGE
     v_ego = self._cs.vEgo if self._cs is not None else 0.
     
@@ -194,7 +191,6 @@ class LaneOffset:
     self._rprob_last = self._lane_probs[2]
     self._left_traffic_last = self._left_traffic
     self._right_traffic_last = self._right_traffic
-    self._road_type_last = road_type
     self._v_ego_last = v_ego
     
     return ret
