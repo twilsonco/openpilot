@@ -129,7 +129,6 @@ class LaneOffset:
     self._lat_curvature_cur = 0.
     self._lat_curvature_pred = 0.
     self._lane_state_changed_last_t = 0.
-    self._road_type_last = -1
     self._auto_auto_enabled = False
     self._v_ego_last = 0.
     
@@ -181,7 +180,7 @@ class LaneOffset:
             self._auto_auto_enabled = False
     return ret
             
-  def do_auto_enable(self, road_type):
+  def do_auto_enable(self):
     ret = AUTO_AUTO_LANE_MODE.NO_CHANGE
     v_ego = self._cs.vEgo if self._cs is not None else 0.
     
@@ -192,7 +191,6 @@ class LaneOffset:
     self._rprob_last = self._lane_probs[2]
     self._left_traffic_last = self._left_traffic
     self._right_traffic_last = self._right_traffic
-    self._road_type_last = road_type
     self._v_ego_last = v_ego
     
     return ret
