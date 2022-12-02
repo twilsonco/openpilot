@@ -140,7 +140,7 @@ class LateralPlanner():
       self.auto_lane_user_enabled = False
     
     md = sm['modelV2']
-    activate_auto_lane_pos = self.LP.lane_offset.do_auto_enable(int(sm['liveMapData'].currentRoadType)) if self.auto_auto_lane_pos_enabled else AUTO_AUTO_LANE_MODE.NO_CHANGE
+    activate_auto_lane_pos = self.LP.lane_offset.do_auto_enable() if self.auto_auto_lane_pos_enabled else AUTO_AUTO_LANE_MODE.NO_CHANGE
     if activate_auto_lane_pos == AUTO_AUTO_LANE_MODE.ENGAGE and not self.auto_lane_user_disabled:
       put_nonblocking("AutoLanePositionActive", "1")
       self.auto_lane_pos_active = True
