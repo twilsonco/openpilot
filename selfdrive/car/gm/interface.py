@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
-from math import fabs
+from math import fabs, atan
 from panda import Panda
 
 from common.conversions import Conversions as CV
@@ -15,6 +15,12 @@ TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
+
+def get_steer_feedforward_sigmoid1(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
+  x = ANGLE_COEF * (angle) / max(0.01,speed)
+  sigmoid = x / (1. + fabs(x))
+  return ((SIGMOID_COEF_RIGHT if angle > 0. else SIGMOID_COEF_LEFT) * sigmoid) * (0.01 + speed + SPEED_OFFSET) ** ANGLE_COEF2 + ANGLE_OFFSET * (angle * SPEED_COEF - atan(angle * SPEED_COEF))
+
 
 
 class CarInterface(CarInterfaceBase):
@@ -31,9 +37,15 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def get_steer_feedforward_acadia(desired_angle, v_ego):
-    desired_angle *= 0.09760208
-    sigmoid = desired_angle / (1 + fabs(desired_angle))
-    return 0.04689655 * sigmoid * (v_ego + 10.028217)
+    ANGLE_COEF = 5.00000000
+    ANGLE_COEF2 = 1.90844451
+    ANGLE_OFFSET = 0.03401073
+    SPEED_OFFSET = 13.72019138
+    SIGMOID_COEF_RIGHT = 0.00100000
+    SIGMOID_COEF_LEFT = 0.00101873
+    SPEED_COEF = 0.36844505
+    return get_steer_feedforward_sigmoid1(desired_angle, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
+
 
   def get_steer_feedforward_function(self):
     if self.CP.carFingerprint == CAR.VOLT:
@@ -142,10 +154,22 @@ class CarInterface(CarInterfaceBase):
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 4353. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.86
-      ret.steerRatio = 14.4  # end to end is 13.46
+      ret.steerRatio = 15.2 # end to end is 13.46
       ret.centerToFront = ret.wheelbase * 0.4
-      ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_acadia()
+      ret.steerActuatorDelay = 0.24
+      ret.lateralTuning.pid.kpBP = [0., 40.]
+      ret.lateralTuning.pid.kpV = [0., .16]
+      ret.lateralTuning.pid.kiBP = [0., 40.]
+      ret.lateralTuning.pid.kiV = [.008, 0.012]
+      ret.lateralTuning.pid.kdBP = [0.]
+      ret.lateralTuning.pid.kdV = [0.6]
+      ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
+      
       ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
+      ret.longitudinalTuning.kdBP = [5., 25.]
+      ret.longitudinalTuning.kdV = [0.8, 0.4]
+      ret.longitudinalTuning.kiBP = [5., 35.]
+      ret.longitudinalTuning.kiV = [0.31, 0.34]
 
     elif candidate == CAR.BUICK_REGAL:
       ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG  # (3849+3708)/2
