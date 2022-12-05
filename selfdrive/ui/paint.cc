@@ -2044,7 +2044,7 @@ static void ui_draw_measures(UIState *s){
                 else if (temp > 115){
                   unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
-                else if (temp > 105){
+                else if (temp > 99){
                   unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
                 }
               }
@@ -2067,7 +2067,7 @@ static void ui_draw_measures(UIState *s){
                 else if (temp > 240){
                   unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
-                else if (temp > 220){
+                else if (temp > 210){
                   unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
                 }
               }
@@ -2087,7 +2087,7 @@ static void ui_draw_measures(UIState *s){
                 else if (temp > 115){
                   val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
-                else if (temp > 105){
+                else if (temp > 99){
                   val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
                 }
               }
@@ -2107,7 +2107,7 @@ static void ui_draw_measures(UIState *s){
                 else if (temp > 240){
                   val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
-                else if (temp > 220){
+                else if (temp > 210){
                   val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
                 }
               }
