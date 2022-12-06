@@ -306,7 +306,7 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
       nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
       // first abs speed
       if (s->is_metric){
-        snprintf(unit, sizeof(unit), "kph"); 
+        snprintf(unit, sizeof(unit), "km/h"); 
         float v = (s->scene.lead_v * 3.6);
         if (v < 100.){
           snprintf(val, sizeof(val), "%.1f", v);
