@@ -724,6 +724,7 @@ static void update_params(UIState *s) {
   UIScene &scene = s->scene;
   if (frame % (5*UI_FREQ) == 0) {
     scene.is_metric = Params().getBool("IsMetric");
+    s->is_metric = scene.is_metric;
   }
 }
 
