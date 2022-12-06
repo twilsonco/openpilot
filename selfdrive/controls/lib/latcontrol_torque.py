@@ -17,7 +17,7 @@ from cereal import log
 # move it at all, this is compensated for too.
 
 
-FRICTION_THRESHOLD = 1.5
+FRICTION_THRESHOLD = 2.0
 
 def get_steer_feedforward(desired_lateral_accel, speed):
   return desired_lateral_accel
