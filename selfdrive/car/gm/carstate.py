@@ -244,6 +244,8 @@ class CarState(CarStateBase):
         not (self.leftBlinkerOn or self.rightBlinkerOn):
         ret.steerFaultTemporary = self.lkas_status == 2
         ret.steerFaultPermanent = self.lkas_status == 3
+        
+    ret.autoHoldActivated = self.autoHoldActivated
 
     return ret
 
