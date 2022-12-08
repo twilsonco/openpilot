@@ -1,4 +1,4 @@
-from cereal import car, log
+from cereal import car
 from common.realtime import DT_CTRL
 from common.numpy_fast import interp, clip
 from common.realtime import sec_since_boot
@@ -12,7 +12,6 @@ from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
-LongPlanSource = log.LongitudinalPlan.LongitudinalPlanSource
 
 # only use pitch-compensated acceleration at 10m/s+
 ACCEL_PITCH_FACTOR_BP = [5., 10.] # [m/s]
@@ -114,7 +113,6 @@ class CarController():
         self.one_pedal_pid.reset()
         self.one_pedal_decel = CS.out.aEgo
         self.one_pedal_decel_in = CS.out.aEgo
-        self.lead_accel_last_t = 0.
       else:
         t = sec_since_boot()
         k = interp(CS.out.vEgo, ACCEL_PITCH_FACTOR_BP, ACCEL_PITCH_FACTOR_V)
@@ -174,38 +172,27 @@ class CarController():
           pitch_accel = CS.pitch * ACCELERATION_DUE_TO_GRAVITY
           pitch_accel *= interp(CS.vEgo, ONE_PEDAL_ACCEL_PITCH_FACTOR_BP, ONE_PEDAL_ACCEL_PITCH_FACTOR_V if pitch_accel <= 0 else ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V)
           
-          if CS.one_pedal_mode_active or (CS.one_pedal_mode_op_braking_allowed and CS.lead_accel < CS.out.aEgo):
-            if CS.one_pedal_mode_active:
-              self.one_pedal_decel_in = interp(CS.vEgo, ONE_PEDAL_MODE_DECEL_BP[CS.one_pedal_brake_mode], ONE_PEDAL_MODE_DECEL_V[CS.one_pedal_brake_mode])
-              if abs(CS.angle_steers) > CS.one_pedal_angle_steers_cutoff_bp[0]:
-                one_pedal_apply_brake_decel_minus1 = interp(CS.vEgo, ONE_PEDAL_MODE_DECEL_BP[max(0,CS.one_pedal_brake_mode-1)], ONE_PEDAL_MODE_DECEL_V[max(0,CS.one_pedal_brake_mode-1)])
-                self.one_pedal_decel_in = interp(abs(CS.angle_steers), CS.one_pedal_angle_steers_cutoff_bp, [self.one_pedal_decel_in, one_pedal_apply_brake_decel_minus1])
-              if CS.one_pedal_mode_op_braking_allowed:
-                self.one_pedal_decel_in = min(self.one_pedal_decel_in, CS.lead_accel)
-            else:
-              self.one_pedal_decel_in = CS.lead_accel
+          if CS.one_pedal_mode_active:
+            self.one_pedal_decel_in = interp(CS.vEgo, ONE_PEDAL_MODE_DECEL_BP[CS.one_pedal_brake_mode], ONE_PEDAL_MODE_DECEL_V[CS.one_pedal_brake_mode])
+            if abs(CS.angle_steers) > CS.one_pedal_angle_steers_cutoff_bp[0]:
+              one_pedal_apply_brake_decel_minus1 = interp(CS.vEgo, ONE_PEDAL_MODE_DECEL_BP[max(0,CS.one_pedal_brake_mode-1)], ONE_PEDAL_MODE_DECEL_V[max(0,CS.one_pedal_brake_mode-1)])
+              self.one_pedal_decel_in = interp(abs(CS.angle_steers), CS.one_pedal_angle_steers_cutoff_bp, [self.one_pedal_decel_in, one_pedal_apply_brake_decel_minus1])
             
-            if CS.lead_accel <= self.one_pedal_decel_in:
-              self.lead_accel_last_t = t
-            
-            if not CS.one_pedal_mode_op_braking_allowed or CS.lead_accel != self.one_pedal_decel_in:
-              error_factor = interp(CS.vEgo, ONE_PEDAL_SPEED_ERROR_FACTOR_BP, ONE_PEDAL_SPEED_ERROR_FACTOR_V)
-            else:
-              error_factor = 1.0
+            error_factor = interp(CS.vEgo, ONE_PEDAL_SPEED_ERROR_FACTOR_BP, ONE_PEDAL_SPEED_ERROR_FACTOR_V)
             error = self.one_pedal_decel_in - min(0.0, CS.out.aEgo + pitch_accel)
             error *= error_factor
             one_pedal_decel = self.one_pedal_pid.update(self.one_pedal_decel_in, self.one_pedal_decel_in - error, speed=CS.out.vEgo, feedforward=self.one_pedal_decel_in)
-            if t - self.lead_accel_last_t > ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T:
-              self.one_pedal_decel = clip(one_pedal_decel, self.one_pedal_decel - ONE_PEDAL_DECEL_RATE_LIMIT_UP * max(1., 0.5 - one_pedal_decel*0.5), self.one_pedal_decel + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
-            else:
-              self.one_pedal_decel = one_pedal_decel
+            
+            self.one_pedal_decel = clip(one_pedal_decel, self.one_pedal_decel - ONE_PEDAL_DECEL_RATE_LIMIT_UP * max(1., 0.5 - one_pedal_decel*0.5), self.one_pedal_decel + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
             self.one_pedal_decel = max(self.one_pedal_decel, ONE_PEDAL_MAX_DECEL)
             one_pedal_apply_brake = interp(self.one_pedal_decel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
           else:
             self.one_pedal_decel_in = clip(0.0 if CS.gear_shifter_ev == 4 and CS.one_pedal_dl_coasting_enabled and CS.vEgo > 0.05 else min(CS.out.aEgo,threshold_accel), self.one_pedal_decel_in - ONE_PEDAL_DECEL_RATE_LIMIT_UP, self.one_pedal_decel_in + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
             one_pedal_apply_brake = 0.
           
-          self.apply_brake = one_pedal_apply_brake
+          if not CS.one_pedal_mode_op_braking_allowed \
+              or one_pedal_apply_brake > self.apply_brake:
+            self.apply_brake = one_pedal_apply_brake
         elif CS.coasting_enabled and lead_long_brake_lockout_factor < 1.:
           if CS.coasting_long_plan in COAST_SOURCES and self.apply_gas < P.ZERO_GAS or self.apply_brake > 0.:
             check_speed_ms = (CS.speed_limit if CS.speed_limit_active and CS.speed_limit < CS.v_cruise_kph else CS.v_cruise_kph) * CV.KPH_TO_MS
