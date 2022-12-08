@@ -65,7 +65,7 @@ def calc_cruise_accel_limits(v_ego, following, accelMode):
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_MODE_LIST[accelMode])
   return [a_cruise_min, a_cruise_max]
 
-LEAD_ONE_PLUS_TR_BUFFER = 0.0 # [s] follow distance between lead and lead+1 to run the lead+1 mpc
+LEAD_ONE_PLUS_TR_BUFFER = -0.2 # [s] follow distance between lead and lead+1 to run the lead+1 mpc (negative means the lead+1 doesn't affect planning unless they're rapidly approaching)
 LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER = 1.0 # [m]
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
@@ -222,7 +222,11 @@ class Planner():
     self.lead_accel = np.inf
     for key in self.mpcs:
       if key == 'lead0p1':
-        if not self.lead_0_plus.status or not self.lead_0.status:
+        if self.lead_0_plus.status and self.lead_0.status:
+          tr = self.mpcs['lead0'].tr + LEAD_ONE_PLUS_TR_BUFFER
+          self.mpcs['lead0p1'].tr_override = True
+          self.mpcs['lead0p1'].tr = tr
+        else:
           continue
       self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
       self.mpcs[key].update(sm['carState'], sm['radarState'], v_cruise, a_mpc[key], active_mpc[key])
