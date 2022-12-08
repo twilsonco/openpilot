@@ -605,7 +605,6 @@ class Controls:
     self.CI.CS.coasting_lead_d = long_plan.leadDist
     self.CI.CS.coasting_lead_v = long_plan.leadV
     self.CI.CS.tr = long_plan.desiredFollowDistance
-    self.CI.CS.lead_accel = long_plan.leadAccelPlanned
 
     actuators = car.CarControl.Actuators.new_message()
     actuators.longControlState = self.LoC.long_control_state

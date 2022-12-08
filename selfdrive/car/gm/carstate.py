@@ -1,8 +1,8 @@
 from cereal import car
 from common.filter_simple import FirstOrderFilter
 from common.params import Params, put_nonblocking
-from common.numpy_fast import mean, interp
-from common.realtime import sec_since_boot
+from common.numpy_fast import mean, interp, clip
+from common.realtime import sec_since_boot, DT_CTRL
 from math import sin, cos
 from selfdrive.config import Conversions as CV
 from opendbc.can.can_define import CANDefine
@@ -128,8 +128,6 @@ class CarState(CarStateBase):
     self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False
     
-    self.lead_accel = 0.
-    
     self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode") and not self.disengage_on_gas
     self.one_pedal_mode_op_braking_allowed = not self._params.get_bool("OnePedalModeSimple")
     self.one_pedal_mode_engage_on_gas_enabled = self._params.get_bool("OnePedalModeEngageOnGas") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
@@ -193,9 +191,10 @@ class CarState(CarStateBase):
     self.blinker = False
     self.prev_blinker = self.blinker
     self.lane_change_steer_factor = 1.
-    self.lane_change_ramp_up_steer_start_t = 0.
-    self.lane_change_ramp_down_steer_start_t = 0.
-    self.lane_change_ramp_steer_dur = .5 # [s]
+    self.steer_pause_rate = 0.6 * DT_CTRL # 0.6 seconds to ramp up/down steering for pause
+    self.steer_pause_a_ego_min = 0.1
+    self.a_ego_filtered_rc = 1.0
+    self.a_ego_filtered = FirstOrderFilter(0.0, self.a_ego_filtered_rc, DT_CTRL)
     
     self.lka_steering_cmd_counter = 0
 
@@ -224,6 +223,10 @@ class CarState(CarStateBase):
     ret.wheelSpeeds.rr = pt_cp.vl["EBCMWheelSpdRear"]["RRWheelSpd"] * CV.KPH_TO_MS
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+    if ret.vEgo < 3.0:
+      self.a_ego_filtered = FirstOrderFilter(ret.aEgo, self.a_ego_filtered_rc, DT_CTRL)
+    else:
+      self.a_ego_filtered.update(ret.aEgo)
     
     self.vEgo = ret.vEgo
     ret.standstill = ret.vEgoRaw < 0.01
@@ -303,21 +306,18 @@ class CarState(CarStateBase):
     ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
 
     self.blinker = (ret.leftBlinker or ret.rightBlinker)
-    if (self.coast_one_pedal_mode_active or self.one_pedal_mode_active) and (self.pause_long_on_gas_press or self.v_cruise_kph * CV.KPH_TO_MPH <= 10.) and self.one_pedal_pause_steering_enabled:
-      cur_time = sec_since_boot()
-      if self.blinker and not self.prev_blinker:
-        self.lane_change_ramp_down_steer_start_t = cur_time
-      elif not self.blinker and self.prev_blinker:
-        self.lane_change_ramp_up_steer_start_t = cur_time
-
-      self.lane_change_steer_factor = interp(self.vEgo, [self.min_lane_change_speed * 0.9, self.min_lane_change_speed], [0., 1.])
-
-      if self.blinker:
-        self.lane_change_steer_factor = interp(cur_time - self.lane_change_ramp_down_steer_start_t, [0., self.lane_change_ramp_steer_dur * 4.], [1., self.lane_change_steer_factor])
-      else:
-        self.lane_change_steer_factor = interp(cur_time - self.lane_change_ramp_up_steer_start_t, [0., self.lane_change_ramp_steer_dur], [self.lane_change_steer_factor, 1.])
+    if self.blinker and self.vEgo <= self.min_lane_change_speed \
+        and self.a_ego_filtered.x <= self.steer_pause_a_ego_min \
+        and (self.coast_one_pedal_mode_active or self.one_pedal_mode_active) \
+        and self.one_pedal_pause_steering_enabled:
+      lane_change_steer_factor = 0.0
     else:
-      self.lane_change_steer_factor = 1.0
+      lane_change_steer_factor = 1.0
+    
+    self.lane_change_steer_factor = clip(lane_change_steer_factor, 
+                                         self.lane_change_steer_factor - self.steer_pause_rate, 
+                                         self.lane_change_steer_factor + self.steer_pause_rate)
+    
     self.prev_blinker = self.blinker
     
 
