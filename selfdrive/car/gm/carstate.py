@@ -193,9 +193,9 @@ class CarState(CarStateBase):
     self.blinker = False
     self.prev_blinker = self.blinker
     self.lane_change_steer_factor = 1.
-    self.lang_change_ramp_up_steer_start_t = 0.
-    self.lang_change_ramp_down_steer_start_t = 0.
-    self.lang_change_ramp_steer_dur = .5 # [s]
+    self.lane_change_ramp_up_steer_start_t = 0.
+    self.lane_change_ramp_down_steer_start_t = 0.
+    self.lane_change_ramp_steer_dur = .5 # [s]
     
     self.lka_steering_cmd_counter = 0
 
@@ -306,16 +306,16 @@ class CarState(CarStateBase):
     if (self.coast_one_pedal_mode_active or self.one_pedal_mode_active) and (self.pause_long_on_gas_press or self.v_cruise_kph * CV.KPH_TO_MPH <= 10.) and self.one_pedal_pause_steering_enabled:
       cur_time = sec_since_boot()
       if self.blinker and not self.prev_blinker:
-        self.lang_change_ramp_down_steer_start_t = cur_time
+        self.lane_change_ramp_down_steer_start_t = cur_time
       elif not self.blinker and self.prev_blinker:
-        self.lang_change_ramp_up_steer_start_t = cur_time
+        self.lane_change_ramp_up_steer_start_t = cur_time
 
       self.lane_change_steer_factor = interp(self.vEgo, [self.min_lane_change_speed * 0.9, self.min_lane_change_speed], [0., 1.])
 
       if self.blinker:
-        self.lane_change_steer_factor = interp(cur_time - self.lang_change_ramp_down_steer_start_t, [0., self.lang_change_ramp_steer_dur * 4.], [1., self.lane_change_steer_factor])
+        self.lane_change_steer_factor = interp(cur_time - self.lane_change_ramp_down_steer_start_t, [0., self.lane_change_ramp_steer_dur * 4.], [1., self.lane_change_steer_factor])
       else:
-        self.lane_change_steer_factor = interp(cur_time - self.lang_change_ramp_up_steer_start_t, [0., self.lang_change_ramp_steer_dur], [self.lane_change_steer_factor, 1.])
+        self.lane_change_steer_factor = interp(cur_time - self.lane_change_ramp_up_steer_start_t, [0., self.lane_change_ramp_steer_dur], [self.lane_change_steer_factor, 1.])
     else:
       self.lane_change_steer_factor = 1.0
     self.prev_blinker = self.blinker
