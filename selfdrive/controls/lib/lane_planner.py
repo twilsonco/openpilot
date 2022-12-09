@@ -348,11 +348,13 @@ class LaneOffset:
     
     if not (self._cs is None or self._cs.leftBlinker or self._cs.rightBlinker):
       if self._left_traffic in [LANE_TRAFFIC.ONCOMING, LANE_TRAFFIC.ONGOING] \
-          and self._right_traffic == LANE_TRAFFIC.NONE:
+          and self._right_traffic == LANE_TRAFFIC.NONE \
+          and self._lane_probs[2] >= self.AUTO_MIN_LANELINE_PROB:
         lane_pos_auto = -1.
         timeout_override = True
       elif self._right_traffic in [LANE_TRAFFIC.ONCOMING, LANE_TRAFFIC.ONGOING] \
-          and self._left_traffic == LANE_TRAFFIC.NONE:
+          and self._left_traffic == LANE_TRAFFIC.NONE \
+          and self._lane_probs[1] >= self.AUTO_MIN_LANELINE_PROB:
         lane_pos_auto = 1.
         timeout_override = True
     if lane_pos_auto != 0. \

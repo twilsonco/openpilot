@@ -1,8 +1,8 @@
 from cereal import car
 from common.filter_simple import FirstOrderFilter
 from common.params import Params, put_nonblocking
-from common.numpy_fast import mean, interp
-from common.realtime import sec_since_boot
+from common.numpy_fast import mean, interp, clip
+from common.realtime import sec_since_boot, DT_CTRL
 from math import sin, cos
 from selfdrive.config import Conversions as CV
 from opendbc.can.can_define import CANDefine
@@ -128,8 +128,6 @@ class CarState(CarStateBase):
     self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False
     
-    self.lead_accel = 0.
-    
     self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode") and not self.disengage_on_gas
     self.one_pedal_mode_op_braking_allowed = not self._params.get_bool("OnePedalModeSimple")
     self.one_pedal_mode_engage_on_gas_enabled = self._params.get_bool("OnePedalModeEngageOnGas") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
@@ -156,6 +154,8 @@ class CarState(CarStateBase):
     self.one_pedal_angle_steers_cutoff_bp = [60., 270.] # [degrees] one pedal braking goes down one "level" as steering wheel is turned more than this angle
     self.one_pedal_coast_lead_dist_apply_brake_bp = [4.5, 15.] # [m] distance to lead
     self.one_pedal_coast_lead_dist_apply_brake_v = [1., 0.] # [unitless] factor of light one-pedal braking
+    self.one_pedal_coast_stop_only_threshold_speed = 40.0  * CV.MPH_TO_MS # if you are in coast mode and enable friction braking under this speed and then stop, coast mode will auto activate again once you start. This is cancelled out if you press the gas again before stopping
+    self.one_pedal_coast_stop_only_mode = 0 # 0 = inactive, 1 = friction brakes applied under threshold speed, 2 = friction brakes applied and stopped
     
     self.drive_mode_button = False
     self.drive_mode_button_last = False
@@ -193,9 +193,10 @@ class CarState(CarStateBase):
     self.blinker = False
     self.prev_blinker = self.blinker
     self.lane_change_steer_factor = 1.
-    self.lang_change_ramp_up_steer_start_t = 0.
-    self.lang_change_ramp_down_steer_start_t = 0.
-    self.lang_change_ramp_steer_dur = .5 # [s]
+    self.steer_pause_rate = 0.6 * DT_CTRL # 0.6 seconds to ramp up/down steering for pause
+    self.steer_pause_a_ego_min = 0.1
+    self.a_ego_filtered_rc = 1.0
+    self.a_ego_filtered = FirstOrderFilter(0.0, self.a_ego_filtered_rc, DT_CTRL)
     
     self.lka_steering_cmd_counter = 0
 
@@ -224,9 +225,16 @@ class CarState(CarStateBase):
     ret.wheelSpeeds.rr = pt_cp.vl["EBCMWheelSpdRear"]["RRWheelSpd"] * CV.KPH_TO_MS
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+    if ret.vEgo < 3.0:
+      self.a_ego_filtered = FirstOrderFilter(ret.aEgo, self.a_ego_filtered_rc, DT_CTRL)
+    else:
+      self.a_ego_filtered.update(ret.aEgo)
     
     self.vEgo = ret.vEgo
     ret.standstill = ret.vEgoRaw < 0.01
+    
+    if ret.vEgo < 3.0 and self.one_pedal_coast_stop_only_mode == 1:
+      self.one_pedal_coast_stop_only_mode = 2 # now will revert to one pedal coast mode on gas
 
     self.coasting_enabled_last = self.coasting_enabled
     if t - self.params_check_last_t >= self.params_check_freq:
@@ -262,6 +270,8 @@ class CarState(CarStateBase):
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
     ret.gasPressed = ret.gas > 1e-5
     self.gasPressed = ret.gasPressed
+    if self.gasPressed and self.one_pedal_coast_stop_only_mode == 1:
+      self.one_pedal_coast_stop_only_mode = 0 # cancel stop only logic so it will stay in friction braking mode
     if self.gasPressed or self.vEgo < 0.2:
       self.resume_required = False
 
@@ -303,21 +313,18 @@ class CarState(CarStateBase):
     ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
 
     self.blinker = (ret.leftBlinker or ret.rightBlinker)
-    if (self.coast_one_pedal_mode_active or self.one_pedal_mode_active) and (self.pause_long_on_gas_press or self.v_cruise_kph * CV.KPH_TO_MPH <= 10.) and self.one_pedal_pause_steering_enabled:
-      cur_time = sec_since_boot()
-      if self.blinker and not self.prev_blinker:
-        self.lang_change_ramp_down_steer_start_t = cur_time
-      elif not self.blinker and self.prev_blinker:
-        self.lang_change_ramp_up_steer_start_t = cur_time
-
-      self.lane_change_steer_factor = interp(self.vEgo, [self.min_lane_change_speed * 0.9, self.min_lane_change_speed], [0., 1.])
-
-      if self.blinker:
-        self.lane_change_steer_factor = interp(cur_time - self.lang_change_ramp_down_steer_start_t, [0., self.lang_change_ramp_steer_dur * 4.], [1., self.lane_change_steer_factor])
-      else:
-        self.lane_change_steer_factor = interp(cur_time - self.lang_change_ramp_up_steer_start_t, [0., self.lang_change_ramp_steer_dur], [self.lane_change_steer_factor, 1.])
+    if self.blinker and self.vEgo <= self.min_lane_change_speed \
+        and self.a_ego_filtered.x <= self.steer_pause_a_ego_min \
+        and (self.coast_one_pedal_mode_active or self.one_pedal_mode_active) \
+        and self.one_pedal_pause_steering_enabled:
+      lane_change_steer_factor = 0.0
     else:
-      self.lane_change_steer_factor = 1.0
+      lane_change_steer_factor = 1.0
+    
+    self.lane_change_steer_factor = clip(lane_change_steer_factor, 
+                                         self.lane_change_steer_factor - self.steer_pause_rate, 
+                                         self.lane_change_steer_factor + self.steer_pause_rate)
+    
     self.prev_blinker = self.blinker
     
 

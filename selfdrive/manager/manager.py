@@ -209,7 +209,7 @@ def manager_thread():
     if sm['deviceState'].freeSpacePercent < 5:
       not_run.append("loggerd")
     elif params.get_bool("LowOverheadMode"):
-      low_overhead_ignore = ["loggerd","proclogd"]
+      low_overhead_ignore = ["loggerd","proclogd","updated","uploader","logmessaged"]
       not_run += low_overhead_ignore
 
     started = sm['deviceState'].started

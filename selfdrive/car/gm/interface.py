@@ -213,7 +213,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torque.ki = 0.15
         ret.lateralTuning.torque.kd = 2.0
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
-        ret.lateralTuning.torque.friction = 0.07
+        ret.lateralTuning.torque.friction = 0.14
       else:
         ret.lateralTuning.pid.kpBP = [0., 40.]
         ret.lateralTuning.pid.kpV = [0., .16]
@@ -439,6 +439,9 @@ class CarInterface(CarInterfaceBase):
             self.CS.one_pedal_mode_active = True
             put_nonblocking("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
             put_nonblocking("OnePedalMode", "1" if self.CS.one_pedal_mode_enabled else "0")
+            if self.CS.vEgo < self.CS.one_pedal_coast_stop_only_threshold_speed and self.CS.one_pedal_coast_stop_only_mode == 0:
+              self.CS.one_pedal_coast_stop_only_mode = 1
+              
           elif self.CS.distance_button and (self.CS.pause_long_on_gas_press or self.CS.out.standstill) and t - self.CS.distance_button_last_press_t < 0.4 and t - self.CS.one_pedal_last_switch_to_friction_braking_t > 1.: # on the second press of a double tap while the gas is pressed, turn off one-pedal braking
             # cycle the brake mode back to nullify the first press
             cloudlog.info("button press event: Disengaging one-pedal mode with distace button double-press.")
@@ -469,6 +472,16 @@ class CarInterface(CarInterfaceBase):
           cloudlog.info("button press event: Engaging one-pedal hard braking.")
           self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
         self.CS.one_pedal_brake_mode = 2
+      elif self.CS.one_pedal_coast_stop_only_mode == 2 and self.CS.gasPressed and self.CS.vEgo > 0.5:
+        # user gassed after using friction brake stop only mode
+        self.CS.one_pedal_brake_mode = 0
+        self.one_pedal_last_brake_mode = self.CS.one_pedal_brake_mode
+        self.CS.one_pedal_mode_enabled = False
+        self.CS.one_pedal_mode_active = False
+        self.CS.coast_one_pedal_mode_active = True
+        put_nonblocking("OnePedalBrakeMode", str(self.CS.one_pedal_brake_mode))
+        put_nonblocking("OnePedalMode", "1" if self.CS.one_pedal_mode_enabled else "0")
+        self.CS.one_pedal_coast_stop_only_mode = 0
       self.CS.follow_level = self.CS.one_pedal_brake_mode + 1
     else: # cruis is active, so just modify follow distance
       if self.CS.distance_button != self.CS.prev_distance_button:

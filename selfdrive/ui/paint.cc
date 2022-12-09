@@ -306,7 +306,7 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
       nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
       // first abs speed
       if (s->is_metric){
-        snprintf(unit, sizeof(unit), "kph"); 
+        snprintf(unit, sizeof(unit), "km/h"); 
         float v = (s->scene.lead_v * 3.6);
         if (v < 100.){
           snprintf(val, sizeof(val), "%.1f", v);
@@ -2044,7 +2044,7 @@ static void ui_draw_measures(UIState *s){
                 else if (temp > 115){
                   unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
-                else if (temp > 105){
+                else if (temp > 99){
                   unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
                 }
               }
@@ -2067,7 +2067,7 @@ static void ui_draw_measures(UIState *s){
                 else if (temp > 240){
                   unit_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
-                else if (temp > 220){
+                else if (temp > 210){
                   unit_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
                 }
               }
@@ -2087,7 +2087,7 @@ static void ui_draw_measures(UIState *s){
                 else if (temp > 115){
                   val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
-                else if (temp > 105){
+                else if (temp > 99){
                   val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
                 }
               }
@@ -2107,7 +2107,7 @@ static void ui_draw_measures(UIState *s){
                 else if (temp > 240){
                   val_color = nvgRGBA(255, 0, 0, 200); // red if too hot
                 }
-                else if (temp > 220){
+                else if (temp > 210){
                   val_color = nvgRGBA(255, 169, 63, 200); // orange if close to too hot
                 }
               }

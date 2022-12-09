@@ -22,6 +22,7 @@ LEAD_PATH_YREL_LOW_TOL = 0.5 # if the lead closest to the "middle" is farther aw
 LEAD_PATH_DREL_MIN = 60 # [m] only care about far away leads
 LEAD_MIN_SMOOTHING_DISTANCE = 145 # [m]
 LEAD_MAX_DISTANCE = 152 # [m] beyond this distance, lead data is too noisy to use
+LEAD_MAX_Y_REL = 12.0 # [m] beyond this Y distance, long range leads are ignored
 MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow use.
 
 LEAD_PLUS_ONE_MIN_REL_DIST_V = [3.0, 6.0] # [m] min distance between lead+1 and lead at low and high distance
@@ -33,12 +34,12 @@ class KalmanParams():
     # hardcoding a lookup table to compute K for values of radar_ts between 0.1s and 1.0s
     assert dt > .01 and dt < .1, "Radar time step must be between .01s and 0.1s"
     self.A = [[1.0, dt], [0.0, 1.0]]
-    self.C = [1.0, 0.0]
     #Q = np.matrix([[10., 0.0], [0.0, 100.]])
     #R = 1e3
     #K = np.matrix([[ 0.05705578], [ 0.03073241]])
     dts = [dt * 0.01 for dt in range(1, 11)]
     K0 = [0.12288, 0.14557, 0.16523, 0.18282, 0.19887, 0.21372, 0.22761, 0.24069, 0.2531, 0.26491]
+    self.C = [1.0, 0.0]
     K1 = [0.29666, 0.29331, 0.29043, 0.28787, 0.28555, 0.28342, 0.28144, 0.27958, 0.27783, 0.27617]
     self.K = [[interp(dt, dts, K0)], [interp(dt, dts, K1)]]
 
@@ -82,7 +83,7 @@ def match_model_path_to_cluster(v_ego, md, clusters):
   # 3) close enough to the predicted path at the cluster distance
   close_path_clusters = [[c,abs(-c.yRel - interp(c.dRel, md.position.x, md.position.y))] for c in clusters if \
       c.dRel <= min(md.position.x[-1], LEAD_MAX_DISTANCE) and \
-      c.dRel >= LEAD_PATH_DREL_MIN]
+      c.dRel >= LEAD_PATH_DREL_MIN and abs(c.yRel) <= LEAD_MAX_Y_REL]
   close_path_clusters = sorted([c for c in close_path_clusters if c[1] <= interp(c[0].dRel, LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V)], key=lambda c:c[1])
   if len(close_path_clusters) == 0:
     return None
@@ -134,7 +135,7 @@ def match_model_lanelines_to_cluster(v_ego, md, lane_width, clusters):
   # 3) close enough to the predicted path at the cluster distance  
   close_path_clusters = [[c,abs(-c.yRel - interp(c.dRel, ll_x, c_y.tolist()))] for c in clusters if \
       c.dRel <= min(ll_x[-1], LEAD_MAX_DISTANCE) and \
-      c.dRel >= LEAD_PATH_DREL_MIN]
+      c.dRel >= LEAD_PATH_DREL_MIN and abs(c.yRel) <= LEAD_MAX_Y_REL]
   close_path_clusters = sorted([c for c in close_path_clusters if c[1] <= interp(c[0].dRel, LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V)], key=lambda c:c[1])
   if len(close_path_clusters) == 0:
     return None

@@ -65,7 +65,7 @@ def calc_cruise_accel_limits(v_ego, following, accelMode):
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_MODE_LIST[accelMode])
   return [a_cruise_min, a_cruise_max]
 
-LEAD_ONE_PLUS_TR_BUFFER = 0.0 # [s] follow distance between lead and lead+1 to run the lead+1 mpc
+LEAD_ONE_PLUS_TR_BUFFER = -0.2 # [s] follow distance between lead and lead+1 to run the lead+1 mpc (negative means the lead+1 doesn't affect planning unless they're rapidly approaching)
 LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER = 1.0 # [m]
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
@@ -106,6 +106,7 @@ class Planner():
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
+    self.j_desired_trajectory = np.zeros(CONTROL_N)
 
     self.vision_turn_controller = VisionTurnController(CP)
     self.speed_limit_controller = SpeedLimitController()
@@ -116,11 +117,11 @@ class Planner():
     self.params_check_last_t = 0.
     self.params_check_freq = 0.1 # check params at 10Hz
     
+    self.one_pedal_mode_op_braking_allowed = not self._params.get_bool("OnePedalModeSimple")
     self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco; 3 = creep
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -10. # lead "absolute"" velocity
     self.tr = 1.8
-    self.lead_accel = 0.
     
     self.stopped_t_last = 0.
     self.seconds_stopped = 0
@@ -197,6 +198,7 @@ class Planner():
     
     if t - self.params_check_last_t >= self.params_check_freq:
       self.params_check_last_t = t
+      self.one_pedal_mode_op_braking_allowed = not self._params.get_bool("OnePedalModeSimple")
       accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco
       if accel_mode != self.accel_mode:
           cloudlog.info(f"Acceleration mode changed, new value: {accel_mode} = {['normal','sport','eco','creep'][accel_mode]}")
@@ -218,24 +220,38 @@ class Planner():
     accel_limits = [min(accel_limits_turns[0], a_mpc['custom']), accel_limits_turns[1]]
     self.mpcs['custom'].set_accel_limits(accel_limits[0], accel_limits[1])
 
-    next_a = np.inf
-    self.lead_accel = np.inf
-    for key in self.mpcs:
-      if key == 'lead0p1':
-        if not self.lead_0_plus.status or not self.lead_0.status:
+    if (sm['carState'].onePedalModeActive or sm['carState'].coastOnePedalModeActive) \
+        and not self.one_pedal_mode_op_braking_allowed:
+      self.v_desired_trajectory = np.ones(CONTROL_N) * v_ego
+      self.a_desired_trajectory = np.ones(CONTROL_N) * a_ego
+      self.j_desired_trajectory = np.zeros(CONTROL_N)
+      self.longitudinalPlanSource = 'cruise'
+      for key in self.mpcs:
+        self.mpcs[key].reset_mpc()
+    else:
+      next_a = np.inf
+      for key in self.mpcs:
+        if key == 'lead0p1':
+          if self.lead_0_plus.status and self.lead_0.status:
+            tr = self.mpcs['lead0'].tr + LEAD_ONE_PLUS_TR_BUFFER
+            self.mpcs['lead0p1'].tr_override = True
+            self.mpcs['lead0p1'].tr = tr
+          else:
+            continue
+        if (sm['carState'].onePedalModeActive or sm['carState'].coastOnePedalModeActive) \
+            and (key not in BRAKE_SOURCES or (key == 'custom' and c_source not in BRAKE_SOURCES)):
+          self.mpcs[key].reset_mpc()
           continue
-      self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
-      self.mpcs[key].update(sm['carState'], sm['radarState'], v_cruise, a_mpc[key], active_mpc[key])
-      # picks slowest solution from accel in ~0.2 seconds
-      if self.mpcs[key].status and active_mpc[key] and self.mpcs[key].a_solution[5] < next_a:
-        self.longitudinalPlanSource = c_source if key == 'custom' else key
-        self.v_desired_trajectory = self.mpcs[key].v_solution[:CONTROL_N]
-        self.a_desired_trajectory = self.mpcs[key].a_solution[:CONTROL_N]
-        self.j_desired_trajectory = self.mpcs[key].j_solution[:CONTROL_N]
-        next_a = self.mpcs[key].a_solution[5]
-      if self.mpcs[key].status and active_mpc[key] and (key in BRAKE_SOURCES or (key == 'custom' and c_source in BRAKE_SOURCES)) \
-          and self.mpcs[key].a_solution[5] < self.lead_accel and self.mpcs[key].a_solution[5] < 0.:
-        self.lead_accel = self.mpcs[key].a_solution[5]
+            
+        self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
+        self.mpcs[key].update(sm['carState'], sm['radarState'], v_cruise, a_mpc[key], active_mpc[key])
+        # picks slowest solution from accel in ~0.2 seconds
+        if self.mpcs[key].status and active_mpc[key] and self.mpcs[key].a_solution[5] < next_a:
+          self.longitudinalPlanSource = c_source if key == 'custom' else key
+          self.v_desired_trajectory = self.mpcs[key].v_solution[:CONTROL_N]
+          self.a_desired_trajectory = self.mpcs[key].a_solution[:CONTROL_N]
+          self.j_desired_trajectory = self.mpcs[key].j_solution[:CONTROL_N]
+          next_a = self.mpcs[key].a_solution[5]
         
     
 
@@ -272,7 +288,6 @@ class Planner():
 
     longitudinalPlan.hasLead = self.mpcs['lead0'].status
     longitudinalPlan.leadDist = self.coasting_lead_d
-    longitudinalPlan.leadAccelPlanned = float(self.lead_accel)
     longitudinalPlan.leadV = self.coasting_lead_v
     longitudinalPlan.desiredFollowDistance = self.mpcs['lead0'].tr
     longitudinalPlan.leadDistCost = self.mpcs['lead0'].dist_cost

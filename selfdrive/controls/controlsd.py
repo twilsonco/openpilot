@@ -178,6 +178,7 @@ class Controls:
     self.a_target = 0.0
     self.pitch = 0.0
     self.pitch_accel_deadzone = 0.01 # [radians] ≈ 1% grade
+    self.k_mean = 0.0
     
     self.interaction_timer = 0.0 # [s] time since any interaction
     self.intervention_timer = 0.0 # [s] time since screen steering/gas/brake interaction
@@ -467,7 +468,13 @@ class Controls:
       if self.sm.updated['gpsLocationExternal']:
         self.CI.CS.altitude = self.sm['gpsLocationExternal'].altitude
       if self.sm.updated['lateralPlan'] and len(self.sm['lateralPlan'].curvatures) > 0:
-        self.CI.CC.params.future_curvature = mean(self.sm['lateralPlan'].curvatures)
+        k_mean = mean(self.sm['lateralPlan'].curvatures)
+        if abs(k_mean) > abs(self.k_mean):
+          self.k_mean = k_mean
+        else:
+          alpha = 0.0005
+          self.k_mean = alpha * k_mean + (1.0 - alpha) * self.k_mean
+        self.CI.CC.params.future_curvature = self.k_mean
       
       self.CI.CS.speed_limit_active = (self.sm['longitudinalPlan'].speedLimitControlState == log.LongitudinalPlan.SpeedLimitControlState.active)
       if self.CI.CS.speed_limit_active:
@@ -598,7 +605,6 @@ class Controls:
     self.CI.CS.coasting_lead_d = long_plan.leadDist
     self.CI.CS.coasting_lead_v = long_plan.leadV
     self.CI.CS.tr = long_plan.desiredFollowDistance
-    self.CI.CS.lead_accel = long_plan.leadAccelPlanned
 
     actuators = car.CarControl.Actuators.new_message()
     actuators.longControlState = self.LoC.long_control_state

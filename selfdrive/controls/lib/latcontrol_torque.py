@@ -17,7 +17,7 @@ from cereal import log
 # move it at all, this is compensated for too.
 
 
-FRICTION_THRESHOLD = 0.3
+FRICTION_THRESHOLD = 2.0
 
 def get_steer_feedforward(desired_lateral_accel, speed):
   return desired_lateral_accel
@@ -59,7 +59,7 @@ class LatControlTorque(LatControl):
       pid_log.error = error
       
       ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
-      ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * 0.55
+      ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * 0.375
       friction_compensation = interp(desired_lateral_jerk, 
                                      [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], 
                                      [-self.friction, self.friction])

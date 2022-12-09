@@ -1,3 +1,19 @@
+Version tw-0.8.12-11_tws (2022-12-09)
+========================
+  * Huge One Pedal Mode improvements
+    * Blending of One Pedal and lead braking works much better, including when in regen-only mode and coast-mode. If you haven't tried it, you have to try it now
+      * Make sure "one pedal pro brakes" is *disabled* in order to allow lead braking
+    * Autosteer low-speed blinker pause below 20mph now only pauses steering when consistently slowing.  As you start driving with the blinker on, autosteer will resume (so openpilot can assist in intersections etc.)
+    * Now you can use friction brakes to come to a stop once, and have it auto-return to regen-only mode after starting again
+      * If you're *in regen-only mode* going *less than 40mph* with your *foot off the gas*, and you *engage friction brakes and slow to a stop* (below 5mph), then regen-only mode will turn back on automatically when you eventually press the gas to resume!
+  * Lower min lane change speed to 20mph
+  * Engine coolant temperature metric now turns orange at 215°F so you can check your EGR valve
+  * Fixed display of metric units (thanks regloom!)
+  * Adjust dynamic follow mode to not jump to close follow at the fart of a mouse
+  * Reduce false positives for long range leads
+  * Improved Volt torque lateral
+  * Less curve braking
+
 Version tw-0.8.12-10_tws (2022-11-22)
 ========================
   * Dynamic follow mode:
