@@ -68,8 +68,6 @@ def calc_cruise_accel_limits(v_ego, following, accelMode):
 LEAD_ONE_PLUS_TR_BUFFER = -0.2 # [s] follow distance between lead and lead+1 to run the lead+1 mpc (negative means the lead+1 doesn't affect planning unless they're rapidly approaching)
 LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER = 1.0 # [m]
 
-ONE_PEDAL_STOPPING_DISTANCE_BUFFER = 2.0
-
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
   This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
@@ -186,15 +184,6 @@ class Planner():
       self.mpcs['lead0'].df.reset()
     self.gear_shifter_last = sm['carState'].gearShifter
     
-    if sm['carState'].onePedalModeActive or sm['carState'].coastOnePedalModeActive:
-      for k in ['lead0','lead1']:
-        self.mpcs[k].stopping_distance_offset = ONE_PEDAL_STOPPING_DISTANCE_BUFFER
-      self.mpcs['lead0p1'].stopping_distance_offset = LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER + ONE_PEDAL_STOPPING_DISTANCE_BUFFER
-    else:
-      for k in ['lead0','lead1']:
-        self.mpcs[k].stopping_distance_offset = 0.0
-      self.mpcs['lead0p1'].stopping_distance_offset = LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER
-    
     
     if long_control_state == LongCtrlState.off or sm['carState'].gasPressed:
       self.v_desired = v_ego
@@ -233,8 +222,8 @@ class Planner():
 
     if (sm['carState'].onePedalModeActive or sm['carState'].coastOnePedalModeActive) \
         and not self.one_pedal_mode_op_braking_allowed:
-      self.v_desired_trajectory = np.zeros(CONTROL_N) * v_ego
-      self.a_desired_trajectory = np.zeros(CONTROL_N) * a_ego
+      self.v_desired_trajectory = np.ones(CONTROL_N) * v_ego
+      self.a_desired_trajectory = np.ones(CONTROL_N) * a_ego
       self.j_desired_trajectory = np.zeros(CONTROL_N)
       self.longitudinalPlanSource = 'cruise'
       for key in self.mpcs:

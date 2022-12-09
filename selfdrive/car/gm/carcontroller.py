@@ -166,9 +166,9 @@ class CarController():
         
         if (CS.one_pedal_mode_active or CS.coast_one_pedal_mode_active):
           if not CS.one_pedal_mode_active and CS.gear_shifter_ev == 4 and CS.one_pedal_dl_coasting_enabled and CS.vEgo > 0.05:
-            self.apply_gas = self.apply_gas * lead_long_gas_lockout_factor + float(P.ZERO_GAS ) * (1. - lead_long_gas_lockout_factor)
+            self.apply_gas = P.ZERO_GAS
           else:
-            self.apply_gas = self.apply_gas * lead_long_gas_lockout_factor + float(P.MAX_ACC_REGEN) * (1. - lead_long_gas_lockout_factor)
+            self.apply_gas = P.MAX_ACC_REGEN
           pitch_accel = CS.pitch * ACCELERATION_DUE_TO_GRAVITY
           pitch_accel *= interp(CS.vEgo, ONE_PEDAL_ACCEL_PITCH_FACTOR_BP, ONE_PEDAL_ACCEL_PITCH_FACTOR_V if pitch_accel <= 0 else ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V)
           
