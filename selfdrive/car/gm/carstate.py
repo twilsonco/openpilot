@@ -154,6 +154,8 @@ class CarState(CarStateBase):
     self.one_pedal_angle_steers_cutoff_bp = [60., 270.] # [degrees] one pedal braking goes down one "level" as steering wheel is turned more than this angle
     self.one_pedal_coast_lead_dist_apply_brake_bp = [4.5, 15.] # [m] distance to lead
     self.one_pedal_coast_lead_dist_apply_brake_v = [1., 0.] # [unitless] factor of light one-pedal braking
+    self.one_pedal_coast_stop_only_threshold_speed = 40.0  * CV.MPH_TO_MS # if you are in coast mode and enable friction braking under this speed and then stop, coast mode will auto activate again once you start. This is cancelled out if you press the gas again before stopping
+    self.one_pedal_coast_stop_only_mode = 0 # 0 = inactive, 1 = friction brakes applied under threshold speed, 2 = friction brakes applied and stopped
     
     self.drive_mode_button = False
     self.drive_mode_button_last = False
@@ -230,6 +232,9 @@ class CarState(CarStateBase):
     
     self.vEgo = ret.vEgo
     ret.standstill = ret.vEgoRaw < 0.01
+    
+    if ret.vEgo < 3.0 and self.one_pedal_coast_stop_only_mode == 1:
+      self.one_pedal_coast_stop_only_mode = 2 # now will revert to one pedal coast mode on gas
 
     self.coasting_enabled_last = self.coasting_enabled
     if t - self.params_check_last_t >= self.params_check_freq:
@@ -265,6 +270,8 @@ class CarState(CarStateBase):
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
     ret.gasPressed = ret.gas > 1e-5
     self.gasPressed = ret.gasPressed
+    if self.gasPressed and self.one_pedal_coast_stop_only_mode == 1:
+      self.one_pedal_coast_stop_only_mode = 0 # cancel stop only logic so it will stay in friction braking mode
     if self.gasPressed or self.vEgo < 0.2:
       self.resume_required = False
 
