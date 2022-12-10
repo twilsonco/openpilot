@@ -193,6 +193,8 @@ class CarState(CarStateBase):
     self.blinker = False
     self.prev_blinker = self.blinker
     self.lane_change_steer_factor = 1.
+    self.steer_unpaused = False # used to make is so it will only pause once per blinker use
+    self.min_steer_speed = CP.minSteerSpeed
     self.steer_pause_rate = 0.6 * DT_CTRL # 0.6 seconds to ramp up/down steering for pause
     self.steer_pause_a_ego_min = 0.1
     self.a_ego_filtered_rc = 1.0
@@ -314,12 +316,19 @@ class CarState(CarStateBase):
 
     self.blinker = (ret.leftBlinker or ret.rightBlinker)
     if self.blinker and self.vEgo <= self.min_lane_change_speed \
-        and self.a_ego_filtered.x <= self.steer_pause_a_ego_min \
+        and (self.a_ego_filtered.x <= self.steer_pause_a_ego_min \
+          or self.vEgo <= self.min_steer_speed * 0.5) \
         and (self.coast_one_pedal_mode_active or self.one_pedal_mode_active) \
-        and self.one_pedal_pause_steering_enabled:
+        and self.one_pedal_pause_steering_enabled \
+        and not self.steer_unpaused:
       lane_change_steer_factor = 0.0
     else:
+      if self.blinker and self.lane_change_steer_factor < 0.5:
+        self.steer_unpaused = True
       lane_change_steer_factor = 1.0
+    
+    if not self.blinker:
+      self.steer_unpaused = False
     
     self.lane_change_steer_factor = clip(lane_change_steer_factor, 
                                          self.lane_change_steer_factor - self.steer_pause_rate, 
