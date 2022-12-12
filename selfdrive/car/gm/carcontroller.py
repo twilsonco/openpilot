@@ -183,20 +183,21 @@ class CarController():
             error *= error_factor
             one_pedal_decel = self.one_pedal_pid.update(self.one_pedal_decel_in, self.one_pedal_decel_in - error, speed=CS.out.vEgo, feedforward=self.one_pedal_decel_in)
             
-            self.one_pedal_decel = clip(one_pedal_decel, self.one_pedal_decel - ONE_PEDAL_DECEL_RATE_LIMIT_UP * max(1., 0.5 - one_pedal_decel*0.5), self.one_pedal_decel + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
+            self.one_pedal_decel = clip(one_pedal_decel, self.one_pedal_decel - ONE_PEDAL_DECEL_RATE_LIMIT_UP * max(1.0, 0.5 - one_pedal_decel*0.5), self.one_pedal_decel + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
             self.one_pedal_decel = max(self.one_pedal_decel, ONE_PEDAL_MAX_DECEL)
             one_pedal_apply_brake = interp(self.one_pedal_decel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
           else:
             self.one_pedal_decel_in = clip(0.0 if CS.gear_shifter_ev == 4 and CS.one_pedal_dl_coasting_enabled and CS.vEgo > 0.05 else min(CS.out.aEgo,threshold_accel), self.one_pedal_decel_in - ONE_PEDAL_DECEL_RATE_LIMIT_UP, self.one_pedal_decel_in + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
-            one_pedal_apply_brake = 0.
+            one_pedal_apply_brake = 0.0
           
           if not CS.one_pedal_mode_op_braking_allowed \
-              or one_pedal_apply_brake > self.apply_brake:
+              or one_pedal_apply_brake > self.apply_brake \
+              or CS.coasting_lead_d < 0.0:
             self.apply_brake = one_pedal_apply_brake
-        elif CS.coasting_enabled and lead_long_brake_lockout_factor < 1.:
-          if CS.coasting_long_plan in COAST_SOURCES and self.apply_gas < P.ZERO_GAS or self.apply_brake > 0.:
+        elif CS.coasting_enabled and lead_long_brake_lockout_factor < 1.0:
+          if CS.coasting_long_plan in COAST_SOURCES and self.apply_gas < P.ZERO_GAS or self.apply_brake > 0.0:
             check_speed_ms = (CS.speed_limit if CS.speed_limit_active and CS.speed_limit < CS.v_cruise_kph else CS.v_cruise_kph) * CV.KPH_TO_MS
-            if self.apply_brake > 0.:
+            if self.apply_brake > 0.0:
               coasting_over_speed_vEgo_BP = [
                 interp(CS.vEgo, CS.coasting_over_speed_vEgo_BP_BP, CS.coasting_over_speed_vEgo_BP[0]),
                 interp(CS.vEgo, CS.coasting_over_speed_vEgo_BP_BP, CS.coasting_over_speed_vEgo_BP[1])
@@ -204,16 +205,16 @@ class CarController():
               over_speed_factor = interp(CS.vEgo / check_speed_ms, coasting_over_speed_vEgo_BP, [0., 1.]) if (check_speed_ms > 0. and CS.coasting_brake_over_speed_enabled) else 0.
               over_speed_brake = self.apply_brake * over_speed_factor
               self.apply_brake = max([self.apply_brake * lead_long_brake_lockout_factor, over_speed_brake])
-            if self.apply_gas < P.ZERO_GAS and lead_long_gas_lockout_factor < 1.:
+            if self.apply_gas < P.ZERO_GAS and lead_long_gas_lockout_factor < 1.0:
               coasting_over_speed_vEgo_BP = [
                 interp(CS.vEgo, CS.coasting_over_speed_vEgo_BP_BP, CS.coasting_over_speed_regen_vEgo_BP[0]),
                 interp(CS.vEgo, CS.coasting_over_speed_vEgo_BP_BP, CS.coasting_over_speed_regen_vEgo_BP[1])
               ]
-              over_speed_factor = interp(CS.vEgo / check_speed_ms, coasting_over_speed_vEgo_BP, [0., 1.]) if (check_speed_ms > 0 and CS.coasting_brake_over_speed_enabled) else 0.
+              over_speed_factor = interp(CS.vEgo / check_speed_ms, coasting_over_speed_vEgo_BP, [0.0, 1.0]) if (check_speed_ms > 0 and CS.coasting_brake_over_speed_enabled) else 0.
               coast_apply_gas = int(round(float(P.ZERO_GAS) - over_speed_factor * (P.ZERO_GAS - self.apply_gas)))
-              self.apply_gas = self.apply_gas * lead_long_gas_lockout_factor + coast_apply_gas * (1. - lead_long_gas_lockout_factor)
-        elif CS.no_friction_braking and lead_long_brake_lockout_factor < 1.:
-          if CS.coasting_long_plan in COAST_SOURCES and self.apply_brake > 0.:
+              self.apply_gas = self.apply_gas * lead_long_gas_lockout_factor + coast_apply_gas * (1.0 - lead_long_gas_lockout_factor)
+        elif CS.no_friction_braking and lead_long_brake_lockout_factor < 1.0:
+          if CS.coasting_long_plan in COAST_SOURCES and self.apply_brake > 0.0:
             self.apply_brake *= lead_long_brake_lockout_factor
         self.apply_gas = int(round(self.apply_gas))
         self.apply_brake = int(round(self.apply_brake))
@@ -246,7 +247,7 @@ class CarController():
     if (frame % 4) == 0:
       idx = (frame // 4) % 4
 
-      if CS.cruiseMain and not enabled and CS.autoHold and CS.autoHoldActive and not CS.out.gasPressed and CS.out.gearShifter in ['drive','low'] and CS.out.vEgo < 0.02 and not CS.regenPaddlePressed:
+      if CS.cruiseMain and not enabled and CS.autoHold and CS.autoHoldActive and not CS.out.gas > 1e-5 and CS.out.gearShifter in ['drive','low'] and CS.out.vEgo < 0.02 and not CS.regenPaddlePressed:
         # Auto Hold State
         car_stopping = no_pitch_apply_gas < P.ZERO_GAS
         standstill = CS.pcm_acc_status == AccState.STANDSTILL
