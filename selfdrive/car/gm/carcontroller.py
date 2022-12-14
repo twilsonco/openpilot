@@ -6,6 +6,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
 from selfdrive.car.gm.values import DBC, AccState, CanBus, CarControllerParams
+from selfdrive.car.gm.carstate import GAS_PRESSED_THRESHOLD
 from selfdrive.controls.lib.longitudinal_planner import BRAKE_SOURCES, COAST_SOURCES
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
@@ -106,7 +107,7 @@ class CarController():
 
     # Gas/regen prep
     if (frame % 4) == 0:
-      if not enabled or CS.pause_long_on_gas_press:
+      if not enabled or (CS.pause_long_on_gas_press and CS.out.gas > GAS_PRESSED_THRESHOLD):
         # Stock ECU sends max regen when not enabled.
         self.apply_gas = P.MAX_ACC_REGEN
         self.apply_brake = 0
@@ -217,7 +218,10 @@ class CarController():
           if CS.coasting_long_plan in COAST_SOURCES and self.apply_brake > 0.0:
             self.apply_brake *= lead_long_brake_lockout_factor
         self.apply_gas = int(round(self.apply_gas))
-        self.apply_brake = int(round(self.apply_brake))
+        if CS.out.gas >= 1e-5:
+          self.apply_brake = 0
+        else:
+          self.apply_brake = int(round(self.apply_brake))
 
         CS.one_pedal_mode_active_last = CS.one_pedal_mode_active
         CS.coast_one_pedal_mode_active_last = CS.coast_one_pedal_mode_active
