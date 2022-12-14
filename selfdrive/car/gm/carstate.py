@@ -25,6 +25,8 @@ ROLLING_RESISTANCE_FROM_VEGO_BP = [3., 16., 28., 39.] # [m/s] using plot at http
 # EV_ICE_INPUT_EFFICIENCY = 1/0.88
 # EV_DRIVE_EFFICIENCY = 1/0.82
 
+GAS_PRESSED_THRESHOLD = 0.15
+
 GearShifter = car.CarState.GearShifter
 class GEAR_SHIFTER2:
   DRIVE = 4
@@ -270,7 +272,7 @@ class CarState(CarStateBase):
     
 
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
-    ret.gasPressed = ret.gas > 0.1
+    ret.gasPressed = ret.gas > GAS_PRESSED_THRESHOLD
     self.gasPressed = ret.gasPressed
     if self.gasPressed and self.one_pedal_coast_stop_only_mode == 1:
       self.one_pedal_coast_stop_only_mode = 0 # cancel stop only logic so it will stay in friction braking mode
