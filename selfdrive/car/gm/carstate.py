@@ -270,7 +270,7 @@ class CarState(CarStateBase):
     
 
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
-    ret.gasPressed = ret.gas > 0.1
+    ret.gasPressed = ret.gas > 0.18
     self.gasPressed = ret.gasPressed
     if self.gasPressed and self.one_pedal_coast_stop_only_mode == 1:
       self.one_pedal_coast_stop_only_mode = 0 # cancel stop only logic so it will stay in friction braking mode
