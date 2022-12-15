@@ -14,6 +14,8 @@ from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.controls.lib.longitudinal_planner import _A_CRUISE_MAX_V_SPORT, \
                                                         _A_CRUISE_MAX_BP, \
                                                         calc_cruise_accel_limits
+                                                        
+GearShifter = car.CarState.GearShifter
 
 FOLLOW_AGGRESSION = 0.15 # (Acceleration/Decel aggression) Lower is more aggressive
 
@@ -40,6 +42,9 @@ def get_steer_feedforward_erf(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSE
 
 
 class CarInterface(CarInterfaceBase):
+  def __init__(self, CP, CarController, CarState):
+    super().__init__(CP, CarController, CarState)
+    
   params_check_last_t = 0.
   params_check_freq = 0.1 # check params at 10Hz
   params = CarControllerParams()
@@ -397,8 +402,8 @@ class CarInterface(CarInterfaceBase):
           or ret.standstill or not ret.cruiseState.enabled:
           self.CS.resume_button_pressed = True
       elif but == CruiseButtons.DECEL_SET:
-        if not cruiseEnabled and not self.CS.lkMode:
-          self.lkMode = True
+        if not cruiseEnabled and not self.CS.lkaEnabled:
+          self.lkaEnabled = True
         be.type = ButtonType.decelCruise
       elif but == CruiseButtons.CANCEL:
         be.type = ButtonType.cancel
@@ -406,11 +411,15 @@ class CarInterface(CarInterfaceBase):
         be.type = ButtonType.altButton3
       buttonEvents.append(be)
 
-    ret.buttonEvents = buttonEvents
-
     if cruiseEnabled and self.CS.lka_button and self.CS.lka_button != self.CS.prev_lka_button:
-      self.CS.lkMode = not self.CS.lkMode
-      cloudlog.info("button press event: LKA button. new value: %i" % self.CS.lkMode)
+      self.CS.lkaEnabled = not self.CS.lkaEnabled
+      be = car.CarState.ButtonEvent.new_message()
+      be.pressed = True
+      be.type = ButtonType.altButton1
+      buttonEvents.append(be)
+      cloudlog.info("button press event: LKA button. new value: %i" % self.CS.lkaEnabled)
+    
+    ret.buttonEvents = buttonEvents
     
     if t - self.params_check_last_t >= self.params_check_freq:
       self.params_check_last_t = t
@@ -504,6 +513,21 @@ class CarInterface(CarInterfaceBase):
     ret.readdistancelines = self.CS.follow_level
 
     events = self.create_common_events(ret, pcm_enable=False)
+    
+    self.CS.disengageByBrake = self.CS.disengageByBrake or ret.disengageByBrake
+
+    enable_pressed = False
+    enable_from_brake = False
+
+    if self.CS.disengageByBrake and not ret.brakePressed \
+        and self.CS.lkaEnabled and self.CS.cruiseMain \
+        and self.CS.out.gearShifter == GearShifter.drive:
+      enable_pressed = True
+      enable_from_brake = True
+
+    if not ret.brakePressed:
+      self.CS.disengageByBrake = False
+      ret.disengageByBrake = False
 
     if ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
@@ -515,13 +539,13 @@ class CarInterface(CarInterfaceBase):
     if cruiseEnabled:
       if t - self.CS.last_pause_long_on_gas_press_t < 0.5 and t - self.CS.sessionInitTime > 10.:
         events.add(car.CarEvent.EventName.pauseLongOnGasPress)
-      if not ret.standstill and self.CS.lkMode and self.CS.lane_change_steer_factor < 1.:
+      if not ret.standstill and self.CS.lkaEnabled and self.CS.lane_change_steer_factor < 1.:
         events.add(car.CarEvent.EventName.blinkerSteeringPaused)
         steer_paused = True
     if ret.vEgo < self.CP.minSteerSpeed:
       if ret.standstill and cruiseEnabled and not ret.brakePressed and not self.CS.pause_long_on_gas_press and not self.CS.autoHoldActivated and not self.CS.disengage_on_gas and t - self.CS.sessionInitTime > 10. and not self.CS.resume_required:
         events.add(car.CarEvent.EventName.stoppedWaitForGas)
-      elif not steer_paused and self.CS.lkMode and not self.CS.resume_required:
+      elif not steer_paused and self.CS.lkaEnabled and not self.CS.resume_required and not self.CS.autoHoldActivated:
         events.add(car.CarEvent.EventName.belowSteerSpeed)
     if self.CS.autoHoldActivated:
       self.CS.lastAutoHoldTime = t
@@ -534,6 +558,16 @@ class CarInterface(CarInterfaceBase):
     # handle button presses
     for b in ret.buttonEvents:
       # do enable on both accel and decel buttons
+
+      # do disable on LFA button if ACC is disabled
+      if self.MADS_enabled:
+        if b.type in [ButtonType.altButton1] and b.pressed:
+          if not self.CS.lkaEnabled: #disabled LFA
+            if not ret.cruiseState.enabled:
+              events.add(EventName.buttonCancel)
+            else:
+              events.add(EventName.manualSteeringRequired)
+      
       # The ECM will fault if resume triggers an enable while speed is set to 0
       if b.type == ButtonType.accelCruise and c.hudControl.setSpeed > 0 and c.hudControl.setSpeed < 70 and not b.pressed:
         events.add(EventName.buttonEnable)
@@ -541,7 +575,10 @@ class CarInterface(CarInterfaceBase):
         events.add(EventName.buttonEnable)
       # do disable on button down
       if b.type == ButtonType.cancel and b.pressed:
-        events.add(EventName.buttonCancel)
+        if (self.MADS_enabled and not self.CS.lkaEnabled):
+          events.add(EventName.buttonCancel)
+        else:
+          events.add(EventName.pauseLongOnGasPress)
       # The ECM independently tracks a ‘speed is set’ state that is reset on main off.
       # To keep controlsd in sync with the ECM state, generate a RESET_V_CRUISE event on main cruise presses.
       if b.type == ButtonType.altButton3 and b.pressed:

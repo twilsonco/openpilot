@@ -88,10 +88,12 @@ class CarState(CarStateBase):
     self.distance_button = 0
     self.distance_button_last_press_t = 0.
     self.follow_level = int(self._params.get("FollowLevel", encoding="utf8"))
-    self.lkMode = True
+    self.lkaEnabled = True
     set_v_cruise_offset(self._params.get_bool("CruiseSpeedOffset"))
     self.autoHold = self._params.get_bool("GMAutoHold")
-    self.disengage_on_gas = not self._params.get_bool("DisableDisengageOnGas")
+    self.MADS_enabled = self._params.get_bool("MADSEnabled")
+    self.disengage_on_gas = not self.MADS_enabled and not Params().get_bool("DisableDisengageOnGas")
+    self.disengageByBrake = False
     self.autoHoldActive = False
     self.autoHoldActivated = False
     self.regenPaddlePressed = False
@@ -310,7 +312,19 @@ class CarState(CarStateBase):
                     pt_cp.vl["BCMDoorBeltStatus"]["FrontRightDoor"] == 1 or
                     pt_cp.vl["BCMDoorBeltStatus"]["RearLeftDoor"] == 1 or
                     pt_cp.vl["BCMDoorBeltStatus"]["RearRightDoor"] == 1)
+    
 
+    self.park_brake = pt_cp.vl["EPBStatus"]["EPBClosed"]
+    ret.cruiseState.available = pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"] != 0
+    self.prev_cruise_main = self.cruiseMain
+    self.cruiseMain = ret.cruiseState.available
+    if self.cruiseMain and not self.prev_cruise_main:
+      self.lkaEnabled = True
+    elif not self.cruiseMain:
+      self.lkaEnabled = False
+    ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
+    self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
+    
     # 1 - latched
     ret.seatbeltUnlatched = pt_cp.vl["BCMDoorBeltStatus"]["LeftSeatBelt"] == 0
     ret.leftBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 1
@@ -320,7 +334,9 @@ class CarState(CarStateBase):
     if self.blinker and self.vEgo <= self.min_lane_change_speed \
         and (self.a_ego_filtered.x <= self.steer_pause_a_ego_min \
           or self.vEgo <= self.min_steer_speed * 0.5) \
-        and (self.coast_one_pedal_mode_active or self.one_pedal_mode_active) \
+        and (self.coast_one_pedal_mode_active \
+          or self.one_pedal_mode_active \
+          or (self.lkaEnabled and self.cruiseMain)) \
         and self.one_pedal_pause_steering_enabled \
         and not self.steer_unpaused:
       lane_change_steer_factor = 0.0
@@ -337,13 +353,6 @@ class CarState(CarStateBase):
                                          self.lane_change_steer_factor + self.steer_pause_rate)
     
     self.prev_blinker = self.blinker
-    
-
-    self.park_brake = pt_cp.vl["EPBStatus"]["EPBClosed"]
-    ret.cruiseState.available = pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"] != 0
-    self.cruiseMain = ret.cruiseState.available
-    ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
-    self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
 
     # Regen braking is braking
     if self.is_ev:
@@ -506,7 +515,7 @@ class CarState(CarStateBase):
 
     ret.autoHoldActivated = self.autoHoldActivated
     
-    ret.lkMode = self.lkMode
+    ret.lkaEnabled = self.lkaEnabled
     
     self.iter += 1
     return ret

@@ -140,9 +140,14 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_speed_offset.png",
                                   this));
   toggles.append(new ParamControl("DisableDisengageOnGas",
-                                  "Disable disengage on gas",
-                                  "Disable default comma stock disengage on gas feature",
+                                  "Steer when gas pressed",
+                                  "Keep steering when gas (accelerator) is pressed",
                                   "../assets/offroad/icon_car_pedal.png",
+                                  this));
+  toggles.append(new ParamControl("MADSEnabled",
+                                  "MADS (Always on autosteer)",
+                                  "Enables autosteer even when brakes are pressed and before initial engagement. Use cruise main or lane keep assist button to toggle autosteer.",
+                                  "../assets/offroad/img_chffr_wheel.png",
                                   this));
   toggles.append(new ParamControl("LanePositionEnabled",
                                   "Adjustable lane position",

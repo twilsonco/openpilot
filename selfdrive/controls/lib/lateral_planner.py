@@ -119,7 +119,7 @@ class LateralPlanner():
       self.auto_auto_lane_pos_enabled = self._params.get_bool("AutoAutoLanePosition")
       self.second = 0.0
     v_ego = sm['carState'].vEgo
-    active = sm['controlsState'].active
+    active = sm['controlsState'].latActive
     measured_curvature = sm['controlsState'].curvature
 
     if not auto_lane_pos_active and self.auto_lane_pos_active:

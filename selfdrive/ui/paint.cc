@@ -623,7 +623,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
         COLOR_BLACK_ALPHA(80), COLOR_BLACK_ALPHA(20));
     } 
     else if (!scene.lateralPlan.lanelessModeStatus) {
-      if (scene.car_state.getLkMode()){
+      if (scene.car_state.getLkaEnabled()){
         if (scene.color_path){
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
             interp_alert_color(fabs(scene.lateralCorrection), 150), 
@@ -641,7 +641,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
       }
     } 
     else { // differentiate laneless mode color (Grace blue)
-      if (scene.car_state.getLkMode()){
+      if (scene.car_state.getLkaEnabled()){
         if (scene.color_path){
           int g, r = 255.f * float(COLOR_GRACE_BLUE.b) * fabs(scene.lateralCorrection);
           r = CLIP(r, 255.f * COLOR_GRACE_BLUE.r, 255.f * COLOR_GRACE_BLUE.b);
@@ -2800,7 +2800,7 @@ static void ui_draw_vision_event(UIState *s) {
     const int center_x = s->fb_w - radius - bdr_s * 2;
     const int center_y = radius  + (bdr_s * 1.5);
     auto const & bg_colors_ = (s->scene.alt_engage_color_enabled ? alt_bg_colors : bg_colors);
-    const QColor &color = bg_colors_[(s->scene.car_state.getLkMode() ? s->status : UIStatus::STATUS_DISENGAGED)];
+    const QColor &color = bg_colors_[(s->scene.car_state.getLkaEnabled() ? s->status : UIStatus::STATUS_DISENGAGED)];
     NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), color.alpha());
   
     // draw circle behind wheel

@@ -52,6 +52,8 @@ def manager_init():
     ("ReverseSpeedAdjust", "1"),
     ("CustomSounds", "0"),
     ("SilentEngageDisengage", "0"),
+    ("MADSEnabled", "1"),
+    ("DisableDisengageOnGas", "1"),
     ("ScreenDimMode", "2"),
     ("AccelModeButton", "0"),
     ("AccelMode", "0"),

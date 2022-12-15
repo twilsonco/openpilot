@@ -159,6 +159,7 @@ class Controls:
     self.state = State.disabled
     self.enabled = False
     self.active = False
+    self.lat_active = False
     self.can_rcv_error = False
     self.soft_disable_timer = 0
     self.v_cruise_kph = 255
@@ -581,6 +582,8 @@ class Controls:
     self.active = self.state == State.enabled or self.state == State.softDisabling
     if self.active:
       self.current_alert_types.append(ET.WARNING)
+      
+    self.lat_active = self.active or (self.CI.CS.lkaEnabled and self.CI.CS.cruiseMain and self.CI.MADS_enabled)
 
     # Check if openpilot is engaged
     self.enabled = self.active or self.state == State.preEnabled
@@ -615,12 +618,13 @@ class Controls:
     # State specific actions
 
     if not self.active:
-      self.LaC.reset()
+      if not self.lat_active:
+        self.LaC.reset()
       self.LoC.reset(v_pid=CS.vEgo)
     else:
       if self.CI.CS.one_pedal_mode_active or self.CI.CS.coast_one_pedal_mode_active:
         self.LoC.reset(v_pid=CS.vEgo)
-      if not self.CI.CS.lkMode:
+      if not self.CI.CS.lkaEnabled:
         self.LaC.reset()
 
     if not self.joystick_mode:
@@ -641,7 +645,8 @@ class Controls:
                                                                              lat_plan.curvatures,
                                                                              lat_plan.curvatureRates,
                                                                              t_since_plan)
-      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, 
+      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.lat_active, 
+                                                                             CS, self.CP, self.VM, params, 
                                                                              desired_curvature, desired_curvature_rate, self.sm['liveLocationKalman'])
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
@@ -661,7 +666,7 @@ class Controls:
     angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \
       abs(actuators.steeringAngleDeg - CS.steeringAngleDeg) > STEER_ANGLE_SATURATION_THRESHOLD
 
-    if angle_control_saturated and not CS.steeringPressed and self.active:
+    if angle_control_saturated and not CS.steeringPressed and self.lat_active:
       self.saturated_count += 1
     else:
       self.saturated_count = 0
@@ -675,7 +680,7 @@ class Controls:
         left_deviation = actuators.steer > 0 and lat_plan.dPathPoints[0] < -0.1
         right_deviation = actuators.steer < 0 and lat_plan.dPathPoints[0] > 0.1
 
-        if left_deviation or right_deviation and CS.lkMode:
+        if left_deviation or right_deviation and CS.lkaEnabled:
           self.events.add(EventName.steerSaturated)
 
     # Ensure no NaNs/Infs
@@ -785,6 +790,7 @@ class Controls:
     controlsState.lateralPlanMonoTime = self.sm.logMonoTime['lateralPlan']
     controlsState.enabled = self.enabled
     controlsState.active = self.active
+    controlsState.latActive = self.lat_active
     controlsState.curvature = curvature
     controlsState.state = self.state
     controlsState.engageable = not self.events.any(ET.NO_ENTRY)
