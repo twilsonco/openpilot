@@ -356,8 +356,7 @@ class SpeedLimitController():
       # no event while inactive
       return
 
-    if self._state_prev <= SpeedLimitControlState.tempInactive \
-      and not self._resolver._sm['carState'].onePedalModeActive and not self._resolver._sm['carState'].coastOnePedalModeActive:
+    if self._state_prev <= SpeedLimitControlState.tempInactive:
       events.add(EventName.speedLimitActive)
     elif self._speed_limit_changed != 0:
       events.add(EventName.speedLimitValueChange)

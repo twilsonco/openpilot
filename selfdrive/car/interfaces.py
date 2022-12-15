@@ -174,8 +174,6 @@ class CarInterfaceBase():
     # e.g. Chrysler does not spam the resume button yet, so resuming with gas is handy. FIXME!
     if (self.disengage_on_gas and cs_out.gasPressed and (not self.CS.out.gasPressed) and cs_out.vEgo > gas_resume_speed) or \
        (cs_out.brakePressed and (not self.CS.out.brakePressed or not cs_out.standstill)):
-      if (self.MADS_enabled and cs_out.lkaEnabled):
-        cs_out.disengageByBrake = True
       if (cs_out.cruiseState.enabled):
         events.add(EventName.pedalPressed)
 

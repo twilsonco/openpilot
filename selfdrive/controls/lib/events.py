@@ -320,6 +320,8 @@ def pre_lane_change(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) ->
     str2 = "(no auto lane change below {})".format("40mph" if not metric else "65kph")
   elif alert == LaneChangeAlert.nudgelessBlockedOnePedal:
     str2 = "(no auto lane change in one-pedal mode)"
+  elif alert == LaneChangeAlert.nudgelessLongDisabled:
+    str2 = "(no auto lane change when not cruising)"
   
   if str2 == "":
     return Alert(

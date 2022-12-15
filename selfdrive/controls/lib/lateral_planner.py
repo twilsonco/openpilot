@@ -217,9 +217,12 @@ class LateralPlanner():
         if nudgeless_allowed and t - self.nudgeless_blinker_press_t > 3.:
           nudgeless_allowed = False
           self.lane_change_alert = LaneChangeAlert.nudgelessBlockedTimeout
-        if nudgeless_allowed and (sm['carState'].onePedalModeActive or sm['carState'].coastOnePedalModeActive):
+        if nudgeless_allowed and sm['carState'].onePedalModeActive:
           nudgeless_allowed = False
           self.lane_change_alert = LaneChangeAlert.nudgelessBlockedOnePedal
+        if nudgeless_allowed and not sm['controlsState'].active:
+          nudgeless_allowed = False
+          self.lane_change_alert = LaneChangeAlert.nudgelessLongDisabled
         if nudgeless_allowed and self.adjacentLaneTraffic == LANE_TRAFFIC.ONCOMING:
           nudgeless_allowed = False
           self.lane_change_alert = LaneChangeAlert.nudgelessBlockedOncoming
