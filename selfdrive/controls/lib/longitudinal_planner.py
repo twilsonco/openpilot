@@ -220,8 +220,7 @@ class Planner():
     accel_limits = [min(accel_limits_turns[0], a_mpc['custom']), accel_limits_turns[1]]
     self.mpcs['custom'].set_accel_limits(accel_limits[0], accel_limits[1])
 
-    if (sm['carState'].onePedalModeActive or sm['carState'].coastOnePedalModeActive) \
-        and not self.one_pedal_mode_op_braking_allowed:
+    if sm['carState'].onePedalModeActive and not self.one_pedal_mode_op_braking_allowed:
       self.v_desired_trajectory = np.ones(CONTROL_N) * v_ego
       self.a_desired_trajectory = np.ones(CONTROL_N) * a_ego
       self.j_desired_trajectory = np.zeros(CONTROL_N)
@@ -238,7 +237,7 @@ class Planner():
             self.mpcs['lead0p1'].tr = tr
           else:
             continue
-        if (sm['carState'].onePedalModeActive or sm['carState'].coastOnePedalModeActive) \
+        if sm['carState'].onePedalModeActive \
             and (key not in BRAKE_SOURCES or (key == 'custom' and c_source not in BRAKE_SOURCES)):
           self.mpcs[key].reset_mpc()
           continue

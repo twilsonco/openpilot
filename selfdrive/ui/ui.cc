@@ -291,7 +291,7 @@ static void update_state(UIState *s) {
     }
     if (scene.disableDisengageOnGasEnabled){
       scene.onePedalModeActive = Params().getBool("OnePedalMode");
-      scene.onePedalEngageOnGasEnabled = Params().getBool("OnePedalModeEngageOnGas");
+      scene.onePedalModeSimple = Params().getBool("OnePedalModeSimple");
       scene.visionBrakingEnabled = Params().getBool("TurnVisionControl");
       scene.mapBrakingEnabled = Params().getBool("TurnSpeedControl");
     }
@@ -685,8 +685,7 @@ static void update_state(UIState *s) {
   scene.brake_indicator_last_t = t;
 
   if (t - scene.sessionInitTime > 3.){
-    if ((scene.car_state.getOnePedalModeActive() || scene.car_state.getCoastOnePedalModeActive())
-      || (s->status == UIStatus::STATUS_DISENGAGED && scene.controls_state.getVCruise() <= 3 && (scene.onePedalModeActive || scene.disableDisengageOnGasEnabled))){
+    if (scene.car_state.getOnePedalModeActive()){
       scene.one_pedal_fade += fade_time_step * (t - scene.one_pedal_fade_last_t);
       if (scene.one_pedal_fade > 1.)
         scene.one_pedal_fade = 1.;
@@ -749,7 +748,7 @@ static void update_vision(UIState *s) {
 
 static void update_status(UIState *s) {
   if (s->scene.started && s->sm->updated("controlsState")) {
-    auto controls_state = (*s->sm)["controlsState"].getControlsState();
+    auto controls_state = s->scene.controls_state;
     auto alert_status = controls_state.getAlertStatus();
     if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       s->status = STATUS_WARNING;
@@ -973,17 +972,17 @@ void Device::updateWakefulness(const UIState &s) {
 }
 
 int offset_button_y(UIState *s, int center_y, int radius){
-  if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL){
+  if (s->scene.controls_state.getAlertSize() == cereal::ControlsState::AlertSize::SMALL){
     center_y = 2 * center_y / 3 + radius / 2;
   }
-  else if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::MID){
+  else if (s->scene.controls_state.getAlertSize() == cereal::ControlsState::AlertSize::MID){
     center_y = (center_y + radius) / 2;
   }
   return center_y;
 }
 
 int offset_right_side_button_x(UIState *s, int center_x, int radius, bool doShift){
-  if ((doShift || (*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::SMALL)
+  if ((doShift || s->scene.controls_state.getAlertSize() == cereal::ControlsState::AlertSize::SMALL)
   && s->scene.measure_cur_num_slots > 0 && !s->scene.map_open){
     int off = s->scene.measure_slots_rect.right() - center_x;
     center_x = s->scene.measure_slots_rect.x - off - bdr_s;

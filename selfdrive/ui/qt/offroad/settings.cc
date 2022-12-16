@@ -140,9 +140,14 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_speed_offset.png",
                                   this));
   toggles.append(new ParamControl("DisableDisengageOnGas",
-                                  "Disable disengage on gas",
-                                  "Disable default comma stock disengage on gas feature",
+                                  "Steer when gas pressed",
+                                  "Keep steering when gas (accelerator) is pressed",
                                   "../assets/offroad/icon_car_pedal.png",
+                                  this));
+  toggles.append(new ParamControl("MADSEnabled",
+                                  "MADS (Always on autosteer)",
+                                  "Enables autosteer even when brakes are pressed and before initial engagement. Use cruise main or lane keep assist button to toggle autosteer.",
+                                  "../assets/offroad/img_chffr_wheel.png",
                                   this));
   toggles.append(new ParamControl("LanePositionEnabled",
                                   "Adjustable lane position",
@@ -196,32 +201,22 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   this));
   toggles.append(new ParamControl("OnePedalMode",
                                   "[GM] One-pedal mode (tap me)",
-                                  "In combination with the \"Disable disengage on gas\" option, you control speed with gas pedal (with optional, adjustable braking) while OP continues to steer and brake for lead car following. To activate, ① (see \"One-pedal/Always-on-steering engage on gas\" below) set cruise speed to 1 and pedal icon will replace max speed indicator; set/resume button to return to normal cruise. ② Tap pedal icon to toggle one-pedal mode (see below). If one-pedal mode is active, then vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1/2/3 = (⚫️)/🟢/🟠/🔴 = (regen/engine)/light/moderate/heavy braking. ③ Press follow distance button to toggle between persistent light/moderate braking; hold for temporary heavy braking. ④ Toggle between friction 🟢/🟠/🔴 and regen/engine ⚫️ braking by tapping the pedal icon or by using the follow distance button; one press will activating friction braking if not active, and a double press while the gas pedal is pressed, or while stopped, will deactivate friction braking.",
+                                  "In combination with the \"MADS\" option, toggle by double-pressing the Volt regen paddle. When active, the max speed indicator will be replaced with a gas pedal icon, and op will apply light braking to bring you to a stop when you're not pressing the gas pedal.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("OnePedalModeSimple",
                                    "[GM] One-pedal pro brakes ⚠️",
-                                   "When using one-pedal mode, COMPLETELY DISABLE ALL OTHER FORMS OF OPENPILOT BRAKING. No additional braking will be automatically applied to slow/stop you behind a lead car, or to slow for a curve. You are solely responsible for applying brakes using adjustable one-pedal braking with the follow button or using the actual brakes.",
+                                   "If this option is disabled and one-pedal mode is active, OpenPilot will smoothly apply extra brakes to stop for other traffic. When this option is enabled, no additional braking is applied so you must stop for cars manually. You can toggle this while one-pedal mode is active by tapping the one-pedal icon. When this is disabled, an additional white circle will appear around the one-pedal icon.",
                                    "../assets/offroad/icon_car_pedal.png",
                                    this));
   toggles.append(new ParamControl("OnePedalDLCoasting",
                                   "[Volt] One-pedal D/L coast",
-                                  "When in one-pedal mode with regen braking ⚫️ active, regen will only be used when in L mode. In D, no braking whatsoever will be applied while you are not pressing the gas. (In fact a light press will result in more braking than no press at all)",
+                                  "When in one-pedal mode, regen/braking will only be used when in L mode. In D, no braking whatsoever will be applied while you are not pressing the gas. (In fact a light press will result in more braking than no press at all)",
                                   "../assets/offroad/icon_gear_shifter.png",
                                   this));
-  toggles.append(new ParamControl("OnePedalModeEngageOnGas",
-                                  "[GM] One-pedal engage on gas (EoG)",
-                                  "When you press the gas in cruise mode at speed (i.e. not when resuming from a stop), enter one-pedal/always-on-steering mode. Increase or reset speed to return to normal cruise.",
-                                  "../assets/offroad/icon_car_pedal.png",
-                                  this));
-  toggles.append(new ParamControl("OnePedalDLEngageOnGas",
-                                  "[Volt] One-pedal D/L EoG",
-                                  "Tie the above option to the gear shifter D/L position. Off in D; on in L.",
-                                  "../assets/offroad/icon_gear_shifter.png",
-                                  this));
-  toggles.append(new ParamControl("OnePedalPauseBlinkerSteering",
-                                  "One-pedal no slow blinker steer",
-                                  "When in one-pedal mode, under 20mph with the blinker on, steering is paused to make it easier to perform sharp turns.",
+  toggles.append(new ParamControl("MADSPauseBlinkerSteering",
+                                  "MADS no slow blinker steer",
+                                  "When MADS is active, under 20mph with the blinker on, steering is paused to make it easier to perform sharp turns.",
                                   "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
   toggles.append(new ParamControl("BrakeIndicator",

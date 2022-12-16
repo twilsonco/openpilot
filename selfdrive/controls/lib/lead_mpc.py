@@ -144,6 +144,8 @@ class DynamicFollow():
   cutin_dist_penalty_bp = [i * 0.3 for i in [15, 30., 60.]]	# [distance from cut-in in ft]
   cutin_dist_penalty_v = [1.5, 0.75, 0.0]  # [follow profile change]
   
+  cutin_dist_max = 50.0 # [m] leads past this distance aren't used
+  
   # penalize more for approaching cut-ins, and *offset* the distance penalty for cut-ins pulling away
   cutin_vel_penalty_bp = [i * CV.MPH_TO_MS for i in [-15., 0., 15.]]  # [mph] relative velocity of new lead
   cutin_vel_penalty_v = [-1.5,0., 2.5]  # [follow profile] additionally go to close follow for new lead approaching too quickly, or *offset* the penalty for a close cutin if they're moving away (to keep from darting after a new cutin)
@@ -210,8 +212,10 @@ class DynamicFollow():
     dur = t - self.t_last
     self.t_last = t
     self.lead_gone = (self.has_lead_last and not has_lead) \
-                or (has_lead and self.lead_d_last - lead_d < -5.0)
-    self.new_lead = has_lead and (not self.has_lead_last or self.lead_d_last - lead_d > 5.0)
+                or (has_lead and self.lead_d_last - lead_d < -5.0 \
+                  and lead_d <= self.cutin_dist_max)
+    self.new_lead = has_lead and lead_d <= self.cutin_dist_max \
+                and (not self.has_lead_last or self.lead_d_last - lead_d > 5.0)
     self.lead_d_last = lead_d if has_lead else 1000.0
     self.has_lead_last = has_lead
     if self.new_lead:
@@ -296,7 +300,6 @@ class LeadMpc():
     self.dynamic_follow_active = False
     
     self.one_pedal_mode_active_last = False
-    self.coast_one_pedal_mode_active_last = False
     
     self.params_check_last_t = 0.
     self.params_check_freq = 0.5 # check params at 2Hz
@@ -341,10 +344,9 @@ class LeadMpc():
         self.df.reset(1)
       self.dynamic_follow_active = dynamic_follow_active
     
-    if (not CS.onePedalModeActive and self.one_pedal_mode_active_last) or (not CS.coastOnePedalModeActive and self.coast_one_pedal_mode_active_last):
+    if not CS.onePedalModeActive and self.one_pedal_mode_active_last:
       self.df.reset(1)
     self.one_pedal_mode_active_last = CS.onePedalModeActive
-    self.coast_one_pedal_mode_active_last = CS.coastOnePedalModeActive
     
     if follow_level != self.follow_level_last:
       self.df.set_fp(follow_level)

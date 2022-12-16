@@ -209,7 +209,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     && QUIState::ui_state.scene.one_pedal_touch_rect.ptInRect(e->x(), e->y())
     && QUIState::ui_state.scene.one_pedal_fade > 0.)
   {
-    Params().putBool("OnePedalModeEngageOnGas", !Params().getBool("OnePedalModeEngageOnGas"));
+    Params().putBool("OnePedalModeSimple", !Params().getBool("OnePedalModeSimple"));
     return;
   }
   
