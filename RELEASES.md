@@ -1,3 +1,9 @@
+Version tw-0.8.12-12_tws (2022-12-16)
+========================
+ * MADS! always-on steering. enable in settings. toggle steering with LKA button (or cruise main)
+ * [Volt] MADS one-pedal mode. need MADS enabled to use. toggle by double-pressing regen paddle
+   * (coming to other cars as a toggle in settings later)
+
 Version tw-0.8.12-11_tws (2022-12-09)
 ========================
   * Huge One Pedal Mode improvements
