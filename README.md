@@ -72,6 +72,7 @@ Please show your support by contributing to the ongoing development of this proj
 - [x] [Comma3] AGNOS4 OS
 - [x] [Volt/Acadia] Alternate lateral (steering) tunes using the new "torque" controller
 - [Volt] Much improved steering control over stock (working on upstreaming)
+- [x] MADS (always-on autosteering). Enable in settings and toggle with the lane keep assist button or with the cruise main switch. Openpilot will autosteer at all times, even when the brakes are pressed. Optional to pause steering at low speeds when blinker is on and you're decelerating.
 - [x] [Volt 2017] Auto-resume behind stopped lead car as they pull away; a.k.a. stop and go (ported from kegman)
 - [x] [Volt 2018] Auto-creep behind stopped lead car as they pull away (tap gas or resume button to resume)
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
@@ -96,8 +97,9 @@ Please show your support by contributing to the ongoing development of this proj
     * Turns on automatic lane positioning automatically when at 22mph+ with clear lanelines and adjacent traffic is present
 - [x] [GM] [✅] Dynamic follow mode (WIP)
 - [x] [GM] Toggle steering with LKAS button (wheel color changes to indicate disengagement)
-- [x] [GM] One-pedal driving a.k.a. autosteering only a.k.a. toggle longitudinal control: using regen (volt) and/or light/moderate/heavy braking, control OP all the way to a stop, without a lead, and without disengaging, with just the gas pedal (see below) (application of friction brakes originally suggested by cybertronicify — 10/06/2021)
-    * extra braking is applied automatically for stopping behind leads
+- [x] [Volt] One-pedal driving. OpenPilot applies light braking when you're not pressing gas, so you can come to a stop without using brakes. (application of friction brakes originally suggested by cybertronicify — 10/06/2021)
+    * toggle on Volt with double press of the regen paddle
+    * extra braking is applied automatically for stopping behind leads (optional. Disable by enabling one pedal "pro brakes")
 - [x] [✅] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only. must enable "Disable use of lanelines" for button to appear* (ported from sunnyhaibin)
 - [x] [✅] Normal/sport/eco acceleration modes [cycle with on-screen button] (adapted from kegman implementation)
     * Eco mode is great for
@@ -142,29 +144,6 @@ Please show your support by contributing to the ongoing development of this proj
         * Vehicle info: Time since driver interaction, time since driver intervention, time since driver distraction, Engine RPM, engine coolant temperature (°C and °F), engine RPM + coolant temperature (°C and °F), steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, lane width, distance from lane center, percent grade of current road (one based on GPS, one based on device accelerometer), Volt high-voltage battery wattage [kW], voltage [V], current [A], voltage+wattage, drag force/power, brake force/power, regen force/power, electric motor force/power, gas engine power, total acceleration force/power, EV efficiency (instantaneous, 5 mile average, total), EV power consumption (instant/5mi/total), EV instantaneous efficiency/consumption (depending on sign), EV drivetrain efficiency (amount of power making it to the tires),  
         * Lead/traffic info: follow distance level, lead distance [length], desired lead distance [length], lead distance [time], desired lead distance [time], follow distance and acceleration mpc costs [in units of the stock OP costs; i.e. 2.5 means 2.5× the stock OP value], relative lead velocity, absolute lead velocity, number of cars (total, ongoing, oncoming, stopped, ongoing in adjacent lanes), minimum follow distance of ongoing cars in adjacent lanes
         * ...and others
-- [x] [GM] [✅] **One-pedal driving**: OP will apply light to heavy braking when you let completely off the gas, allowing you to come to a full stop and resume without OP disengaging
-    * **Not necessary to enable the one-pedal toggle; you engage/disengage while driving**
-    * Engage in three ways
-      1. While cruise is set, press and hold the follow distance button for 0.5s (continue to hold for immediate hard braking if necessary)
-      2. If one-pedal engage on gas toggle is enabled, press gas while cruise is set and traveling above 1mph
-      3. While cruise is set, lower cruise speed to 1
-    * When in one-pedal mode, the max speed indicator in openpilot will be replaced with a one-pedal mode indicator. Tap the one-pedal icon to toggle one-pedal engage on gas mode
-    * Vehicle follow distance indicator and pedal icon color indicate the one-pedal braking profile in use; 1 bar/2 bar/3 bar = (⚫️)/🟢/🟠/🔴 = (regen-engine)/light/moderate/heavy braking
-    * Control braking with follow distance button:
-      * *Single press*: alternate between persistent light or moderate 🟢/🟠 braking
-      * *Press and hold*: apply temporary hard braking 🔴 (Chevy's the ones that decided a brake paddle on the steering wheel was a good idea; not me)
-      * *Press when friction braking disabled*: activate friction braking 🟢
-      * *Double-press when stopped or when gas is pressed and friction braking is active*: deactivate friction braking/activate regen/engine braking ⚫️
-    * [Volt] Coasting: using gear shifter, select D for coasting or L for regen (thanks to jshuler)
-    * When one-pedal mode active and blinker is on below 20mph, autosteer will automatically pause
-      * [Optional; tap wheel icon to toggle while in one-pedal mode]
-      * A second white circle around the wheel icon indicates autosteer pause is enabled
-    * *Must have disable disengage on gas toggle enabled*
-- [x] [Volt] [✅] One-pedal D/L coasting: In one-pedal regen/engine ⚫️ braking mode in D, no braking whatsoever will be applied. Shift to L for max regen. Happy hypermiling!
-- [x] [GM] [✅] One-pedal engage on gas: When cruising at speed and the driver presses the gas (i.e. not when resuming from a stop), engage one-pedal mode
-    * Toggle while one-pedal mode enabled by tapping the pedal icon
-    * Indiated by an extra circle around one-pedal icon
-- [x] [Volt] [✅] One-pedal D/L engage on gas: tie the engage on gas setting to the D/L gear shifter position. Off in D; on in L. (suggested by Shadowlight5)
 - [x] [GM] panda-based GM steering fault fix (thanks jshuler)
 - [x] Remember last follow mode (ported from kegman)
 - [x] Grey/White panda support
