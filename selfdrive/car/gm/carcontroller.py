@@ -99,7 +99,7 @@ class CarController():
 
     # Gas/regen prep
     if (frame % 4) == 0:
-      if CS.out.gas > 1e-5 or not CS.out.onePedalModeActive or CS.out.brakePressed:
+      if CS.out.gas >= 1e-5 or not CS.out.onePedalModeActive or CS.out.brakePressed:
         self.one_pedal_pid.reset()
         self.one_pedal_decel = CS.out.aEgo
         self.one_pedal_decel_in = CS.out.aEgo
@@ -208,11 +208,6 @@ class CarController():
           if CS.coasting_long_plan in COAST_SOURCES and self.apply_brake > 0.0:
             self.apply_brake *= lead_long_brake_lockout_factor
         self.apply_gas = int(round(self.apply_gas))
-        if CS.out.gas >= 1e-5:
-          self.apply_brake = 0
-        else:
-          self.apply_brake = int(round(self.apply_brake))
-      CS.brake_cmd = self.apply_brake
 
     if CS.showBrakeIndicator:
       CS.apply_brake_percent = 0.
@@ -237,6 +232,11 @@ class CarController():
     # Gas/regen and brakes - all at 25Hz
     if (frame % 4) == 0:
       idx = (frame // 4) % 4
+      
+      if CS.out.gas >= 1e-5:
+        self.apply_brake = 0
+      else:
+        self.apply_brake = int(round(self.apply_brake))
 
       if CS.cruiseMain and not enabled and CS.autoHold and CS.autoHoldActive and not CS.out.gas > 1e-5 and CS.out.gearShifter in ['drive','low'] and CS.out.vEgo < 0.02 and not CS.regen_paddle_pressed:
         # Auto Hold State
@@ -257,6 +257,8 @@ class CarController():
         else:
           car_stopping = no_pitch_apply_gas < P.ZERO_GAS
           standstill = CS.pcm_acc_status == AccState.STANDSTILL
+          if standstill:
+            self.apply_gas = P.MAX_ACC_REGEN
           at_full_stop = enabled and standstill and car_stopping
           near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
 
@@ -275,6 +277,8 @@ class CarController():
       
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, acc_enabled, at_full_stop))
 
+
+    CS.brake_cmd = self.apply_brake
 
     # Send dashboard UI commands (ACC status), 25hz
     if (frame % 4) == 0:
