@@ -31,8 +31,14 @@ REGEN_PADDLE_STOP_SPEED = 5.0 * CV.MPH_TO_MS
 
 GearShifter = car.CarState.GearShifter
 class GEAR_SHIFTER2:
+  INBETWEEN_PARK_AND_REVERSE = 0
+  PARK = 1
+  REVERSE = 2
+  NEUTRAL = 3
   DRIVE = 4
+  REGEN_PADDLE_DRIVE = 5
   LOW = 6
+  REGEN_PADDLE_LOW = 7
   
 def ev_regen_accel(v_ego, ice_on):
   gas_brake_threshold = interp(v_ego, CarControllerParams.EV_GAS_BRAKE_THRESHOLD_BP, CarControllerParams.EV_GAS_BRAKE_THRESHOLD_ICE_V if ice_on else CarControllerParams.EV_GAS_BRAKE_THRESHOLD_V)
@@ -94,7 +100,7 @@ class CarState(CarStateBase):
     set_v_cruise_offset(self._params.get_bool("CruiseSpeedOffset"))
     self.autoHold = self._params.get_bool("GMAutoHold")
     self.MADS_enabled = self._params.get_bool("MADSEnabled")
-    self.disengage_on_gas = not self.MADS_enabled and not Params().get_bool("DisableDisengageOnGas")
+    self.disengage_on_gas = not self.MADS_enabled or not Params().get_bool("DisableDisengageOnGas")
     self.autoHoldActive = False
     self.autoHoldActivated = False
     self.regen_paddle_pressed = False
@@ -132,11 +138,10 @@ class CarState(CarStateBase):
     self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False
     
-    self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode") and self.MADS_enabled
-    self.one_pedal_mode_op_braking_allowed = not self._params.get_bool("OnePedalModeSimple")
-    self.one_pedal_dl_coasting_enabled = self.is_ev and self._params.get_bool("OnePedalDLCoasting") and (self.one_pedal_mode_enabled or not self.disengage_on_gas)
-    self.one_pedal_mode_active = self.one_pedal_mode_enabled and self._params.get_bool("OnePedalModeActive")
-    self.one_pedal_mode_checked_on_start = False
+    self.one_pedal_mode_enabled = self._params.get_bool("MADSOnePedalMode") and self.MADS_enabled
+    self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking")
+    self.one_pedal_dl_coasting_enabled = True
+    self.one_pedal_mode_active = self.one_pedal_mode_enabled
     self.long_active = False
     self.one_pedal_mode_temporary = False
     self.one_pedal_mode_regen_paddle_double_press_time = 0.7
@@ -229,11 +234,8 @@ class CarState(CarStateBase):
       self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
       if not self.disengage_on_gas:
         self.MADS_pause_steering_enabled = self._params.get_bool("MADSPauseBlinkerSteering")
-        self.one_pedal_mode_enabled = self._params.get_bool("OnePedalMode")
-        self.one_pedal_mode_op_braking_allowed = not self._params.get_bool("OnePedalModeSimple")
-        if not self.one_pedal_mode_checked_on_start:
-          self.one_pedal_mode_checked_on_start = True
-          self.one_pedal_mode_active = self.one_pedal_mode_enabled and self._params.get_bool("OnePedalModeActive")
+        self.one_pedal_mode_enabled = self._params.get_bool("MADSOnePedalMode")
+        self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking")
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
       
@@ -327,7 +329,7 @@ class CarState(CarStateBase):
         if t - self.regen_paddle_pressed_last_t <= self.one_pedal_mode_regen_paddle_double_press_time:
           self.one_pedal_mode_active = not self.one_pedal_mode_active
           self.one_pedal_mode_temporary = False
-          put_nonblocking("OnePedalModeActive", "1") # persists across drives
+          put_nonblocking("MADSOnePedalMode", str(int(self.one_pedal_mode_active))) # persists across drives
           cloudlog.info(f"Toggling one-pedal mode with double-regen press. New value: {self.one_pedal_mode_active}")
         self.regen_paddle_pressed_last_t = t
       elif not self.one_pedal_mode_active and regen_paddle_pressed and self.regen_paddle_pressed \
@@ -481,7 +483,7 @@ class CarState(CarStateBase):
       self.cruise_enabled_last_t = t
       
     self.cruise_enabled_last = cruise_enabled
-        
+    
     ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active
     ret.onePedalModeTemporary = self.one_pedal_mode_temporary
     
@@ -489,6 +491,8 @@ class CarState(CarStateBase):
     ret.pitch = self.pitch
 
     ret.autoHoldActivated = self.autoHoldActivated
+    
+    ret.cruiseMain = self.cruiseMain
     
     ret.lkaEnabled = self.lkaEnabled
     self.v_ego_prev = ret.vEgo

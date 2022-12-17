@@ -166,7 +166,7 @@ class Controls:
     self.v_cruise_kph_last = 0
     self.v_cruise_last_changed = 0.
     self.stock_speed_adjust = not params.get_bool("ReverseSpeedAdjust")
-    self.one_pedal_mode_op_braking_allowed = not params.get_bool("OnePedalModeSimple")
+    self.MADS_lead_braking_enabled = params.get_bool("MADSLeadBraking")
     self.mismatch_counter = 0
     self.can_error_counter = 0
     self.last_blinker_frame = 0
@@ -251,7 +251,7 @@ class Controls:
       self.interaction_timer = t - self.interaction_last_t
       self.intervention_timer = t - self.intervention_last_t
       self.distraction_timer = t - self.distraction_last_t
-      self.one_pedal_mode_op_braking_allowed = not self._params.get_bool("OnePedalModeSimple")
+      self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking")
     
     network_strength = self.sm['deviceState'].networkStrength
     if network_strength != self.network_strength_last:
@@ -608,7 +608,7 @@ class Controls:
     if not self.active:
       if not self.lat_active:
         self.LaC.reset()
-      if not CS.onePedalModeActive or not self.one_pedal_mode_op_braking_allowed:
+      if not self.MADS_lead_braking_enabled or not self.CI.CS.cruiseMain:
         self.LoC.reset(v_pid=CS.vEgo)
     else:
       if not self.CI.CS.lkaEnabled:
@@ -618,7 +618,7 @@ class Controls:
       # accel PID loop
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS, self.CI)
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
-      actuators.accel = self.LoC.update(self.active or CS.onePedalModeActive, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
+      actuators.accel = self.LoC.update(self.active or self.CI.CS.MADS_lead_braking_enabled, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
       
       # compute pitch-compensated accel
       if self.sm.updated['liveParameters']:
@@ -778,6 +778,7 @@ class Controls:
     controlsState.enabled = self.enabled
     controlsState.active = self.active
     controlsState.latActive = self.lat_active
+    controlsState.madsEnabled = self.CI.MADS_enabled and not self.active and self.CI.CS.cruiseMain
     controlsState.curvature = curvature
     controlsState.state = self.state
     controlsState.engageable = not self.events.any(ET.NO_ENTRY)

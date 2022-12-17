@@ -145,9 +145,24 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("MADSEnabled",
-                                  "MADS (Always on autosteer)",
-                                  "Enables autosteer even when brakes are pressed and before initial engagement. Use cruise main or lane keep assist button to toggle autosteer.",
+                                  "[GM] MADS (tap me)",
+                                  "MADS = Modified Assistive Driving Safety. Three independently toggle-able, always-on features: Autosteer, Lead braking, and One-pedal mode. This toggle must be enabled to use any of them. Toggle autosteer (even when brakes are pressed and before initial engagement) using the lane keep assist steering wheel button. Use cruise main to shut off all OP control. When MADS is running, the max speed is replaced by the MADS icon",
                                   "../assets/offroad/img_chffr_wheel.png",
+                                  this));
+  toggles.append(new ParamControl("MADSOnePedalMode",
+                                  "[GM] MADS One-pedal mode (tap me)",
+                                  "Toggle by double-pressing the Volt regen paddle or tapping the MADS icon. When active, the MADS icon will turn blue 🔵, and op will apply light braking to bring you to a stop when you're not pressing the gas pedal.",
+                                  "../assets/offroad/icon_car_pedal.png",
+                                  this));
+  toggles.append(new ParamControl("MADSLeadBraking",
+                                   "[GM] MADS Lead braking",
+                                   "Toggle by pressing the ACC distance button when MADS icon is showing. OpenPilot will smoothly stop for lead cars. When this is enabled, an additional white circle will appear around the MADS icon.",
+                                   "../assets/offroad/icon_car_pedal.png",
+                                   this));
+  toggles.append(new ParamControl("MADSPauseBlinkerSteering",
+                                  "MADS no slow blinker steer",
+                                  "When MADS is active, under 20mph with the blinker on, steering is paused to make it easier to perform sharp turns.",
+                                  "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
   toggles.append(new ParamControl("LanePositionEnabled",
                                   "Adjustable lane position",
@@ -198,26 +213,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "[GM] Engine/regen braking",
                                   "Disable friction braking when OP is slowing to maintain cruise/speed limit; still brake for following/curves",
                                   "../assets/img_brake.png",
-                                  this));
-  toggles.append(new ParamControl("OnePedalMode",
-                                  "[GM] One-pedal mode (tap me)",
-                                  "In combination with the \"MADS\" option, toggle by double-pressing the Volt regen paddle. When active, the max speed indicator will be replaced with a gas pedal icon, and op will apply light braking to bring you to a stop when you're not pressing the gas pedal.",
-                                  "../assets/offroad/icon_car_pedal.png",
-                                  this));
-  toggles.append(new ParamControl("OnePedalModeSimple",
-                                   "[GM] One-pedal pro brakes ⚠️",
-                                   "If this option is disabled and one-pedal mode is active, OpenPilot will smoothly apply extra brakes to stop for other traffic. When this option is enabled, no additional braking is applied so you must stop for cars manually. You can toggle this while one-pedal mode is active by tapping the one-pedal icon. When this is disabled, an additional white circle will appear around the one-pedal icon.",
-                                   "../assets/offroad/icon_car_pedal.png",
-                                   this));
-  toggles.append(new ParamControl("OnePedalDLCoasting",
-                                  "[Volt] One-pedal D/L coast",
-                                  "When in one-pedal mode, regen/braking will only be used when in L mode. In D, no braking whatsoever will be applied while you are not pressing the gas. (In fact a light press will result in more braking than no press at all)",
-                                  "../assets/offroad/icon_gear_shifter.png",
-                                  this));
-  toggles.append(new ParamControl("MADSPauseBlinkerSteering",
-                                  "MADS no slow blinker steer",
-                                  "When MADS is active, under 20mph with the blinker on, steering is paused to make it easier to perform sharp turns.",
-                                  "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
   toggles.append(new ParamControl("BrakeIndicator",
                                   "[GM] Power/Brake indicator",

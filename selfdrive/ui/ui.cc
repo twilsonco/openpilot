@@ -290,8 +290,8 @@ static void update_state(UIState *s) {
       scene.lane_pos = std::stoi(Params().get("LanePosition"));
     }
     if (scene.disableDisengageOnGasEnabled){
-      scene.onePedalModeActive = Params().getBool("OnePedalMode");
-      scene.onePedalModeSimple = Params().getBool("OnePedalModeSimple");
+      scene.onePedalModeActive = Params().getBool("MADSOnePedalMode");
+      scene.onePedalModeSimple = !Params().getBool("MADSLeadBraking");
       scene.visionBrakingEnabled = Params().getBool("TurnVisionControl");
       scene.mapBrakingEnabled = Params().getBool("TurnSpeedControl");
     }
@@ -685,7 +685,7 @@ static void update_state(UIState *s) {
   scene.brake_indicator_last_t = t;
 
   if (t - scene.sessionInitTime > 3.){
-    if (scene.car_state.getOnePedalModeActive()){
+    if (scene.controls_state.getMadsEnabled()){
       scene.one_pedal_fade += fade_time_step * (t - scene.one_pedal_fade_last_t);
       if (scene.one_pedal_fade > 1.)
         scene.one_pedal_fade = 1.;

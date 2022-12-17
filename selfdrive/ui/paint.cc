@@ -783,18 +783,8 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   const Rect rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
   auto const & bg_colors_ = (s->scene.alt_engage_color_enabled ? alt_bg_colors : bg_colors);
   if (s->scene.one_pedal_fade > 0.){
-    NVGcolor nvg_color;
-    if(s->status == UIStatus::STATUS_DISENGAGED){
-          const QColor &color = bg_colors_[UIStatus::STATUS_DISENGAGED];
-          nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
-        }
-    else if (s->scene.car_state.getOnePedalModeActive()){
-      const QColor &color = bg_colors_[UIStatus::STATUS_DISENGAGED];
-      nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
-    }
-    else {
-      nvg_color = nvgRGBA(0, 0, 0, int(s->scene.one_pedal_fade * 100.));
-    }
+    const QColor &color = bg_colors_[s->scene.car_state.getOnePedalModeActive() ? 1 : 0];
+    NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
     const Rect pedal_rect = {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2};
     ui_fill_rect(s->vg, pedal_rect, nvg_color, brake_size);
     ui_draw_image(s, {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2}, "one_pedal_mode", s->scene.one_pedal_fade);
@@ -2800,7 +2790,7 @@ static void ui_draw_vision_event(UIState *s) {
     const int center_x = s->fb_w - radius - bdr_s * 2;
     const int center_y = radius  + (bdr_s * 1.5);
     auto const & bg_colors_ = (s->scene.alt_engage_color_enabled ? alt_bg_colors : bg_colors);
-    const QColor &color = bg_colors_[(s->scene.car_state.getLkaEnabled() ? s->status : UIStatus::STATUS_DISENGAGED)];
+    const QColor &color = bg_colors_[(s->scene.car_state.getLkaEnabled() ? MAX(1,s->status) : UIStatus::STATUS_DISENGAGED)];
     NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), color.alpha());
   
     // draw circle behind wheel
