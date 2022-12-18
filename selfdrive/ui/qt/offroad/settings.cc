@@ -35,55 +35,41 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
                                   "../assets/offroad/icon_openpilot.png",
                                   this));
-  toggles.append(new ParamControl("IsLdwEnabled",
-                                  "Enable Lane Departure Warnings",
-                                  "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
-                                  "../assets/offroad/icon_warning.png",
-                                  this));
-  toggles.append(new ParamControl("IsRHD",
-                                  "Enable Right-Hand Drive",
-                                  "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
-                                  "../assets/offroad/icon_openpilot_mirrored.png",
-                                  this));
-  toggles.append(new ParamControl("IsMetric",
-                                  "Use Metric System",
-                                  "Display speed in km/h instead of mp/h.",
-                                  "../assets/offroad/icon_metric.png",
-                                  this));
-
-  toggles.append(new ParamControl("UploadRaw",
-                                  "Upload Raw Logs",
-                                  "Upload full logs and full resolution video by default while on WiFi. If not enabled, individual logs can be marked for upload at my.comma.ai/useradmin.",
-                                  "../assets/offroad/icon_network.png",
-                                  this));
-
-  toggles.append(new ParamControl("DisableOnroadUploads",
-                                  "Disable onroad uploads",
-                                  "Completely disable uploads when onroad. Necessary to avoid high data use when connected to wifi hotspot.",
-                                  "../assets/offroad/icon_network.png",
-                                  this));
-
-  ParamControl *record_toggle = new ParamControl("RecordFront",
-                                                 "Record and Upload Driver Camera",
-                                                 "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
-                                                 "../assets/offroad/icon_monitoring.png",
-                                                 this);
-  toggles.append(record_toggle);
-  toggles.append(new ParamControl("EndToEndToggle",
-                                  "\U0001f96c Disable use of lanelines (Alpha) \U0001f96c",
-                                  "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
-                                  "../assets/offroad/icon_road.png",
-                                  this));
 
   toggles.append(new ParamControl("EVConsumptionReset",
-                                  "Reset trip/EV metrics",
-                                  "Upon the next vehicle start, reset the distance travelled and EV consumption and efficiency trip and 5mi/8km metrics to 0.",
+                                  "On-screen information (tap me; reset)",
+                                  "When the car is on, tap the current speed to unlock edit mode, then tap more to cycle the number of metrics shown on the right side. Tap each metric to change the information displayed. Use this toggle to, upon the next vehicle start, reset the distance travelled and EV consumption and efficiency trip and 5mi/8km metrics to 0.",
                                   "../assets/offroad/icon_calibration.png",
+                                  this));
+  toggles.append(new ParamControl("DisableDisengageOnGas",
+                                  "Steer when gas pressed",
+                                  "Keep steering when gas (accelerator) is pressed",
+                                  "../assets/offroad/icon_car_pedal.png",
+                                  this));
+  toggles.append(new ParamControl("MADSEnabled",
+                                  "[GM] MADS (tap me)",
+                                  "MADS = Modified Assistive Driving Safety. Three independently toggle-able, always-on features: Autosteer, Lead braking, and One-pedal mode. This toggle must be enabled to use any of them. Toggle autosteer (even when brakes are pressed and before initial engagement) using the lane keep assist steering wheel button. Use cruise main to shut off all OP control. When MADS is running, the max speed is replaced by the MADS icon",
+                                  "../assets/offroad/icon_car_pedal.png",
+                                  this));
+  toggles.append(new ParamControl("MADSLeadBraking",
+                                   "MADS Lead braking (tap me)",
+                                   "Toggle by pressing the ACC distance button when MADS icon is showing. OpenPilot will smoothly stop for lead cars. Even the slightest touch of gas/brake will override lead braking. When this is enabled, an additional white circle will appear around the MADS icon.",
+                                   "../assets/offroad/icon_car_pedal.png",
+                                   this));
+  toggles.append(new ParamControl("MADSOnePedalMode",
+                                  "MADS One-pedal mode (tap me)",
+                                  "Toggle by double-pressing the Volt regen paddle or tapping the MADS icon. When active, the MADS icon will be colored, and op will apply light braking to bring you to a stop when you're not pressing the gas pedal.",
+                                  "../assets/offroad/icon_car_pedal.png",
+                                  this));
+  toggles.append(new ParamControl("MADSPauseBlinkerSteering",
+                                  "MADS no slow blinker steer",
+                                  "When MADS is active, under 20mph with the blinker on and decelerating, steering pauses to make it easier to perform sharp turns (which may be contrary to OpenPilot's plan). Steering is unpaused when you resume acceleration or go above 20mph again.",
+                                  "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
   
   toggles.append(new ParamControl("LongRangeLeadsEnabled",
-                                  "Longer-range lead detection (alpha)",
-                                  "Use the much longer-range lead detection ability of the car's LKA camera to detect leads up to 40\% farther than stock openpilot.  This also allows for 10\% longer range detection using radar.",
+                                  "Longer-range lead detection (beta)",
+                                  "This also allows for 10-20\% longer range detection using radar and the cars LKA camera.",
                                   "../assets/offroad/icon_plus.png",
                                   this));
 
@@ -91,18 +77,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Extended radar capabilities (alpha)",
                                   "Enables tracking of all cars; not just the one openpilot lead. Necessary for braking for car in front of lead, longer-range lead detection, traffic-based auto lane position, drawing of oncoming/ongoing lanes, and indication of non-lead cars.",
                                   "../assets/offroad/icon_plus.png",
-                                  this));
-
-  toggles.append(new ParamControl("EnableTorqueControl",
-                                  "Enable \"torque\" steering control",
-                                  "(Restart car to take effect) Use the newer torque-based steering control that steers by achieving a target amount of lateral acceleration rather than achieving a target steering angle. Torque tune is only available in the Volt.",
-                                  "../assets/offroad/icon_openpilot.png",
-                                  this));
-  
-  toggles.append(new ParamControl("HandsOnWheelMonitoring",
-                                  "Enable Hands on Wheel Monitoring",
-                                  "Monitor and alert when driver is not keeping the hands on the steering wheel.",
-                                  "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
   toggles.append(new ParamControl("TurnVisionControl",
                                   "Enable vision based turn control",
@@ -138,31 +112,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Enable Cruise Speed Offset (+3mph)",
                                   "When adjusting, cruise speed will be {8, 13, 18, 23, 28} mph.",
                                   "../assets/offroad/icon_speed_offset.png",
-                                  this));
-  toggles.append(new ParamControl("DisableDisengageOnGas",
-                                  "Steer when gas pressed",
-                                  "Keep steering when gas (accelerator) is pressed",
-                                  "../assets/offroad/icon_car_pedal.png",
-                                  this));
-  toggles.append(new ParamControl("MADSEnabled",
-                                  "[GM] MADS (tap me)",
-                                  "MADS = Modified Assistive Driving Safety. Three independently toggle-able, always-on features: Autosteer, Lead braking, and One-pedal mode. This toggle must be enabled to use any of them. Toggle autosteer (even when brakes are pressed and before initial engagement) using the lane keep assist steering wheel button. Use cruise main to shut off all OP control. When MADS is running, the max speed is replaced by the MADS icon",
-                                  "../assets/offroad/img_chffr_wheel.png",
-                                  this));
-  toggles.append(new ParamControl("MADSOnePedalMode",
-                                  "[GM] MADS One-pedal mode (tap me)",
-                                  "Toggle by double-pressing the Volt regen paddle or tapping the MADS icon. When active, the MADS icon will turn blue 🔵, and op will apply light braking to bring you to a stop when you're not pressing the gas pedal.",
-                                  "../assets/offroad/icon_car_pedal.png",
-                                  this));
-  toggles.append(new ParamControl("MADSLeadBraking",
-                                   "[GM] MADS Lead braking",
-                                   "Toggle by pressing the ACC distance button when MADS icon is showing. OpenPilot will smoothly stop for lead cars. When this is enabled, an additional white circle will appear around the MADS icon.",
-                                   "../assets/offroad/icon_car_pedal.png",
-                                   this));
-  toggles.append(new ParamControl("MADSPauseBlinkerSteering",
-                                  "MADS no slow blinker steer",
-                                  "When MADS is active, under 20mph with the blinker on, steering is paused to make it easier to perform sharp turns.",
-                                  "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
   toggles.append(new ParamControl("LanePositionEnabled",
                                   "Adjustable lane position",
@@ -268,6 +217,59 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Indicate all cars",
                                   "[Requires extended radar toggle] Print speeds of all cars being tracked by radar and/or vision. Tap at screen bottom in the middle of the path to toggle display modes between printing inside the indicator or along the bottom of the screen, out from the center to the left/right in order of distance, so the numbers closest to the center are for the more immediate cars. Cars are also indicated onscreen as oncoming (red) or ongoing (green).",
                                   "../assets/offroad/icon_metric.png",
+                                  this));
+
+  toggles.append(new ParamControl("EnableTorqueControl",
+                                  "Enable \"torque\" steering control",
+                                  "(Restart car to take effect) Use the newer torque-based steering control that steers by achieving a target amount of lateral acceleration rather than achieving a target steering angle. Torque tune is only available in the Volt.",
+                                  "../assets/offroad/icon_openpilot.png",
+                                  this));
+
+
+  toggles.append(new ParamControl("IsLdwEnabled",
+                                  "Enable Lane Departure Warnings",
+                                  "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
+                                  "../assets/offroad/icon_warning.png",
+                                  this));
+  toggles.append(new ParamControl("IsRHD",
+                                  "Enable Right-Hand Drive",
+                                  "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
+                                  "../assets/offroad/icon_openpilot_mirrored.png",
+                                  this));
+  toggles.append(new ParamControl("IsMetric",
+                                  "Use Metric System",
+                                  "Display speed in km/h instead of mp/h.",
+                                  "../assets/offroad/icon_metric.png",
+                                  this));
+
+  toggles.append(new ParamControl("UploadRaw",
+                                  "Upload Raw Logs",
+                                  "Upload full logs and full resolution video by default while on WiFi. If not enabled, individual logs can be marked for upload at my.comma.ai/useradmin.",
+                                  "../assets/offroad/icon_network.png",
+                                  this));
+
+  toggles.append(new ParamControl("DisableOnroadUploads",
+                                  "Disable onroad uploads",
+                                  "Completely disable uploads when onroad. Necessary to avoid high data use when connected to wifi hotspot.",
+                                  "../assets/offroad/icon_network.png",
+                                  this));
+
+  ParamControl *record_toggle = new ParamControl("RecordFront",
+                                                 "Record and Upload Driver Camera",
+                                                 "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
+                                                 "../assets/offroad/icon_monitoring.png",
+                                                 this);
+  toggles.append(record_toggle);
+  toggles.append(new ParamControl("EndToEndToggle",
+                                  "\U0001f96c Disable use of lanelines (Alpha) \U0001f96c",
+                                  "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
+                                  "../assets/offroad/icon_road.png",
+                                  this));
+  
+  toggles.append(new ParamControl("HandsOnWheelMonitoring",
+                                  "Enable Hands on Wheel Monitoring",
+                                  "Monitor and alert when driver is not keeping the hands on the steering wheel.",
+                                  "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
   toggles.append(new ParamControl("ShowDebugUI",
                                   "Show debug UI elements",

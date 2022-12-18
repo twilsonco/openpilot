@@ -72,7 +72,10 @@ Please show your support by contributing to the ongoing development of this proj
 - [x] [Comma3] AGNOS4 OS
 - [x] [Volt/Acadia] Alternate lateral (steering) tunes using the new "torque" controller
 - [Volt] Much improved steering control over stock (working on upstreaming)
-- [x] MADS (always-on autosteering). Enable in settings and toggle with the lane keep assist button or with the cruise main switch. Openpilot will autosteer at all times, even when the brakes are pressed. Optional to pause steering at low speeds when blinker is on and you're decelerating.
+- [x] MADS (Modified Assistive Driving Safety). Three independent, always-on safety features. Enable the MADS autosteer toggle in order to access the other features as well. If enabled, the max speed indicator is replaced by the MADS icon. *Reminder: You can use the cruise main button to cancel out all openpilot controls*. 
+      * *Autosteer* comes on as soon as you start driving the car, before initially engaging, and even while brakes are pressed. *Toggle autosteer with the lane keep assist button on your steering wheel*. Optional toggle in settings to pause steering at low speeds when blinker is on and you're decelerating. When autosteer is enabled, the steering wheel icon will be colored ("disengaged" color when disabled).
+      * *Lead braking* will be applied automatically, so OpenPilot will smoothly slow for other cars *if neither the gas or brake pedal are pressed in the slightest*. Use either pedal to override lead braking. *Toggle lead braking with the ACC follow distance button on your steering wheel*. When lead braking is enabled, an additional white ring is shown around the MADS icon.
+      * *One-pedal driving*, where OpenPilot applies light braking when you're in L-mode and not pressing the gas, so you can come to a stop without using brakes. The feeling is as if L-mode regen braking brought you to a stop. *Toggle one-pedal driving with a double-press of the regen paddle*. You can also toggle one-pedal driving by tapping the MADS icon. When one-pedal driving is enabled, the MADS icon turns to the "engaged" color, or the "disengaged" color when disabled. (application of friction brakes originally suggested by cybertronicify — 10/06/2021)
 - [x] [Volt 2017] Auto-resume behind stopped lead car as they pull away; a.k.a. stop and go (ported from kegman)
 - [x] [Volt 2018] Auto-creep behind stopped lead car as they pull away (tap gas or resume button to resume)
 - [x] [GM] [✅] AutoHold (autohold brakes when stopped; ported from kegman)
@@ -96,10 +99,7 @@ Please show your support by contributing to the ongoing development of this proj
 - [x] [✅] Automatic automatic lane position (you heard me)
     * Turns on automatic lane positioning automatically when at 22mph+ with clear lanelines and adjacent traffic is present
 - [x] [GM] [✅] Dynamic follow mode (WIP)
-- [x] [GM] Toggle steering with LKAS button (wheel color changes to indicate disengagement)
-- [x] [Volt] One-pedal driving. OpenPilot applies light braking when you're not pressing gas, so you can come to a stop without using brakes. (application of friction brakes originally suggested by cybertronicify — 10/06/2021)
-    * toggle on Volt with double press of the regen paddle
-    * extra braking is applied automatically for stopping behind leads (optional. Disable by enabling one pedal "pro brakes")
+- [x] [GM] Toggle steering while openpilot is engaged with the LKAS button (wheel color changes to indicate disengagement)
 - [x] [✅] [Dynamic Lane Profile](https://github.com/sunnyhaibin/openpilot#dynamic-lane-profile-dlp) (DLP); *tap button while driving to switch between auto/laneless/lane-only. must enable "Disable use of lanelines" for button to appear* (ported from sunnyhaibin)
 - [x] [✅] Normal/sport/eco acceleration modes [cycle with on-screen button] (adapted from kegman implementation)
     * Eco mode is great for

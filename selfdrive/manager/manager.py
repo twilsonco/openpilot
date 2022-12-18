@@ -47,15 +47,15 @@ def manager_init():
     ("TurnVisionControl", "1"),
     ("GMAutoHold", "1"),
     ("CruiseSpeedOffset", "1"),
-    ("ColorPath", "0"),
+    ("ColorPath", "1"),
     ("AlternateColors", "1"),
     ("ReverseSpeedAdjust", "1"),
-    ("CustomSounds", "0"),
-    ("SilentEngageDisengage", "0"),
+    ("CustomSounds", "1"),
+    ("SilentEngageDisengage", "1"),
     ("MADSEnabled", "1"),
     ("DisableDisengageOnGas", "1"),
     ("ScreenDimMode", "2"),
-    ("AccelModeButton", "0"),
+    ("AccelModeButton", "1"),
     ("AccelMode", "0"),
     ("EVDriveTrainEfficiency", "1"),
     ("EVConsumptionReset", "0"),
@@ -63,11 +63,11 @@ def manager_init():
     ("EVConsumptionTripkWh", "0"),
     ("EVConsumptionTripDistance", "0"),
     ("EndToEndToggle", "1"),
-    ("EnableTorqueControl", "0"),
+    ("EnableTorqueControl", "1"),
     ("LanelessMode", "2"),
-    ("LanePositionEnabled", "0"),
-    ("AutoAutoLanePosition", "0"),
-    ("LongRangeLeadsEnabled", "0"),
+    ("LanePositionEnabled", "1"),
+    ("AutoAutoLanePosition", "1"),
+    ("LongRangeLeadsEnabled", "1"),
     ("AutoLanePositionActive", "0"),
     ("LanePosition", "0"),
     ("NudgelessLaneChange", "0"),
@@ -79,13 +79,13 @@ def manager_init():
     ("MADSPauseBlinkerSteering", "1"),
     ("FollowLevel", "2"),
     ("DynamicFollow", "1"),
-    ("DynamicFollowToggle", "0"),
+    ("DynamicFollowToggle", "1"),
     ("CoastingBrakeOverSpeed", "0"),
     ("FrictionBrakePercent", "0"),
     ("BrakeIndicator", "1"),
     ("PowerMeterMode", "0"),
     ("PowerMeterMetric", "1"),
-    ("PrintLeadInfo", "1"),
+    ("PrintLeadInfo", "0"),
     ("PrintAdjacentLeadSpeeds", "1"),
     ("PrintAdjacentLeadSpeedsAtLead", "1"),
     ("ExtendedRadar", "1"),
@@ -93,17 +93,17 @@ def manager_init():
     ("DisableOnroadUploads", "0"),
     ("LowOverheadMode", "0"),
     ("FPVolt", "0"),
-    ("MeasureConfigNum", "0"),
-    ("MeasureSlot00", "31"), # percent grade 
-    ("MeasureSlot01", "9"), # acceleration 
-    ("MeasureSlot02", "48"), # hvb wattage and voltage
-    ("MeasureSlot03", "50"), # ev recent eff
+    ("MeasureConfigNum", "3"),
+    ("MeasureSlot00", "33"), # percent grade 
+    ("MeasureSlot01", "31"), # elevation 
+    ("MeasureSlot02", "41"), # intervention timer
+    ("MeasureSlot03", "38"), # ev recent eff
     ("MeasureSlot04", "6"), # engine RPM + coolant temp F
-    ("MeasureSlot05", "22"), #  brake power
-    ("MeasureSlot06", "19"), # regen power
-    ("MeasureSlot07", "24"), # drive power
-    ("MeasureSlot08", "56"),# ev drivetrain eff
-    ("MeasureSlot09", "52"),# device cpu percent and temp °C
+    ("MeasureSlot05", "35"), #  roll
+    ("MeasureSlot06", "39"), # distance traveled
+    ("MeasureSlot07", "65"), # 5mi EV eff
+    ("MeasureSlot08", "82"),# fan speed rpm
+    ("MeasureSlot09", "73"),# device cpu percent and temp °C
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
