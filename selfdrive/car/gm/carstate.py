@@ -175,7 +175,7 @@ class CarState(CarStateBase):
     self.lead_d_long_brake_lockout_bp, self.lead_d_long_brake_lockout_v = [[6, 10], [1., 0.]] # pass through all cruise braking if follow distance < 6m
     
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
-    self.hvb_wattage = 0. # [kW]
+    self.hvb_wattage = FirstOrderFilter(0.0, 0.5, DT_CTRL) # [kW]
     self.hvb_wattage_bp = [0., 53.] # [kW], based on the banned user BZZT's testimony at https://www.gm-volt.com/threads/using-regen-paddle-and-l-drive-mode-summary.222289/
     self.apply_brake_percent = 0. if self.showBrakeIndicator else -1. # for brake percent on ui
     self.vEgo = 0.
@@ -313,10 +313,10 @@ class CarState(CarStateBase):
       ret.brakePressed = ret.brakePressed or self.regen_paddle_pressed
       hvb_current = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryCurrent']
       hvb_voltage = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryVoltage']
-      self.hvb_wattage = hvb_current * hvb_voltage
+      self.hvb_wattage.update(hvb_current * hvb_voltage)
       ret.hvbVoltage = hvb_voltage
       ret.hvbCurrent = hvb_current
-      ret.hvbWattage = self.hvb_wattage
+      ret.hvbWattage = self.hvb_wattage.x
       self.gear_shifter_ev_last = self.gear_shifter_ev
       self.gear_shifter_ev = pt_cp.vl["ECMPRDNL2"]['PRNDL2']
       
@@ -386,35 +386,35 @@ class CarState(CarStateBase):
       if self.is_ev:
         if self.drive_power > 0.:
           self.brake_power = 0.
-          self.regen_power = (self.hvb_wattage * self.observed_efficiency.x) if self.hvb_wattage > 0. else 0.
+          self.regen_power = (self.hvb_wattage.x * self.observed_efficiency.x) if self.hvb_wattage.x > 0. else 0.
           self.regen_force = (self.regen_power / self.vEgo) if self.vEgo > 0.3 else 0.
           if self.engineRPM > 0:
-            self.ice_power = self.drive_power / max(0.1,self.observed_efficiency.x) + self.hvb_wattage  # [W]
-            self.ev_power = -((self.hvb_wattage + self.ice_power) * self.observed_efficiency.x) if self.hvb_wattage <= 0. else 0.
+            self.ice_power = self.drive_power / max(0.1,self.observed_efficiency.x) + self.hvb_wattage.x  # [W]
+            self.ev_power = -((self.hvb_wattage.x + self.ice_power) * self.observed_efficiency.x) if self.hvb_wattage.x <= 0. else 0.
           else:
-            self.ev_power = -(self.hvb_wattage * self.observed_efficiency.x) if self.hvb_wattage <= 0. else 0.
+            self.ev_power = -(self.hvb_wattage.x * self.observed_efficiency.x) if self.hvb_wattage.x <= 0. else 0.
             self.ice_power = 0.
-            if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse and self.drive_power > 10000. and self.hvb_wattage < -10000.:
-              eff = self.drive_power / (-self.hvb_wattage)
+            if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse and self.drive_power > 10000. and self.hvb_wattage.x < -10000.:
+              eff = self.drive_power / (-self.hvb_wattage.x)
               if eff < 1.0:
                 self.observed_efficiency.update(eff)
         else:
           if self.engineRPM == 0:
             self.ice_power = 0.
-            self.regen_power = (self.hvb_wattage * self.observed_efficiency.x) if self.hvb_wattage > 0. else 0.
+            self.regen_power = (self.hvb_wattage.x * self.observed_efficiency.x) if self.hvb_wattage.x > 0. else 0.
             self.regen_force = (self.regen_power / self.vEgo) if self.vEgo > 0.3 else 0.
-            self.ev_power = -(self.hvb_wattage * self.observed_efficiency.x) if self.hvb_wattage <= 0. else 0.
+            self.ev_power = -(self.hvb_wattage.x * self.observed_efficiency.x) if self.hvb_wattage.x <= 0. else 0.
             self.brake_power = -(self.drive_power + self.regen_power)
-            if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse and self.drive_power < -5000. and self.hvb_wattage > 5000. and self.brake_cmd == 0 and not ret.brakePressed:
-              eff = -self.hvb_wattage / self.drive_power
+            if self.vEgo > 0.3 and ret.gearShifter != GearShifter.reverse and self.drive_power < -5000. and self.hvb_wattage.x > 5000. and self.brake_cmd == 0 and not ret.brakePressed:
+              eff = -self.hvb_wattage.x / self.drive_power
               if eff < 1.0:
                 self.observed_efficiency.update(eff)
           else: # assume full regen from dynamic gas/brake accel threshold which is a measure of available regen brake force
             self.regen_force = self.cp_mass * ev_regen_accel(self.vEgo+2.5, self.engineRPM > 0)
             self.regen_power = self.regen_force * self.vEgo  # [W]
             self.brake_power = self.drive_power - self.regen_power
-            self.ice_power = -self.hvb_wattage - self.regen_power
-            self.ev_power = -((self.hvb_wattage + self.ice_power) * self.observed_efficiency.x) if self.hvb_wattage <= 0. else 0.
+            self.ice_power = -self.hvb_wattage.x - self.regen_power
+            self.ev_power = -((self.hvb_wattage.x + self.ice_power) * self.observed_efficiency.x) if self.hvb_wattage.x <= 0. else 0.
         self.drive_power /= max(0.1, self.observed_efficiency.x) # [W]
       else:        
         self.ev_power = 0.
