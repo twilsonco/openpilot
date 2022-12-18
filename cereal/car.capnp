@@ -130,7 +130,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     e2eLongStart @129;
     controlsMismatchLong @130;
 
-    autoHoldActivated @130;
+    autoHoldActivated @131;
 
     radarCanErrorDEPRECATED @15;
     communityFeatureDisallowedDEPRECATED @62;

@@ -632,7 +632,7 @@ struct ControlsState @0x97ff69c53601abf1 {
   vCruiseCluster @63 :Float32;  # set speed to display in the UI
   upAccelCmd @4 :Float32;
   uiAccelCmd @5 :Float32;
-  udAccelCmd @66 :Float32;
+  udAccelCmd @67 :Float32;
   ufAccelCmd @33 :Float32;
   aTarget @35 :Float32;
   curvature @37 :Float32;  # path curvature from vehicle model
@@ -652,7 +652,7 @@ struct ControlsState @0x97ff69c53601abf1 {
 
   cumLagMs @15 :Float32;
   canErrorCounter @57 :UInt32;
-  lateralState @67 :Text;
+  lateralState @66 :Text;
 
   lateralControlState :union {
     indiState @52 :LateralINDIState;
