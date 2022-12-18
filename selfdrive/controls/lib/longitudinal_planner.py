@@ -117,7 +117,7 @@ class Planner():
     self.params_check_last_t = 0.
     self.params_check_freq = 0.1 # check params at 10Hz
     
-    self.one_pedal_mode_op_braking_allowed = not self._params.get_bool("OnePedalModeSimple")
+    self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking")
     self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco; 3 = creep
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -10. # lead "absolute"" velocity
@@ -198,7 +198,7 @@ class Planner():
     
     if t - self.params_check_last_t >= self.params_check_freq:
       self.params_check_last_t = t
-      self.one_pedal_mode_op_braking_allowed = not self._params.get_bool("OnePedalModeSimple")
+      self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking")
       accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco
       if accel_mode != self.accel_mode:
           cloudlog.info(f"Acceleration mode changed, new value: {accel_mode} = {['normal','sport','eco','creep'][accel_mode]}")
@@ -220,7 +220,7 @@ class Planner():
     accel_limits = [min(accel_limits_turns[0], a_mpc['custom']), accel_limits_turns[1]]
     self.mpcs['custom'].set_accel_limits(accel_limits[0], accel_limits[1])
 
-    if sm['carState'].onePedalModeActive and not self.one_pedal_mode_op_braking_allowed:
+    if not sm['controlsState'].active and not self.MADS_lead_braking_enabled:
       self.v_desired_trajectory = np.ones(CONTROL_N) * v_ego
       self.a_desired_trajectory = np.ones(CONTROL_N) * a_ego
       self.j_desired_trajectory = np.zeros(CONTROL_N)
@@ -237,7 +237,7 @@ class Planner():
             self.mpcs['lead0p1'].tr = tr
           else:
             continue
-        if sm['carState'].onePedalModeActive \
+        if not sm['controlsState'].active and self.MADS_lead_braking_enabled \
             and (key not in BRAKE_SOURCES or (key == 'custom' and c_source not in BRAKE_SOURCES)):
           self.mpcs[key].reset_mpc()
           continue

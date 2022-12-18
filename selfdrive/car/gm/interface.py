@@ -412,7 +412,7 @@ class CarInterface(CarInterfaceBase):
         be.type = ButtonType.altButton3
       buttonEvents.append(be)
 
-    if cruiseEnabled and self.CS.lka_button and self.CS.lka_button != self.CS.prev_lka_button:
+    if self.CS.lka_button and self.CS.lka_button != self.CS.prev_lka_button:
       self.CS.lkaEnabled = not self.CS.lkaEnabled
       be = car.CarState.ButtonEvent.new_message()
       be.pressed = True
@@ -424,9 +424,9 @@ class CarInterface(CarInterfaceBase):
     
     if t - self.params_check_last_t >= self.params_check_freq:
       self.params_check_last_t = t
-      self.one_pedal_mode = self.CS._params.get_bool("OnePedalMode")
+      self.one_pedal_mode = self.CS._params.get_bool("MADSOnePedalMode")
 
-    if self.CS.distance_button != self.CS.prev_distance_button:
+    if self.CS.long_active and self.CS.distance_button != self.CS.prev_distance_button:
       if self.CS.distance_button:
         self.CS.distance_button_last_press_t = t
         cloudlog.info("button press event: Distance button pressed in cruise mode.")
@@ -436,6 +436,10 @@ class CarInterface(CarInterfaceBase):
           self.CS.follow_level = 3
         put_nonblocking("FollowLevel", str(self.CS.follow_level))
         cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
+    elif self.CS.MADS_enabled and not self.CS.distance_button and self.CS.prev_distance_button:
+      self.CS.MADS_lead_braking_enabled = not self.CS.MADS_lead_braking_enabled
+      put_nonblocking("MADSLeadBraking", str(int(self.CS.MADS_lead_braking_enabled)))
+      cloudlog.info("button press event: press distance button for MADS lead braking. new value: %i" % self.CS.MADS_lead_braking_enabled)
 
     ret.readdistancelines = self.CS.follow_level
 
