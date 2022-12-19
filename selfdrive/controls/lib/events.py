@@ -259,10 +259,10 @@ def startup_fuzzy_fingerprint_alert(CP: car.CarParams, sm: messaging.SubMaster, 
 
 def startup_master_display_fingerprint_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   return Alert(
-    "Hands on wheel | Eyes on road",
-    f"UNTESTED BRANCH on {CP.carFingerprint.title()[:40]}",
-    AlertStatus.normal, AlertSize.mid,
-    Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 10.)
+      "Hands on wheel | Eyes on road",
+      f"UNTESTED BRANCH on {CP.carFingerprint.title()[:40]}",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 10.)
   
 def comm_issue_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   invalid = [s for s, valid in sm.valid.items() if not valid]
@@ -1113,5 +1113,13 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Manual Steering Required",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeDisengage, 1., 2., 2.),
+  },
+  
+  EventName.madsAlert: {
+    ET.WARNING: Alert(
+      "MADS enabled: LKA → Autosteer | Distance → Lead braking,",
+      "Regen 2x tap → One-pedal driving | Cruise main → On/Off",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15., creation_delay=11.0),
   },
 }

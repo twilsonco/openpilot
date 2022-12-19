@@ -226,6 +226,9 @@ class Controls:
     if self.startup_event is not None:
       self.events.add(self.startup_event)
       self.startup_event = None
+      
+    if Params().get_bool("MADSEnabled"):
+      self.events.add(EventName.madsAlert)
 
     # Don't add any more events if not initialized
     if not self.initialized:
