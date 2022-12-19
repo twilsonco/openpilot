@@ -255,14 +255,14 @@ def startup_fuzzy_fingerprint_alert(CP: car.CarParams, sm: messaging.SubMaster, 
     "WARNING: No Exact Match on Car Model",
     f"Closest Match: {CP.carFingerprint.title()[:40]}",
     AlertStatus.userPrompt, AlertSize.mid,
-    Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 10.)
+    Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.)
 
 def startup_master_display_fingerprint_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   return Alert(
       "Hands on wheel | Eyes on road",
       f"UNTESTED BRANCH on {CP.carFingerprint.title()[:40]}",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 10.)
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.)
   
 def comm_issue_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   invalid = [s for s, valid in sm.valid.items() if not valid]
@@ -1119,11 +1119,32 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeDisengage, 1., 2., 2.),
   },
   
-  EventName.madsAlert: {
+  EventName.madsAlert1: {
     ET.PERMANENT: Alert(
-      "MADS enabled: LKA → Autosteer | Distance → Lead braking,",
-      "Regen 2x tap → One-pedal driving | Cruise main → On/Off",
+      "MADS enabled",
+      "Toggle autosteer with LKA button",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },  
+  EventName.madsAlert2: {
+    ET.PERMANENT: Alert(
+      "MADS enabled",
+      "Toggle lead braking with ACC distance button",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },  
+  EventName.madsAlert3: {
+    ET.PERMANENT: Alert(
+      "MADS enabled",
+      "Toggle one-pedal driving with 2x regen paddle",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  EventName.madsAlert4: {
+    ET.PERMANENT: Alert(
+      "MADS enabled",
+      "Master on/off using cruise main button",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },
 }
