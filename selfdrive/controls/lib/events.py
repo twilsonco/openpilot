@@ -625,14 +625,17 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.belowSteerSpeed: {
     ET.WARNING: below_steer_speed_alert,
+    ET.PERMANENT: below_steer_speed_alert,
   },
 
   EventName.preLaneChangeLeft: {
     ET.WARNING: pre_lane_change,
+    ET.PERMANENT: pre_lane_change,
   },
 
   EventName.preLaneChangeRight: {
     ET.WARNING: pre_lane_change,
+    ET.PERMANENT: pre_lane_change,
   },
 
   EventName.laneChangeBlocked: {
@@ -645,6 +648,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.laneChange: {
     ET.WARNING: lane_change,
+    ET.PERMANENT: lane_change,
   },
 
   EventName.steerSaturated: {
@@ -1116,7 +1120,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
   
   EventName.madsAlert: {
-    ET.WARNING: Alert(
+    ET.PERMANENT: Alert(
       "MADS enabled: LKA → Autosteer | Distance → Lead braking,",
       "Regen 2x tap → One-pedal driving | Cruise main → On/Off",
       AlertStatus.normal, AlertSize.mid,
