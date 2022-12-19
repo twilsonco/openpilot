@@ -40,7 +40,7 @@ class CarInterfaceBase():
     self.MADS_alert_mode = 0
     self.MADS_alerts = [EventName.madsAlert1, EventName.madsAlert2, EventName.madsAlert3, EventName.madsAlert4]
     self.MADS_alert_dur = int(5 / DT_CTRL)
-    self.MADS_alery_delay = int(5 / DT_CTRL)
+    self.MADS_alery_delay = int(2 / DT_CTRL)
     self.disengage_on_gas = not self.MADS_enabled and not Params().get_bool("DisableDisengageOnGas")
 
     if CarState is not None:
@@ -159,7 +159,7 @@ class CarInterfaceBase():
     if cs_out.cruiseState.nonAdaptive:
       events.add(EventName.wrongCruiseMode)
       
-    if self.MADS_enabled and self.MADS_alert_mode < len(self.MADS_alerts) and self.frame >= self.MADS_alery_delay and self.frame % self.MADS_alert_dur == 0:
+    if self.MADS_enabled and self.MADS_alert_mode < len(self.MADS_alerts) and self.frame >= self.MADS_alery_delay and (self.frame - self.MADS_alery_delay) % self.MADS_alert_dur == 0:
       events.add(self.MADS_alerts[self.MADS_alert_mode])
       self.MADS_alert_mode += 1
 

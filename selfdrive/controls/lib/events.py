@@ -1121,28 +1121,28 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   
   EventName.madsAlert1: {
     ET.PERMANENT: Alert(
-      "MADS enabled",
-      "Toggle autosteer with LKA button",
+      "MADS | Autosteer",
+      "Toggle with LKA button",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },  
   EventName.madsAlert2: {
     ET.PERMANENT: Alert(
-      "MADS enabled",
-      "Toggle lead braking with ACC distance button",
+      "MADS | Lead braking",
+      "Toggle with ACC distance button",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },  
   EventName.madsAlert3: {
     ET.PERMANENT: Alert(
-      "MADS enabled",
-      "Toggle one-pedal driving with 2x regen paddle",
+      "MADS | One-pedal driving",
+      "Toggle with regen paddle double-tap",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },
   EventName.madsAlert4: {
     ET.PERMANENT: Alert(
-      "MADS enabled",
+      "MADS | Enabled",
       "Master on/off using cruise main button",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
