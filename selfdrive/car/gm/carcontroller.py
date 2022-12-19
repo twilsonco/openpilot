@@ -218,13 +218,13 @@ class CarController():
             if self.apply_brake > 1:
               CS.apply_brake_percent = interp(self.apply_brake, [float(P.BRAKE_LOOKUP_V[-1]), float(P.BRAKE_LOOKUP_V[0])], [51., 100.])
             elif CS.out.onePedalModeActive:
-              CS.apply_brake_percent = interp(CS.hvb_wattage, CS.hvb_wattage_bp, [0., 49.])
+              CS.apply_brake_percent = interp(CS.hvb_wattage.x, CS.hvb_wattage_bp, [0., 49.])
             elif self.apply_gas < P.ZERO_GAS:
               CS.apply_brake_percent = interp(self.apply_gas, [float(P.GAS_LOOKUP_V[0]), float(P.GAS_LOOKUP_V[1])], [51., 0.])
           else:
-            CS.apply_brake_percent = interp(CS.hvb_wattage, CS.hvb_wattage_bp, [0., 49.])
+            CS.apply_brake_percent = interp(CS.hvb_wattage.x, CS.hvb_wattage_bp, [0., 49.])
         elif CS.is_ev and CS.out.brake == 0.:
-          CS.apply_brake_percent = interp(CS.hvb_wattage, CS.hvb_wattage_bp, [0., 49.])
+          CS.apply_brake_percent = interp(CS.hvb_wattage.x, CS.hvb_wattage_bp, [0., 49.])
         elif CS.out.brake > 0.:
           CS.apply_brake_percent = interp(CS.out.brake, [0., 0.5], [51., 100.])
       elif CS.out.brake > 0.:
