@@ -58,7 +58,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                    this));
   toggles.append(new ParamControl("MADSOnePedalMode",
                                   "MADS One-pedal mode (tap me)",
-                                  "Toggle by double-pressing the Volt regen paddle or tapping the MADS icon. When active, the MADS icon will be colored, and op will apply light braking to bring you to a stop when you're not pressing the gas pedal.",
+                                  "Toggle by double-pressing the Volt regen paddle or tapping the MADS icon. When active, the MADS icon will be colored, and op will apply light braking to bring you to a stop when you're not pressing the gas pedal in L mode.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("MADSPauseBlinkerSteering",
