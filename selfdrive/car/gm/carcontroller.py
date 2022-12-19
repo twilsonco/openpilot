@@ -202,8 +202,12 @@ class CarController():
         self.apply_gas = int(round(self.apply_gas))
         
       self.apply_brake = int(round(self.apply_brake))
-      if not CS.cruiseMain or CS.out.gas > GAS_PRESSED_THRESHOLD or CS.out.brakePressed or CS.out.gearShifter not in ['drive','low']:
+      if not CS.cruiseMain or CS.out.brakePressed or CS.out.gearShifter not in ['drive','low']:
         self.apply_gas = P.MAX_ACC_REGEN
+        self.apply_brake = 0
+      if CS.out.gas >= GAS_PRESSED_THRESHOLD:
+        self.apply_gas = P.MAX_ACC_REGEN
+      if CS.out.gas >= 1e-5:
         self.apply_brake = 0
 
     if CS.showBrakeIndicator:
