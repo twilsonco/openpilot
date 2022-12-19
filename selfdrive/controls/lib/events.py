@@ -255,14 +255,14 @@ def startup_fuzzy_fingerprint_alert(CP: car.CarParams, sm: messaging.SubMaster, 
     "WARNING: No Exact Match on Car Model",
     f"Closest Match: {CP.carFingerprint.title()[:40]}",
     AlertStatus.userPrompt, AlertSize.mid,
-    Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 10.)
+    Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.)
 
 def startup_master_display_fingerprint_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   return Alert(
-    "Hands on wheel | Eyes on road",
-    f"UNTESTED BRANCH on {CP.carFingerprint.title()[:40]}",
-    AlertStatus.normal, AlertSize.mid,
-    Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 10.)
+      "Hands on wheel | Eyes on road",
+      f"UNTESTED BRANCH on {CP.carFingerprint.title()[:40]}",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.)
   
 def comm_issue_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   invalid = [s for s, valid in sm.valid.items() if not valid]
@@ -625,14 +625,17 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.belowSteerSpeed: {
     ET.WARNING: below_steer_speed_alert,
+    ET.PERMANENT: below_steer_speed_alert,
   },
 
   EventName.preLaneChangeLeft: {
     ET.WARNING: pre_lane_change,
+    ET.PERMANENT: pre_lane_change,
   },
 
   EventName.preLaneChangeRight: {
     ET.WARNING: pre_lane_change,
+    ET.PERMANENT: pre_lane_change,
   },
 
   EventName.laneChangeBlocked: {
@@ -645,6 +648,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.laneChange: {
     ET.WARNING: lane_change,
+    ET.PERMANENT: lane_change,
   },
 
   EventName.steerSaturated: {
@@ -1113,5 +1117,34 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Manual Steering Required",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeDisengage, 1., 2., 2.),
+  },
+  
+  EventName.madsAlert1: {
+    ET.PERMANENT: Alert(
+      "MADS | Autosteer",
+      "Toggle with LKA button",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },  
+  EventName.madsAlert2: {
+    ET.PERMANENT: Alert(
+      "MADS | Lead braking",
+      "Toggle with ACC distance button",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },  
+  EventName.madsAlert3: {
+    ET.PERMANENT: Alert(
+      "MADS | One-pedal driving",
+      "Toggle with regen paddle double-tap",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  EventName.madsAlert4: {
+    ET.PERMANENT: Alert(
+      "MADS | Enabled",
+      "Master on/off using cruise main button",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },
 }

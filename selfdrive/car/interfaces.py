@@ -37,6 +37,10 @@ class CarInterfaceBase():
     self.driver_interacted = False
 
     self.MADS_enabled = Params().get_bool("MADSEnabled")
+    self.MADS_alert_mode = 0
+    self.MADS_alerts = [EventName.madsAlert1, EventName.madsAlert2, EventName.madsAlert3, EventName.madsAlert4]
+    self.MADS_alert_dur = int(5 / DT_CTRL)
+    self.MADS_alery_delay = int(2 / DT_CTRL)
     self.disengage_on_gas = not self.MADS_enabled and not Params().get_bool("DisableDisengageOnGas")
 
     if CarState is not None:
@@ -154,6 +158,10 @@ class CarInterfaceBase():
       events.add(EventName.speedTooHigh)
     if cs_out.cruiseState.nonAdaptive:
       events.add(EventName.wrongCruiseMode)
+      
+    if self.MADS_enabled and self.MADS_alert_mode < len(self.MADS_alerts) and self.frame >= self.MADS_alery_delay and (self.frame - self.MADS_alery_delay) % self.MADS_alert_dur == 0:
+      events.add(self.MADS_alerts[self.MADS_alert_mode])
+      self.MADS_alert_mode += 1
 
     self.steer_warning = self.steer_warning + 1 if cs_out.steerWarning else 0
     self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
