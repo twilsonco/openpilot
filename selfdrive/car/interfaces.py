@@ -154,6 +154,9 @@ class CarInterfaceBase():
       events.add(EventName.speedTooHigh)
     if cs_out.cruiseState.nonAdaptive:
       events.add(EventName.wrongCruiseMode)
+      
+    if self.MADS_enabled and 10.5 < self.frame * DT_CTRL < 26:
+      events.add(EventName.madsAlert)
 
     self.steer_warning = self.steer_warning + 1 if cs_out.steerWarning else 0
     self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1

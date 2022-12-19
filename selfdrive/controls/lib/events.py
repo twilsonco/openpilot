@@ -1120,6 +1120,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "MADS enabled: LKA → Autosteer | Distance → Lead braking,",
       "Regen 2x tap → One-pedal driving | Cruise main → On/Off",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15., creation_delay=11.0),
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
   },
 }
