@@ -37,6 +37,7 @@ class CarInterfaceBase():
     self.driver_interacted = False
 
     self.MADS_enabled = Params().get_bool("MADSEnabled")
+    self.MADS_alert_shown = False
     self.disengage_on_gas = not self.MADS_enabled and not Params().get_bool("DisableDisengageOnGas")
 
     if CarState is not None:
@@ -155,8 +156,9 @@ class CarInterfaceBase():
     if cs_out.cruiseState.nonAdaptive:
       events.add(EventName.wrongCruiseMode)
       
-    if self.MADS_enabled and 10.5 < self.frame * DT_CTRL < 26:
+    if self.MADS_enabled and not self.MADS_alert_shown and self.frame * DT_CTRL > 10:
       events.add(EventName.madsAlert)
+      self.MADS_alert_shown = True
 
     self.steer_warning = self.steer_warning + 1 if cs_out.steerWarning else 0
     self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
