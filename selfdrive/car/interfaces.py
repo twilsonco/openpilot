@@ -159,7 +159,7 @@ class CarInterfaceBase():
     if cs_out.cruiseState.nonAdaptive:
       events.add(EventName.wrongCruiseMode)
       
-    if self.MADS_enabled and self.MADS_alert_mode < len(self.MADS_alerts) and self.frame > self.MADS_alery_delay and self.frame % self.MADS_alert_dur == 0:
+    if self.MADS_enabled and self.MADS_alert_mode < len(self.MADS_alerts) and self.frame >= self.MADS_alery_delay and self.frame % self.MADS_alert_dur == 0:
       events.add(self.MADS_alerts[self.MADS_alert_mode])
       self.MADS_alert_mode += 1
 
