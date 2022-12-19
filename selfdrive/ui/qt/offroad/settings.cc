@@ -49,16 +49,16 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   toggles.append(new ParamControl("MADSEnabled",
                                   "[GM] MADS (tap me)",
                                   "MADS = Modified Assistive Driving Safety. Three independently toggle-able, always-on features: Autosteer, Lead braking, and One-pedal mode. This toggle must be enabled to use any of them. Toggle autosteer (even when brakes are pressed and before initial engagement) using the lane keep assist steering wheel button. Use cruise main to shut off all OP control. When MADS is running, the max speed is replaced by the MADS icon",
-                                  "../assets/offroad/icon_car_pedal.png",
+                                  "../assets/offroad/icon_car_MADS.png",
                                   this));
   toggles.append(new ParamControl("MADSLeadBraking",
                                    "MADS Lead braking (tap me)",
                                    "Toggle by pressing the ACC distance button when MADS icon is showing. OpenPilot will smoothly stop for lead cars. Even the slightest touch of gas/brake will override lead braking. When this is enabled, an additional white circle will appear around the MADS icon.",
-                                   "../assets/offroad/icon_car_pedal.png",
+                                   "../assets/offroad/icon_car_MADS.png",
                                    this));
   toggles.append(new ParamControl("MADSOnePedalMode",
                                   "MADS One-pedal mode (tap me)",
-                                  "Toggle by double-pressing the Volt regen paddle or tapping the MADS icon. When active, the MADS icon will be colored, and op will apply light braking to bring you to a stop when you're not pressing the gas pedal in L mode.",
+                                  "Toggle by double-pressing the Volt regen paddle or tapping the MADS icon. When active, the MADS icon will change to the colored one-pedal icon, and op will apply light braking to bring you to a stop when you're not pressing the gas pedal in L mode.",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("MADSPauseBlinkerSteering",

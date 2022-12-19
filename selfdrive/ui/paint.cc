@@ -787,7 +787,12 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
     const Rect pedal_rect = {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2};
     ui_fill_rect(s->vg, pedal_rect, nvg_color, brake_size);
-    ui_draw_image(s, {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2}, "one_pedal_mode", s->scene.one_pedal_fade);
+    if (s->scene.car_state.getOnePedalModeActive()){
+      ui_draw_image(s, {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2}, "one_pedal_mode", s->scene.one_pedal_fade);
+    }
+    else{
+      ui_draw_image(s, {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2}, "MADS", s->scene.one_pedal_fade);
+    }
     s->scene.one_pedal_touch_rect = pedal_rect;
     s->scene.maxspeed_touch_rect = {1,1,1,1};
     
@@ -3711,6 +3716,7 @@ void ui_nvg_init(UIState *s) {
     {"map_source_icon", "../assets/img_world_icon.png"},
     {"brake_disk", "../assets/img_brake.png"},
     {"one_pedal_mode", "../assets/offroad/icon_car_pedal.png"},
+    {"MADS", "../assets/offroad/icon_car_MADS.png"},
     {"lane_pos_left", "../assets/offroad/icon_lane_pos_left.png"},
     {"lane_pos_right", "../assets/offroad/icon_lane_pos_right.png"}
   };
