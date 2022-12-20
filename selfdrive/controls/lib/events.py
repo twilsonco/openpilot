@@ -1133,6 +1133,13 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },  
+  EventName.madsAlert5: {
+    ET.PERMANENT: Alert(
+      "MADS | Lead braking",
+      "White ring around MADS icon means enabled",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
   EventName.madsAlert3: {
     ET.PERMANENT: Alert(
       "MADS | One-pedal driving",
