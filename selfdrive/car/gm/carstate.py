@@ -491,7 +491,7 @@ class CarState(CarStateBase):
     
     ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active
     ret.onePedalModeTemporary = self.one_pedal_mode_temporary
-    ret.madsLeadBrakingActive = self.MADS_lead_braking_active
+    ret.madsLeadBrakingActive = self.MADS_lead_braking_active and ret.vEgo > 0.02 and ret.gearShifter in ['drive','low']
     
     self.pitch = self.pitch_ema * self.pitch_raw + (1 - self.pitch_ema) * self.pitch 
     ret.pitch = self.pitch
