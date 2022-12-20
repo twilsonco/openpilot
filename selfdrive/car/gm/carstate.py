@@ -140,6 +140,7 @@ class CarState(CarStateBase):
     
     self.one_pedal_mode_enabled = self._params.get_bool("MADSOnePedalMode") and self.MADS_enabled
     self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking")
+    self.MADS_lead_braking_active = False
     self.one_pedal_dl_coasting_enabled = True
     self.one_pedal_mode_active = self.one_pedal_mode_enabled
     self.long_active = False
@@ -490,7 +491,7 @@ class CarState(CarStateBase):
     
     ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active
     ret.onePedalModeTemporary = self.one_pedal_mode_temporary
-    
+    ret.madsLeadBrakingActive = self.MADS_lead_braking_active
     
     self.pitch = self.pitch_ema * self.pitch_raw + (1 - self.pitch_ema) * self.pitch 
     ret.pitch = self.pitch
