@@ -208,13 +208,13 @@ class CarController():
         self.apply_gas = int(round(self.apply_gas))
         
       self.apply_brake = int(round(self.apply_brake))
-      if not CS.cruiseMain or CS.out.brakePressed or CS.out.gearShifter not in ['drive','low']:
-        self.apply_gas = P.MAX_ACC_REGEN
-        self.apply_brake = 0
-      if CS.out.gas >= GAS_PRESSED_THRESHOLD:
-        self.apply_gas = P.MAX_ACC_REGEN
-      if CS.out.gas >= 1e-5:
-        self.apply_brake = 0
+    if not CS.cruiseMain or CS.out.brakePressed or CS.out.gearShifter not in ['drive','low']:
+      self.apply_gas = P.MAX_ACC_REGEN
+      self.apply_brake = 0
+    if CS.out.gas >= GAS_PRESSED_THRESHOLD:
+      self.apply_gas = P.MAX_ACC_REGEN
+    if CS.out.gas >= 1e-5:
+      self.apply_brake = 0
 
     if CS.showBrakeIndicator:
       CS.apply_brake_percent = 0.
@@ -264,7 +264,7 @@ class CarController():
           at_full_stop = enabled and standstill and car_stopping
           near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
 
-        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake, idx, near_stop, at_full_stop))
+        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake, idx, near_stop and CS.out.gas < 1e-5, at_full_stop and CS.out.gas < 1e-5))
         CS.autoHoldActivated = False
 
         # Auto-resume from full stop by resetting ACC control
