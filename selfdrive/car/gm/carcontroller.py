@@ -116,6 +116,9 @@ class CarController():
         no_pitch_apply_gas = interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
         self.apply_brake = interp(brake_accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
         
+        
+        CS.MADS_lead_braking_active = not enabled and actuators.accel < 0.0 and CS.coasting_long_plan in BRAKE_SOURCES
+        
         v_rel = CS.coasting_lead_v - CS.vEgo
         ttc = min(-CS.coasting_lead_d / v_rel if (CS.coasting_lead_d > 0. and v_rel < 0.) else 100.,100.)
         d_time = CS.coasting_lead_d / CS.vEgo if (CS.coasting_lead_d > 0. and CS.vEgo > 0. and CS.tr > 0.) else 10.
@@ -173,10 +176,13 @@ class CarController():
             self.one_pedal_decel_in = clip(0.0 if CS.gear_shifter_ev == GEAR_SHIFTER2.DRIVE and CS.one_pedal_dl_coasting_enabled and CS.vEgo > 0.05 else min(CS.out.aEgo,threshold_accel), self.one_pedal_decel_in - ONE_PEDAL_DECEL_RATE_LIMIT_UP, self.one_pedal_decel_in + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
             one_pedal_apply_brake = 0.0
           
+          
           if not CS.MADS_lead_braking_enabled \
               or one_pedal_apply_brake > self.apply_brake \
               or CS.coasting_lead_d < 0.0:
             self.apply_brake = one_pedal_apply_brake
+            CS.MADS_lead_braking_active = False
+          
         elif CS.coasting_enabled and lead_long_brake_lockout_factor < 1.0:
           if CS.coasting_long_plan in COAST_SOURCES and self.apply_gas < P.ZERO_GAS or self.apply_brake > 0.0:
             check_speed_ms = (CS.speed_limit if CS.speed_limit_active and CS.speed_limit < CS.v_cruise_kph else CS.v_cruise_kph) * CV.KPH_TO_MS
