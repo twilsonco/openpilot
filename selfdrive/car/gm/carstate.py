@@ -114,7 +114,7 @@ class CarState(CarStateBase):
     self.lastAutoHoldTime = 0.0
     self.sessionInitTime = sec_since_boot()
     self.params_check_last_t = 0.
-    self.params_check_freq = 0.1 # check params at 10Hz
+    self.params_check_freq = 0.25 # check params at 10Hz
     
     self.resume_button_pressed = False
     self.resume_required = False

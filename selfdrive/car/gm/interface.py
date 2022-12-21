@@ -435,8 +435,7 @@ class CarInterface(CarInterfaceBase):
         put_nonblocking("FollowLevel", str(self.CS.follow_level))
         cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
     elif self.CS.MADS_enabled and not self.CS.distance_button and self.CS.prev_distance_button:
-      self.CS.MADS_lead_braking_enabled = not self.CS.MADS_lead_braking_enabled
-      put_nonblocking("MADSLeadBraking", str(int(self.CS.MADS_lead_braking_enabled)))
+      put_nonblocking("MADSLeadBraking", str(int(not self.CS.MADS_lead_braking_enabled)))
       cloudlog.info("button press event: press distance button for MADS lead braking. new value: %i" % self.CS.MADS_lead_braking_enabled)
 
     ret.readdistancelines = self.CS.follow_level
