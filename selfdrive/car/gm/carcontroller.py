@@ -117,7 +117,7 @@ class CarController():
         self.apply_brake = interp(brake_accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
         
         
-        CS.MADS_lead_braking_active = not enabled and actuators.accel < 0.0 and CS.coasting_long_plan in BRAKE_SOURCES
+        CS.MADS_lead_braking_active = not enabled and actuators.accel < -0.1 and CS.coasting_long_plan in BRAKE_SOURCES
         
         v_rel = CS.coasting_lead_v - CS.vEgo
         ttc = min(-CS.coasting_lead_d / v_rel if (CS.coasting_lead_d > 0. and v_rel < 0.) else 100.,100.)
@@ -211,7 +211,7 @@ class CarController():
     if not CS.cruiseMain or CS.out.brakePressed or CS.out.gearShifter not in ['drive','low']:
       self.apply_gas = P.MAX_ACC_REGEN
       self.apply_brake = 0
-    if CS.out.gas >= GAS_PRESSED_THRESHOLD:
+    if not enabled or CS.out.gas >= GAS_PRESSED_THRESHOLD:
       self.apply_gas = P.MAX_ACC_REGEN
     if CS.out.gas >= 1e-5:
       self.apply_brake = 0
