@@ -28,7 +28,7 @@ ONE_PEDAL_MIN_SPEED = 2.1
 ONE_PEDAL_DECEL_RATE_LIMIT_UP = 0.8 * DT_CTRL * 4 # m/s^2 per second for increasing braking force
 ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.8 * DT_CTRL * 4 # m/s^2 per second for decreasing
 
-ONE_PEDAL_MAX_DECEL = -3.5
+ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
 ONE_PEDAL_SPEED_ERROR_FACTOR_BP = [1.5, 20.] # [m/s] 
 ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.4, 0.2] # factor of error for non-lead braking decel
 
@@ -206,8 +206,8 @@ class CarController():
           if CS.coasting_long_plan in COAST_SOURCES and self.apply_brake > 0.0:
             self.apply_brake *= lead_long_brake_lockout_factor
         self.apply_gas = int(round(self.apply_gas))
-        
       self.apply_brake = int(round(self.apply_brake))
+      
     if not CS.cruiseMain or CS.out.brakePressed or CS.out.gearShifter not in ['drive','low']:
       self.apply_gas = P.MAX_ACC_REGEN
       self.apply_brake = 0
