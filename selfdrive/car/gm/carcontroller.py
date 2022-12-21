@@ -117,7 +117,7 @@ class CarController():
         self.apply_brake = interp(brake_accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
         
         
-        CS.MADS_lead_braking_active = not enabled and actuators.accel < -0.1 and CS.coasting_long_plan in BRAKE_SOURCES
+        CS.MADS_lead_braking_active = CS.MADS_lead_braking_enabled and not enabled and actuators.accel < -0.1 and CS.coasting_long_plan in BRAKE_SOURCES
         
         v_rel = CS.coasting_lead_v - CS.vEgo
         ttc = min(-CS.coasting_lead_d / v_rel if (CS.coasting_lead_d > 0. and v_rel < 0.) else 100.,100.)
@@ -156,7 +156,7 @@ class CarController():
           self.one_pedal_pid.reset()
           self.one_pedal_decel = CS.out.aEgo
           self.one_pedal_decel_in = CS.out.aEgo
-        if CS.out.onePedalModeActive:
+        if CS.out.onePedalModeActive and CS.out.gas < 1e-5:
           self.apply_gas = P.MAX_ACC_REGEN
           pitch_accel = CS.pitch * ACCELERATION_DUE_TO_GRAVITY
           pitch_accel *= interp(CS.vEgo, ONE_PEDAL_ACCEL_PITCH_FACTOR_BP, ONE_PEDAL_ACCEL_PITCH_FACTOR_V if pitch_accel <= 0 else ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V)
@@ -182,6 +182,8 @@ class CarController():
               or CS.coasting_lead_d < 0.0:
             self.apply_brake = one_pedal_apply_brake
             CS.MADS_lead_braking_active = False
+          if CS.MADS_lead_braking_active:
+            self.lead_accel_last_t = t
           
         elif CS.coasting_enabled and lead_long_brake_lockout_factor < 1.0:
           if CS.coasting_long_plan in COAST_SOURCES and self.apply_gas < P.ZERO_GAS or self.apply_brake > 0.0:
