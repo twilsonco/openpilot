@@ -251,7 +251,7 @@ class CarController():
         CS.autoHoldActivated = True
 
       else:
-        if CS.pause_long_on_gas_press:
+        if CS.out.gas > 1e-5:
           at_full_stop = False
           near_stop = False
           car_stopping = False
@@ -261,10 +261,10 @@ class CarController():
           standstill = CS.pcm_acc_status == AccState.STANDSTILL
           if standstill:
             self.apply_gas = P.MAX_ACC_REGEN
-          at_full_stop = enabled and standstill and car_stopping
-          near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
+          at_full_stop = (enabled or (CS.out.onePedalModeActive or CS.MADS_lead_braking_enabled)) and standstill and car_stopping
+          near_stop = (enabled or (CS.out.onePedalModeActive or CS.MADS_lead_braking_enabled)) and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
 
-        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake, idx, near_stop and CS.out.gas < 1e-5, at_full_stop and CS.out.gas < 1e-5))
+        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake, idx, near_stop, at_full_stop))
         CS.autoHoldActivated = False
 
         # Auto-resume from full stop by resetting ACC control
