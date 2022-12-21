@@ -27,6 +27,8 @@ ONE_PEDAL_MODE_DECEL_V = [-1.0, -1.1]
 ONE_PEDAL_MIN_SPEED = 2.1
 ONE_PEDAL_DECEL_RATE_LIMIT_UP = 0.8 * DT_CTRL * 4 # m/s^2 per second for increasing braking force
 ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.8 * DT_CTRL * 4 # m/s^2 per second for decreasing
+ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP = [i * CV.MPH_TO_MS for i in [0.0, 10.]] # [mph to meters]
+ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_V = [0.2, 1.0] # factor of rate limit
 
 ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
 ONE_PEDAL_SPEED_ERROR_FACTOR_BP = [1.5, 20.] # [m/s] 
@@ -169,7 +171,9 @@ class CarController():
             error *= error_factor
             one_pedal_decel = self.one_pedal_pid.update(self.one_pedal_decel_in, self.one_pedal_decel_in - error, speed=CS.out.vEgo, feedforward=self.one_pedal_decel_in)
             
-            self.one_pedal_decel = clip(one_pedal_decel, self.one_pedal_decel - ONE_PEDAL_DECEL_RATE_LIMIT_UP * max(1.0, 0.5 - one_pedal_decel*0.5), self.one_pedal_decel + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
+            rate_limit_factor = interp(CS.vEgo, ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP, ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_V)
+            
+            self.one_pedal_decel = clip(one_pedal_decel, self.one_pedal_decel - ONE_PEDAL_DECEL_RATE_LIMIT_UP * rate_limit_factor, self.one_pedal_decel + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN + rate_limit_factor)
             self.one_pedal_decel = max(self.one_pedal_decel, ONE_PEDAL_MAX_DECEL)
             one_pedal_apply_brake = interp(self.one_pedal_decel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
           else:
