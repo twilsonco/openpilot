@@ -2720,8 +2720,7 @@ static void ui_draw_vision_turnspeed(UIState *s) {
   }
   const float vEgo = s->scene.car_state.getVEgo();  
   auto source = s->scene.longitudinal_plan.getLongitudinalPlanSource();
-  const bool manual_long = s->scene.controls_state.getActive();
-  const bool show = (!manual_long && turnSpeed > 0.0 && (turnSpeed < vEgo+2.24 || s->scene.show_debug_ui));
+  const bool show = (s->scene.controls_state.getActive() && turnSpeed > 0.0 && (turnSpeed < vEgo+2.24 || s->scene.show_debug_ui));
 
   if (show) {
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
