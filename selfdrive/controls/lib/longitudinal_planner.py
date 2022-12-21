@@ -133,11 +133,6 @@ class Planner():
     cur_time = sec_since_boot()
     t = cur_time
     
-    if sm['carState'].gas > 1e-5:
-      self.mpcs['lead0'].reset_mpc()
-      self.mpcs['lead1'].reset_mpc()
-      self.mpcs['lead0p1'].reset_mpc()
-    
     v_ego = sm['carState'].vEgo
     a_ego = sm['carState'].aEgo
     
@@ -179,11 +174,9 @@ class Planner():
       self.coasting_lead_a = 10.
     self.tr = self.mpcs['lead0'].tr
     
-    
     if sm['carState'].gearShifter == GearShifter.drive and self.gear_shifter_last != GearShifter.drive:
       self.mpcs['lead0'].df.reset()
     self.gear_shifter_last = sm['carState'].gearShifter
-    
     
     if long_control_state == LongCtrlState.off or sm['carState'].gasPressed:
       self.v_desired = v_ego
@@ -205,6 +198,11 @@ class Planner():
           self.accel_mode = accel_mode
 
     accel_limits = calc_cruise_accel_limits(v_ego, following, self.accel_mode)
+    if not sm['controlsState'].active:
+      accel_limits[1] = min(0.0, accel_limits[1])
+    if sm['carState'].gas > 1e-5:
+      accel_limits[0] = 0.0
+      
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     if force_slow_decel:
       # if required so, force a smooth deceleration

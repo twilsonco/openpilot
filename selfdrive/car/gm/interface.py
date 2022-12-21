@@ -63,8 +63,6 @@ class CarInterface(CarInterfaceBase):
       accel_limits[0] *= interp(time_since_engage, CI.CS.cruise_enabled_neg_accel_ramp_bp, CI.CS.cruise_enabled_neg_accel_ramp_v)
     
     accel_limits = [max(CI.params.ACCEL_MIN, accel_limits[0]), min(accel_limits[1], CI.params.ACCEL_MAX)]
-    if CI.CS.out.onePedalModeActive:
-      accel_limits[1] = 0.0
     
     return accel_limits
 
