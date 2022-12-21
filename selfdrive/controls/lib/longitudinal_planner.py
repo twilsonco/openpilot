@@ -234,6 +234,7 @@ class Planner():
             self.mpcs['lead0p1'].tr_override = True
             self.mpcs['lead0p1'].tr = tr
           else:
+            self.mpcs['lead0p1'].reset_mpc()
             continue
         if not sm['controlsState'].active and self.MADS_lead_braking_enabled \
             and (key not in BRAKE_SOURCES or (key == 'custom' and c_source not in BRAKE_SOURCES)):
