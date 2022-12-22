@@ -783,7 +783,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   const Rect rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
   auto const & bg_colors_ = (s->scene.alt_engage_color_enabled ? alt_bg_colors : bg_colors);
   if (s->scene.one_pedal_fade > 0.){
-    const QColor &color = bg_colors_[s->scene.car_state.getMadsLeadBrakingActive() ? 3 : (s->scene.car_state.getOnePedalModeActive() ? 1 : 0)];
+    const QColor &color = bg_colors_[s->scene.car_state.getMadsLeadBrakingActive() ? 3 : (s->scene.car_state.getOnePedalModeTemporary() ? 2 : (s->scene.car_state.getOnePedalModeActive() ? 1 : 0))];
     NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
     const Rect pedal_rect = {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2};
     ui_fill_rect(s->vg, pedal_rect, nvg_color, brake_size);
