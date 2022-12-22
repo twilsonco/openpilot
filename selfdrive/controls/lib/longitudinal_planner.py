@@ -65,8 +65,9 @@ def calc_cruise_accel_limits(v_ego, following, accelMode):
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_MODE_LIST[accelMode])
   return [a_cruise_min, a_cruise_max]
 
-LEAD_ONE_PLUS_TR_BUFFER = -0.2 # [s] follow distance between lead and lead+1 to run the lead+1 mpc (negative means the lead+1 doesn't affect planning unless they're rapidly approaching)
+LEAD_ONE_PLUS_TR_BUFFER = -0.3 # [s] follow distance between lead and lead+1 to run the lead+1 mpc (negative means the lead+1 doesn't affect planning unless they're rapidly approaching)
 LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER = 1.0 # [m]
+LEAD_ONE_PLUS_TO_LEAD_ONE_CUTOFF_TTC = 1.5 # if lead TTC to lead+1 is less than this, then consider the lead+1
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
@@ -229,13 +230,17 @@ class Planner():
       next_a = np.inf
       for key in self.mpcs:
         if key == 'lead0p1':
+          ttc = LEAD_ONE_PLUS_TO_LEAD_ONE_CUTOFF_TTC + 1
           if self.lead_0_plus.status and self.lead_0.status:
+            v_rel = self.lead_0_plus.vLeadK - self.lead_0.vLeadK
+            ttc = (self.lead_0_plus.dRel - self.lead_0.dRel) / max(v_rel, 0.01)
+          if ttc > LEAD_ONE_PLUS_TO_LEAD_ONE_CUTOFF_TTC:
+            self.mpcs['lead0p1'].reset_mpc()
+            continue
+          else:
             tr = self.mpcs['lead0'].tr + LEAD_ONE_PLUS_TR_BUFFER
             self.mpcs['lead0p1'].tr_override = True
             self.mpcs['lead0p1'].tr = tr
-          else:
-            self.mpcs['lead0p1'].reset_mpc()
-            continue
         if not sm['controlsState'].active and self.MADS_lead_braking_enabled \
             and (key not in BRAKE_SOURCES or (key == 'custom' and c_source not in BRAKE_SOURCES)):
           self.mpcs[key].reset_mpc()

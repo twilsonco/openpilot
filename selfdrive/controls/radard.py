@@ -27,6 +27,7 @@ MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow use.
 
 LEAD_PLUS_ONE_MIN_REL_DIST_V = [3.0, 6.0] # [m] min distance between lead+1 and lead at low and high distance
 LEAD_PLUS_ONE_MIN_REL_DIST_BP = [0., 100.] # [m] min distance between lead+1 and lead at low and high distance
+LEAD_PLUS_ONE_MAX_YREL_TO_LEAD = 1.0 # [m]
 
 class KalmanParams():
   def __init__(self, dt):
@@ -421,7 +422,7 @@ class RadarD():
         try:
           if abs(sm['carState'].steeringAngleDeg) < 15 and radarState.leadOne.status and radarState.leadOne.modelProb > 0.5:
             check_dist = interp(radarState.leadOne.dRel, LEAD_PLUS_ONE_MIN_REL_DIST_BP, LEAD_PLUS_ONE_MIN_REL_DIST_V)
-            lc = [l for l in lc if l["dRel"] > radarState.leadOne.dRel + check_dist]
+            lc = [l for l in lc if l["dRel"] > radarState.leadOne.dRel + check_dist and abs(l["yRel"] - radarState.leadOne.yRel) <= LEAD_PLUS_ONE_MAX_YREL_TO_LEAD]
             if len(lc) > 0: # get the lead+1 car
               radarState.leadOnePlus = self.lead_one_plus_lr.update(lc[0])
         except AttributeError:
