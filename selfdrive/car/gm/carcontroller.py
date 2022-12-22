@@ -119,7 +119,7 @@ class CarController():
         self.apply_brake = interp(brake_accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
         
         
-        CS.MADS_lead_braking_active = CS.MADS_lead_braking_enabled and not enabled and actuators.accel < -0.1 and CS.coasting_long_plan in BRAKE_SOURCES
+        CS.MADS_lead_braking_active = CS.MADS_lead_braking_enabled and not enabled and CS.coasting_lead_d > 0.0 and actuators.accel < -0.1 and CS.coasting_long_plan in BRAKE_SOURCES
         
         v_rel = CS.coasting_lead_v - CS.vEgo
         ttc = min(-CS.coasting_lead_d / v_rel if (CS.coasting_lead_d > 0. and v_rel < 0.) else 100.,100.)
