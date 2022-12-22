@@ -38,7 +38,7 @@ class CarInterfaceBase():
 
     self.MADS_enabled = Params().get_bool("MADSEnabled")
     self.MADS_alert_mode = 0
-    self.MADS_alerts = [EventName.madsAlert1, EventName.madsAlert2, EventName.madsAlert5, EventName.madsAlert3, EventName.madsAlert4]
+    self.MADS_alerts = [EventName.madsAlert1, EventName.madsAlert2, EventName.madsAlert5, EventName.madsAlert3, EventName.madsAlert6, EventName.madsAlert4]
     self.MADS_alert_dur = int(4 / DT_CTRL)
     self.MADS_alery_delay = int(1.3 / DT_CTRL)
     self.disengage_on_gas = not self.MADS_enabled and not Params().get_bool("DisableDisengageOnGas")

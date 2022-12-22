@@ -1152,6 +1152,13 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },
+  EventName.madsAlert6: {
+    ET.PERMANENT: Alert(
+      "MADS | One-pedal one-time-stop",
+      "Slow to below 5mph with regen paddle",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
   EventName.madsAlert4: {
     ET.PERMANENT: Alert(
       "MADS | Enabled",
