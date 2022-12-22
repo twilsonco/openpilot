@@ -205,7 +205,7 @@ class TurnSpeedController():
 
     # In any case, we deactivate the speed limit controller temporarily
     # if gas is pressed (to support gas override implementations).
-    if sm['carState'].gasPressed:
+    if sm['carState'].gas > 1e-5:
       self.state = TurnSpeedControlState.tempInactive
       return
 

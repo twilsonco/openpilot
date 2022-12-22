@@ -366,7 +366,7 @@ class SpeedLimitController():
     self._v_ego = v_ego
     self._a_ego = a_ego
     self._v_cruise_setpoint = v_cruise_setpoint
-    self._gas_pressed = sm['carState'].gasPressed
+    self._gas_pressed = sm['carState'].gas > 1e-5
 
     self._speed_limit, self._distance, self._source = self._resolver.resolve(v_ego, self.speed_limit, sm)
 

@@ -27,8 +27,10 @@ ONE_PEDAL_MODE_DECEL_V = [-1.0, -1.1]
 ONE_PEDAL_MIN_SPEED = 2.1
 ONE_PEDAL_DECEL_RATE_LIMIT_UP = 0.8 * DT_CTRL * 4 # m/s^2 per second for increasing braking force
 ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.8 * DT_CTRL * 4 # m/s^2 per second for decreasing
+ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP = [i * CV.MPH_TO_MS for i in [0.0, 10.]] # [mph to meters]
+ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_V = [0.2, 1.0] # factor of rate limit
 
-ONE_PEDAL_MAX_DECEL = -3.5
+ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
 ONE_PEDAL_SPEED_ERROR_FACTOR_BP = [1.5, 20.] # [m/s] 
 ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.4, 0.2] # factor of error for non-lead braking decel
 
@@ -117,7 +119,7 @@ class CarController():
         self.apply_brake = interp(brake_accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
         
         
-        CS.MADS_lead_braking_active = not enabled and actuators.accel < 0.0 and CS.coasting_long_plan in BRAKE_SOURCES
+        CS.MADS_lead_braking_active = CS.MADS_lead_braking_enabled and not enabled and CS.coasting_lead_d > 0.0 and actuators.accel < -0.1 and CS.coasting_long_plan in BRAKE_SOURCES
         
         v_rel = CS.coasting_lead_v - CS.vEgo
         ttc = min(-CS.coasting_lead_d / v_rel if (CS.coasting_lead_d > 0. and v_rel < 0.) else 100.,100.)
@@ -156,7 +158,7 @@ class CarController():
           self.one_pedal_pid.reset()
           self.one_pedal_decel = CS.out.aEgo
           self.one_pedal_decel_in = CS.out.aEgo
-        if CS.out.onePedalModeActive:
+        if CS.out.onePedalModeActive and CS.out.gas < 1e-5:
           self.apply_gas = P.MAX_ACC_REGEN
           pitch_accel = CS.pitch * ACCELERATION_DUE_TO_GRAVITY
           pitch_accel *= interp(CS.vEgo, ONE_PEDAL_ACCEL_PITCH_FACTOR_BP, ONE_PEDAL_ACCEL_PITCH_FACTOR_V if pitch_accel <= 0 else ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V)
@@ -169,7 +171,9 @@ class CarController():
             error *= error_factor
             one_pedal_decel = self.one_pedal_pid.update(self.one_pedal_decel_in, self.one_pedal_decel_in - error, speed=CS.out.vEgo, feedforward=self.one_pedal_decel_in)
             
-            self.one_pedal_decel = clip(one_pedal_decel, self.one_pedal_decel - ONE_PEDAL_DECEL_RATE_LIMIT_UP * max(1.0, 0.5 - one_pedal_decel*0.5), self.one_pedal_decel + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
+            rate_limit_factor = interp(CS.vEgo, ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP, ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_V)
+            
+            self.one_pedal_decel = clip(one_pedal_decel, self.one_pedal_decel - ONE_PEDAL_DECEL_RATE_LIMIT_UP * rate_limit_factor, self.one_pedal_decel + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN + rate_limit_factor)
             self.one_pedal_decel = max(self.one_pedal_decel, ONE_PEDAL_MAX_DECEL)
             one_pedal_apply_brake = interp(self.one_pedal_decel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
           else:
@@ -182,6 +186,8 @@ class CarController():
               or CS.coasting_lead_d < 0.0:
             self.apply_brake = one_pedal_apply_brake
             CS.MADS_lead_braking_active = False
+          if CS.MADS_lead_braking_active:
+            self.lead_accel_last_t = t
           
         elif CS.coasting_enabled and lead_long_brake_lockout_factor < 1.0:
           if CS.coasting_long_plan in COAST_SOURCES and self.apply_gas < P.ZERO_GAS or self.apply_brake > 0.0:
@@ -206,12 +212,12 @@ class CarController():
           if CS.coasting_long_plan in COAST_SOURCES and self.apply_brake > 0.0:
             self.apply_brake *= lead_long_brake_lockout_factor
         self.apply_gas = int(round(self.apply_gas))
-        
       self.apply_brake = int(round(self.apply_brake))
+      
     if not CS.cruiseMain or CS.out.brakePressed or CS.out.gearShifter not in ['drive','low']:
       self.apply_gas = P.MAX_ACC_REGEN
       self.apply_brake = 0
-    if CS.out.gas >= GAS_PRESSED_THRESHOLD:
+    if not enabled or CS.out.gas >= GAS_PRESSED_THRESHOLD:
       self.apply_gas = P.MAX_ACC_REGEN
     if CS.out.gas >= 1e-5:
       self.apply_brake = 0
@@ -240,7 +246,7 @@ class CarController():
     if (frame % 4) == 0:
       idx = (frame // 4) % 4
 
-      if CS.cruiseMain and not enabled and CS.autoHold and CS.autoHoldActive and not CS.out.gas > 1e-5 and CS.out.gearShifter in ['drive','low'] and CS.out.vEgo < 0.02 and not CS.regen_paddle_pressed:
+      if CS.cruiseMain and not enabled and CS.autoHold and CS.autoHoldActive and not CS.out.gas > 1e-5 and CS.time_in_drive >= CS.autohold_min_time_in_drive and CS.out.vEgo < 0.02 and not CS.regen_paddle_pressed:
         # Auto Hold State
         car_stopping = no_pitch_apply_gas < P.ZERO_GAS
         standstill = CS.pcm_acc_status == AccState.STANDSTILL
@@ -251,7 +257,7 @@ class CarController():
         CS.autoHoldActivated = True
 
       else:
-        if CS.pause_long_on_gas_press:
+        if CS.out.gas > 1e-5 or CS.out.gearShifter not in ['drive','low'] or CS.out.brakePressed:
           at_full_stop = False
           near_stop = False
           car_stopping = False
@@ -261,10 +267,10 @@ class CarController():
           standstill = CS.pcm_acc_status == AccState.STANDSTILL
           if standstill:
             self.apply_gas = P.MAX_ACC_REGEN
-          at_full_stop = enabled and standstill and car_stopping
-          near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
+          at_full_stop = (enabled or (CS.out.onePedalModeActive or CS.MADS_lead_braking_enabled)) and standstill and car_stopping
+          near_stop = (enabled or (CS.out.onePedalModeActive or CS.MADS_lead_braking_enabled)) and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
 
-        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake, idx, near_stop and CS.out.gas < 1e-5, at_full_stop and CS.out.gas < 1e-5))
+        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake, idx, near_stop, at_full_stop))
         CS.autoHoldActivated = False
 
         # Auto-resume from full stop by resetting ACC control

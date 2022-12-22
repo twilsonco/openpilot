@@ -1101,6 +1101,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Low-speed blinker",
       AlertStatus.userPrompt, AlertSize.small,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3, creation_delay=0.5),
+    ET.PERMANENT: Alert(
+      "Autosteer paused for low-speed blinker",
+      "Low-speed blinker",
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3, creation_delay=0.5),
   },
 
   EventName.pauseLongOnGasPress: {
@@ -1144,6 +1149,13 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.PERMANENT: Alert(
       "MADS | One-pedal driving",
       "Toggle with regen paddle double-tap",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  EventName.madsAlert6: {
+    ET.PERMANENT: Alert(
+      "MADS | One-pedal one-time-stop",
+      "Slow to below 5mph with regen paddle",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },

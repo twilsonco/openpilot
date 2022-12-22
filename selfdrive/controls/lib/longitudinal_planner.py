@@ -65,8 +65,9 @@ def calc_cruise_accel_limits(v_ego, following, accelMode):
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_MODE_LIST[accelMode])
   return [a_cruise_min, a_cruise_max]
 
-LEAD_ONE_PLUS_TR_BUFFER = -0.2 # [s] follow distance between lead and lead+1 to run the lead+1 mpc (negative means the lead+1 doesn't affect planning unless they're rapidly approaching)
+LEAD_ONE_PLUS_TR_BUFFER = -0.3 # [s] follow distance between lead and lead+1 to run the lead+1 mpc (negative means the lead+1 doesn't affect planning unless they're rapidly approaching)
 LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER = 1.0 # [m]
+LEAD_ONE_PLUS_TO_LEAD_ONE_CUTOFF_TTC = 1.5 # if lead TTC to lead+1 is less than this, then consider the lead+1
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
@@ -133,11 +134,6 @@ class Planner():
     cur_time = sec_since_boot()
     t = cur_time
     
-    if sm['carState'].gasPressed:
-      self.mpcs['lead0'].reset_mpc()
-      self.mpcs['lead1'].reset_mpc()
-      self.mpcs['lead0p1'].reset_mpc()
-    
     v_ego = sm['carState'].vEgo
     a_ego = sm['carState'].aEgo
     
@@ -179,11 +175,9 @@ class Planner():
       self.coasting_lead_a = 10.
     self.tr = self.mpcs['lead0'].tr
     
-    
     if sm['carState'].gearShifter == GearShifter.drive and self.gear_shifter_last != GearShifter.drive:
       self.mpcs['lead0'].df.reset()
     self.gear_shifter_last = sm['carState'].gearShifter
-    
     
     if long_control_state == LongCtrlState.off or sm['carState'].gasPressed:
       self.v_desired = v_ego
@@ -205,6 +199,11 @@ class Planner():
           self.accel_mode = accel_mode
 
     accel_limits = calc_cruise_accel_limits(v_ego, following, self.accel_mode)
+    if not sm['controlsState'].active:
+      accel_limits[1] = min(0.0, accel_limits[1])
+    if sm['carState'].gas > 1e-5:
+      accel_limits[0] = 0.0
+      
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     if force_slow_decel:
       # if required so, force a smooth deceleration
@@ -231,12 +230,17 @@ class Planner():
       next_a = np.inf
       for key in self.mpcs:
         if key == 'lead0p1':
+          ttc = LEAD_ONE_PLUS_TO_LEAD_ONE_CUTOFF_TTC + 1
           if self.lead_0_plus.status and self.lead_0.status:
+            v_rel = self.lead_0_plus.vLeadK - self.lead_0.vLeadK
+            ttc = (self.lead_0_plus.dRel - self.lead_0.dRel) / max(v_rel, 0.01)
+          if ttc > LEAD_ONE_PLUS_TO_LEAD_ONE_CUTOFF_TTC:
+            self.mpcs['lead0p1'].reset_mpc()
+            continue
+          else:
             tr = self.mpcs['lead0'].tr + LEAD_ONE_PLUS_TR_BUFFER
             self.mpcs['lead0p1'].tr_override = True
             self.mpcs['lead0p1'].tr = tr
-          else:
-            continue
         if not sm['controlsState'].active and self.MADS_lead_braking_enabled \
             and (key not in BRAKE_SOURCES or (key == 'custom' and c_source not in BRAKE_SOURCES)):
           self.mpcs[key].reset_mpc()

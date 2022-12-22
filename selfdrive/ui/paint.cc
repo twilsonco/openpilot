@@ -783,7 +783,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   const Rect rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
   auto const & bg_colors_ = (s->scene.alt_engage_color_enabled ? alt_bg_colors : bg_colors);
   if (s->scene.one_pedal_fade > 0.){
-    const QColor &color = bg_colors_[s->scene.car_state.getMadsLeadBrakingActive() ? 3 : (s->scene.car_state.getOnePedalModeActive() ? 1 : 0)];
+    const QColor &color = bg_colors_[s->scene.car_state.getMadsLeadBrakingActive() ? 3 : (s->scene.car_state.getOnePedalModeTemporary() ? 2 : (s->scene.car_state.getOnePedalModeActive() ? 1 : 0))];
     NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), int(s->scene.one_pedal_fade * float(color.alpha())));
     const Rect pedal_rect = {rect.centerX() - brake_size, rect.centerY() - brake_size, brake_size * 2, brake_size * 2};
     ui_fill_rect(s->vg, pedal_rect, nvg_color, brake_size);
@@ -2720,8 +2720,7 @@ static void ui_draw_vision_turnspeed(UIState *s) {
   }
   const float vEgo = s->scene.car_state.getVEgo();  
   auto source = s->scene.longitudinal_plan.getLongitudinalPlanSource();
-  const bool manual_long = s->scene.controls_state.getActive();
-  const bool show = (turnSpeed > 0.0 && ((turnSpeed < vEgo+2.24 && !manual_long) || s->scene.show_debug_ui));
+  const bool show = (s->scene.controls_state.getActive() && turnSpeed > 0.0 && (turnSpeed < vEgo+2.24 || s->scene.show_debug_ui));
 
   if (show) {
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
@@ -2731,7 +2730,7 @@ static void ui_draw_vision_turnspeed(UIState *s) {
       maxspeed_rect.h};
     const float speed = turnSpeed * (s->scene.is_metric ? 3.6 : 2.2369362921);
 
-    if (vision_active){
+    if (source == cereal::LongitudinalPlan::LongitudinalPlanSource::TURN){
       // vision turn controller, so need sign of curvature to know curve direction
       int curveSign = 0;
       if (visionTurnControllerState == cereal::LongitudinalPlan::VisionTurnControllerState::ENTERING){
@@ -2756,8 +2755,7 @@ static void ui_draw_vision_turnspeed(UIState *s) {
                               curveSign, distToTurn > 0 ? distance_str.c_str() : "", "sans-bold", is_active);
     }
     else{
-      auto turnSpeedControlState = s->scene.longitudinal_plan.getTurnSpeedControlState();
-      const bool is_active = turnSpeedControlState > cereal::LongitudinalPlan::SpeedLimitControlState::TEMP_INACTIVE;
+      const bool is_active = source == cereal::LongitudinalPlan::LongitudinalPlanSource::TURNLIMIT;
 
       
 

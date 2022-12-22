@@ -63,8 +63,6 @@ class CarInterface(CarInterfaceBase):
       accel_limits[0] *= interp(time_since_engage, CI.CS.cruise_enabled_neg_accel_ramp_bp, CI.CS.cruise_enabled_neg_accel_ramp_v)
     
     accel_limits = [max(CI.params.ACCEL_MIN, accel_limits[0]), min(accel_limits[1], CI.params.ACCEL_MAX)]
-    if CI.CS.out.onePedalModeActive:
-      accel_limits[1] = 0.0
     
     return accel_limits
 
@@ -437,8 +435,7 @@ class CarInterface(CarInterfaceBase):
         put_nonblocking("FollowLevel", str(self.CS.follow_level))
         cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
     elif self.CS.MADS_enabled and not self.CS.distance_button and self.CS.prev_distance_button:
-      self.CS.MADS_lead_braking_enabled = not self.CS.MADS_lead_braking_enabled
-      put_nonblocking("MADSLeadBraking", str(int(self.CS.MADS_lead_braking_enabled)))
+      put_nonblocking("MADSLeadBraking", str(int(not self.CS.MADS_lead_braking_enabled)))
       cloudlog.info("button press event: press distance button for MADS lead braking. new value: %i" % self.CS.MADS_lead_braking_enabled)
 
     ret.readdistancelines = self.CS.follow_level
@@ -538,7 +535,7 @@ class CarInterface(CarInterfaceBase):
     if self.CS.autoHold and not self.CS.autoHoldActive and not self.CS.regen_paddle_pressed:
       if self.CS.out.vEgo > 0.03:
         self.CS.autoHoldActive = True
-      elif self.CS.out.vEgo < 0.02 and self.CS.out.brakePressed:
+      elif self.CS.out.vEgo < 0.02 and self.CS.out.brakePressed and self.CS.time_in_drive >= self.CS.autohold_min_time_in_drive:
         self.CS.autoHoldActive = True
 
     return can_sends
