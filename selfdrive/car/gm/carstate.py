@@ -113,7 +113,7 @@ class CarState(CarStateBase):
     self.engineRPM = 0
     self.lastAutoHoldTime = 0.0
     self.time_in_drive = 0.0
-    self.autohold_min_time_in_drive = 0.8 # [s]
+    self.autohold_min_time_in_drive = 3.0 # [s]
     self.sessionInitTime = sec_since_boot()
     self.params_check_last_t = 0.
     self.params_check_freq = 0.25 # check params at 10Hz
@@ -244,10 +244,6 @@ class CarState(CarStateBase):
       
     self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
     ret.gearShifter = self.gear_shifter
-    if ret.gearShifter in ['drive','low']:
-      self.time_in_drive += DT_CTRL
-    else:
-      self.time_in_drive = 0.0
     ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"] != 0 
     ret.brakePressed = ret.brakePressed and pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"] >= 15
     if ret.brakePressed:
@@ -256,6 +252,11 @@ class CarState(CarStateBase):
     else:
       self.user_brake = 0.
       ret.brake = 0.
+    
+    if ret.gearShifter in ['drive','low'] and not ret.brakePressed:
+      self.time_in_drive += DT_CTRL
+    else:
+      self.time_in_drive = 0.0
     
     if self.showBrakeIndicator:
       if t - self.sessionInitTime < 13.:
