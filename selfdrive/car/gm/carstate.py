@@ -253,10 +253,14 @@ class CarState(CarStateBase):
       self.user_brake = 0.
       ret.brake = 0.
     
-    if ret.gearShifter in ['drive','low'] and not ret.brakePressed:
-      self.time_in_drive += DT_CTRL
+    if ret.gearShifter in ['drive','low']:
+      if ret.brakePressed:
+        self.time_in_drive = self.autohold_min_time_in_drive
+      else:
+        self.time_in_drive += DT_CTRL
     else:
       self.time_in_drive = 0.0
+    
     
     if self.showBrakeIndicator:
       if t - self.sessionInitTime < 13.:
