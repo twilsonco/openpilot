@@ -299,7 +299,8 @@ class LeadMpc():
     self.follow_level_df = 0.
     self.dynamic_follow_active = False
     
-    self.one_pedal_mode_active_last = False
+    self.MADS_lead_braking_enabled = False
+    self.long_control_active = False
     
     self.params_check_last_t = 0.
     self.params_check_freq = 0.5 # check params at 2Hz
@@ -334,7 +335,7 @@ class LeadMpc():
     self.cur_state[0].x_ego = 0.0
     
     
-    follow_level = int(CS.readdistancelines) - 1 # use base 0
+    follow_level = 1 if (self.MADS_lead_braking_enabled and not self.long_control_active) else int(CS.readdistancelines) - 1 # use base 0
     
     t = sec_since_boot()
     if t - self.params_check_last_t >= self.params_check_freq:
@@ -344,9 +345,9 @@ class LeadMpc():
         self.df.reset(1)
       self.dynamic_follow_active = dynamic_follow_active
     
-    if not CS.onePedalModeActive and self.one_pedal_mode_active_last:
+    if not self.long_control_active:
       self.df.reset(1)
-    self.one_pedal_mode_active_last = CS.onePedalModeActive
+      self.dynamic_follow_active = False
     
     if follow_level != self.follow_level_last:
       self.df.set_fp(follow_level)

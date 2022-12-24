@@ -229,6 +229,9 @@ class Planner():
     else:
       next_a = np.inf
       for key in self.mpcs:
+        if 'lead' in key:
+          self.mpcs[key].long_control_active = enabled
+          self.mpcs[key].MADS_lead_braking_enabled = self.MADS_lead_braking_enabled
         if key == 'lead0p1':
           ttc = LEAD_ONE_PLUS_TO_LEAD_ONE_CUTOFF_TTC + 1
           if self.lead_0_plus.status and self.lead_0.status:
@@ -245,7 +248,7 @@ class Planner():
             and (key not in BRAKE_SOURCES or (key == 'custom' and c_source not in BRAKE_SOURCES)):
           self.mpcs[key].reset_mpc()
           continue
-            
+
         self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
         self.mpcs[key].update(sm['carState'], sm['radarState'], v_cruise, a_mpc[key], active_mpc[key])
         # picks slowest solution from accel in ~0.2 seconds
