@@ -167,6 +167,7 @@ class Controls:
     self.v_cruise_last_changed = 0.
     self.stock_speed_adjust = not params.get_bool("ReverseSpeedAdjust")
     self.MADS_lead_braking_enabled = params.get_bool("MADSLeadBraking")
+    self.accel_modes_enabled = params.get_bool("AccelModeButton")
     self.mismatch_counter = 0
     self.can_error_counter = 0
     self.last_blinker_frame = 0
@@ -181,6 +182,11 @@ class Controls:
     self.pitch = 0.0
     self.pitch_accel_deadzone = 0.01 # [radians] ≈ 1% grade
     self.k_mean = 0.0
+    
+    self.slippery_roads_activated = False
+    self.slippery_roads = False
+    self.low_visibility = False
+    self.low_visibility_activated = False
     
     self.interaction_timer = 0.0 # [s] time since any interaction
     self.intervention_timer = 0.0 # [s] time since screen steering/gas/brake interaction
@@ -275,6 +281,12 @@ class Controls:
           ):
       self.events.add(EventName.signalLost)
     
+    if self.slippery_roads_activated:
+      self.slippery_roads_activated = False
+      self.events.add(EventName.slipperyRoadsActivated)
+    if self.low_visibility_activated:
+      self.low_visibility_activated = False
+      self.events.add(EventName.lowVisibilityActivated)
 
     # Create events for battery, temperature, disk space, and memory
     if EON and self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
@@ -473,6 +485,35 @@ class Controls:
       vEgo = getattr(CS, "vEgo", None)
       vEgo = int(round((float(vEgo) * 3.6 if self.is_metric else int(round((float(vEgo) * 3.6 * 0.6233 + 0.0995)))))) if vEgo else v_cruise
       
+      if self.sm.updated['liveWeatherData']:
+        if self.sm['liveWeatherData'].valid:
+          slippery_roads = self.sm['liveWeatherData'].temperature < -1.0 \
+            and self.sm['liveWeatherData'].rain1Hour * 4 + self.sm['liveWeatherData'].snow1Hour > 36
+          low_visibility = self.sm['liveWeatherData'].visibility <= 600 \
+            or self.sm['liveWeatherData'].rain1Hour > 6
+          if slippery_roads and (not self.weather_valid or not self.slippery_roads):
+            self.CI.CS.accel_mode = 2
+            self.CI.CS.follow_level = 2
+            put_nonblocking("FollowLevel", str(int(self.CI.CS.follow_level)))
+            put_nonblocking("AccelMode", str(int(self.CI.CS.accel_mode)))
+            self.CI.CS.slippery_roads_active = True
+            self.slippery_roads_activated = True
+          elif low_visibility and (not self.weather_valid or not self.low_visibility):
+            self.CI.CS.follow_level = 2
+            put_nonblocking("FollowLevel", str(int(self.CI.CS.follow_level)))
+            self.CI.CS.low_visibility_active = True
+            self.low_visibility_activated = True
+          
+          self.slippery_roads = slippery_roads
+          self.low_visibility = low_visibility
+      
+      if not self.slippery_roads and self.CI.CS.slippery_roads_active:
+        self.CI.CS.slippery_roads_active = False
+        if not self.accel_modes_enabled:
+          self.CI.CS.accel_mode = 1
+          put_nonblocking("AccelMode", str(int(self.CI.CS.accel_mode)))
+      if not self.low_visibility and self.CI.CS.low_visibility_active:
+        self.CI.CS.low_visibility_active = False
       if self.sm.updated['gpsLocationExternal']:
         self.CI.CS.altitude = self.sm['gpsLocationExternal'].altitude
       if self.sm.updated['lateralPlan'] and len(self.sm['lateralPlan'].curvatures) > 0:

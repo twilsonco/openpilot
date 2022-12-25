@@ -161,7 +161,6 @@ class CarState(CarStateBase):
     self.pitch_ema = 1/100
     self.pitch_future_time = 0.5 # seconds
     
-    
     # similar to over-speed coast braking, lockout coast/one-pedal logic first for engine/regen braking, and then for actual brakes.
     # gas lockout lookup tables:
     self.lead_v_rel_long_gas_lockout_bp, self.lead_v_rel_long_gas_lockout_v = [[-12 * CV.MPH_TO_MS, -8 * CV.MPH_TO_MS], [1., 0.]] # pass-through all engine/regen braking for v_rel < -15mph
@@ -194,7 +193,8 @@ class CarState(CarStateBase):
     self.a_ego_filtered_rc = 1.0
     self.a_ego_filtered = FirstOrderFilter(0.0, self.a_ego_filtered_rc, DT_CTRL)
     
-    
+    self.low_visibility_active = False
+    self.slippery_roads_active = False
     
     self.lka_steering_cmd_counter = 0
 

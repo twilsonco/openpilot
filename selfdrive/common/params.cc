@@ -227,6 +227,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ScreenDimMode", CLEAR_ON_MANAGER_START},
     {"ShouldDoUpdate", CLEAR_ON_MANAGER_START},
     {"ShowDebugUI", PERSISTENT},
+    {"WeatherSafetyEnabled", PERSISTENT},
     {"SpeedLimitControl", PERSISTENT},
     {"EUSpeedLimitStyle", PERSISTENT},
     {"SpeedLimitPercOffset", PERSISTENT},

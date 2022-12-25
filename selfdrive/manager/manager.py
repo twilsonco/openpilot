@@ -71,6 +71,7 @@ def manager_init():
     ("AutoLanePositionActive", "0"),
     ("LanePosition", "0"),
     ("NudgelessLaneChange", "0"),
+    ("WeatherSafetyEnabled", "1"),
     ("Coasting", "0"),
     ("CoastingDL", "0"),
     ("WeatherDisplayEnabled", "1"),

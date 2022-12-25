@@ -198,6 +198,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Tap weather info to cycle between simple and full layouts",
                                   "../assets/weather/10n.png",
                                   this));
+  toggles.append(new ParamControl("WeatherSafetyEnabled",
+                                  "Weather safety",
+                                  "OpenPilot will automatically use softer acceleration, softer curve braking, follow traffic farther, or lower the speed limit offset in use.",
+                                  "../assets/weather/10n.png",
+                                  this));
   toggles.append(new ParamControl("ColorPath",
                                   "Colored path",
                                   "Color path according to the amount of lateral (steering) correction being applied",

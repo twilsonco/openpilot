@@ -334,8 +334,9 @@ class LeadMpc():
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
     
-    
-    follow_level = 1 if (self.MADS_lead_braking_enabled and not self.long_control_active) else int(CS.readdistancelines) - 1 # use base 0
+    follow_level = int(CS.readdistancelines) - 1 # use base 0
+    if self.MADS_lead_braking_enabled and not self.long_control_active:
+      follow_level = 1
     
     t = sec_since_boot()
     if t - self.params_check_last_t >= self.params_check_freq:

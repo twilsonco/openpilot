@@ -420,6 +420,8 @@ class VisionTurnController():
       # When leaving we provide a confortable acceleration to regain speed.
       a_target = _LEAVING_ACC
 
+    if self._soften_decel:
+      a_target = max(a_target, 0.4)
     # update solution values.
     self._a_target.update(a_target)
 
@@ -429,6 +431,7 @@ class VisionTurnController():
     self._v_ego = v_ego
     self._a_ego = a_ego
     self._v_cruise_setpoint = v_cruise_setpoint
+    self._soften_decel = sm['carState'].lowVisibilityActive or sm['carState'].slipperyRoadsActive
 
     self._update_params()
     self._update_calculations(sm)

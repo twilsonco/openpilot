@@ -42,6 +42,10 @@ class WeatherD():
       self.api_key = f.read()
     if len(self.api_key) < 32:
       self.api_key = rot_str(''.join(WEATHER_DEFAULT_API_KEY), -1)
+    if len(self.api_key) == 32:
+      cloudlog.info(f"liveWeatherData: using OpenWeatherMap.org api key: {'*' * 24}{self.api_key[-8:]}")
+    else:
+      cloudlog.info("liveWeatherData: no OpenWeatherMap.org api key provided")
     self.weather = None
     
   def update(self, lat, lon):
