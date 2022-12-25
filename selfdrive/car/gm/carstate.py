@@ -178,7 +178,7 @@ class CarState(CarStateBase):
     self.lead_d_long_brake_lockout_bp, self.lead_d_long_brake_lockout_v = [[6, 10], [1., 0.]] # pass through all cruise braking if follow distance < 6m
     
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
-    self.hvb_wattage = FirstOrderFilter(0.0, 0.5, DT_CTRL) # [kW]
+    self.hvb_wattage = FirstOrderFilter(0.0, 1.0, DT_CTRL) # [kW]
     self.hvb_wattage_bp = [0., 53.] # [kW], based on the banned user BZZT's testimony at https://www.gm-volt.com/threads/using-regen-paddle-and-l-drive-mode-summary.222289/
     self.apply_brake_percent = 0. if self.showBrakeIndicator else -1. # for brake percent on ui
     self.vEgo = 0.
@@ -193,6 +193,8 @@ class CarState(CarStateBase):
     self.steer_pause_a_ego_min = 0.1
     self.a_ego_filtered_rc = 1.0
     self.a_ego_filtered = FirstOrderFilter(0.0, self.a_ego_filtered_rc, DT_CTRL)
+    
+    
     
     self.lka_steering_cmd_counter = 0
 
