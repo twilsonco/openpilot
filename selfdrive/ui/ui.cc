@@ -895,6 +895,8 @@ static void update_status(UIState *s) {
 
       s->scene.weather_info.enabled = Params().getBool("WeatherDisplayEnabled");
       s->scene.weather_info.display_mode = std::stoi(Params().get("WeatherDisplayMode"));
+      s->scene.weather_info.valid = false;
+      s->scene.weather_info.time = 0;
 
       s->scene.accel_mode_button_enabled = Params().getBool("AccelModeButton");
       if (!s->scene.accel_mode_button_enabled){
