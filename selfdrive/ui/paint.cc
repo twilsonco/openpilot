@@ -3396,6 +3396,49 @@ static void draw_accel_mode_button(UIState *s) {
   }
 }
 
+static void draw_weather(UIState *s){
+  if (s->scene.weather_info.enabled == 0){
+    return;
+  }
+  auto const & w = s->scene.weather_info;
+  const Rect max_speed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
+  if (w.display_mode == 0 || !w.valid || s->scene.map_open){
+    Rect icon_rect = {max_speed_rect.right() + 20, max_speed_rect.y - 40, 200, 200};
+    if (w.valid){
+      ui_draw_image(s, icon_rect, w.icon, 1.0);
+    }
+    nvgBeginPath(s->vg);
+    nvgFontSize(s->vg, 90);
+    nvgStrokeColor(s->vg, COLOR_WHITE);
+    nvgFillColor(s->vg, COLOR_WHITE);
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+    nvgText(s->vg, icon_rect.centerX(), icon_rect.bottom(),w.valid ? w.desc_simple : "--",NULL);
+    s->scene.weather_touch_rect = {icon_rect.x, icon_rect.y, icon_rect.w, icon_rect.h + 100};
+  }
+  else{
+    Rect icon_rect = {max_speed_rect.right() + 40, max_speed_rect.y - 5, 100, 100};
+    ui_draw_image(s, icon_rect, w.icon, 1.0);
+    nvgBeginPath(s->vg);
+    nvgStrokeColor(s->vg, COLOR_WHITE);
+    nvgFillColor(s->vg, COLOR_WHITE);
+    nvgFontSize(s->vg, 70);
+    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+    nvgText(s->vg, icon_rect.right(), icon_rect.centerY(), w.desc_full1,NULL);
+    nvgFontSize(s->vg, 55);
+    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
+    int y = 0, dy = 50;
+    nvgText(s->vg, icon_rect.x + icon_rect.w / 5, icon_rect.bottom() - 20 + y, w.desc_full2,NULL);
+    y += dy;
+    if (w.has_precip){
+      nvgText(s->vg, icon_rect.x + icon_rect.w / 5, icon_rect.bottom() - 20 + y, w.desc_full3,NULL);
+      y += dy;
+    }
+    nvgText(s->vg, icon_rect.x + icon_rect.w / 5, icon_rect.bottom() - 20 + y, w.desc_full4,NULL);
+    y += dy;
+    s->scene.weather_touch_rect = {icon_rect.x, icon_rect.y, int(icon_rect.w * 2.5), int(icon_rect.h * 2.5)};
+  }
+}
+
 static void draw_dynamic_follow_mode_button(UIState *s) {
   if (s->vipc_client->connected && s->scene.dynamic_follow_mode_button_enabled) {
     const int radius = 72;
@@ -3584,9 +3627,11 @@ static void ui_draw_vision(UIState *s) {
     if (!s->scene.map_open || s->scene.controls_state.getAlertSize() == cereal::ControlsState::AlertSize::NONE){
       ui_draw_measures(s);
     }
+    draw_weather(s);
   }
   else if (s->scene.controls_state.getAlertSize() == cereal::ControlsState::AlertSize::MID) {
     ui_draw_vision_face(s);
+    draw_weather(s);
     if (s->scene.power_meter_mode < 2){
       ui_draw_vision_power_meter(s);
     }
@@ -3716,7 +3761,7 @@ void ui_nvg_init(UIState *s) {
   }
 
   // init images
-  std::vector<std::pair<const char *, const char *>> images = {
+  std::vector<std::pair<const char *, const char *> > images = {
     {"eye", "../assets/img_eye_open_white.png"},
     {"wheel", "../assets/img_chffr_wheel.png"},
     {"driver_face", "../assets/img_driver_face.png"},
@@ -3728,7 +3773,25 @@ void ui_nvg_init(UIState *s) {
     {"one_pedal_mode", "../assets/offroad/icon_car_pedal.png"},
     {"MADS", "../assets/offroad/icon_car_MADS.png"},
     {"lane_pos_left", "../assets/offroad/icon_lane_pos_left.png"},
-    {"lane_pos_right", "../assets/offroad/icon_lane_pos_right.png"}
+    {"lane_pos_right", "../assets/offroad/icon_lane_pos_right.png"},
+    {"01d", "../assets/weather/01d.png"},
+    {"02d", "../assets/weather/02d.png"},
+    {"03d", "../assets/weather/03d.png"},
+    {"04d", "../assets/weather/04d.png"},
+    {"09d", "../assets/weather/09d.png"},
+    {"10d", "../assets/weather/10d.png"},
+    {"11d", "../assets/weather/11d.png"},
+    {"13d", "../assets/weather/13d.png"},
+    {"50d", "../assets/weather/50d.png"},
+    {"01n", "../assets/weather/01n.png"},
+    {"02n", "../assets/weather/02n.png"},
+    {"03n", "../assets/weather/03n.png"},
+    {"04n", "../assets/weather/04n.png"},
+    {"09n", "../assets/weather/09n.png"},
+    {"10n", "../assets/weather/10n.png"},
+    {"11n", "../assets/weather/11n.png"},
+    {"13n", "../assets/weather/13n.png"},
+    {"50n", "../assets/weather/50n.png"}
   };
   for (auto [name, file] : images) {
     s->images[name] = nvgCreateImage(s->vg, file, 1);

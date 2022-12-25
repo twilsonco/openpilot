@@ -193,6 +193,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Decreases device power, CPU, and storage use for running better on older hardware by: 1) defaulting to medium brightness (tap DM icon to change), 2) disable onroad logging (loggerd and proclogd). Your device will not keep or upload logs with this enabled!",
                                   "../assets/offroad/icon_settings.png",
                                   this));
+  toggles.append(new ParamControl("WeatherDisplayEnabled",
+                                  "Display weather info",
+                                  "Tap weather info to cycle between simple and full layouts",
+                                  "../assets/weather/10n.png",
+                                  this));
   toggles.append(new ParamControl("ColorPath",
                                   "Colored path",
                                   "Color path according to the amount of lateral (steering) correction being applied",

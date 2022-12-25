@@ -73,6 +73,8 @@ def manager_init():
     ("NudgelessLaneChange", "0"),
     ("Coasting", "0"),
     ("CoastingDL", "0"),
+    ("WeatherDisplayEnabled", "1"),
+    ("WeatherDisplayMode", "1"),
     ("RegenBraking", "0"),
     ("MADSOnePedalMode", "0"),
     ("MADSLeadBraking", "0"),

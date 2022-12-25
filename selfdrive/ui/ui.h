@@ -166,6 +166,22 @@ typedef struct {
   int cnt;
 } line_vertices_data;
 
+typedef struct {
+  bool enabled = false;
+  bool valid = false;
+  long int time = 0;
+  int display_mode = 0; // 0/1 = simple/full
+  char desc_simple[16];
+  char desc_full1[64];
+  char desc_full2[64];
+  char desc_full3[64];
+  char desc_full4[64];
+  char icon[8];
+  bool has_precip = false;
+} weather_info;
+
+void deg_to_str(char* val, float deg);
+
 typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   // Vehicle info
   STEERING_ANGLE = 0,
@@ -302,6 +318,9 @@ typedef struct UIScene {
   int speed_limit_eu_style = false;
 
   std::string current_road_name;
+
+  weather_info weather_info;
+  Rect weather_touch_rect;
   
   // adjustable lane position
   Rect lane_pos_left_touch_rect = {1,1,1,1}, lane_pos_right_touch_rect = {1,1,1,1};

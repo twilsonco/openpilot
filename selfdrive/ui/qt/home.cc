@@ -218,6 +218,12 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     Params().put("AccelMode", std::to_string((std::stoi(Params().get("AccelMode")) + 1) % 3).c_str(), 1);
     return;
   }
+
+  // weather button
+  if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.weather_touch_rect.ptInRect(e->x(), e->y())){
+    Params().put("WeatherDisplayMode", std::to_string((std::stoi(Params().get("WeatherDisplayMode")) + 1) % 2).c_str(), 1);
+    return;
+  }
   
   // dynamic_follow_mode button
   if (QUIState::ui_state.scene.started && QUIState::ui_state.scene.dynamic_follow_mode_touch_rect.ptInRect(e->x(), e->y())){
