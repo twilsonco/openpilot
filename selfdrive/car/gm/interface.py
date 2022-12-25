@@ -535,7 +535,7 @@ class CarInterface(CarInterfaceBase):
     if self.CS.autoHold and not self.CS.autoHoldActive and not self.CS.regen_paddle_pressed:
       if self.CS.out.vEgo > 0.03:
         self.CS.autoHoldActive = True
-      elif self.CS.out.vEgo < 0.02 and self.CS.out.brakePressed and self.CS.time_in_drive >= self.CS.autohold_min_time_in_drive:
+      elif self.CS.out.vEgo < 0.02 and self.CS.out.brakePressed and self.CS.time_in_drive >= self.CS.MADS_long_min_time_in_drive:
         self.CS.autoHoldActive = True
 
     return can_sends

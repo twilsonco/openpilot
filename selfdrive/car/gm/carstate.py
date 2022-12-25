@@ -113,7 +113,7 @@ class CarState(CarStateBase):
     self.engineRPM = 0
     self.lastAutoHoldTime = 0.0
     self.time_in_drive = 0.0
-    self.autohold_min_time_in_drive = 3.0 # [s]
+    self.MADS_long_min_time_in_drive = 3.0 # [s]
     self.sessionInitTime = sec_since_boot()
     self.params_check_last_t = 0.
     self.params_check_freq = 0.25 # check params at 10Hz
@@ -255,7 +255,7 @@ class CarState(CarStateBase):
     
     if ret.gearShifter in ['drive','low']:
       if ret.brakePressed:
-        self.time_in_drive = self.autohold_min_time_in_drive
+        self.time_in_drive = self.MADS_long_min_time_in_drive
       else:
         self.time_in_drive += DT_CTRL
     else:
@@ -500,9 +500,9 @@ class CarState(CarStateBase):
     self.cruise_enabled_last = cruise_enabled
     
     
-    ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active
+    ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active and self.time_in_drive >= self.MADS_long_min_time_in_drive
     ret.onePedalModeTemporary = self.one_pedal_mode_temporary
-    ret.madsLeadBrakingActive = self.MADS_lead_braking_active and ret.vEgo > 0.02 and ret.gearShifter in ['drive','low'] and ret.gas < 1e-5 and not ret.brakePressed
+    ret.madsLeadBrakingActive = self.MADS_lead_braking_active and ret.vEgo > 0.02 and ret.gearShifter in ['drive','low'] and ret.gas < 1e-5 and not ret.brakePressed and ret.cruiseMain
     
     self.pitch = self.pitch_ema * self.pitch_raw + (1 - self.pitch_ema) * self.pitch 
     ret.pitch = self.pitch

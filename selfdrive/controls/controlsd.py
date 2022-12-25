@@ -240,14 +240,19 @@ class Controls:
       screen_tapped = self._params.get_bool("ScreenTapped")
       if screen_tapped:
         put_nonblocking("ScreenTapped", "0")
-      car_interaction = CS.brakePressed or CS.gas > 1e-5 or CS.steeringPressed
-      if screen_tapped or car_interaction or self.CI.driver_interacted:
+      if CS.gearShifter not in ['drive','low']:
         self.interaction_last_t = t
-        self.CI.driver_interacted = False
-      if car_interaction:
         self.intervention_last_t = t
-      if not car_interaction and self.sm['driverMonitoringState'].isDistracted or CS.vEgo < 0.1:
         self.distraction_last_t = t
+      else:
+        car_interaction = CS.brakePressed or CS.gas > 1e-5 or CS.steeringPressed
+        if screen_tapped or car_interaction or self.CI.driver_interacted:
+          self.interaction_last_t = t
+          self.CI.driver_interacted = False
+        if car_interaction:
+          self.intervention_last_t = t
+        if not car_interaction and self.sm['driverMonitoringState'].isDistracted or CS.vEgo < 0.1:
+          self.distraction_last_t = t
       self.interaction_timer = t - self.interaction_last_t
       self.intervention_timer = t - self.intervention_last_t
       self.distraction_timer = t - self.distraction_last_t
