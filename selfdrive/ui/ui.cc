@@ -502,7 +502,28 @@ static void update_state(UIState *s) {
   if (sm.updated("liveWeatherData")){
     auto data = sm["liveWeatherData"].getLiveWeatherData();
     auto time = data.getTimeCurrent();
-    scene.weather_info.valid = data.getValid() && time > 0 && time - scene.weather_info.time < 1200; // only use weather data < 20 minutes old
+    bool valid = data.getValid() && time > 0 && time - scene.weather_info.time < 1200; // only use weather data < 20 minutes old
+    if (valid && !scene.weather_info.valid){
+      if (time < data.getTimeSunrise() || time > data.getTimeSunset()){
+        scene.screen_dim_mode = MIN(1, scene.screen_dim_mode);
+        Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
+      }
+    }
+    else if (valid && scene.weather_info.valid 
+            && time > data.getTimeSunset() 
+            && scene.weather_info.time <= data.getTimeSunset())
+    {
+      scene.screen_dim_mode = MIN(1, scene.screen_dim_mode);
+      Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
+    }
+    else if (valid && scene.weather_info.valid 
+            && time > data.getTimeSunrise() 
+            && scene.weather_info.time <= data.getTimeSunrise())
+    {
+      scene.screen_dim_mode = 2;
+      Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
+    }
+    scene.weather_info.valid = valid;
     scene.weather_info.time = time;
     std::string desc = data.getDescription();
     std::string icon = data.getIcon();
