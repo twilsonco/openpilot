@@ -257,7 +257,7 @@ class CarController():
         CS.autoHoldActivated = True
 
       else:
-        if CS.out.gas > 1e-5 or CS.out.gearShifter not in ['drive','low'] or CS.out.brakePressed:
+        if CS.out.gas > 1e-5 or CS.out.gearShifter not in ['drive','low'] or CS.out.brakePressed or not CS.cruiseMain:
           at_full_stop = False
           near_stop = False
           car_stopping = False
