@@ -190,7 +190,8 @@ class Controls:
     self.low_visibility_activated = False
     self.weather_safety_enabled = params.get_bool("WeatherSafetyEnabled")
     
-    if params.get_bool("MetricResetSwitch"):
+    self.reset_metrics = params.get_bool("MetricResetSwitch")
+    if self.reset_metrics:
       params.put("TripDistance", "0.0")
       params.put("NumberOfDisengagements", "0.0")
       params.put("NumberOfInterventions", "0.0")
@@ -199,7 +200,6 @@ class Controls:
       params.put("CarSecondsRunning", "0.0")
       params.put("EngagedDistance", "0.0")
       params.put("OpenPilotSecondsEngaged", "0.0")
-      params.put("MetricResetSwitch", "0")
     
     self.distance_traveled_total = float(params.get("TripDistance", encoding="utf8"))
     self.car_running_timer_total = float(params.get("CarSecondsRunning", encoding="utf8"))
@@ -345,6 +345,9 @@ class Controls:
         put_nonblocking("OpenPilotSecondsEngaged", str(self.openpilot_long_control_timer_total))
         put_nonblocking("TripDistance", str(self.distance_traveled_total))
         put_nonblocking("EngagedDistance", str(self.engaged_dist_total))
+        if self.reset_metrics:
+          self.reset_metrics = False
+          put_nonblocking("MetricResetSwitch", "0")
         self.params_write_last_t = t
     
     network_strength = self.sm['deviceState'].networkStrength
