@@ -3890,7 +3890,7 @@ static void draw_weather(UIState *s){
     s->scene.weather_touch_rect = {icon_rect.x, icon_rect.y, icon_rect.w, icon_rect.h + 100};
   }
   else{
-    Rect icon_rect = {max_speed_rect.right() + 40, max_speed_rect.y - 5, 100, 100};
+    Rect icon_rect = {max_speed_rect.right() + 40, max_speed_rect.y, 100, 100};
     ui_draw_image(s, icon_rect, w.icon, 1.0);
     nvgBeginPath(s->vg);
     nvgStrokeColor(s->vg, COLOR_WHITE);
