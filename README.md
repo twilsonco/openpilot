@@ -127,6 +127,8 @@ Please show your support by contributing to the ongoing development of this proj
     * Won't auto lane change if adjacent lane is not detected, or if oncoming traffic in adjacent lanes
     * Alert will tell you when/why auto lane change is blocked
     * Lane change alerts warn you if changing lanes when adjacent lane not detected or when oncoming traffic in adjacent lane
+- [x] [✅] *Local weather information* using OpenWeatherMap.org. Tap the weather icon to switch between simple/full display modes. You can use the provided API key or enter your own into `/data/OpenWeatherMap_apiKey.txt`
+- [x] [✅] *Weather-based safety* using OpenWeatherMap.org. Openpilot will automatically use far follow, mild acceleration, and less intense braking for curves when in inclement weather. You can use the provided API key or enter your own into `/data/OpenWeatherMap_apiKey.txt`
 - [x] [✅] **Power meter** (or brake indicator) shows level of regenerative/engine and friction braking
     * Power meter shows lines for losses due to drag, rolling resistance, and elevation gain (in that order from bottom to top on the meter), and differentiates between regen and brake power
     * Tap brake indicator or power meter to switch between indicator, meter, or meter + power readout
@@ -137,8 +139,20 @@ Please show your support by contributing to the ongoing development of this proj
         * Tap any metric to cycle its content (sorry for all the god-forsaken tapping, a better metric display with vehicle, following, position, and device widgets is a WIP)
     * Metrics (79 to choose from):
         * Device info: CPU temperature (°C and °F), CPU percent, CPU temp + percent (°C and °F), memory temperature (°C and °F), memory used, free storage, ambient temperature (°C and °F), fanspeed (as percent of max), GPS accuracy (and number of satelites), altitude
-        * Vehicle info: Time since driver interaction, time since driver intervention, time since driver distraction, Engine RPM, engine coolant temperature (°C and °F), engine RPM + coolant temperature (°C and °F), steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, lane width, distance from lane center, percent grade of current road (one based on GPS, one based on device accelerometer), Volt high-voltage battery wattage [kW], voltage [V], current [A], voltage+wattage, drag force/power, brake force/power, regen force/power, electric motor force/power, gas engine power, total acceleration force/power, EV efficiency (instantaneous, 5 mile average, total), EV power consumption (instant/5mi/total), EV instantaneous efficiency/consumption (depending on sign), EV drivetrain efficiency (amount of power making it to the tires),  
+        * Vehicle info: Engine RPM, engine coolant temperature (°C and °F), engine RPM + coolant temperature (°C and °F), steering torque, steering angle, desired steering angle, vehicle acceleration, vehicle jerk, lane width, distance from lane center, percent grade of current road (one based on GPS, one based on device accelerometer), Volt high-voltage battery wattage [kW], voltage [V], current [A], voltage+wattage, drag force/power, brake force/power, regen force/power, electric motor force/power, gas engine power, total acceleration force/power, EV efficiency (instantaneous, 5 mile average, total), EV power consumption (instant/5mi/total), EV instantaneous efficiency/consumption (depending on sign), EV drivetrain efficiency (amount of power making it to the tires),  
         * Lead/traffic info: follow distance level, lead distance [length], desired lead distance [length], lead distance [time], desired lead distance [time], follow distance and acceleration mpc costs [in units of the stock OP costs; i.e. 2.5 means 2.5× the stock OP value], relative lead velocity, absolute lead velocity, number of cars (total, ongoing, oncoming, stopped, ongoing in adjacent lanes), minimum follow distance of ongoing cars in adjacent lanes
+        * Engagement and interaction statistics
+          * Time driving (drive or trip)
+          * Time openpilot fully engaged (drive or trip)
+          * Percent time openpilot fully engaged (drive or trip)
+          * Distance driven (drive or trip)
+          * Distance openpilot fully engaged (since last engage, drive, or trip)
+          * Percent distance openpilot fully engaged (drive or trip)
+          * Time since last disengagement (also for interaction, intervention, distraction)
+          * Distance since last disengagement (also for interaction, intervention, distraction)
+          * Count of disengagements (drive or trip; also for interactions, interventions, distractions)
+          * Time per disengagement (drive or trip; also for interactions, interventions, distractions)
+          * Distance per disengagement (drive or trip; also for interactions, interventions, distractions)
         * ...and others
 - [x] [GM] panda-based GM steering fault fix (thanks jshuler)
 - [x] Remember last follow mode (ported from kegman)

@@ -1,9 +1,24 @@
-Version tw-0.8.12-12_tws (2022-12-17)
+Version tw-0.8.12-12_tws (2022-12-26)
 ========================
  * MADS (Modified Assistive Driving Safety). Three independent, always-on safety features. Enable the MADS autosteer toggle in order to access the other features as well. If enabled, the max speed indicator is replaced by the MADS icon. *Reminder: You can use the cruise main button to cancel out all openpilot controls*. 
   * *Autosteer* comes on as soon as you start driving the car, before initially engaging, and even while brakes are pressed. *Toggle autosteer with the lane keep assist button on your steering wheel*. Optional toggle in settings to pause steering at low speeds when blinker is on and you're decelerating. When autosteer is enabled, the steering wheel icon will be colored ("disengaged" color when disabled).
   * *Lead braking* will be applied automatically, so OpenPilot will smoothly slow for other cars *if neither the gas or brake pedal are pressed in the slightest*. Use either pedal to override lead braking. *Toggle lead braking with the ACC follow distance button on your steering wheel*. When lead braking is enabled, an additional white ring is shown around the MADS icon.
   * *One-pedal driving*, where OpenPilot applies light braking when you're in L-mode and not pressing the gas, so you can come to a stop without using brakes. The feeling is as if L-mode regen braking brought you to a stop. *Toggle one-pedal driving with a double-press of the regen paddle*. You can also toggle one-pedal driving by tapping the MADS icon. When one-pedal driving is enabled, the MADS icon turns to the "engaged" color, or the "disengaged" color when disabled. (application of friction brakes originally suggested by cybertronicify — 10/06/2021)
+  * *One-time one-pedal stop* by holding the regen paddle to below 5mph and one-pedal mode will activate until the next gas press
+* On-screen weather display based on your current location. Tap weather icon to switch between simple/full display modes. Optionally enter your own OpenWeatherMap.org api key into `/data/OpenWeatherMap_apiKey.txt`
+* Weather-based safety: automatically lower speed limit offset, switch to far-follow, mild acceleration, and mild curve braking for inclement weather
+* New (mostly) UI metrics: engagement and interaction statistics
+  * Time driving (drive or trip)
+  * Time openpilot fully engaged (drive or trip)
+  * Percent time openpilot fully engaged (drive or trip)
+  * Distance driven (drive or trip)
+  * Distance openpilot fully engaged (since last engage, drive, or trip)
+  * Percent distance openpilot fully engaged (drive or trip)
+  * Time since last disengagement (also for interaction, intervention, distraction)
+  * Distance since last disengagement (also for interaction, intervention, distraction)
+  * Count of disengagements (drive or trip; also for interactions, interventions, distractions)
+  * Time per disengagement (drive or trip; also for interactions, interventions, distractions)
+  * Distance per disengagement (drive or trip; also for interactions, interventions, distractions)
 * Spruced up the toggles page
 
 Version tw-0.8.12-11_tws (2022-12-09)

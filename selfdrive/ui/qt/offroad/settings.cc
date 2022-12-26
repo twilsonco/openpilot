@@ -195,12 +195,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   this));
   toggles.append(new ParamControl("WeatherDisplayEnabled",
                                   "Display weather info",
-                                  "Tap weather info to cycle between simple and full layouts",
+                                  "Tap weather info to cycle between simple and full layouts. If you want, enter your own OpenWeatherMap.org api key into /data/OpenWeatherMap_apiKey.txt",
                                   "../assets/weather/10n.png",
                                   this));
   toggles.append(new ParamControl("WeatherSafetyEnabled",
                                   "Weather safety",
-                                  "OpenPilot will automatically use softer acceleration, softer curve braking, follow traffic farther, or lower the speed limit offset in use.",
+                                  "OpenPilot will automatically use softer acceleration, softer curve braking, follow traffic farther, or lower the speed limit offset in use. If you want, enter your own OpenWeatherMap.org api key into /data/OpenWeatherMap_apiKey.txt",
                                   "../assets/weather/10n.png",
                                   this));
   toggles.append(new ParamControl("ColorPath",
