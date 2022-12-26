@@ -229,7 +229,7 @@ class Controls:
     self.intervention_last_t = sec_since_boot()
     self.distraction_last_t = sec_since_boot()
     self.params_check_last_t = 0.0
-    self.params_check_freq = 1.0
+    self.params_check_freq = 0.3
     self._params = params
     self.params_write_freq = 30.0
     self.params_write_last_t = sec_since_boot()
