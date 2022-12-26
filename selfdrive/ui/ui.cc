@@ -931,13 +931,6 @@ static void update_status(UIState *s) {
         Params().put("EVConsumption5Mi", val_str, strlen(val_str));
         Params().put("EVConsumptionTripkWh", val_str, strlen(val_str));
         Params().put("TripDistance", val_str, strlen(val_str));
-        Params().put("NumberOfDisengagements", val_str, strlen(val_str));
-        Params().put("NumberOfInterventions", val_str, strlen(val_str));
-        Params().put("NumberOfInteractions", val_str, strlen(val_str));
-        Params().put("NumberOfDistractions", val_str, strlen(val_str));
-        Params().put("CarSecondsRunning", val_str, strlen(val_str));
-        Params().put("EngagedDistance", val_str, strlen(val_str));
-        Params().put("OpenPilotSecondsEngaged", val_str, strlen(val_str));
         s->scene.ev_recip_eff_wa[1] = 0.0;
         s->scene.ev_eff_total_dist = 0.0;
         s->scene.ev_eff_total_kWh = 0.0;
