@@ -36,9 +36,9 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_openpilot.png",
                                   this));
 
-  toggles.append(new ParamControl("EVConsumptionReset",
+  toggles.append(new ParamControl("MetricResetSwitch",
                                   "On-screen information (tap me; reset)",
-                                  "When the car is on, tap the current speed to unlock edit mode, then tap more to cycle the number of metrics shown on the right side. Tap each metric to change the information displayed. Use this toggle to, upon the next vehicle start, reset the distance travelled and EV consumption and efficiency trip and 5mi/8km metrics to 0.",
+                                  "When the car is on, tap the current speed to unlock edit mode, then tap more to cycle the number of metrics shown on the right side. Tap each metric to change the information displayed. Use this toggle to, upon the next vehicle start, reset the distance travelled, disengagement/intervention/interaction/distraction counts, and EV consumption and efficiency trip and 5mi/8km metrics.",
                                   "../assets/offroad/icon_calibration.png",
                                   this));
   toggles.append(new ParamControl("DisableDisengageOnGas",

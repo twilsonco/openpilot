@@ -158,6 +158,7 @@ class Controls:
     self.initialized = False
     self.state = State.disabled
     self.enabled = False
+    self.enabled_last = False
     self.active = False
     self.lat_active = False
     self.can_rcv_error = False
@@ -188,15 +189,49 @@ class Controls:
     self.low_visibility = False
     self.low_visibility_activated = False
     
+    if params.get_bool("MetricResetSwitch"):
+      params.put("TripDistance", "0.0")
+      params.put("NumberOfDisengagements", "0.0")
+      params.put("NumberOfInterventions", "0.0")
+      params.put("NumberOfInteractions", "0.0")
+      params.put("NumberOfDistractions", "0.0")
+      params.put("CarSecondsRunning", "0.0")
+      params.put("EngagedDistance", "0.0")
+      params.put("OpenPilotSecondsEngaged", "0.0")
+      params.put("MetricResetSwitch", "0")
+    
+    self.distance_traveled_total = float(params.get("TripDistance", encoding="utf8"))
+    self.car_running_timer_total = float(params.get("CarSecondsRunning", encoding="utf8"))
+    self.car_running_timer_session = 0.0
+    self.openpilot_long_control_timer_total = float(params.get("OpenPilotSecondsEngaged", encoding="utf8"))
+    self.openpilot_long_control_timer_session = 0.0
+    self.disengagement_timer = 0.0
     self.interaction_timer = 0.0 # [s] time since any interaction
     self.intervention_timer = 0.0 # [s] time since screen steering/gas/brake interaction
     self.distraction_timer = 0.0 # [s] time since driver distracted
+    self.disengagement_count_total = int(params.get("NumberOfDisengagements", encoding="utf8"))
+    self.disengagement_count_session = 0
+    self.interaction_count_total = int(params.get("NumberOfInteractions", encoding="utf8"))
+    self.interaction_count_session = 0
+    self.intervention_count_total = int(params.get("NumberOfInterventions", encoding="utf8"))
+    self.intervention_count_session = 0
+    self.distraction_count_total = int(params.get("NumberOfDistractions", encoding="utf8"))
+    self.distraction_count_session = 0
+    self.distance_last = 0.0
+    self.engaged_dist = 0.0
+    self.engaged_dist_session = 0.0
+    self.engaged_dist_total = float(params.get("EngagedDistance", encoding="utf8"))
+    self.interaction_dist = 0.0
+    self.intervention_dist = 0.0
+    self.distraction_dist = 0.0
     self.interaction_last_t = sec_since_boot()
     self.intervention_last_t = sec_since_boot()
     self.distraction_last_t = sec_since_boot()
     self.params_check_last_t = 0.0
     self.params_check_freq = 1.0
     self._params = params
+    self.params_write_freq = 30.0
+    self.params_write_last_t = sec_since_boot()
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -242,10 +277,31 @@ class Controls:
     t = sec_since_boot()
     
     if t - self.params_check_last_t > self.params_check_freq:
-      self.params_check_last_t = t
       screen_tapped = self._params.get_bool("ScreenTapped")
       if screen_tapped:
         put_nonblocking("ScreenTapped", "0")
+      self.distance_last = CS.vEgo * (t - self.params_check_last_t)
+      self.distance_traveled_total += self.distance_last
+      self.car_running_timer_session += self.params_check_freq
+      self.car_running_timer_total += self.params_check_freq
+      if not self.enabled and self.enabled_last:
+        self.disengagement_count_session += 1
+        self.disengagement_count_total += 1
+        self.disengagement_last_t = t
+      elif self.enabled and self.enabled_last:
+        self.openpilot_long_control_timer_session += self.params_check_freq
+        self.openpilot_long_control_timer_total += self.params_check_freq
+        self.disengagement_timer += self.params_check_freq
+        self.engaged_dist += self.distance_last
+        self.engaged_dist_session += self.distance_last
+        self.engaged_dist_total += self.distance_last
+        self.interaction_dist += self.distance_last
+        self.intervention_dist += self.distance_last
+      if not self.enabled:
+        self.interaction_last_t = t
+        self.intervention_last_t = t
+        self.disengagement_timer = 0.0
+        self.engaged_dist = 0.0
       if CS.gearShifter not in ['drive','low']:
         self.interaction_last_t = t
         self.intervention_last_t = t
@@ -253,16 +309,42 @@ class Controls:
       else:
         car_interaction = CS.brakePressed or CS.gas > 1e-5 or CS.steeringPressed
         if screen_tapped or car_interaction or self.CI.driver_interacted:
+          if self.interaction_timer > 2.0:
+            self.interaction_count_session += 1
+            self.interaction_count_total += 1
           self.interaction_last_t = t
+          self.interaction_dist = 0.0
           self.CI.driver_interacted = False
         if car_interaction:
+          if self.intervention_timer > 2.0:
+            self.intervention_count_session += 1
+            self.intervention_count_total += 1
           self.intervention_last_t = t
+          self.intervention_dist = 0.0
         if not car_interaction and self.sm['driverMonitoringState'].isDistracted or CS.vEgo < 0.1:
+          if CS.vEgo > 0.1 and self.distraction_timer > 2.0:
+            self.distraction_count_session += 1
+            self.distraction_count_total += 1
           self.distraction_last_t = t
+          self.distraction_dist = 0.0
+        else:
+          self.distraction_dist += self.distance_last
       self.interaction_timer = t - self.interaction_last_t
       self.intervention_timer = t - self.intervention_last_t
       self.distraction_timer = t - self.distraction_last_t
       self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking")
+      self.enabled_last = self.enabled
+      self.params_check_last_t = t
+      if t - self.params_write_last_t > self.params_write_freq:
+        put_nonblocking("NumberOfDisengagements", str(self.disengagement_count_total))
+        put_nonblocking("NumberOfInteractions", str(self.interaction_count_total))
+        put_nonblocking("NumberOfInterventions", str(self.intervention_count_total))
+        put_nonblocking("NumberOfDistractions", str(self.distraction_count_total))
+        put_nonblocking("CarSecondsRunning", str(self.car_running_timer_total))
+        put_nonblocking("OpenPilotSecondsEngaged", str(self.openpilot_long_control_timer_total))
+        put_nonblocking("TripDistance", str(self.distance_traveled_total))
+        put_nonblocking("EngagedDistance", str(self.engaged_dist_total))
+        self.params_write_last_t = t
     
     network_strength = self.sm['deviceState'].networkStrength
     if network_strength != self.network_strength_last:
@@ -841,6 +923,28 @@ class Controls:
     controlsState.interactionTimer = int(self.interaction_timer)
     controlsState.interventionTimer = int(self.intervention_timer)
     controlsState.distractionTimer = int(self.distraction_timer)
+    
+    controlsState.distanceTraveledSession = float(self.distance_traveled)
+    controlsState.distanceTraveledTotal = float(self.distance_traveled_total)
+    controlsState.carRunningTimerTotal = int(self.car_running_timer_total)
+    controlsState.carRunningTimerSession = int(self.car_running_timer_session)
+    controlsState.openpilotLongControlTimerTotal = int(self.openpilot_long_control_timer_total)
+    controlsState.openpilotLongControlTimerSession = int(self.openpilot_long_control_timer_session)
+    controlsState.disengagementTimer = int(self.disengagement_timer)
+    controlsState.disengagementCountTotal = int(self.disengagement_count_total)
+    controlsState.disengagementCountSession = int(self.disengagement_count_session)
+    controlsState.interactionCountTotal = int(self.interaction_count_total)
+    controlsState.interactionCountSession = int(self.interaction_count_session)
+    controlsState.interventionCountTotal = int(self.intervention_count_total)
+    controlsState.interventionCountSession = int(self.intervention_count_session)
+    controlsState.distractionCountTotal = int(self.distraction_count_total)
+    controlsState.distractionCountSession = int(self.distraction_count_session)
+    controlsState.interactionDistance = float(self.interaction_dist)
+    controlsState.interventionDistance = float(self.intervention_dist)
+    controlsState.engagedDistance = float(self.engaged_dist)
+    controlsState.engagedDistanceTotal = float(self.engaged_dist_total)
+    controlsState.engagedDistanceSession = float(self.engaged_dist_session)
+    controlsState.distractionDistance = int(self.distraction_dist)
 
     lat_tuning = self.CP.lateralTuning.which()
     if self.joystick_mode:

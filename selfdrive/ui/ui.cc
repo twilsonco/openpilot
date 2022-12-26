@@ -32,6 +32,24 @@ static const float dynamic_follow_fade_step = 1. / dynamic_follow_fade_duration;
 
 static const float voacc_lead_min_laneline_prob = 0.6; // should match MIN_LANE_PROB in selfdrive/controls/radard.py
 
+void s_to_time_str(char* val, int s){
+  int d = s / 86400;
+  s = s % 86400;
+  int h = s / 3600;
+  s = s % 3600;
+  int m = s / 60;
+  s = s % 60;
+  if (d > 0){
+    snprintf(val, sizeof(val), "%d-%02d:%02d", d, h, m);
+  }
+  else if (h > 0){
+    snprintf(val, sizeof(val), "%d:%02d:%02d", h, m, s);
+  }
+  else{
+    snprintf(val, sizeof(val), "%d:%02d", m, s);
+  }
+}
+
 void deg_to_str(char* val, float deg){
   if (((deg >= 337.5) && (deg <= 360)) || ((deg >= 0) && (deg <= 22.5))) {
     snprintf(val, sizeof(val), "N");
@@ -324,7 +342,7 @@ static void update_state(UIState *s) {
       scene.dynamic_follow_active = std::stoi(Params().get("DynamicFollow"));
     }
     if (scene.ev_eff_total_dist < 10.){
-      float oldDist = std::stof(Params().get("EVConsumptionTripDistance"));
+      float oldDist = std::stof(Params().get("TripDistance"));
       if (oldDist > scene.ev_eff_total_dist){
         scene.ev_eff_total_dist = oldDist;
         scene.ev_recip_eff_wa[1] = std::stof(Params().get("EVConsumption5Mi"));
@@ -366,7 +384,7 @@ static void update_state(UIState *s) {
       {
         char val_str[18];
         sprintf(val_str, "%.3f", scene.ev_eff_total_dist);
-        Params().put("EVConsumptionTripDistance", val_str, strlen(val_str));
+        Params().put("TripDistance", val_str, strlen(val_str));
       }
     }
     
@@ -907,13 +925,19 @@ static void update_status(UIState *s) {
         s->scene.dynamic_follow_mode_touch_rect = {1,1,1,1};
       }
 
-      if (Params().getBool("EVConsumptionReset")) {
+      if (Params().getBool("MetricResetSwitch")) {
         char val_str[18];
         sprintf(val_str, "0.0");
         Params().put("EVConsumption5Mi", val_str, strlen(val_str));
         Params().put("EVConsumptionTripkWh", val_str, strlen(val_str));
-        Params().put("EVConsumptionTripDistance", val_str, strlen(val_str));
-        Params().putBool("EVConsumptionReset", false);
+        Params().put("TripDistance", val_str, strlen(val_str));
+        Params().put("NumberOfDisengagements", val_str, strlen(val_str));
+        Params().put("NumberOfInterventions", val_str, strlen(val_str));
+        Params().put("NumberOfInteractions", val_str, strlen(val_str));
+        Params().put("NumberOfDistractions", val_str, strlen(val_str));
+        Params().put("CarSecondsRunning", val_str, strlen(val_str));
+        Params().put("EngagedDistance", val_str, strlen(val_str));
+        Params().put("OpenPilotSecondsEngaged", val_str, strlen(val_str));
         s->scene.ev_recip_eff_wa[1] = 0.0;
         s->scene.ev_eff_total_dist = 0.0;
         s->scene.ev_eff_total_kWh = 0.0;

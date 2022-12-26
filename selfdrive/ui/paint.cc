@@ -1023,17 +1023,9 @@ static void ui_draw_measures(UIState *s){
             if (s < 5){
               val_color = nvgRGBA(255, 125, 100, 200);
             }
-            int h = s / 3600;
-            s = s % 3600;
-            int m = s / 60;
-            s = s % 60;
-            if (h > 0){
-              snprintf(val, sizeof(val), "%d:%02d:%02d", h, m, s);
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "INTERACT");
             }
-            else{
-              snprintf(val, sizeof(val), "%d:%02d", m, s);
-            }
-            snprintf(name, sizeof(name), "INTERACT");}
             break;
 
           case UIMeasure::INTERVENTION_TIMER: 
@@ -1042,17 +1034,9 @@ static void ui_draw_measures(UIState *s){
             if (s < 5){
               val_color = nvgRGBA(255, 125, 100, 200);
             }
-            int h = s / 3600;
-            s = s % 3600;
-            int m = s / 60;
-            s = s % 60;
-            if (h > 0){
-              snprintf(val, sizeof(val), "%d:%02d:%02d", h, m, s);
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "INTERVENE");
             }
-            else{
-              snprintf(val, sizeof(val), "%d:%02d", m, s);
-            }
-            snprintf(name, sizeof(name), "INTERVENE");}
             break;
           
           case UIMeasure::DISTRACTION_TIMER: 
@@ -1061,19 +1045,228 @@ static void ui_draw_measures(UIState *s){
             if (s < 5){
               val_color = nvgRGBA(255, 125, 100, 200);
             }
-            int h = s / 3600;
-            s = s % 3600;
-            int m = s / 60;
-            s = s % 60;
-            if (h > 0){
-              snprintf(val, sizeof(val), "%d:%02d:%02d", h, m, s);
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "DISTRACT");
             }
-            else{
-              snprintf(val, sizeof(val), "%d:%02d", m, s);
+            break;
+
+          case UIMeasure::TIME_CAR_RUNNING_SESSION: 
+            {
+            int s = scene.controls_state.getCarRunningTimerSession();
+            if (s < 5){
+              val_color = nvgRGBA(255, 125, 100, 200);
             }
-            snprintf(name, sizeof(name), "DISTRACT");}
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "DRIVE TIME");
+            }
+            break;
+
+          case UIMeasure::TIME_CAR_RUNNING_TOTAL: 
+            {
+            int s = scene.controls_state.getCarRunningTimerTotal();
+            if (s < 5){
+              val_color = nvgRGBA(255, 125, 100, 200);
+            }
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "TRIP TIME");
+            }
+            break;
+
+          case UIMeasure::TIME_OPENPILOT_ENGAGED_SESSION: 
+            {
+            int s = scene.controls_state.getOpenpilotLongControlTimerSession();
+            if (s < 5){
+              val_color = nvgRGBA(255, 125, 100, 200);
+            }
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "DRIVE ENGD.");
+            }
+            break;
+
+          case UIMeasure::TIME_OPENPILOT_ENGAGED_TOTAL: 
+            {
+            int s = scene.controls_state.getOpenpilotLongControlTimerTotal();
+            if (s < 5){
+              val_color = nvgRGBA(255, 125, 100, 200);
+            }
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "TRIP ENGD.");
+            }
+            break;
+
+          case UIMeasure::TIME_OPENPILOT_ENGAGED: 
+            {
+            int s = scene.controls_state.getDisengagementTimer();
+            if (s < 5){
+              val_color = nvgRGBA(255, 125, 100, 200);
+            }
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "ENGAGED");
+            }
+            break;
+
+          case UIMeasure::TIME_ENGAGED_PERCENT_SESSION: 
+            {
+            float p = scene.controls_state.getOpenpilotLongControlTimerSession() / MAX(1.0, scene.controls_state.getCarRunningTimerSession()) * 100.;
+            snprintf(val, sizeof(val), "%0.1f%%", p);
+            snprintf(name, sizeof(name), "DRIVE ENGAGED");
+            snprintf(unit, sizeof(unit), "time");
+            }
+            break;
+
+          case UIMeasure::TIME_ENGAGED_PERCENT_TOTAL: 
+            {
+            float p = scene.controls_state.getOpenpilotLongControlTimerTotal() / MAX(1.0, scene.controls_state.getCarRunningTimerTotal()) * 100.;
+            snprintf(val, sizeof(val), "%0.1f%%", p);
+            snprintf(name, sizeof(name), "TRIP ENGAGED");
+            snprintf(unit, sizeof(unit), "time");
+            }
+            break;
+
+          case UIMeasure::DISENGAGEMENT_COUNT_SESSION: 
+            {
+            int c = scene.controls_state.getDisengagementCountSession();
+            snprintf(val, sizeof(val), "%d", c);
+            snprintf(name, sizeof(name), "#DISENGAGE");
+            snprintf(unit, sizeof(unit), "drive");
+            }
+            break;
+
+          case UIMeasure::DISENGAGEMENT_COUNT_TOTAL: 
+            {
+            int c = scene.controls_state.getDisengagementCountTotal();
+            snprintf(val, sizeof(val), "%d", c);
+            snprintf(name, sizeof(name), "#DISENGAGE");
+            snprintf(unit, sizeof(unit), "trip");
+            }
+            break;
+
+          case UIMeasure::INTERACTION_COUNT_SESSION: 
+            {
+            int c = scene.controls_state.getInteractionCountSession();
+            snprintf(val, sizeof(val), "%d", c);
+            snprintf(name, sizeof(name), "#INTERACT");
+            snprintf(unit, sizeof(unit), "drive");
+            }
+            break;
+
+          case UIMeasure::INTERACTION_COUNT_TOTAL: 
+            {
+            int c = scene.controls_state.getInteractionCountTotal();
+            snprintf(val, sizeof(val), "%d", c);
+            snprintf(name, sizeof(name), "#INTERACT");
+            snprintf(unit, sizeof(unit), "trip");
+            }
+            break;
+
+          case UIMeasure::INTERVENTION_COUNT_SESSION: 
+            {
+            int c = scene.controls_state.getInterventionCountSession();
+            snprintf(val, sizeof(val), "%d", c);
+            snprintf(name, sizeof(name), "#INTERVENE");
+            snprintf(unit, sizeof(unit), "drive");
+            }
+            break;
+
+          case UIMeasure::INTERVENTION_COUNT_TOTAL: 
+            {
+            int c = scene.controls_state.getInterventionCountTotal();
+            snprintf(val, sizeof(val), "%d", c);
+            snprintf(name, sizeof(name), "#INTERVENE");
+            snprintf(unit, sizeof(unit), "trip");
+            }
+            break;
+
+          case UIMeasure::DISTRACTION_COUNT_SESSION: 
+            {
+            int c = scene.controls_state.getDistractionCountSession();
+            snprintf(val, sizeof(val), "%d", c);
+            snprintf(name, sizeof(name), "#DISTRACT");
+            snprintf(unit, sizeof(unit), "drive");
+            }
+            break;
+
+          case UIMeasure::DISTRACTION_COUNT_TOTAL: 
+            {
+            int c = scene.controls_state.getDistractionCountTotal();
+            snprintf(val, sizeof(val), "%d", c);
+            snprintf(name, sizeof(name), "#DISTRACT");
+            snprintf(unit, sizeof(unit), "trip");
+            }
+            break;
+
+          case UIMeasure::TIME_PER_DISENGAGEMENT_SESSION: 
+            {
+            int s = float(scene.controls_state.getOpenpilotLongControlTimerSession()) / MAX(1.0, scene.controls_state.getDisengagementCountSession());
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "PER DISENGAGE");
+            snprintf(unit, sizeof(unit), "drive time");
+            }
+            break;
+
+          case UIMeasure::TIME_PER_DISENGAGEMENT_TOTAL: 
+            {
+            int s = float(scene.controls_state.getOpenpilotLongControlTimerTotal()) / MAX(1.0, scene.controls_state.getDisengagementCountTotal());
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "PER DISENGAGE");
+            snprintf(unit, sizeof(unit), "trip time");
+            }
             break;
             
+          case UIMeasure::TIME_PER_INTERACTION_SESSION: 
+            {
+            int s = float(scene.controls_state.getOpenpilotLongControlTimerSession()) / MAX(1.0, scene.controls_state.getInteractionCountSession());
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "PER INTERACT");
+            snprintf(unit, sizeof(unit), "drive time");
+            }
+            break;
+
+          case UIMeasure::TIME_PER_INTERACTION_TOTAL: 
+            {
+            int s = float(scene.controls_state.getOpenpilotLongControlTimerTotal()) / MAX(1.0, scene.controls_state.getInteractionCountTotal());
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "PER INTERACT");
+            snprintf(unit, sizeof(unit), "trip time");
+            }
+            break;
+
+          case UIMeasure::TIME_PER_INTERVENTION_SESSION: 
+            {
+            int s = float(scene.controls_state.getOpenpilotLongControlTimerSession()) / MAX(1.0, scene.controls_state.getInterventionCountSession());
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "PER INTERVENE");
+            snprintf(unit, sizeof(unit), "drive time");
+            }
+            break;
+
+          case UIMeasure::TIME_PER_INTERVENTION_TOTAL: 
+            {
+            int s = float(scene.controls_state.getOpenpilotLongControlTimerTotal()) / MAX(1.0, scene.controls_state.getInterventionCountTotal());
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "PER INTERVENE");
+            snprintf(unit, sizeof(unit), "trip time");
+            }
+            break;
+
+          case UIMeasure::TIME_PER_DISTRACTION_SESSION: 
+            {
+            int s = float(scene.controls_state.getOpenpilotLongControlTimerSession()) / MAX(1.0, scene.controls_state.getInterventionCountSession());
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "PER DISTRACT");
+            snprintf(unit, sizeof(unit), "drive time");
+            }
+            break;
+
+          case UIMeasure::TIME_PER_DISTRACTION_TOTAL: 
+            {
+            int s = float(scene.controls_state.getOpenpilotLongControlTimerTotal()) / MAX(1.0, scene.controls_state.getInterventionCountTotal());
+            s_to_time_str(val, s);
+            snprintf(name, sizeof(name), "PER DISTRACT");
+            snprintf(unit, sizeof(unit), "trip time");
+            }
+            break;
+
           case UIMeasure::CPU_TEMP_AND_PERCENTC: 
             {
             auto cpus = scene.deviceState.getCpuUsagePercent();
@@ -2607,10 +2800,10 @@ static void ui_draw_measures(UIState *s){
             }
             break;
 
-          case UIMeasure::DISTANCE_TRAVELLED: 
+          case UIMeasure::DISTANCE_TRAVELED_TOTAL: 
             {
               snprintf(name, sizeof(name), "TRIP DIST.");
-              float temp = scene.ev_eff_total_dist / (scene.is_metric ? 1000. : 1609.);
+              float temp = scene.controls_state.getDistanceTraveledTotal() / (scene.is_metric ? 1000. : 1609.);
               if (abs(temp) >= 100.){
                 snprintf(val, sizeof(val), "%.0f", temp);
               }
@@ -2621,6 +2814,287 @@ static void ui_draw_measures(UIState *s){
                 snprintf(val, sizeof(val), "%.2f", temp);
               }
               snprintf(unit, sizeof(unit), (scene.is_metric ? "km" : "mi"));
+            }
+            break;
+
+          case UIMeasure::DISTANCE_TRAVELED_SESSION: 
+            {
+              snprintf(name, sizeof(name), "DRIVE DIST.");
+              float temp = scene.controls_state.getDistanceTraveledSession() / (scene.is_metric ? 1000. : 1609.);
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "km" : "mi"));
+            }
+            break;
+          
+          case UIMeasure::DISTANCE_ENGAGED: 
+            {
+              snprintf(name, sizeof(name), "ENGAGED");
+              float temp = scene.controls_state.getEngagedDistance() / (scene.is_metric ? 1000. : 1609.);
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "km" : "mi"));
+            }
+            break;
+
+          case UIMeasure::DISTANCE_ENGAGED_SESSION: 
+            {
+              snprintf(name, sizeof(name), "DRIVE ENGD.");
+              float temp = scene.controls_state.getEngagedDistanceSession() / (scene.is_metric ? 1000. : 1609.);
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "km" : "mi"));
+            }
+            break;
+
+          case UIMeasure::DISTANCE_ENGAGED_TOTAL: 
+            {
+              snprintf(name, sizeof(name), "TRIP ENGD.");
+              float temp = scene.controls_state.getEngagedDistanceTotal() / (scene.is_metric ? 1000. : 1609.);
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "km" : "mi"));
+            }
+            break;
+
+          case UIMeasure::DISTANCE_ENGAGED_PERCENT_SESSION: 
+            {
+              snprintf(name, sizeof(name), "DRIVE ENGAGED");
+              float temp = scene.controls_state.getEngagedDistanceSession() / MAX(scene.controls_state.getDistanceTraveledSession(), 1.0) * 100.0;
+              snprintf(val, sizeof(val), "%.1f%%", temp);
+              snprintf(unit, sizeof(unit), "distance");
+            }
+            break;
+
+          case UIMeasure::DISTANCE_ENGAGED_PERCENT_TOTAL: 
+            {
+              snprintf(name, sizeof(name), "TRIP ENGAGED");
+              float temp = scene.controls_state.getEngagedDistanceTotal() / MAX(scene.controls_state.getDistanceTraveledTotal(), 1.0) * 100.0;
+              snprintf(val, sizeof(val), "%.1f", temp);
+              snprintf(unit, sizeof(unit), "distance");
+            }
+            break;
+
+          case UIMeasure::INTERACTION_DISTANCE: 
+            {
+              snprintf(name, sizeof(name), "INTERACT");
+              float temp = scene.controls_state.getInteractionDistance() / (scene.is_metric ? 1000. : 1609.);
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "km" : "mi"));
+            }
+            break;
+
+          case UIMeasure::INTERVENTION_DISTANCE: 
+            {
+              snprintf(name, sizeof(name), "INTERVENE");
+              float temp = scene.controls_state.getInterventionDistance() / (scene.is_metric ? 1000. : 1609.);
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "km" : "mi"));
+            }
+            break;
+
+          case UIMeasure::DISTRACTION_DISTANCE: 
+            {
+              snprintf(name, sizeof(name), "DISTRACT");
+              float temp = scene.controls_state.getDistractionDistance() / (scene.is_metric ? 1000. : 1609.);
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), (scene.is_metric ? "km" : "mi"));
+            }
+            break;
+
+          case UIMeasure::DISTANCE_PER_DISENGAGEMENT_SESSION: 
+            {
+              snprintf(name, sizeof(name), "PER DISENGAGE");
+              float temp = scene.controls_state.getEngagedDistanceSession() / (scene.is_metric ? 1000. : 1609.);
+              temp /= MAX(1, scene.controls_state.getDisengagementCountSession());
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), "drive %s", (scene.is_metric ? "km" : "mi"));
+            }
+            break;
+
+          case UIMeasure::DISTANCE_PER_DISENGAGEMENT_TOTAL: 
+            {
+              snprintf(name, sizeof(name), "PER DISENGAGE");
+              float temp = scene.controls_state.getEngagedDistanceTotal() / (scene.is_metric ? 1000. : 1609.);
+              temp /= MAX(1, scene.controls_state.getDisengagementCountTotal());
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), "trip %s", (scene.is_metric ? "km" : "mi"));
+            }
+            break;
+
+          case UIMeasure::DISTANCE_PER_INTERACTION_SESSION: 
+            {
+              snprintf(name, sizeof(name), "PER INTERACT");
+              float temp = scene.controls_state.getEngagedDistanceSession() / (scene.is_metric ? 1000. : 1609.);
+              temp /= MAX(1, scene.controls_state.getInteractionCountSession());
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), "drive %s", (scene.is_metric ? "km" : "mi"));
+            }
+            break;
+
+          case UIMeasure::DISTANCE_PER_INTERACTION_TOTAL: 
+            {
+              snprintf(name, sizeof(name), "PER INTERACT");
+              float temp = scene.controls_state.getEngagedDistanceTotal() / (scene.is_metric ? 1000. : 1609.);
+              temp /= MAX(1, scene.controls_state.getInteractionCountTotal());
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), "trip %s", (scene.is_metric ? "km" : "mi"));
+            }
+            break;
+
+          case UIMeasure::DISTANCE_PER_INTERVENTION_SESSION: 
+            {
+              snprintf(name, sizeof(name), "PER INTERVENE");
+              float temp = scene.controls_state.getEngagedDistanceSession() / (scene.is_metric ? 1000. : 1609.);
+              temp /= MAX(1, scene.controls_state.getInterventionCountSession());
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), "drive %s", (scene.is_metric ? "km" : "mi"));
+            }
+            break;
+
+          case UIMeasure::DISTANCE_PER_INTERVENTION_TOTAL: 
+            {
+              snprintf(name, sizeof(name), "PER INTERVENE");
+              float temp = scene.controls_state.getEngagedDistanceTotal() / (scene.is_metric ? 1000. : 1609.);
+              temp /= MAX(1, scene.controls_state.getInterventionCountTotal());
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), "trip %s", (scene.is_metric ? "km" : "mi"));
+            }
+            break;
+
+          case UIMeasure::DISTANCE_PER_DISTRACTION_SESSION: 
+            {
+              snprintf(name, sizeof(name), "PER DISTRACT");
+              float temp = scene.controls_state.getEngagedDistanceSession() / (scene.is_metric ? 1000. : 1609.);
+              temp /= MAX(1, scene.controls_state.getDistractionCountSession());
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), "drive %s", (scene.is_metric ? "km" : "mi"));
+            }
+            break;
+
+          case UIMeasure::DISTANCE_PER_DISTRACTION_TOTAL: 
+            {
+              snprintf(name, sizeof(name), "PER DISTRACT");
+              float temp = scene.controls_state.getEngagedDistanceTotal() / (scene.is_metric ? 1000. : 1609.);
+              temp /= MAX(1, scene.controls_state.getDistractionCountTotal());
+              if (abs(temp) >= 100.){
+                snprintf(val, sizeof(val), "%.0f", temp);
+              }
+              else if (abs(temp) >= 10.){
+                snprintf(val, sizeof(val), "%.1f", temp);
+              }
+              else{
+                snprintf(val, sizeof(val), "%.2f", temp);
+              }
+              snprintf(unit, sizeof(unit), "trip %s", (scene.is_metric ? "km" : "mi"));
             }
             break;
             
