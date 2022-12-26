@@ -956,7 +956,7 @@ static void ui_draw_measures(UIState *s){
           i += scene.measure_row_offset;
         }
 
-        char name[16], val[16], unit[8];
+        char name[32], val[24], unit[16];
         snprintf(name, sizeof(name), "");
         snprintf(val, sizeof(val), "");
         snprintf(unit, sizeof(unit), "");
@@ -3128,8 +3128,8 @@ static void ui_draw_measures(UIState *s){
           val_font_size -= (vallen - 4) * 8;
         }
         int unitlen = strlen(unit);
-        if (unitlen > 5){
-          unit_font_size -= (unitlen - 5) * 5;
+        if (unitlen > 4){
+          unit_font_size -= (unitlen - 4) * 4;
         }
         int slot_x = scene.measure_slots_rect.x + (scene.measure_cur_num_slots <= scene.measure_max_rows ? 0 : (i < scene.measure_max_rows ? slots_r * 2 : 0));
         int x = slot_x + slots_r - unit_font_size / 2;
