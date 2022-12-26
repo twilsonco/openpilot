@@ -506,6 +506,9 @@ class CarState(CarStateBase):
     ret.onePedalModeTemporary = self.one_pedal_mode_temporary
     ret.madsLeadBrakingActive = self.MADS_lead_braking_active and ret.vEgo > 0.02 and ret.gearShifter in ['drive','low'] and ret.gas < 1e-5 and not ret.brakePressed and ret.cruiseMain
     
+    ret.slipperyRoadsActive = self.slippery_roads_active
+    ret.lowVisibilityActive = self.low_visibility_active
+    
     self.pitch = self.pitch_ema * self.pitch_raw + (1 - self.pitch_ema) * self.pitch 
     ret.pitch = self.pitch
 

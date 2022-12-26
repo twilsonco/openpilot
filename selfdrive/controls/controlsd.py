@@ -188,6 +188,7 @@ class Controls:
     self.slippery_roads = False
     self.low_visibility = False
     self.low_visibility_activated = False
+    self.weather_safety_enabled = params.get_bool("WeatherSafetyEnabled")
     
     if params.get_bool("MetricResetSwitch"):
       params.put("TripDistance", "0.0")
@@ -567,7 +568,7 @@ class Controls:
       vEgo = getattr(CS, "vEgo", None)
       vEgo = int(round((float(vEgo) * 3.6 if self.is_metric else int(round((float(vEgo) * 3.6 * 0.6233 + 0.0995)))))) if vEgo else v_cruise
       
-      if self.sm.updated['liveWeatherData']:
+      if self.weather_safety_enabled and self.sm.updated['liveWeatherData']:
         if self.sm['liveWeatherData'].valid:
           slippery_roads = self.sm['liveWeatherData'].temperature < -1.0 \
             and self.sm['liveWeatherData'].rain1Hour * 4 + self.sm['liveWeatherData'].snow1Hour > 36
