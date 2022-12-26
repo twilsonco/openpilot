@@ -285,7 +285,7 @@ class Controls:
       self.distance_traveled_total += self.distance_last
       self.car_running_timer_session += self.params_check_freq
       self.car_running_timer_total += self.params_check_freq
-      if not self.enabled and self.enabled_last:
+      if not self.enabled and self.enabled_last and CS.vEgo > 0.5:
         self.disengagement_count_session += 1
         self.disengagement_count_total += 1
         self.disengagement_last_t = t
