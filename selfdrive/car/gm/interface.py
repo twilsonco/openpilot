@@ -487,10 +487,7 @@ class CarInterface(CarInterfaceBase):
         events.add(EventName.buttonEnable)
       # do disable on button down
       if b.type == ButtonType.cancel and b.pressed:
-        if (self.MADS_enabled and not self.CS.lkaEnabled):
-          events.add(EventName.buttonCancel)
-        else:
-          events.add(EventName.pauseLongOnGasPress)
+        events.add(EventName.buttonCancel)
       # The ECM independently tracks a ‘speed is set’ state that is reset on main off.
       # To keep controlsd in sync with the ECM state, generate a RESET_V_CRUISE event on main cruise presses.
       if b.type == ButtonType.altButton3 and b.pressed:
