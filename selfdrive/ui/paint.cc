@@ -1107,7 +1107,7 @@ static void ui_draw_measures(UIState *s){
 
           case UIMeasure::TIME_ENGAGED_PERCENT_SESSION: 
             {
-            float p = scene.controls_state.getOpenpilotLongControlTimerSession() / MAX(1.0, scene.controls_state.getCarRunningTimerSession()) * 100.;
+            float p = float(scene.controls_state.getOpenpilotLongControlTimerSession()) / MAX(1.0, float(scene.controls_state.getCarRunningTimerSession())) * 100.;
             snprintf(val, sizeof(val), "%0.1f%%", p);
             snprintf(name, sizeof(name), "DRIVE ENGAGED");
             snprintf(unit, sizeof(unit), "time");
@@ -1116,7 +1116,7 @@ static void ui_draw_measures(UIState *s){
 
           case UIMeasure::TIME_ENGAGED_PERCENT_TOTAL: 
             {
-            float p = scene.controls_state.getOpenpilotLongControlTimerTotal() / MAX(1.0, scene.controls_state.getCarRunningTimerTotal()) * 100.;
+            float p = float(scene.controls_state.getOpenpilotLongControlTimerTotal()) / MAX(1.0, float(scene.controls_state.getCarRunningTimerTotal())) * 100.;
             snprintf(val, sizeof(val), "%0.1f%%", p);
             snprintf(name, sizeof(name), "TRIP ENGAGED");
             snprintf(unit, sizeof(unit), "time");
@@ -1197,7 +1197,7 @@ static void ui_draw_measures(UIState *s){
 
           case UIMeasure::TIME_PER_DISENGAGEMENT_SESSION: 
             {
-            int s = float(scene.controls_state.getOpenpilotLongControlTimerSession()) / MAX(1.0, scene.controls_state.getDisengagementCountSession());
+            int s = float(scene.controls_state.getOpenpilotLongControlTimerSession()) / MAX(1.0, float(scene.controls_state.getDisengagementCountSession()));
             s_to_time_str(val, s);
             snprintf(name, sizeof(name), "PER DISENGAGE");
             snprintf(unit, sizeof(unit), "drive time");
@@ -2958,7 +2958,7 @@ static void ui_draw_measures(UIState *s){
             {
               snprintf(name, sizeof(name), "PER DISENGAGE");
               float temp = scene.controls_state.getEngagedDistanceSession() / (scene.is_metric ? 1000. : 1609.);
-              temp /= MAX(1, scene.controls_state.getDisengagementCountSession());
+              temp /= MAX(1.0, float(scene.controls_state.getDisengagementCountSession()));
               if (abs(temp) >= 100.){
                 snprintf(val, sizeof(val), "%.0f", temp);
               }
@@ -2976,7 +2976,7 @@ static void ui_draw_measures(UIState *s){
             {
               snprintf(name, sizeof(name), "PER DISENGAGE");
               float temp = scene.controls_state.getEngagedDistanceTotal() / (scene.is_metric ? 1000. : 1609.);
-              temp /= MAX(1, scene.controls_state.getDisengagementCountTotal());
+              temp /= MAX(1.0, float(scene.controls_state.getDisengagementCountTotal()));
               if (abs(temp) >= 100.){
                 snprintf(val, sizeof(val), "%.0f", temp);
               }
@@ -2994,7 +2994,7 @@ static void ui_draw_measures(UIState *s){
             {
               snprintf(name, sizeof(name), "PER INTERACT");
               float temp = scene.controls_state.getEngagedDistanceSession() / (scene.is_metric ? 1000. : 1609.);
-              temp /= MAX(1, scene.controls_state.getInteractionCountSession());
+              temp /= MAX(1.0, float(scene.controls_state.getInteractionCountSession()));
               if (abs(temp) >= 100.){
                 snprintf(val, sizeof(val), "%.0f", temp);
               }
@@ -3012,7 +3012,7 @@ static void ui_draw_measures(UIState *s){
             {
               snprintf(name, sizeof(name), "PER INTERACT");
               float temp = scene.controls_state.getEngagedDistanceTotal() / (scene.is_metric ? 1000. : 1609.);
-              temp /= MAX(1, scene.controls_state.getInteractionCountTotal());
+              temp /= MAX(1.0, float(scene.controls_state.getInteractionCountTotal()));
               if (abs(temp) >= 100.){
                 snprintf(val, sizeof(val), "%.0f", temp);
               }
@@ -3030,7 +3030,7 @@ static void ui_draw_measures(UIState *s){
             {
               snprintf(name, sizeof(name), "PER INTERVENE");
               float temp = scene.controls_state.getEngagedDistanceSession() / (scene.is_metric ? 1000. : 1609.);
-              temp /= MAX(1, scene.controls_state.getInterventionCountSession());
+              temp /= MAX(1.0, float(scene.controls_state.getInterventionCountSession()));
               if (abs(temp) >= 100.){
                 snprintf(val, sizeof(val), "%.0f", temp);
               }
@@ -3048,7 +3048,7 @@ static void ui_draw_measures(UIState *s){
             {
               snprintf(name, sizeof(name), "PER INTERVENE");
               float temp = scene.controls_state.getEngagedDistanceTotal() / (scene.is_metric ? 1000. : 1609.);
-              temp /= MAX(1, scene.controls_state.getInterventionCountTotal());
+              temp /= MAX(1.0, float(scene.controls_state.getInterventionCountTotal()));
               if (abs(temp) >= 100.){
                 snprintf(val, sizeof(val), "%.0f", temp);
               }
@@ -3066,7 +3066,7 @@ static void ui_draw_measures(UIState *s){
             {
               snprintf(name, sizeof(name), "PER DISTRACT");
               float temp = scene.controls_state.getEngagedDistanceSession() / (scene.is_metric ? 1000. : 1609.);
-              temp /= MAX(1, scene.controls_state.getDistractionCountSession());
+              temp /= MAX(1.0, float(scene.controls_state.getDistractionCountSession()));
               if (abs(temp) >= 100.){
                 snprintf(val, sizeof(val), "%.0f", temp);
               }
@@ -3084,7 +3084,7 @@ static void ui_draw_measures(UIState *s){
             {
               snprintf(name, sizeof(name), "PER DISTRACT");
               float temp = scene.controls_state.getEngagedDistanceTotal() / (scene.is_metric ? 1000. : 1609.);
-              temp /= MAX(1, scene.controls_state.getDistractionCountTotal());
+              temp /= MAX(1.0, float(scene.controls_state.getDistractionCountTotal()));
               if (abs(temp) >= 100.){
                 snprintf(val, sizeof(val), "%.0f", temp);
               }
