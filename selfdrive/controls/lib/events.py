@@ -622,6 +622,32 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
   },
+  
+  EventName.slipperyRoadsActivated: {
+    ET.WARNING: Alert(
+    "Slippery roads: Using eco mode,",
+    "far follow, and lower speed limit offset",
+    AlertStatus.userPrompt, AlertSize.mid,
+    Priority.MID, VisualAlert.none, AudibleAlert.chimePrompt, 0., 3.0, 3.0),
+    ET.PERMANENT: Alert(
+    "Slippery roads: Using eco mode,",
+    "far follow, and lower speed limit offset",
+    AlertStatus.userPrompt, AlertSize.mid,
+    Priority.MID, VisualAlert.none, AudibleAlert.chimePrompt, 0., 3.0, 3.0),
+  },
+  
+  EventName.lowVisibilityActivated: {
+    ET.WARNING: Alert(
+    "Low visibility: Using far follow",
+    "and lower speed limit offset",
+    AlertStatus.userPrompt, AlertSize.mid,
+    Priority.MID, VisualAlert.none, AudibleAlert.chimePrompt, 0., 3.0, 3.0),
+    ET.PERMANENT: Alert(
+    "Low visibility: Using far follow",
+    "and lower speed limit offset",
+    AlertStatus.userPrompt, AlertSize.mid,
+    Priority.MID, VisualAlert.none, AudibleAlert.chimePrompt, 0., 3.0, 3.0),
+  },
 
   EventName.belowSteerSpeed: {
     ET.WARNING: below_steer_speed_alert,

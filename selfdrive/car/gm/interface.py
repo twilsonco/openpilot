@@ -454,8 +454,8 @@ class CarInterface(CarInterfaceBase):
     if not ret.standstill and self.CS.lane_change_steer_factor < 1.:
       events.add(car.CarEvent.EventName.blinkerSteeringPaused)
       steer_paused = True
-    if ret.vEgo <= self.CP.minSteerSpeed and not self.CS.autoHoldActivated:
-      if ret.standstill and cruiseEnabled and t - self.CS.sessionInitTime > 10. and not self.CS.resume_required:
+    if ret.vEgo <= self.CP.minSteerSpeed and (not self.CS.autoHoldActivated or self.CS.out.onePedalModeActive):
+      if ret.standstill and (cruiseEnabled or self.CS.out.onePedalModeActive) and t - self.CS.sessionInitTime > 10. and not self.CS.resume_required:
         events.add(car.CarEvent.EventName.stoppedWaitForGas)
       elif not ret.standstill and self.CS.out.gearShifter in ['drive','low'] and not steer_paused and self.CS.lkaEnabled:
         events.add(car.CarEvent.EventName.belowSteerSpeed)
@@ -487,10 +487,7 @@ class CarInterface(CarInterfaceBase):
         events.add(EventName.buttonEnable)
       # do disable on button down
       if b.type == ButtonType.cancel and b.pressed:
-        if (self.MADS_enabled and not self.CS.lkaEnabled):
-          events.add(EventName.buttonCancel)
-        else:
-          events.add(EventName.pauseLongOnGasPress)
+        events.add(EventName.buttonCancel)
       # The ECM independently tracks a ‘speed is set’ state that is reset on main off.
       # To keep controlsd in sync with the ECM state, generate a RESET_V_CRUISE event on main cruise presses.
       if b.type == ButtonType.altButton3 and b.pressed:
@@ -535,7 +532,7 @@ class CarInterface(CarInterfaceBase):
     if self.CS.autoHold and not self.CS.autoHoldActive and not self.CS.regen_paddle_pressed:
       if self.CS.out.vEgo > 0.03:
         self.CS.autoHoldActive = True
-      elif self.CS.out.vEgo < 0.02 and self.CS.out.brakePressed and self.CS.time_in_drive >= self.CS.autohold_min_time_in_drive:
+      elif self.CS.out.vEgo < 0.02 and self.CS.out.brakePressed and self.CS.time_in_drive >= self.CS.MADS_long_min_time_in_drive:
         self.CS.autoHoldActive = True
 
     return can_sends

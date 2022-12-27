@@ -32,6 +32,44 @@ static const float dynamic_follow_fade_step = 1. / dynamic_follow_fade_duration;
 
 static const float voacc_lead_min_laneline_prob = 0.6; // should match MIN_LANE_PROB in selfdrive/controls/radard.py
 
+void s_to_time_str(char* val, int s){
+  int d = s / 86400;
+  s = s % 86400;
+  int h = s / 3600;
+  s = s % 3600;
+  int m = s / 60;
+  s = s % 60;
+  if (d > 0){
+    snprintf(val, sizeof(val), "%d-%02d:%02d", d, h, m);
+  }
+  else if (h > 0){
+    snprintf(val, sizeof(val), "%d:%02d:%02d", h, m, s);
+  }
+  else{
+    snprintf(val, sizeof(val), "%d:%02d", m, s);
+  }
+}
+
+void deg_to_str(char* val, float deg){
+  if (((deg >= 337.5) && (deg <= 360)) || ((deg >= 0) && (deg <= 22.5))) {
+    snprintf(val, sizeof(val), "N");
+  } else if ((deg > 22.5) && (deg < 67.5)) {
+    snprintf(val, sizeof(val), "NE");
+  } else if ((deg >= 67.5) && (deg <= 112.5)) {
+    snprintf(val, sizeof(val), "E");
+  } else if ((deg > 112.5) && (deg < 157.5)) {
+    snprintf(val, sizeof(val), "SE");
+  } else if ((deg >= 157.5) && (deg <= 202.5)) {
+    snprintf(val, sizeof(val), "S");
+  } else if ((deg > 202.5) && (deg < 247.5)) {
+    snprintf(val, sizeof(val), "SW");
+  } else if ((deg >= 247.5) && (deg <= 292.5)) {
+    snprintf(val, sizeof(val), "W");
+  } else if ((deg > 292.5) && (deg < 337.5)) {
+    snprintf(val, sizeof(val), "NW");
+  }
+}
+
 // Given interpolate between engaged/warning/critical bg color on [0-1]
 // If a < 0, interpolate that too based on bg color alpha, else pass through.
 NVGcolor interp_alert_color(float p, int a){
@@ -286,6 +324,8 @@ static void update_state(UIState *s) {
     scene.speed_limit_eu_style = int(Params().getBool("EUSpeedLimitStyle"));
     scene.show_debug_ui = Params().getBool("ShowDebugUI");
     scene.brake_indicator_enabled = Params().getBool("BrakeIndicator");
+    scene.weather_info.enabled = Params().getBool("WeatherDisplayEnabled");
+    scene.weather_info.display_mode = std::stoi(Params().get("WeatherDisplayMode"));
     if (scene.auto_lane_pos_active){
       scene.lane_pos = std::stoi(Params().get("LanePosition"));
     }
@@ -302,7 +342,7 @@ static void update_state(UIState *s) {
       scene.dynamic_follow_active = std::stoi(Params().get("DynamicFollow"));
     }
     if (scene.ev_eff_total_dist < 10.){
-      float oldDist = std::stof(Params().get("EVConsumptionTripDistance"));
+      float oldDist = std::stof(Params().get("TripDistance"));
       if (oldDist > scene.ev_eff_total_dist){
         scene.ev_eff_total_dist = oldDist;
         scene.ev_recip_eff_wa[1] = std::stof(Params().get("EVConsumption5Mi"));
@@ -344,7 +384,7 @@ static void update_state(UIState *s) {
       {
         char val_str[18];
         sprintf(val_str, "%.3f", scene.ev_eff_total_dist);
-        Params().put("EVConsumptionTripDistance", val_str, strlen(val_str));
+        Params().put("TripDistance", val_str, strlen(val_str));
       }
     }
     
@@ -476,6 +516,95 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("liveParameters")){
     scene.road_roll = sm["liveParameters"].getLiveParameters().getRoll();
+  }
+  if (sm.updated("liveWeatherData")){
+    auto data = sm["liveWeatherData"].getLiveWeatherData();
+    auto time = data.getTimeCurrent();
+    bool valid = data.getValid() && time > 0 && time - scene.weather_info.time < 1200; // only use weather data < 20 minutes old
+    if (valid && !scene.weather_info.valid){
+      if (time < data.getTimeSunrise() || time > data.getTimeSunset()){
+        scene.screen_dim_mode = MIN(1, scene.screen_dim_mode);
+        Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
+      }
+    }
+    else if (valid && scene.weather_info.valid 
+            && time > data.getTimeSunset() 
+            && scene.weather_info.time <= data.getTimeSunset())
+    {
+      scene.screen_dim_mode = MIN(1, scene.screen_dim_mode);
+      Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
+    }
+    else if (valid && scene.weather_info.valid 
+            && time > data.getTimeSunrise() 
+            && scene.weather_info.time <= data.getTimeSunrise())
+    {
+      scene.screen_dim_mode = 2;
+      Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
+    }
+    scene.weather_info.valid = valid;
+    scene.weather_info.time = time;
+    std::string desc = data.getDescription();
+    std::string icon = data.getIcon();
+    if (scene.weather_info.valid){
+      sprintf(scene.weather_info.icon, "%s", icon.c_str());
+      auto totalPrecip = data.getRain3Hour() + data.getSnow3Hour();
+      scene.weather_info.has_precip = totalPrecip > 0.0;
+      char wind_dir[8];
+      char precip_str[32];
+      deg_to_str(wind_dir, data.getWindDirectionDeg());
+      if (s->scene.is_metric){
+        if (scene.weather_info.has_precip){
+          sprintf(precip_str, "%0.1fmm in last 3h\n", totalPrecip);
+        }
+        else{
+          sprintf(precip_str, "");
+        }
+        sprintf(scene.weather_info.desc_simple, 
+                "%0.1f°C", 
+                data.getTemperature());
+        sprintf(scene.weather_info.desc_full1,
+                "%0.1f°C (feels like %0.1f)",
+                data.getTemperature(),
+                data.getTemperatureFeelsLike());
+        sprintf(scene.weather_info.desc_full2,
+                "%s",
+                desc.c_str());
+        sprintf(scene.weather_info.desc_full3,
+                "%s",
+                precip_str);
+        sprintf(scene.weather_info.desc_full4,
+                "wind %s@%0.1fm/s (gusts %0.1f)",
+                wind_dir,
+                data.getWindSpeed(),
+                data.getWindSpeedGust());
+      }
+      else{
+        if (scene.weather_info.has_precip){
+          sprintf(precip_str, "%0.2f\" in last 3h\n", totalPrecip * 0.039);
+        }
+        else{
+          sprintf(precip_str, "");
+        }
+        sprintf(scene.weather_info.desc_simple, 
+                "%0.0f°F", 
+                data.getTemperature() * 1.8 + 32.0);
+        sprintf(scene.weather_info.desc_full1,
+                "%0.0f°F (feels like %0.0f)",
+                data.getTemperature() * 1.8 + 32.0,
+                data.getTemperatureFeelsLike() * 1.8 + 32.0);
+        sprintf(scene.weather_info.desc_full2,
+                "%s",
+                desc.c_str());
+        sprintf(scene.weather_info.desc_full3,
+                "%s",
+                precip_str);
+        sprintf(scene.weather_info.desc_full4,
+                "wind %s@%0.0fmph (gusts %0.0f)",
+                wind_dir,
+                data.getWindSpeed() * 2.24,
+                data.getWindSpeedGust() * 2.24);
+      }
+    }
   }
   if (sm.updated("radarState")) {
     auto radar_state = sm["radarState"].getRadarState();
@@ -782,6 +911,11 @@ static void update_status(UIState *s) {
       s->scene.laneless_mode = std::stoi(Params().get("LanelessMode"));
       s->scene.brake_percent = std::stoi(Params().get("FrictionBrakePercent"));
 
+      s->scene.weather_info.enabled = Params().getBool("WeatherDisplayEnabled");
+      s->scene.weather_info.display_mode = std::stoi(Params().get("WeatherDisplayMode"));
+      s->scene.weather_info.valid = false;
+      s->scene.weather_info.time = 0;
+
       s->scene.accel_mode_button_enabled = Params().getBool("AccelModeButton");
       if (!s->scene.accel_mode_button_enabled){
         s->scene.accel_mode_touch_rect = {1,1,1,1};
@@ -791,13 +925,12 @@ static void update_status(UIState *s) {
         s->scene.dynamic_follow_mode_touch_rect = {1,1,1,1};
       }
 
-      if (Params().getBool("EVConsumptionReset")) {
+      if (Params().getBool("MetricResetSwitch")) {
         char val_str[18];
         sprintf(val_str, "0.0");
         Params().put("EVConsumption5Mi", val_str, strlen(val_str));
         Params().put("EVConsumptionTripkWh", val_str, strlen(val_str));
-        Params().put("EVConsumptionTripDistance", val_str, strlen(val_str));
-        Params().putBool("EVConsumptionReset", false);
+        Params().put("TripDistance", val_str, strlen(val_str));
         s->scene.ev_recip_eff_wa[1] = 0.0;
         s->scene.ev_eff_total_dist = 0.0;
         s->scene.ev_eff_total_kWh = 0.0;
@@ -858,8 +991,7 @@ static void update_status(UIState *s) {
 QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "deviceState", "roadCameraState", "liveMapData",
-    "pandaState", "carParams", "driverMonitoringState", "sensorEvents", "carState", "radarState", "liveLocationKalman", "ubloxGnss", "gpsLocationExternal", 
-    "longitudinalPlan", "lateralPlan", "liveParameters",
+    "pandaState", "carParams", "driverMonitoringState", "sensorEvents", "carState", "radarState", "liveLocationKalman", "ubloxGnss", "gpsLocationExternal", "longitudinalPlan", "lateralPlan", "liveParameters", "liveWeatherData"
   });
 
   ui_state.fb_w = vwp_w;

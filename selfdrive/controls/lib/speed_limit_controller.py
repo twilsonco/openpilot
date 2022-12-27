@@ -247,7 +247,7 @@ class SpeedLimitController():
   @property
   def speed_limit_offset(self):
     if self._offset_enabled:
-      return interp(self._speed_limit, _LIMIT_PERC_OFFSET_BP, _LIMIT_PERC_OFFSET_V) * self._speed_limit
+      return interp(self._speed_limit, _LIMIT_PERC_OFFSET_BP, _LIMIT_PERC_OFFSET_V) * self._speed_limit * 0.25 if self._reduced_offset else 1.0
     return 0.
 
   @property
@@ -367,6 +367,7 @@ class SpeedLimitController():
     self._a_ego = a_ego
     self._v_cruise_setpoint = v_cruise_setpoint
     self._gas_pressed = sm['carState'].gas > 1e-5
+    self._reduced_offset = sm['carState'].lowVisibilityActive or sm['carState'].slipperyRoadsActive
 
     self._speed_limit, self._distance, self._source = self._resolver.resolve(v_ego, self.speed_limit, sm)
 

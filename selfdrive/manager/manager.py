@@ -58,10 +58,17 @@ def manager_init():
     ("AccelModeButton", "1"),
     ("AccelMode", "0"),
     ("EVDriveTrainEfficiency", "1"),
-    ("EVConsumptionReset", "0"),
+    ("MetricResetSwitch", "0"),
     ("EVConsumption5Mi", "0"),
     ("EVConsumptionTripkWh", "0"),
-    ("EVConsumptionTripDistance", "0"),
+    ("TripDistance", "0"),
+    ("NumberOfDisengagements", "0"),
+    ("NumberOfInterventions", "0"),
+    ("NumberOfInteractions", "0"),
+    ("NumberOfDistractions", "0"),
+    ("CarSecondsRunning", "0"),
+    ("EngagedDistance", "0"),
+    ("OpenPilotSecondsEngaged", "0"),
     ("EndToEndToggle", "1"),
     ("EnableTorqueControl", "1"),
     ("LanelessMode", "2"),
@@ -71,8 +78,11 @@ def manager_init():
     ("AutoLanePositionActive", "0"),
     ("LanePosition", "0"),
     ("NudgelessLaneChange", "0"),
+    ("WeatherSafetyEnabled", "1"),
     ("Coasting", "0"),
     ("CoastingDL", "0"),
+    ("WeatherDisplayEnabled", "1"),
+    ("WeatherDisplayMode", "1"),
     ("RegenBraking", "0"),
     ("MADSOnePedalMode", "0"),
     ("MADSLeadBraking", "0"),
@@ -96,14 +106,14 @@ def manager_init():
     ("MeasureConfigNum", "3"),
     ("MeasureSlot00", "33"), # percent grade 
     ("MeasureSlot01", "31"), # elevation 
-    ("MeasureSlot02", "41"), # intervention timer
+    ("MeasureSlot02", "6"), # engine RPM + coolant temp F
     ("MeasureSlot03", "38"), # ev recent eff
-    ("MeasureSlot04", "6"), # engine RPM + coolant temp F
-    ("MeasureSlot05", "35"), #  roll
-    ("MeasureSlot06", "39"), # distance traveled
-    ("MeasureSlot07", "65"), # 5mi EV eff
-    ("MeasureSlot08", "82"),# fan speed rpm
-    ("MeasureSlot09", "73"),# device cpu percent and temp °C
+    ("MeasureSlot04", "115"), # cpu temp C
+    ("MeasureSlot05", "65"), #  dist per disengagement total
+    ("MeasureSlot06", "64"), # dist per disengagement session
+    ("MeasureSlot07", "38"), # dist from lane center
+    ("MeasureSlot08", "121"),# fan speed percent
+    ("MeasureSlot09", "123"),# memory percent
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))

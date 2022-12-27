@@ -225,14 +225,14 @@ class CarController():
     if CS.showBrakeIndicator:
       CS.apply_brake_percent = 0.
       if CS.vEgo > 0.1:
-        if CS.out.cruiseState.enabled or CS.out.onePedalModeActive:
-          if not CS.pause_long_on_gas_press:
+        if CS.out.cruiseState.enabled or CS.out.onePedalModeActive or CS.MADS_lead_braking_active:
+          if CS.out.gas < 1e-5:
             if self.apply_brake > 1:
               CS.apply_brake_percent = interp(self.apply_brake, [float(P.BRAKE_LOOKUP_V[-1]), float(P.BRAKE_LOOKUP_V[0])], [51., 100.])
             elif CS.out.onePedalModeActive:
               CS.apply_brake_percent = interp(CS.hvb_wattage.x, CS.hvb_wattage_bp, [0., 49.])
             elif self.apply_gas < P.ZERO_GAS:
-              CS.apply_brake_percent = interp(self.apply_gas, [float(P.GAS_LOOKUP_V[0]), float(P.GAS_LOOKUP_V[1])], [51., 0.])
+              CS.apply_brake_percent = interp(self.apply_gas, [float(P.GAS_LOOKUP_V[0]), float(P.GAS_LOOKUP_V[1])], [49., 0.])
           else:
             CS.apply_brake_percent = interp(CS.hvb_wattage.x, CS.hvb_wattage_bp, [0., 49.])
         elif CS.is_ev and CS.out.brake == 0.:
@@ -246,18 +246,17 @@ class CarController():
     if (frame % 4) == 0:
       idx = (frame // 4) % 4
 
-      if CS.cruiseMain and not enabled and CS.autoHold and CS.autoHoldActive and not CS.out.gas > 1e-5 and CS.time_in_drive >= CS.autohold_min_time_in_drive and CS.out.vEgo < 0.02 and not CS.regen_paddle_pressed:
+      if CS.cruiseMain and not enabled and CS.autoHold and CS.autoHoldActive and not CS.out.gas > 1e-5 and CS.time_in_drive >= CS.MADS_long_min_time_in_drive and CS.out.vEgo < 0.02 and not CS.regen_paddle_pressed:
         # Auto Hold State
-        car_stopping = no_pitch_apply_gas < P.ZERO_GAS
         standstill = CS.pcm_acc_status == AccState.STANDSTILL
 
-        at_full_stop = standstill and car_stopping
-        near_stop = (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
+        at_full_stop = standstill
+        near_stop = (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake, idx, near_stop, at_full_stop))
         CS.autoHoldActivated = True
 
       else:
-        if CS.out.gas > 1e-5 or CS.out.gearShifter not in ['drive','low'] or CS.out.brakePressed:
+        if CS.out.gas > 1e-5 or CS.out.gearShifter not in ['drive','low'] or CS.out.brakePressed or not CS.cruiseMain:
           at_full_stop = False
           near_stop = False
           car_stopping = False

@@ -113,7 +113,7 @@ class CarState(CarStateBase):
     self.engineRPM = 0
     self.lastAutoHoldTime = 0.0
     self.time_in_drive = 0.0
-    self.autohold_min_time_in_drive = 0.8 # [s]
+    self.MADS_long_min_time_in_drive = 3.0 # [s]
     self.sessionInitTime = sec_since_boot()
     self.params_check_last_t = 0.
     self.params_check_freq = 0.25 # check params at 10Hz
@@ -161,7 +161,6 @@ class CarState(CarStateBase):
     self.pitch_ema = 1/100
     self.pitch_future_time = 0.5 # seconds
     
-    
     # similar to over-speed coast braking, lockout coast/one-pedal logic first for engine/regen braking, and then for actual brakes.
     # gas lockout lookup tables:
     self.lead_v_rel_long_gas_lockout_bp, self.lead_v_rel_long_gas_lockout_v = [[-12 * CV.MPH_TO_MS, -8 * CV.MPH_TO_MS], [1., 0.]] # pass-through all engine/regen braking for v_rel < -15mph
@@ -178,7 +177,7 @@ class CarState(CarStateBase):
     self.lead_d_long_brake_lockout_bp, self.lead_d_long_brake_lockout_v = [[6, 10], [1., 0.]] # pass through all cruise braking if follow distance < 6m
     
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
-    self.hvb_wattage = FirstOrderFilter(0.0, 0.5, DT_CTRL) # [kW]
+    self.hvb_wattage = FirstOrderFilter(0.0, 1.0, DT_CTRL) # [kW]
     self.hvb_wattage_bp = [0., 53.] # [kW], based on the banned user BZZT's testimony at https://www.gm-volt.com/threads/using-regen-paddle-and-l-drive-mode-summary.222289/
     self.apply_brake_percent = 0. if self.showBrakeIndicator else -1. # for brake percent on ui
     self.vEgo = 0.
@@ -193,6 +192,9 @@ class CarState(CarStateBase):
     self.steer_pause_a_ego_min = 0.1
     self.a_ego_filtered_rc = 1.0
     self.a_ego_filtered = FirstOrderFilter(0.0, self.a_ego_filtered_rc, DT_CTRL)
+    
+    self.low_visibility_active = False
+    self.slippery_roads_active = False
     
     self.lka_steering_cmd_counter = 0
 
@@ -244,10 +246,6 @@ class CarState(CarStateBase):
       
     self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
     ret.gearShifter = self.gear_shifter
-    if ret.gearShifter in ['drive','low']:
-      self.time_in_drive += DT_CTRL
-    else:
-      self.time_in_drive = 0.0
     ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"] != 0 
     ret.brakePressed = ret.brakePressed and pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"] >= 15
     if ret.brakePressed:
@@ -256,6 +254,15 @@ class CarState(CarStateBase):
     else:
       self.user_brake = 0.
       ret.brake = 0.
+    
+    if ret.gearShifter in ['drive','low']:
+      if ret.brakePressed:
+        self.time_in_drive = self.MADS_long_min_time_in_drive
+      else:
+        self.time_in_drive += DT_CTRL
+    else:
+      self.time_in_drive = 0.0
+    
     
     if self.showBrakeIndicator:
       if t - self.sessionInitTime < 13.:
@@ -495,9 +502,12 @@ class CarState(CarStateBase):
     self.cruise_enabled_last = cruise_enabled
     
     
-    ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active
+    ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active and self.time_in_drive >= self.MADS_long_min_time_in_drive
     ret.onePedalModeTemporary = self.one_pedal_mode_temporary
-    ret.madsLeadBrakingActive = self.MADS_lead_braking_active and ret.vEgo > 0.02 and ret.gearShifter in ['drive','low'] and ret.gas < 1e-5 and not ret.brakePressed
+    ret.madsLeadBrakingActive = self.MADS_lead_braking_active and ret.vEgo > 0.02 and ret.gearShifter in ['drive','low'] and ret.gas < 1e-5 and not ret.brakePressed and ret.cruiseMain
+    
+    ret.slipperyRoadsActive = self.slippery_roads_active
+    ret.lowVisibilityActive = self.low_visibility_active
     
     self.pitch = self.pitch_ema * self.pitch_raw + (1 - self.pitch_ema) * self.pitch 
     ret.pitch = self.pitch

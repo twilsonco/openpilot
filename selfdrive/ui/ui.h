@@ -166,6 +166,23 @@ typedef struct {
   int cnt;
 } line_vertices_data;
 
+typedef struct {
+  bool enabled = false;
+  bool valid = false;
+  long int time = 0;
+  int display_mode = 0; // 0/1 = simple/full
+  char desc_simple[16];
+  char desc_full1[64];
+  char desc_full2[64];
+  char desc_full3[64];
+  char desc_full4[64];
+  char icon[8];
+  bool has_precip = false;
+} weather_info;
+
+void s_to_time_str(char* val, int s);
+void deg_to_str(char* val, float deg);
+
 typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   // Vehicle info
   STEERING_ANGLE = 0,
@@ -208,7 +225,47 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   ROLL_DEVICE,
   LANE_WIDTH,
   LANE_DIST_FROM_CENTER,
-  DISTANCE_TRAVELLED,
+  DISTANCE_TRAVELED_SESSION,
+  DISTANCE_TRAVELED_TOTAL,
+  DISTANCE_ENGAGED,
+  DISTANCE_ENGAGED_SESSION,
+  DISTANCE_ENGAGED_TOTAL,
+  DISTANCE_ENGAGED_PERCENT_SESSION,
+  DISTANCE_ENGAGED_PERCENT_TOTAL,
+  TIME_CAR_RUNNING_SESSION,
+  TIME_CAR_RUNNING_TOTAL,
+  TIME_OPENPILOT_ENGAGED_SESSION,
+  TIME_OPENPILOT_ENGAGED_TOTAL,
+  TIME_OPENPILOT_ENGAGED,
+  TIME_ENGAGED_PERCENT_SESSION,
+  TIME_ENGAGED_PERCENT_TOTAL,
+  DISENGAGEMENT_COUNT_SESSION,
+  DISENGAGEMENT_COUNT_TOTAL,
+  INTERACTION_COUNT_SESSION,
+  INTERACTION_COUNT_TOTAL,
+  INTERVENTION_COUNT_SESSION,
+  INTERVENTION_COUNT_TOTAL,
+  DISTRACTION_COUNT_SESSION,
+  DISTRACTION_COUNT_TOTAL,
+  INTERACTION_DISTANCE,
+  INTERVENTION_DISTANCE,
+  DISTRACTION_DISTANCE,
+  DISTANCE_PER_DISENGAGEMENT_SESSION,
+  DISTANCE_PER_DISENGAGEMENT_TOTAL,
+  DISTANCE_PER_INTERACTION_SESSION,
+  DISTANCE_PER_INTERACTION_TOTAL,
+  DISTANCE_PER_INTERVENTION_SESSION,
+  DISTANCE_PER_INTERVENTION_TOTAL,
+  DISTANCE_PER_DISTRACTION_SESSION,
+  DISTANCE_PER_DISTRACTION_TOTAL,
+  TIME_PER_DISENGAGEMENT_SESSION,
+  TIME_PER_DISENGAGEMENT_TOTAL,
+  TIME_PER_INTERACTION_SESSION,
+  TIME_PER_INTERACTION_TOTAL,
+  TIME_PER_INTERVENTION_SESSION,
+  TIME_PER_INTERVENTION_TOTAL,
+  TIME_PER_DISTRACTION_SESSION,
+  TIME_PER_DISTRACTION_TOTAL,
   INTERACTION_TIMER,
   INTERVENTION_TIMER,
   DISTRACTION_TIMER,
@@ -302,6 +359,9 @@ typedef struct UIScene {
   int speed_limit_eu_style = false;
 
   std::string current_road_name;
+
+  weather_info weather_info;
+  Rect weather_touch_rect;
   
   // adjustable lane position
   Rect lane_pos_left_touch_rect = {1,1,1,1}, lane_pos_right_touch_rect = {1,1,1,1};

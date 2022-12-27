@@ -249,7 +249,7 @@ class TurnSpeedController():
       # When active we are trying to keep the speed constant around the control time horizon.
       # but under constrained acceleration limits since we are in a turn.
       a_target = self._v_offset / T_IDXS[CONTROL_N]
-      a_target = np.clip(a_target, _ACTIVE_LIMIT_MIN_ACC, _ACTIVE_LIMIT_MAX_ACC)
+      a_target = np.clip(a_target, _ACTIVE_LIMIT_MIN_ACC * 0.6 if self._soften_decel else 1.0, _ACTIVE_LIMIT_MAX_ACC)
 
     # update solution values.
     self._a_target.update(a_target)
@@ -258,6 +258,7 @@ class TurnSpeedController():
     self._op_enabled = enabled
     self._v_ego = v_ego
     self._a_ego = a_ego
+    self._soften_decel = sm['carState'].lowVisibilityActive or sm['carState'].slipperyRoadsActive
 
     # Get the speed limit from Map Data
     self._speed_limit, self._distance, self._turn_sign = self._get_limit_from_map_data(sm)
