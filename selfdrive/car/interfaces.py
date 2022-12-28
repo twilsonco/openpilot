@@ -35,6 +35,7 @@ class CarInterfaceBase():
     self.steering_unpressed = 0
     self.low_speed_alert = False
     self.driver_interacted = False
+    self.screen_tapped = False
 
     self.MADS_enabled = Params().get_bool("MADSEnabled")
     self.MADS_alert_mode = 0
@@ -160,6 +161,8 @@ class CarInterfaceBase():
       events.add(EventName.wrongCruiseMode)
       
     if self.MADS_enabled and self.MADS_alert_mode < len(self.MADS_alerts) and self.frame >= self.MADS_alery_delay and (self.frame - self.MADS_alery_delay) % self.MADS_alert_dur == 0:
+      if self.screen_tapped:
+        self.MADS_alert_mode = len(self.MADS_alerts)
       events.add(self.MADS_alerts[self.MADS_alert_mode])
       self.MADS_alert_mode += 1
 
