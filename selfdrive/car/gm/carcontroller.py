@@ -30,6 +30,9 @@ ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.8 * DT_CTRL * 4 # m/s^2 per second for decre
 ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP = [i * CV.MPH_TO_MS for i in [0.0, 10.]] # [mph to meters]
 ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_V = [0.2, 1.0] # factor of rate limit
 
+ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_BP = [20.0, 120.0] # [deg] abs steering wheel angle
+ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_V = [1.0, 0.2] # factor of rate limit
+
 ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
 ONE_PEDAL_SPEED_ERROR_FACTOR_BP = [1.5, 20.] # [m/s] 
 ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.4, 0.2] # factor of error for non-lead braking decel
@@ -172,6 +175,8 @@ class CarController():
             one_pedal_decel = self.one_pedal_pid.update(self.one_pedal_decel_in, self.one_pedal_decel_in - error, speed=CS.out.vEgo, feedforward=self.one_pedal_decel_in)
             
             rate_limit_factor = interp(CS.vEgo, ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP, ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_V)
+            rate_limit_factor = min(rate_limit_factor,
+                                    interp(abs(CS.out.steeringAngleDeg), ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_BP, ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_V))
             
             self.one_pedal_decel = clip(one_pedal_decel, self.one_pedal_decel - ONE_PEDAL_DECEL_RATE_LIMIT_UP * rate_limit_factor, self.one_pedal_decel + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN + rate_limit_factor)
             self.one_pedal_decel = max(self.one_pedal_decel, ONE_PEDAL_MAX_DECEL)
