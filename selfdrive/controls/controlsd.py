@@ -279,8 +279,8 @@ class Controls:
     
     if t - self.params_check_last_t > self.params_check_freq:
       screen_tapped = self._params.get_bool("ScreenTapped")
-      self.CI.screen_tapped = screen_tapped
       if screen_tapped:
+        self.CI.screen_tapped = True
         put_nonblocking("ScreenTapped", "0")
       self.distance_last = CS.vEgo * (t - self.params_check_last_t)
       self.distance_traveled_total += self.distance_last
