@@ -1107,18 +1107,18 @@ static void ui_draw_measures(UIState *s){
 
           case UIMeasure::TIME_ENGAGED_PERCENT_SESSION: 
             {
-            float p = float(scene.controls_state.getOpenpilotLongControlTimerSession()) / MAX(1.0, float(scene.controls_state.getCarRunningTimerSession())) * 100.;
+            float p = scene.controls_state.getPercentEngagedTimeSession();
             snprintf(val, sizeof(val), "%0.1f%%", p);
-            snprintf(name, sizeof(name), "DRIVE ENGAGED");
+            snprintf(name, sizeof(name), "DRIVE ENGD.");
             snprintf(unit, sizeof(unit), "time");
             }
             break;
 
           case UIMeasure::TIME_ENGAGED_PERCENT_TOTAL: 
             {
-            float p = float(scene.controls_state.getOpenpilotLongControlTimerTotal()) / MAX(1.0, float(scene.controls_state.getCarRunningTimerTotal())) * 100.;
+            float p = scene.controls_state.getPercentEngagedTimeTotal();
             snprintf(val, sizeof(val), "%0.1f%%", p);
-            snprintf(name, sizeof(name), "TRIP ENGAGED");
+            snprintf(name, sizeof(name), "TRIP ENGD.");
             snprintf(unit, sizeof(unit), "time");
             }
             break;
@@ -2887,8 +2887,8 @@ static void ui_draw_measures(UIState *s){
 
           case UIMeasure::DISTANCE_ENGAGED_PERCENT_SESSION: 
             {
-              snprintf(name, sizeof(name), "DRIVE ENGAGED");
-              float temp = scene.controls_state.getEngagedDistanceSession() / MAX(scene.controls_state.getDistanceTraveledSession(), 1.0) * 100.0;
+              snprintf(name, sizeof(name), "DRIVE ENGD.");
+              float temp = scene.controls_state.getPercentEngagedDistanceSession()
               snprintf(val, sizeof(val), "%.1f%%", temp);
               snprintf(unit, sizeof(unit), "distance");
             }
@@ -2896,9 +2896,9 @@ static void ui_draw_measures(UIState *s){
 
           case UIMeasure::DISTANCE_ENGAGED_PERCENT_TOTAL: 
             {
-              snprintf(name, sizeof(name), "TRIP ENGAGED");
-              float temp = scene.controls_state.getEngagedDistanceTotal() / MAX(scene.controls_state.getDistanceTraveledTotal(), 1.0) * 100.0;
-              snprintf(val, sizeof(val), "%.1f", temp);
+              snprintf(name, sizeof(name), "TRIP ENGD.");
+              float temp = scene.controls_state.getPercentEngagedDistanceTotal()
+              snprintf(val, sizeof(val), "%.1f%%", temp);
               snprintf(unit, sizeof(unit), "distance");
             }
             break;

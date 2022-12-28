@@ -949,6 +949,10 @@ class Controls:
     controlsState.engagedDistanceTotal = float(self.engaged_dist_total)
     controlsState.engagedDistanceSession = float(self.engaged_dist_session)
     controlsState.distractionDistance = int(self.distraction_dist)
+    controlsState.percentEngagedTimeSession = float(self.openpilot_long_control_timer_session / max(self.car_running_timer_session, 1.0) * 100.0)
+    controlsState.percentEngagedTimeTotal = float(self.openpilot_long_control_timer_total / max(self.car_running_timer_total, 1.0) * 100.0)
+    controlsState.percentEngagedDistanceSession = float(self.engaged_dist_session / max(1.0, self.distance_traveled) * 100.0)
+    controlsState.percentEngagedDistanceTotal = float(self.engaged_dist_total / max(1.0, self.distance_traveled_total) * 100.0)
 
     lat_tuning = self.CP.lateralTuning.which()
     if self.joystick_mode:
