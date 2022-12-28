@@ -66,15 +66,14 @@ class WeatherD():
       weather = self.update(lat, lon)
       _debug('WeatherD: Query to OWM finished {}successfully'.format("un" if weather is None else ""))
 
+      cloudlog.info(f"Fetched weather: {weather}")
       # Only issue an update if we received new weather. Otherwise it is most likely a conectivity issue.
-      # Will retry on next loop.
-      if weather is not None:
-        # Use the lock to update weather as it might be being used to update the route.
-        _debug('WeatherD: Locking to write results from OWM.')
-        with self._lock:
-          self.weather = weather
-          _debug(f'WeatherD: Updated map data @ {(lat,lon)}')
-        _debug('WeatherD: Releasing Lock to write results from OWM')
+      # Use the lock to update weather as it might be being used to update the route.
+      _debug('WeatherD: Locking to write results from OWM.')
+      with self._lock:
+        self.weather = weather
+        _debug(f'WeatherD: Updated map data @ {(lat,lon)}')
+      _debug('WeatherD: Releasing Lock to write results from OWM')
 
     # Ignore if we have a query thread already running.
     if self._query_thread is not None and self._query_thread.is_alive():
@@ -85,8 +84,10 @@ class WeatherD():
     self._query_thread.start()
   
   def publish(self, pm, sm):
+    if len(self.api_key) < 32:
+      return 1
     if self.weather is None:
-      return -5 # tries again in 5 seconds
+      return -5 # tries again in  seconds
     
     def publish_weather():
       w = messaging.new_message('liveWeatherData')
@@ -346,6 +347,7 @@ def mapd_thread(sm=None, pm=None):
     pm = messaging.PubMaster(['liveMapData', 'liveWeatherData'])
 
   weather_iter = 0
+  weather_check = 10
   while True:
     sm.update()
     mapd.udpate_state(sm)
@@ -353,11 +355,12 @@ def mapd_thread(sm=None, pm=None):
     mapd.updated_osm_data()
     mapd.update_route()
     mapd.publish(pm, sm)
-    if weather_iter % 180 == 0: # check weather every 3 minutes
-      if mapd.location_deg is not None:
+    if weather_iter % weather_check == 0: # check weather every 3 minutes
+      if mapd.location_deg is not None \
+        and (weatherd.weather is None or weather_iter % (weather_check * 18) == 0):
         lat, lon = mapd.location_deg
         weatherd._query_owm_not_blocking(lat, lon)
-        weather_iter += weatherd.publish(pm, sm)
+      weather_iter += weatherd.publish(pm, sm)
     else:
       weather_iter += 1
     rk.keep_time()

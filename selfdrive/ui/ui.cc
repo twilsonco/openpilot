@@ -547,14 +547,25 @@ static void update_state(UIState *s) {
     std::string icon = data.getIcon();
     if (scene.weather_info.valid){
       sprintf(scene.weather_info.icon, "%s", icon.c_str());
-      auto totalPrecip = data.getRain3Hour() + data.getSnow3Hour();
+      float totalPrecip3h = data.getRain3Hour() + data.getSnow3Hour();
+      float totalPrecip1h = data.getRain1Hour() + data.getSnow1Hour();
+      int precipTime;
+      float totalPrecip;
+      if (totalPrecip3h > totalPrecip1h * 1.5){
+        precipTime = 3;
+        totalPrecip = totalPrecip3h;
+      }
+      else{
+        precipTime = 1;
+        totalPrecip = totalPrecip1h;
+      }
       scene.weather_info.has_precip = totalPrecip > 0.0;
       char wind_dir[8];
       char precip_str[32];
       deg_to_str(wind_dir, data.getWindDirectionDeg());
       if (s->scene.is_metric){
         if (scene.weather_info.has_precip){
-          sprintf(precip_str, "%0.1fmm in last 3h\n", totalPrecip);
+          sprintf(precip_str, "%0.1fmm in last %dh", totalPrecip, precipTime);
         }
         else{
           sprintf(precip_str, "");
@@ -580,7 +591,7 @@ static void update_state(UIState *s) {
       }
       else{
         if (scene.weather_info.has_precip){
-          sprintf(precip_str, "%0.2f\" in last 3h\n", totalPrecip * 0.039);
+          sprintf(precip_str, "%0.2f\" in last %dh", totalPrecip * 0.039, precipTime);
         }
         else{
           sprintf(precip_str, "");
