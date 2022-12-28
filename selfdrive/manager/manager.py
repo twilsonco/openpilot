@@ -104,7 +104,7 @@ def manager_init():
     ("LowOverheadMode", "0"),
     ("FPVolt", "0"),
     ("MeasureConfigNum", "3"),
-    ("MeasureSlot00", "33"), # percent grade 
+    ("MeasureSlot00", "34"), # percent grade 
     ("MeasureSlot01", "31"), # elevation 
     ("MeasureSlot02", "6"), # engine RPM + coolant temp F
     ("MeasureSlot03", "38"), # ev recent eff
