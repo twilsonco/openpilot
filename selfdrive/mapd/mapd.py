@@ -47,57 +47,88 @@ class WeatherD():
     else:
       cloudlog.info("liveWeatherData: no OpenWeatherMap.org api key provided")
     self.weather = None
+    self._lock = threading.RLock()
+    self._query_thread = None
     
   def update(self, lat, lon):
+    weather = None
     if len(self.api_key) > 30:
       url = f"{WEATHER_BASE_URL}lat={lat}&lon={lon}&appid={self.api_key}"
       response = requests.get(url)
       x = response.json()
       if x["cod"] != "404":
-        self.weather = x
-      else:
-        self.weather = None
+        weather = x
+    return weather
+        
+  def _query_owm_not_blocking(self, lat, lon):
+    def query(lat, lon):
+      _debug(f'WeatherD: Start query for OWM map data at {(lat,lon)}')
+      weather = self.update(lat, lon)
+      _debug('WeatherD: Query to OWM finished {}successfully'.format("un" if weather is None else ""))
+
+      # Only issue an update if we received new weather. Otherwise it is most likely a conectivity issue.
+      # Will retry on next loop.
+      if weather is not None:
+        # Use the lock to update weather as it might be being used to update the route.
+        _debug('WeatherD: Locking to write results from OWM.')
+        with self._lock:
+          self.weather = weather
+          _debug(f'WeatherD: Updated map data @ {(lat,lon)}')
+        _debug('WeatherD: Releasing Lock to write results from OWM')
+
+    # Ignore if we have a query thread already running.
+    if self._query_thread is not None and self._query_thread.is_alive():
+      return
+
+    self._query_thread = threading.Thread(target=query, 
+                                          args=(lat,lon))
+    self._query_thread.start()
   
   def publish(self, pm, sm):
     if self.weather is None:
       return -5 # tries again in 5 seconds
     
-    w = messaging.new_message('liveWeatherData')
+    def publish_weather():
+      w = messaging.new_message('liveWeatherData')
+      
+      ww = self.weather
+      w.liveWeatherData.valid = True
+      x = ww["weather"][0]
+      w.liveWeatherData.main = x["main"]
+      w.liveWeatherData.weatherID = x["id"]
+      w.liveWeatherData.description = x["description"]
+      w.liveWeatherData.icon = x["icon"]
+      x = ww["main"]
+      w.liveWeatherData.temperature = x["temp"] - 273.15
+      w.liveWeatherData.temperatureFeelsLike = x["feels_like"] - 273.15
+      w.liveWeatherData.pressure = x["pressure"]
+      w.liveWeatherData.humidity = x["humidity"]
+      w.liveWeatherData.visibility = ww["visibility"]
+      if "wind" in ww:
+        x = ww["wind"]
+        w.liveWeatherData.windSpeed = x["speed"]
+        w.liveWeatherData.windDirectionDeg = x["deg"]
+        w.liveWeatherData.windSpeedGust = x["gust"] if "gust" in x else 0.0
+      w.liveWeatherData.cloudsPercent = ww["clouds"]["all"]
+      w.liveWeatherData.cityName = ww["name"]
+      if "rain" in ww:
+        w.liveWeatherData.rain1Hour = ww["rain"]["1h"] if "1h" in ww["rain"] else 0.0
+        w.liveWeatherData.rain3Hour = ww["rain"]["3h"] if "3h" in ww["rain"] else 0.0
+      if "snow" in ww:
+        w.liveWeatherData.snow1Hour = ww["snow"]["1h"] if "1h" in ww["snow"] else 0.0
+        w.liveWeatherData.snow3Hour = ww["snow"]["3h"] if "3h" in ww["snow"] else 0.0
+      w.liveWeatherData.timeCurrent = ww["dt"]
+      w.liveWeatherData.timeZone = ww["timezone"]
+      x = ww["sys"]
+      w.liveWeatherData.timeSunrise = x["sunrise"]
+      w.liveWeatherData.timeSunset = x["sunset"]
+      
+      pm.send('liveWeatherData', w)
+      cloudlog.info(f"WeatherD: Current weather in {w.liveWeatherData.cityName}: {w.liveWeatherData.temperature:0.1f}C and {w.liveWeatherData.description}")
     
-    ww = self.weather
-    w.liveWeatherData.valid = True
-    x = ww["weather"][0]
-    w.liveWeatherData.main = x["main"]
-    w.liveWeatherData.weatherID = x["id"]
-    w.liveWeatherData.description = x["description"]
-    w.liveWeatherData.icon = x["icon"]
-    x = ww["main"]
-    w.liveWeatherData.temperature = x["temp"] - 273.15
-    w.liveWeatherData.temperatureFeelsLike = x["feels_like"] - 273.15
-    w.liveWeatherData.pressure = x["pressure"]
-    w.liveWeatherData.humidity = x["humidity"]
-    w.liveWeatherData.visibility = ww["visibility"]
-    if "wind" in ww:
-      x = ww["wind"]
-      w.liveWeatherData.windSpeed = x["speed"]
-      w.liveWeatherData.windDirectionDeg = x["deg"]
-      w.liveWeatherData.windSpeedGust = x["gust"] if "gust" in x else 0.0
-    w.liveWeatherData.cloudsPercent = ww["clouds"]["all"]
-    w.liveWeatherData.cityName = ww["name"]
-    if "rain" in ww:
-      w.liveWeatherData.rain1Hour = ww["rain"]["1h"] if "1h" in ww["rain"] else 0.0
-      w.liveWeatherData.rain3Hour = ww["rain"]["3h"] if "3h" in ww["rain"] else 0.0
-    if "snow" in ww:
-      w.liveWeatherData.snow1Hour = ww["snow"]["1h"] if "1h" in ww["snow"] else 0.0
-      w.liveWeatherData.snow3Hour = ww["snow"]["3h"] if "3h" in ww["snow"] else 0.0
-    w.liveWeatherData.timeCurrent = ww["dt"]
-    w.liveWeatherData.timeZone = ww["timezone"]
-    x = ww["sys"]
-    w.liveWeatherData.timeSunrise = x["sunrise"]
-    w.liveWeatherData.timeSunset = x["sunset"]
+    with self._lock:
+      publish_weather()
     
-    pm.send('liveWeatherData', w)
-    cloudlog.info(f"Current weather in {w.liveWeatherData.cityName}: {w.liveWeatherData.temperature:0.1f}C and {w.liveWeatherData.description}")
     return 1 # used to increment a counter
 
 class MapD():
@@ -181,8 +212,11 @@ class MapD():
     if self._query_thread is not None and self._query_thread.is_alive():
       return
 
-    self._query_thread = threading.Thread(target=query, args=(self.osm, self.location_deg, self.location_rad,
-                                                              QUERY_RADIUS))
+    self._query_thread = threading.Thread(target=query, 
+                                          args=(self.osm, 
+                                                self.location_deg, 
+                                                self.location_rad,
+                                                QUERY_RADIUS))
     self._query_thread.start()
 
   def updated_osm_data(self):
@@ -322,7 +356,7 @@ def mapd_thread(sm=None, pm=None):
     if weather_iter % 180 == 0: # check weather every 3 minutes
       if mapd.location_deg is not None:
         lat, lon = mapd.location_deg
-        weatherd.update(lat, lon)
+        weatherd._query_owm_not_blocking(lat, lon)
         weather_iter += weatherd.publish(pm, sm)
     else:
       weather_iter += 1
