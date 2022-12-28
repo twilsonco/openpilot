@@ -2888,7 +2888,7 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::DISTANCE_ENGAGED_PERCENT_SESSION: 
             {
               snprintf(name, sizeof(name), "DRIVE ENGD.");
-              float temp = scene.controls_state.getPercentEngagedDistanceSession()
+              float temp = scene.controls_state.getPercentEngagedDistanceSession();
               snprintf(val, sizeof(val), "%.1f%%", temp);
               snprintf(unit, sizeof(unit), "distance");
             }
@@ -2897,7 +2897,7 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::DISTANCE_ENGAGED_PERCENT_TOTAL: 
             {
               snprintf(name, sizeof(name), "TRIP ENGD.");
-              float temp = scene.controls_state.getPercentEngagedDistanceTotal()
+              float temp = scene.controls_state.getPercentEngagedDistanceTotal();
               snprintf(val, sizeof(val), "%.1f%%", temp);
               snprintf(unit, sizeof(unit), "distance");
             }
