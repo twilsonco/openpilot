@@ -573,6 +573,14 @@ static void update_state(UIState *s) {
         sprintf(scene.weather_info.desc_simple, 
                 "%0.1f°C", 
                 data.getTemperature());
+        if (data.getWindSpeed() > 3.0){
+          sprintf(scene.weather_info.desc_simple1, 
+                  "%0.1fkm/h", 
+                  data.getWindSpeed() * 3.6);
+        }
+        else{
+          sprintf(scene.weather_info.desc_simple1, " ");
+        }
         sprintf(scene.weather_info.desc_full1,
                 "%0.1f°C (feels like %0.1f)",
                 data.getTemperature(),
@@ -584,10 +592,10 @@ static void update_state(UIState *s) {
                 "%s",
                 precip_str);
         sprintf(scene.weather_info.desc_full4,
-                "wind %s@%0.1fm/s (gusts %0.1f)",
+                "wind %s@%0.1fkm/h (gusts %0.1f)",
                 wind_dir,
-                data.getWindSpeed(),
-                data.getWindSpeedGust());
+                data.getWindSpeed() * 3.6,
+                data.getWindSpeedGust() * 3.6);
       }
       else{
         if (scene.weather_info.has_precip){
@@ -599,6 +607,14 @@ static void update_state(UIState *s) {
         sprintf(scene.weather_info.desc_simple, 
                 "%0.0f°F", 
                 data.getTemperature() * 1.8 + 32.0);
+        if (data.getWindSpeed() > 3.0){
+          sprintf(scene.weather_info.desc_simple1, 
+                  "%0.1fmph", 
+                  data.getWindSpeed() * 2.24);
+        }
+        else{
+          sprintf(scene.weather_info.desc_simple1, " ");
+        }
         sprintf(scene.weather_info.desc_full1,
                 "%0.0f°F (feels like %0.0f)",
                 data.getTemperature() * 1.8 + 32.0,

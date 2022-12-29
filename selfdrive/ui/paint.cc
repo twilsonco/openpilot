@@ -3881,12 +3881,16 @@ static void draw_weather(UIState *s){
     if (w.valid){
       ui_draw_image(s, icon_rect, w.icon, 1.0);
     }
+    else{
+      ui_draw_image(s, icon_rect, "weather_load", 1.0);
+    }
     nvgBeginPath(s->vg);
     nvgFontSize(s->vg, 90);
     nvgStrokeColor(s->vg, COLOR_WHITE);
     nvgFillColor(s->vg, COLOR_WHITE);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-    nvgText(s->vg, icon_rect.centerX(), icon_rect.bottom(),w.valid ? w.desc_simple : "--",NULL);
+    nvgText(s->vg, icon_rect.centerX(), icon_rect.bottom(), w.valid ? w.desc_simple : "", NULL);
+    nvgText(s->vg, icon_rect.centerX(), icon_rect.bottom() + 50, w.desc_simple1, NULL);
     s->scene.weather_touch_rect = {icon_rect.x, icon_rect.y, icon_rect.w, icon_rect.h + 100};
   }
   else{
@@ -4266,7 +4270,8 @@ void ui_nvg_init(UIState *s) {
     {"10n", "../assets/weather/10n.png"},
     {"11n", "../assets/weather/11n.png"},
     {"13n", "../assets/weather/13n.png"},
-    {"50n", "../assets/weather/50n.png"}
+    {"50n", "../assets/weather/50n.png"},
+    {"weather_load", "../assets/weather/weatherload.png"}
   };
   for (auto [name, file] : images) {
     s->images[name] = nvgCreateImage(s->vg, file, 1);
