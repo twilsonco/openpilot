@@ -227,7 +227,7 @@ class CarController():
     if CS.out.gas >= 1e-5 \
         or (not CS.long_active \
           and not CS.out.onePedalModeActive \
-          and not CS.out.madsLeadBrakingActive):
+          and not CS.MADS_lead_braking_active):
       self.apply_brake = 0
 
     if CS.showBrakeIndicator:
@@ -270,7 +270,7 @@ class CarController():
             or not CS.cruiseMain \
             or (not CS.long_active \
               and not CS.out.onePedalModeActive\
-              and not CS.out.madsLeadBrakingActive):
+              and not CS.MADS_lead_braking_active):
           at_full_stop = False
           near_stop = False
           car_stopping = False
