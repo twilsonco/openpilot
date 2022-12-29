@@ -758,7 +758,7 @@ class Controls:
       # accel PID loop
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS, self.CI)
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
-      actuators.accel = self.LoC.update(self.active or self.CI.CS.MADS_lead_braking_enabled, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
+      actuators.accel = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits, t_since_plan, MADS_lead_braking_enabled=self.CI.CS.MADS_lead_braking_enabled)
       
       # compute pitch-compensated accel
       if self.sm.updated['liveParameters']:
@@ -925,8 +925,10 @@ class Controls:
     controlsState.longControlState = self.LoC.long_control_state
     controlsState.vPid = float(self.LoC.v_pid)
     controlsState.vCruise = float(self.v_cruise_kph)
+    controlsState.aTarget = float(self.LoC.a_target)
     controlsState.upAccelCmd = float(self.LoC.pid.p)
     controlsState.uiAccelCmd = float(self.LoC.pid.i)
+    controlsState.udAccelCmd = float(self.LoC.pid.d)
     controlsState.ufAccelCmd = float(self.LoC.pid.f)
     controlsState.cumLagMs = -self.rk.remaining * 1000.
     controlsState.startMonoTime = int(start_time * 1e9)
