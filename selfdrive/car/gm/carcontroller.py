@@ -194,7 +194,8 @@ class CarController():
           if CS.MADS_lead_braking_active:
             self.lead_accel_last_t = t
           
-        elif CS.coasting_enabled and lead_long_brake_lockout_factor < 1.0:
+        elif CS.coasting_enabled and lead_long_brake_lockout_factor < 1.0 \
+            and not CS.slippery_roads_active and not CS.low_visibility_active:
           if CS.coasting_long_plan in COAST_SOURCES and self.apply_gas < P.ZERO_GAS or self.apply_brake > 0.0:
             check_speed_ms = (CS.speed_limit if CS.speed_limit_active and CS.speed_limit < CS.v_cruise_kph else CS.v_cruise_kph) * CV.KPH_TO_MS
             if self.apply_brake > 0.0:
