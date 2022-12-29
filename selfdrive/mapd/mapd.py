@@ -347,7 +347,8 @@ def mapd_thread(sm=None, pm=None):
     pm = messaging.PubMaster(['liveMapData', 'liveWeatherData'])
 
   weather_iter = 0
-  weather_check = 10
+  weather_freq = 10
+  weather_check = weather_freq * 2
   while True:
     sm.update()
     mapd.udpate_state(sm)
@@ -355,9 +356,9 @@ def mapd_thread(sm=None, pm=None):
     mapd.updated_osm_data()
     mapd.update_route()
     mapd.publish(pm, sm)
-    if weather_iter % weather_check == 0: # check weather every 3 minutes
+    if weather_iter % weather_freq == 0: # check weather every 3 minutes
       if mapd.location_deg is not None \
-        and (weatherd.weather is None or weather_iter % (weather_check * 18) == 0):
+        and (weatherd.weather is None or weather_iter % weather_check == 0):
         lat, lon = mapd.location_deg
         weatherd._query_owm_not_blocking(lat, lon)
       weather_iter += weatherd.publish(pm, sm)

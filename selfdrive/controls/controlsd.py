@@ -189,6 +189,7 @@ class Controls:
     self.low_visibility = False
     self.low_visibility_activated = False
     self.weather_safety_enabled = params.get_bool("WeatherSafetyEnabled")
+    self.weather_valid = False
     
     self.reset_metrics = params.get_bool("MetricResetSwitch")
     if self.reset_metrics:
@@ -574,10 +575,13 @@ class Controls:
       
       if self.weather_safety_enabled and self.sm.updated['liveWeatherData']:
         if self.sm['liveWeatherData'].valid:
+          precip_1h = self.sm['liveWeatherData'].rain1Hour * 4 + self.sm['liveWeatherData'].snow1Hour
+          precip_3h = self.sm['liveWeatherData'].rain3Hour * 4 + self.sm['liveWeatherData'].snow3Hour
+          precip = max(precip_1h * 1.5, precip_3h)
           slippery_roads = self.sm['liveWeatherData'].temperature < -1.0 \
-            and self.sm['liveWeatherData'].rain1Hour * 4 + self.sm['liveWeatherData'].snow1Hour > 36
-          low_visibility = self.sm['liveWeatherData'].visibility <= 600 \
-            or self.sm['liveWeatherData'].rain1Hour > 6
+            and precip > 15
+          low_visibility = self.sm['liveWeatherData'].visibility <= 1500 \
+            or precip > 10
           if slippery_roads and (not self.weather_valid or not self.slippery_roads):
             self.CI.CS.accel_mode = 2
             self.CI.CS.follow_level = 2
@@ -585,14 +589,17 @@ class Controls:
             put_nonblocking("AccelMode", str(int(self.CI.CS.accel_mode)))
             self.CI.CS.slippery_roads_active = True
             self.slippery_roads_activated = True
+            cloudlog.info(f"Weather safety: Activating slippery road mode for {precip}mm @ {self.sm['liveWeatherData'].temperature}C")
           elif low_visibility and (not self.weather_valid or not self.low_visibility):
             self.CI.CS.follow_level = 2
             put_nonblocking("FollowLevel", str(int(self.CI.CS.follow_level)))
             self.CI.CS.low_visibility_active = True
             self.low_visibility_activated = True
+            cloudlog.info(f"Weather safety: Activating low visibility mode. Visibility {self.sm['liveWeatherData'].visibility}m, precipitation {precip}mm")
           
           self.slippery_roads = slippery_roads
           self.low_visibility = low_visibility
+        self.weather_valid = self.sm['liveWeatherData'].valid
       
       if not self.slippery_roads and self.CI.CS.slippery_roads_active:
         self.CI.CS.slippery_roads_active = False
