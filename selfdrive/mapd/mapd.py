@@ -348,7 +348,7 @@ def mapd_thread(sm=None, pm=None):
 
   weather_iter = 0
   weather_freq = 10
-  weather_check = weather_freq * 2
+  weather_check = weather_freq * 18
   while True:
     sm.update()
     mapd.udpate_state(sm)
