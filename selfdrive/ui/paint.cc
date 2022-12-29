@@ -3125,11 +3125,11 @@ static void ui_draw_measures(UIState *s){
         
         int vallen = strlen(val);
         if (vallen > 4){
-          val_font_size -= (vallen - 4) * 8;
+          val_font_size -= 6 + (vallen - 4) * 8;
         }
         int unitlen = strlen(unit);
         if (unitlen > 4){
-          unit_font_size -= (unitlen - 4) * 5;
+          unit_font_size -= 5 + (unitlen - 4) * 4;
         }
         int slot_x = scene.measure_slots_rect.x + (scene.measure_cur_num_slots <= scene.measure_max_rows ? 0 : (i < scene.measure_max_rows ? slots_r * 2 : 0));
         int x = slot_x + slots_r - unit_font_size / 2;
