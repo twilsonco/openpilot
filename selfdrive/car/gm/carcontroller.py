@@ -224,7 +224,10 @@ class CarController():
       self.apply_brake = 0
     if not enabled or CS.out.gas >= GAS_PRESSED_THRESHOLD:
       self.apply_gas = P.MAX_ACC_REGEN
-    if CS.out.gas >= 1e-5:
+    if CS.out.gas >= 1e-5 \
+        or (not CS.long_active \
+          and not CS.out.onePedalModeActive \
+          and not CS.MADS_lead_braking_active):
       self.apply_brake = 0
 
     if CS.showBrakeIndicator:
