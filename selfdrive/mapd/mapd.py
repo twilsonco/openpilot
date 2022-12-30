@@ -39,7 +39,7 @@ threading.excepthook = excepthook
 class WeatherD():
   def __init__(self):
     with open(WEATHER_API_KEY_PATH,'r+') as f:
-      self.api_key = f.read()
+      self.api_key = f.read().strip()
     if len(self.api_key) < 32:
       self.api_key = rot_str(''.join(WEATHER_DEFAULT_API_KEY), -1)
     if len(self.api_key) == 32:
