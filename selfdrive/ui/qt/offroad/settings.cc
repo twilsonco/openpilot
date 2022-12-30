@@ -183,8 +183,13 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Prevent an error about missing NVME drive from showing on 32GB C3's. (restart device for change to take effect)",
                                   "../assets/offroad/icon_settings.png",
                                   this));
+  toggles.append(new ParamControl("GrayPandaSupport",
+                                  "Gray panda support",
+                                  "Necessary to run on gray panda",
+                                  "../assets/offroad/icon_settings.png",
+                                  this));
   toggles.append(new ParamControl("FPVolt",
-                                  "Volt Fingerprint",
+                                  "Volt fingerprint",
                                   "Forces Volt fingerprint",
                                   "../assets/offroad/icon_settings.png",
                                   this));

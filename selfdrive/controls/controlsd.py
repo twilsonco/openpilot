@@ -88,10 +88,14 @@ class Controls:
     params = Params()
     self.joystick_mode = params.get_bool("JoystickDebugMode")
     joystick_packet = ['testJoystick'] if self.joystick_mode else []
+    
+    self.gray_panda_support_enabled = params.get_bool("GrayPandaSupport")
 
     self.sm = sm
     if self.sm is None:
       ignore = ['driverCameraState', 'managerState'] if SIMULATION else ['liveWeatherData']
+      if self.gray_panda_support_enabled:
+        ignore += ['gpsLocationExternal']
       self.sm = messaging.SubMaster(['deviceState', 'pandaState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'managerState', 'liveParameters', 'radarState', 'gpsLocationExternal', 'liveWeatherData'] + self.camera_packets + joystick_packet,

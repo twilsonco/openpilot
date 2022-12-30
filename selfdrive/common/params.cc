@@ -176,6 +176,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"GithubSshKeys", PERSISTENT},
     {"GithubUsername", PERSISTENT},
     {"GsmRoaming", PERSISTENT},
+    {"GrayPandaSupport", PERSISTENT},
     {"HandsOnWheelMonitoring", PERSISTENT},
     {"HardwareSerial", PERSISTENT},
     {"HasAcceptedTerms", PERSISTENT},

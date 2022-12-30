@@ -76,6 +76,7 @@ def manager_init():
     ("AutoAutoLanePosition", "1"),
     ("LongRangeLeadsEnabled", "1"),
     ("AutoLanePositionActive", "0"),
+    ("GrayPandaSupport", "0"),
     ("LanePosition", "0"),
     ("NudgelessLaneChange", "0"),
     ("WeatherSafetyEnabled", "1"),
