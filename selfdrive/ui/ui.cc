@@ -350,6 +350,11 @@ static void update_state(UIState *s) {
         scene.ev_eff_total_kWh = std::stof(Params().get("EVConsumptionTripkWh"));
       }
     }
+    for (int i = 0; i < scene.measure_max_num_slots; ++i){
+      char slotName[16];
+      snprintf(slotName, sizeof(slotName), "MeasureSlot%.2d", i);
+      scene.measure_slots[i] = std::stoi(Params().get(slotName));
+    }
     scene.car_is_ev = Params().getBool("CarIsEV");
     if (s->sm->frame - scene.started_frame > 100 && s->sm->frame - scene.started_frame < 130 && !scene.car_is_ev){
       for (int i = 0; i < scene.measure_max_num_slots; ++i){

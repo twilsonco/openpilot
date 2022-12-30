@@ -39,6 +39,7 @@ def manager_init():
     ("OpenpilotEnabledToggle", "1"),
     ("CommunityFeaturesToggle", "1"),
     ("ShowDebugUI", "1"),
+    ("OPParamsLiveTuneEnabled", "0"),
     ("IgnoreMissingNVME", "0"),
     ("SpeedLimitControl", "1"),
     ("EUSpeedLimitStyle", "0"),

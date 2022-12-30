@@ -41,6 +41,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "When the car is on, tap the current speed to unlock edit mode, then tap more to cycle the number of metrics shown on the right side. Tap each metric to change the information displayed. Use this toggle to, upon the next vehicle start, reset the distance travelled, disengagement/intervention/interaction/distraction counts, and EV consumption and efficiency trip and 5mi/8km metrics.",
                                   "../assets/offroad/icon_calibration.png",
                                   this));
+  toggles.append(new ParamControl("OPParamsLiveTuneEnabled",
+                                  "Customization over SSH (tap me)",
+                                  "Many of the features can be fine-tuned to your liking by connecting to your device over SSH and running `./opparams.py` from the `/data/openpilot/` directory. Most of the adjustable parameters are live-tunable—can be modified while driving and take effect immediately IF THIS TOGGLE IS ENABLED. If this toggle is NOT enabled, then all parameters become \"startup\" parameters where a car or OpenPilot restart is necessary for them to take effect. Changes to this toggle will take effect the next time you start your car, and you'll need to restart `opparams.py` for it to reflect the change.",
+                                  "../assets/offroad/icon_calibration.png",
+                                  this));
   toggles.append(new ParamControl("DisableDisengageOnGas",
                                   "Steer when gas pressed",
                                   "Keep steering when gas (accelerator) is pressed",

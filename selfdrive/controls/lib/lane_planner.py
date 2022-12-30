@@ -2,6 +2,7 @@ import numpy as np
 from cereal import log
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import interp, clip
+from common.op_params import opParams
 from common.realtime import DT_MDL
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
@@ -73,15 +74,6 @@ def lead_close_to_line(ll, lead, offset, is_left):
     return interp(lead.dRel, ll.x, ll.y) < -lead.yRel < interp(lead.dRel, ll.x, ll.y) + offset
 
 class LaneOffset: 
-  OFFSET = 0.11 # [unitless] offset of the left/right positions as factor of current lane width
-  AUTO_OFFSET_FACTOR = 0.8 # 20% less offset when auto mode
-  OFFSET_MAX = 0.7 # [m]
-  DUR = 2.0 # [s] time it takes to switch lane positions
-  STEP = OFFSET / DUR * DT_MDL * LANE_WIDTH_DEFAULT
-  
-  DUR_SLOW = 8.0 # [s] same, but slower for when position change is caused by auto lane offset
-  STEP_SLOW = OFFSET / DUR_SLOW * DT_MDL * LANE_WIDTH_DEFAULT
-  
   AUTO_MIN_SHOULDER_WIDTH_FACTOR = 0.0 # [unitless] shoulder width must be as this this factor of lane width
   AUTO_MAX_LANE_WIDTH_FACTOR = 0.6 # [unitless] adjacent lanes whose width is narrower than this factor of lane width are considered a shoulder
   
@@ -93,21 +85,30 @@ class LaneOffset:
   
   AUTO_LANE_STATE_MIN_TIME = 3.0 # [s] amount of time the lane state must stay the same before it can be acted upon
   
-  AUTO_ENABLE_TRAFFIC_MIN_SPEED = 10. * CV.MPH_TO_MS
   AUTO_ENABLE_MIN_SPEED_DEADZONE = 2. # [m/s]
   
-  AUTO_TRAFFIC_TIMEOUT_ONCOMING = 60. # [s] amount of time auto lane position will be kept after last car is seen
-  AUTO_TRAFFIC_TIMEOUT_ONGOING = 5. # [s] amount of time auto lane position will be kept after last car is seen
-  AUTO_TRAFFIC_MIN_TIME = 1.1 # [s] time an oncoming/ongoing car needs to be observed before it will be taken to indicate traffic
-  AUTO_TRAFFIC_MIN_SPEED = 9. # [m/s] need to go faster than this to be considered moving
-  AUTO_CUTOFF_STEER_ANGLE = 110. # [degrees] auto lane position reset traffic monitoring after this
-  TRAFFIC_NEW_DETECT_STEER_CUTOFF = 9. # [degrees] instantaneous traffic isn't detected if steer angle greater than this
   AUTO_TRAFFIC_MIN_DIST_LANE_WIDTH_FACTOR = 1.25 # [unitless] factor of current lane width used to check against adjacent lead distance
   AUTO_TRAFFIC_STOPPED_MIN_DIST_LANE_WIDTH_FACTOR = 0.9 # [unitless] factor of current lane width used to check against adjacent lead distance, but for stopped objects
   
   ADJACENT_TRAFFIC_SEP_DIST_NONE = 2.5 # [s] separation follow distance used when <= 1 adjacent ongoing car
   
   def __init__(self, mass=0.):
+    self._op_params = opParams(calling_function="lane planner LaneOffset")
+    self.OFFSET = self._op_params.get('LP_offset') # [unitless] offset of the left/right positions as factor of current lane width
+    self.AUTO_OFFSET_FACTOR = self._op_params.get('LP_offset_factor_automatic', force_update=True) # 20% less offset when auto mode
+    self.OFFSET_MAX = self._op_params.get('LP_offset_maximum_m', force_update=True) # [m]
+    self.DUR = self._op_params.get('LP_transition_duration_manual_s', force_update=True) # [s] time it takes to switch lane positions
+    self.STEP = self.OFFSET / self.DUR * DT_MDL * LANE_WIDTH_DEFAULT
+    
+    self.DUR_SLOW = self._op_params.get('LP_transition_duration_automatic_s', force_update=True) # [s] same, but slower for when position change is caused by auto lane offset
+    self.STEP_SLOW = self.OFFSET / self.DUR_SLOW * DT_MDL * LANE_WIDTH_DEFAULT
+    self.AUTO_ENABLE_TRAFFIC_MIN_SPEED = self._op_params.get('LP_auto_auto_minimum_speed_mph', force_update=True) * CV.MPH_TO_MS
+    self.AUTO_TRAFFIC_TIMEOUT_ONCOMING = self._op_params.get('TD_oncoming_timeout_s', force_update=True) # [s] amount of time auto lane position will be kept after last car is seen
+    self.AUTO_TRAFFIC_TIMEOUT_ONGOING = self._op_params.get('TD_ongoing_timeout_s', force_update=True) # [s] amount of time auto lane position will be kept after last car is seen
+    self.AUTO_TRAFFIC_MIN_TIME = self._op_params.get('TD_traffic_presence_cutoff_s', force_update=True) # [s] time an oncoming/ongoing car needs to be observed before it will be taken to indicate traffic
+    self.AUTO_TRAFFIC_MIN_SPEED = self._op_params.get('TD_min_traffic_moving_speed_mph', force_update=True) * CV.MPH_TO_MS # [m/s] need to go faster than this to be considered moving
+    self.AUTO_CUTOFF_STEER_ANGLE = self._op_params.get('TD_reset_steer_angle_deg', force_update=True) # [degrees] auto lane position reset traffic monitoring after this
+    self.TRAFFIC_NEW_DETECT_STEER_CUTOFF = self._op_params.get('TD_cutoff_steer_angle_deg', force_update=True) # [degrees] instantaneous traffic isn't detected if steer angle greater than this
     self.offset = 0.
     self.lane_pos = 0.
     self.offset_scale = interp(float(mass), [1607., 2729.], [1., 0.7]) # scales down offset based on vehicle width (assumed to go as mass)
@@ -479,6 +480,7 @@ class LanePlanner:
     self.lane_width = LANE_WIDTH_DEFAULT
     self.lane_offset = LaneOffset(mass)
     self.lane_dist_from_center = FirstOrderFilter(0.0, 5.0, DT_MDL)
+    self.op_params = opParams(calling_function="lane planner LanePlanner")
 
     self.lll_prob = 0.
     self.rll_prob = 0.
@@ -494,6 +496,7 @@ class LanePlanner:
     self.path_offset = -PATH_OFFSET if wide_camera else PATH_OFFSET
 
   def parse_model(self, md, lane_pos = 0., sm=None, auto_lane_pos_active=False):
+    self.camera_offset = self.op_params.get('camera_offset_m')  # update camera offset
     offset = self.lane_offset.update(lane_pos, self.lane_width, auto_active=auto_lane_pos_active, md=md, sm=sm)
     if len(md.laneLines) == 4 and len(md.laneLines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(md.laneLines[1].t) + np.array(md.laneLines[2].t))/2

@@ -5,6 +5,7 @@ import numpy as np
 from time import strftime, gmtime
 import cereal.messaging as messaging
 from collections import defaultdict
+from common.op_params import opParams
 from common.realtime import Ratekeeper
 import requests
 from selfdrive.mapd.lib.osm import OSM
@@ -17,8 +18,6 @@ from selfdrive.swaglog import cloudlog
 _DEBUG = False
 
 WEATHER_BASE_URL="http://api.openweathermap.org/data/2.5/weather?"
-WEATHER_API_KEY_PATH = "/data/OpenWeatherMap_apiKey.txt"
-open(WEATHER_API_KEY_PATH,'a+')
 WEATHER_DEFAULT_API_KEY = ["128gb5631e9bff6:", "c:2d2d6c8gb5742e"]
 def rot_str(s,n):
   return ''.join([chr(ord(i)+n) for i in s])
@@ -38,9 +37,11 @@ threading.excepthook = excepthook
 
 class WeatherD():
   def __init__(self):
-    with open(WEATHER_API_KEY_PATH,'r+') as f:
-      self.api_key = f.read().strip()
-    if len(self.api_key) < 32:
+    self._op_params = opParams(calling_function="mapd.py WeatherD")
+    self.api_key = self._op_params.get('open_weather_map_api_key', force_update=True)
+    if self.api_key is not None:
+      self.api_key = self.api_key.strip()
+    if self.api_key is None or len(self.api_key) < 32:
       self.api_key = rot_str(''.join(WEATHER_DEFAULT_API_KEY), -1)
     if len(self.api_key) == 32:
       cloudlog.info(f"liveWeatherData: using OpenWeatherMap.org api key: {'*' * 24}{self.api_key[-8:]}")
