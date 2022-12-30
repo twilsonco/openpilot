@@ -40,7 +40,7 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_targ
   starting_condition = v_target_future > STARTING_TARGET_SPEED and accelerating and not cruise_standstill
 
   if not active:
-    if time_since_brake_press > 3.0 \
+    if (time_since_brake_press > 3.0 or v_ego > 2.0) \
         and gear_shifter in ['drive','low'] \
         and MADS_lead_braking_enabled \
         and gas < 1e-5 \
