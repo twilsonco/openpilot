@@ -1,14 +1,14 @@
 import numpy as np
 from cereal import log
 from common.filter_simple import FirstOrderFilter
-from common.numpy_fast import interp, clip, mean
+from common.numpy_fast import interp, clip
 from common.realtime import DT_MDL
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import apply_deadzone
 from selfdrive.hardware import EON, TICI
 from selfdrive.swaglog import cloudlog
-from enum import Enum
+from common.op_params import opParams
 
 LaneTraffic = log.LateralPlan.LaneTraffic
 Desire = log.LateralPlan.Desire
