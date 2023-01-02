@@ -91,12 +91,14 @@ class CarState(CarStateBase):
     self.is_ev = (self.car_fingerprint in [CAR.VOLT, CAR.VOLT18])
     self.do_sng = (self.car_fingerprint in [CAR.VOLT])
     
+    self.sessionInitTime = sec_since_boot()
     self.prev_distance_button = 0
     self.prev_lka_button = 0
     self.lka_button = 0
     self.distance_button = 0
     self.distance_button_last_press_t = 0.
     self.follow_level = int(self._params.get("FollowLevel", encoding="utf8"))
+    self.follow_level_change_last_t = self.sessionInitTime
     self.lkaEnabled = True
     self.cruise_offset_enabled = self._params.get_bool("CruiseSpeedOffset")
     set_v_cruise_offset(self._op_params.get('set_speed_offset_mph', force_update=True) if self.cruise_offset_enabled else 0)
@@ -116,14 +118,14 @@ class CarState(CarStateBase):
     self.lastAutoHoldTime = 0.0
     self.time_in_drive = 0.0
     self.MADS_long_min_time_in_drive = 3.0 # [s]
-    self.sessionInitTime = sec_since_boot()
     self.params_check_last_t = 0.
     self.params_check_freq = 0.25 # check params at 10Hz
     
     self.resume_button_pressed = False
     self.resume_required = False
     
-    self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco; 3 = creep
+    self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco
+    self.accel_mode_change_last_t = self.sessionInitTime
     
     self.coasting_enabled = self._params.get_bool("Coasting")
     self.coasting_dl_enabled = self.is_ev and self._params.get_bool("CoastingDL")
@@ -199,6 +201,8 @@ class CarState(CarStateBase):
     
     self.low_visibility_active = False
     self.slippery_roads_active = False
+    self.low_visibility_activated_t = 0.0
+    self.slippery_roads_activated_t = 0.0
     
     self.lka_steering_cmd_counter = 0
     
@@ -264,7 +268,10 @@ class CarState(CarStateBase):
       self.update_op_params()
       set_v_cruise_offset(self._op_params.get('set_speed_offset_mph') if self.cruise_offset_enabled else 0)
       self.coasting_enabled = self._params.get_bool("Coasting")
-      self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco; 3 = creep
+      accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco
+      if accel_mode != self.accel_mode:
+        self.accel_mode_change_last_t = t
+      self.accel_mode = accel_mode
       self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
       if not self.disengage_on_gas:
         self.min_lane_change_speed = self._op_params.get('MADS_steer_pause_speed_mph') * CV.MPH_TO_MS
@@ -545,6 +552,19 @@ class CarState(CarStateBase):
     
     ret.slipperyRoadsActive = self.slippery_roads_active
     ret.lowVisibilityActive = self.low_visibility_active
+    
+    if self.iter % 20 == 0:
+      if self.slippery_roads_active:
+        if self.follow_level != 2 and self.slippery_roads_activated_t > self.follow_level_change_last_t:
+          self.follow_level = 2
+          put_nonblocking("FollowLevel", str(int(self.follow_level)))
+        if self.accel_mode != 2 and self.slippery_roads_activated_t > self.accel_mode_change_last_t:
+          self.accel_mode = 2
+          put_nonblocking("AccelMode", str(int(self.accel_mode)))
+      if self.low_visibility_active:
+        if self.follow_level != 2 and self.low_visibility_activated_t > self.follow_level_change_last_t:
+          self.follow_level = 2
+          put_nonblocking("FollowLevel", str(int(self.follow_level)))
     
     self.pitch = self.pitch_ema * self.pitch_raw + (1 - self.pitch_ema) * self.pitch 
     ret.pitch = self.pitch

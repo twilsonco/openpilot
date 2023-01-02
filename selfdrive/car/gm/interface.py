@@ -433,6 +433,7 @@ class CarInterface(CarInterfaceBase):
         if self.CS.follow_level < 1:
           self.CS.follow_level = 3
         put_nonblocking("FollowLevel", str(self.CS.follow_level))
+        self.CS.follow_level_change_last_t = t
         cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
     elif self.CS.MADS_enabled and not self.CS.distance_button and self.CS.prev_distance_button:
       put_nonblocking("MADSLeadBraking", str(int(not self.CS.MADS_lead_braking_enabled)))
