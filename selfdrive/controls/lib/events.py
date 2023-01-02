@@ -3,6 +3,7 @@ from typing import Dict, Union, Callable, Any
 
 from cereal import log, car
 import cereal.messaging as messaging
+from common.op_params import opParams
 from common.realtime import DT_CTRL
 from selfdrive.config import Conversions as CV
 from selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
@@ -14,6 +15,9 @@ AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 EventName = car.CarEvent.EventName
 LaneChangeAlert = log.LateralPlan.LaneChangeAlert
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
+
+OPPARAMS = opParams(calling_function="events.py global")
+AUTO_LANE_CHANGE_MIN_SPEED_MPH = OPPARAMS.get('LC_nudgeless_minimum_speed_mph', force_update=True)
 
 def stotime(S):
 
@@ -244,7 +248,7 @@ def no_gps_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Al
 
 
 def wrong_car_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
-  text = "Cruise Mode Disabled"
+  text = "Enable Cruise Main to engage"
   if CP.carName == "honda":
     text = "Main Switch Off"
   return NoEntryAlert(text, duration_hud_alert=0.)
@@ -317,9 +321,9 @@ def pre_lane_change(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) ->
   elif alert == LaneChangeAlert.nudgelessBlockedTimeout:
     str2 = "(auto lane change timed out)"
   elif alert == LaneChangeAlert.nudgelessBlockedMinSpeed:
-    str2 = "(no auto lane change below {})".format("40mph" if not metric else "65kph")
-  elif alert == LaneChangeAlert.nudgelessBlockedOnePedal:
-    str2 = "(no auto lane change in one-pedal mode)"
+    str2 = "(no auto lane change below {})".format(f"{int(AUTO_LANE_CHANGE_MIN_SPEED_MPH)}mph" if not metric else f"{int(AUTO_LANE_CHANGE_MIN_SPEED_MPH * CV.MPH_TO_KPH)}kph")
+  elif alert == LaneChangeAlert.nudgelessBlockedMADS:
+    str2 = "(no auto lane change in MADS)"
   elif alert == LaneChangeAlert.nudgelessLongDisabled:
     str2 = "(no auto lane change when not cruising)"
   

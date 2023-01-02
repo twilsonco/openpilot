@@ -4,9 +4,11 @@ import numpy as np
 from cereal import log
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp
+from common.op_params import opParams
 from common.realtime import DT_CTRL
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.toyota.values import CarControllerParams
+from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 
 
@@ -45,8 +47,19 @@ class LatControlINDI():
     self.sat_count_rate = 1.0 * DT_CTRL
     self.sat_limit = CP.steerLimitTimer
     self.steer_filter = FirstOrderFilter(0., self.RC, DT_CTRL)
+    
+    self._op_params = opParams(calling_function="latcontrol_indi.py")
+    self.roll_k = 1.0
 
     self.reset()
+  
+  def update_op_params(self):
+    bp = [i * CV.MPH_TO_MS for i in [self._op_params.get(f"TUNE_LAT_INDI_{s}s_mph") for s in ['l','h']]]
+    self._RC = (bp, [self._op_params.get(f"TUNE_LAT_INDI_time_constant_{s}s") for s in ['l','h']])
+    self._G = (bp, [self._op_params.get(f"TUNE_LAT_INDI_actuator_effectiveness_{s}s") for s in ['l','h']])
+    self._outer_loop_gain = (bp, [self._op_params.get(f"TUNE_LAT_INDI_outer_gain_{s}s") for s in ['l','h']])
+    self._inner_loop_gain = (bp, [self._op_params.get(f"TUNE_LAT_INDI_inner_gain_{s}s") for s in ['l','h']])
+    self.roll_k = self._op_params.get('TUNE_LAT_INDI_roll_compensation')
 
   @property
   def RC(self):
@@ -93,7 +106,7 @@ class LatControlINDI():
     indi_log.steeringRateDeg = math.degrees(self.x[1])
     indi_log.steeringAccelDeg = math.degrees(self.x[2])
 
-    steers_des = VM.get_steer_from_curvature(-curvature, CS.vEgo, params.roll)
+    steers_des = VM.get_steer_from_curvature(-curvature, CS.vEgo, params.roll * self.roll_k)
     steers_des += math.radians(params.angleOffsetDeg)
     indi_log.steeringAngleDesiredDeg = math.degrees(steers_des)
 

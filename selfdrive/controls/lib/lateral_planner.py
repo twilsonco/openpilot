@@ -2,6 +2,7 @@ import math
 import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp
+from common.op_params import opParams
 from common.params import Params, put_nonblocking
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
@@ -45,6 +46,7 @@ DESIRES = {
 
 class LateralPlanner():
   def __init__(self, CP, use_lanelines=True, wide_camera=False):
+    global LANE_CHANGE_SPEED_MIN
     self.use_lanelines = use_lanelines
     self.LP = LanePlanner(wide_camera, CP.mass)
 
@@ -54,13 +56,17 @@ class LateralPlanner():
     self.solution_invalid_cnt = 0
 
     self._params = Params()
+    self._op_params = opParams(calling_function="lateral planner")
     self.laneless_mode = int(self._params.get("LanelessMode", encoding="utf8"))
     self.laneless_mode_status = False
     self.laneless_mode_status_buffer = False
 
     self.nudgeless_enabled = self._params.get_bool("NudgelessLaneChange")
-    self.nudgeless_delay = 1.5 # [s] amount of time blinker has to be on before nudgless lane change
-    self.nudgeless_min_speed = 18. # no nudgeless below ≈40mph
+    self.nudgeless_delay = self._op_params.get('LC_nudgeless_delay_s', force_update=True) # [s] amount of time blinker has to be on before nudgless lane change
+    self.nudgeless_min_speed = self._op_params.get('LC_nudgeless_minimum_speed_mph', force_update=True) * CV.MPH_TO_MS
+    self.MADS_allow_nudgeless_lane_change = self._op_params.get('MADS_steer_allow_nudgeless_lane_change')
+    LANE_CHANGE_SPEED_MIN = self._op_params.get('LC_minimum_speed_mph', force_update=True) * CV.MPH_TO_MS
+    
     self.nudgeless_lane_change_start_t = 0.
     self.nudgeless_blinker_press_t = 0.
     self.adjacentLaneWidth = 0.
@@ -217,9 +223,9 @@ class LateralPlanner():
         if nudgeless_allowed and t - self.nudgeless_blinker_press_t > 3.:
           nudgeless_allowed = False
           self.lane_change_alert = LaneChangeAlert.nudgelessBlockedTimeout
-        if nudgeless_allowed and sm['carState'].onePedalModeActive:
+        if nudgeless_allowed and (sm['controlsState'].latActive and not sm['controlsState'].active and not self.MADS_allow_nudgeless_lane_change):
           nudgeless_allowed = False
-          self.lane_change_alert = LaneChangeAlert.nudgelessBlockedOnePedal
+          self.lane_change_alert = LaneChangeAlert.nudgelessBlockedMADS
         if nudgeless_allowed and not sm['controlsState'].active:
           nudgeless_allowed = False
           self.lane_change_alert = LaneChangeAlert.nudgelessLongDisabled

@@ -4,6 +4,7 @@ import time
 from statistics import mean
 
 from cereal import log
+from common.op_params import opParams
 from common.params import Params, put_nonblocking
 from common.realtime import sec_since_boot
 from selfdrive.hardware import HARDWARE
@@ -24,6 +25,7 @@ MIN_ON_TIME_S = 5*3600
 class PowerMonitoring:
   def __init__(self):
     self.params = Params()
+    self._op_params = opParams(calling_function="power monitor")
     self.last_measurement_time = None           # Used for integration delta
     self.last_save_time = 0                     # Used for saving current value in a param
     self.power_used_uWh = 0                     # Integrated power usage in uWh since going into offroad
@@ -156,6 +158,11 @@ class PowerMonitoring:
 
   def get_car_battery_capacity(self):
     return int(self.car_battery_capacity_uWh)
+  
+  def update_op_params(self):
+    global MAX_TIME_OFFROAD_S, MIN_ON_TIME_S, VBATT_PAUSE_CHARGING
+    MAX_TIME_OFFROAD_S = MIN_ON_TIME_S = self._op_params.get('offroad_shutdown_time_hr', force_update=True) * 3600
+    VBATT_PAUSE_CHARGING = self._op_params.get('car_12v_pause_charging_v', force_update=True)
 
   # See if we need to disable charging
   def should_disable_charging(self, pandaState, offroad_timestamp):
@@ -181,6 +188,8 @@ class PowerMonitoring:
     now = sec_since_boot()
     panda_charging = (pandaState.pandaState.usbPowerMode != log.PandaState.UsbPowerMode.client)
     BATT_PERC_OFF = 10
+    
+    self.update_op_params()
 
     should_shutdown = False
     # Wait until we have shut down charging before powering down

@@ -2,6 +2,7 @@ import math
 import numpy as np
 
 from common.numpy_fast import clip
+from common.op_params import opParams
 from common.realtime import DT_CTRL
 from cereal import log
 from selfdrive.controls.lib.drive_helpers import get_steer_max
@@ -25,8 +26,27 @@ class LatControlLQR():
 
     self.sat_count_rate = 1.0 * DT_CTRL
     self.sat_limit = CP.steerLimitTimer
+    
+    self._op_params = opParams(calling_function="latcontrol_lqr.py")
+    self.roll_k = 1.0
 
     self.reset()
+  
+  def update_op_params(self):
+    self.scale = self._op_params.get('TUNE_LAT_LQR_scale')
+    self.ki = self._op_params.get('TUNE_LAT_LQR_ki')
+    self.dc_gain = self._op_params.get('TUNE_LAT_LQR_dc_gain')
+    a = self._op_params.get('TUNE_LAT_LQR_a')
+    b = self._op_params.get('TUNE_LAT_LQR_b')
+    c = self._op_params.get('TUNE_LAT_LQR_c')
+    k = self._op_params.get('TUNE_LAT_LQR_k')
+    l = self._op_params.get('TUNE_LAT_LQR_l')
+    self.A = np.array(a).reshape((2, 2))
+    self.B = np.array(b).reshape((2, 1))
+    self.C = np.array(c).reshape((1, 2))
+    self.K = np.array(k).reshape((1, 2))
+    self.L = np.array(l).reshape((2, 1))
+    self.roll_k = self._op_params.get('TUNE_LAT_LQR_roll_compensation')
 
   def reset(self):
     self.i_lqr = 0.0
@@ -53,7 +73,7 @@ class LatControlLQR():
     # Subtract offset. Zero angle should correspond to zero torque
     steering_angle_no_offset = CS.steeringAngleDeg - params.angleOffsetAverageDeg
 
-    desired_angle = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
+    desired_angle = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll * self.roll_k))
 
     instant_offset = params.angleOffsetDeg - params.angleOffsetAverageDeg
     desired_angle += instant_offset  # Only add offset that originates from vehicle model errors

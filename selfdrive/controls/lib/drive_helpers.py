@@ -11,7 +11,6 @@ V_CRUISE_MAX = 145
 V_CRUISE_MIN = 1
 V_CRUISE_DELTA = 5
 V_CRUISE_OFFSET = 3
-V_CRUISE_OFFSET_DEFAULT = 3
 V_CRUISE_ENABLE_MIN = 5
 LAT_MPC_N = 16
 LON_MPC_N = 32
@@ -59,12 +58,9 @@ def rate_limit(new_value, last_value, dw_step, up_step):
 def get_steer_max(CP, v_ego):
   return interp(v_ego, CP.steerMaxBP, CP.steerMaxV)
 
-def set_v_cruise_offset(do_offset):
+def set_v_cruise_offset(offset):
   global V_CRUISE_OFFSET
-  if do_offset:
-    V_CRUISE_OFFSET = V_CRUISE_OFFSET_DEFAULT
-  else:
-    V_CRUISE_OFFSET = 0
+  V_CRUISE_OFFSET = offset
 
 def update_v_cruise(v_cruise_kph, buttonEvents, enabled, cur_time, accel_pressed,decel_pressed,accel_pressed_last,decel_pressed_last, fastMode, stock_speed_adjust, vEgo_kph, gas_pressed):
   

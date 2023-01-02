@@ -39,6 +39,9 @@ def manager_init():
     ("OpenpilotEnabledToggle", "1"),
     ("CommunityFeaturesToggle", "1"),
     ("ShowDebugUI", "1"),
+    ("OPParamsLiveTuneEnabled", "0"),
+    ("OPParamsLateralOverride", "0"),
+    ("OPParamsLongitudinalOverride", "0"),
     ("IgnoreMissingNVME", "0"),
     ("SpeedLimitControl", "1"),
     ("EUSpeedLimitStyle", "0"),
@@ -76,6 +79,7 @@ def manager_init():
     ("AutoAutoLanePosition", "1"),
     ("LongRangeLeadsEnabled", "1"),
     ("AutoLanePositionActive", "0"),
+    ("GrayPandaSupport", "0"),
     ("LanePosition", "0"),
     ("NudgelessLaneChange", "0"),
     ("WeatherSafetyEnabled", "1"),
@@ -104,7 +108,7 @@ def manager_init():
     ("LowOverheadMode", "0"),
     ("FPVolt", "0"),
     ("MeasureConfigNum", "3"),
-    ("MeasureSlot00", "33"), # percent grade 
+    ("MeasureSlot00", "34"), # percent grade 
     ("MeasureSlot01", "31"), # elevation 
     ("MeasureSlot02", "6"), # engine RPM + coolant temp F
     ("MeasureSlot03", "38"), # ev recent eff

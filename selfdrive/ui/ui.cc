@@ -350,6 +350,11 @@ static void update_state(UIState *s) {
         scene.ev_eff_total_kWh = std::stof(Params().get("EVConsumptionTripkWh"));
       }
     }
+    for (int i = 0; i < scene.measure_max_num_slots; ++i){
+      char slotName[16];
+      snprintf(slotName, sizeof(slotName), "MeasureSlot%.2d", i);
+      scene.measure_slots[i] = std::stoi(Params().get(slotName));
+    }
     scene.car_is_ev = Params().getBool("CarIsEV");
     if (s->sm->frame - scene.started_frame > 100 && s->sm->frame - scene.started_frame < 130 && !scene.car_is_ev){
       for (int i = 0; i < scene.measure_max_num_slots; ++i){
@@ -547,14 +552,28 @@ static void update_state(UIState *s) {
     std::string icon = data.getIcon();
     if (scene.weather_info.valid){
       sprintf(scene.weather_info.icon, "%s", icon.c_str());
-      auto totalPrecip = data.getRain3Hour() + data.getSnow3Hour();
+      float totalPrecip3h = data.getRain3Hour() + data.getSnow3Hour();
+      float totalPrecip1h = data.getRain1Hour() + data.getSnow1Hour();
+      int precipTime;
+      float totalPrecip;
+      if (totalPrecip3h > totalPrecip1h * 1.5){
+        precipTime = 3;
+        totalPrecip = totalPrecip3h;
+      }
+      else{
+        precipTime = 1;
+        totalPrecip = totalPrecip1h;
+      }
       scene.weather_info.has_precip = totalPrecip > 0.0;
       char wind_dir[8];
       char precip_str[32];
       deg_to_str(wind_dir, data.getWindDirectionDeg());
+      sprintf(scene.weather_info.desc_simple2, 
+              "%s", 
+              wind_dir);
       if (s->scene.is_metric){
         if (scene.weather_info.has_precip){
-          sprintf(precip_str, "%0.1fmm in last 3h\n", totalPrecip);
+          sprintf(precip_str, "%0.1fmm in last %dh", totalPrecip, precipTime);
         }
         else{
           sprintf(precip_str, "");
@@ -562,6 +581,14 @@ static void update_state(UIState *s) {
         sprintf(scene.weather_info.desc_simple, 
                 "%0.1f°C", 
                 data.getTemperature());
+        if (data.getWindSpeed() > 3.0){
+          sprintf(scene.weather_info.desc_simple1, 
+                  "%0.0fkm/h", 
+                  data.getWindSpeed() * 3.6);
+        }
+        else{
+          sprintf(scene.weather_info.desc_simple1, " ");
+        }
         sprintf(scene.weather_info.desc_full1,
                 "%0.1f°C (feels like %0.1f)",
                 data.getTemperature(),
@@ -573,14 +600,14 @@ static void update_state(UIState *s) {
                 "%s",
                 precip_str);
         sprintf(scene.weather_info.desc_full4,
-                "wind %s@%0.1fm/s (gusts %0.1f)",
+                "wind %s@%0.1fkm/h (gusts %0.1f)",
                 wind_dir,
-                data.getWindSpeed(),
-                data.getWindSpeedGust());
+                data.getWindSpeed() * 3.6,
+                data.getWindSpeedGust() * 3.6);
       }
       else{
         if (scene.weather_info.has_precip){
-          sprintf(precip_str, "%0.2f\" in last 3h\n", totalPrecip * 0.039);
+          sprintf(precip_str, "%0.2f\" in last %dh", totalPrecip * 0.039, precipTime);
         }
         else{
           sprintf(precip_str, "");
@@ -588,6 +615,14 @@ static void update_state(UIState *s) {
         sprintf(scene.weather_info.desc_simple, 
                 "%0.0f°F", 
                 data.getTemperature() * 1.8 + 32.0);
+        if (data.getWindSpeed() > 3.0){
+          sprintf(scene.weather_info.desc_simple1, 
+                  "%0.0fmph", 
+                  data.getWindSpeed() * 2.24);
+        }
+        else{
+          sprintf(scene.weather_info.desc_simple1, " ");
+        }
         sprintf(scene.weather_info.desc_full1,
                 "%0.0f°F (feels like %0.0f)",
                 data.getTemperature() * 1.8 + 32.0,

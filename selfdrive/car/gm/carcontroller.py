@@ -19,20 +19,16 @@ ACCEL_PITCH_FACTOR_BP = [5., 10.] # [m/s]
 ACCEL_PITCH_FACTOR_V = [0., 1.] # [unitless in [0-1]]
 
 ONE_PEDAL_ACCEL_PITCH_FACTOR_BP = [4., 8.] # [m/s]
-ONE_PEDAL_ACCEL_PITCH_FACTOR_V = [0.4, 1.] # [unitless in [0-1]]
-ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V = [0.2, 1.] # [unitless in [0-1]]
 
 ONE_PEDAL_MODE_DECEL_BP = [i * CV.MPH_TO_MS for i in [0.5, 6.]] # [mph to meters]
-ONE_PEDAL_MODE_DECEL_V = [-1.0, -1.1]
 ONE_PEDAL_MIN_SPEED = 2.1
-ONE_PEDAL_DECEL_RATE_LIMIT_UP = 0.8 * DT_CTRL * 4 # m/s^2 per second for increasing braking force
-ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.8 * DT_CTRL * 4 # m/s^2 per second for decreasing
 ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP = [i * CV.MPH_TO_MS for i in [0.0, 10.]] # [mph to meters]
 ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_V = [0.2, 1.0] # factor of rate limit
 
-ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
+ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_BP = [20.0, 120.0] # [deg] abs steering wheel angle
+ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_V = [1.0, 0.2] # factor of rate limit
+
 ONE_PEDAL_SPEED_ERROR_FACTOR_BP = [1.5, 20.] # [m/s] 
-ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.4, 0.2] # factor of error for non-lead braking decel
 
 ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T = 0.6 # [s]
 
@@ -161,23 +157,25 @@ class CarController():
         if CS.out.onePedalModeActive and CS.out.gas < 1e-5:
           self.apply_gas = P.MAX_ACC_REGEN
           pitch_accel = CS.pitch * ACCELERATION_DUE_TO_GRAVITY
-          pitch_accel *= interp(CS.vEgo, ONE_PEDAL_ACCEL_PITCH_FACTOR_BP, ONE_PEDAL_ACCEL_PITCH_FACTOR_V if pitch_accel <= 0 else ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V)
+          pitch_accel *= interp(CS.vEgo, ONE_PEDAL_ACCEL_PITCH_FACTOR_BP, CS.ONE_PEDAL_ACCEL_PITCH_FACTOR_V if pitch_accel <= 0 else CS.ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V)
           
           if CS.gear_shifter_ev == GEAR_SHIFTER2.LOW:
-            self.one_pedal_decel_in = interp(CS.vEgo, ONE_PEDAL_MODE_DECEL_BP, ONE_PEDAL_MODE_DECEL_V)
+            self.one_pedal_decel_in = interp(CS.vEgo, ONE_PEDAL_MODE_DECEL_BP, CS.ONE_PEDAL_MODE_DECEL_V)
             
-            error_factor = interp(CS.vEgo, ONE_PEDAL_SPEED_ERROR_FACTOR_BP, ONE_PEDAL_SPEED_ERROR_FACTOR_V)
+            error_factor = interp(CS.vEgo, ONE_PEDAL_SPEED_ERROR_FACTOR_BP, CS.ONE_PEDAL_SPEED_ERROR_FACTOR_V)
             error = self.one_pedal_decel_in - min(0.0, CS.out.aEgo + pitch_accel)
             error *= error_factor
             one_pedal_decel = self.one_pedal_pid.update(self.one_pedal_decel_in, self.one_pedal_decel_in - error, speed=CS.out.vEgo, feedforward=self.one_pedal_decel_in)
             
             rate_limit_factor = interp(CS.vEgo, ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP, ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_V)
+            rate_limit_factor = min(rate_limit_factor,
+                                    interp(abs(CS.out.steeringAngleDeg), ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_BP, ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_V))
             
-            self.one_pedal_decel = clip(one_pedal_decel, self.one_pedal_decel - ONE_PEDAL_DECEL_RATE_LIMIT_UP * rate_limit_factor, self.one_pedal_decel + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN + rate_limit_factor)
-            self.one_pedal_decel = max(self.one_pedal_decel, ONE_PEDAL_MAX_DECEL)
+            self.one_pedal_decel = clip(one_pedal_decel, self.one_pedal_decel - CS.ONE_PEDAL_DECEL_RATE_LIMIT_UP * rate_limit_factor, self.one_pedal_decel + CS.ONE_PEDAL_DECEL_RATE_LIMIT_DOWN + rate_limit_factor)
+            self.one_pedal_decel = max(self.one_pedal_decel, CS.ONE_PEDAL_MAX_DECEL)
             one_pedal_apply_brake = interp(self.one_pedal_decel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
           else:
-            self.one_pedal_decel_in = clip(0.0 if CS.gear_shifter_ev == GEAR_SHIFTER2.DRIVE and CS.one_pedal_dl_coasting_enabled and CS.vEgo > 0.05 else min(CS.out.aEgo,threshold_accel), self.one_pedal_decel_in - ONE_PEDAL_DECEL_RATE_LIMIT_UP, self.one_pedal_decel_in + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
+            self.one_pedal_decel_in = clip(0.0 if CS.gear_shifter_ev == GEAR_SHIFTER2.DRIVE and CS.one_pedal_dl_coasting_enabled and CS.vEgo > 0.05 else min(CS.out.aEgo,threshold_accel), self.one_pedal_decel_in - CS.ONE_PEDAL_DECEL_RATE_LIMIT_UP, self.one_pedal_decel_in + CS.ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
             one_pedal_apply_brake = 0.0
           
           
@@ -189,7 +187,8 @@ class CarController():
           if CS.MADS_lead_braking_active:
             self.lead_accel_last_t = t
           
-        elif CS.coasting_enabled and lead_long_brake_lockout_factor < 1.0:
+        elif CS.coasting_enabled and lead_long_brake_lockout_factor < 1.0 \
+            and not CS.slippery_roads_active and not CS.low_visibility_active:
           if CS.coasting_long_plan in COAST_SOURCES and self.apply_gas < P.ZERO_GAS or self.apply_brake > 0.0:
             check_speed_ms = (CS.speed_limit if CS.speed_limit_active and CS.speed_limit < CS.v_cruise_kph else CS.v_cruise_kph) * CV.KPH_TO_MS
             if self.apply_brake > 0.0:
@@ -219,7 +218,10 @@ class CarController():
       self.apply_brake = 0
     if not enabled or CS.out.gas >= GAS_PRESSED_THRESHOLD:
       self.apply_gas = P.MAX_ACC_REGEN
-    if CS.out.gas >= 1e-5:
+    if CS.out.gas >= 1e-5 \
+        or (not CS.long_active \
+          and not CS.out.onePedalModeActive \
+          and not CS.MADS_lead_braking_active):
       self.apply_brake = 0
 
     if CS.showBrakeIndicator:
@@ -256,7 +258,13 @@ class CarController():
         CS.autoHoldActivated = True
 
       else:
-        if CS.out.gas > 1e-5 or CS.out.gearShifter not in ['drive','low'] or CS.out.brakePressed or not CS.cruiseMain:
+        if CS.out.gas > 1e-5 \
+            or CS.out.gearShifter not in ['drive','low'] \
+            or CS.out.brakePressed \
+            or not CS.cruiseMain \
+            or (not CS.long_active \
+              and not CS.out.onePedalModeActive\
+              and not CS.MADS_lead_braking_active):
           at_full_stop = False
           near_stop = False
           car_stopping = False

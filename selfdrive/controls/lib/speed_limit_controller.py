@@ -4,6 +4,7 @@ from common.numpy_fast import interp
 from enum import IntEnum
 from cereal import log, car
 from common.params import Params
+from common.op_params import opParams
 from common.realtime import sec_since_boot
 from selfdrive.controls.lib.drive_helpers import LIMIT_ADAPT_ACC, LIMIT_MIN_ACC, LIMIT_MAX_ACC, LIMIT_SPEED_OFFSET_TH, \
   LIMIT_MAX_MAP_DATA_AGE, CONTROL_N
@@ -15,7 +16,6 @@ _PARAMS_UPDATE_PERIOD = 0.2  # secs. Time between parameter updates.
 _TEMP_INACTIVE_GUARD_PERIOD = 0.7  # secs. Time to wait after activation before considering temp deactivation signal.
 
 # Lookup table for speed limit percent offset depending on speed.
-_LIMIT_PERC_OFFSET_V = [0.2, 0.12]  # 9mph over by 75mph
 _LIMIT_PERC_OFFSET_BP = [10., 35.]  
 
 SpeedLimitControlState = log.LongitudinalPlan.SpeedLimitControlState
@@ -192,6 +192,7 @@ class SpeedLimitResolver():
 class SpeedLimitController():
   def __init__(self):
     self._params = Params()
+    self._op_params = opParams(calling_function="speed limit controller")
     self._resolver = SpeedLimitResolver()
     self._last_params_update = 0.0
     self._last_op_enabled_time = 0.0
@@ -215,6 +216,10 @@ class SpeedLimitController():
     self._state_prev = SpeedLimitControlState.inactive
     self._gas_pressed = False
     self._a_target = 0.
+  
+  def get_offset(self):
+    # Lookup table for speed limit percent offset depending on speed.
+    return [self._op_params.get('SLC_offset_low_speed'), self._op_params.get('SLC_offset_high_speed')]  # 9mph over by 75mph
 
   @property
   def a_target(self):
@@ -247,7 +252,7 @@ class SpeedLimitController():
   @property
   def speed_limit_offset(self):
     if self._offset_enabled:
-      return interp(self._speed_limit, _LIMIT_PERC_OFFSET_BP, _LIMIT_PERC_OFFSET_V) * self._speed_limit * 0.25 if self._reduced_offset else 1.0
+      return interp(self._speed_limit, _LIMIT_PERC_OFFSET_BP, self.get_offset()) * self._speed_limit * 0.25 if self._reduced_offset else 1.0
     return 0.
 
   @property

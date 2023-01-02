@@ -66,6 +66,24 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "When MADS is active, under 20mph with the blinker on and decelerating, steering pauses to make it easier to perform sharp turns (which may be contrary to OpenPilot's plan). Steering is unpaused when you resume acceleration or go above 20mph again.",
                                   "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
+
+  toggles.append(new ParamControl("OPParamsLiveTuneEnabled",
+                                  "Customization over SSH (tap me)",
+                                  "opParams: Many of the features can be fine-tuned to your liking by connecting to your device over SSH and running `./opparams.py` from the `/data/openpilot/` directory. Most of the adjustable parameters are live-tunable—can be modified while driving and take effect immediately IF THIS TOGGLE IS ENABLED. If this toggle is NOT enabled, then all parameters become \"startup\" parameters where a car or OpenPilot restart is necessary for them to take effect. Changes to this toggle will take effect the next time you start your car, and you'll need to restart `opparams.py` for it to reflect the change.",
+                                  "../assets/offroad/icon_calibration.png",
+                                  this));
+
+  toggles.append(new ParamControl("OPParamsLateralOverride",
+                                  "Custom lateral override (tap me)",
+                                  "This enables the lateral tune specified in opParams.",
+                                  "../assets/offroad/icon_calibration.png",
+                                  this));
+
+  toggles.append(new ParamControl("OPParamsLongitudinalOverride",
+                                  "Custom long override (tap me)",
+                                  "This enables the longitudinal tune specified in opParams.",
+                                  "../assets/offroad/icon_calibration.png",
+                                  this));
   
   toggles.append(new ParamControl("LongRangeLeadsEnabled",
                                   "Longer-range lead detection (beta)",
@@ -183,8 +201,13 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Prevent an error about missing NVME drive from showing on 32GB C3's. (restart device for change to take effect)",
                                   "../assets/offroad/icon_settings.png",
                                   this));
+  toggles.append(new ParamControl("GrayPandaSupport",
+                                  "Gray panda support",
+                                  "Necessary to run on gray panda",
+                                  "../assets/offroad/icon_settings.png",
+                                  this));
   toggles.append(new ParamControl("FPVolt",
-                                  "Volt Fingerprint",
+                                  "Volt fingerprint",
                                   "Forces Volt fingerprint",
                                   "../assets/offroad/icon_settings.png",
                                   this));

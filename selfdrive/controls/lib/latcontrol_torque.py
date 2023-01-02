@@ -1,6 +1,7 @@
 import math
 from selfdrive.controls.lib.pid import PIDController
 from common.numpy_fast import interp
+from common.op_params import opParams
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from cereal import log
@@ -31,6 +32,17 @@ class LatControlTorque(LatControl):
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
     self.friction = CP.lateralTuning.torque.friction
     self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
+    self._op_params = opParams(calling_function="latcontrol_torque.py")
+    self.roll_k = 1.0
+  
+  def update_op_params(self):
+    self.use_steering_angle = self._op_params.get('TUNE_LAT_TRX_use_steering_angle')
+    self.pid._k_p = [[0], [self._op_params.get('TUNE_LAT_TRX_kp')]]
+    self.pid._k_i = [[0], [self._op_params.get('TUNE_LAT_TRX_ki')]]
+    self.pid._k_d = [[0], [self._op_params.get('TUNE_LAT_TRX_kd')]]
+    self.pid.k_f = self._op_params.get('TUNE_LAT_TRX_kf')
+    self.friction = self._op_params.get('TUNE_LAT_TRX_friction')
+    self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
 
   def reset(self):
     super().reset()
@@ -59,7 +71,7 @@ class LatControlTorque(LatControl):
       pid_log.error = error
       
       ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
-      ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * 0.45
+      ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * self.roll_k
       friction_compensation = interp(desired_lateral_jerk, 
                                      [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], 
                                      [-self.friction, self.friction])

@@ -3,6 +3,7 @@ import math
 import numpy as np
 from common.numpy_fast import interp
 
+from common.op_params import opParams
 from common.params import Params
 import cereal.messaging as messaging
 from cereal import log, car
@@ -115,11 +116,12 @@ class Planner():
     self.turn_speed_controller = TurnSpeedController()
 
     self._params = Params()
+    self._op_params = opParams(calling_function="longitudinal planner")
     self.params_check_last_t = 0.
     self.params_check_freq = 0.1 # check params at 10Hz
     
     self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking")
-    self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco; 3 = creep
+    self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -10. # lead "absolute"" velocity
     self.tr = 1.8
@@ -128,8 +130,17 @@ class Planner():
     self.seconds_stopped = 0
     self.standstill_last = False
     self.gear_shifter_last = GearShifter.park
+    self.update_op_params()
 
 
+  def update_op_params(self):
+    self.accel_profile_factors = [
+      self._op_params.get('AP_stock_accel_factor'),
+      self._op_params.get('AP_sport_accel_factor'),
+      self._op_params.get('AP_eco_accel_factor')
+    ]
+    self.accel_profile_following_factor = self._op_params.get('AP_following_accel_factor')
+  
   def update(self, sm, CP):
     cur_time = sec_since_boot()
     t = cur_time
@@ -192,6 +203,7 @@ class Planner():
     
     if t - self.params_check_last_t >= self.params_check_freq:
       self.params_check_last_t = t
+      self.update_op_params()
       self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking")
       accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco
       if accel_mode != self.accel_mode:
@@ -199,6 +211,7 @@ class Planner():
           self.accel_mode = accel_mode
 
     accel_limits = calc_cruise_accel_limits(v_ego, following, self.accel_mode)
+    accel_limits[1] *= self.accel_profile_following_factor if following else self.accel_profile_factors[self.accel_mode]
     if not sm['controlsState'].active:
       accel_limits[1] = min(0.0, accel_limits[1])
     if sm['carState'].gas > 1e-5:

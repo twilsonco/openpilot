@@ -3,6 +3,7 @@ from math import fabs, erf, atan
 from cereal import car
 from common.numpy_fast import interp
 from common.realtime import sec_since_boot
+from common.op_params import opParams
 from common.params import Params, put_nonblocking
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
@@ -216,7 +217,7 @@ class CarInterface(CarInterfaceBase):
         max_lateral_accel = 3.0
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 0.6
+        ret.lateralTuning.torque.kp = 0.48
         ret.lateralTuning.torque.ki = 0.15
         ret.lateralTuning.torque.kd = 2.0
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
@@ -351,6 +352,60 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kdBP = [0.]
         ret.lateralTuning.pid.kdV = [0.6]
         ret.lateralTuning.pid.kf = 1. # use with get_feedforward_bolt_euv
+    
+    if Params().get_bool('OPParamsLateralOverride'):
+      op_params = opParams("gm car_interface.py for lateral override")
+      lat_type = op_params.get('TUNE_LAT_type')
+      if lat_type == 'torque':
+        ret.lateralTuning.init('torque')
+        ret.lateralTuning.torque.useSteeringAngle = op_params.get('TUNE_LAT_TRX_use_steering_angle', force_update=True)
+        ret.lateralTuning.torque.kp = op_params.get('TUNE_LAT_TRX_kp', force_update=True)
+        ret.lateralTuning.torque.ki = op_params.get('TUNE_LAT_TRX_ki', force_update=True)
+        ret.lateralTuning.torque.kd = op_params.get('TUNE_LAT_TRX_kd', force_update=True)
+        ret.lateralTuning.torque.kf = op_params.get('TUNE_LAT_TRX_kf', force_update=True)
+        ret.lateralTuning.torque.friction = op_params.get('TUNE_LAT_TRX_friction', force_update=True)
+      elif lat_type == 'pid':
+        ret.lateralTuning.init('pid')
+        bp = [i * CV.MPH_TO_MS for i in [op_params.get(f"TUNE_LAT_PID_{s}s_mph", force_update=True) for s in ['l','h']]]
+        ret.lateralTuning.pid.kpBP = bp
+        ret.lateralTuning.pid.kpV = [op_params.get(f"TUNE_LAT_PID_kp_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.pid.kiBP = bp
+        ret.lateralTuning.pid.kiV = [op_params.get(f"TUNE_LAT_PID_ki_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.pid.kdBP = bp
+        ret.lateralTuning.pid.kdV = [op_params.get(f"TUNE_LAT_PID_kd_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.pid.kf = op_params.get('TUNE_LAT_PID_kf', force_update=True)
+      elif lat_type == 'indi':
+        ret.lateralTuning.init('indi')
+        bp = [i * CV.MPH_TO_MS for i in [op_params.get(f"TUNE_LAT_INDI_{s}s_mph", force_update=True) for s in ['l','h']]]
+        ret.lateralTuning.indi.innerLoopGainBP = bp
+        ret.lateralTuning.indi.innerLoopGainV = [op_params.get(f"TUNE_LAT_INDI_inner_gain_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.indi.outerLoopGainBP = bp
+        ret.lateralTuning.indi.outerLoopGainV = [op_params.get(f"TUNE_LAT_INDI_outer_gain_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.indi.timeConstantBP = bp
+        ret.lateralTuning.indi.timeConstantV = [op_params.get(f"TUNE_LAT_INDI_time_constant_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.indi.actuatorEffectivenessBP = bp
+        ret.lateralTuning.indi.actuatorEffectivenessV = [op_params.get(f"TUNE_LAT_INDI_actuator_effectiveness_{s}s", force_update=True) for s in ['l','h']]
+      elif lat_type == 'lqr':
+        ret.lateralTuning.init('lqr')
+        ret.lateralTuning.lqr.scale = op_params.get('TUNE_LAT_LQR_scale', force_update=True)
+        ret.lateralTuning.lqr.ki = op_params.get('TUNE_LAT_LQR_ki', force_update=True)
+        ret.lateralTuning.lqr.dcGain = op_params.get('TUNE_LAT_LQR_dc_gain', force_update=True)
+        ret.lateralTuning.lqr.a = op_params.get('TUNE_LAT_LQR_a', force_update=True)
+        ret.lateralTuning.lqr.b = op_params.get('TUNE_LAT_LQR_b', force_update=True)
+        ret.lateralTuning.lqr.c = op_params.get('TUNE_LAT_LQR_c', force_update=True)
+        ret.lateralTuning.lqr.k = op_params.get('TUNE_LAT_LQR_k', force_update=True)
+        ret.lateralTuning.lqr.l = op_params.get('TUNE_LAT_LQR_l', force_update=True)
+    
+    if Params().get_bool('OPParamsLongitudinalOverride'):
+      bp = [i * CV.MPH_TO_MS for i in op_params.get('TUNE_LONG_speed_mph', force_update=True)]
+      ret.longitudinalTuning.kpBP = bp
+      ret.longitudinalTuning.kpV = op_params.get('TUNE_LONG_kp', force_update=True)
+      ret.longitudinalTuning.kiBP = bp
+      ret.longitudinalTuning.kiV = op_params.get('TUNE_LONG_ki', force_update=True)
+      ret.longitudinalTuning.kdBP = bp
+      ret.longitudinalTuning.kdV = op_params.get('TUNE_LONG_kd', force_update=True)
+      ret.longitudinalTuning.deadzoneBP = bp
+      ret.longitudinalTuning.deadzoneV = op_params.get('TUNE_LONG_deadzone', force_update=True)
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
@@ -433,6 +488,7 @@ class CarInterface(CarInterfaceBase):
         if self.CS.follow_level < 1:
           self.CS.follow_level = 3
         put_nonblocking("FollowLevel", str(self.CS.follow_level))
+        self.CS.follow_level_change_last_t = t
         cloudlog.info("button press event: cruise follow distance button. new value: %r" % self.CS.follow_level)
     elif self.CS.MADS_enabled and not self.CS.distance_button and self.CS.prev_distance_button:
       put_nonblocking("MADSLeadBraking", str(int(not self.CS.MADS_lead_braking_enabled)))
@@ -441,31 +497,32 @@ class CarInterface(CarInterfaceBase):
     ret.readdistancelines = self.CS.follow_level
 
     events = self.create_common_events(ret, pcm_enable=False)
-
-    if ret.vEgo < self.CP.minEnableSpeed:
-      events.add(EventName.belowEngageSpeed)
-    if self.CS.pause_long_on_gas_press:
-      events.add(EventName.gasPressed)
-    if self.CS.park_brake:
-      events.add(EventName.parkBrake)
-    steer_paused = False
-    if cruiseEnabled and t - self.CS.last_pause_long_on_gas_press_t < 0.5 and t - self.CS.sessionInitTime > 10.:
-      events.add(car.CarEvent.EventName.pauseLongOnGasPress)
-    if not ret.standstill and self.CS.lane_change_steer_factor < 1.:
-      events.add(car.CarEvent.EventName.blinkerSteeringPaused)
-      steer_paused = True
-    if ret.vEgo <= self.CP.minSteerSpeed and (not self.CS.autoHoldActivated or self.CS.out.onePedalModeActive):
-      if ret.standstill and (cruiseEnabled or self.CS.out.onePedalModeActive) and t - self.CS.sessionInitTime > 10. and not self.CS.resume_required:
-        events.add(car.CarEvent.EventName.stoppedWaitForGas)
-      elif not ret.standstill and self.CS.out.gearShifter in ['drive','low'] and not steer_paused and self.CS.lkaEnabled:
-        events.add(car.CarEvent.EventName.belowSteerSpeed)
-    if self.CS.autoHoldActivated:
-      self.CS.lastAutoHoldTime = t
-      events.add(car.CarEvent.EventName.autoHoldActivated)
-    if self.CS.pcm_acc_status == AccState.FAULTED and t - self.CS.sessionInitTime > 10.0 and t - self.CS.lastAutoHoldTime > 1.0:
-      events.add(EventName.accFaulted)
-    if self.CS.resume_required:
-      events.add(EventName.resumeRequired)
+    
+    if self.CS.cruiseMain:
+      if ret.vEgo < self.CP.minEnableSpeed:
+        events.add(EventName.belowEngageSpeed)
+      if self.CS.pause_long_on_gas_press:
+        events.add(EventName.gasPressed)
+      if self.CS.park_brake:
+        events.add(EventName.parkBrake)
+      steer_paused = False
+      if cruiseEnabled and t - self.CS.last_pause_long_on_gas_press_t < 0.5 and t - self.CS.sessionInitTime > 10.:
+        events.add(car.CarEvent.EventName.pauseLongOnGasPress)
+      if not ret.standstill and self.CS.lane_change_steer_factor < 1.:
+        events.add(car.CarEvent.EventName.blinkerSteeringPaused)
+        steer_paused = True
+      if ret.vEgo <= self.CP.minSteerSpeed and (not self.CS.autoHoldActivated or self.CS.out.onePedalModeActive):
+        if ret.standstill and (cruiseEnabled or self.CS.out.onePedalModeActive) and t - self.CS.sessionInitTime > 10. and not self.CS.resume_required:
+          events.add(car.CarEvent.EventName.stoppedWaitForGas)
+        elif not ret.standstill and self.CS.out.gearShifter in ['drive','low'] and not steer_paused and self.CS.lkaEnabled:
+          events.add(car.CarEvent.EventName.belowSteerSpeed)
+      if self.CS.autoHoldActivated:
+        self.CS.lastAutoHoldTime = t
+        events.add(car.CarEvent.EventName.autoHoldActivated)
+      if self.CS.pcm_acc_status == AccState.FAULTED and t - self.CS.sessionInitTime > 10.0 and t - self.CS.lastAutoHoldTime > 1.0:
+        events.add(EventName.accFaulted)
+      if self.CS.resume_required:
+        events.add(EventName.resumeRequired)
 
     # handle button presses
     for b in ret.buttonEvents:
@@ -483,8 +540,12 @@ class CarInterface(CarInterfaceBase):
       # The ECM will fault if resume triggers an enable while speed is set to 0
       if b.type == ButtonType.accelCruise and c.hudControl.setSpeed > 0 and c.hudControl.setSpeed < 70 and not b.pressed:
         events.add(EventName.buttonEnable)
+        if not self.CS.cruiseMain:
+          events.add(EventName.wrongCarMode)
       if b.type == ButtonType.decelCruise and not b.pressed:
         events.add(EventName.buttonEnable)
+        if not self.CS.cruiseMain:
+          events.add(EventName.wrongCarMode)
       # do disable on button down
       if b.type == ButtonType.cancel and b.pressed:
         events.add(EventName.buttonCancel)
