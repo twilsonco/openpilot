@@ -205,6 +205,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"MapboxToken", PERSISTENT | DONT_LOG},
     {"FPVolt", PERSISTENT},
     {"OPParamsLiveTuneEnabled", PERSISTENT},
+    {"OPParamsLongitudinalOverride", PERSISTENT},
+    {"OPParamsLateralOverride", PERSISTENT},
     {"MeasureConfigNum", PERSISTENT},
     {"MeasureSlot00", PERSISTENT},
     {"MeasureSlot01", PERSISTENT},

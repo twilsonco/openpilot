@@ -3,6 +3,7 @@ from math import fabs, erf, atan
 from cereal import car
 from common.numpy_fast import interp
 from common.realtime import sec_since_boot
+from common.op_params import opParams
 from common.params import Params, put_nonblocking
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
@@ -351,6 +352,60 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kdBP = [0.]
         ret.lateralTuning.pid.kdV = [0.6]
         ret.lateralTuning.pid.kf = 1. # use with get_feedforward_bolt_euv
+    
+    if Params().get_bool('OPParamsLateralOverride'):
+      op_params = opParams("gm car_interface.py for lateral override")
+      lat_type = op_params.get('TUNE_LAT_type')
+      if lat_type == 'torque':
+        ret.lateralTuning.init('torque')
+        ret.lateralTuning.torque.useSteeringAngle = op_params.get('TUNE_LAT_TRX_use_steering_angle', force_update=True)
+        ret.lateralTuning.torque.kp = op_params.get('TUNE_LAT_TRX_kp', force_update=True)
+        ret.lateralTuning.torque.ki = op_params.get('TUNE_LAT_TRX_ki', force_update=True)
+        ret.lateralTuning.torque.kd = op_params.get('TUNE_LAT_TRX_kd', force_update=True)
+        ret.lateralTuning.torque.kf = op_params.get('TUNE_LAT_TRX_kf', force_update=True)
+        ret.lateralTuning.torque.friction = op_params.get('TUNE_LAT_TRX_friction', force_update=True)
+      elif lat_type == 'pid':
+        ret.lateralTuning.init('pid')
+        bp = [i * CV.MPH_TO_MS for i in [op_params.get(f"TUNE_LAT_PID_{s}s_mph", force_update=True) for s in ['l','h']]]
+        ret.lateralTuning.pid.kpBP = bp
+        ret.lateralTuning.pid.kpV = [op_params.get(f"TUNE_LAT_PID_kp_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.pid.kiBP = bp
+        ret.lateralTuning.pid.kiV = [op_params.get(f"TUNE_LAT_PID_ki_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.pid.kdBP = bp
+        ret.lateralTuning.pid.kdV = [op_params.get(f"TUNE_LAT_PID_kd_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.pid.kf = op_params.get('TUNE_LAT_PID_kf', force_update=True)
+      elif lat_type == 'indi':
+        ret.lateralTuning.init('indi')
+        bp = [i * CV.MPH_TO_MS for i in [op_params.get(f"TUNE_LAT_INDI_{s}s_mph", force_update=True) for s in ['l','h']]]
+        ret.lateralTuning.indi.innerLoopGainBP = bp
+        ret.lateralTuning.indi.innerLoopGainV = [op_params.get(f"TUNE_LAT_INDI_inner_gain_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.indi.outerLoopGainBP = bp
+        ret.lateralTuning.indi.outerLoopGainV = [op_params.get(f"TUNE_LAT_INDI_outer_gain_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.indi.timeConstantBP = bp
+        ret.lateralTuning.indi.timeConstantV = [op_params.get(f"TUNE_LAT_INDI_time_constant_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.indi.actuatorEffectivenessBP = bp
+        ret.lateralTuning.indi.actuatorEffectivenessV = [op_params.get(f"TUNE_LAT_INDI_actuator_effectiveness_{s}s", force_update=True) for s in ['l','h']]
+      elif lat_type == 'lqr':
+        ret.lateralTuning.init('lqr')
+        ret.lateralTuning.lqr.scale = op_params.get('TUNE_LAT_LQR_scale', force_update=True)
+        ret.lateralTuning.lqr.ki = op_params.get('TUNE_LAT_LQR_ki', force_update=True)
+        ret.lateralTuning.lqr.dcGain = op_params.get('TUNE_LAT_LQR_dc_gain', force_update=True)
+        ret.lateralTuning.lqr.a = op_params.get('TUNE_LAT_LQR_a', force_update=True)
+        ret.lateralTuning.lqr.b = op_params.get('TUNE_LAT_LQR_b', force_update=True)
+        ret.lateralTuning.lqr.c = op_params.get('TUNE_LAT_LQR_c', force_update=True)
+        ret.lateralTuning.lqr.k = op_params.get('TUNE_LAT_LQR_k', force_update=True)
+        ret.lateralTuning.lqr.l = op_params.get('TUNE_LAT_LQR_l', force_update=True)
+    
+    if Params().get_bool('OPParamsLongitudinalOverride'):
+      bp = [i * CV.MPH_TO_MS for i in op_params.get('TUNE_LONG_speed_mph', force_update=True)]
+      ret.longitudinalTuning.kpBP = bp
+      ret.longitudinalTuning.kpV = op_params.get('TUNE_LONG_kp', force_update=True)
+      ret.longitudinalTuning.kiBP = bp
+      ret.longitudinalTuning.kiV = op_params.get('TUNE_LONG_ki', force_update=True)
+      ret.longitudinalTuning.kdBP = bp
+      ret.longitudinalTuning.kdV = op_params.get('TUNE_LONG_kd', force_update=True)
+      ret.longitudinalTuning.deadzoneBP = bp
+      ret.longitudinalTuning.deadzoneV = op_params.get('TUNE_LONG_deadzone', force_update=True)
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase

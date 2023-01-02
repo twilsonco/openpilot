@@ -3877,7 +3877,7 @@ static void draw_weather(UIState *s){
   auto const & w = s->scene.weather_info;
   const Rect max_speed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
   if (w.display_mode == 0 || !w.valid || s->scene.map_open){
-    Rect icon_rect = {max_speed_rect.right() + 20, max_speed_rect.y - 40, 200, 200};
+    Rect icon_rect = {max_speed_rect.right() + 20, max_speed_rect.y - 40, 180, 180};
     if (w.valid){
       ui_draw_image(s, icon_rect, w.icon, 1.0);
     }
@@ -3885,12 +3885,12 @@ static void draw_weather(UIState *s){
       ui_draw_image(s, icon_rect, "weather_load", 1.0);
     }
     nvgBeginPath(s->vg);
-    nvgFontSize(s->vg, 90);
+    nvgFontSize(s->vg, 80);
     nvgStrokeColor(s->vg, COLOR_WHITE);
     nvgFillColor(s->vg, COLOR_WHITE);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
     nvgText(s->vg, icon_rect.centerX(), icon_rect.bottom(), w.valid ? w.desc_simple : "", NULL);
-    nvgFontSize(s->vg, 65);
+    nvgFontSize(s->vg, 60);
     nvgText(s->vg, icon_rect.centerX(), icon_rect.bottom() + 50, w.desc_simple1, NULL);
     nvgText(s->vg, icon_rect.centerX(), icon_rect.bottom() + 100, w.desc_simple2, NULL);
     s->scene.weather_touch_rect = {icon_rect.x, icon_rect.y, icon_rect.w, icon_rect.h + 100};

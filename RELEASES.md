@@ -1,3 +1,28 @@
+Version tw-0.8.12-13_tws (2023-01-02)
+========================
+  * opParams: command-line editor to configure OpenPilot over SSH that lets you tune and change options instantaneously while driving. You can tune run `./opparams.py` immediately after connecting over SSH (https://docs.comma.ai/tools/ssh/README.html#) and configure the following:
+    * acceleration profiles
+    * traffic following profiles
+    * camera (lane) offset
+    * offroad shutdown timer and car 12v cutoff
+    * over-speed coasting
+    * assisted (and nudgeless) lane change
+    * MADS (autosteer, one-pedal mode)
+    * curve braking
+    * automatic speed limits
+    * adjustable/automatic lane positioning
+    * traffic detection
+    * lateral and longitudinal controllers
+      * *can select and tune pid, torque, indi, or lqr controllers*
+    * select UI metrics (no more tapping! you can still tap though)
+    * enter your own OpenWeatherMap api key (no more txt file with key)
+    * *perform a reboot-less restart on your Comma Three by running `./opparams.py -r`*
+    * *Started from @Shane's opParams implementation, made the read process for live tuning non-blocking so it has zero impact on performance, and added TONS of features*
+  * Weather polish
+  * One-pedal mode improvements
+  * Fixes to post-MADS autohold (regen tap still doesn't release like it used to, but gas tap does. Still working on this)
+  * Grey Panda support (Thanks @Regloom)
+
 Version tw-0.8.12-12_tws (2022-12-26)
 ========================
  * MADS (Modified Assistive Driving Safety). Three independent, always-on safety features. Enable the MADS autosteer toggle in order to access the other features as well. If enabled, the max speed indicator is replaced by the MADS icon. *Reminder: You can use the cruise main button to cancel out all openpilot controls*. 

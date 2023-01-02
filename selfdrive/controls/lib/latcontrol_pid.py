@@ -1,5 +1,6 @@
 import math
 
+from common.op_params import opParams
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 from selfdrive.config import Conversions as CV
@@ -15,6 +16,16 @@ class LatControlPID():
                              k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, neg_limit=-1.0,
                              sat_limit=CP.steerLimitTimer, derivative_period=0.1)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
+    self._op_params = opParams(calling_function="latcontrol_pid.py")
+    self.roll_k = 1.0
+
+  def update_op_params(self):
+    bp = [i * CV.MPH_TO_MS for i in [self._op_params.get(f"TUNE_LAT_PID_{s}s_mph") for s in ['l','h']]]
+    self.pid._k_p = [bp, [self._op_params.get(f"TUNE_LAT_PID_kp_{s}s") for s in ['l','h']]]
+    self.pid._k_i = [bp, [self._op_params.get(f"TUNE_LAT_PID_ki_{s}s") for s in ['l','h']]]
+    self.pid._k_d = [bp, [self._op_params.get(f"TUNE_LAT_PID_kd_{s}s") for s in ['l','h']]]
+    self.pid.k_f = self._op_params.get('TUNE_LAT_PID_kf')
+    self.roll_k = self._op_params.get('TUNE_LAT_PID_roll_compensation')
 
   def reset(self):
     self.pid.reset()
@@ -24,7 +35,7 @@ class LatControlPID():
     pid_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     pid_log.steeringRateDeg = float(CS.steeringRateDeg)
 
-    angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
+    angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll * self.roll_k))
     angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
 
     pid_log.angleError = angle_steers_des - CS.steeringAngleDeg

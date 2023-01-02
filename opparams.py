@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import time, sys
 from common.op_params import opParams
+from common.params import Params
 import ast
 import difflib
 from common.colors import COLORS
@@ -8,10 +9,10 @@ from math import log10
 from textwrap import wrap
 
 class opEdit:  # use by running `python /data/openpilot/op_edit.py`
-  def __init__(self, restart=False):
+  def __init__(self, restart=False, restart_immediate=False):
     self.sleep_time = 0.5
-    if restart:
-      self.C3_rebootless_restart()
+    if restart or restart_immediate:
+      self.C3_rebootless_restart(restart_immediate)
       return
     self.op_params = opParams(calling_function="opparams editor")
     self.params = None
@@ -95,6 +96,23 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       if self.live_tuning:  # only display live tunable params
         self.params = {k: v for k, v in self.params.items() if self.op_params.fork_params[k].live}
       
+      tmp_removed = set()
+      for k,v in self.params.items():
+        if (self.section or self.compact_view) \
+          and self.op_params.fork_params[k].show_op_param != '' \
+          and self.op_params.fork_params[k].show_op_param_check_val is not None \
+          and self.op_params.fork_params[k].show_op_param in self.op_params.fork_params \
+          and self.op_params.get(self.op_params.fork_params[k].show_op_param, force_update=True) != self.op_params.fork_params[k].show_op_param_check_val:
+            tmp_removed.add(k)
+        elif self.op_params.fork_params[k].linked_op_param != '' \
+            and k not in tmp_removed \
+            and self.op_params.fork_params[k].linked_op_param in self.op_params.fork_params \
+            and self.op_params.fork_params[k].linked_op_param_check_param in self.op_params.fork_params \
+            and self.op_params.get(self.op_params.fork_params[k].linked_op_param_check_param, force_update=True):
+          tmp_removed.add(self.op_params.fork_params[k].linked_op_param)
+      for p in tmp_removed:
+        del self.params[p]
+      
       if len(self.params) == 0 and self.section != '':
         self.warning(f"No params to list!\n")
         self.section = ''
@@ -106,13 +124,12 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         
       
       sections = []
-      if len(self.op_params._param_sections) > 0 and self.section == '':
+      if len(self.op_params._param_sections) > 0:
         for i,v in self.op_params._param_sections.items():
-          sections.append((i,v))
-          # for p in self.params:
-          #   if p.startswith(i):
-          #     sections.append((i,v))
-          #     break
+          for p in self.op_params.fork_params:
+            if (self.section == '' and p.startswith(i)) or (self.section != '' and p in self.params and i in p and p.startswith(self.section)):
+              sections.append((i,v))
+              break
             
         # n_pad = max([len(i[0]) for i in sections])
         # self.info('Abbreviations:\n' + '\n'.join([f'  {abb[0].ljust(n_pad)} : {abb[1]}' for abb in sorted(sections, key=lambda x:x[0])]), end='\n', sleep_time=0)
@@ -143,21 +160,21 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           line = COLORS.BASE(_color) + line
         to_print.append(line)
       
-      if self.section == '':
+      if len(sections) > 0:
         n_pad = max([len(i[0]) for i in sections])
-        to_print.append(f'{COLORS.INFO}{COLORS.UNDERLINE}Groups:{COLORS.ENDC}{COLORS.ENDC}')
+        to_print.append(f'{COLORS.INFO}{COLORS.UNDERLINE}{"Groups" if not self.section else "Abbreviations"}:{COLORS.ENDC}{COLORS.ENDC}')
         blue_gradient = blue_gradient[::-1]
         for abb in sections:
           idx += 1
           _color = blue_gradient[min(round((idx - len(self.params)) / len(sections) * len(blue_gradient)), len(blue_gradient) - 1)]
-          line = COLORS.BASE(_color) + '{} {}'.format(f"{idx + 1}.".rjust(n_pad_idx), f"{COLORS.BOLD}{abb[0].rjust(n_pad)} {abb[1]}{COLORS.ENDC}")
+          line = COLORS.BASE(_color) + '{} {}'.format(f"{idx + 1}.".rjust(n_pad_idx) if not self.section else "", f"{COLORS.BOLD}{abb[0].rjust(n_pad)} {abb[1]}{COLORS.ENDC}")
           to_print.append(line)
 
       extras = {'o': ('Restart openpilot (C3 only)', COLORS.FAIL),
                 'l': ('Toggle live params', COLORS.WARNING)}
       if self.section == '':
         extras.update({'c': ('Switch to {} view'.format('full' if self.compact_view else 'compact'), COLORS.WARNING)})
-      extras.update({'r': ('Reset ALL {}params to default'.format(f"{self.section} " if self.section != '' else ''), COLORS.WARNING),
+      extras.update({'r': ('Reset {} params to default'.format("shown" if self.compact_view or self.section else "ALL"), COLORS.WARNING),
               'e': ('Exit opEdit', COLORS.PINK)})
       if self.section != '':
         extras.update({'h': ('Exit {} group and return to home'.format(self.section), COLORS.PINK)})
@@ -190,9 +207,16 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       elif parsed == 'restart':
         self.C3_rebootless_restart()
       elif parsed == 'reset':
-        for k,v in self.op_params.fork_params.items():
-          if not v.hidden and (self.section == '' or k.startswith(self.section)):
-            self.op_params.put(k,v.default_value)
+        self.last_choice = None
+        if self.compact_view or self.section:
+          for k in self.params:
+            v = self.op_params.fork_params[k]
+            if not v.hidden:
+              self.op_params.put(k,v.default_value)
+        else:
+          for k, v in self.op_params.fork_params.items():
+            if not v.hidden:
+              self.op_params.put(k,v.default_value)
         continue
       elif parsed == 'home':
         self.section = ''
@@ -228,9 +252,9 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       else:
         return 'continue', choice
     elif choice in ['reset', 'r']:
-      self.warning("Resetting all params to default values! Continue?")
+      self.warning("Resetting params to default values! Continue?")
       if self.input_with_options(['Y','N'], default=0)[0] == 0:
-        self.warning("Resetting all params to default values!")
+        self.warning("Resetting params to default values!")
         return 'reset', choice
       else:
         return 'continue', choice
@@ -280,6 +304,8 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         to_print.append(COLORS.WARNING + '>>  Allowed values:{} {}{}{}'.format(COLORS.ENDC, COLORS.PRETTY_YELLOW, allowed_val_str, COLORS.ENDC))
       if param_info.min_val is not None or param_info.max_val is not None:
         to_print.append(COLORS.WARNING + '>>  Bounds:{} ({}, {})'.format(COLORS.ENDC, self.color_from_type(param_info.min_val), self.color_from_type(param_info.max_val)) + COLORS.ENDC)
+      if param_info.linked_op_param != '' and param_info.linked_op_param in self.op_params.fork_params and param_info.linked_op_param_check_param in self.op_params.fork_params and self.op_params.get(param_info.linked_op_param_check_param, force_update=True):
+        to_print.append(COLORS.WARNING + '>>  Linked to{} `{}`'.format(COLORS.ENDC, self.color_from_type(param_info.linked_op_param)) + COLORS.ENDC)
       to_print.append(COLORS.WARNING + '>>  Default value: {} {}'.format(self.color_from_type(param_info.default_value), param_info.unit) + COLORS.ENDC)
 
       if to_print:
@@ -369,11 +395,14 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         self.success('Saved {} with value: {}{} (type: {})'.format(chosen_key, self.color_from_type(new_value), COLORS.SUCCESS, type(new_value).__name__), end='\n')
         break
       
-  def C3_rebootless_restart(self):
+  def C3_rebootless_restart(self, immediate=False):
     import os
     
-    for i in range(5):
-      self.info("PERFORMING OPENPILOT RESTART IN {} second{}!! ASSUME CONTROL OF VEHICLE!!".format(5-i,'' if i == 5-1 else 's'), sleep_time=1)
+    if Params().get_bool('IsOnroad') and not immediate:
+      for i in range(5):
+        self.info("PERFORMING ONROAD OPENPILOT RESTART IN {} second{}!! ASSUME CONTROL OF VEHICLE!!".format(5-i,'' if i == 5-1 else 's'), sleep_time=1)
+    else:
+      self.info("PERFORMING {}OPENPILOT RESTART".format(" FORCED " if immediate else ""), sleep_time=0)
     i=0
     while (ret := os.system('tmux kill-session -t comma; rm -f /tmp/safe_staging_overlay.lock; tmux new -s comma -d "/data/openpilot/launch_openpilot.sh"')) != 0:
       i += 1
@@ -493,4 +522,4 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
     return dat
 
 
-opEdit(restart='-r' in sys.argv)
+opEdit(restart='-r' in sys.argv, restart_immediate='-n' in sys.argv)

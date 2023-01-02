@@ -60,6 +60,7 @@ class CarState(CarStateBase):
     self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
     self._params = Params()
     self._op_params = opParams("gm CarState")
+    self.ui_metrics = [self._op_params.get(f'MET_{i:02d}', force_update=True) for i in range(10)]
     self.update_op_params()
     
     self.iter = 0
@@ -206,7 +207,6 @@ class CarState(CarStateBase):
     
     self.lka_steering_cmd_counter = 0
     
-    self.ui_metrics = [self._op_params.get(f'MET_{i:02d}', force_update=True) for i in range(10)]
   
   def update_op_params(self):
     self.ONE_PEDAL_MODE_DECEL_V = [self._op_params.get('MADS_OP_low_speed_decel_mss'), self._op_params.get('MADS_OP_high_speed_decel_mss')]

@@ -1,6 +1,8 @@
 from cereal import car
 from common.numpy_fast import clip, interp
+from common.op_params import opParams
 from common.realtime import sec_since_boot
+from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.drive_helpers import CONTROL_N
 from selfdrive.modeld.constants import T_IDXS
@@ -89,6 +91,15 @@ class LongControl():
     self.a_target = 0.0
     self.brake_pressed_last_t = sec_since_boot()
     self.brake_pressed_time_since = 0.0
+    self._op_params = opParams(calling_function="longcontrol.py")
+    self.deadzone_bp, self.deadzone_v = CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV
+  
+  def update_op_params(self):
+    bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LONG_speed_mph')]
+    self.pid._k_p = [bp, self._op_params.get('TUNE_LONG_kp')]
+    self.pid._k_i = [bp, self._op_params.get('TUNE_LONG_ki')]
+    self.pid._k_d = [bp, self._op_params.get('TUNE_LONG_kd')]
+    self.deadzone_bp, self.deadzone_v = bp, self._op_params.get('TUNE_LONG_deadzone')
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
@@ -147,7 +158,7 @@ class LongControl():
       # Toyota starts braking more when it thinks you want to stop
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
       prevent_overshoot = not CP.stoppingControl and CS.vEgo < 1.5 and v_target_future < 0.7 and v_target_future < v_target
-      deadzone = interp(CS.vEgo, CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV)
+      deadzone = interp(CS.vEgo, self.deadzone_bp, self.deadzone_v)
       freeze_integrator = prevent_overshoot
 
       output_accel = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, deadzone=deadzone, feedforward=a_target, freeze_integrator=freeze_integrator)

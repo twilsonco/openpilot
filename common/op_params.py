@@ -197,7 +197,12 @@ class Param:
                is_common=False,
                param_param='',
                param_param_use_ord=False,
-               unit=''):  # pylint: disable=dangerous-default-value
+               unit='',
+               linked_op_param='',
+               linded_op_param_check_param='',
+               param_param_read_on_startup=False,
+               show_op_param='',
+               show_op_param_check_val=None):  # pylint: disable=dangerous-default-value
     self.default_value = default  # value first saved and returned if actual value isn't a valid type
     if not isinstance(allowed_types, list):
       allowed_types = [allowed_types]
@@ -211,31 +216,46 @@ class Param:
     self.max_val = max_val # specify maximum value
     self.is_common = is_common
     self.unit = unit
+    self.show_op_param = show_op_param # if set, this param's value is compared to see if param should be shown or not
+    self.show_op_param_check_val = show_op_param_check_val # the value against which it is compared
+    self.linked_op_param = linked_op_param # when a change is made, update this specified param also
+    self.linked_op_param_check_param = linded_op_param_check_param # this specified bool param can be changed by the user to control whether the linked_op_param is used
     self.param_param = param_param # op_params can also write to regular "params" when put(), and op_params always overwrite regular params
     self.param_param_use_ord = param_param_use_ord # store the index of the value in allowed values when writing to corresponding param
+    self.param_param_read_on_startup = param_param_read_on_startup # if true, get the param_param when initializing to override own value
     self._get_thread = None # non-static params are fetched regularly in a separate thread
     self._create_attrs()
 
   def type_is_valid(self, value):
     if not self.has_allowed_types:  # always valid if no allowed types, otherwise checks to make sure
       return True
-    return type(value) in self.allowed_types
+    return type(value) in self.allowed_types \
+      or (self.is_list and isinstance(value, list) \
+        and all([type(i) in self.allowed_types for i in value]))
   
   def value_is_valid(self, value):
     if not self.has_allowed_vals:  # always valid if no allowed types, otherwise checks to make sure
       return True
     return value in self.allowed_vals
   
-  def value_clipped(self, value):
-    val = None
+  
+  def clip_val(self, v):
     if self.max_val is not None and self.min_val is not None:
-      val = clip(value, self.min_val, self.max_val)
+      return clip(v, self.min_val, self.max_val)
     elif self.max_val is not None:
-      val = min(self.max_val, value)
+      return min(self.max_val, v)
     elif self.min_val is not None:
-      val = max(self.min_val, value)
-      
-    if val is not None and val != value:
+      return max(self.min_val, v)
+    return v
+    
+  def value_clipped(self, value):
+    
+    if isinstance(value, list):
+      val = [self.clip_val(v) for v in value]
+    else:
+      val = self.clip_val(value)
+    
+    if val != value:
       value = val
       return value, True
     else:
@@ -248,7 +268,7 @@ class Param:
     self.is_list = list in self.allowed_types
     self.read_frequency = None if self.static else (1 if self.live else 10)  # how often to read param file (sec)
     if self.has_allowed_types:
-      if not type(self.default_value) in self.allowed_types:
+      if not type(self.default_value) in self.allowed_types and not isinstance(self.default_value, list):
         try:
           self.default_value = self.allowed_types[0](self.default_value)
         except ValueError:
@@ -264,6 +284,10 @@ class Param:
       self._params = Params()
       try:
         self._params.check_key(self.param_param)
+        if self.param_param_read_on_startup:
+          self.value = self._params.get(self.param_param)
+          if self.has_allowed_types:
+            self.value = self.allowed_types[0](self.value)
       except:
         warning("Corresponding param for this op_param is invalid!")
         self.param_param = ''
@@ -339,6 +363,11 @@ class opParams:
       self.fork_params = {'camera_offset': Param(0.06, allowed_types=NUMBER), live=True}  # NUMBER allows both floats and ints
     """
 
+    kf_desc = 'Feedforward is the part of the steering controller that only cares about the desire steering angle (how sharp the curve is). So feedforward only comes into play in curves when the desired steering angle is non-zero, and the greater the angle, the greater the feedforward response, which is scaled by kf.\nTo tune kf, you observe if OpenPilot enters curves too early/late and rides curves too far inside/outside. If it enters too early (late) and/or rides too far inside (outside), then kf is too high (low) and should be lowered (raised) in 10% increments until it enters correctly and rides center.\n'
+    kp_desc = 'Proportional gain responds proportionally to the instantaneous error being controlled. The greater the error, the greater the corrective responce, linearly, and scaled according to kp. In this case, where we\'re controlling the steering angle, the proportional gain alone cannot completely correct for error, becuase when the error is close to zero, so is the proportional response.\nThe best way to tune kp is then using nudgeless lane change on straight roads (no feedforward response), which creates a sudden (so doesn\'t trigger the integral response) change in course that results in a reproducible error source that triggers the proportional and derivative responses. Set kd to zero to best asses kp. If the lane change feels too assertive or jerky, lower kp. If too weak, increase kp.\n'
+    ki_desc = 'Integral gain responds based on the accumulated error, so if you\'re missing the target continually, the integral response builds the longer you\'re off in the same direction. This corrects for things like persistent crosswinds, inconsistent tire pressures, or dramatic road roll that roll compensation fails to fully compensate for. The drawback is that integral gain can "wind up", overshooting the desired angle, causing lateral oscillations, ping-ponging back and forth about lane center.\nTune kf and kp with ki set to zero, then set ki to 1/3rd the value of kp or less, and kd to 10-20x the value of kp (see the default values here). If lateral oscillations occur, lower ki in 10% increments until they are no longer observed.\n'
+    kd_desc = 'Derivative gain responds to the rate of change of error. The benefits are two-fold. First, note that the proportional and integral responses always push against the error until the error is zero (and due to integral wind-up, integral can push past zero even), which necessarily results in overshoot and oscillations. In such an overshooting case, when you\'re returning to lane center and the error (let\'s say positive) is decreasing, the error rate wil be negative even though the error is still positive, so the derivative response is pushing against the proportional and integral overshoot. Second, if you\'re quickly leaving lane center then the rate of change of error is positive along with the error, so the derivative here helps along with the proportional and integral responses to correct for the error. Too high of kd is indicated by a jerky initial correction when using nudgeles lane change on straight roads.\n'
+    
     self.fork_params = {
       'camera_offset_m': Param(-0.04 if TICI else 0.06, float, 'Adjust your default lane position. (Your camera offset to use in lane_planner.py)\n', live=True, min_val=-0.5, max_val=0.5, is_common=True, unit='meters'),
       'offroad_shutdown_time_hr': Param(5, int, 'The amount of time after turning off your car before your device shuts down to conserve power (and not drain your car battery)\n', min_val=0, is_common=True, unit='hours'),
@@ -412,6 +441,59 @@ class opParams:
       'TD_reset_steer_angle_deg': Param(110.0, float, 'Reset traffic detection when steering wheel is above this absolute angle\n', static=True, min_val=10.0, max_val=720.0, unit='degrees'),
       'TD_cutoff_steer_angle_deg': Param(9.0, float, 'Don\'t detect new traffic when steering wheel is above this absolute angle\n', static=True, min_val=0.0, max_val=720.0, unit='degrees'),
       
+      'TUNE_LAT_do_override': Param(False, bool, 'If true, the other params here will override the hardcoded lateral tune settings for any gm car. Changes to this opParam will also apply to the "Custom lateral override" toggle in OpenPilot settings. Restart car or openpilot to apply change.\n', param_param='OPParamsLateralOverride', param_param_read_on_startup=True),
+      'TUNE_LAT_type': Param('torque', str, '(additional options coming later) Type of lateral controller that will be used with the corresponding parameters. The default torque and pid tunes are for Volt, the indi tune is from Hyundai Genesis, and the lqr is from Toyota Rav4. Consult selfdrive/car/gm/interface.py to see the default values for your car for the "pid" (and possibly also the "torque") controllers. Restart car or openpilot to apply change.  torque: lateral acceleration-based pid controller.  pid: steering angle-based pid controller.  indi: incremental non-linear dynamic inversion controller.  lqr: linear quadratic regulator\n', allowed_vals=['torque','pid','indi','lqr']),
+      
+      'TUNE_LAT_TRX_roll_compensation': Param(0.45, float, 'Scale the amount of roll compensation for the torque controller\n', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_use_steering_angle': Param(True, bool, 'The torque controller computes current lateral acceleration using the steering angle and current roll. Set this to false to instead use the internal Comma device sensors to measure lateral acceleration (it\'s terrible)\n', live=True, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kf': Param(1.0, float, kf_desc, live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_friction': Param(0.14, float, 'The torque controller has two components to the feedforward, one based solely on desired lateral acceleration and is scaled by kf. The other is based on desired lateral jerk (rate of desired lateral acceleration) and is also called "friction" to depict the idea of overcoming the friction in the steering assembly. The concept it simple: the faster the desired lateral acceleration changes (i.e. high rate of change), the greater the friction response. This provides much smoother steering, especially when the steering angle is decreasing (returning to center).\n', live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kp': Param(0.48, float, kp_desc, live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_ki': Param(0.15, float, ki_desc, live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kd': Param(2.0, float, kd_desc, live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      
+      'TUNE_LAT_PID_link_ls_hs': Param(False, bool, 'Set to true to make changes to a low-speed (ls) parameter also apply to its high-speed (hs) counterpart. With PID it seems the k values need to be higher at high speed, but in INDI other (Hyundai) car tunes only use one value, so the ls and hs values are the same. When linked, redundant params are not shown.\n', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_roll_compensation': Param(1.0, float, 'Scale the amount of roll compensation for the pid controller\n', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_kf': Param(1.0, float, kf_desc, live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_kp_ls': Param(0.0, float, kp_desc + 'This scales the low-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_PID_kp_hs', linded_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_kp_hs': Param(0.16, float, kp_desc + 'This scales the high-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_PID_kp_ls', linded_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_ki_ls': Param(0.015, float, ki_desc + 'This scales the low-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_PID_ki_hs', linded_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_ki_hs': Param(0.02, float, ki_desc + 'This scales the high-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_PID_ki_ls', linded_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_kd_ls': Param(0.6, float, kd_desc + 'This scales the low-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_PID_kd_hs', linded_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_kd_hs': Param(0.6, float, kd_desc + 'This scales the high-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_PID_kd_ls', linded_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_ls_mph': Param(0.0, float, 'This is the speed that corresponds to the low-speed kp, ki, and kd values.\n', live=True, min_val=0.0, max_val=100.0, unit="mph", show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_hs_mph': Param(90.0, float, 'This is the speed that corresponds to the high-speed kp, ki, and kd values.\n', live=True, min_val=0.0, max_val=100.0, unit="mph", show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      
+      'TUNE_LAT_INDI_link_ls_hs': Param(True, bool, 'Set to true to make changes to a low-speed (ls) parameter also apply to its high-speed (hs) counterpart. With PID it seems the k values need to be higher at high speed so this wouldn\'t be used, but in INDI other (Hyundai) car tunes only use one value, so the ls and hs values are the same and this makes tuning easier. When linked, redundant params are not shown.\n', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_roll_compensation': Param(1.0, float, 'Scale the amount of roll compensation for the indi controller\n', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_outer_gain_ls': Param(2.0, float, 'Low-speed setting. Steer error gain.  Too high: twitchy hyper lane centering, oversteering.  Too low: sloppy, long hugging in turns (not to be confused with over/understeering), all over lane (no tendency to approach the center).  Just right: crisp lane centering\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_outer_gain_hs', linded_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_outer_gain_hs': Param(2.0, float, 'High-speed setting. Steer error gain.  Too high: twitchy hyper lane centering, oversteering.  Too low: sloppy, long hugging in turns (not to be confused with over/understeering), all over lane (no tendency to approach the center).  Just right: crisp lane centering\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_outer_gain_ls', linded_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_inner_gain_ls': Param(3.5, float, 'Low-speed setting. Steer rate error gain.  Too high: jerky oscillation in high curvature.  Too low: sloppy, cannot accomplish desired steer angle.  Just right: brief snap on entering high curvature\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_inner_gain_hs', linded_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_inner_gain_hs': Param(3.5, float, 'High-speed setting. Steer rate error gain.  Too high: jerky oscillation in high curvature.  Too low: sloppy, cannot accomplish desired steer angle.  Just right: brief snap on entering high curvature\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_inner_gain_ls', linded_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_time_constant_ls': Param(1.4, float, 'Low-speed setting. Exponential moving average of prior output steer.  Too high: sloppy lane centering.  Too low: noisy actuation, responds to every bump, maybe unable to maintain lane center due to rapid actuation.  Just right: above noisy actuation and lane centering instability\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_time_constant_hs', linded_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_time_constant_hs': Param(1.4, float, 'High-speed setting. Exponential moving average of prior output steer.  Too high: sloppy lane centering.  Too low: noisy actuation, responds to every bump, maybe unable to maintain lane center due to rapid actuation.  Just right: above noisy actuation and lane centering instability\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_time_constant_ls', linded_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_actuator_effectiveness_ls': Param(2.3, float, 'Low-speed setting. As effectiveness increases, actuation strength decreases.  Too high: weak, sloppy lane centering, slow oscillation, can\'t follow high curvature, high steering error causes snappy corrections.  Too low: overpower, saturation, jerky, fast oscillation, bang-bang control.  Just right: Highest value able to maintain good lane centering.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_actuator_effectiveness_hs', linded_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_actuator_effectiveness_hs': Param(2.3, float, 'High-speed setting. As effectiveness increases, actuation strength decreases.  Too high: weak, sloppy lane centering, slow oscillation, can\'t follow high curvature, high steering error causes snappy corrections.  Too low: overpower, saturation, jerky, fast oscillation, bang-bang control.  Just right: Highest value able to maintain good lane centering.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_actuator_effectiveness_ls', linded_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_ls_mph': Param(0.0, float, 'At this speed, the low-speed values are used\n', live=True, min_val=0.0, max_val=100.0, unit="mph", show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_hs_mph': Param(90.0, float, 'At this speed, the high-speed values are used\n', live=True, min_val=0.0, max_val=100.0, unit="mph", show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      
+      'TUNE_LAT_LQR_roll_compensation': Param(1.0, float, 'Scale the amount of roll compensation for the lqr controller\n', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='lqr'),
+      'TUNE_LAT_LQR_scale': Param(1500.0, float, '\n', live=True, min_val=0.0, max_val=10000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='lqr'),
+      'TUNE_LAT_LQR_ki': Param(0.05, float, '\n', live=True, min_val=0.0, max_val=5.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='lqr'),
+      'TUNE_LAT_LQR_dc_gain': Param(0.00224, float, '\n', live=True, min_val=0.0, max_val=5.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='lqr'),
+      'TUNE_LAT_LQR_a': Param([0., 1., -0.22619643, 1.21822268], [list, float], '\n', live=True, show_op_param='TUNE_LAT_type', show_op_param_check_val='lqr'),
+      'TUNE_LAT_LQR_b': Param([-1.92006585e-04, 3.95603032e-05], [list, float], '\n', live=True, show_op_param='TUNE_LAT_type', show_op_param_check_val='lqr'),
+      'TUNE_LAT_LQR_c': Param([1., 0.], [list, float], '\n', live=True, show_op_param='TUNE_LAT_type', show_op_param_check_val='lqr'),
+      'TUNE_LAT_LQR_k': Param([-110.73572306, 451.22718255], [list, float], '\n', live=True, show_op_param='TUNE_LAT_type', show_op_param_check_val='lqr'),
+      'TUNE_LAT_LQR_l': Param([0.3233671, 0.3185757], [list, float], '\n', live=True, show_op_param='TUNE_LAT_type', show_op_param_check_val='lqr'),
+      
+      'TUNE_LONG_do_override': Param(False, bool, 'If true, the other params here will override the hardcoded longitudinal tune settings for any gm car. The default is for Volt. Changes to this opParam will also apply to the "Custom long override" toggle in OpenPilot settings. There is no tunable feedforward; instead you would adjust acceleration profiles. Restart car or openpilot to apply change.\n', param_param='OPParamsLongitudinalOverride', param_param_read_on_startup=True),
+      'TUNE_LONG_speed_mph': Param([12.0, 35.0, 80.0], [list, float], 'Lookup speeds used for corresponding values of kp, ki, and kd, such that the first value of kp,ki,kd is used when driving at the first speed here.\n', live=True, min_val=0.0, max_val=100.0, unit="mph"),
+      'TUNE_LONG_kp': Param([0.8, .9, 0.8], [list, float], 'Values of kp used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.\n', live=True, min_val=0.01, max_val=5.0),
+      'TUNE_LONG_ki': Param([0.08, 0.13, 0.13], [list, float], 'Values of ki used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.\n', live=True, min_val=0.0, max_val=5.0),
+      'TUNE_LONG_kd': Param([0.3, 0.0, 0.0], [list, float], 'Values of kd used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.\n', live=True, min_val=0.0, max_val=5.0),
+      'TUNE_LONG_deadzone': Param([0.0, 0.0, 0.0], [list, float], 'Values of deadzone used at the corresponding speeds in TUNE_LONG_mph. Deadzone sets a minimum amount of desired acceleration before the gas or brakes are actually actuated. Deadzones are used to smooth jerky long control, if the gas/brake controls are too sensitive or if the planning is noisy.\n', live=True, min_val=0.0, max_val=5.0, unit='m/s²'),
+      
       'MET_00': Param('PERCENT_GRADE_DEVICE', [int,str], 'UI metric in top row right column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, static=True, param_param='MeasureSlot00', param_param_use_ord=True),
       'MET_01': Param('ALTITUDE', [int,str], 'UI metric in second row from top, right column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, static=True, param_param='MeasureSlot01', param_param_use_ord=True),
       'MET_02': Param('ENGINE_RPM_TEMPF', [int,str], 'UI metric in third row from top, right column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, static=True, param_param='MeasureSlot02', param_param_use_ord=True),
@@ -435,7 +517,15 @@ class opParams:
       'SLC': 'Speed Limit Controller',
       'LP': 'adjustable/automatic Lane Positioning',
       'TD': 'Traffic Detection',
+      'TUNE': 'lateral/longitudinal tuning',
       'MET': 'on-screed UI METrics',
+      'LAT': "LATeral control (steering)",
+      'TRX': "Lateral acceleration \"torque\" controller (PID under the hood)",
+      'PID': "Angle PID controller",
+      'INDI': "Incremental Non-linear Dynamic Inversion controller",
+      'LQR': "Linear Quadratic Regulator controller",
+      'LONG': "LONGitudinal control (gas/brake)",
+      'OP': "One-Pedal driving",
     }
 
     self._to_delete = []  # a list of unused params you want to delete from users' params file
@@ -474,7 +564,7 @@ class opParams:
                                           force_update=force_update, 
                                           time_cur=sec_since_boot())
 
-  def put(self, key, value):
+  def put(self, key, value, write_linked=True):
     self._check_key_exists(key, 'put')
     if not self.fork_params[key].type_is_valid(value):
       raise Exception('opParams: Tried to put a value of invalid type!')
@@ -488,8 +578,16 @@ class opParams:
       if self.fork_params[key].param_param_use_ord and value in self.fork_params[key].allowed_vals:
         self.fork_params[key]._params.put(self.fork_params[key].param_param, str(self.fork_params[key].allowed_vals.index(value)))
       else:
-        self.fork_params[key]._params.put(self.fork_params[key].param_param, str(value))
+        put_val = value if type(value) == str \
+          else str(int(value)) if type(value) == bool \
+          else str(value)
+        self.fork_params[key]._params.put(self.fork_params[key].param_param, put_val)
     _write_param(key, value)
+    if write_linked and self.fork_params[key].linked_op_param != '' \
+        and self.fork_params[key].linked_op_param in self.fork_params \
+        and self.fork_params[key].linked_op_param_check_param in self.fork_params \
+        and self.get(self.fork_params[key].linked_op_param_check_param, force_update=True):
+      self.put(self.fork_params[key].linked_op_param, value, write_linked=False)
 
   def _load_params(self, can_import=False):
     if not os.path.exists(PARAMS_DIR):

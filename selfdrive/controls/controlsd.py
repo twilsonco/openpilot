@@ -238,6 +238,8 @@ class Controls:
     self._params = params
     self.params_write_freq = 30.0
     self.params_write_last_t = sec_since_boot()
+    self.op_params_override_lateral = self._params.get_bool('OPParamsLateralOverride')
+    self.op_params_override_long = self._params.get_bool('OPParamsLongitudinalOverride')
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -283,6 +285,10 @@ class Controls:
     t = sec_since_boot()
     
     if t - self.params_check_last_t > self.params_check_freq:
+      if self.op_params_override_lateral:
+        self.LaC.update_op_params()
+      if self.op_params_override_long:
+        self.LoC.update_op_params()
       screen_tapped = self._params.get_bool("ScreenTapped")
       if screen_tapped:
         self.CI.screen_tapped = True
