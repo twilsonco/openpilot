@@ -173,6 +173,7 @@ typedef struct {
   int display_mode = 0; // 0/1 = simple/full
   char desc_simple[16];
   char desc_simple1[16];
+  char desc_simple2[16];
   char desc_full1[64];
   char desc_full2[64];
   char desc_full3[64];
