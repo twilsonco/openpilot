@@ -441,31 +441,32 @@ class CarInterface(CarInterfaceBase):
     ret.readdistancelines = self.CS.follow_level
 
     events = self.create_common_events(ret, pcm_enable=False)
-
-    if ret.vEgo < self.CP.minEnableSpeed:
-      events.add(EventName.belowEngageSpeed)
-    if self.CS.pause_long_on_gas_press:
-      events.add(EventName.gasPressed)
-    if self.CS.park_brake:
-      events.add(EventName.parkBrake)
-    steer_paused = False
-    if cruiseEnabled and t - self.CS.last_pause_long_on_gas_press_t < 0.5 and t - self.CS.sessionInitTime > 10.:
-      events.add(car.CarEvent.EventName.pauseLongOnGasPress)
-    if not ret.standstill and self.CS.lane_change_steer_factor < 1.:
-      events.add(car.CarEvent.EventName.blinkerSteeringPaused)
-      steer_paused = True
-    if ret.vEgo <= self.CP.minSteerSpeed and (not self.CS.autoHoldActivated or self.CS.out.onePedalModeActive):
-      if ret.standstill and (cruiseEnabled or self.CS.out.onePedalModeActive) and t - self.CS.sessionInitTime > 10. and not self.CS.resume_required:
-        events.add(car.CarEvent.EventName.stoppedWaitForGas)
-      elif not ret.standstill and self.CS.out.gearShifter in ['drive','low'] and not steer_paused and self.CS.lkaEnabled:
-        events.add(car.CarEvent.EventName.belowSteerSpeed)
-    if self.CS.autoHoldActivated:
-      self.CS.lastAutoHoldTime = t
-      events.add(car.CarEvent.EventName.autoHoldActivated)
-    if self.CS.pcm_acc_status == AccState.FAULTED and t - self.CS.sessionInitTime > 10.0 and t - self.CS.lastAutoHoldTime > 1.0:
-      events.add(EventName.accFaulted)
-    if self.CS.resume_required:
-      events.add(EventName.resumeRequired)
+    
+    if self.CS.cruiseMain:
+      if ret.vEgo < self.CP.minEnableSpeed:
+        events.add(EventName.belowEngageSpeed)
+      if self.CS.pause_long_on_gas_press:
+        events.add(EventName.gasPressed)
+      if self.CS.park_brake:
+        events.add(EventName.parkBrake)
+      steer_paused = False
+      if cruiseEnabled and t - self.CS.last_pause_long_on_gas_press_t < 0.5 and t - self.CS.sessionInitTime > 10.:
+        events.add(car.CarEvent.EventName.pauseLongOnGasPress)
+      if not ret.standstill and self.CS.lane_change_steer_factor < 1.:
+        events.add(car.CarEvent.EventName.blinkerSteeringPaused)
+        steer_paused = True
+      if ret.vEgo <= self.CP.minSteerSpeed and (not self.CS.autoHoldActivated or self.CS.out.onePedalModeActive):
+        if ret.standstill and (cruiseEnabled or self.CS.out.onePedalModeActive) and t - self.CS.sessionInitTime > 10. and not self.CS.resume_required:
+          events.add(car.CarEvent.EventName.stoppedWaitForGas)
+        elif not ret.standstill and self.CS.out.gearShifter in ['drive','low'] and not steer_paused and self.CS.lkaEnabled:
+          events.add(car.CarEvent.EventName.belowSteerSpeed)
+      if self.CS.autoHoldActivated:
+        self.CS.lastAutoHoldTime = t
+        events.add(car.CarEvent.EventName.autoHoldActivated)
+      if self.CS.pcm_acc_status == AccState.FAULTED and t - self.CS.sessionInitTime > 10.0 and t - self.CS.lastAutoHoldTime > 1.0:
+        events.add(EventName.accFaulted)
+      if self.CS.resume_required:
+        events.add(EventName.resumeRequired)
 
     # handle button presses
     for b in ret.buttonEvents:
@@ -483,8 +484,12 @@ class CarInterface(CarInterfaceBase):
       # The ECM will fault if resume triggers an enable while speed is set to 0
       if b.type == ButtonType.accelCruise and c.hudControl.setSpeed > 0 and c.hudControl.setSpeed < 70 and not b.pressed:
         events.add(EventName.buttonEnable)
+        if not self.CS.cruiseMain:
+          events.add(EventName.wrongCarMode)
       if b.type == ButtonType.decelCruise and not b.pressed:
         events.add(EventName.buttonEnable)
+        if not self.CS.cruiseMain:
+          events.add(EventName.wrongCarMode)
       # do disable on button down
       if b.type == ButtonType.cancel and b.pressed:
         events.add(EventName.buttonCancel)
