@@ -24,6 +24,8 @@ from selfdrive.controls.lib.latcontrol_indi import LatControlINDI
 from selfdrive.controls.lib.latcontrol_lqr import LatControlLQR
 from selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from selfdrive.controls.lib.latcontrol_torque import LatControlTorque
+from selfdrive.controls.lib.latcontrol_torque_indi import LatControlTorqueINDI
+from selfdrive.controls.lib.latcontrol_torque_lqr import LatControlTorqueLQR
 from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
@@ -158,6 +160,10 @@ class Controls:
       self.LaC = LatControlLQR(self.CP)
     elif self.CP.lateralTuning.which() == 'torque':
       self.LaC = LatControlTorque(self.CP, self.CI)
+    elif self.CP.lateralTuning.which() == 'torqueIndi':
+      self.LaC = LatControlTorqueINDI(self.CP)
+    elif self.CP.lateralTuning.which() == 'torqueLqr':
+      self.LaC = LatControlTorqueLQR(self.CP)
 
     self.initialized = False
     self.state = State.disabled
@@ -984,6 +990,10 @@ class Controls:
       controlsState.lateralControlState.indiState = lac_log
     elif lat_tuning == 'torque':
       controlsState.lateralControlState.torqueState = lac_log
+    elif lat_tuning == 'torqueLqr':
+      controlsState.lateralControlState.torqueLqrState = lac_log
+    elif lat_tuning == 'torqueIndi':
+      controlsState.lateralControlState.torqueIndiState = lac_log
     self.pm.send('controlsState', dat)
 
     # carState
