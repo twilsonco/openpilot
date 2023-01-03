@@ -406,6 +406,8 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torqueIndi.timeConstantV = [op_params.get(f"TUNE_LAT_TRXINDI_time_constant_{s}s", force_update=True) for s in ['l','h']]
         ret.lateralTuning.torqueIndi.actuatorEffectivenessBP = bp
         ret.lateralTuning.torqueIndi.actuatorEffectivenessV = [op_params.get(f"TUNE_LAT_TRXINDI_actuator_effectiveness_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.torqueIndi.friction = op_params.get('TUNE_LAT_TRXINDI_friction', force_update=True)
+        ret.lateralTuning.torqueIndi.kf = op_params.get('TUNE_LAT_TRXINDI_kf', force_update=True)
       elif lat_type == 'torquelqr':
         ret.lateralTuning.init('torqueLqr')
         ret.lateralTuning.torqueLqr.scale = op_params.get('TUNE_LAT_TRXLQR_scale', force_update=True)
@@ -417,6 +419,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torqueLqr.k = op_params.get('TUNE_LAT_TRXLQR_k', force_update=True)
         ret.lateralTuning.torqueLqr.l = op_params.get('TUNE_LAT_TRXLQR_l', force_update=True)
         ret.lateralTuning.torqueLqr.friction = op_params.get('TUNE_LAT_TRXLQR_friction', force_update=True)
+        ret.lateralTuning.torqueLqr.kf = op_params.get('TUNE_LAT_TRXLQR_kf', force_update=True)
         ret.lateralTuning.torqueLqr.useSteeringAngle = op_params.get('TUNE_LAT_TRXLQR_use_steering_angle', force_update=True)
     
     if Params().get_bool('OPParamsLongitudinalOverride'):
