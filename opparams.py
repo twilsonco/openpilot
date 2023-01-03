@@ -344,6 +344,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         # if not param_info.static:  # stay in live tuning interface
         self.op_params.put(chosen_key, new_value)
         self.success('Saved {} with value: {}{}{} (type: {})'.format(chosen_key, self.color_from_type(new_value), ' ' + param_info.unit, COLORS.SUCCESS, type(new_value).__name__))
+        time.sleep(1.1)
         # else:  # else ask to save and break
         #   self.warning('\nOld value: {}{} (type: {})'.format(self.color_from_type(old_value), COLORS.WARNING, type(old_value).__name__))
         #   self.success('New value: {}{} (type: {})'.format(self.color_from_type(new_value), COLORS.OKGREEN, type(new_value).__name__), sleep_time=0)
@@ -393,6 +394,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
 
         self.op_params.put(chosen_key, old_value)
         self.success('Saved {} with value: {}{} (type: {})'.format(chosen_key, self.color_from_type(new_value), COLORS.SUCCESS, type(new_value).__name__), end='\n')
+        time.sleep(1.1)
         break
       
   def C3_rebootless_restart(self, immediate=False):

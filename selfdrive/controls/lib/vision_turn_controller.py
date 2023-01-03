@@ -297,15 +297,19 @@ class VisionTurnController():
     if self._controls_state is not None and self._lat_sat_t >= 0:
       lat_type = self._controls_state.lateralControlState.which()
       if lat_type == 'indiState':
-        lat_sat = (self._controls_state.lateralControlState.indiState.output >= 1.0)
+        lat_sat = (self._controls_state.lateralControlState.indiState.output >= 0.95)
       elif lat_type == 'pidState':
-        lat_sat = (self._controls_state.lateralControlState.pidState.output >= 1.0)
+        lat_sat = (self._controls_state.lateralControlState.pidState.output >= 0.95)
       elif lat_type == 'lqrState':
-        lat_sat = (self._controls_state.lateralControlState.lqrState.output >= 1.0)
+        lat_sat = (self._controls_state.lateralControlState.lqrState.output >= 0.95)
       elif lat_type == 'angleState':
-        lat_sat = (self._controls_state.lateralControlState.angleState.output >= 1.0)
+        lat_sat = (self._controls_state.lateralControlState.angleState.output >= 0.95)
       elif lat_type == 'torqueState':
-        lat_sat = (self._controls_state.lateralControlState.torqueState.output >= 1.0)
+        lat_sat = (self._controls_state.lateralControlState.torqueState.output >= 0.95)
+      elif lat_type == 'torqueIndiState':
+        lat_sat = (self._controls_state.lateralControlState.torqueIndiState.output >= 0.95)
+      elif lat_type == 'torqueLqrState':
+        lat_sat = (self._controls_state.lateralControlState.torqueLqrState.output >= 0.95)
       else: # unknown type
         cloudlog.info(f"Vision controller: unknown lateralControlState: {lat_type}")
         self._lat_sat_t = -1
