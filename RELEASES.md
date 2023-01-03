@@ -18,7 +18,7 @@ Version tw-0.8.12-13_tws (2023-01-02)
     * enter your own OpenWeatherMap api key (no more txt file with key)
     * *perform a reboot-less restart on your Comma Three by running `./opparams.py -r`*
     * *Started from @Shane's opParams implementation, made the read process for live tuning non-blocking so it has zero impact on performance, and added TONS of features*
-  * **Two new controllers**, torque INDI and torque LQR. They both need lots of tuning work, especially torque LQR. Feel free to give tuning torque INDI a shot! And torque LQR if you don't mind reading up on how LQR controllers work!
+  * **Two new lateral (steering) controllers**, torque INDI and torque LQR. They both need lots of tuning work, especially torque LQR. Feel free to give tuning torque INDI a shot! And torque LQR if you don't mind reading up on how LQR controllers work!
   * Weather polish
   * One-pedal mode improvements
   * Fixes to post-MADS autohold (regen tap still doesn't release like it used to, but gas tap does. Still working on this)
