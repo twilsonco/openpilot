@@ -276,22 +276,41 @@ class Param:
     if self.has_allowed_vals:
       assert self.default_value in self.allowed_vals, 'Default value must be in specified allowed_vals!'
     self.default_value = self.value_clipped(self.default_value)[0]
-    self.value = self.default_value
     self.updated = False
     self.last_read = 0
     self._params = None
+    self.value = None
     if self.param_param != '':
       self._params = Params()
       try:
+        val = None
         self._params.check_key(self.param_param)
         if self.param_param_read_on_startup:
-          self.value = self._params.get(self.param_param)
-          if self.has_allowed_types:
-            self.value = self.allowed_types[0](self.value)
-      except:
-        warning("Corresponding param for this op_param is invalid!")
+          if self.param_param_use_ord and self.has_allowed_vals:
+            val = int(self._params.get(self.param_param, encoding="utf8"))
+            if val < len(self.allowed_vals):
+              self.value = self.allowed_vals[val]
+            else:
+              self.value = self._params.get(self.param_param)
+          else:
+            self.value = self._params.get(self.param_param)
+          if self.has_allowed_types and type(self.value) not in self.allowed_types:
+            for t in self.allowed_types:
+              try:
+                self.value = self.allowed_types[0](self.value)
+                break
+              except:
+                continue
+            if type(self.value) not in self.allowed_types:
+              raise ValueError 
+          # cloudlog.info(f"opParams: Read in param value '{self.value}' from param '{self.param_param}' on startup")
+      except Exception as e:
+        cloudlog.warning(f"Corresponding param '{self.param_param}' for this op_param is invalid! Read {val = }, {self.value = }. Exception: {e}, {self.allowed_types = }")
         self.param_param = ''
         self._params = None
+        self.value = self.default_value
+    else:
+      self.value = self.default_value
     
     if self.is_list:
       self.allowed_types.remove(list)
@@ -310,9 +329,9 @@ class Param:
       value, success = _read_param(key)
       if not success:
         err_str = "read failure"
-      elif not (success := self.type_is_valid(value)):
+      if success and not (success := self.type_is_valid(value)):
         err_str = f"invalid type of {value = }"
-      elif not (success := self.value_is_valid(value)):
+      if success and not (success := self.value_is_valid(value)):
         err_str = f"invalid {value = }"
       if not success:
         value = self.default_value
@@ -522,16 +541,16 @@ class opParams:
       'TUNE_LONG_kd': Param([0.3, 0.0, 0.0], [list, float], 'Values of kd used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.\n', live=True, min_val=0.0, max_val=5.0),
       'TUNE_LONG_deadzone': Param([0.0, 0.0, 0.0], [list, float], 'Values of deadzone used at the corresponding speeds in TUNE_LONG_mph. Deadzone sets a minimum amount of desired acceleration before the gas or brakes are actually actuated. Deadzones are used to smooth jerky long control, if the gas/brake controls are too sensitive or if the planning is noisy.\n', live=True, min_val=0.0, max_val=5.0, unit='m/s²'),
       
-      'MET_00': Param('PERCENT_GRADE_DEVICE', [int,str], 'UI metric in top row right column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, static=True, param_param='MeasureSlot00', param_param_use_ord=True),
-      'MET_01': Param('ALTITUDE', [int,str], 'UI metric in second row from top, right column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, static=True, param_param='MeasureSlot01', param_param_use_ord=True),
-      'MET_02': Param('ENGINE_RPM_TEMPF', [int,str], 'UI metric in third row from top, right column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, static=True, param_param='MeasureSlot02', param_param_use_ord=True),
-      'MET_03': Param('EV_EFF_RECENT', [int,str], 'UI metric in fourth row from top, right column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, static=True, param_param='MeasureSlot03', param_param_use_ord=True),
-      'MET_04': Param('CPU_TEMP_AND_PERCENTC', [int,str], 'UI metric in bottom row right column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, static=True, param_param='MeasureSlot04', param_param_use_ord=True),
-      'MET_05': Param('DISTANCE_ENGAGED_PERCENT_TOTAL', [int,str], 'UI metric in top row left column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, static=True, param_param='MeasureSlot05', param_param_use_ord=True),
-      'MET_06': Param('TIME_ENGAGED_PERCENT_TOTAL', [int,str], 'UI metric in second row from top, left column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, static=True, param_param='MeasureSlot06', param_param_use_ord=True),
-      'MET_07': Param('LANE_DIST_FROM_CENTER', [int,str], 'UI metric in third row from top, left column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, static=True, param_param='MeasureSlot07', param_param_use_ord=True),
-      'MET_08': Param('FANSPEED_PERCENT', [int,str], 'UI metric in fourth row from top, left column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, static=True, param_param='MeasureSlot08', param_param_use_ord=True),
-      'MET_09': Param('MEMORY_USAGE_PERCENT', [int,str], 'UI metric in bottom row left column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, static=True, param_param='MeasureSlot09', param_param_use_ord=True),
+      'MET_00': Param('PERCENT_GRADE_DEVICE', [int,str], 'UI metric in top row right column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, param_param='MeasureSlot00', param_param_use_ord=True, param_param_read_on_startup=True),
+      'MET_01': Param('ALTITUDE', [int,str], 'UI metric in second row from top, right column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, param_param='MeasureSlot01', param_param_use_ord=True, param_param_read_on_startup=True),
+      'MET_02': Param('ENGINE_RPM_TEMPF', [int,str], 'UI metric in third row from top, right column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, param_param='MeasureSlot02', param_param_use_ord=True, param_param_read_on_startup=True),
+      'MET_03': Param('EV_EFF_RECENT', [int,str], 'UI metric in fourth row from top, right column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, param_param='MeasureSlot03', param_param_use_ord=True, param_param_read_on_startup=True),
+      'MET_04': Param('CPU_TEMP_AND_PERCENTC', [int,str], 'UI metric in bottom row right column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, param_param='MeasureSlot04', param_param_use_ord=True, param_param_read_on_startup=True),
+      'MET_05': Param('DISTANCE_ENGAGED_PERCENT_TOTAL', [int,str], 'UI metric in top row left column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, param_param='MeasureSlot05', param_param_use_ord=True, param_param_read_on_startup=True),
+      'MET_06': Param('TIME_ENGAGED_PERCENT_TOTAL', [int,str], 'UI metric in second row from top, left column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, param_param='MeasureSlot06', param_param_use_ord=True, param_param_read_on_startup=True),
+      'MET_07': Param('LANE_DIST_FROM_CENTER', [int,str], 'UI metric in third row from top, left column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, param_param='MeasureSlot07', param_param_use_ord=True, param_param_read_on_startup=True),
+      'MET_08': Param('FANSPEED_PERCENT', [int,str], 'UI metric in fourth row from top, left column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, param_param='MeasureSlot08', param_param_use_ord=True, param_param_read_on_startup=True),
+      'MET_09': Param('MEMORY_USAGE_PERCENT', [int,str], 'UI metric in bottom row left column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, param_param='MeasureSlot09', param_param_use_ord=True, param_param_read_on_startup=True),
     }
     
     # params in a group must start with the group's short name
@@ -576,13 +595,24 @@ class opParams:
         self.fork_params[p].live = False
         self.fork_params[p].static = True
     self.params = self._load_params(can_import=True)
+    # cloudlog.info(f"opParams: {calling_function}:   Loaded op_params")
     self._add_default_params()  # adds missing params and resets values with invalid types to self.params
+    # cloudlog.info(f"opParams: {calling_function}:   added default params")
     self._delete_and_reset()  # removes old params
+    # cloudlog.info(f"opParams: {calling_function}:   delete and reset applied")
     if self.live_tuning_enabled:
       self.put('op_params_live_tune_enabled', True)
+      
+    # cloudlog.info(f"opParams: {calling_function}:   Putting params with linked param_params")
     for k,v in self.fork_params.items():
-      if v.param_param != '':
-        self.put(k, v.value)
+      val = v.value
+      if not all([v.type_is_valid(v.value), v.value_is_valid(v.value)]):
+        val = v.default_value
+        cloudlog.info(f"opParams: {calling_function}:   Putting params with invalid initial value: {k} -> {v.value} to default value '{val}'")
+        self.put(k, val)
+      # elif v.param_param != '':
+      #   cloudlog.info(f"opParams: {calling_function}:   Putting params with linked param_params: {k} -> {v.value}")
+      #   self.put(k, val)
 
   def get(self, key=None, *, force_update=False):  # key=None returns dict of all params
     if key is None:
@@ -595,26 +625,30 @@ class opParams:
   def put(self, key, value, write_linked=True):
     self._check_key_exists(key, 'put')
     if not self.fork_params[key].type_is_valid(value):
-      raise Exception('opParams: Tried to put a value of invalid type!')
+      raise Exception(f'opParams: Tried to put a value of invalid type! {key = }, {value = }, {write_linked = }')
     if not self.fork_params[key].value_is_valid(value):
-      raise Exception('opParams: Tried to put an invalid value!')
+      raise Exception(f'opParams: Tried to put an invalid value! {key = }, {value = }, {write_linked = }')
     value, clipped = self.fork_params[key].value_clipped(value)
     if clipped:
-      print(warning('Provided value was clipped to param bounds'))
+      print(warning(f'Provided value was clipped to param bounds. {key = }, {value = }, {write_linked = }'))
     self.params.update({key: value})
     if self.fork_params[key].param_param != '':
       if self.fork_params[key].param_param_use_ord and value in self.fork_params[key].allowed_vals:
-        self.fork_params[key]._params.put(self.fork_params[key].param_param, str(self.fork_params[key].allowed_vals.index(value)))
+        ind = self.fork_params[key].allowed_vals.index(value)
+        self.fork_params[key]._params.put(self.fork_params[key].param_param, str(ind))
+        cloudlog.info(f"opParams: putting value in linked param using ordinal {ind} for {value = }. {key = }")
       else:
         put_val = value if type(value) == str \
           else str(int(value)) if type(value) == bool \
           else str(value)
+        cloudlog.info(f"opParams: putting value in linked param: {value = }. {key = }")
         self.fork_params[key]._params.put(self.fork_params[key].param_param, put_val)
     _write_param(key, value)
     if write_linked and self.fork_params[key].linked_op_param != '' \
         and self.fork_params[key].linked_op_param in self.fork_params \
         and self.fork_params[key].linked_op_param_check_param in self.fork_params \
         and self.get(self.fork_params[key].linked_op_param_check_param, force_update=True):
+      cloudlog.info(f"opParams: putting value in linked param: {value = }. {key = }")
       self.put(self.fork_params[key].linked_op_param, value, write_linked=False)
 
   def _load_params(self, can_import=False):
@@ -629,7 +663,9 @@ class opParams:
         continue
       value, success = _read_param(key)
       if not success:
-        value = self.fork_params[key].default_value
+        val_default = self.fork_params[key].default_value
+        cloudlog.warning(f'opParams: Failed to initially load param "{key}" (got "{value}" from the read operation), loading with default value "{val_default}"')
+        value = val_default
         _write_param(key, value)
       params[key] = value
     return params
