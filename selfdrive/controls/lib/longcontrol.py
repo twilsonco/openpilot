@@ -9,6 +9,7 @@ from selfdrive.modeld.constants import T_IDXS
 
 BRAKE_SOURCES = {'lead0',
                  'lead1',
+                 'lead2',
                  'lead0p1'}
 
 LongCtrlState = car.CarControl.Actuators.LongControlState

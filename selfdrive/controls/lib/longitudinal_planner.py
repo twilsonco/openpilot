@@ -27,6 +27,7 @@ GearShifter = car.CarState.GearShifter
 
 BRAKE_SOURCES = {'lead0',
                  'lead1',
+                 'lead2',
                  'lead0p1'}
 COAST_SOURCES = {'cruise',
                  'limit'}
