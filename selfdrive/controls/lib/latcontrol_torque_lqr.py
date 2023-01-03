@@ -6,11 +6,11 @@ from common.op_params import opParams
 from common.realtime import DT_CTRL
 from cereal import log
 from selfdrive.controls.lib.drive_helpers import get_steer_max
-
-FRICTION_THRESHOLD = 2.0
+from selfdrive.controls.lib.latcontrol_torque import FRICTION_THRESHOLD
+from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 
 class LatControlTorqueLQR():
-  def __init__(self, CP):
+  def __init__(self, CP, CI):
     self.scale = CP.lateralTuning.torqueLqr.scale
     self.ki = CP.lateralTuning.torqueLqr.ki
 
@@ -20,8 +20,10 @@ class LatControlTorqueLQR():
     self.K = np.array(CP.lateralTuning.torqueLqr.k).reshape((1, 2))
     self.L = np.array(CP.lateralTuning.torqueLqr.l).reshape((2, 1))
     self.dc_gain = CP.lateralTuning.torqueLqr.dcGain
+    self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
     self.friction = CP.lateralTuning.torqueLqr.friction
     self.use_steering_angle = CP.lateralTuning.torqueLqr.useSteeringAngle
+    self._k_f = CP.lateralTuning.torqueLqr.kf
 
     self.x_hat = np.array([[0], [0]])
     self.i_unwind_rate = 0.3 * DT_CTRL
@@ -51,6 +53,7 @@ class LatControlTorqueLQR():
     self.L = np.array(l).reshape((2, 1))
     self.roll_k = self._op_params.get('TUNE_LAT_TRXLQR_roll_compensation')
     self.friction = self._op_params.get('TUNE_LAT_TRXLQR_friction')
+    self._k_f = self._op_params.get('TUNE_LAT_TRXLQR_kf')
     self.use_steering_angle = self._op_params.get('TUNE_LAT_TRXLQR_use_steering_angle')
 
   def reset(self):
@@ -73,7 +76,7 @@ class LatControlTorqueLQR():
     lqr_log = log.ControlsState.LateralTorqueLQRState.new_message()
 
     if self.use_steering_angle:
-      actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll * self.roll_k)
+      actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
       actual_curvature_rate = -VM.calc_curvature(math.radians(CS.steeringRateDeg), CS.vEgo, 0)
     else:
       actual_curvature = llk.angularVelocityCalibrated.value[2] / CS.vEgo
@@ -119,11 +122,15 @@ class LatControlTorqueLQR():
            (error <= 0 and (control >= -steers_max or i > 0.0)):
           self.i_lqr = i
 
+      ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY * self.roll_k
+      ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * self.roll_k
       friction_compensation = interp(desired_lateral_jerk, 
                                      [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], 
                                      [-self.friction, self.friction])
+      ff += friction_compensation
+      ff *= self._k_f
       
-      output_steer = lqr_output + self.i_lqr + friction_compensation 
+      output_steer = lqr_output + self.i_lqr + ff
       output_steer = clip(output_steer, -steers_max, steers_max)
 
     check_saturation = (CS.vEgo > 10) and not CS.steeringRateLimited and not CS.steeringPressed

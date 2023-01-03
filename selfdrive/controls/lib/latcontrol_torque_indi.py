@@ -10,10 +10,12 @@ from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.toyota.values import CarControllerParams
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import get_steer_max
+from selfdrive.controls.lib.latcontrol_torque import FRICTION_THRESHOLD
+from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 
 
 class LatControlTorqueINDI():
-  def __init__(self, CP):
+  def __init__(self, CP, CI):
     self.angle_steers_des = 0.
 
     A = np.array([[1.0, DT_CTRL, 0.0],
@@ -46,6 +48,9 @@ class LatControlTorqueINDI():
     self.sat_count_rate = 1.0 * DT_CTRL
     self.sat_limit = CP.steerLimitTimer
     self.steer_filter = FirstOrderFilter(0., self.RC, DT_CTRL)
+    self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
+    self.friction = CP.lateralTuning.torqueIndi.friction
+    self._k_f = CP.lateralTuning.torqueIndi.kf
     
     self._op_params = opParams(calling_function="latcontrol_torque_indi.py")
     self.roll_k = 1.0
@@ -59,6 +64,8 @@ class LatControlTorqueINDI():
     self._outer_loop_gain = (bp, [self._op_params.get(f"TUNE_LAT_TRXINDI_outer_gain_{s}s") for s in ['l','h']])
     self._inner_loop_gain = (bp, [self._op_params.get(f"TUNE_LAT_TRXINDI_inner_gain_{s}s") for s in ['l','h']])
     self.roll_k = self._op_params.get('TUNE_LAT_TRXINDI_roll_compensation')
+    self.friction = self._op_params.get('TUNE_LAT_TRXINDI_friction')
+    self._k_f = self._op_params.get('TUNE_LAT_TRXINDI_kf')
 
   @property
   def RC(self):
@@ -97,7 +104,7 @@ class LatControlTorqueINDI():
   def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None):
     self.speed = CS.vEgo
     
-    actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll * self.roll_k)
+    actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
     actual_curvature_rate = -VM.calc_curvature(math.radians(CS.steeringRateDeg), CS.vEgo, 0)
     
     desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
@@ -154,6 +161,16 @@ class LatControlTorqueINDI():
         self.output_steer = new_output_steer_cmd / steer_max
       else:
         self.output_steer = self.steer_filter.x + delta_u
+      
+      ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY * self.roll_k
+      ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * self.roll_k
+      friction_compensation = interp(desired_lateral_jerk, 
+                                     [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], 
+                                     [-self.friction, self.friction])
+      ff += friction_compensation
+      ff *= self._k_f
+      
+      self.output_steer += ff
 
       steers_max = get_steer_max(CP, CS.vEgo)
       self.output_steer = clip(self.output_steer, -steers_max, steers_max)
