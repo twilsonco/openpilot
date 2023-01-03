@@ -568,9 +568,6 @@ static void update_state(UIState *s) {
       char wind_dir[8];
       char precip_str[32];
       deg_to_str(wind_dir, data.getWindDirectionDeg());
-      sprintf(scene.weather_info.desc_simple2, 
-              "%s", 
-              wind_dir);
       if (s->scene.is_metric){
         if (scene.weather_info.has_precip){
           sprintf(precip_str, "%0.1fmm in last %dh", totalPrecip, precipTime);
@@ -585,9 +582,13 @@ static void update_state(UIState *s) {
           sprintf(scene.weather_info.desc_simple1, 
                   "%0.0fkm/h", 
                   data.getWindSpeed() * 3.6);
+          sprintf(scene.weather_info.desc_simple2, 
+              "%s", 
+              wind_dir);
         }
         else{
           sprintf(scene.weather_info.desc_simple1, " ");
+          sprintf(scene.weather_info.desc_simple2, " ");
         }
         sprintf(scene.weather_info.desc_full1,
                 "%0.1f°C (feels like %0.1f)",
@@ -619,9 +620,13 @@ static void update_state(UIState *s) {
           sprintf(scene.weather_info.desc_simple1, 
                   "%0.0fmph", 
                   data.getWindSpeed() * 2.24);
+          sprintf(scene.weather_info.desc_simple2, 
+              "%s", 
+              wind_dir);
         }
         else{
           sprintf(scene.weather_info.desc_simple1, " ");
+          sprintf(scene.weather_info.desc_simple2, " ");
         }
         sprintf(scene.weather_info.desc_full1,
                 "%0.0f°F (feels like %0.0f)",

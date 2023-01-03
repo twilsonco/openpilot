@@ -169,8 +169,8 @@ Please show your support by contributing to the ongoing development of this proj
     * automatic speed limits
     * adjustable/automatic lane positioning
     * traffic detection
-    * lateral and longitudinal controllers
-      * *can select and tune pid, torque, indi, or lqr controllers*
+    * lateral (six of them!) and longitudinal controllers
+      * *can select and tune pid, torque, indi, lqr, torque indi, or torque lqr controllers*
     * select UI metrics (no more tapping! you can still tap though)
     * enter your own OpenWeatherMap api key (no more txt file with key)
     * *perform a reboot-less restart on your Comma Three by running `./opparams.py -r`*
