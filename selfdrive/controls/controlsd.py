@@ -161,9 +161,9 @@ class Controls:
     elif self.CP.lateralTuning.which() == 'torque':
       self.LaC = LatControlTorque(self.CP, self.CI)
     elif self.CP.lateralTuning.which() == 'torqueIndi':
-      self.LaC = LatControlTorqueINDI(self.CP)
+      self.LaC = LatControlTorqueINDI(self.CP, self.CI)
     elif self.CP.lateralTuning.which() == 'torqueLqr':
-      self.LaC = LatControlTorqueLQR(self.CP)
+      self.LaC = LatControlTorqueLQR(self.CP, self.CI)
 
     self.initialized = False
     self.state = State.disabled

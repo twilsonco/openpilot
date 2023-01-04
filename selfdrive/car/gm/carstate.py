@@ -60,7 +60,7 @@ class CarState(CarStateBase):
     self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
     self._params = Params()
     self._op_params = opParams("gm CarState")
-    self.ui_metrics = [self._op_params.get(f'MET_{i:02d}', force_update=True) for i in range(10)]
+    self.ui_metrics_params = [int(self._params.get(f'MeasureSlot{i:02d}', encoding="utf8")) for i in range(10)]
     self.update_op_params()
     
     self.iter = 0
@@ -208,7 +208,7 @@ class CarState(CarStateBase):
     self.lka_steering_cmd_counter = 0
     
   
-  def update_op_params(self):
+  def update_op_params(self, t = sec_since_boot()):
     self.ONE_PEDAL_MODE_DECEL_V = [self._op_params.get('MADS_OP_low_speed_decel_mss'), self._op_params.get('MADS_OP_high_speed_decel_mss')]
     self.ONE_PEDAL_MAX_DECEL = min(self.ONE_PEDAL_MODE_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
     self.ONE_PEDAL_DECEL_RATE_LIMIT_UP = self._op_params.get('MADS_OP_rate_ramp_up') * DT_CTRL * 4 # m/s^2 per second for increasing braking force
@@ -223,11 +223,15 @@ class CarState(CarStateBase):
     self.coasting_over_speed_vEgo_BP = [[i + 0.1 for i in base_BP], [i + 0.15 for i in base_BP]]
     self.coasting_over_speed_regen_vEgo_BP = [base_BP, [i + 0.05 for i in base_BP]]
     
-    ui_metrics = [self._op_params.get(f'MET_{i:02d}') for i in range(10)]
     for i in range(10):
-      if ui_metrics[i] != self.ui_metrics[i]:
-        put_nonblocking(f"MeasureSlot{i:02d}", str(UI_METRICS.index(ui_metrics[i])))
-        self.ui_metrics[i] = ui_metrics[i]
+      key_op = f'MET_{i:02d}'
+      key = f'MeasureSlot{i:02d}'
+      metric_param = int(self._params.get(key, encoding="utf8"))
+      if metric_param != self.ui_metrics_params[i]:
+        cloudlog.info(f"opParams: UI metric in slot {i} '{UI_METRICS[self.ui_metrics_params[i]]}' ({self.ui_metrics_params[i]}) updated to '{UI_METRICS[metric_param]}' ({metric_param}) onroad. Copying new metric to opParams '{key_op}'")
+        self._op_params.put(key_op, UI_METRICS[metric_param])
+        self.ui_metrics_params[i] = metric_param
+
     
   def update(self, pt_cp, loopback_cp):
     ret = car.CarState.new_message()
@@ -265,7 +269,7 @@ class CarState(CarStateBase):
     self.coasting_enabled_last = self.coasting_enabled
     if t - self.params_check_last_t >= self.params_check_freq:
       self.params_check_last_t = t
-      self.update_op_params()
+      self.update_op_params(t)
       set_v_cruise_offset(self._op_params.get('set_speed_offset_mph') if self.cruise_offset_enabled else 0)
       self.coasting_enabled = self._params.get_bool("Coasting")
       accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco

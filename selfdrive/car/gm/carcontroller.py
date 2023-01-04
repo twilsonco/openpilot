@@ -177,15 +177,17 @@ class CarController():
           else:
             self.one_pedal_decel_in = clip(0.0 if CS.gear_shifter_ev == GEAR_SHIFTER2.DRIVE and CS.one_pedal_dl_coasting_enabled and CS.vEgo > 0.05 else min(CS.out.aEgo,threshold_accel), self.one_pedal_decel_in - CS.ONE_PEDAL_DECEL_RATE_LIMIT_UP, self.one_pedal_decel_in + CS.ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
             one_pedal_apply_brake = 0.0
+        else:
+          one_pedal_apply_brake = 0.0
           
           
-          if not CS.MADS_lead_braking_enabled \
-              or one_pedal_apply_brake > self.apply_brake \
-              or CS.coasting_lead_d < 0.0:
-            self.apply_brake = one_pedal_apply_brake
-            CS.MADS_lead_braking_active = False
-          if CS.MADS_lead_braking_active:
-            self.lead_accel_last_t = t
+        if not CS.MADS_lead_braking_enabled \
+            or one_pedal_apply_brake > self.apply_brake \
+            or CS.coasting_lead_d < 0.0:
+          self.apply_brake = one_pedal_apply_brake
+          CS.MADS_lead_braking_active = False
+        if CS.MADS_lead_braking_active:
+          self.lead_accel_last_t = t
           
         elif CS.coasting_enabled and lead_long_brake_lockout_factor < 1.0 \
             and not CS.slippery_roads_active and not CS.low_visibility_active:
