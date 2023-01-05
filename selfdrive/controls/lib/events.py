@@ -320,7 +320,7 @@ def pre_lane_change(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) ->
   elif alert == LaneChangeAlert.nudgelessBlockedTimeout:
     str2 = "(auto lane change timed out)"
   elif alert == LaneChangeAlert.nudgelessBlockedMinSpeed:
-    min_speed = OPPARAMS.get('LC_nudgeless_minimum_speed_mph', force_update=True)
+    min_speed = OPPARAMS.get('LC_nudgeless_minimum_speed_mph')
     str2 = "(no auto lane change below {})".format(f"{int(min_speed)}mph" if not metric else f"{int(min_speed * CV.MPH_TO_KPH)}kph")
   elif alert == LaneChangeAlert.nudgelessBlockedMADS:
     str2 = "(no auto lane change in MADS)"

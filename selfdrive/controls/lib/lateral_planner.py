@@ -116,8 +116,8 @@ class LateralPlanner():
   def update_op_params(self):
     global LANE_CHANGE_SPEED_MIN
     LANE_CHANGE_SPEED_MIN = self._op_params.get('LC_minimum_speed_mph') * CV.MPH_TO_MS
-    self.nudgeless_delay = self._op_params.get('LC_nudgeless_delay_s', force_update=True) # [s] amount of time blinker has to be on before nudgless lane change
-    self.nudgeless_min_speed = self._op_params.get('LC_nudgeless_minimum_speed_mph', force_update=True) * CV.MPH_TO_MS
+    self.nudgeless_delay = self._op_params.get('LC_nudgeless_delay_s') # [s] amount of time blinker has to be on before nudgless lane change
+    self.nudgeless_min_speed = self._op_params.get('LC_nudgeless_minimum_speed_mph') * CV.MPH_TO_MS
     self.MADS_allow_nudgeless_lane_change = self._op_params.get('MADS_steer_allow_nudgeless_lane_change')
 
   def update(self, sm, CP):
