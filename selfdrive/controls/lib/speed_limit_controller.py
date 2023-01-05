@@ -252,7 +252,7 @@ class SpeedLimitController():
   @property
   def speed_limit_offset(self):
     if self._offset_enabled:
-      return interp(self._speed_limit, _LIMIT_PERC_OFFSET_BP, self.get_offset()) * self._speed_limit * 0.25 if self._reduced_offset else 1.0
+      return interp(self._speed_limit, _LIMIT_PERC_OFFSET_BP, self.get_offset()) * self._speed_limit * (0.25 if self._reduced_offset else 1.0)
     return 0.
 
   @property
