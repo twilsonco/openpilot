@@ -235,11 +235,12 @@ class CarController():
                             CS.out.gearShifter in ['drive','low'],
                             not CS.out.brakePressed])
     
-    if not brakes_allowed:
+    if not CS.cruiseMain or CS.out.brakePressed or CS.out.gearShifter not in ['drive','low']:
       self.apply_gas = P.MAX_ACC_REGEN
-      self.apply_brake = 0
     if not enabled or CS.out.gas >= GAS_PRESSED_THRESHOLD:
       self.apply_gas = P.MAX_ACC_REGEN
+    if not brakes_allowed:
+      self.apply_brake = 0
 
     if CS.showBrakeIndicator:
       CS.apply_brake_percent = 0.
