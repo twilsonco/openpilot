@@ -161,11 +161,12 @@ class CarController():
           lead_long_gas_lockout_factor =  0. # 1.0 means regular braking logic is completely unaltered, 0.0 means no cruise braking
           lead_long_brake_lockout_factor =  0. # 1.0 means regular braking logic is completely unaltered, 0.0 means no cruise braking
         
-        if not CS.out.onePedalModeActive:
+        if not CS.out.onePedalModeActive or CS.out.gas >= 1e-5 or CS.out.brakePressed:
           self.one_pedal_pid.reset()
           self.one_pedal_decel = CS.out.aEgo
           self.one_pedal_decel_in = CS.out.aEgo
-        if CS.out.onePedalModeActive and CS.out.gas < 1e-5:
+          one_pedal_apply_brake = 0.0
+        else:
           self.apply_gas = P.MAX_ACC_REGEN
           pitch_accel = CS.pitch * ACCELERATION_DUE_TO_GRAVITY
           pitch_accel *= interp(CS.vEgo, ONE_PEDAL_ACCEL_PITCH_FACTOR_BP, CS.ONE_PEDAL_ACCEL_PITCH_FACTOR_V if pitch_accel <= 0 else CS.ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V)
@@ -188,8 +189,6 @@ class CarController():
           else:
             self.one_pedal_decel_in = clip(0.0 if CS.gear_shifter_ev == GEAR_SHIFTER2.DRIVE and CS.one_pedal_dl_coasting_enabled and CS.vEgo > 0.05 else min(CS.out.aEgo,threshold_accel), self.one_pedal_decel_in - CS.ONE_PEDAL_DECEL_RATE_LIMIT_UP, self.one_pedal_decel_in + CS.ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
             one_pedal_apply_brake = 0.0
-        else:
-          one_pedal_apply_brake = 0.0
           
           
         if not CS.MADS_lead_braking_enabled \
@@ -225,17 +224,22 @@ class CarController():
             self.apply_brake *= lead_long_brake_lockout_factor
         self.apply_gas = int(round(self.apply_gas))
       self.apply_brake = int(round(self.apply_brake))
-      
-    if not CS.cruiseMain or CS.out.brakePressed or CS.out.gearShifter not in ['drive','low']:
+    
+    
+    brakes_allowed = any([CS.long_active, 
+                          CS.out.onePedalModeActive, 
+                          CS.MADS_lead_braking_active]
+                        ) and \
+                      all([CS.out.gas < 1e-5,
+                            CS.out.cruiseMain,
+                            CS.out.gearShifter in ['drive','low'],
+                            not CS.out.brakePressed])
+    
+    if not brakes_allowed:
       self.apply_gas = P.MAX_ACC_REGEN
       self.apply_brake = 0
     if not enabled or CS.out.gas >= GAS_PRESSED_THRESHOLD:
       self.apply_gas = P.MAX_ACC_REGEN
-    if CS.out.gas >= 1e-5 \
-        or (not CS.long_active \
-          and not CS.out.onePedalModeActive \
-          and not CS.MADS_lead_braking_active):
-      self.apply_brake = 0
 
     if CS.showBrakeIndicator:
       CS.apply_brake_percent = 0.
@@ -271,13 +275,7 @@ class CarController():
         CS.autoHoldActivated = True
 
       else:
-        if CS.out.gas > 1e-5 \
-            or CS.out.gearShifter not in ['drive','low'] \
-            or CS.out.brakePressed \
-            or not CS.cruiseMain \
-            or (not CS.long_active \
-              and not CS.out.onePedalModeActive\
-              and not CS.MADS_lead_braking_active):
+        if not brakes_allowed:
           at_full_stop = False
           near_stop = False
           car_stopping = False
