@@ -398,6 +398,11 @@ static void update_state(UIState *s) {
       scene.lane_pos_timeout_dist = scene.lane_pos_dist_short;
       Params().put("LanePosition", "0", 1);
     }
+
+    // flip weather toggle every 5s
+    if (sm.frame % (UI_FREQ * 5) == 0) {
+      scene.weather_simple_show_percip = !scene.weather_simple_show_percip;
+    }
   
     // fade screen brightness
     // update screen dim
@@ -578,14 +583,25 @@ static void update_state(UIState *s) {
         sprintf(scene.weather_info.desc_simple, 
                 "%0.1f°C", 
                 data.getTemperature());
-        if (data.getWindSpeed() > 3.0){
-          sprintf(scene.weather_info.desc_simple1, 
-                  "%0.0fkm/h", 
-                  data.getWindSpeed() * 3.6);
-          sprintf(scene.weather_info.desc_simple2, 
-              "%s", 
-              wind_dir);
+        if (data.getWindSpeed() > 3.0 || totalPrecip > 0.0){
+          if (data.getWindSpeed() > 3.0 && (!scene.weather_simple_show_percip || totalPrecip <= 0.0)){
+            sprintf(scene.weather_info.desc_simple1, 
+                    "%0.0fkm/h", 
+                    data.getWindSpeed() * 3.6);
+            sprintf(scene.weather_info.desc_simple2, 
+                "%s", 
+                wind_dir);
+          }
+          else if (scene.weather_simple_show_percip && totalPrecip > 0.0){
+            sprintf(scene.weather_info.desc_simple1, 
+                    "%0.1fmm", 
+                    totalPrecip);
+            sprintf(scene.weather_info.desc_simple2, 
+                "last %dh", 
+                precipTime);
+          }
         }
+        
         else{
           sprintf(scene.weather_info.desc_simple1, " ");
           sprintf(scene.weather_info.desc_simple2, " ");
@@ -616,13 +632,25 @@ static void update_state(UIState *s) {
         sprintf(scene.weather_info.desc_simple, 
                 "%0.0f°F", 
                 data.getTemperature() * 1.8 + 32.0);
-        if (data.getWindSpeed() > 3.0){
-          sprintf(scene.weather_info.desc_simple1, 
-                  "%0.0fmph", 
-                  data.getWindSpeed() * 2.24);
-          sprintf(scene.weather_info.desc_simple2, 
-              "%s", 
-              wind_dir);
+        
+        if (data.getWindSpeed() > 3.0 && (!scene.weather_simple_show_percip || totalPrecip <= 0.0)){
+          if (data.getWindSpeed() > 3.0 && (!scene.weather_simple_show_percip || totalPrecip <= 0.0)){
+            sprintf(scene.weather_info.desc_simple1, 
+                    "%0.0fmph", 
+                    data.getWindSpeed() * 2.24);
+            sprintf(scene.weather_info.desc_simple2, 
+                "%s", 
+                wind_dir);
+          }
+          else if (scene.weather_simple_show_percip && totalPrecip > 0.0){
+            sprintf(scene.weather_info.desc_simple1, 
+                    "%0.2f\"", 
+                    totalPrecip * 0.039);
+            sprintf(scene.weather_info.desc_simple2, 
+                "last %dh", 
+                precipTime);
+          }
+        }
         }
         else{
           sprintf(scene.weather_info.desc_simple1, " ");
