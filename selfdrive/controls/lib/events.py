@@ -1156,7 +1156,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   
   EventName.madsAlert1: {
     ET.PERMANENT: Alert(
-      "MADS | Autosteer",
+      "MADS | Autosteer (tap to skip)",
       "Toggle with LKA button",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
