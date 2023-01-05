@@ -305,6 +305,22 @@ def radar_fault_alert_no_entry(CP: car.CarParams, sm: messaging.SubMaster, metri
     AlertSize.mid, Priority.LOW, VisualAlert.none,
     AudibleAlert.chimeError, .4, 2., 3.)
 
+def reboot_imminent_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  return Alert(
+    "RESTARTING IN {}!".format(sm['carState'].rebootInNSeconds),
+    "TAKE CONTROL OF VEHICLE",
+    AlertStatus.critical, AlertSize.full,
+    Priority.MID, VisualAlert.steerRequired,
+    AudibleAlert.chimeWarning1, .1, 2., 2.)
+  
+def reboot_imminent_alert_no_entry(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  return Alert(
+    "Restarting in {}".format(sm['carState'].rebootInNSeconds),
+    "",
+    AlertStatus.normal,
+    AlertSize.mid, Priority.LOW, VisualAlert.none,
+    AudibleAlert.chimeError, .4, 2., 3.)
+
 def pre_lane_change(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   alert = sm['lateralPlan'].laneChangeAlert
   direction = sm['lateralPlan'].laneChangeDirection
@@ -935,6 +951,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   EventName.radarFault: {
     ET.SOFT_DISABLE: radar_fault_alert,
     ET.NO_ENTRY: radar_fault_alert_no_entry,
+  },
+  
+  EventName.rebootImminent: {
+    ET.SOFT_DISABLE: reboot_imminent_alert,
+    ET.NO_ENTRY: reboot_imminent_alert_no_entry,
   },
 
   # Every frame from the camera should be processed by the model. If modeld

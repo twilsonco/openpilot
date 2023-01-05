@@ -40,6 +40,7 @@ def manager_init():
     ("CommunityFeaturesToggle", "1"),
     ("ShowDebugUI", "1"),
     ("WeatherAlternateFrequency", "4"),
+    ("OPParamsRebootInNSeconds", "-1"),
     ("OPParamsLiveTuneEnabled", "0"),
     ("OPParamsLateralOverride", "0"),
     ("OPParamsLongitudinalOverride", "0"),

@@ -205,6 +205,8 @@ class CarState(CarStateBase):
     self.low_visibility_activated_t = 0.0
     self.slippery_roads_activated_t = 0.0
     
+    self.reboot_in_N_seconds = -1
+    
     self.lka_steering_cmd_counter = 0
     
   
@@ -275,6 +277,7 @@ class CarState(CarStateBase):
     self.coasting_enabled_last = self.coasting_enabled
     if t - self.params_check_last_t >= self.params_check_freq:
       self.params_check_last_t = t
+      self.reboot_in_N_seconds = int(self._params.get("OPParamsRebootImminent", encoding="utf8"))
       self.update_op_params(t)
       set_v_cruise_offset(self._op_params.get('set_speed_offset_mph') if self.cruise_offset_enabled else 0)
       self.coasting_enabled = self._params.get_bool("Coasting")
@@ -561,6 +564,7 @@ class CarState(CarStateBase):
     
     ret.slipperyRoadsActive = self.slippery_roads_active
     ret.lowVisibilityActive = self.low_visibility_active
+    ret.rebootInNSeconds = int(self.reboot_in_N_seconds)
     
     if self.iter % 20 == 0:
       if self.slippery_roads_active:

@@ -400,6 +400,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
     
     if Params().get_bool('IsOnroad') and not immediate:
       for i in range(5):
+        Params().put('OPParamsRebootInNSeconds', str(5-i))
         self.info("PERFORMING ONROAD OPENPILOT RESTART IN {} second{}!! ASSUME CONTROL OF VEHICLE!!".format(5-i,'' if i == 5-1 else 's'), sleep_time=1)
     else:
       self.info("PERFORMING {}OPENPILOT RESTART".format(" FORCED " if immediate else ""), sleep_time=0)

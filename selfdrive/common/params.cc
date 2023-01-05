@@ -207,6 +207,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"OPParamsLiveTuneEnabled", PERSISTENT},
     {"OPParamsLongitudinalOverride", PERSISTENT},
     {"OPParamsLateralOverride", PERSISTENT},
+    {"OPParamsRebootInNSeconds", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF | CLEAR_ON_PANDA_DISCONNECT},
     {"WeatherAlternateFrequency", PERSISTENT},
     {"MeasureConfigNum", PERSISTENT},
     {"MeasureSlot00", PERSISTENT},
