@@ -7,6 +7,7 @@ from common.filter_simple import FirstOrderFilter
 import cereal.messaging as messaging
 from cereal import car
 from common.numpy_fast import interp
+from common.op_params import opParams
 from common.params import Params
 from common.realtime import Ratekeeper, Priority, config_realtime_process
 from selfdrive.config import RADAR_TO_CAMERA
@@ -258,12 +259,12 @@ def get_lead(v_ego, ready, clusters, lead_msg=None, low_speed_override=True, md=
   return lead_dict
 
 class LongRangeLead():
-  DREL_BP = [LEAD_MIN_SMOOTHING_DISTANCE, LEAD_MAX_DISTANCE] # [m] used commonly between distance-based parameters
-  D_DREL_MAX_V = [8., 20.] # [m] deviation between old and new leads necessary to trigger reset of values
-  ALPHA_V = [0, 1.] # raise/lower second value for more/less smoothing of long-range lead data
-  D_YREL_MAX = 0.8 # [m] max yrel deviation
   
   def __init__(self, dt):
+    self.DREL_BP = [LEAD_MIN_SMOOTHING_DISTANCE, LEAD_MAX_DISTANCE] # [m] used commonly between distance-based parameters
+    self.D_DREL_MAX_V = [8., 20.] # [m] deviation between old and new leads necessary to trigger reset of values
+    self.ALPHA_V = [0, 1.] # raise/lower second value for more/less smoothing of long-range lead data
+    self.D_YREL_MAX = 0.8 # [m] max yrel deviation
     self.dRel = FirstOrderFilter(0., 0., dt, initialized=False)
     self.vRel = FirstOrderFilter(0., 0., dt, initialized=False)
     self.vLead = FirstOrderFilter(0., 0., dt, initialized=False)
@@ -336,11 +337,31 @@ class RadarD():
     self.lead_one_lr = LongRangeLead(radar_ts)
     self.lead_two_lr = LongRangeLead(radar_ts)
     self.lead_one_plus_lr = LongRangeLead(radar_ts)
+    
+    self._op_params = opParams("gm CarState")
+    self._op_param_last_update = False
 
     self.ready = False
+    
+  def update_op_params(self):
+    global LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V, LEAD_PATH_DREL_MIN, LEAD_PATH_YREL_LOW_TOL, LEAD_MAX_DISTANCE, LEAD_MIN_SMOOTHING_DISTANCE, LEAD_MAX_Y_REL
+    if self._op_param_last_update and self.current_time - self._op_param_last_update < 0.5:
+      return
+    self._op_param_last_update = self.current_time
+    LEAD_PATH_YREL_MAX_BP = self._op_params.get('XR_LRL_path_y_distance_bp_m') # [m] distance to lead
+    LEAD_PATH_YREL_MAX_V = self._op_params.get('XR_LRL_path_y_distance_v_m') # [m] constant tolerance
+    LEAD_PATH_YREL_LOW_TOL = self._op_params.get('XR_LRL_path_y_distance_low_tol_filter_m') # if the lead closest to the "middle" is farther away than one that is both closer and within this distance of "middle", use that lead
+    LEAD_PATH_DREL_MIN = self._op_params.get('XR_LRL_min_detection_distance_m') # [m] only care about far away leads
+    LEAD_MIN_SMOOTHING_DISTANCE = self._op_params.get('XR_LRL_min_smoothing_distance_m') # [m]
+    LEAD_MAX_DISTANCE = self._op_params.get('XR_LRL_max_detection_distance_m') # [m] beyond this distance, lead data is too noisy to use
+    LEAD_MAX_Y_REL = self._op_params.get('XR_LRL_max_relative_y_distance_m') # [m] beyond this Y distance, long range leads are ignored
+    self.lead_one_lr.ALPHA_V[1] = self._op_params.get('XR_LRL_smoothing_factor')
+    self.lead_two_lr.ALPHA_V[1] = self._op_params.get('XR_LRL_smoothing_factor')
+    self.lead_one_plus_lr.ALPHA_V[1] = self._op_params.get('XR_LRL_smoothing_factor')
 
   def update(self, sm, rr, enable_lead):
     self.current_time = 1e-9*max(sm.logMonoTime.values())
+    self.update_op_params()
 
     if sm.updated['carState']:
       self.v_ego = sm['carState'].vEgo

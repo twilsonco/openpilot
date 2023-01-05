@@ -440,6 +440,24 @@ class opParams:
       
       #####
       
+      'XR_LRL_max_detection_distance_m': Param(150, int, 'Max distance [in meters] at which radar + vision data will be used to consider tracks (a.k.a. points) as a potential lead. WARNING: RADAR DETECTION DISTANCE IS ~150m, AND ABOVE THAT VISION DATA FROM THE VOLT LKA CAMERA WILL BE USED, WHICH CAN BE VERY NOISY, LEADING TO PHANTOM BRAKING. USE THE SMOOTHING PARAMETER TO TRY AND SMOOTH IT OR JUST DON\'T GO ABOVE 150m!\n', min_val=50, max_val=250, unit="meters"),
+      
+      'XR_LRL_smoothing_factor': Param(1.0, float, 'This adjusts the smoothing used for vision-only long-range leads, in order to reduce unnecessary braking from noise lead velocity data.\n', min_val=0.0, max_val=50.0),
+      
+      'XR_LRL_min_smoothing_distance_m': Param(145, int, 'Vision-only long-range lead distance/velocity data is noisier at higher distances. At this lead distance, no smoothing is applied. At the max detection distance, the full amount of smoothing is applied. Change this to control the distance at which smoothing begins to ramp up.\n', min_val=50, max_val=250, unit="meters"),
+      
+      'XR_LRL_min_detection_distance_m': Param(60, int, 'Below this distance, radar tracks aren\'t considered as leads. The OpenPilot model is very good at lead detection up to around 120m, but it becomes more inconsistent as you approach that value. Setting a value below 120m allows for a smooth transition, as you approach a long range lead on the highway, from long-rage lead to regular OpenPilot model lead, avoiding interruptions in planned acceleration. Don\'t use too low of a value, however, because at closer distances the OpenPilot model is very good at lead detection, and it\'s best to rely entirely on it and not risk false positives from long-range lead detection. If you experience false positives, for example detecting the lead in the adjacent lane while in a curve, and the lead marker has a blue dot (long-range lead) then you can increase this value to prevent those.\n', min_val=20, max_val=120, unit="meters"),
+      
+      'XR_LRL_max_relative_y_distance_m': Param(7.0, float, 'Max distance [in meters] in the lateral (y) direction at which long-range radar + vision tracks will be considered as leads.  Long range leads are qualified by comparing them to the OpenPilot model lanelines and planned path, which becomes less accurate at far distances and more so in curves, so you can reduce false positives (detecting the wrong lead) in curves by decreasing this value.\n', min_val=3.0, max_val=50.0, unit="meters"),
+      
+      'XR_LRL_path_y_distance_bp_m': Param([0.0, 200.0], [list, float], 'The "low-distance" and "high-distance" values used to determine path lateral (y) cutoff for long-range lead detection. At these distances, the respective values of LRL_path_y_distance_v_m will be used\n', min_val=0.0, max_val=220.0, unit="meters"),
+      
+      'XR_LRL_path_y_distance_v_m': Param([1.2, 1.2], [list, float], 'The "low-distance" and "high-distance" values of path lateral (y) cutoff for long-range lead detection. If a long-range lead is within than this many meters of lane center or the planned OpenPilot path, then it is considered to be in your path. Note that lanes are never more than 4m wide, so you will have false positives in adjacent lanes if too high of a value is used.\n', min_val=0.0, max_val=2.5, unit="meters"),
+      
+      'XR_LRL_path_y_distance_low_tol_filter_m': Param(0.7, float, 'Long-range lead detection prioritizes leads based on lateral distance to the planned path or lane center. In the event there are two lead candidates, if the closer of the two is within this distance of path/lane-center, it will take priority over the farther lead, even if the farther lead is technically closer to the path. This guarantees OpenPilot is following based on the closest lead that is on the path.\n', min_val=0.0, max_val=1.5, unit="meters"),
+      
+      #####
+      
       'LC_minimum_speed_mph': Param(20.0, float, 'No OpenPilot assisted lane change below this speed\n', min_val=8.0, max_val=90.0, is_common=True, unit='mph'),
       
       'LC_nudgeless_minimum_speed_mph': Param(40.0, float, 'No nudgeless lane change below this speed\n', min_val=8.0, max_val=90.0, is_common=True, unit='mph'),
