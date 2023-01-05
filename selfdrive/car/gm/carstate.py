@@ -224,6 +224,7 @@ class CarState(CarStateBase):
     self.coasting_over_speed_regen_vEgo_BP = [base_BP, [i + 0.05 for i in base_BP]]
     
     self.hvb_wattage.update_alpha(self._op_params.get('MET_power_meter_smoothing_factor'))
+    self.one_pedal_mode_regen_paddle_double_press_time = self._op_params.get('MADS_OP_double_press_time_s')
     
     for i in range(10):
       key_op = f'MET_{i:02d}'
