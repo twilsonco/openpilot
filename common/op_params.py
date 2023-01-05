@@ -297,7 +297,7 @@ class Param:
           if self.has_allowed_types and type(self.value) not in self.allowed_types:
             for t in self.allowed_types:
               try:
-                self.value = self.allowed_types[0](self.value)
+                self.value = t(self.value)
                 break
               except:
                 continue
@@ -614,9 +614,21 @@ class opParams:
     # cloudlog.info(f"opParams: {calling_function}:   Putting params with linked param_params")
     for k,v in self.fork_params.items():
       val = v.value
-      if not all([v.type_is_valid(v.value), v.value_is_valid(v.value)]):
+      type_valid, val_valid = [v.type_is_valid(v.value), v.value_is_valid(v.value)]
+      if not type_valid:
+        for t in v.allowed_types:
+          try:
+            val = t(val)
+            type_valid = v.type_is_valid(val)
+            if type_valid:
+              v.value = val
+              break
+          except:
+            continue
+          
+      if not all([type_valid, val_valid]):
         val = v.default_value
-        cloudlog.info(f"opParams: {calling_function}:   Putting params with invalid initial value: {k} -> {v.value} to default value '{val}'")
+        cloudlog.info(f"opParams: {calling_function}:   Putting params with invalid initial value: {k} -> {v.value} to default value '{val}'. {type_valid = }, {val_valid = }")
         self.put(k, val)
       # elif v.param_param != '':
       #   cloudlog.info(f"opParams: {calling_function}:   Putting params with linked param_params: {k} -> {v.value}")

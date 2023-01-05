@@ -225,6 +225,7 @@ class CarState(CarStateBase):
     
     self.hvb_wattage.update_alpha(self._op_params.get('MET_power_meter_smoothing_factor'))
     self.one_pedal_mode_regen_paddle_double_press_time = self._op_params.get('MADS_OP_double_press_time_s')
+    self.min_lane_change_speed = self._op_params.get('MADS_steer_pause_speed_mph') * CV.MPH_TO_MS
     
     for i in range(10):
       key_op = f'MET_{i:02d}'
@@ -281,7 +282,6 @@ class CarState(CarStateBase):
       self.accel_mode = accel_mode
       self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
       if not self.disengage_on_gas:
-        self.min_lane_change_speed = self._op_params.get('MADS_steer_pause_speed_mph') * CV.MPH_TO_MS
         self.MADS_pause_steering_enabled = self._params.get_bool("MADSPauseBlinkerSteering")
         self.one_pedal_mode_enabled = self._params.get_bool("MADSOnePedalMode")
         self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking")
