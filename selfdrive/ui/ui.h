@@ -365,6 +365,7 @@ typedef struct UIScene {
   weather_info weather_info;
   Rect weather_touch_rect;
   bool weather_simple_show_percip = false;
+  int weather_simple_alernate_wind_precip_update_freq = 4;
   
   // adjustable lane position
   Rect lane_pos_left_touch_rect = {1,1,1,1}, lane_pos_right_touch_rect = {1,1,1,1};

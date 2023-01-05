@@ -400,7 +400,8 @@ static void update_state(UIState *s) {
     }
 
     // flip weather toggle every 5s
-    if (sm.frame % (UI_FREQ * 5) == 0) {
+    if (sm.frame % (UI_FREQ * scene.weather_simple_alernate_wind_precip_update_freq) == 0) {
+      scene.weather_simple_alernate_wind_precip_update_freq = std::stoi(Params().get("WeatherAlternateFrequency"));
       scene.weather_simple_show_percip = !scene.weather_simple_show_percip;
     }
   
@@ -601,7 +602,6 @@ static void update_state(UIState *s) {
                 precipTime);
           }
         }
-        
         else{
           sprintf(scene.weather_info.desc_simple1, " ");
           sprintf(scene.weather_info.desc_simple2, " ");
@@ -650,7 +650,6 @@ static void update_state(UIState *s) {
                 "last %dh", 
                 precipTime);
           }
-        }
         }
         else{
           sprintf(scene.weather_info.desc_simple1, " ");
