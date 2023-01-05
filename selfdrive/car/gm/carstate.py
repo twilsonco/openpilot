@@ -209,6 +209,7 @@ class CarState(CarStateBase):
     
   
   def update_op_params(self, t = sec_since_boot()):
+    global GAS_PRESSED_THRESHOLD
     self.ONE_PEDAL_MODE_DECEL_V = [self._op_params.get('MADS_OP_low_speed_decel_mss'), self._op_params.get('MADS_OP_high_speed_decel_mss')]
     self.ONE_PEDAL_MAX_DECEL = min(self.ONE_PEDAL_MODE_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
     self.ONE_PEDAL_DECEL_RATE_LIMIT_UP = self._op_params.get('MADS_OP_rate_ramp_up') * DT_CTRL * 4 # m/s^2 per second for increasing braking force
@@ -226,6 +227,7 @@ class CarState(CarStateBase):
     self.hvb_wattage.update_alpha(self._op_params.get('MET_power_meter_smoothing_factor'))
     self.one_pedal_mode_regen_paddle_double_press_time = self._op_params.get('MADS_OP_double_press_time_s')
     self.min_lane_change_speed = self._op_params.get('MADS_steer_pause_speed_mph') * CV.MPH_TO_MS
+    GAS_PRESSED_THRESHOLD = max(1e-5, self._op_params.get('gas_overlap_cutoff') * 0.01)
     
     for i in range(10):
       key_op = f'MET_{i:02d}'
