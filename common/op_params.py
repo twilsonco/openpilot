@@ -304,6 +304,8 @@ class Param:
             if type(self.value) not in self.allowed_types:
               raise ValueError 
           # cloudlog.info(f"opParams: Read in param value '{self.value}' from param '{self.param_param}' on startup")
+        else:
+          self.value = self.default_value
       except Exception as e:
         cloudlog.warning(f"Corresponding param '{self.param_param}' for this op_param is invalid! Read {val = }, {self.value = }. Exception: {e}, {self.allowed_types = }")
         self.param_param = ''
