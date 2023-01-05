@@ -548,7 +548,7 @@ class CarState(CarStateBase):
       self.MADS_lead_braking_enabled = False
       
     self.cruise_enabled_last = cruise_enabled
-    
+    ret.cruiseMain = self.cruiseMain
     
     ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active and self.time_in_drive >= self.MADS_long_min_time_in_drive
     ret.onePedalModeTemporary = self.one_pedal_mode_temporary
@@ -574,8 +574,6 @@ class CarState(CarStateBase):
     ret.pitch = self.pitch
 
     ret.autoHoldActivated = self.autoHoldActivated
-    
-    ret.cruiseMain = self.cruiseMain
     
     ret.lkaEnabled = self.lkaEnabled
     self.v_ego_prev = ret.vEgo
