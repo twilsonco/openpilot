@@ -1,6 +1,7 @@
 from cereal import car
 from common.realtime import DT_CTRL
 from common.numpy_fast import interp, clip
+from common.op_params import opParams
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
@@ -42,6 +43,7 @@ class CarController():
     self.fcw_count = 0
     
     self.params = CarControllerParams()
+    self._op_params = opParams("gm CarController")
 
     self.packer_pt = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.packer_obj = CANPacker(DBC[CP.carFingerprint]['radar'])
@@ -63,6 +65,13 @@ class CarController():
     
     self.apply_gas = 0
     self.apply_brake = 0
+  
+  def update_op_params(self):
+    global ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_V, ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_V, ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP, ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_BP
+    ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_V[0] = self._op_params.get('MADS_OP_rate_low_speed_factor')
+    ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP = sorted(self._op_params.get('MADS_OP_rate_low_speed_factor_bp'))
+    ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_V[1] = self._op_params.get('MADS_OP_rate_high_steer_factor')
+    ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP = sorted(self._op_params.get('MADS_OP_rate_high_steer_factor_bp'))
     
   def update(self, enabled, CS, frame, actuators,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
@@ -97,6 +106,8 @@ class CarController():
 
     # Gas/regen prep
     if (frame % 4) == 0:
+      if (frame % 48) == 0:
+        self.update_op_params()
       if CS.out.gas >= 1e-5 or (not CS.out.onePedalModeActive and not CS.MADS_lead_braking_enabled) or CS.out.brakePressed:
         self.one_pedal_pid.reset()
         self.one_pedal_decel = CS.out.aEgo

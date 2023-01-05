@@ -157,7 +157,7 @@ class LaneOffset:
     self.last_op_param_update_t = 0.
     self._auto_auto_lane_position_action = AUTO_AUTO_LANE_MODE.NO_CHANGE
   
-  def update_op_params(self, t):
+  def update_op_params(self, t=sec_since_boot()):
     if t - self.last_op_param_update_t <= 0.5:
       return
     self.last_op_param_update = t
