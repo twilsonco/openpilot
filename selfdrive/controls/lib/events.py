@@ -306,17 +306,19 @@ def radar_fault_alert_no_entry(CP: car.CarParams, sm: messaging.SubMaster, metri
     AudibleAlert.chimeError, .4, 2., 3.)
 
 def reboot_imminent_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  ns = sm['carState'].rebootInNSeconds
   return Alert(
-    "RESTARTING IN {}!".format(sm['carState'].rebootInNSeconds),
-    "TAKE CONTROL OF VEHICLE",
+    "RESTARTING IN {}!".format(ns),
+    "TAKE CONTROL OF VEHICLE" if ns > 2 else "(sorry about the beeps)",
     AlertStatus.critical, AlertSize.full,
     Priority.MID, VisualAlert.steerRequired,
     AudibleAlert.chimeWarning1, .1, 2., 2.)
   
 def reboot_imminent_alert_no_entry(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  ns = sm['carState'].rebootInNSeconds
   return Alert(
-    "Restarting in {}".format(sm['carState'].rebootInNSeconds),
-    "",
+    "Restarting in {}".format(ns),
+    "(sorry about the beeps)",
     AlertStatus.normal,
     AlertSize.mid, Priority.LOW, VisualAlert.none,
     AudibleAlert.chimeError, .4, 2., 3.)

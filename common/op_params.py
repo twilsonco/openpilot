@@ -392,8 +392,6 @@ class opParams:
     self.fork_params = {
       'camera_offset_m': Param(-0.04 if TICI else 0.06, float, 'Adjust your default lane position. (Your camera offset to use in lane_planner.py)\n', live=True, min_val=-0.5, max_val=0.5, is_common=True, unit='meters'),
       
-      'gas_overlap_cutoff': Param(15, int, 'Adjust the percent throttle necessary to override OpenPilot gas control. (any amount of throttle overrides brake control.)\n', live=True, min_val=0, max_val=15, is_common=True, unit='%'),
-      
       'car_12v_pause_charging_v': Param(11.0, float, 'Lower voltage threshold for your car\'s 12v system, below which the device will shutdown (well, stop charging, but there\'s no battery in the C2 or C3, so it shuts down)\n', min_val=0, max_val=10000, is_common=True, unit='volts'),
       
       'offroad_shutdown_time_hr': Param(5, int, 'The amount of time after turning off your car before your device shuts down to conserve power (and not drain your car battery)\n', min_val=0, is_common=True, unit='hours'),
@@ -714,6 +712,8 @@ class opParams:
       
       #####
       
+      'TUNE_LONG_gas_overlap_cutoff': Param(15, int, 'Adjust the percent throttle necessary to override OpenPilot gas control. (any amount of throttle overrides brake control.)\n', live=True, min_val=0, max_val=15, is_common=True, unit='%'),
+      
       'TUNE_LONG_do_override': Param(False, bool, 'If true, the other params here will override the hardcoded longitudinal tune settings for any gm car. The default is for Volt. Changes to this opParam will also apply to the "Custom long override" toggle in OpenPilot settings. There is no tunable feedforward; instead you would adjust acceleration profiles. Restart car or openpilot to apply change.\n', param_param='OPParamsLongitudinalOverride', param_param_read_on_startup=True),
       
       'TUNE_LONG_speed_mph': Param([12.0, 35.0, 80.0], [list, float], 'Lookup speeds used for corresponding values of kp, ki, and kd, such that the first value of kp,ki,kd is used when driving at the first speed here.\n', live=True, min_val=0.0, max_val=100.0, unit="mph"),
@@ -773,6 +773,8 @@ class opParams:
       'LQR': "Linear Quadratic Regulator controller",
       'LONG': "LONGitudinal control (gas/brake)",
       'OP': "One-Pedal driving",
+      'XR': "eXtended Radar capabilities",
+      'LRL': "Long Range Lead detection",
     }
 
     self._to_delete = []  # a list of unused params you want to delete from users' params file

@@ -229,7 +229,7 @@ class CarState(CarStateBase):
     self.hvb_wattage.update_alpha(self._op_params.get('MET_power_meter_smoothing_factor'))
     self.one_pedal_mode_regen_paddle_double_press_time = self._op_params.get('MADS_OP_double_press_time_s')
     self.min_lane_change_speed = self._op_params.get('MADS_steer_pause_speed_mph') * CV.MPH_TO_MS
-    GAS_PRESSED_THRESHOLD = max(1e-5, self._op_params.get('gas_overlap_cutoff') * 0.01)
+    GAS_PRESSED_THRESHOLD = max(1e-5, self._op_params.get('TUNE_LONG_gas_overlap_cutoff') * 0.01)
     
     for i in range(10):
       key_op = f'MET_{i:02d}'
@@ -277,7 +277,7 @@ class CarState(CarStateBase):
     self.coasting_enabled_last = self.coasting_enabled
     if t - self.params_check_last_t >= self.params_check_freq:
       self.params_check_last_t = t
-      self.reboot_in_N_seconds = int(self._params.get("OPParamsRebootImminent", encoding="utf8"))
+      self.reboot_in_N_seconds = int(self._params.get("OPParamsRebootInNSeconds", encoding="utf8"))
       self.update_op_params(t)
       set_v_cruise_offset(self._op_params.get('set_speed_offset_mph') if self.cruise_offset_enabled else 0)
       self.coasting_enabled = self._params.get_bool("Coasting")
