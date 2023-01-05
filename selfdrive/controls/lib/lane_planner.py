@@ -154,9 +154,28 @@ class LaneOffset:
     self._right_traffic_temp_t = 0.
     self._lprob_last = 0.
     self._rprob_last = 0.
-    
+    self.last_op_param_update_t = 0.
     self._auto_auto_lane_position_action = AUTO_AUTO_LANE_MODE.NO_CHANGE
   
+  def update_op_params(self, t):
+    if t - self.last_op_param_update_t <= 0.5:
+      return
+    self.last_op_param_update = t
+    self.OFFSET = self._op_params.get('LP_offset') # [unitless] offset of the left/right positions as factor of current lane width
+    self.AUTO_OFFSET_FACTOR = self._op_params.get('LP_offset_factor_automatic') # 20% less offset when auto mode
+    self.OFFSET_MAX = self._op_params.get('LP_offset_maximum_m') # [m]
+    self.DUR = self._op_params.get('LP_transition_duration_manual_s') # [s] time it takes to switch lane positions
+    self.STEP = self.OFFSET / self.DUR * DT_MDL * LANE_WIDTH_DEFAULT
+    
+    self.DUR_SLOW = self._op_params.get('LP_transition_duration_automatic_s') # [s] same, but slower for when position change is caused by auto lane offset
+    self.STEP_SLOW = self.OFFSET / self.DUR_SLOW * DT_MDL * LANE_WIDTH_DEFAULT
+    self.AUTO_ENABLE_TRAFFIC_MIN_SPEED = self._op_params.get('LP_auto_auto_minimum_speed_mph') * CV.MPH_TO_MS
+    self.AUTO_TRAFFIC_TIMEOUT_ONCOMING = self._op_params.get('TD_oncoming_timeout_s') # [s] amount of time auto lane position will be kept after last car is seen
+    self.AUTO_TRAFFIC_TIMEOUT_ONGOING = self._op_params.get('TD_ongoing_timeout_s') # [s] amount of time auto lane position will be kept after last car is seen
+    self.AUTO_TRAFFIC_MIN_TIME = self._op_params.get('TD_traffic_presence_cutoff_s') # [s] time an oncoming/ongoing car needs to be observed before it will be taken to indicate traffic
+    self.AUTO_TRAFFIC_MIN_SPEED = self._op_params.get('TD_min_traffic_moving_speed_mph') * CV.MPH_TO_MS # [m/s] need to go faster than this to be considered moving
+    self.AUTO_CUTOFF_STEER_ANGLE = self._op_params.get('TD_reset_steer_angle_deg') # [degrees] auto lane position reset traffic monitoring after this
+    self.TRAFFIC_NEW_DETECT_STEER_CUTOFF = self._op_params.get('TD_cutoff_steer_angle_deg')
   
   def do_auto_enable_traffic(self, ret, v_ego):
     v_ego_diff = apply_deadzone(v_ego - self.AUTO_ENABLE_TRAFFIC_MIN_SPEED, self.AUTO_ENABLE_MIN_SPEED_DEADZONE)
@@ -375,7 +394,7 @@ class LaneOffset:
     
   def update(self, lane_pos=0., lane_width=LANE_WIDTH_DEFAULT, auto_active=False, md=None, sm=None): # 0., 1., -1. = center, left, right
     self._t = sec_since_boot()
-    
+    self.update_op_params()
     if sm is not None:
       if sm.valid.get('carState', False):
         self._cs = sm['carState']
