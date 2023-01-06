@@ -60,6 +60,7 @@ class CarState(CarStateBase):
     self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
     self._params = Params()
     self._op_params = opParams("gm CarState")
+    self.hvb_wattage = FirstOrderFilter(0.0, self._op_params.get('MET_power_meter_smoothing_factor'), DT_CTRL) # [kW]
     self.ui_metrics_params = [int(self._params.get(f'MeasureSlot{i:02d}', encoding="utf8")) for i in range(10)]
     self.update_op_params()
     
@@ -184,7 +185,6 @@ class CarState(CarStateBase):
     self.lead_d_long_brake_lockout_bp, self.lead_d_long_brake_lockout_v = [[6, 10], [1., 0.]] # pass through all cruise braking if follow distance < 6m
     
     self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
-    self.hvb_wattage = FirstOrderFilter(0.0, 1.0, DT_CTRL) # [kW]
     self.hvb_wattage_bp = [0., 53.] # [kW], based on the banned user BZZT's testimony at https://www.gm-volt.com/threads/using-regen-paddle-and-l-drive-mode-summary.222289/
     self.apply_brake_percent = 0. if self.showBrakeIndicator else -1. # for brake percent on ui
     self.vEgo = 0.
@@ -205,10 +205,13 @@ class CarState(CarStateBase):
     self.low_visibility_activated_t = 0.0
     self.slippery_roads_activated_t = 0.0
     
+    self.reboot_in_N_seconds = -1
+    
     self.lka_steering_cmd_counter = 0
     
   
   def update_op_params(self, t = sec_since_boot()):
+    global GAS_PRESSED_THRESHOLD
     self.ONE_PEDAL_MODE_DECEL_V = [self._op_params.get('MADS_OP_low_speed_decel_mss'), self._op_params.get('MADS_OP_high_speed_decel_mss')]
     self.ONE_PEDAL_MAX_DECEL = min(self.ONE_PEDAL_MODE_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
     self.ONE_PEDAL_DECEL_RATE_LIMIT_UP = self._op_params.get('MADS_OP_rate_ramp_up') * DT_CTRL * 4 # m/s^2 per second for increasing braking force
@@ -222,6 +225,11 @@ class CarState(CarStateBase):
     base_BP = [self._op_params.get('coasting_low_speed_over'), self._op_params.get('coasting_high_speed_over')]
     self.coasting_over_speed_vEgo_BP = [[i + 0.1 for i in base_BP], [i + 0.15 for i in base_BP]]
     self.coasting_over_speed_regen_vEgo_BP = [base_BP, [i + 0.05 for i in base_BP]]
+    
+    self.hvb_wattage.update_alpha(self._op_params.get('MET_power_meter_smoothing_factor'))
+    self.one_pedal_mode_regen_paddle_double_press_time = self._op_params.get('MADS_OP_double_press_time_s')
+    self.min_lane_change_speed = self._op_params.get('MADS_steer_pause_speed_mph') * CV.MPH_TO_MS
+    GAS_PRESSED_THRESHOLD = max(1e-5, self._op_params.get('TUNE_LONG_gas_overlap_cutoff') * 0.01)
     
     for i in range(10):
       key_op = f'MET_{i:02d}'
@@ -269,6 +277,7 @@ class CarState(CarStateBase):
     self.coasting_enabled_last = self.coasting_enabled
     if t - self.params_check_last_t >= self.params_check_freq:
       self.params_check_last_t = t
+      self.reboot_in_N_seconds = int(self._params.get("OPParamsRebootInNSeconds", encoding="utf8"))
       self.update_op_params(t)
       set_v_cruise_offset(self._op_params.get('set_speed_offset_mph') if self.cruise_offset_enabled else 0)
       self.coasting_enabled = self._params.get_bool("Coasting")
@@ -278,7 +287,6 @@ class CarState(CarStateBase):
       self.accel_mode = accel_mode
       self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
       if not self.disengage_on_gas:
-        self.min_lane_change_speed = self._op_params.get('MADS_steer_pause_speed_mph') * CV.MPH_TO_MS
         self.MADS_pause_steering_enabled = self._params.get_bool("MADSPauseBlinkerSteering")
         self.one_pedal_mode_enabled = self._params.get_bool("MADSOnePedalMode")
         self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking")
@@ -556,6 +564,7 @@ class CarState(CarStateBase):
     
     ret.slipperyRoadsActive = self.slippery_roads_active
     ret.lowVisibilityActive = self.low_visibility_active
+    ret.rebootInNSeconds = int(self.reboot_in_N_seconds)
     
     if self.iter % 20 == 0:
       if self.slippery_roads_active:

@@ -17,7 +17,6 @@ LaneChangeAlert = log.LateralPlan.LaneChangeAlert
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
 OPPARAMS = opParams(calling_function="events.py global")
-AUTO_LANE_CHANGE_MIN_SPEED_MPH = OPPARAMS.get('LC_nudgeless_minimum_speed_mph', force_update=True)
 
 def stotime(S):
 
@@ -306,6 +305,24 @@ def radar_fault_alert_no_entry(CP: car.CarParams, sm: messaging.SubMaster, metri
     AlertSize.mid, Priority.LOW, VisualAlert.none,
     AudibleAlert.chimeError, .4, 2., 3.)
 
+def reboot_imminent_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  ns = sm['carState'].rebootInNSeconds
+  return Alert(
+    "RESTARTING IN {}!".format(ns),
+    "TAKE CONTROL OF VEHICLE" if ns > 2 else "(sorry about the beeps)",
+    AlertStatus.critical, AlertSize.full,
+    Priority.MID, VisualAlert.steerRequired,
+    AudibleAlert.chimeWarning1, .1, 2., 2.)
+  
+def reboot_imminent_alert_no_entry(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  ns = sm['carState'].rebootInNSeconds
+  return Alert(
+    "Restarting in {}".format(ns),
+    "(sorry about the beeps)",
+    AlertStatus.normal,
+    AlertSize.mid, Priority.LOW, VisualAlert.none,
+    AudibleAlert.chimeError, .4, 2., 3.)
+
 def pre_lane_change(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   alert = sm['lateralPlan'].laneChangeAlert
   direction = sm['lateralPlan'].laneChangeDirection
@@ -321,7 +338,8 @@ def pre_lane_change(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) ->
   elif alert == LaneChangeAlert.nudgelessBlockedTimeout:
     str2 = "(auto lane change timed out)"
   elif alert == LaneChangeAlert.nudgelessBlockedMinSpeed:
-    str2 = "(no auto lane change below {})".format(f"{int(AUTO_LANE_CHANGE_MIN_SPEED_MPH)}mph" if not metric else f"{int(AUTO_LANE_CHANGE_MIN_SPEED_MPH * CV.MPH_TO_KPH)}kph")
+    min_speed = OPPARAMS.get('LC_nudgeless_minimum_speed_mph')
+    str2 = "(no auto lane change below {})".format(f"{int(min_speed)}mph" if not metric else f"{int(min_speed * CV.MPH_TO_KPH)}kph")
   elif alert == LaneChangeAlert.nudgelessBlockedMADS:
     str2 = "(no auto lane change in MADS)"
   elif alert == LaneChangeAlert.nudgelessLongDisabled:
@@ -935,6 +953,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   EventName.radarFault: {
     ET.SOFT_DISABLE: radar_fault_alert,
     ET.NO_ENTRY: radar_fault_alert_no_entry,
+  },
+  
+  EventName.rebootImminent: {
+    ET.SOFT_DISABLE: reboot_imminent_alert,
+    ET.NO_ENTRY: reboot_imminent_alert_no_entry,
   },
 
   # Every frame from the camera should be processed by the model. If modeld

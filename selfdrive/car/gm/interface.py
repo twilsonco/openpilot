@@ -524,6 +524,9 @@ class CarInterface(CarInterfaceBase):
 
     events = self.create_common_events(ret, pcm_enable=False)
     
+    if self.CS.reboot_in_N_seconds >= 0:
+      events.add(EventName.rebootImminent)
+    
     if self.CS.cruiseMain:
       if ret.vEgo < self.CP.minEnableSpeed:
         events.add(EventName.belowEngageSpeed)

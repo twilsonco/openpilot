@@ -112,11 +112,19 @@ class LateralPlanner():
     self.safe_desired_curvature = 0.0
     self.desired_curvature_rate = 0.0
     self.safe_desired_curvature_rate = 0.0
+  
+  def update_op_params(self):
+    global LANE_CHANGE_SPEED_MIN
+    LANE_CHANGE_SPEED_MIN = self._op_params.get('LC_minimum_speed_mph') * CV.MPH_TO_MS
+    self.nudgeless_delay = self._op_params.get('LC_nudgeless_delay_s') # [s] amount of time blinker has to be on before nudgless lane change
+    self.nudgeless_min_speed = self._op_params.get('LC_nudgeless_minimum_speed_mph') * CV.MPH_TO_MS
+    self.MADS_allow_nudgeless_lane_change = self._op_params.get('MADS_steer_allow_nudgeless_lane_change')
 
   def update(self, sm, CP):
     self.second += DT_MDL
     auto_lane_pos_active = self.auto_lane_pos_active
     if self.second > 1.0:
+      self.update_op_params()
       self.use_lanelines = not Params().get_bool("EndToEndToggle")
       self.laneless_mode = int(Params().get("LanelessMode", encoding="utf8"))
       self.lane_pos = float(Params().get("LanePosition", encoding="utf8"))
