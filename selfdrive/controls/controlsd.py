@@ -954,6 +954,7 @@ class Controls:
     
     controlsState.applyGas = int(self.CI.CC.apply_gas)
     controlsState.applyBrake = int(self.CI.CC.apply_brake)
+    controlsState.applySteer = int(self.CI.CC.apply_steer)
     controlsState.brakesAllowed = bool(self.CI.CC.brakes_allowed)
     
     controlsState.distanceTraveledSession = float(self.distance_traveled)

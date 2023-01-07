@@ -65,6 +65,7 @@ class CarController():
     
     self.apply_gas = 0
     self.apply_brake = 0
+    self.apply_steer = 0
     self.brakes_allowed = False
   
   def update_op_params(self):
@@ -93,17 +94,17 @@ class CarController():
       if lkas_enabled:
         new_steer = int(round(actuators.steer * P.STEER_MAX * CS.lane_change_steer_factor))
         P.v_ego = CS.out.vEgo
-        apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
-        self.steer_rate_limited = new_steer != apply_steer
+        self.apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
+        self.steer_rate_limited = new_steer != self.apply_steer
       else:
-        apply_steer = 0
+        self.apply_steer = 0
 
-      self.apply_steer_last = apply_steer
+      self.apply_steer_last = self.apply_steer
       # GM EPS faults on any gap in received message counters. To handle transient OP/Panda safety sync issues at the
       # moment of disengaging, increment the counter based on the last message known to pass Panda safety checks.
       idx = (CS.lka_steering_cmd_counter + 1) % 4
 
-      can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))
+      can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, self.apply_steer, idx, lkas_enabled))
 
     # Gas/regen prep
     if (frame % 4) == 0:
