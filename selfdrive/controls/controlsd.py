@@ -860,13 +860,6 @@ class Controls:
     CC.cruiseControl.accelOverride = float(self.CI.calc_accel_override(CS.aEgo, self.a_target,
                                                                        CS.vEgo, self.v_target))
     
-    CC.onePedalAccelOutput = float(self.CI.CC.one_pedal_decel)
-    CC.onePedalAccelInput = float(self.CI.CC.one_pedal_decel_in)
-    CC.onePedalP = float(self.CI.CC.one_pedal_pid.p)
-    CC.onePedalI = float(self.CI.CC.one_pedal_pid.i)
-    CC.onePedalD = float(self.CI.CC.one_pedal_pid.d)
-    CC.onePedalF = float(self.CI.CC.one_pedal_pid.f)
-    
     CC.hudControl.setSpeed = float(self.v_cruise_kph) * CV.KPH_TO_MS
     CC.hudControl.speedVisible = self.enabled
     CC.hudControl.lanesVisible = self.enabled
@@ -904,6 +897,14 @@ class Controls:
       # send car controls over can
       can_sends = self.CI.apply(CC)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
+    
+    
+    CC.onePedalAccelOutput = float(self.CI.CC.one_pedal_decel)
+    CC.onePedalAccelInput = float(self.CI.CC.one_pedal_decel_in)
+    CC.onePedalP = float(self.CI.CC.one_pedal_pid.p)
+    CC.onePedalI = float(self.CI.CC.one_pedal_pid.i)
+    CC.onePedalD = float(self.CI.CC.one_pedal_pid.d)
+    CC.onePedalF = float(self.CI.CC.one_pedal_pid.f)
 
     force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
                   (self.state == State.softDisabling)
@@ -950,6 +951,9 @@ class Controls:
     controlsState.interactionTimer = int(self.interaction_timer)
     controlsState.interventionTimer = int(self.intervention_timer)
     controlsState.distractionTimer = int(self.distraction_timer)
+    
+    controlsState.applyGas = int(self.CI.CC.apply_gas)
+    controlsState.applyBrake = int(self.CI.CC.apply_brake)
     
     controlsState.distanceTraveledSession = float(self.distance_traveled)
     controlsState.distanceTraveledTotal = float(self.distance_traveled_total)
