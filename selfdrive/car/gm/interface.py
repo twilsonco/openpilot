@@ -167,7 +167,12 @@ class CarInterface(CarInterfaceBase):
         ret.stoppingDecelRate = 2.0  # reach brake quickly after enabling
         ret.vEgoStopping = 0.25
         ret.vEgoStarting = 0.25
-        ret.longitudinalActuatorDelayUpperBound = 0.5
+        ret.longitudinalActuatorDelayUpperBound = 0.5# Tuning
+        ret.longitudinalTuning.kpV = [2.0, 1.5]
+        ret.longitudinalTuning.kiV = [0.72]
+      else:
+        ret.longitudinalTuning.kpV = [2.4, 1.5]
+        ret.longitudinalTuning.kiV = [0.36]
 
     else:  # ASCM, OBD-II harness
       ret.openpilotLongitudinalControl = True
@@ -177,9 +182,9 @@ class CarInterface(CarInterfaceBase):
       # supports stop and go, but initial engage must (conservatively) be above 18mph
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
 
-    # Tuning
-    ret.longitudinalTuning.kpV = [2.4, 1.5]
-    ret.longitudinalTuning.kiV = [0.36]
+      # Tuning
+      ret.longitudinalTuning.kpV = [2.4, 1.5]
+      ret.longitudinalTuning.kiV = [0.36]
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
