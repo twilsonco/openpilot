@@ -61,6 +61,7 @@ def create_radar_can_parser(car_fingerprint, voacc_enabled):
 
   return CANParser(DBC[car_fingerprint]['radar'], signals, checks, CanBus.OBSTACLE)
 
+
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
@@ -69,7 +70,7 @@ class RadarInterface(RadarInterfaceBase):
     self.extended_radar_enabled = Params().get_bool("ExtendedRadar")
     self.voacc_enabled = self.extended_radar_enabled and Params().get_bool("LongRangeLeadsEnabled")
 
-    self.rcp = create_radar_can_parser(CP.carFingerprint, self.voacc_enabled)
+    self.rcp = None if CP.radarOffCan else create_radar_can_parser(CP.carFingerprint, self.voacc_enabled)
 
     self.trigger_msg = LAST_RADAR_MSG
     self.updated_messages = set()
