@@ -43,16 +43,6 @@ def ev_regen_accel(v_ego, ice_on):
   gas_brake_threshold = interp(v_ego, CarControllerParams.EV_GAS_BRAKE_THRESHOLD_BP, CarControllerParams.EV_GAS_BRAKE_THRESHOLD_ICE_V if ice_on else CarControllerParams.EV_GAS_BRAKE_THRESHOLD_V)
   return gas_brake_threshold
 
-def get_chassis_can_parser(CP, canbus):
-  # this function generates lists for signal, messages and initial values
-  signals = [
-      # sig_name, sig_address, default
-      ("FrictionBrakePressure", "EBCMFrictionBrakeStatus", 0),
-  ]
-
-  return CANParser(DBC[CP.carFingerprint]['chassis'], signals, [], canbus.chassis)
-  
-
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
@@ -241,7 +231,7 @@ class CarState(CarStateBase):
         self.ui_metrics_params[i] = metric_param
 
     
-  def update(self, pt_cp, loopback_cp):
+  def update(self, pt_cp, loopback_cp, chassis_cp):
     ret = car.CarState.new_message()
     
     t = sec_since_boot()
@@ -295,6 +285,7 @@ class CarState(CarStateBase):
       
     self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
     ret.gearShifter = self.gear_shifter
+    ret.brakePressure = chassis_cp.vl["EBCMFrictionBrakeStatus"]["FrictionBrakePressure"]
     ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"] != 0 
     ret.brakePressed = ret.brakePressed and pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"] >= 15
     if ret.brakePressed:
@@ -673,6 +664,16 @@ class CarState(CarStateBase):
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.POWERTRAIN)
+  
+  @staticmethod
+  def get_chassis_can_parser(CP):
+    # this function generates lists for signal, messages and initial values
+    signals = [
+        # sig_name, sig_address, default
+        ("FrictionBrakePressure", "EBCMFrictionBrakeStatus", 0),
+    ]
+
+    return CANParser(DBC[CP.carFingerprint]['chassis'], signals, [], CanBus.CHASSIS)
 
   @staticmethod
   def get_loopback_can_parser(CP):
