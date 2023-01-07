@@ -65,6 +65,7 @@ class CarController():
     
     self.apply_gas = 0
     self.apply_brake = 0
+    self.brakes_allowed = False
   
   def update_op_params(self):
     global ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_V, ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_V, ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP, ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_BP
@@ -201,7 +202,7 @@ class CarController():
           
         elif CS.coasting_enabled and lead_long_brake_lockout_factor < 1.0 \
             and not CS.slippery_roads_active and not CS.low_visibility_active:
-          if CS.coasting_long_plan in COAST_SOURCES and self.apply_gas < P.ZERO_GAS or self.apply_brake > 0.0:
+          if CS.coasting_long_plan in COAST_SOURCES and (self.apply_gas < P.ZERO_GAS or self.apply_brake > 0.0):
             check_speed_ms = (CS.speed_limit if CS.speed_limit_active and CS.speed_limit < CS.v_cruise_kph else CS.v_cruise_kph) * CV.KPH_TO_MS
             if self.apply_brake > 0.0:
               coasting_over_speed_vEgo_BP = [
@@ -226,7 +227,7 @@ class CarController():
       self.apply_brake = int(round(self.apply_brake))
     
     
-    brakes_allowed = any([CS.long_active, 
+    self.brakes_allowed = any([CS.long_active, 
                           CS.out.onePedalModeActive, 
                           CS.MADS_lead_braking_active]
                         ) and \
@@ -235,11 +236,13 @@ class CarController():
                             CS.out.gearShifter in ['drive','low'],
                             not CS.out.brakePressed])
     
-    if not CS.cruiseMain or CS.out.brakePressed or CS.out.gearShifter not in ['drive','low']:
+    if any([not CS.cruiseMain,
+            CS.out.brakePressed,
+            CS.out.gearShifter not in ['drive','low'],
+            not enabled,
+            CS.out.gas >= GAS_PRESSED_THRESHOLD]):
       self.apply_gas = P.MAX_ACC_REGEN
-    if not enabled or CS.out.gas >= GAS_PRESSED_THRESHOLD:
-      self.apply_gas = P.MAX_ACC_REGEN
-    if not brakes_allowed:
+    if not self.brakes_allowed:
       self.apply_brake = 0
 
     if CS.showBrakeIndicator:
@@ -276,7 +279,7 @@ class CarController():
         CS.autoHoldActivated = True
 
       else:
-        if not brakes_allowed:
+        if not self.brakes_allowed:
           at_full_stop = False
           near_stop = False
           car_stopping = False
