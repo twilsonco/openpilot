@@ -46,7 +46,7 @@ class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
     if CarState is not None:
-      self.cp_chassis = self.CS.get_can_parser(CP)
+      self.cp_chassis = self.CS.get_chassis_can_parser(CP)
     
   params_check_last_t = 0.
   params_check_freq = 0.1 # check params at 10Hz

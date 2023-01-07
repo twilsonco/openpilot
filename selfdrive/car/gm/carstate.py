@@ -672,8 +672,12 @@ class CarState(CarStateBase):
         # sig_name, sig_address, default
         ("FrictionBrakePressure", "EBCMFrictionBrakeStatus", 0),
     ]
+    
+    checks = [
+      ("EBCMFrictionBrakeStatus", 1),
+    ]
 
-    return CANParser(DBC[CP.carFingerprint]['chassis'], signals, [], CanBus.CHASSIS)
+    return CANParser(DBC[CP.carFingerprint]['chassis'], signals, checks, CanBus.CHASSIS)
 
   @staticmethod
   def get_loopback_can_parser(CP):
