@@ -155,7 +155,7 @@ class CarInterface(CarInterfaceBase):
       ret.radarOffCan = True  # no radar
       ret.pcmCruise = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
-      ret.minEnableSpeed = 5 * CV.KPH_TO_MS
+      ret.minEnableSpeed = (5 * CV.KPH_TO_MS) if candidate != CAR.BOLT_EUV else 0.0
 
       if experimental_long:
         ret.pcmCruise = False
