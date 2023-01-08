@@ -38,7 +38,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       self.prompt('Would you like to add your Discord username for easier crash debugging for the fork owner?')
       self.prompt('Your username is only used for reaching out if a crash occurs.')
 
-      username_choice = self.input_with_options(['Y', 'N', 'don\'t ask again'], default='n')[0]
+      username_choice = self.input_with_options(['Y', 'N', 'don\'t ask again'], default=2)[0]
       if username_choice == 0:
         self.prompt('Enter a unique identifer/Discord username:')
         username = ''
