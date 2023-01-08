@@ -96,7 +96,7 @@ class CarState(CarStateBase):
     set_v_cruise_offset(self._op_params.get('set_speed_offset_mph', force_update=True) if self.cruise_offset_enabled else 0)
     self.autoHold = self._params.get_bool("GMAutoHold")
     self.MADS_enabled = self._params.get_bool("MADSEnabled")
-    self.disengage_on_gas = not self.MADS_enabled or not Params().get_bool("DisableDisengageOnGas")
+    self.disengage_on_gas = not self.MADS_enabled and not Params().get_bool("DisableDisengageOnGas")
     self.autoHoldActive = False
     self.autoHoldActivated = False
     self.regen_paddle_pressed = False
