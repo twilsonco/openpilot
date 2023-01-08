@@ -45,6 +45,8 @@ def get_steer_feedforward_erf(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSE
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
+    if CarState is not None:
+      self.cp_chassis = self.CS.get_chassis_can_parser(CP)
     
   params_check_last_t = 0.
   params_check_freq = 0.1 # check params at 10Hz
@@ -447,8 +449,9 @@ class CarInterface(CarInterfaceBase):
   def update(self, c, can_strings):
     self.cp.update_strings(can_strings)
     self.cp_loopback.update_strings(can_strings)
+    self.cp_chassis.update_strings(can_strings)
 
-    ret = self.CS.update(self.cp, self.cp_loopback)
+    ret = self.CS.update(self.cp, self.cp_loopback, self.cp_chassis)
 
     t = sec_since_boot()
 

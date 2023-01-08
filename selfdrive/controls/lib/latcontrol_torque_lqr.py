@@ -122,13 +122,17 @@ class LatControlTorqueLQR():
            (error <= 0 and (control >= -steers_max or i > 0.0)):
           self.i_lqr = i
 
-      ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY * self.roll_k
-      ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * self.roll_k
+      ff_roll = -math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY * self.roll_k
+      ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo)
       friction_compensation = interp(desired_lateral_jerk, 
                                      [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], 
                                      [-self.friction, self.friction])
-      ff += friction_compensation
       ff *= self._k_f
+      lqr_log.f = ff
+      lqr_log.friction = friction_compensation
+      lqr_log.rollCompensation = ff_roll
+      ff += friction_compensation
+      ff += ff_roll
       
       output_steer = lqr_output + self.i_lqr + ff
       output_steer = clip(output_steer, -steers_max, steers_max)
