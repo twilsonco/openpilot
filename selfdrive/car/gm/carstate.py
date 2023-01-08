@@ -138,7 +138,7 @@ class CarState(CarStateBase):
     self.gasPressed = False
     
     self.one_pedal_mode_enabled = self._params.get_bool("MADSOnePedalMode") and self.MADS_enabled
-    self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking")
+    self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking") and self.MADS_enabled
     self.MADS_lead_braking_active = False
     self.one_pedal_dl_coasting_enabled = True
     self.one_pedal_mode_active = self.one_pedal_mode_enabled
