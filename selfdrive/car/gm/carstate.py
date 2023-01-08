@@ -278,8 +278,8 @@ class CarState(CarStateBase):
       self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
       if not self.disengage_on_gas:
         self.MADS_pause_steering_enabled = self._params.get_bool("MADSPauseBlinkerSteering")
-        self.one_pedal_mode_enabled = self._params.get_bool("MADSOnePedalMode")
-        self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking")
+        self.one_pedal_mode_enabled = self._params.get_bool("MADSOnePedalMode") and self.MADS_enabled
+        self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking") and self.MADS_enabled
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
       
@@ -380,13 +380,13 @@ class CarState(CarStateBase):
         cloudlog.info("Deactivating temporary one-pedal mode with gas press")
       
       if regen_paddle_pressed and not self.regen_paddle_pressed:
-        if t - self.regen_paddle_pressed_last_t <= self.one_pedal_mode_regen_paddle_double_press_time:
+        if self.one_pedal_mode_enabled and t - self.regen_paddle_pressed_last_t <= self.one_pedal_mode_regen_paddle_double_press_time:
           self.one_pedal_mode_active = not self.one_pedal_mode_active
           self.one_pedal_mode_temporary = False
           put_nonblocking("MADSOnePedalMode", str(int(self.one_pedal_mode_active))) # persists across drives
           cloudlog.info(f"Toggling one-pedal mode with double-regen press. New value: {self.one_pedal_mode_active}")
         self.regen_paddle_pressed_last_t = t
-      elif not self.one_pedal_mode_active and regen_paddle_pressed and self.regen_paddle_pressed \
+      elif self.one_pedal_mode_enabled and not self.one_pedal_mode_active and regen_paddle_pressed and self.regen_paddle_pressed \
           and ((ret.vEgo < self.REGEN_PADDLE_STOP_SPEED and self.v_ego_prev >= self.REGEN_PADDLE_STOP_SPEED) \
             or self.regen_paddle_under_speed_pressed_time >= self.REGEN_PADDLE_STOP_PRESS_TIME):
         self.one_pedal_mode_active = True
@@ -410,8 +410,7 @@ class CarState(CarStateBase):
         and (self.a_ego_filtered.x <= self.steer_pause_a_ego_min \
           or self.vEgo <= self.min_steer_speed * 0.5) \
         and not self.long_active \
-        and (self.one_pedal_mode_active \
-          or (self.lkaEnabled and self.cruiseMain and self.MADS_enabled)) \
+        and (self.lkaEnabled and self.cruiseMain and self.MADS_enabled) \
         and self.MADS_pause_steering_enabled \
         and not self.steer_unpaused:
       lane_change_steer_factor = 0.0
