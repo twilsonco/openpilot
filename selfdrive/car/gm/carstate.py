@@ -543,9 +543,6 @@ class CarState(CarStateBase):
         self.cruise_enabled_neg_accel_ramp_v[0] = 0.
       self.cruise_enabled_last_t = t
       
-    if ret.doorOpen or ret.seatbeltUnlatched:
-      self.MADS_lead_braking_enabled = False
-      
     self.cruise_enabled_last = cruise_enabled
     ret.cruiseMain = self.cruiseMain
     
