@@ -196,13 +196,14 @@ class CarController():
             self.one_pedal_apply_brake = 0.0
           
           
-        if not CS.MADS_lead_braking_enabled \
-            or self.one_pedal_apply_brake > self.apply_brake_out \
-            or CS.coasting_lead_d < 0.0:
-          self.apply_brake_out = self.one_pedal_apply_brake
-          CS.MADS_lead_braking_active = False
-        if CS.MADS_lead_braking_active:
-          self.lead_accel_last_t = t
+          if self.one_pedal_apply_brake > 0.0 \
+              and (not CS.MADS_lead_braking_enabled \
+              or self.one_pedal_apply_brake > self.apply_brake_out \
+              or CS.coasting_lead_d < 0.0):
+            self.apply_brake_out = self.one_pedal_apply_brake
+            CS.MADS_lead_braking_active = False
+          if CS.MADS_lead_braking_active:
+            self.lead_accel_last_t = t
         
         if enabled:
           if CS.coasting_enabled and lead_long_brake_lockout_factor < 1.0 \
@@ -232,23 +233,24 @@ class CarController():
         self.apply_brake_out = int(round(self.apply_brake_out))
     
     
-    self.brakes_allowed = any([CS.long_active or enabled, 
-                          CS.out.onePedalModeActive, 
-                          CS.MADS_lead_braking_active]
-                        ) and \
-                      all([CS.out.gas < 1e-5,
-                            CS.out.cruiseMain,
-                            CS.out.gearShifter in ['drive','low'],
-                            not CS.out.brakePressed])
-    
-    if any([not CS.cruiseMain,
-            CS.out.brakePressed,
-            CS.out.gearShifter not in ['drive','low'],
-            not enabled,
-            CS.out.gas >= GAS_PRESSED_THRESHOLD]):
-      self.apply_gas = P.MAX_ACC_REGEN
-    if not self.brakes_allowed:
-      self.apply_brake_out = 0
+      self.brakes_allowed = any([CS.long_active,
+                            enabled, 
+                            CS.out.onePedalModeActive, 
+                            CS.MADS_lead_braking_active]
+                          ) and \
+                        all([CS.out.gas < 1e-5,
+                              CS.out.cruiseMain,
+                              CS.out.gearShifter in ['drive','low'],
+                              not CS.out.brakePressed])
+      
+      if any([not CS.cruiseMain,
+              CS.out.brakePressed,
+              CS.out.gearShifter not in ['drive','low'],
+              not enabled,
+              CS.out.gas >= GAS_PRESSED_THRESHOLD]):
+        self.apply_gas = P.MAX_ACC_REGEN
+      if not self.brakes_allowed:
+        self.apply_brake_out = 0
 
     if CS.showBrakeIndicator:
       CS.apply_brake_percent = 0.
