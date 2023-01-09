@@ -811,7 +811,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   else{
     s->scene.one_pedal_touch_rect = {1,1,1,1};
     s->scene.maxspeed_touch_rect = rect;
-    const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
+    const bool is_cruise_set = s->scene.controls_state.getActive() && maxspeed != 0 && maxspeed != SET_SPEED_NA;
     if (is_cruise_set && !s->scene.is_metric) { maxspeed *= 0.6225; }
 
     ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(int(-s->scene.one_pedal_fade * 100.)), 30.);

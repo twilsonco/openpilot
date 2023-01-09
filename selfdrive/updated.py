@@ -376,7 +376,7 @@ def main():
     wait_helper.ready_event.clear()
 
     # Don't run updater while onroad or if the time's wrong
-    time_wrong = datetime.datetime.utcnow().year < 2019
+    time_wrong = datetime.datetime.utcnow().year < 2023
     is_onroad = not params.get_bool("IsOffroad")
     if is_onroad or time_wrong:
       wait_helper.sleep(30)
