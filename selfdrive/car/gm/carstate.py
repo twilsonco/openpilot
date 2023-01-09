@@ -390,13 +390,19 @@ class CarState(CarStateBase):
           self.one_pedal_mode_temporary = False
           put_nonblocking("MADSOnePedalMode", str(int(self.one_pedal_mode_active))) # persists across drives
           cloudlog.info(f"Toggling one-pedal mode with double-regen press. New value: {self.one_pedal_mode_active}")
-        self.regen_paddle_pressed_last_t = t
-      elif self.one_pedal_mode_enabled and not self.one_pedal_mode_active and regen_paddle_pressed and self.regen_paddle_pressed \
-          and ((ret.vEgo < self.REGEN_PADDLE_STOP_SPEED and self.v_ego_prev >= self.REGEN_PADDLE_STOP_SPEED) \
+      elif self.one_pedal_mode_enabled \
+          and not self.one_pedal_mode_active \
+          and regen_paddle_pressed \
+          and self.regen_paddle_pressed \
+          and ((ret.vEgo < self.REGEN_PADDLE_STOP_SPEED \
+            and self.v_ego_prev >= self.REGEN_PADDLE_STOP_SPEED) \
             or self.regen_paddle_under_speed_pressed_time >= self.REGEN_PADDLE_STOP_PRESS_TIME):
         self.one_pedal_mode_active = True
         self.one_pedal_mode_temporary = True
         cloudlog.info("Activating temporary one-pedal mode")
+      
+      if regen_paddle_pressed:
+        self.regen_paddle_pressed_last_t = t
       
       if regen_paddle_pressed and self.regen_paddle_pressed and ret.vEgo < self.REGEN_PADDLE_STOP_SPEED:
         self.regen_paddle_under_speed_pressed_time += DT_CTRL
