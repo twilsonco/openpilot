@@ -177,7 +177,8 @@ class Controls:
     self.v_cruise_kph_last = 0
     self.v_cruise_last_changed = 0.
     self.stock_speed_adjust = not params.get_bool("ReverseSpeedAdjust")
-    self.MADS_lead_braking_enabled = params.get_bool("MADSLeadBraking")
+    self.MADS_enabled = Params().get_bool("MADSEnabled")
+    self.MADS_lead_braking_enabled = self.MADS_enabled and params.get_bool("MADSLeadBraking")
     self.accel_modes_enabled = params.get_bool("AccelModeButton")
     self.mismatch_counter = 0
     self.can_error_counter = 0
@@ -352,7 +353,7 @@ class Controls:
       self.interaction_timer = t - self.interaction_last_t
       self.intervention_timer = t - self.intervention_last_t
       self.distraction_timer = t - self.distraction_last_t
-      self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking")
+      self.MADS_lead_braking_enabled = self.MADS_enabled and self._params.get_bool("MADSLeadBraking")
       self.enabled_last = self.enabled
       self.params_check_last_t = t
       if t - self.params_write_last_t > self.params_write_freq:
@@ -771,7 +772,7 @@ class Controls:
       # accel PID loop
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS, self.CI)
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
-      actuators.accel = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits, t_since_plan, MADS_lead_braking_enabled=self.CI.CS.MADS_lead_braking_enabled)
+      actuators.accel = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits, t_since_plan, MADS_lead_braking_enabled=self.MADS_lead_braking_enabled)
       
       # compute pitch-compensated accel
       if self.sm.updated['liveParameters']:
@@ -932,7 +933,7 @@ class Controls:
     controlsState.enabled = self.enabled
     controlsState.active = self.active
     controlsState.latActive = self.lat_active
-    controlsState.madsEnabled = self.CI.MADS_enabled and not self.active and self.CI.CS.cruiseMain
+    controlsState.madsEnabled = self.MADS_enabled and not self.active and self.CI.CS.cruiseMain
     controlsState.curvature = curvature
     controlsState.state = self.state
     controlsState.engageable = not self.events.any(ET.NO_ENTRY)

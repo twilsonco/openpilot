@@ -137,8 +137,8 @@ class CarState(CarStateBase):
     self.last_pause_long_on_gas_press_t = 0.
     self.gasPressed = False
     
-    self.one_pedal_mode_enabled = self._params.get_bool("MADSOnePedalMode") and self.MADS_enabled
-    self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking") and self.MADS_enabled
+    self.one_pedal_mode_enabled = self.MADS_enabled and self._params.get_bool("MADSOnePedalMode")
+    self.MADS_lead_braking_enabled = self.MADS_enabled and self._params.get_bool("MADSLeadBraking")
     self.MADS_lead_braking_active = False
     self.one_pedal_dl_coasting_enabled = True
     self.one_pedal_mode_active = self.one_pedal_mode_enabled
@@ -278,8 +278,8 @@ class CarState(CarStateBase):
       self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
       if not self.disengage_on_gas:
         self.MADS_pause_steering_enabled = self._params.get_bool("MADSPauseBlinkerSteering")
-        self.one_pedal_mode_enabled = self._params.get_bool("MADSOnePedalMode") and self.MADS_enabled
-        self.MADS_lead_braking_enabled = self._params.get_bool("MADSLeadBraking") and self.MADS_enabled
+        self.one_pedal_mode_enabled = self.MADS_enabled and self._params.get_bool("MADSOnePedalMode")
+        self.MADS_lead_braking_enabled = self.MADS_enabled and self._params.get_bool("MADSLeadBraking")
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
       
