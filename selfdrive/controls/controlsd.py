@@ -725,7 +725,7 @@ class Controls:
     if self.active:
       self.current_alert_types.append(ET.WARNING)
       
-    self.lat_active = self.active or ((self.CI.CS.lkaEnabled and self.CI.CS.cruiseMain and self.CI.MADS_enabled) and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED)
+    self.lat_active = self.CI.CS.lkaEnabled and (self.active or ((self.CI.CS.cruiseMain and self.MADS_enabled) and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED))
 
     # Check if openpilot is engaged
     self.enabled = self.active or self.state == State.preEnabled
