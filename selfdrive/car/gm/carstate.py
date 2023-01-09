@@ -108,7 +108,8 @@ class CarState(CarStateBase):
     self.cruise_enabled_neg_accel_ramp_v = [0., 1.]
     self.engineRPM = 0
     self.lastAutoHoldTime = 0.0
-    self.time_in_drive = 0.0
+    self.time_in_drive_autohold = 0.0
+    self.time_in_drive_one_pedal = 0.0
     self.MADS_long_min_time_in_drive = 3.0 # [s]
     self.params_check_last_t = 0.
     self.params_check_freq = 0.25 # check params at 10Hz
@@ -299,11 +300,13 @@ class CarState(CarStateBase):
     
     if ret.gearShifter in ['drive','low']:
       if ret.brakePressed:
-        self.time_in_drive = self.MADS_long_min_time_in_drive
+        self.time_in_drive_autohold = self.MADS_long_min_time_in_drive
       else:
-        self.time_in_drive += DT_CTRL
+        self.time_in_drive_autohold += DT_CTRL
+      self.time_in_drive_one_pedal += DT_CTRL
     else:
-      self.time_in_drive = 0.0
+      self.time_in_drive_autohold = 0.0
+      self.time_in_drive_one_pedal = 0.0
     
     
     if self.showBrakeIndicator:
@@ -551,7 +554,7 @@ class CarState(CarStateBase):
     self.cruise_enabled_last = cruise_enabled
     ret.cruiseMain = self.cruiseMain
     
-    ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active and self.time_in_drive >= self.MADS_long_min_time_in_drive
+    ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active and self.time_in_drive_one_pedal >= self.MADS_long_min_time_in_drive
     ret.onePedalModeTemporary = self.one_pedal_mode_temporary
     ret.madsLeadBrakingActive = self.MADS_lead_braking_active and ret.vEgo > 0.02 and ret.gearShifter in ['drive','low'] and ret.gas < 1e-5 and not ret.brakePressed and ret.cruiseMain
     
