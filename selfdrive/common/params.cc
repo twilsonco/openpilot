@@ -255,6 +255,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"AccelModeButton", PERSISTENT},
     {"AccelMode", PERSISTENT},
     {"Coasting", PERSISTENT},
+    {"CoastingActive", PERSISTENT},
     {"CoastingDL", PERSISTENT},
     {"WeatherDisplayMode", PERSISTENT},
     {"WeatherDisplayEnabled", PERSISTENT},

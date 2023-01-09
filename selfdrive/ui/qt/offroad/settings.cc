@@ -163,7 +163,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   this));
   toggles.append(new ParamControl("Coasting",
                                   "[GM] Coasting (tap me)",
-                                  "OP will allow the car to coast above the set speed rather than use engine/regen/friction braking. If you also have the \"Brake indicator\" toggle enabled, you can toggle coasting while driving by tapping the brake indicator, but you can only disable coasting while driving if you're traveling below your set speed (or at any speed if you have the \"Engine/regen braking\" toggle enabled).",
+                                  "OP will allow the car to coast above the set speed rather than use engine/regen/friction braking. If this toggle is enabled, then you can toggle coasting while driving by tapping the on-screen max speed indicator, but you can only disable coasting while driving if you're traveling below your set speed (or at any speed if you have the \"Engine/regen braking\" toggle enabled).",
                                   "../assets/offroad/icon_car_pedal.png",
                                   this));
   toggles.append(new ParamControl("CoastingBrakeOverSpeed",

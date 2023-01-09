@@ -119,7 +119,8 @@ class CarState(CarStateBase):
     self.accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco
     self.accel_mode_change_last_t = self.sessionInitTime
     
-    self.coasting_enabled = self._params.get_bool("Coasting")
+    self.coasting_allowed = self._params.get_bool("Coasting")
+    self.coasting_enabled = self.coasting_allowed and self._params.get_bool("CoastingActive")
     self.coasting_dl_enabled = self.is_ev and self._params.get_bool("CoastingDL")
     self.coasting_enabled_last = self.coasting_enabled
     self.no_friction_braking = self._params.get_bool("RegenBraking")
@@ -270,7 +271,8 @@ class CarState(CarStateBase):
       self.reboot_in_N_seconds = int(self._params.get("OPParamsRebootInNSeconds", encoding="utf8"))
       self.update_op_params(t)
       set_v_cruise_offset(self._op_params.get('set_speed_offset_mph') if self.cruise_offset_enabled else 0)
-      self.coasting_enabled = self._params.get_bool("Coasting")
+      self.coasting_allowed = self._params.get_bool("Coasting")
+      self.coasting_enabled = self.coasting_allowed and self._params.get_bool("CoastingActive")
       accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco
       if accel_mode != self.accel_mode:
         self.accel_mode_change_last_t = t
@@ -515,19 +517,23 @@ class CarState(CarStateBase):
     ret.observedEVDrivetrainEfficiency = self.observed_efficiency.x
     
     
-    if self.is_ev and self.coasting_dl_enabled:
-      if not self.coasting_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.DRIVE:
-        self.coasting_enabled = True
-        put_nonblocking("Coasting", "1")
-      elif self.coasting_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.LOW and (self.vEgo <= self.v_cruise_kph * CV.KPH_TO_MS or self.no_friction_braking):
-        self.coasting_enabled = False
-        put_nonblocking("Coasting", "0")
-    else:
-      if self.coasting_enabled != self.coasting_enabled_last:
-        if not self.coasting_enabled and self.vEgo > self.v_cruise_kph * CV.KPH_TO_MS and not self.no_friction_braking:
-          # prevent disable of coasting if over set speed and friction brakes not disabled.
-          put_nonblocking("Coasting", "1")
+    if self.coasting_allowed and self.gear_shifter in ['drive', 'low'] and self.long_active:
+      if self.is_ev and self.coasting_dl_enabled:
+        if not self.coasting_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.DRIVE:
           self.coasting_enabled = True
+          put_nonblocking("CoastingActive", "1")
+        elif self.coasting_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.LOW and (self.vEgo <= self.v_cruise_kph * CV.KPH_TO_MS or self.no_friction_braking):
+          self.coasting_enabled = False
+          put_nonblocking("CoastingActive", "0")
+      else:
+        if self.coasting_enabled != self.coasting_enabled_last:
+          if not self.coasting_enabled and self.vEgo > self.v_cruise_kph * CV.KPH_TO_MS and not self.no_friction_braking:
+            # prevent disable of coasting if over set speed and friction brakes not disabled.
+            put_nonblocking("CoastingActive", "1")
+            self.coasting_enabled = True
+    else:
+      self.coasting_enabled = False
+      
     ret.coastingActive = self.coasting_enabled
 
     

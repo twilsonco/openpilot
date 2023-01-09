@@ -200,7 +200,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     && QUIState::ui_state.scene.maxspeed_touch_rect.ptInRect(e->x(), e->y())
     && QUIState::ui_state.scene.one_pedal_fade <= 0.)
   {
-    Params().putBool("Coasting", !Params().getBool("Coasting"));
+    Params().putBool("CoastingActive", !Params().getBool("CoastingActive"));
     return;
   }
   
