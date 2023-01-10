@@ -4,6 +4,7 @@ import math
 from numbers import Number
 
 from cereal import car, log
+from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp, mean
 from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
@@ -193,7 +194,7 @@ class Controls:
     self.a_target = 0.0
     self.pitch = 0.0
     self.pitch_accel_deadzone = 0.01 # [radians] ≈ 1% grade
-    self.k_mean = 0.0
+    self.k_mean = FirstOrderFilter(0., 20, DT_CTRL)
     
     self.slippery_roads_activated = False
     self.slippery_roads = False
@@ -626,12 +627,11 @@ class Controls:
         self.CI.CS.altitude = self.sm['gpsLocationExternal'].altitude
       if self.sm.updated['lateralPlan'] and len(self.sm['lateralPlan'].curvatures) > 0:
         k_mean = mean(self.sm['lateralPlan'].curvatures)
-        if abs(k_mean) > abs(self.k_mean):
-          self.k_mean = k_mean
+        if abs(k_mean) > abs(self.k_mean.x):
+          self.k_mean.x = k_mean
         else:
-          alpha = 0.0005
-          self.k_mean = alpha * k_mean + (1.0 - alpha) * self.k_mean
-        self.CI.CC.params.future_curvature = self.k_mean
+          self.k_mean.update(k_mean)
+        self.CI.CC.params.future_curvature = self.k_mean.x
       
       self.CI.CS.speed_limit_active = (self.sm['longitudinalPlan'].speedLimitControlState == log.LongitudinalPlan.SpeedLimitControlState.active)
       if self.CI.CS.speed_limit_active:
@@ -788,7 +788,8 @@ class Controls:
                                                                              t_since_plan)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.lat_active, 
                                                                              CS, self.CP, self.VM, params, 
-                                                                             desired_curvature, desired_curvature_rate, self.sm['liveLocationKalman'])
+                                                                             desired_curvature, desired_curvature_rate, self.sm['liveLocationKalman'],
+                                                                             mean_curvature=self.k_mean.x)
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0 and self.active:
