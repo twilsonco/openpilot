@@ -18,8 +18,11 @@ class LatControlPID():
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
     self._op_params = opParams(calling_function="latcontrol_pid.py")
     self.roll_k = 1.0
+    self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
 
   def update_op_params(self):
+    if not self.tune_override:
+      return
     bp = [i * CV.MPH_TO_MS for i in [self._op_params.get(f"TUNE_LAT_PID_{s}s_mph") for s in ['l','h']]]
     self.pid._k_p = [bp, [self._op_params.get(f"TUNE_LAT_PID_kp_{s}s") for s in ['l','h']]]
     self.pid._k_i = [bp, [self._op_params.get(f"TUNE_LAT_PID_ki_{s}s") for s in ['l','h']]]
