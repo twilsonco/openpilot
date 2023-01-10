@@ -142,7 +142,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           v = '{} ... {}'.format(str(v)[:30], str(v)[-15:])
         values_list.append(v)
       
-      static = [COLORS.INFO + 's' + COLORS.ENDC if self.op_params.fork_params[k].static else 'l' for k in self.params]
+      static = [COLORS.INFO + 's' + COLORS.ENDC if self.op_params.fork_params[k].static or self.op_params.fork_params[k].fake_live else 'l' for k in self.params]
 
       to_print = []
       if self.section == '':
@@ -277,17 +277,17 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       param_info = self.op_params.fork_params[chosen_key]
 
       old_value = self.params[chosen_key]
-      if param_info.live:
-        self.info2('Chosen parameter: {}{} (live every 1s)'.format(chosen_key, COLORS.BASE(207)), sleep_time=0)
-      elif not param_info.static:
-        self.info2('Chosen parameter: {}{} (live every 10s)'.format(chosen_key, COLORS.BASE(207)), sleep_time=0)
-      else:
+      if param_info.static or param_info.fake_live:
         self.info2('Chosen parameter: {}{}\n(refresh on startup)'.format(chosen_key, COLORS.BASE(207)), sleep_time=0)
+      elif param_info.live:
+        self.info2('Chosen parameter: {}{} (live every 1s)'.format(chosen_key, COLORS.BASE(207)), sleep_time=0)
+      else:
+        self.info2('Chosen parameter: {}{} (live every 10s)'.format(chosen_key, COLORS.BASE(207)), sleep_time=0)
 
       to_print = []
       if param_info.has_description:
         to_print.append(COLORS.OKGREEN + '>>  {}'.format('\n    '.join(wrap(param_info.description, width=50, initial_indent=f'Description: '))) + COLORS.ENDC)
-      if param_info.static:
+      if param_info.static or param_info.fake_live:
         to_print.append(COLORS.BLUE_GREEN + '>>  A car or openpilot restart is required\n    for changes to this parameter!' + COLORS.ENDC)
       elif not param_info.live:
         to_print.append(COLORS.WARNING + '>>  Changes take effect within 10 seconds for this parameter!' + COLORS.ENDC)
