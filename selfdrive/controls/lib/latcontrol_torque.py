@@ -2,6 +2,7 @@ import math
 from selfdrive.controls.lib.pid import PIDController
 from common.numpy_fast import interp
 from common.op_params import opParams
+from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from cereal import log
@@ -33,7 +34,9 @@ class LatControlTorque(LatControl):
     self.friction = CP.lateralTuning.torque.friction
     self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
     self._op_params = opParams(calling_function="latcontrol_torque.py")
-    self.roll_k = 1.0
+    self.roll_k = 0.5
+    self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp', force_update=True)]
+    self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v', force_update=True)
   
   def update_op_params(self):
     self.use_steering_angle = self._op_params.get('TUNE_LAT_TRX_use_steering_angle')
@@ -43,6 +46,8 @@ class LatControlTorque(LatControl):
     self.pid.k_f = self._op_params.get('TUNE_LAT_TRX_kf')
     self.friction = self._op_params.get('TUNE_LAT_TRX_friction')
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
+    self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp')]
+    self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v')
 
   def reset(self):
     super().reset()
@@ -64,7 +69,7 @@ class LatControlTorque(LatControl):
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       actual_lateral_accel = actual_curvature * CS.vEgo**2
 
-      low_speed_factor = interp(CS.vEgo, [10., 25.], [80., 50.])
+      low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
