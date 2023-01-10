@@ -101,6 +101,7 @@ class CarState(CarStateBase):
     self.autoHoldActivated = False
     self.regen_paddle_pressed = False
     self.regen_paddle_pressed_last_t = 0.0
+    self.regen_paddle_released_last_t = 0.0
     self.cruiseMain = False
     self.cruise_enabled_last_t = 0.
     self.cruise_enabled_last = False
@@ -385,12 +386,13 @@ class CarState(CarStateBase):
         cloudlog.info("Deactivating temporary one-pedal mode with gas press")
       
       if regen_paddle_pressed and not self.regen_paddle_pressed:
-        if self.one_pedal_mode_enabled and t - self.regen_paddle_pressed_last_t <= self.one_pedal_mode_regen_paddle_double_press_time:
+        if self.MADS_enabled and t - self.regen_paddle_pressed_last_t <= self.one_pedal_mode_regen_paddle_double_press_time:
           self.one_pedal_mode_active = not self.one_pedal_mode_active
           self.one_pedal_mode_temporary = False
           put_nonblocking("MADSOnePedalMode", str(int(self.one_pedal_mode_active))) # persists across drives
           cloudlog.info(f"Toggling one-pedal mode with double-regen press. New value: {self.one_pedal_mode_active}")
-      elif self.one_pedal_mode_enabled \
+        self.regen_paddle_pressed_last_t = t
+      elif self.MADS_enabled \
           and not self.one_pedal_mode_active \
           and regen_paddle_pressed \
           and self.regen_paddle_pressed \
@@ -401,8 +403,8 @@ class CarState(CarStateBase):
         self.one_pedal_mode_temporary = True
         cloudlog.info("Activating temporary one-pedal mode")
       
-      if regen_paddle_pressed:
-        self.regen_paddle_pressed_last_t = t
+      if not regen_paddle_pressed and self.regen_paddle_pressed:
+        self.regen_paddle_released_last_t = t
       
       if regen_paddle_pressed and self.regen_paddle_pressed and ret.vEgo < self.REGEN_PADDLE_STOP_SPEED:
         self.regen_paddle_under_speed_pressed_time += DT_CTRL
