@@ -286,7 +286,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
 
       to_print = []
       if param_info.has_description:
-        to_print.append(COLORS.OKGREEN + '>>  {}'.format('\n    '.join(wrap(param_info.description, width=40, initial_indent=f'Description: '))) + COLORS.ENDC)
+        to_print.append(COLORS.OKGREEN + '>>  {}'.format('\n    '.join(wrap(param_info.description, width=50, initial_indent=f'Description: '))) + COLORS.ENDC)
       if param_info.static:
         to_print.append(COLORS.BLUE_GREEN + '>>  A car or openpilot restart is required\n    for changes to this parameter!' + COLORS.ENDC)
       elif not param_info.live:
