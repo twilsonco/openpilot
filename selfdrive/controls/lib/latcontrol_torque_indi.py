@@ -101,7 +101,7 @@ class LatControlTorqueINDI():
 
     return self.sat_count > self.sat_limit
 
-  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None):
+  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, mean_curvature=0.0):
     self.speed = CS.vEgo
     
     actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)

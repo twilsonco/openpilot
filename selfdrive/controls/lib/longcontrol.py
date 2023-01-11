@@ -93,9 +93,12 @@ class LongControl():
     self.brake_pressed_last_t = sec_since_boot()
     self.brake_pressed_time_since = 0.0
     self._op_params = opParams(calling_function="longcontrol.py")
+    self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
     self.deadzone_bp, self.deadzone_v = CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV
   
   def update_op_params(self):
+    if not self.tune_override:
+      return
     bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LONG_speed_mph')]
     self.pid._k_p = [bp, self._op_params.get('TUNE_LONG_kp')]
     self.pid._k_i = [bp, self._op_params.get('TUNE_LONG_ki')]

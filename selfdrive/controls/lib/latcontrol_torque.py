@@ -1,4 +1,5 @@
 import math
+from numpy import sign
 from selfdrive.controls.lib.pid import PIDController
 from common.numpy_fast import interp
 from common.op_params import opParams
@@ -35,10 +36,17 @@ class LatControlTorque(LatControl):
     self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
     self._op_params = opParams(calling_function="latcontrol_torque.py")
     self.roll_k = 0.5
-    self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp', force_update=True)]
-    self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v', force_update=True)
+    self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
+    if self.tune_override:
+      self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp', force_update=True)]
+      self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v', force_update=True)
+    else:
+      self.low_speed_factor_bp = [10.0, 25.0]
+      self.low_speed_factor_v = [180.0, 50.0]
   
   def update_op_params(self):
+    if not self.tune_override:
+      return
     self.use_steering_angle = self._op_params.get('TUNE_LAT_TRX_use_steering_angle')
     self.pid._k_p = [[0], [self._op_params.get('TUNE_LAT_TRX_kp')]]
     self.pid._k_i = [[0], [self._op_params.get('TUNE_LAT_TRX_ki')]]
@@ -53,7 +61,7 @@ class LatControlTorque(LatControl):
     super().reset()
     self.pid.reset()
 
-  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None):
+  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, mean_curvature=0.0):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
 
     if CS.vEgo < MIN_STEER_SPEED or not active:
@@ -70,8 +78,8 @@ class LatControlTorque(LatControl):
       actual_lateral_accel = actual_curvature * CS.vEgo**2
 
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)
-      setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
-      measurement = actual_lateral_accel + low_speed_factor * actual_curvature
+      setpoint = float(desired_lateral_accel + low_speed_factor * min(abs(desired_curvature), abs(mean_curvature)) * sign(desired_curvature))
+      measurement = float(actual_lateral_accel + low_speed_factor * min(abs(actual_curvature), abs(mean_curvature)) * sign(actual_curvature))
       error = setpoint - measurement
       pid_log.error = error
       
