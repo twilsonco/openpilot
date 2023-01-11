@@ -370,6 +370,7 @@ class CarState(CarStateBase):
     # Regen braking is braking
     if self.is_ev:
       regen_paddle_pressed = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
+      ret.regenPaddlePressed = regen_paddle_pressed
       ret.brakePressed = ret.brakePressed or self.regen_paddle_pressed
       hvb_current = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryCurrent']
       hvb_voltage = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryVoltage']
