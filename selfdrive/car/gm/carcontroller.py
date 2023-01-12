@@ -218,7 +218,7 @@ class CarController():
             rate_limit_factor = min(rate_limit_factor,
                                     interp(abs(CS.out.steeringAngleDeg), ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_BP, ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_V))
             
-            self.one_pedal_decel = clip(one_pedal_decel, self.one_pedal_decel - ONE_PEDAL_DECEL_RATE_LIMIT_UP * rate_limit_factor, self.one_pedal_decel + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN + rate_limit_factor)
+            self.one_pedal_decel = clip(one_pedal_decel, min(self.one_pedal_decel, CS.out.aEgo + pitch_accel) - ONE_PEDAL_DECEL_RATE_LIMIT_UP * rate_limit_factor, max(self.one_pedal_decel, CS.out.aEgo + pitch_accel) + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN + rate_limit_factor)
             self.one_pedal_decel = max(self.one_pedal_decel, ONE_PEDAL_MAX_DECEL)
             self.one_pedal_apply_brake = interp(self.one_pedal_decel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
           else:
