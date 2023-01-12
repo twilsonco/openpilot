@@ -231,9 +231,10 @@ class Param:
   def type_is_valid(self, value):
     if not self.has_allowed_types:  # always valid if no allowed types, otherwise checks to make sure
       return True
-    return type(value) in self.allowed_types \
-      or (self.is_list and isinstance(value, list) \
-        and all([type(i) in self.allowed_types for i in value]))
+    return all([not self.is_list,
+                type(value) in self.allowed_types]) \
+      or all([self.is_list,
+              isinstance(value, list) and all([type(i) in self.allowed_types for i in value])])
   
   def value_is_valid(self, value):
     if not self.has_allowed_vals:  # always valid if no allowed types, otherwise checks to make sure
@@ -482,9 +483,9 @@ class opParams:
       
       'MADS_steer_allow_nudgeless_lane_change': Param(False, bool, 'If true, nudgeless lane changes will apply when in MADS mode\n'),
       
-      'MADS_OP_low_speed_decel_mss': Param(-1.0, float, 'The amount of desired one-pedal deceleration at and below 1mph\n', min_val=-2.5, max_val=0.0, is_common=True, unit='m/s²'),
+      'MADS_OP_decel_mss': Param([-1.0, -1.1], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is not pressed.\n', min_val=-2.5, max_val=0.0, is_common=True, unit='m/s²'),
       
-      'MADS_OP_high_speed_decel_mss': Param(-1.1, float, 'The amount of desired one-pedal deceleration above 14mph\n', min_val=-2.5, max_val=0.0, is_common=True, unit='m/s²'),
+      'MADS_OP_regen_paddle_decel_mss': Param([-1.5, -1.6], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is pressed.\n', min_val=-2.5, max_val=0.0, is_common=True, unit='m/s²'),
       
       'MADS_OP_rate_ramp_up': Param(0.8, float, 'The rate at which one-pedal brake force increases (applying)\n', min_val=0.1, max_val=3.0, unit='m/s³'),
       
@@ -502,9 +503,7 @@ class opParams:
       
       'MADS_OP_low_speed_pitch_factor_decline': Param(0.4, float, 'At higher speeds, one-pedal driving corrects for road pitch so that, for example, if you\'re already slowing due to an incline it doesn\'t need to apply additional brakes. At low speed this can be unwanted, so control it here when on decline. A value of 0.0 cancels out all pitch correction\n', min_val=0.0, max_val=1.0),
       
-      'MADS_OP_low_speed_error_factor': Param(0.4, float, 'One-pedal driving uses the same longitudinal PID controller tune as your car, which is too high for the smooth response we want from one-pedal, so we scale down the error (in terms of acceleration) for the one-pedal controller to dampen its response. This is the low-speed dampening. Set to 0.0 for a "dumb" one-pedal that applies "constant" braking regardless of whether you\'re slowing or not, or increase for more responsive correction and consistent deceleration\n', min_val=0.0, max_val=2.0),
-      
-      'MADS_OP_high_speed_error_factor': Param(0.2, float, 'One-pedal driving uses the same longitudinal PID controller tune as your car, which is too high for the smooth response we want from one-pedal, so we scale down the error (in terms of acceleration) for the one-pedal controller to dampen its response. This is the high-speed dampening. Set to 0.0 for a "dumb" one-pedal that applies "constant" braking regardless of whether you\'re slowing or not, or increase for more responsive correction\n', min_val=0.0, max_val=2.0),
+      'MADS_OP_speed_error_factor': Param([0.2, 0.4], [list, float], 'One-pedal driving uses the same longitudinal PID controller tune as your car, which is too high for the smooth response we want from one-pedal, so we scale down the error (in terms of acceleration) for the one-pedal controller to dampen its response. Set to 0.0 for a "dumb" one-pedal that applies "constant" braking regardless of whether you\'re slowing or not, or increase for more responsive correction and consistent deceleration. This parameter sets the "low" and "high" speed error factor.\n', min_val=0.0, max_val=2.0),
       
       'MADS_OP_one_time_stop_threshold_mph': Param(5.0, float, 'Adjust the speed threshold used for one-pedal one-time stop. If you are holding the regen paddle while your speed goes from above to below this speed, one-pedal one-time stop will activate. Note that you can continue to hold the regen paddle and one-pedal brakes will still blend in, bringing you to a stop more quickly.\n', min_val=0.5, max_val=100.0, unit='mph'),
       

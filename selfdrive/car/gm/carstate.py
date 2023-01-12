@@ -205,13 +205,6 @@ class CarState(CarStateBase):
   
   def update_op_params(self, t = sec_since_boot()):
     global GAS_PRESSED_THRESHOLD
-    self.ONE_PEDAL_MODE_DECEL_V = [self._op_params.get('MADS_OP_low_speed_decel_mss'), self._op_params.get('MADS_OP_high_speed_decel_mss')]
-    self.ONE_PEDAL_MAX_DECEL = min(self.ONE_PEDAL_MODE_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
-    self.ONE_PEDAL_DECEL_RATE_LIMIT_UP = self._op_params.get('MADS_OP_rate_ramp_up') * DT_CTRL * 4 # m/s^2 per second for increasing braking force
-    self.ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = self._op_params.get('MADS_OP_rate_ramp_down') * DT_CTRL * 4 # m/s^2 per second for decreasing
-    self.ONE_PEDAL_SPEED_ERROR_FACTOR_V = [self._op_params.get('MADS_OP_low_speed_error_factor'), self._op_params.get('MADS_OP_high_speed_error_factor')] # factor of error for non-lead braking decel
-    self.ONE_PEDAL_ACCEL_PITCH_FACTOR_V = [self._op_params.get('MADS_OP_low_speed_pitch_factor_decline'), 1.] # [unitless in [0-1]]
-    self.ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V = [self._op_params.get('MADS_OP_low_speed_pitch_factor_incline'), 1.] # [unitless in [0-1]]
     self.REGEN_PADDLE_STOP_SPEED = self._op_params.get('MADS_OP_one_time_stop_threshold_mph') * CV.MPH_TO_MS
     self.REGEN_PADDLE_STOP_PRESS_TIME = self._op_params.get('MADS_OP_one_time_stop_hold_s')
     

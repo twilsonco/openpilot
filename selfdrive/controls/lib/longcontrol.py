@@ -3,6 +3,7 @@ from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp
 from common.op_params import opParams
 from common.realtime import sec_since_boot, DT_CTRL
+from selfdrive.car.gm.carstate import GAS_PRESSED_THRESHOLD
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.drive_helpers import CONTROL_N
@@ -27,8 +28,6 @@ RATE = 100.0
 # As NOT per ISO 15622:2018 for all speeds
 ACCEL_MIN_ISO = -3.5 # m/s^2
 ACCEL_MAX_ISO = 3.5 # m/s^2
-
-GAS_PRESSED_THRESHOLD = 0.15
 
 
 # TODO this logic isn't really car independent, does not belong here
@@ -106,7 +105,6 @@ class LongControl():
     self.deadzone_bp, self.deadzone_v = CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV
   
   def update_op_params(self):
-    global GAS_PRESSED_THRESHOLD
     if not self.tune_override:
       return
     bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LONG_speed_mph')]
@@ -120,7 +118,6 @@ class LongControl():
     self.pos_accel_smooth_min_speed = self._op_params.get('AP_positive_accel_smoothing_min_speed')
     self.lead_gone_smooth_accel_time = self._op_params.get('AP_positive_accel_post_lead_smoothing_time')
     self.gas_smooth_accel_time = self._op_params.get('AP_positive_accel_post_gas_smoothing_time')
-    GAS_PRESSED_THRESHOLD = max(1e-5, self._op_params.get('TUNE_LONG_gas_overlap_cutoff') * 0.01)
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
