@@ -420,6 +420,18 @@ class opParams:
       
       'AP_following_accel_factor': Param(1.0, float, 'Scale acceleration when behind a pulling away lead.\n', live=True, min_val=0.01, max_val=20.0),
       
+      'AP_positive_accel_post_gas_smoothing_factor': Param(1.0, float, 'Adjust the smoothing applied to positive acceleration as OpenPilot resumes long control after you let off the gas pedal. Higher value is more smoothing.\n', live=True, min_val=0.0, max_val=20.0),
+      
+      'AP_positive_accel_post_gas_smoothing_time': Param(3.0, float, 'How long should positive acceleration smoothing be applied after resuming following a gas press?\n', live=True, min_val=0.0, max_val=20.0, unit='seconds'),
+      
+      'AP_positive_accel_post_lead_smoothing_factor': Param(1.0, float, 'Adjust the smoothing applied to positive acceleration immediately after a lead "disappears", say, after they slow for a hard right turn, so that OpenPilot doesn\'t abruptly let off the brakes and accelerate uncomfortably. Higher value is more smoothing.\n', live=True, min_val=0.0, max_val=20.0),
+      
+      'AP_positive_accel_post_lead_smoothing_time': Param(4.0, float, 'How long should positive acceleration smoothing be applied after a lead having "disappeared"?\n', live=True, min_val=0.0, max_val=20.0, unit='seconds'),
+      
+      'AP_positive_accel_smoothing_factor': Param(0.0, float, 'Adjust the smoothing applied to positive acceleration at all other times. Higher value is more smoothing.\n', live=True, min_val=0.0, max_val=20.0),
+      
+      'AP_positive_accel_smoothing_min_speed': Param(2.0, float, 'Below this speed, no smoothing is applied to positive acceleration under any circumstances.\n', live=True, min_val=0.0, max_val=90.0, unit='mph'),
+      
       #####
       
       'FP_close_gas_factor': Param(1.0, float, 'Controls how proactively OpenPilot will adjust in response to a change in the lead car velocity when using the close follow profile. Increase to make close follow more responsive.\n', live=True, min_val=0.1, max_val=2.0),
@@ -490,13 +502,14 @@ class opParams:
       
       'MADS_OP_low_speed_pitch_factor_decline': Param(0.4, float, 'At higher speeds, one-pedal driving corrects for road pitch so that, for example, if you\'re already slowing due to an incline it doesn\'t need to apply additional brakes. At low speed this can be unwanted, so control it here when on decline. A value of 0.0 cancels out all pitch correction\n', min_val=0.0, max_val=1.0),
       
-      'MADS_OP_low_speed_error_factor': Param(0.4, float, 'One-pedal driving uses the same longitudinal PID controller tune as your car, which is too high for the smooth response we want from one-pedal, so we scale down the error (in terms of acceleration) for the one-pedal controller to dampen its response. This is the low-speed dampening. Set to 0.0 for a "dumb" one-pedal that applies "constant" braking regardless of whether you\'re slowing or not, or increase for more responsive correction\n', min_val=0.0, max_val=2.0),
+      'MADS_OP_low_speed_error_factor': Param(0.4, float, 'One-pedal driving uses the same longitudinal PID controller tune as your car, which is too high for the smooth response we want from one-pedal, so we scale down the error (in terms of acceleration) for the one-pedal controller to dampen its response. This is the low-speed dampening. Set to 0.0 for a "dumb" one-pedal that applies "constant" braking regardless of whether you\'re slowing or not, or increase for more responsive correction and consistent deceleration\n', min_val=0.0, max_val=2.0),
       
       'MADS_OP_high_speed_error_factor': Param(0.2, float, 'One-pedal driving uses the same longitudinal PID controller tune as your car, which is too high for the smooth response we want from one-pedal, so we scale down the error (in terms of acceleration) for the one-pedal controller to dampen its response. This is the high-speed dampening. Set to 0.0 for a "dumb" one-pedal that applies "constant" braking regardless of whether you\'re slowing or not, or increase for more responsive correction\n', min_val=0.0, max_val=2.0),
       
-      'MADS_OP_one_time_stop_threshold_mph': Param(5.0, float, 'Adjust the speed threshold used for one-pedal one-time stop\n', min_val=0.5, max_val=100.0, unit='mph'),
+      'MADS_OP_one_time_stop_threshold_mph': Param(5.0, float, 'Adjust the speed threshold used for one-pedal one-time stop. If you are holding the regen paddle while your speed goes from above to below this speed, one-pedal one-time stop will activate. Note that you can continue to hold the regen paddle and one-pedal brakes will still blend in, bringing you to a stop more quickly.\n', min_val=0.5, max_val=100.0, unit='mph'),
       
-      'MADS_OP_one_time_stop_hold_s': Param(3.0, float, 'Adjust the amount of time regen paddle needs to be held while below the threshold speed for one-pedal one-time stop\n', min_val=0.5, max_val=15.0, unit='seconds'),
+      'MADS_OP_one_time_stop_hold_s': Param(0.5, float, 'The one-time stop threshold speed above is explicit, in that you must cross that threshold speed with the regen paddle pressed, otherwise one-pedal one-time stop will not activate. However, one-pedal one-time stop will still activate if you hold the regen paddle for long enough while already below the threshold speed. This parameter lets you adjust the amount of time regen paddle needs to be held while below the threshold speed for one-pedal one-time stop to activate, at which point you can release the regen paddle and come to a smooth stop, or continue holding the regen paddle to stop sooner, as one-pedal brakes are still blended in.\n', min_val=0.1, max_val=15.0, unit='seconds'),
+      
       'MADS_OP_double_press_time_s': Param(0.7, float, 'Adjust how quickly you must double-press the regen paddle to toggle one-pedal mode\n', min_val=0.1, max_val=2.0, unit='seconds'),
       
       #####

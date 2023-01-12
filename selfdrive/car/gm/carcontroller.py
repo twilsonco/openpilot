@@ -44,6 +44,7 @@ class CarController():
     
     self.params = CarControllerParams()
     self._op_params = opParams("gm CarController")
+    self.override_long_tune = self._op_params.get('TUNE_LAT_do_override', force_update=True)
 
     self.packer_pt = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.packer_obj = CANPacker(DBC[CP.carFingerprint]['radar'])
@@ -69,6 +70,7 @@ class CarController():
     self.apply_brake_in = 0
     self.apply_steer = 0
     self.brakes_allowed = False
+    self.threshold_accel = 0.0
   
   def update_op_params(self):
     global ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_V, ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_V, ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP, ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_BP
@@ -76,6 +78,12 @@ class CarController():
     ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP = sorted(self._op_params.get('MADS_OP_rate_low_speed_factor_bp'))
     ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_V[1] = self._op_params.get('MADS_OP_rate_high_steer_factor')
     ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP = sorted(self._op_params.get('MADS_OP_rate_high_steer_factor_bp'))
+    if self.override_long_tune:
+      bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LONG_speed_mph')]
+      self.one_pedal_pid._k_p = [bp, self._op_params.get('TUNE_LONG_kp')]
+      self.one_pedal_pid._k_i = [bp, self._op_params.get('TUNE_LONG_ki')]
+      self.one_pedal_pid._k_d = [bp, self._op_params.get('TUNE_LONG_kd')]
+    
     
   def update(self, enabled, CS, frame, actuators,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
@@ -122,9 +130,9 @@ class CarController():
         brake_accel = k * actuators.accelPitchCompensated + (1. - k) * actuators.accel
         if CS.out.onePedalModeActive and (not CS.MADS_lead_braking_enabled or t - self.lead_accel_last_t > ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T):
           one_pedal_speed = max(CS.vEgo, ONE_PEDAL_MIN_SPEED)
-          threshold_accel = self.params.update_gas_brake_threshold(one_pedal_speed, CS.engineRPM > 0)
+          self.threshold_accel = self.params.update_gas_brake_threshold(one_pedal_speed, CS.engineRPM > 0)
         else:
-          threshold_accel = self.params.update_gas_brake_threshold(CS.out.vEgo, CS.engineRPM > 0)
+          self.threshold_accel = self.params.update_gas_brake_threshold(CS.out.vEgo, CS.engineRPM > 0)
         self.apply_gas = interp(actuators.accelPitchCompensated, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
         no_pitch_apply_gas = interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
         self.apply_brake_out = interp(brake_accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
@@ -176,7 +184,7 @@ class CarController():
           pitch_accel = CS.pitch * ACCELERATION_DUE_TO_GRAVITY
           pitch_accel *= interp(CS.vEgo, ONE_PEDAL_ACCEL_PITCH_FACTOR_BP, CS.ONE_PEDAL_ACCEL_PITCH_FACTOR_V if pitch_accel <= 0 else CS.ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V)
           
-          if CS.gear_shifter_ev == GEAR_SHIFTER2.LOW:
+          if CS.gear_shifter_ev in [GEAR_SHIFTER2.LOW, GEAR_SHIFTER2.REGEN_PADDLE_LOW, GEAR_SHIFTER2.REGEN_PADDLE_DRIVE]:
             self.one_pedal_decel_in = interp(CS.vEgo, ONE_PEDAL_MODE_DECEL_BP, CS.ONE_PEDAL_MODE_DECEL_V)
             
             error_factor = interp(CS.vEgo, ONE_PEDAL_SPEED_ERROR_FACTOR_BP, CS.ONE_PEDAL_SPEED_ERROR_FACTOR_V)
@@ -192,7 +200,7 @@ class CarController():
             self.one_pedal_decel = max(self.one_pedal_decel, CS.ONE_PEDAL_MAX_DECEL)
             self.one_pedal_apply_brake = interp(self.one_pedal_decel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
           else:
-            self.one_pedal_decel_in = clip(0.0 if CS.gear_shifter_ev == GEAR_SHIFTER2.DRIVE and CS.one_pedal_dl_coasting_enabled and CS.vEgo > 0.05 else min(CS.out.aEgo,threshold_accel), self.one_pedal_decel_in - CS.ONE_PEDAL_DECEL_RATE_LIMIT_UP, self.one_pedal_decel_in + CS.ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
+            self.one_pedal_decel_in = clip(0.0 if CS.gear_shifter_ev == GEAR_SHIFTER2.DRIVE and CS.one_pedal_dl_coasting_enabled and CS.vEgo > 0.05 else min(CS.out.aEgo,self.threshold_accel), self.one_pedal_decel_in - CS.ONE_PEDAL_DECEL_RATE_LIMIT_UP, self.one_pedal_decel_in + CS.ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
             self.one_pedal_apply_brake = 0.0
           
           

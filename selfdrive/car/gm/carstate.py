@@ -30,7 +30,7 @@ GAS_PRESSED_THRESHOLD = 0.15
 
 GearShifter = car.CarState.GearShifter
 class GEAR_SHIFTER2:
-  INBETWEEN_PARK_AND_REVERSE = 0
+  IN_BETWEEN_PARK_AND_REVERSE = 0
   PARK = 1
   REVERSE = 2
   NEUTRAL = 3
@@ -370,7 +370,7 @@ class CarState(CarStateBase):
     # Regen braking is braking
     if self.is_ev:
       regen_paddle_pressed = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
-      ret.brakePressed = ret.brakePressed or self.regen_paddle_pressed
+      ret.regenPaddlePressed = regen_paddle_pressed
       hvb_current = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryCurrent']
       hvb_voltage = pt_cp.vl["BECMBatteryVoltageCurrent"]['HVBatteryVoltage']
       self.hvb_wattage.update(hvb_current * hvb_voltage)
@@ -563,6 +563,8 @@ class CarState(CarStateBase):
     ret.cruiseMain = self.cruiseMain
     
     ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active and self.time_in_drive_one_pedal >= self.MADS_long_min_time_in_drive
+    if self.long_active:
+      ret.brakePressed = ret.brakePressed or self.regen_paddle_pressed
     ret.onePedalModeTemporary = self.one_pedal_mode_temporary
     ret.madsLeadBrakingActive = self.MADS_lead_braking_active and ret.vEgo > 0.02 and ret.gearShifter in ['drive','low'] and ret.gas < 1e-5 and not ret.brakePressed and ret.cruiseMain
     

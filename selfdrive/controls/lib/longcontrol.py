@@ -1,7 +1,8 @@
 from cereal import car
+from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp
 from common.op_params import opParams
-from common.realtime import sec_since_boot
+from common.realtime import sec_since_boot, DT_CTRL
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.drive_helpers import CONTROL_N
@@ -26,6 +27,8 @@ RATE = 100.0
 # As NOT per ISO 15622:2018 for all speeds
 ACCEL_MIN_ISO = -3.5 # m/s^2
 ACCEL_MAX_ISO = 3.5 # m/s^2
+
+GAS_PRESSED_THRESHOLD = 0.15
 
 
 # TODO this logic isn't really car independent, does not belong here
@@ -86,17 +89,24 @@ class LongControl():
     self.v_pid = 0.0
     self.lead_present_last = False
     self.lead_gone_t = 0.
-    self.lead_gone_smooth_accel_time = 4. # seconds after lead gone during which we'll smooth positive jerk
-    self.last_output_accel = 0.0
-    self.output_accel_pos_rate_ema_k = 1/10 # use exponential moving average on output accel, but only for positive jerk
+    self.last_gas_t = 0.
     self.a_target = 0.0
     self.brake_pressed_last_t = sec_since_boot()
     self.brake_pressed_time_since = 0.0
     self._op_params = opParams(calling_function="longcontrol.py")
+    self.pos_accel_gas_smooth_k = 0.5
+    self.pos_accel_lead_smooth_k = 0.5
+    self.pos_accel_smooth_k = 0.0
+    self.lead_gone_smooth_accel_time = 4.0
+    self.gas_smooth_accel_time = 3.0
+    self.pos_accel_smooth_min_speed = 1.0
+    self.output_accel = FirstOrderFilter(0.0, 0.0, DT_CTRL)
+    self.last_output_accel = 0.0
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
     self.deadzone_bp, self.deadzone_v = CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV
   
   def update_op_params(self):
+    global GAS_PRESSED_THRESHOLD
     if not self.tune_override:
       return
     bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LONG_speed_mph')]
@@ -104,6 +114,13 @@ class LongControl():
     self.pid._k_i = [bp, self._op_params.get('TUNE_LONG_ki')]
     self.pid._k_d = [bp, self._op_params.get('TUNE_LONG_kd')]
     self.deadzone_bp, self.deadzone_v = bp, self._op_params.get('TUNE_LONG_deadzone')
+    self.pos_accel_gas_smooth_k = self._op_params.get('AP_positive_accel_post_gas_smoothing_factor')
+    self.pos_accel_lead_smooth_k = self._op_params.get('AP_positive_accel_post_lead_smoothing_factor')
+    self.pos_accel_smooth_k = self._op_params.get('AP_positive_accel_smoothing_factor')
+    self.pos_accel_smooth_min_speed = self._op_params.get('AP_positive_accel_smoothing_min_speed')
+    self.lead_gone_smooth_accel_time = self._op_params.get('AP_positive_accel_post_lead_smoothing_time')
+    self.gas_smooth_accel_time = self._op_params.get('AP_positive_accel_post_gas_smoothing_time')
+    GAS_PRESSED_THRESHOLD = max(1e-5, self._op_params.get('TUNE_LONG_gas_overlap_cutoff') * 0.01)
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
@@ -190,17 +207,33 @@ class LongControl():
       self.brake_pressed_last_t = t
     elif CS.gas > 1e-5: # no delay after gas press
       self.brake_pressed_last_t = t - 10.0
+    elif CS.gas > GAS_PRESSED_THRESHOLD:
+      self.last_gas_t = t
     self.brake_pressed_time_since = t - self.brake_pressed_last_t
     lead_present = long_plan.leadDist > 0.
     if not lead_present and self.lead_present_last:
       self.lead_gone_t = t
     self.lead_present_last = lead_present
-      
-    if CS.vEgo > 0.5 and not lead_present and t - self.lead_gone_t < self.lead_gone_smooth_accel_time and output_accel > self.last_output_accel:
-      output_accel =  self.output_accel_pos_rate_ema_k * output_accel + (1. - self.output_accel_pos_rate_ema_k) * self.last_output_accel    
     
-    self.last_output_accel = output_accel
-    final_accel = clip(output_accel, accel_limits[0], accel_limits[1])
+    time_since_lead = t - self.lead_gone_t
+    time_since_gas = t - self.last_gas_t
+    if CS.vEgo > self.pos_accel_smooth_min_speed and output_accel > self.last_output_accel:
+      if not lead_present and time_since_lead < self.lead_gone_smooth_accel_time:
+        smooth_factor = interp(time_since_lead, [self.lead_gone_smooth_accel_time * 0.5, self.lead_gone_smooth_accel_time], [self.pos_accel_lead_smooth_k, 0.0])
+        self.output_accel.update_alpha(smooth_factor)
+        self.output_accel.update(output_accel)
+      elif time_since_gas < self.gas_smooth_accel_time:
+        smooth_factor = interp(time_since_gas, [self.gas_smooth_accel_time * 0.5, self.gas_smooth_accel_time], [self.pos_accel_gas_smooth_k, 0.0])
+        self.output_accel.update_alpha(smooth_factor)
+        self.output_accel.update(output_accel)
+      else:
+        self.output_accel.update_alpha(self.pos_accel_smooth_k)
+        self.output_accel.update(output_accel)
+    else:
+      self.output_accel.x = output_accel
+    
+    self.last_output_accel = self.output_accel.x
+    final_accel = clip(self.output_accel.x, accel_limits[0], accel_limits[1])
     self.a_target = a_target
 
     return final_accel
