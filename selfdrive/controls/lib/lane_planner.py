@@ -516,6 +516,7 @@ class LanePlanner:
 
   def parse_model(self, md, lane_pos = 0., sm=None, auto_lane_pos_active=False):
     self.camera_offset = self.op_params.get('camera_offset_m')  # update camera offset
+    self.path_offset = self.op_params.get('path_offset_m')  # update camera offset
     offset = self.lane_offset.update(lane_pos, self.lane_width, auto_active=auto_lane_pos_active, md=md, sm=sm)
     if len(md.laneLines) == 4 and len(md.laneLines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(md.laneLines[1].t) + np.array(md.laneLines[2].t))/2
