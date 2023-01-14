@@ -1219,4 +1219,68 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },
+  
+  EventName.madsLeadBrakingEnabled: {
+    ET.PERMANENT: Alert(
+      "MADS lead braking ENABLED",
+      "Override with gas/brake pedals",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsLeadBrakingDisabled: {
+    ET.PERMANENT: Alert(
+      "MADS lead braking DISABLED",
+      "",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsOnePedalEnabled: {
+    ET.PERMANENT: Alert(
+      "MADS one pedal mode ENABLED",
+      "Hold regen paddle for additional decel",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsOnePedalDisabled: {
+    ET.PERMANENT: Alert(
+      "MADS one pedal mode DISABLED",
+      "",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsAutosteerEnabled: {
+    ET.PERMANENT: Alert(
+      "MADS autosteer ENABLED",
+      "",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsAutosteerDisabled: {
+    ET.PERMANENT: Alert(
+      "MADS autosteer DISABLED",
+      "",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsEnabled: {
+    ET.PERMANENT: Alert(
+      "MADS | ENABLED",
+      "Cruise main turned on",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsDisabled: {
+    ET.PERMANENT: Alert(
+      "MADS | DISABLED",
+      "Cruise main turned off",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
 }

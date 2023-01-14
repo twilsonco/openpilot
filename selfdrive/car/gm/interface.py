@@ -47,6 +47,9 @@ class CarInterface(CarInterfaceBase):
     super().__init__(CP, CarController, CarState)
     if CarState is not None:
       self.cp_chassis = self.CS.get_chassis_can_parser(CP)
+    self.mads_one_pedal_enabled = False
+    self.mads_lead_braking_enabled = False
+    self.mads_cruise_main = False
     
   params_check_last_t = 0.
   params_check_freq = 0.1 # check params at 10Hz
@@ -556,6 +559,26 @@ class CarInterface(CarInterfaceBase):
       if self.CS.resume_required:
         events.add(EventName.resumeRequired)
 
+    if self.MADS_enabled:
+      lead_braking_enabled = self.CS.MADS_lead_braking_enabled
+      if lead_braking_enabled != self.mads_lead_braking_enabled:
+        if lead_braking_enabled:
+          events.add(EventName.madsLeadBrakingEnabled)
+        else:
+          events.add(EventName.madsLeadBrakingDisabled)
+      one_pedal_enabled = self.CS.one_pedal_mode_active
+      if one_pedal_enabled != self.mads_one_pedal_enabled:
+        if one_pedal_enabled:
+          events.add(EventName.madsOnePedalEnabled)
+        else:
+          events.add(EventName.madsOnePedalDisabled)
+      cruise_main = self.CS.cruiseMain
+      if cruise_main != self.mads_cruise_main:
+        if cruise_main:
+          events.add(EventName.madsEnabled)
+        else:
+          events.add(EventName.madsDisabled)
+
     # handle button presses
     for b in ret.buttonEvents:
       # do enable on both accel and decel buttons
@@ -566,8 +589,31 @@ class CarInterface(CarInterfaceBase):
           if not self.CS.lkaEnabled: #disabled LFA
             if not ret.cruiseState.enabled:
               events.add(EventName.buttonCancel)
-            else:
               events.add(EventName.manualSteeringRequired)
+            else:
+              events.add(EventName.madsAutosteerDisabled)
+          else:
+            events.add(EventName.madsAutosteerEnabled)
+        lead_braking_enabled = self.CS.MADS_lead_braking_enabled
+        if lead_braking_enabled != self.mads_lead_braking_enabled:
+          if lead_braking_enabled:
+            events.add(EventName.madsLeadBrakingEnabled)
+          else:
+            events.add(EventName.madsLeadBrakingDisabled)
+        one_pedal_enabled = self.CS.one_pedal_mode_active
+        if one_pedal_enabled != self.mads_one_pedal_enabled:
+          if one_pedal_enabled:
+            events.add(EventName.madsOnePedalEnabled)
+          else:
+            events.add(EventName.madsOnePedalDisabled)
+        cruise_main = self.CS.cruiseMain
+        if cruise_main != self.mads_cruise_main:
+          if cruise_main:
+            events.add(EventName.madsEnabled)
+          else:
+            events.add(EventName.madsDisabled)
+            
+            
       
       # The ECM will fault if resume triggers an enable while speed is set to 0
       if b.type == ButtonType.accelCruise and c.hudControl.setSpeed > 0 and c.hudControl.setSpeed < 70 and not b.pressed:
