@@ -48,8 +48,10 @@ class CarInterface(CarInterfaceBase):
     if CarState is not None:
       self.cp_chassis = self.CS.get_chassis_can_parser(CP)
     self.mads_one_pedal_enabled = False
+    self.mads_one_pedal_temporary = False
     self.mads_lead_braking_enabled = False
     self.mads_cruise_main = False
+    self.autosteer_enabled = False
     
   params_check_last_t = 0.
   params_check_freq = 0.1 # check params at 10Hz
@@ -559,25 +561,45 @@ class CarInterface(CarInterfaceBase):
       if self.CS.resume_required:
         events.add(EventName.resumeRequired)
 
-    if self.MADS_enabled:
-      lead_braking_enabled = self.CS.MADS_lead_braking_enabled
-      if lead_braking_enabled != self.mads_lead_braking_enabled:
-        if lead_braking_enabled:
+    if self.MADS_enabled and not self.CS.long_active and t - self.CS.sessionInitTime > 30.:
+      if self.CS.MADS_lead_braking_enabled != self.mads_lead_braking_enabled:
+        if self.CS.MADS_lead_braking_enabled:
           events.add(EventName.madsLeadBrakingEnabled)
         else:
           events.add(EventName.madsLeadBrakingDisabled)
-      one_pedal_enabled = self.CS.one_pedal_mode_active
-      if one_pedal_enabled != self.mads_one_pedal_enabled:
-        if one_pedal_enabled:
-          events.add(EventName.madsOnePedalEnabled)
+      
+      if self.CS.one_pedal_mode_active != self.mads_one_pedal_enabled:
+        if self.CS.one_pedal_mode_active:
+          if self.CS.one_pedal_mode_temporary:
+            if self.CS.out.vEgo > 0.1:
+              events.add(EventName.madsOnePedalTemporary)
+          else:
+            events.add(EventName.madsOnePedalEnabled)
         else:
-          events.add(EventName.madsOnePedalDisabled)
-      cruise_main = self.CS.cruiseMain
-      if cruise_main != self.mads_cruise_main:
-        if cruise_main:
+          if not self.mads_one_pedal_temporary:
+            events.add(EventName.madsOnePedalDisabled)
+      
+      if self.CS.cruiseMain != self.mads_cruise_main:
+        if self.CS.cruiseMain:
           events.add(EventName.madsEnabled)
         else:
           events.add(EventName.madsDisabled)
+      
+      if self.CS.lkaEnabled != self.autosteer_enabled:
+        if self.CS.lkaEnabled:
+          events.add(EventName.madsAutosteerEnabled)
+        else:
+          events.add(EventName.madsAutosteerDisabled)
+    else:
+      if self.CS.lkaEnabled != self.autosteer_enabled:
+        if not self.CS.lkaEnabled:
+          events.add(EventName.manualSteeringRequired)
+          
+    self.mads_one_pedal_enabled = self.CS.one_pedal_mode_active
+    self.mads_one_pedal_temporary = self.CS.one_pedal_mode_temporary
+    self.mads_cruise_main = self.CS.cruiseMain
+    self.autosteer_enabled = self.CS.lkaEnabled
+    self.mads_lead_braking_enabled = self.CS.MADS_lead_braking_enabled
 
     # handle button presses
     for b in ret.buttonEvents:
@@ -589,29 +611,6 @@ class CarInterface(CarInterfaceBase):
           if not self.CS.lkaEnabled: #disabled LFA
             if not ret.cruiseState.enabled:
               events.add(EventName.buttonCancel)
-              events.add(EventName.manualSteeringRequired)
-            else:
-              events.add(EventName.madsAutosteerDisabled)
-          else:
-            events.add(EventName.madsAutosteerEnabled)
-        lead_braking_enabled = self.CS.MADS_lead_braking_enabled
-        if lead_braking_enabled != self.mads_lead_braking_enabled:
-          if lead_braking_enabled:
-            events.add(EventName.madsLeadBrakingEnabled)
-          else:
-            events.add(EventName.madsLeadBrakingDisabled)
-        one_pedal_enabled = self.CS.one_pedal_mode_active
-        if one_pedal_enabled != self.mads_one_pedal_enabled:
-          if one_pedal_enabled:
-            events.add(EventName.madsOnePedalEnabled)
-          else:
-            events.add(EventName.madsOnePedalDisabled)
-        cruise_main = self.CS.cruiseMain
-        if cruise_main != self.mads_cruise_main:
-          if cruise_main:
-            events.add(EventName.madsEnabled)
-          else:
-            events.add(EventName.madsDisabled)
             
             
       

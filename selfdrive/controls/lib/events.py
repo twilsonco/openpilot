@@ -1207,8 +1207,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
   EventName.madsAlert6: {
     ET.PERMANENT: Alert(
-      "MADS | One-pedal one-time-stop",
-      "Slow to below 5mph with regen paddle",
+      "MADS | One-pedal regen paddle",
+      "Hold for extra braking or to stop",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },
@@ -1232,7 +1232,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.PERMANENT: Alert(
       "MADS lead braking DISABLED",
       "",
-      AlertStatus.normal, AlertSize.mid,
+      AlertStatus.normal, AlertSize.small,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },
   
@@ -1248,15 +1248,23 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.PERMANENT: Alert(
       "MADS one pedal mode DISABLED",
       "",
-      AlertStatus.normal, AlertSize.mid,
+      AlertStatus.normal, AlertSize.small,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsOnePedalTemporary: {
+    ET.PERMANENT: Alert(
+      "MADS one-time stop activated",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 2.),
   },
   
   EventName.madsAutosteerEnabled: {
     ET.PERMANENT: Alert(
       "MADS autosteer ENABLED",
       "",
-      AlertStatus.normal, AlertSize.mid,
+      AlertStatus.normal, AlertSize.small,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },
   
@@ -1264,7 +1272,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.PERMANENT: Alert(
       "MADS autosteer DISABLED",
       "",
-      AlertStatus.normal, AlertSize.mid,
+      AlertStatus.normal, AlertSize.small,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },
   
