@@ -294,7 +294,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.0
 
     elif candidate == CAR.BOLT_EUV:
-      ret.minEnableSpeed = -1.
       ret.mass = 1669. + STD_CARGO_KG
       ret.wheelbase = 2.63779
       ret.steerRatio = 16.8
