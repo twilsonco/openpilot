@@ -96,7 +96,7 @@ class CarState(CarStateBase):
     self.follow_level_change_last_t = self.sessionInitTime
     self.lkaEnabled = True
     self.cruise_offset_enabled = self._params.get_bool("CruiseSpeedOffset")
-    set_v_cruise_offset(self._op_params.get('set_speed_offset_mph', force_update=True) if self.cruise_offset_enabled else 0)
+    set_v_cruise_offset(self._op_params.get('MISC_set_speed_offset_mph', force_update=True) if self.cruise_offset_enabled else 0)
     self.autoHold = self._params.get_bool("GMAutoHold")
     self.MADS_enabled = self._params.get_bool("MADSEnabled")
     self.disengage_on_gas = not self.MADS_enabled and not Params().get_bool("DisableDisengageOnGas")
@@ -130,7 +130,7 @@ class CarState(CarStateBase):
     self.coasting_enabled_last = self.coasting_enabled
     self.no_friction_braking = self._params.get_bool("RegenBraking")
     self.coasting_brake_over_speed_enabled = self._params.get_bool("CoastingBrakeOverSpeed")
-    base_BP = [self._op_params.get('coasting_low_speed_over', force_update=True), self._op_params.get('coasting_high_speed_over', force_update=True)]
+    base_BP = [self._op_params.get('MISC_coasting_low_speed_over', force_update=True), self._op_params.get('MISC_coasting_high_speed_over', force_update=True)]
     self.coasting_over_speed_vEgo_BP = [[i + 0.1 for i in base_BP], [i + 0.15 for i in base_BP]]
     self.coasting_over_speed_regen_vEgo_BP = [base_BP, [i + 0.05 for i in base_BP]]
     self.coasting_over_speed_vEgo_BP_BP = [i * CV.MPH_TO_MS for i in [20., 80.]]
@@ -211,7 +211,7 @@ class CarState(CarStateBase):
     self.REGEN_PADDLE_STOP_SPEED = self._op_params.get('MADS_OP_one_time_stop_threshold_mph') * CV.MPH_TO_MS
     self.REGEN_PADDLE_STOP_PRESS_TIME = self._op_params.get('MADS_OP_one_time_stop_hold_s')
     
-    base_BP = [self._op_params.get('coasting_low_speed_over'), self._op_params.get('coasting_high_speed_over')]
+    base_BP = [self._op_params.get('MISC_coasting_low_speed_over'), self._op_params.get('MISC_coasting_high_speed_over')]
     self.coasting_over_speed_vEgo_BP = [[i + 0.1 for i in base_BP], [i + 0.15 for i in base_BP]]
     self.coasting_over_speed_regen_vEgo_BP = [base_BP, [i + 0.05 for i in base_BP]]
     
@@ -268,7 +268,7 @@ class CarState(CarStateBase):
       self.params_check_last_t = t
       self.reboot_in_N_seconds = int(self._params.get("OPParamsRebootInNSeconds", encoding="utf8"))
       self.update_op_params(t)
-      set_v_cruise_offset(self._op_params.get('set_speed_offset_mph') if self.cruise_offset_enabled else 0)
+      set_v_cruise_offset(self._op_params.get('MISC_set_speed_offset_mph') if self.cruise_offset_enabled else 0)
       self.coasting_allowed = self._params.get_bool("Coasting")
       self.coasting_enabled = self.coasting_allowed and self._params.get_bool("CoastingActive")
       accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco

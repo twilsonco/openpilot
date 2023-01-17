@@ -161,8 +161,8 @@ class PowerMonitoring:
   
   def update_op_params(self):
     global MAX_TIME_OFFROAD_S, MIN_ON_TIME_S, VBATT_PAUSE_CHARGING
-    MAX_TIME_OFFROAD_S = MIN_ON_TIME_S = self._op_params.get('offroad_shutdown_time_hr') * 3600
-    VBATT_PAUSE_CHARGING = self._op_params.get('car_12v_pause_charging_v')
+    MAX_TIME_OFFROAD_S = MIN_ON_TIME_S = self._op_params.get('MISC_offroad_shutdown_time_hr') * 3600
+    VBATT_PAUSE_CHARGING = self._op_params.get('MISC_car_12v_pause_charging_v')
 
   # See if we need to disable charging
   def should_disable_charging(self, pandaState, offroad_timestamp):
