@@ -1200,7 +1200,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
   EventName.madsAlert3: {
     ET.PERMANENT: Alert(
-      "MADS | One-pedal driving",
+      "MADS | One-pedal L-mode driving",
       "Toggle with regen paddle double-tap",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
@@ -1238,7 +1238,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   
   EventName.madsOnePedalEnabled: {
     ET.PERMANENT: Alert(
-      "MADS one pedal mode ENABLED",
+      "MADS one pedal L-mode ENABLED",
       "Hold regen paddle for additional decel",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
