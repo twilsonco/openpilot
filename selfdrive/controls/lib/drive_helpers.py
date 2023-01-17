@@ -1,6 +1,8 @@
 from cereal import car
+from common.filter_simple import FirstOrderFilter
+from common.op_params import opParams
 from common.numpy_fast import clip, interp
-from common.realtime import DT_MDL
+from common.realtime import DT_MDL, DT_CTRL
 from common.params import Params
 from selfdrive.config import Conversions as CV
 from selfdrive.modeld.constants import T_IDXS
@@ -57,6 +59,38 @@ def rate_limit(new_value, last_value, dw_step, up_step):
 
 def get_steer_max(CP, v_ego):
   return interp(v_ego, CP.steerMaxBP, CP.steerMaxV)
+
+class ClusterSpeed:
+  def __init__(self, is_metric):
+    self._op_params = opParams(calling_function='drive_helpers.py ClusterSpeed')
+    self.v_ego = FirstOrderFilter(0.0, self._op_params.get('cluster_speed_smoothing_factor', force_update=True), DT_CTRL)
+    self.is_metric = is_metric
+    self.cluster_speed_last = 0
+    self.frame = 0
+  
+  def update(self, v_ego, do_reset=False):
+    if self.frame > 1000:
+      self.frame = 0
+      self.v_ego.update_alpha(self._op_params.get('cluster_speed_smoothing_factor'))
+    self.frame += 1
+      
+    if do_reset:
+      self.v_ego.x = v_ego
+    else:
+      self.v_ego.update(v_ego)
+      
+    out = max(self.v_ego.x * (CV.MS_TO_KPH if self.is_metric else CV.MS_TO_MPH), 0.0)
+    if do_reset or abs(out - self.cluster_speed_last) > 1.33:
+      self.cluster_speed_last = int(round(out))
+    
+    return int(self.cluster_speed_last)
+      
+def get_cluster_speed(v_ego, cluster_speed_last, is_metric):
+  out = v_ego * (CV.MS_TO_KPH if is_metric else CV.MS_TO_MPH)
+  if abs(out - cluster_speed_last) > 1.25:
+    return int(round(out))
+  else:
+    return cluster_speed_last
 
 def set_v_cruise_offset(offset):
   global V_CRUISE_OFFSET

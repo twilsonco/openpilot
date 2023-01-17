@@ -11,7 +11,7 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, \
                                     CruiseButtons, STEER_THRESHOLD, CarControllerParams
-from selfdrive.controls.lib.drive_helpers import set_v_cruise_offset
+from selfdrive.controls.lib.drive_helpers import set_v_cruise_offset, ClusterSpeed
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from selfdrive.swaglog import cloudlog
 
@@ -53,6 +53,9 @@ class CarState(CarStateBase):
     self.hvb_wattage = FirstOrderFilter(0.0, self._op_params.get('MET_power_meter_smoothing_factor'), DT_CTRL) # [kW]
     self.ui_metrics_params = [int(self._params.get(f'MeasureSlot{i:02d}', encoding="utf8")) for i in range(10)]
     self.update_op_params()
+    
+    self.gear_shifter = 'park'
+    self.cluster_speed = ClusterSpeed(is_metric=self._params.get_bool("IsMetric"))
     
     self.iter = 0
     self.uiframe = 5
@@ -280,7 +283,9 @@ class CarState(CarStateBase):
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
       
-    self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
+    gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
+    ret.clusterSpeed = self.cluster_speed.update(ret.vEgo, do_reset=self.gear_shifter != gear_shifter)
+    self.gear_shifter = gear_shifter
     ret.gearShifter = self.gear_shifter
     ret.brakePressure = chassis_cp.vl["EBCMFrictionBrakeStatus"]["FrictionBrakePressure"]
     ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"] != 0 
