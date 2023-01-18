@@ -664,10 +664,10 @@ class CarInterface(CarInterfaceBase):
     self.frame += 1
 
     # Release Auto Hold and creep smoothly when regenpaddle pressed
-    if t - self.CS.regen_paddle_released_last_t < 1.0 and self.CS.autoHold:
+    if t - self.CS.regen_paddle_released_last_t < 1.0 and self.CS.autoHold and not self.CS.one_pedal_mode_active:
       self.CS.autoHoldActive = False
 
-    if self.CS.autoHold and not self.CS.autoHoldActive and not self.CS.regen_paddle_pressed:
+    if ((self.CS.autoHold and not self.CS.regen_paddle_pressed) or self.CS.one_pedal_mode_active) and not self.CS.autoHoldActive:
       if self.CS.out.vEgo > 0.03:
         self.CS.autoHoldActive = True
       elif self.CS.out.vEgo < 0.02 and self.CS.out.brakePressed and self.CS.time_in_drive_autohold >= self.CS.MADS_long_min_time_in_drive:
