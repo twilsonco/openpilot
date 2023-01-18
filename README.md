@@ -157,7 +157,7 @@ Please show your support by contributing to the ongoing development of this proj
 - [x] [GM] panda-based GM steering fault fix (thanks jshuler)
 - [x] Remember last follow mode (ported from kegman)
 - [x] Grey/White panda support
-- [ ] **opParams**: command-line editor to configure OpenPilot over SSH that lets you tune and change options instantaneously while driving. You can tune run `./opparams.py` immediately after [connecting over SSH](https://docs.comma.ai/tools/ssh/README.html#) and configure the following:
+- [x] **opParams**: command-line editor to configure and tune OpenPilot instantaneously from the passenger seat. You can tune run `./opparams.py` immediately after [connecting over SSH](https://docs.comma.ai/tools/ssh/README.html#) and configure the following:
     * acceleration profiles
     * traffic following profiles
     * camera (lane) offset
@@ -172,9 +172,9 @@ Please show your support by contributing to the ongoing development of this proj
     * lateral (six of them!) and longitudinal controllers
       * *can select and tune pid, torque, indi, lqr, torque indi, or torque lqr controllers*
     * select UI metrics (no more tapping! you can still tap though)
-    * enter your own OpenWeatherMap api key (no more txt file with key)
+    * enter your own OpenWeatherMap api key (instead of freeloading off mine!)
     * *perform a reboot-less restart on your Comma Three by running `./opparams.py -r`*
-    * *Started from @Shane's opParams implementation, made the read process for live tuning non-blocking so it has zero impact on performance, and added TONS of features*
+    * *Started from @Shane's opParams implementation and added TONS of features. Thanks Shane!*
 
 #### Planned Fork Features (in no particular order):
 -----
