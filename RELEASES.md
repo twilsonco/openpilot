@@ -1,3 +1,11 @@
+Version tw-0.8.12-14_tws (2023-01-17)
+========================
+  * one-pedal mode regen paddle integration
+  * alert shown when each MADS feature is toggled
+  * stopped timer only increments when in gear
+  * use deadzone for current speed to better match vehicle cluster speed
+    * opParams MISC_cluster_speed params to disable/adjust
+
 Version tw-0.8.12-13_tws (2023-01-02)
 ========================
   * opParams: command-line editor to configure OpenPilot over SSH that lets you tune and change options instantaneously while driving. You can tune run `./opparams.py` immediately after connecting over SSH (https://docs.comma.ai/tools/ssh/README.html#) and configure the following:
