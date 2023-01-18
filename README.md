@@ -77,7 +77,7 @@ Please show your support by contributing to the ongoing development of this proj
 - [x] [Volt 2018] **Auto-creep** behind stopped lead car as they pull away (tap gas or resume button to resume)
 - [x] [GM] [✅] **AutoHold** (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
-- [x] [✅] **Extended radar capabilities** (ALPHA)
+- [x] [✅] **Extended radar capabilities**
     * Brake for car in front of lead, avoiding pile-ups and able to brake when lead changes lanes right in front of a column of stopped cars
     * Indicate adjacent oncoming/ongoing traffic
     * Indicate all tracked cars, including those in front of the lead, and print all speeds
