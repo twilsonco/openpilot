@@ -392,24 +392,30 @@ class opParams:
     ki_desc = 'Integral gain responds based on the accumulated error, so if you\'re missing the target continually, the integral response builds the longer you\'re off in the same direction. This corrects for things like persistent crosswinds, inconsistent tire pressures, or dramatic road roll that roll compensation fails to fully compensate for. The drawback is that integral gain can "wind up", overshooting the desired angle, causing lateral oscillations, ping-ponging back and forth about lane center.\nTune kf and kp with ki set to zero, then set ki to 1/3rd the value of kp or less, and kd to 10-20x the value of kp (see the default values here). If lateral oscillations occur, lower ki in 10% increments until they are no longer observed.\n'
     kd_desc = 'Derivative gain responds to the rate of change of error. The benefits are two-fold. First, note that the proportional and integral responses always push against the error until the error is zero (and due to integral wind-up, integral can push past zero even), which necessarily results in overshoot and oscillations. In such an overshooting case, when you\'re returning to lane center and the error (let\'s say positive) is decreasing, the error rate wil be negative even though the error is still positive, so the derivative response is pushing against the proportional and integral overshoot. Second, if you\'re quickly leaving lane center then the rate of change of error is positive along with the error, so the derivative here helps along with the proportional and integral responses to correct for the error. Too high of kd is indicated by a jerky initial correction when using nudgeles lane change on straight roads.\n'
     
-    self.fork_params = {
-      'camera_offset_m': Param(-0.04 if TICI else 0.06, float, 'Adjust your default lane position. (Your camera offset to use in lane_planner.py)\n', live=True, min_val=-0.5, max_val=0.5, is_common=True, unit='meters'),
+    self.fork_params = {      
+      'LP_camera_offset_m': Param(-0.04 if TICI else 0.06, float, 'Adjust your default lane position. This only shifts the perceived position of lanelines for laneline-based planning. You need to also change the LP_path_offset_m below in order to adjust lateral position when using laneless. (Your camera offset to use in lane_planner.py)\n', live=True, min_val=-0.5, max_val=0.5, is_common=True, unit='meters'),
       
-      'car_12v_pause_charging_v': Param(11.0, float, 'Lower voltage threshold for your car\'s 12v system, below which the device will shutdown (well, stop charging, but there\'s no battery in the C2 or C3, so it shuts down)\n', min_val=0, max_val=10000, is_common=True, unit='volts'),
+      'LP_path_offset_m': Param(-0.04 if TICI else 0.0, float, 'Adjust your default path position. This is like camera offset, but applies to lateral position when no lanelines are present or they are not being used.\n', live=True, min_val=-0.5, max_val=0.5, is_common=True, unit='meters'),
       
-      'offroad_shutdown_time_hr': Param(5, int, 'The amount of time after turning off your car before your device shuts down to conserve power (and not drain your car battery)\n', min_val=0, is_common=True, unit='hours'),
+      'MISC_set_speed_offset_mph': Param(3, int, 'When adjusting 5mph at a time, this offset will be added to the result, so if set to 3mph, then your set speed will always be 3mph over the closest 5, so 10+3, 15+3, 20+3 = 13, 18, 23mph instead of 10, 15, 20\n', min_val=1, max_val=4, is_common=True, unit='mph'),
       
-      'car_12v_pause_charging_v': Param(11.0, float, 'Lower voltage threshold for your car\'s 12v system, below which the device will shutdown (well, stop charging, but there\'s no battery in the C2 or C3, so it shuts down)\n', min_val=0, max_val=10000, is_common=True, unit='volts'),
+      'MISC_coasting_low_speed_over': Param(0.2, float, 'When over-speed coasting is enabled along with the 15% cap, use this to adjust the low-speed value. (0.2 corresponds to 20% over the set speed)\n', min_val=0.01, max_val=0.5),
       
-      'weather_simple_update_freq_s': Param(4, int, 'If weather is enabled, you can tap it to toggle simple/full display. If there\'s wind and rain/snow, simple display will alternate between showing wind and precipitation information. Set the amount of time between alternations here.\n', min_val=1, is_common=True, unit='seconds', param_param='WeatherAlternateFrequency'),
+      'MISC_coasting_high_speed_over': Param(0.1, float, 'When over-speed coasting is enabled along with the 15% cap, use this to adjust the low-speed value. (0.1 corresponds to 10% over the set speed)\n', min_val=0.01, max_val=0.5),
       
-      'set_speed_offset_mph': Param(3, int, 'When adjusting 5mph at a time, this offset will be added to the result, so if set to 3mph, then your set speed will always be 3mph over the closest 5, so 10+3, 15+3, 20+3 = 13, 18, 23mph instead of 10, 15, 20\n', min_val=1, max_val=4, is_common=True, unit='mph'),
+      'MISC_car_12v_pause_charging_v': Param(11.0, float, 'Lower voltage threshold for your car\'s 12v system, below which the device will shutdown (well, stop charging, but there\'s no battery in the C2 or C3, so it shuts down)\n', min_val=0, max_val=10000, unit='volts'),
       
-      'coasting_low_speed_over': Param(0.2, float, 'When over-speed coasting is enabled along with the 15% cap, use this to adjust the low-speed value. (0.2 corresponds to 20% over the set speed)\n', min_val=0.01, max_val=0.5, is_common=True),
+      'MISC_offroad_shutdown_time_hr': Param(5, int, 'The amount of time after turning off your car before your device shuts down to conserve power (and not drain your car battery)\n', min_val=0, unit='hours'),
       
-      'coasting_high_speed_over': Param(0.1, float, 'When over-speed coasting is enabled along with the 15% cap, use this to adjust the low-speed value. (0.1 corresponds to 10% over the set speed)\n', min_val=0.01, max_val=0.5, is_common=True),
+      'MISC_car_12v_pause_charging_v': Param(11.0, float, 'Lower voltage threshold for your car\'s 12v system, below which the device will shutdown (well, stop charging, but there\'s no battery in the C2 or C3, so it shuts down)\n', min_val=6, max_val=20, unit='volts'),
       
-      'open_weather_map_api_key': Param(None, [str, None], 'You can provide your own api key for fetching weather information after signing up at https://home.openweathermap.org/users/sign_up. This is optional.\n', static=True),
+      'MISC_weather_simple_update_freq_s': Param(4, int, 'If weather is enabled, you can tap it to toggle simple/full display. If there\'s wind and rain/snow, simple display will alternate between showing wind and precipitation information. Set the amount of time between alternations here.\n', min_val=1, unit='seconds', param_param='WeatherAlternateFrequency'),
+      
+      'MISC_open_weather_map_api_key': Param(None, [str, None], 'You can provide your own api key for fetching weather information after signing up at https://home.openweathermap.org/users/sign_up. This is optional.\n', static=True),
+      
+      'MISC_cluster_speed_smoothing_factor': Param(0.2, float, 'Adjust the smoothing used to determine the "current speed" shown on the Comma device\n', min_val=0.0, max_val=100.0),
+      
+      'MISC_cluster_speed_deadzone': Param(0.12, float, 'Adjust the deadzone used to prevent the current speed from quickly alternating back and forth. Higher value means a more delayed response with less alternating.\n', min_val=0.0, max_val=0.45, unit='mph or km/h'),
       
       #####
       
@@ -437,11 +443,11 @@ class opParams:
       
       'FP_close_gas_factor': Param(1.0, float, 'Controls how proactively OpenPilot will adjust in response to a change in the lead car velocity when using the close follow profile. Increase to make close follow more responsive.\n', live=True, min_val=0.1, max_val=2.0),
       
-      'FP_close_distance_offset_s': Param(0.0, float, 'Add or subtract follow distance from the close follow profile\n', live=True, min_val=-0.5, max_val=3.0, is_common=True, unit='seconds follow distance'),
+      'FP_close_distance_offset_s': Param(0.0, float, 'Add or subtract follow distance from the close follow profile\n', live=True, min_val=-0.5, max_val=3.0, unit='seconds follow distance'),
       
       'FP_medium_distance_offset_s': Param(0.0, float, 'Add or subtract follow distance from the medium follow profile\n', live=True, min_val=-1.0, max_val=2.5, is_common=True, unit='seconds follow distance'),
       
-      'FP_far_distance_offset_s': Param(0.0, float, 'Add or subtract follow distance from the far follow profile\n', live=True, min_val=-1.5, max_val=2.0, is_common=True, unit='seconds follow distance'),
+      'FP_far_distance_offset_s': Param(0.0, float, 'Add or subtract follow distance from the far follow profile\n', live=True, min_val=-1.5, max_val=2.0, unit='seconds follow distance'),
       
       'FP_DF_distance_gain_factor': Param(1.0, float, 'Scale the rate at which the follow profile increases to a higher, farther following profile. A larger number means it will return to medium/far follow more quickly after a cut-in.\n', min_val=0.01, max_val=20.0),
       
@@ -483,9 +489,9 @@ class opParams:
       
       'MADS_steer_allow_nudgeless_lane_change': Param(False, bool, 'If true, nudgeless lane changes will apply when in MADS mode\n'),
       
-      'MADS_OP_decel_mss': Param([-1.0, -1.1], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is not pressed.\n', min_val=-2.5, max_val=0.0, is_common=True, unit='m/s²'),
+      'MADS_OP_decel_mss': Param([-1.0, -1.1], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is not pressed.\n', min_val=-2.5, max_val=0.0, unit='m/s²'),
       
-      'MADS_OP_regen_paddle_decel_mss': Param([-1.5, -1.6], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is pressed.\n', min_val=-2.5, max_val=0.0, is_common=True, unit='m/s²'),
+      'MADS_OP_regen_paddle_decel_mss': Param([-1.5, -1.6], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is pressed.\n', min_val=-2.5, max_val=0.0, unit='m/s²'),
       
       'MADS_OP_rate_ramp_up': Param(0.8, float, 'The rate at which one-pedal brake force increases (applying)\n', min_val=0.1, max_val=3.0, unit='m/s³'),
       
@@ -517,7 +523,7 @@ class opParams:
       
       'VTSC_lat_accel_factor': Param(1.0, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the lateral acceleration values used in the lookup. A value less/greater than 1.0 will make curve braking less/more sensitive to lateral acceleration and apply braking later/sooner.\n', live=True, min_val=0.01, max_val=3.0),
       
-      'VTSC_long_accel_factor': Param(1.0, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the output values of longitudinal acceleration. A value less/greater than 1.0 will decrease/increase the brake intensity for a given curve.\n', live=True, min_val=0.01, max_val=3.0, is_common=True),
+      'VTSC_long_accel_factor': Param(1.0, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the output values of longitudinal acceleration. A value less/greater than 1.0 will decrease/increase the brake intensity for a given curve.\n', live=True, min_val=0.01, max_val=3.0),
       
       'VTSC_low_speed_scale_interchange': Param(0.85, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds on freeway/highway interchanges. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
       
@@ -551,7 +557,7 @@ class opParams:
       
       #####
       
-      'LP_auto_auto_minimum_speed_mph': Param(10.0, float, 'Minimum speed at which traffic-based "auto auto lane position" will activate\n', min_val=5.0, max_val=90.0, is_common=True, unit='mph'),
+      'LP_auto_auto_minimum_speed_mph': Param(10.0, float, 'Minimum speed at which traffic-based "auto auto lane position" will activate\n', min_val=5.0, max_val=90.0, unit='mph'),
       
       'LP_offset': Param(0.11, float, 'This controls the offset distance of the left and right lane positions, as a factor of current lane width, when manual adjustable lane position is used\n', live=True, min_val=0.01, max_val=0.3, is_common=True),
       
@@ -731,7 +737,7 @@ class opParams:
       
       #####
       
-      'TUNE_LONG_gas_overlap_cutoff': Param(15, int, 'Adjust the percent throttle necessary to override OpenPilot gas control. (any amount of throttle overrides brake control.)\n', live=True, min_val=0, max_val=15, is_common=True, unit='%'),
+      'TUNE_LONG_gas_overlap_cutoff': Param(15, int, 'Adjust the percent throttle necessary to override OpenPilot gas control. (any amount of throttle overrides brake control.)\n', live=True, min_val=0, max_val=15, unit='%'),
       
       'TUNE_LONG_do_override': Param(False, bool, 'If true, the other params here will override the hardcoded longitudinal tune settings for any gm car. The default is for Volt. Changes to this opParam will also apply to the "Custom long override" toggle in OpenPilot settings. There is no tunable feedforward; instead you would adjust acceleration profiles.\n', param_param='OPParamsLongitudinalOverride', param_param_read_on_startup=True, fake_live=True),
       
@@ -767,9 +773,9 @@ class opParams:
       
       'MET_09': Param('MEMORY_USAGE_PERCENT', [int,str], 'UI metric in bottom row left column. Enter the name of the metric or it\'s number.\n', allowed_vals=UI_METRICS, param_param='MeasureSlot09', param_param_use_ord=True, param_param_read_on_startup=True),
       
-      'MET_reset_trip_metrics': Param(False, bool, 'Set this to true in order to, the next time you start your car, reset trip and EV "total" efficiency metrics. This sets the UI metric reset toggle in OpenPilot settings, so you can reset on-device or here using opparams.\n', param_param='MetricResetSwitch', param_param_read_on_startup=True),
+      'MET_reset_trip_metrics': Param(False, bool, 'Set this to true in order to, the next time you start your car, reset trip and EV "total" efficiency metrics. This sets the UI metric reset toggle in OpenPilot settings, so you can reset on-device or here using opparams.\n', param_param='MetricResetSwitch', param_param_read_on_startup=True, is_common=True, fake_live=True),
       
-      'MET_power_meter_smoothing_factor': Param(1.0, float, 'Use this to control the amount of smoothing applied to the wattage reading in order to smooth the power meter. On Volt, the power meter for power output is determined using the high-voltage battery wattage. Only total battery wattage is available to OpenPilot, so the power use is not exclusively that of the powertrain, and things like the AC/heater frequently cycle on/off, causing rapid spikes in the wattage.\n', min_val=0.0, max_val=1000.0, is_common=True),
+      'MET_power_meter_smoothing_factor': Param(1.0, float, 'Use this to control the amount of smoothing applied to the wattage reading in order to smooth the power meter. On Volt, the power meter for power output is determined using the high-voltage battery wattage. Only total battery wattage is available to OpenPilot, so the power use is not exclusively that of the powertrain, and things like the AC/heater frequently cycle on/off, causing rapid spikes in the wattage.\n', min_val=0.0, max_val=1000.0),
     }
     
     # params in a group must start with the group's short name
@@ -784,6 +790,7 @@ class opParams:
       'LP': 'adjustable/automatic Lane Positioning',
       'TD': 'Traffic Detection',
       'TUNE': 'lateral/longitudinal tuning',
+      'MISC': 'MISCellaneous OpenPilot settings',
       'MET': 'on-screed UI METrics',
       'LAT': "LATeral control (steering)",
       'TRX': "Lateral acceleration \"torque\" controller (PID under the hood)",
@@ -807,7 +814,7 @@ class opParams:
     cloudlog.info(f"opParams: loading opParams{f' from {calling_function}' if calling_function else ''}.\n   Live tuning: {self.live_tuning_enabled}")
     
     self.fork_params['op_params_live_tune_enabled'] = Param(False, bool, 'Used to see if live tuning is enabled when using opparams.py (formerly op_edit.py)', hidden=True)
-    self.fork_params['username'] = Param(False, [type(None), str, bool], 'Your identifier provided with any crash logs sent to Sentry.\nHelps the developer reach out to you if anything goes wrong')
+    self.fork_params['MISC_username'] = Param(False, [type(None), str, bool], 'Your identifier provided with any crash logs sent to Sentry.\nHelps the developer reach out to you if anything goes wrong', is_common=False, fake_live=True)
     self.fork_params['op_edit_live_mode'] = Param(False, bool, 'This parameter controls which mode opEdit starts in', hidden=True)
     self.fork_params['op_edit_section'] = Param('', str, 'This parameter controls display of param sections', hidden=True)
     self.fork_params['op_edit_compact_view'] = Param(True, bool, 'This parameter controls display of more or less parameters on the home screen', hidden=True)

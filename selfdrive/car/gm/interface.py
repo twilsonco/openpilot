@@ -47,6 +47,11 @@ class CarInterface(CarInterfaceBase):
     super().__init__(CP, CarController, CarState)
     if CarState is not None:
       self.cp_chassis = self.CS.get_chassis_can_parser(CP)
+    self.mads_one_pedal_enabled = False
+    self.mads_one_pedal_temporary = False
+    self.mads_lead_braking_enabled = False
+    self.mads_cruise_main = False
+    self.autosteer_enabled = False
     
   params_check_last_t = 0.
   params_check_freq = 0.1 # check params at 10Hz
@@ -556,6 +561,46 @@ class CarInterface(CarInterfaceBase):
       if self.CS.resume_required:
         events.add(EventName.resumeRequired)
 
+    if self.MADS_enabled and not self.CS.long_active and t - self.CS.sessionInitTime > 30.:
+      if self.CS.MADS_lead_braking_enabled != self.mads_lead_braking_enabled:
+        if self.CS.MADS_lead_braking_enabled:
+          events.add(EventName.madsLeadBrakingEnabled)
+        else:
+          events.add(EventName.madsLeadBrakingDisabled)
+      
+      if self.CS.one_pedal_mode_active != self.mads_one_pedal_enabled:
+        if self.CS.one_pedal_mode_active:
+          if self.CS.one_pedal_mode_temporary:
+            if self.CS.out.vEgo > 0.1:
+              events.add(EventName.madsOnePedalTemporary)
+          else:
+            events.add(EventName.madsOnePedalEnabled)
+        else:
+          if not self.mads_one_pedal_temporary:
+            events.add(EventName.madsOnePedalDisabled)
+      
+      if self.CS.cruiseMain != self.mads_cruise_main:
+        if self.CS.cruiseMain:
+          events.add(EventName.madsEnabled)
+        else:
+          events.add(EventName.madsDisabled)
+      
+      if self.CS.lkaEnabled != self.autosteer_enabled:
+        if self.CS.lkaEnabled:
+          events.add(EventName.madsAutosteerEnabled)
+        else:
+          events.add(EventName.madsAutosteerDisabled)
+    else:
+      if self.CS.lkaEnabled != self.autosteer_enabled:
+        if not self.CS.lkaEnabled:
+          events.add(EventName.manualSteeringRequired)
+          
+    self.mads_one_pedal_enabled = self.CS.one_pedal_mode_active
+    self.mads_one_pedal_temporary = self.CS.one_pedal_mode_temporary
+    self.mads_cruise_main = self.CS.cruiseMain
+    self.autosteer_enabled = self.CS.lkaEnabled
+    self.mads_lead_braking_enabled = self.CS.MADS_lead_braking_enabled
+
     # handle button presses
     for b in ret.buttonEvents:
       # do enable on both accel and decel buttons
@@ -566,8 +611,8 @@ class CarInterface(CarInterfaceBase):
           if not self.CS.lkaEnabled: #disabled LFA
             if not ret.cruiseState.enabled:
               events.add(EventName.buttonCancel)
-            else:
-              events.add(EventName.manualSteeringRequired)
+            
+            
       
       # The ECM will fault if resume triggers an enable while speed is set to 0
       if b.type == ButtonType.accelCruise and c.hudControl.setSpeed > 0 and c.hudControl.setSpeed < 70 and not b.pressed:
@@ -619,10 +664,10 @@ class CarInterface(CarInterfaceBase):
     self.frame += 1
 
     # Release Auto Hold and creep smoothly when regenpaddle pressed
-    if t - self.CS.regen_paddle_released_last_t < 1.0 and self.CS.autoHold:
+    if t - self.CS.regen_paddle_released_last_t < 1.0 and self.CS.autoHold and not self.CS.one_pedal_mode_active:
       self.CS.autoHoldActive = False
 
-    if self.CS.autoHold and not self.CS.autoHoldActive and not self.CS.regen_paddle_pressed:
+    if ((self.CS.autoHold and not self.CS.regen_paddle_pressed) or self.CS.one_pedal_mode_active) and not self.CS.autoHoldActive:
       if self.CS.out.vEgo > 0.03:
         self.CS.autoHoldActive = True
       elif self.CS.out.vEgo < 0.02 and self.CS.out.brakePressed and self.CS.time_in_drive_autohold >= self.CS.MADS_long_min_time_in_drive:

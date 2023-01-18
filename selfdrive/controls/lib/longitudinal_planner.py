@@ -127,10 +127,7 @@ class Planner():
     self.coasting_lead_d = -1. # [m] lead distance. -1. if no lead
     self.coasting_lead_v = -10. # lead "absolute"" velocity
     self.tr = 1.8
-    
-    self.stopped_t_last = 0.
-    self.seconds_stopped = 0
-    self.standstill_last = False
+    self.seconds_stopped = 0.0
     self.gear_shifter_last = GearShifter.park
     self.update_op_params()
 
@@ -150,12 +147,8 @@ class Planner():
     v_ego = sm['carState'].vEgo
     a_ego = sm['carState'].aEgo
     
-    if sm['carState'].standstill and not self.standstill_last:
-      self.stopped_t_last = t
-    self.standstill_last = sm['carState'].standstill
-    
-    if sm['carState'].standstill:
-      self.seconds_stopped = int(t - self.stopped_t_last)
+    if sm['carState'].standstill and sm['carState'].gearShifter in ['drive','low']:
+      self.seconds_stopped += DT_MDL
     else:
       self.seconds_stopped = 0
 
@@ -317,7 +310,7 @@ class Planner():
     longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
     longitudinalPlan.fcw = self.fcw
     longitudinalPlan.dynamicFollowLevel = self.mpcs['lead0'].follow_level_df
-    longitudinalPlan.secondsStopped = self.seconds_stopped
+    longitudinalPlan.secondsStopped = int(self.seconds_stopped)
 
     longitudinalPlan.visionTurnControllerState = self.vision_turn_controller.state
     longitudinalPlan.visionCurrentLateralAcceleration = float(self.vision_turn_controller._current_lat_acc)

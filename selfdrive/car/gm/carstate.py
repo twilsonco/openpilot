@@ -11,7 +11,7 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, \
                                     CruiseButtons, STEER_THRESHOLD, CarControllerParams
-from selfdrive.controls.lib.drive_helpers import set_v_cruise_offset
+from selfdrive.controls.lib.drive_helpers import set_v_cruise_offset, ClusterSpeed
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from selfdrive.swaglog import cloudlog
 
@@ -54,6 +54,9 @@ class CarState(CarStateBase):
     self.ui_metrics_params = [int(self._params.get(f'MeasureSlot{i:02d}', encoding="utf8")) for i in range(10)]
     self.update_op_params()
     
+    self.gear_shifter = 'park'
+    self.cluster_speed = ClusterSpeed(is_metric=self._params.get_bool("IsMetric"))
+    
     self.iter = 0
     self.uiframe = 5
     
@@ -93,7 +96,7 @@ class CarState(CarStateBase):
     self.follow_level_change_last_t = self.sessionInitTime
     self.lkaEnabled = True
     self.cruise_offset_enabled = self._params.get_bool("CruiseSpeedOffset")
-    set_v_cruise_offset(self._op_params.get('set_speed_offset_mph', force_update=True) if self.cruise_offset_enabled else 0)
+    set_v_cruise_offset(self._op_params.get('MISC_set_speed_offset_mph', force_update=True) if self.cruise_offset_enabled else 0)
     self.autoHold = self._params.get_bool("GMAutoHold")
     self.MADS_enabled = self._params.get_bool("MADSEnabled")
     self.disengage_on_gas = not self.MADS_enabled and not Params().get_bool("DisableDisengageOnGas")
@@ -127,7 +130,7 @@ class CarState(CarStateBase):
     self.coasting_enabled_last = self.coasting_enabled
     self.no_friction_braking = self._params.get_bool("RegenBraking")
     self.coasting_brake_over_speed_enabled = self._params.get_bool("CoastingBrakeOverSpeed")
-    base_BP = [self._op_params.get('coasting_low_speed_over', force_update=True), self._op_params.get('coasting_high_speed_over', force_update=True)]
+    base_BP = [self._op_params.get('MISC_coasting_low_speed_over', force_update=True), self._op_params.get('MISC_coasting_high_speed_over', force_update=True)]
     self.coasting_over_speed_vEgo_BP = [[i + 0.1 for i in base_BP], [i + 0.15 for i in base_BP]]
     self.coasting_over_speed_regen_vEgo_BP = [base_BP, [i + 0.05 for i in base_BP]]
     self.coasting_over_speed_vEgo_BP_BP = [i * CV.MPH_TO_MS for i in [20., 80.]]
@@ -208,7 +211,7 @@ class CarState(CarStateBase):
     self.REGEN_PADDLE_STOP_SPEED = self._op_params.get('MADS_OP_one_time_stop_threshold_mph') * CV.MPH_TO_MS
     self.REGEN_PADDLE_STOP_PRESS_TIME = self._op_params.get('MADS_OP_one_time_stop_hold_s')
     
-    base_BP = [self._op_params.get('coasting_low_speed_over'), self._op_params.get('coasting_high_speed_over')]
+    base_BP = [self._op_params.get('MISC_coasting_low_speed_over'), self._op_params.get('MISC_coasting_high_speed_over')]
     self.coasting_over_speed_vEgo_BP = [[i + 0.1 for i in base_BP], [i + 0.15 for i in base_BP]]
     self.coasting_over_speed_regen_vEgo_BP = [base_BP, [i + 0.05 for i in base_BP]]
     
@@ -265,7 +268,7 @@ class CarState(CarStateBase):
       self.params_check_last_t = t
       self.reboot_in_N_seconds = int(self._params.get("OPParamsRebootInNSeconds", encoding="utf8"))
       self.update_op_params(t)
-      set_v_cruise_offset(self._op_params.get('set_speed_offset_mph') if self.cruise_offset_enabled else 0)
+      set_v_cruise_offset(self._op_params.get('MISC_set_speed_offset_mph') if self.cruise_offset_enabled else 0)
       self.coasting_allowed = self._params.get_bool("Coasting")
       self.coasting_enabled = self.coasting_allowed and self._params.get_bool("CoastingActive")
       accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco
@@ -280,7 +283,9 @@ class CarState(CarStateBase):
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
       
-    self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
+    gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
+    ret.clusterSpeed = self.cluster_speed.update(ret.vEgo, do_reset=self.gear_shifter != gear_shifter)
+    self.gear_shifter = gear_shifter
     ret.gearShifter = self.gear_shifter
     ret.brakePressure = chassis_cp.vl["EBCMFrictionBrakeStatus"]["FrictionBrakePressure"]
     ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"] != 0 

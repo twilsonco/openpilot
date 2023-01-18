@@ -22,7 +22,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       self.op_params.put('op_edit_live_mode', self.live_tuning)
     self.compact_view = self.op_params.get('op_edit_compact_view', force_update=True)
     self.section = self.op_params.get('op_edit_section', force_update=True)
-    self.username = self.op_params.get('username', force_update=True)
+    self.username = self.op_params.get('MISC_username', force_update=True)
     self.type_colors = {int: COLORS.BASE(179), float: COLORS.BASE(179),
                         bool: {False: COLORS.RED, True: COLORS.OKGREEN},
                         type(None): COLORS.BASE(177),
@@ -44,12 +44,12 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         username = ''
         while username == '':
           username = input('>> ').strip()
-        self.op_params.put('username', username)
+        self.op_params.put('MISC_username', username)
         self.username = username
         self.success('Thanks! Saved your username\n'
                      'Edit the \'username\' parameter at any time to update', sleep_time=1.5)
       elif username_choice == 2:
-        self.op_params.put('username', False)
+        self.op_params.put('MISC_username', False)
         self.info('Got it, bringing you into opEdit\n'
                   'Edit the \'username\' parameter at any time to update', sleep_time=1.0)
     else:

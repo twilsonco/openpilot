@@ -122,8 +122,8 @@ class Controls:
     self.is_metric = params.get_bool("IsMetric")
     self.is_ldw_enabled = params.get_bool("IsLdwEnabled")
     community_feature_toggle = True
-    openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
-    passive = params.get_bool("Passive") or not openpilot_enabled_toggle
+    self.openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
+    passive = params.get_bool("Passive") or not self.openpilot_enabled_toggle
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
@@ -729,6 +729,9 @@ class Controls:
 
     # Check if openpilot is engaged
     self.enabled = self.active or self.state == State.preEnabled
+    
+    if not self.openpilot_enabled_toggle:
+      self.current_alert_types = []
 
   def state_control(self, CS):
     """Given the state, this function returns an actuators packet"""

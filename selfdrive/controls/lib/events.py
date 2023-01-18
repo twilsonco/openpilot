@@ -1200,15 +1200,15 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
   EventName.madsAlert3: {
     ET.PERMANENT: Alert(
-      "MADS | One-pedal driving",
+      "MADS | One-pedal L-mode driving",
       "Toggle with regen paddle double-tap",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },
   EventName.madsAlert6: {
     ET.PERMANENT: Alert(
-      "MADS | One-pedal one-time-stop",
-      "Slow to below 5mph with regen paddle",
+      "MADS | One-pedal regen paddle",
+      "Hold for extra braking or to stop",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },
@@ -1216,6 +1216,78 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.PERMANENT: Alert(
       "MADS | Enabled",
       "Master on/off using cruise main button",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsLeadBrakingEnabled: {
+    ET.PERMANENT: Alert(
+      "MADS lead braking ENABLED",
+      "Override with gas/brake pedals",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsLeadBrakingDisabled: {
+    ET.PERMANENT: Alert(
+      "MADS lead braking DISABLED",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsOnePedalEnabled: {
+    ET.PERMANENT: Alert(
+      "MADS one pedal L-mode ENABLED",
+      "Hold regen paddle for additional decel",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsOnePedalDisabled: {
+    ET.PERMANENT: Alert(
+      "MADS one pedal mode DISABLED",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsOnePedalTemporary: {
+    ET.PERMANENT: Alert(
+      "MADS one-time stop activated",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 2.),
+  },
+  
+  EventName.madsAutosteerEnabled: {
+    ET.PERMANENT: Alert(
+      "MADS autosteer ENABLED",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsAutosteerDisabled: {
+    ET.PERMANENT: Alert(
+      "MADS autosteer DISABLED",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsEnabled: {
+    ET.PERMANENT: Alert(
+      "MADS | ENABLED",
+      "Cruise main turned on",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.madsDisabled: {
+    ET.PERMANENT: Alert(
+      "MADS | DISABLED",
+      "Cruise main turned off",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
   },
