@@ -35,7 +35,7 @@ ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.4, 0.2] # factor of error for non-lead braki
 ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T = 0.6 # [s]
 
 ONE_PEDAL_MODE_DECEL_V = [-1.0, -1.1] # m/s^2
-ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V = [-1.5, -1.6] # m/s^2
+ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V = [-1.3, -1.6] # m/s^2
 ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V + ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
 ONE_PEDAL_DECEL_RATE_LIMIT_UP = 0.8 * DT_CTRL * 4 # m/s^2 per second for increasing braking force
 ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.8 * DT_CTRL * 4 # m/s^2 per second for decreasing
