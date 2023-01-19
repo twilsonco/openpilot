@@ -491,7 +491,7 @@ class opParams:
       
       'MADS_OP_decel_mss': Param([-1.0, -1.1], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is not pressed.\n', min_val=-2.5, max_val=0.0, unit='m/s²'),
       
-      'MADS_OP_regen_paddle_decel_mss': Param([-1.5, -1.6], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is pressed.\n', min_val=-2.5, max_val=0.0, unit='m/s²'),
+      'MADS_OP_regen_paddle_decel_mss': Param([-1.3, -1.6], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is pressed.\n', min_val=-2.5, max_val=0.0, unit='m/s²'),
       
       'MADS_OP_rate_ramp_up': Param(0.8, float, 'The rate at which one-pedal brake force increases (applying)\n', min_val=0.1, max_val=3.0, unit='m/s³'),
       
