@@ -895,6 +895,10 @@ static void ui_draw_measures(UIState *s){
   if (s->scene.measure_cur_num_slots){
     SubMaster &sm = *(s->sm);
     UIScene &scene = s->scene;
+    const int measure_cur_num_slots = scene.measure_cur_num_slots;
+    if (scene.map_open){
+      scene.measure_cur_num_slots = MIN(scene.measure_num_rows, 4);
+    }
     const Rect maxspeed_rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
     int center_x = s->fb_w - face_wheel_radius - bdr_s * 2;
     center_x -= s->scene.power_meter_rect.w + s->fb_w / 256;
@@ -3182,6 +3186,7 @@ static void ui_draw_measures(UIState *s){
       }
       catch(...){}
     }
+    scene.measure_cur_num_slots = measure_cur_num_slots;
   }
 }
 
