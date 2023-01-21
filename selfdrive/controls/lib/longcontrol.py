@@ -89,6 +89,7 @@ class LongControl():
     self.lead_present_last = False
     self.lead_gone_t = 0.
     self.last_gas_t = 0.
+    self.active_last = False
     self.a_target = 0.0
     self.brake_pressed_last_t = sec_since_boot()
     self.brake_pressed_time_since = 0.0
@@ -204,8 +205,9 @@ class LongControl():
       self.brake_pressed_last_t = t
     elif CS.gas > 1e-5: # no delay after gas press
       self.brake_pressed_last_t = t - 10.0
-    elif CS.gas > GAS_PRESSED_THRESHOLD:
+    elif CS.gas > GAS_PRESSED_THRESHOLD or active and not self.active_last:
       self.last_gas_t = t
+    self.active_last = active
     self.brake_pressed_time_since = t - self.brake_pressed_last_t
     lead_present = long_plan.leadDist > 0.
     if not lead_present and self.lead_present_last:
@@ -217,10 +219,12 @@ class LongControl():
     if CS.vEgo > self.pos_accel_smooth_min_speed and output_accel > self.last_output_accel:
       if not lead_present and time_since_lead < self.lead_gone_smooth_accel_time:
         smooth_factor = interp(time_since_lead, [self.lead_gone_smooth_accel_time * 0.5, self.lead_gone_smooth_accel_time], [self.pos_accel_lead_smooth_k, 0.0])
+        self.output_accel.x = max(self.output_accel.x, CS.aEgo)
         self.output_accel.update_alpha(smooth_factor)
         self.output_accel.update(output_accel)
       elif time_since_gas < self.gas_smooth_accel_time:
         smooth_factor = interp(time_since_gas, [self.gas_smooth_accel_time * 0.5, self.gas_smooth_accel_time], [self.pos_accel_gas_smooth_k, 0.0])
+        self.output_accel.x = max(self.output_accel.x, CS.aEgo)
         self.output_accel.update_alpha(smooth_factor)
         self.output_accel.update(output_accel)
       else:
