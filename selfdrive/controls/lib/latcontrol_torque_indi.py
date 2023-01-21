@@ -58,11 +58,11 @@ class LatControlTorqueINDI():
     self.reset()
   
   def update_op_params(self):
-    bp = [i * CV.MPH_TO_MS for i in [self._op_params.get(f"TUNE_LAT_TRXINDI_{s}s_mph") for s in ['l','h']]]
-    self._RC = (bp, [self._op_params.get(f"TUNE_LAT_TRXINDI_time_constant_{s}s") for s in ['l','h']])
-    self._G = (bp, [self._op_params.get(f"TUNE_LAT_TRXINDI_actuator_effectiveness_{s}s") for s in ['l','h']])
-    self._outer_loop_gain = (bp, [self._op_params.get(f"TUNE_LAT_TRXINDI_outer_gain_{s}s") for s in ['l','h']])
-    self._inner_loop_gain = (bp, [self._op_params.get(f"TUNE_LAT_TRXINDI_inner_gain_{s}s") for s in ['l','h']])
+    bp = [i * CV.MPH_TO_MS for i in self._op_params.get("TUNE_LAT_TRXINDI_bp_mph")]
+    self._RC = (bp, self._op_params.get("TUNE_LAT_TRXINDI_time_constant"))
+    self._G = (bp, self._op_params.get("TUNE_LAT_TRXINDI_actuator_effectiveness"))
+    self._outer_loop_gain = (bp, self._op_params.get("TUNE_LAT_TRXINDI_outer_gain"))
+    self._inner_loop_gain = (bp, self._op_params.get("TUNE_LAT_TRXINDI_inner_gain"))
     self.roll_k = self._op_params.get('TUNE_LAT_TRXINDI_roll_compensation')
     self.friction = self._op_params.get('TUNE_LAT_TRXINDI_friction')
     self._k_f = self._op_params.get('TUNE_LAT_TRXINDI_kf')

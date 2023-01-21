@@ -130,7 +130,7 @@ class CarState(CarStateBase):
     self.coasting_enabled_last = self.coasting_enabled
     self.no_friction_braking = self._params.get_bool("RegenBraking")
     self.coasting_brake_over_speed_enabled = self._params.get_bool("CoastingBrakeOverSpeed")
-    base_BP = [self._op_params.get('MISC_coasting_low_speed_over', force_update=True), self._op_params.get('MISC_coasting_high_speed_over', force_update=True)]
+    base_BP = self._op_params.get('MISC_coasting_speed_over', force_update=True)
     self.coasting_over_speed_vEgo_BP = [[i + 0.1 for i in base_BP], [i + 0.15 for i in base_BP]]
     self.coasting_over_speed_regen_vEgo_BP = [base_BP, [i + 0.05 for i in base_BP]]
     self.coasting_over_speed_vEgo_BP_BP = [i * CV.MPH_TO_MS for i in [20., 80.]]
@@ -211,7 +211,7 @@ class CarState(CarStateBase):
     self.REGEN_PADDLE_STOP_SPEED = self._op_params.get('MADS_OP_one_time_stop_threshold_mph') * CV.MPH_TO_MS
     self.REGEN_PADDLE_STOP_PRESS_TIME = self._op_params.get('MADS_OP_one_time_stop_hold_s')
     
-    base_BP = [self._op_params.get('MISC_coasting_low_speed_over'), self._op_params.get('MISC_coasting_high_speed_over')]
+    base_BP = self._op_params.get('MISC_coasting_speed_over')
     self.coasting_over_speed_vEgo_BP = [[i + 0.1 for i in base_BP], [i + 0.15 for i in base_BP]]
     self.coasting_over_speed_regen_vEgo_BP = [base_BP, [i + 0.05 for i in base_BP]]
     

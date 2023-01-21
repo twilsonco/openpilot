@@ -73,7 +73,7 @@ class VisionTurnController():
     self._v_cruise_setpoint = 0.
     self._v_ego = 0.
     self._a_ego = 0.
-    self._a_target = FirstOrderFilter(0., self._op_params.get('VTSC_smoothing_factor', force_update=True), DT_MDL)
+    self._a_target = FirstOrderFilter(0., self._op_params.get('CB_VTSC_smoothing_factor', force_update=True), DT_MDL)
     self._v_overshoot = 0.
     self._state = VisionTurnControllerState.disabled
     self._CS = None
@@ -93,13 +93,13 @@ class VisionTurnController():
     
   def get_speed_scale(self, road_rank):
     if road_rank == 0:
-      return [self._SPEED_SCALE_BP, [self._op_params.get('VTSC_low_speed_scale_freeway'), 1.0]]
+      return [self._SPEED_SCALE_BP, [self._op_params.get('CB_VTSC_low_speed_scale_freeway'), 1.0]]
     elif road_rank in [10, 20, 30]:
-      return [self._SPEED_SCALE_BP, [self._op_params.get('VTSC_low_speed_scale_state_highway'), 1.0]]
+      return [self._SPEED_SCALE_BP, [self._op_params.get('CB_VTSC_low_speed_scale_state_highway'), 1.0]]
     elif road_rank in [1,11,21,31]:
-      return [self._SPEED_SCALE_BP, [self._op_params.get('VTSC_low_speed_scale_interchange'), 1.0]]
+      return [self._SPEED_SCALE_BP, [self._op_params.get('CB_VTSC_low_speed_scale_interchange'), 1.0]]
     else:
-      return [self._SPEED_SCALE_DEFAULT_BP, [self._op_params.get('VTSC_low_speed_scale_default'), 1.0]]
+      return [self._SPEED_SCALE_DEFAULT_BP, [self._op_params.get('CB_VTSC_low_speed_scale_default'), 1.0]]
 
   @property
   def state(self):
@@ -172,9 +172,9 @@ class VisionTurnController():
     return np.array([curvature(x) for x in x_vals]), max_lat_accel, max_curvature, max_roll_compensation, max_lat_accel_dist
 
   def _update_op_params(self):
-    self._a_target.update_alpha(self._op_params.get('VTSC_smoothing_factor'))
-    lat_accel_factor = self._op_params.get('VTSC_lat_accel_factor')
-    long_accel_factor = self._op_params.get('VTSC_long_accel_factor')
+    self._a_target.update_alpha(self._op_params.get('CB_VTSC_smoothing_factor'))
+    lat_accel_factor = self._op_params.get('CB_VTSC_lat_accel_factor')
+    long_accel_factor = self._op_params.get('CB_VTSC_long_accel_factor')
     self._ENTERING_PRED_LAT_ACC_TH = 1.3 * lat_accel_factor  # Predicted Lat Acc threshold to trigger entering turn state.
     self._ABORT_ENTERING_PRED_LAT_ACC_TH = 0.9 * lat_accel_factor  # Predicted Lat Acc threshold to abort entering state if speed drops.
     self._TURNING_LAT_ACC_TH = 0.8 * lat_accel_factor  # Lat Acc threshold to trigger turning turn state.

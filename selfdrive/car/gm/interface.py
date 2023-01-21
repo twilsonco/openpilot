@@ -373,25 +373,25 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torque.friction = op_params.get('TUNE_LAT_TRX_friction', force_update=True)
       elif lat_type == 'pid':
         ret.lateralTuning.init('pid')
-        bp = [i * CV.MPH_TO_MS for i in [op_params.get(f"TUNE_LAT_PID_{s}s_mph", force_update=True) for s in ['l','h']]]
+        bp = [i * CV.MPH_TO_MS for i in op_params.get(f"TUNE_LAT_PID_bp_mph", force_update=True)]
+        ret.lateralTuning.pid.kpV = op_params.get("TUNE_LAT_PID_kp", force_update=True)
+        ret.lateralTuning.pid.kiV = op_params.get("TUNE_LAT_PID_ki", force_update=True)
+        ret.lateralTuning.pid.kdV = op_params.get("TUNE_LAT_PID_kd", force_update=True)
         ret.lateralTuning.pid.kpBP = bp
-        ret.lateralTuning.pid.kpV = [op_params.get(f"TUNE_LAT_PID_kp_{s}s", force_update=True) for s in ['l','h']]
         ret.lateralTuning.pid.kiBP = bp
-        ret.lateralTuning.pid.kiV = [op_params.get(f"TUNE_LAT_PID_ki_{s}s", force_update=True) for s in ['l','h']]
         ret.lateralTuning.pid.kdBP = bp
-        ret.lateralTuning.pid.kdV = [op_params.get(f"TUNE_LAT_PID_kd_{s}s", force_update=True) for s in ['l','h']]
         ret.lateralTuning.pid.kf = op_params.get('TUNE_LAT_PID_kf', force_update=True)
       elif lat_type == 'indi':
         ret.lateralTuning.init('indi')
-        bp = [i * CV.MPH_TO_MS for i in [op_params.get(f"TUNE_LAT_INDI_{s}s_mph", force_update=True) for s in ['l','h']]]
+        bp = [i * CV.MPH_TO_MS for i in op_params.get("TUNE_LAT_INDI_bp_mph", force_update=True)]
         ret.lateralTuning.indi.innerLoopGainBP = bp
-        ret.lateralTuning.indi.innerLoopGainV = [op_params.get(f"TUNE_LAT_INDI_inner_gain_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.indi.innerLoopGainV = op_params.get("TUNE_LAT_INDI_inner_gain", force_update=True)
         ret.lateralTuning.indi.outerLoopGainBP = bp
-        ret.lateralTuning.indi.outerLoopGainV = [op_params.get(f"TUNE_LAT_INDI_outer_gain_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.indi.outerLoopGainV = op_params.get("TUNE_LAT_INDI_outer_gain", force_update=True)
         ret.lateralTuning.indi.timeConstantBP = bp
-        ret.lateralTuning.indi.timeConstantV = [op_params.get(f"TUNE_LAT_INDI_time_constant_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.indi.timeConstantV = op_params.get("TUNE_LAT_INDI_time_constant", force_update=True)
         ret.lateralTuning.indi.actuatorEffectivenessBP = bp
-        ret.lateralTuning.indi.actuatorEffectivenessV = [op_params.get(f"TUNE_LAT_INDI_actuator_effectiveness_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.indi.actuatorEffectivenessV = op_params.get("TUNE_LAT_INDI_actuator_effectiveness", force_update=True)
       elif lat_type == 'lqr':
         ret.lateralTuning.init('lqr')
         ret.lateralTuning.lqr.scale = op_params.get('TUNE_LAT_LQR_scale', force_update=True)
@@ -404,15 +404,15 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.lqr.l = op_params.get('TUNE_LAT_LQR_l', force_update=True)
       elif lat_type == 'torqueindi':
         ret.lateralTuning.init('torqueIndi')
-        bp = [i * CV.MPH_TO_MS for i in [op_params.get(f"TUNE_LAT_TRXINDI_{s}s_mph", force_update=True) for s in ['l','h']]]
+        bp = [i * CV.MPH_TO_MS for i in op_params.get("TUNE_LAT_TRXINDI_bp_mph", force_update=True)]
         ret.lateralTuning.torqueIndi.innerLoopGainBP = bp
-        ret.lateralTuning.torqueIndi.innerLoopGainV = [op_params.get(f"TUNE_LAT_TRXINDI_inner_gain_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.torqueIndi.innerLoopGainV = op_params.get("TUNE_LAT_TRXINDI_inner_gain", force_update=True)
         ret.lateralTuning.torqueIndi.outerLoopGainBP = bp
-        ret.lateralTuning.torqueIndi.outerLoopGainV = [op_params.get(f"TUNE_LAT_TRXINDI_outer_gain_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.torqueIndi.outerLoopGainV = op_params.get("TUNE_LAT_TRXINDI_outer_gain", force_update=True)
         ret.lateralTuning.torqueIndi.timeConstantBP = bp
-        ret.lateralTuning.torqueIndi.timeConstantV = [op_params.get(f"TUNE_LAT_TRXINDI_time_constant_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.torqueIndi.timeConstantV = op_params.get("TUNE_LAT_TRXINDI_time_constant", force_update=True)
         ret.lateralTuning.torqueIndi.actuatorEffectivenessBP = bp
-        ret.lateralTuning.torqueIndi.actuatorEffectivenessV = [op_params.get(f"TUNE_LAT_TRXINDI_actuator_effectiveness_{s}s", force_update=True) for s in ['l','h']]
+        ret.lateralTuning.torqueIndi.actuatorEffectivenessV = op_params.get("TUNE_LAT_TRXINDI_actuator_effectiveness", force_update=True)
         ret.lateralTuning.torqueIndi.friction = op_params.get('TUNE_LAT_TRXINDI_friction', force_update=True)
         ret.lateralTuning.torqueIndi.kf = op_params.get('TUNE_LAT_TRXINDI_kf', force_update=True)
       elif lat_type == 'torquelqr':

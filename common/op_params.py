@@ -198,7 +198,6 @@ class Param:
                param_param='',
                param_param_use_ord=False,
                unit='',
-               linked_op_param='',
                linked_op_param_check_param='',
                param_param_read_on_startup=False,
                show_op_param='',
@@ -220,8 +219,7 @@ class Param:
     self.unit = unit
     self.show_op_param = show_op_param # if set, this param's value is compared to see if param should be shown or not
     self.show_op_param_check_val = show_op_param_check_val # the value against which it is compared
-    self.linked_op_param = linked_op_param # when a change is made, update this specified param also
-    self.linked_op_param_check_param = linked_op_param_check_param # this specified bool param can be changed by the user to control whether the linked_op_param is used
+    self.linked_op_param_check_param = linked_op_param_check_param # this specified bool param can be changed by the user to control whether the list items are synced
     self.param_param = param_param # op_params can also write to regular "params" when put(), and op_params always overwrite regular params
     self.param_param_use_ord = param_param_use_ord # store the index of the value in allowed values when writing to corresponding param
     self.param_param_read_on_startup = param_param_read_on_startup # if true, get the param_param when initializing to override own value
@@ -399,9 +397,7 @@ class opParams:
       
       'MISC_set_speed_offset_mph': Param(3, int, 'When adjusting 5mph at a time, this offset will be added to the result, so if set to 3mph, then your set speed will always be 3mph over the closest 5, so 10+3, 15+3, 20+3 = 13, 18, 23mph instead of 10, 15, 20\n', min_val=1, max_val=4, is_common=True, unit='mph'),
       
-      'MISC_coasting_low_speed_over': Param(0.2, float, 'When over-speed coasting is enabled along with the 15% cap, use this to adjust the low-speed value. (0.2 corresponds to 20% over the set speed)\n', min_val=0.01, max_val=0.5),
-      
-      'MISC_coasting_high_speed_over': Param(0.1, float, 'When over-speed coasting is enabled along with the 15% cap, use this to adjust the low-speed value. (0.1 corresponds to 10% over the set speed)\n', min_val=0.01, max_val=0.5),
+      'MISC_coasting_speed_over': Param([0.2, 0.1], [list, float], 'When over-speed coasting is enabled along with the 15% cap, use this to adjust the actual cap used at low and high speeds (20 and 80mph). (0.2 corresponds to 20% over the set speed)\n', min_val=0.01, max_val=0.5),
       
       'MISC_car_12v_pause_charging_v': Param(11.0, float, 'Lower voltage threshold for your car\'s 12v system, below which the device will shutdown (well, stop charging, but there\'s no battery in the C2 or C3, so it shuts down)\n', min_val=0, max_val=10000, unit='volts'),
       
@@ -416,6 +412,8 @@ class opParams:
       'MISC_cluster_speed_smoothing_factor': Param(0.2, float, 'Adjust the smoothing used to determine the "current speed" shown on the Comma device\n', min_val=0.0, max_val=100.0),
       
       'MISC_cluster_speed_deadzone': Param(0.12, float, 'Adjust the deadzone used to prevent the current speed from quickly alternating back and forth. Higher value means a more delayed response with less alternating.\n', min_val=0.0, max_val=0.45, unit='mph or km/h'),
+      
+      'MISC_speed_limit_offset': Param([0.2, 0.12], [list, float], '"Low" and "high" speed speed limit offsets over the current speed limit if seed limit offset is enabled in OpenPilot settings. The speed limit offset changes from low-speed amount (eg. 0.2 = 20% over) at 20mph to the high_speed offset amount by 80mph\n', live=True, min_val=0.0, max_val=0.5),
       
       #####
       
@@ -519,41 +517,35 @@ class opParams:
       
       #####
       
-      'VTSC_smoothing_factor': Param(0.3, float, 'The vision turn controller output acceleration is smoothed. Increase/decrease for more/less smoothing.\n', live=True, min_val=0.01, max_val=3.0),
+      'CB_VTSC_smoothing_factor': Param(0.3, float, 'The vision turn controller output acceleration is smoothed. Increase/decrease for more/less smoothing.\n', live=True, min_val=0.01, max_val=3.0),
       
-      'VTSC_lat_accel_factor': Param(1.0, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the lateral acceleration values used in the lookup. A value less/greater than 1.0 will make curve braking less/more sensitive to lateral acceleration and apply braking later/sooner.\n', live=True, min_val=0.01, max_val=3.0),
+      'CB_VTSC_lat_accel_factor': Param(1.0, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the lateral acceleration values used in the lookup. A value less/greater than 1.0 will make curve braking less/more sensitive to lateral acceleration and apply braking later/sooner.\n', live=True, min_val=0.01, max_val=3.0),
       
-      'VTSC_long_accel_factor': Param(1.0, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the output values of longitudinal acceleration. A value less/greater than 1.0 will decrease/increase the brake intensity for a given curve.\n', live=True, min_val=0.01, max_val=3.0),
+      'CB_VTSC_long_accel_factor': Param(1.0, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the output values of longitudinal acceleration. A value less/greater than 1.0 will decrease/increase the brake intensity for a given curve.\n', live=True, min_val=0.01, max_val=3.0),
       
-      'VTSC_low_speed_scale_interchange': Param(0.85, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds on freeway/highway interchanges. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
+      'CB_VTSC_low_speed_scale_interchange': Param(0.85, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds on freeway/highway interchanges. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
       
-      'VTSC_low_speed_scale_freeway': Param(1.0, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds on freeways. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
+      'CB_VTSC_low_speed_scale_freeway': Param(1.0, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds on freeways. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
       
-      'VTSC_low_speed_scale_state_highway': Param(0.9, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds on freeways. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
+      'CB_VTSC_low_speed_scale_state_highway': Param(0.9, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds on freeways. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
       
-      'VTSC_low_speed_scale_default': Param(1.05, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds for all other types of roads (e.g. neighborhood and most city streets). By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
-      
-      #####
-      
-      'MTSC_smoothing_factor': Param(0.3, float, 'The map turn controller output acceleration is smoothed. Increase/decrease for more/less smoothing.\n', live=True, min_val=0.01, max_val=3.0),
-      
-      'MTSC_speed_scale_interchange': Param(1.34, float, 'This scales the perceived car speed used by the vision turn speed controller at all speeds on interchanges. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
-      
-      'MTSC_speed_scale_freeway': Param(1.08, float, 'This scales the perceived car speed used by the vision turn speed controller at all speeds on freeways. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
-      
-      'MTSC_speed_scale_state_highway': Param(1.08, float, 'This scales the perceived car speed used by the vision turn speed controller at all speeds on state highways. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
-      
-      'MTSC_speed_scale_default': Param(1.08, float, 'This scales the perceived car speed used by the vision turn speed controller at all speeds for all other types of roads (e.g. neighborhood and most city streets). By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
-      
-      'MTSC_cutoff_speed_freeway_mph': Param(35.0, float, 'If you\'re on a freeway then map curve braking won\'t activate for turns whose curve speed is less than this\n', live=True, min_val=0.0, max_val=90.0),
-      
-      'MTSC_cutoff_speed_state_highway_mph': Param(0.0, float, 'If you\'re on a state highway then map curve braking won\'t activate for turns whose curve speed is less than this\n', live=True, min_val=0.0, max_val=90.0, unit='mph'),
+      'CB_VTSC_low_speed_scale_default': Param(1.05, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds for all other types of roads (e.g. neighborhood and most city streets). By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
       
       #####
       
-      'SLC_offset_low_speed': Param(0.2, float, 'The speed limit offset changes from this amount over (0.2 = 20% over) at 20mph to the high_speed offset amount by 80mph\n', live=True, min_val=0.0, max_val=0.5),
+      'CB_MTSC_smoothing_factor': Param(0.3, float, 'The map turn controller output acceleration is smoothed. Increase/decrease for more/less smoothing.\n', live=True, min_val=0.01, max_val=3.0),
       
-      'SLC_offset_high_speed': Param(0.12, float, 'The speed limit offset changes from the low_speed amount at 20mph to the this amount (0.12 = 12% over) by 80mph\n', live=True, min_val=0.0, max_val=0.5),
+      'CB_MTSC_speed_scale_interchange': Param(1.34, float, 'This scales the perceived car speed used by the vision turn speed controller at all speeds on interchanges. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
+      
+      'CB_MTSC_speed_scale_freeway': Param(1.08, float, 'This scales the perceived car speed used by the vision turn speed controller at all speeds on freeways. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
+      
+      'CB_MTSC_speed_scale_state_highway': Param(1.08, float, 'This scales the perceived car speed used by the vision turn speed controller at all speeds on state highways. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
+      
+      'CB_MTSC_speed_scale_default': Param(1.08, float, 'This scales the perceived car speed used by the vision turn speed controller at all speeds for all other types of roads (e.g. neighborhood and most city streets). By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
+      
+      'CB_MTSC_cutoff_speed_freeway_mph': Param(35.0, float, 'If you\'re on a freeway then map curve braking won\'t activate for turns whose curve speed is less than this\n', live=True, min_val=0.0, max_val=90.0),
+      
+      'CB_MTSC_cutoff_speed_state_highway_mph': Param(0.0, float, 'If you\'re on a state highway then map curve braking won\'t activate for turns whose curve speed is less than this\n', live=True, min_val=0.0, max_val=90.0, unit='mph'),
       
       #####
       
@@ -571,23 +563,23 @@ class opParams:
       
       #####
       
-      'TD_oncoming_timeout_s': Param(60.0, float, 'OpenPilot will remember that there is oncoming traffic in an adjacent lane for this amount of time\n', min_val=1.0, max_val=1200.0, unit='seconds'),
+      'XR_TD_oncoming_timeout_s': Param(60.0, float, 'OpenPilot will remember that there is oncoming traffic in an adjacent lane for this amount of time\n', min_val=1.0, max_val=1200.0, unit='seconds'),
       
-      'TD_ongoing_timeout_s': Param(5.0, float, 'OpenPilot will remember that there is ongoing traffic in an adjacent lane for this amount of time\n', min_val=1.0, max_val=1200.0, unit='seconds'),
+      'XR_TD_ongoing_timeout_s': Param(5.0, float, 'OpenPilot will remember that there is ongoing traffic in an adjacent lane for this amount of time\n', min_val=1.0, max_val=1200.0, unit='seconds'),
       
-      'TD_traffic_presence_cutoff_s': Param(1.1, float, 'A moving car in an adjacent lane needs to be present for this amount of time for there to be "traffic"\n', min_val=0.1, max_val=10.0, unit='seconds'),
+      'XR_TD_traffic_presence_cutoff_s': Param(1.1, float, 'A moving car in an adjacent lane needs to be present for this amount of time for there to be "traffic"\n', min_val=0.1, max_val=10.0, unit='seconds'),
       
-      'TD_min_traffic_moving_speed_mph': Param(20.0, float, 'A car in an adjacent lane needs to be moving faster than this to be "moving"\n', min_val=0.1, max_val=50.0, unit='mph'),
+      'XR_TD_min_traffic_moving_speed_mph': Param(20.0, float, 'A car in an adjacent lane needs to be moving faster than this to be "moving"\n', min_val=0.1, max_val=50.0, unit='mph'),
       
-      'TD_reset_steer_angle_deg': Param(110.0, float, 'Reset traffic detection when steering wheel is above this absolute angle\n', min_val=10.0, max_val=720.0, unit='degrees'),
+      'XR_TD_reset_steer_angle_deg': Param(110.0, float, 'Reset traffic detection when steering wheel is above this absolute angle\n', min_val=10.0, max_val=720.0, unit='degrees'),
       
-      'TD_cutoff_steer_angle_deg': Param(9.0, float, 'Don\'t detect new traffic when steering wheel is above this absolute angle\n', min_val=0.0, max_val=720.0, unit='degrees'),
+      'XR_TD_cutoff_steer_angle_deg': Param(9.0, float, 'Don\'t detect new traffic when steering wheel is above this absolute angle\n', min_val=0.0, max_val=720.0, unit='degrees'),
       
       #####
       
       'TUNE_LAT_do_override': Param(False, bool, 'If true, the other params here will override the hardcoded lateral tune settings for any gm car. Changes to this opParam will also apply to the "Custom lateral override" toggle in OpenPilot settings.\n', param_param='OPParamsLateralOverride', fake_live=True, param_param_read_on_startup=True),
       
-      'TUNE_LAT_type': Param('torque', [str, int], '(additional options coming later) Type of lateral controller that will be used with the corresponding parameters. The default torque and pid tunes are for Volt, the indi tune is from Hyundai Genesis, and the lqr is from Toyota Rav4. Consult selfdrive/car/gm/interface.py to see the default values for your car for the "pid" (and possibly also the "torque") controllers.  torque: lateral acceleration-based pid controller.  pid: steering angle-based pid controller.  indi: incremental non-linear dynamic inversion controller.  lqr: linear quadratic regulator.  There are also "torque" versions of indi and lqr to experiment with. The torque INDI needs tuning, but the torque LQR needs it more. Let me know if you get those working well! The provided torque and pid tunes for Volt are the same very good tunes as hardcoded in the this fork of OpenPilot\n', live=True, fake_live=True, allowed_vals=['torque','pid','indi','lqr','torqueindi','torquelqr']),
+      'TUNE_LAT_type': Param('torque', [str, int], 'Type of lateral controller that will be used with the corresponding parameters. The default torque and pid tunes are for Volt, the indi tune is from Hyundai Genesis, and the lqr is from Toyota Rav4. Consult selfdrive/car/gm/interface.py to see the default values for your car for the "pid" (and possibly also the "torque") controllers.  torque: lateral acceleration-based pid controller.  pid: steering angle-based pid controller.  indi: incremental non-linear dynamic inversion controller.  lqr: linear quadratic regulator.  There are also "torque" versions of indi and lqr to experiment with. The torque INDI needs tuning, but the torque LQR needs it more. Let me know if you get those working well! The provided torque and pid tunes for Volt are the same very good tunes as hardcoded in the this fork of OpenPilot\n', live=True, fake_live=True, allowed_vals=['torque','pid','indi','lqr','torqueindi','torquelqr']),
       
       #####
       
@@ -617,21 +609,13 @@ class opParams:
       
       'TUNE_LAT_PID_kf': Param(1.0, float, kf_desc, live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
-      'TUNE_LAT_PID_kp_ls': Param(0.0, float, kp_desc + 'This scales the low-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_PID_kp_hs', linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_kp': Param([0.0, 0.16], [list, float], kp_desc + 'This scales the low-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
-      'TUNE_LAT_PID_kp_hs': Param(0.16, float, kp_desc + 'This scales the high-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_PID_kp_ls', linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_ki': Param([0.015, 0.02], [list, float], ki_desc + 'This scales the low-speed response.\n', live=True, min_val=0.01, max_val=10.0,  linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
-      'TUNE_LAT_PID_ki_ls': Param(0.015, float, ki_desc + 'This scales the low-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_PID_ki_hs', linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_kd': Param([0.6, 0.6], [list, float], kd_desc + 'This scales the low-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
-      'TUNE_LAT_PID_ki_hs': Param(0.02, float, ki_desc + 'This scales the high-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_PID_ki_ls', linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
-      
-      'TUNE_LAT_PID_kd_ls': Param(0.6, float, kd_desc + 'This scales the low-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_PID_kd_hs', linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
-      
-      'TUNE_LAT_PID_kd_hs': Param(0.6, float, kd_desc + 'This scales the high-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_PID_kd_ls', linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
-      
-      'TUNE_LAT_PID_ls_mph': Param(0.0, float, 'This is the speed that corresponds to the low-speed kp, ki, and kd values.\n', live=True, min_val=0.0, max_val=100.0, unit="mph", show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
-      
-      'TUNE_LAT_PID_hs_mph': Param(90.0, float, 'This is the speed that corresponds to the high-speed kp, ki, and kd values.\n', live=True, min_val=0.0, max_val=100.0, unit="mph", show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_bp_mph': Param([0.0, 90.0], [list, float], 'These speeds corresponds to the low- and high-speed kp, ki, and kd values.\n', live=True, min_val=0.0, max_val=100.0, unit="mph", show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
       #####
       
@@ -639,25 +623,15 @@ class opParams:
       
       'TUNE_LAT_INDI_roll_compensation': Param(1.0, float, 'Scale the amount of roll compensation for the indi controller\n', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
       
-      'TUNE_LAT_INDI_outer_gain_ls': Param(2.0, float, 'This scales the low-speed  (and maybe high-speed if linked) Steer error gain.  Too high: twitchy hyper lane centering, oversteering.  Too low: sloppy, long hugging in turns (not to be confused with over/understeering), all over lane (no tendency to approach the center).  Just right: crisp lane centering\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_outer_gain_hs', linked_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_outer_gain': Param([2.0, 2.0], [list, float], 'This scales the low-speed  (and maybe high-speed if linked) Steer error gain.  Too high: twitchy hyper lane centering, oversteering.  Too low: sloppy, long hugging in turns (not to be confused with over/understeering), all over lane (no tendency to approach the center).  Just right: crisp lane centering\n', live=True, min_val=0.01, max_val=10.0, linked_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
       
-      'TUNE_LAT_INDI_outer_gain_hs': Param(2.0, float, 'This scales the high-speed Steer error gain.  Too high: twitchy hyper lane centering, oversteering.  Too low: sloppy, long hugging in turns (not to be confused with over/understeering), all over lane (no tendency to approach the center).  Just right: crisp lane centering\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_outer_gain_ls', linked_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_inner_gain': Param([3.5, 3.5], [list, float], 'This scales the low-speed (and maybe high-speed if linked) Steer rate error gain.  Too high: jerky oscillation in high curvature.  Too low: sloppy, cannot accomplish desired steer angle.  Just right: brief snap on entering high curvature\n', live=True, min_val=0.01, max_val=10.0, linked_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
       
-      'TUNE_LAT_INDI_inner_gain_ls': Param(3.5, float, 'This scales the low-speed (and maybe high-speed if linked) Steer rate error gain.  Too high: jerky oscillation in high curvature.  Too low: sloppy, cannot accomplish desired steer angle.  Just right: brief snap on entering high curvature\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_inner_gain_hs', linked_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_time_constant': Param([1.4, 1.4], [list, float], 'This scales the low-speed (and maybe high-speed if linked) exponential moving average of prior output steer.  Too high: sloppy lane centering.  Too low: noisy actuation, responds to every bump, maybe unable to maintain lane center due to rapid actuation.  Just right: above noisy actuation and lane centering instability\n', live=True, min_val=0.01, max_val=10.0, linked_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
       
-      'TUNE_LAT_INDI_inner_gain_hs': Param(3.5, float, 'This scales the high-speed Steer rate error gain.  Too high: jerky oscillation in high curvature.  Too low: sloppy, cannot accomplish desired steer angle.  Just right: brief snap on entering high curvature\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_inner_gain_ls', linked_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_actuator_effectiveness': Param([2.3, 2.3], [list, float], 'This scales the low-speed (and maybe high-speed if linked) actuator effectiveness. As it increases, actuation strength decreases.  Too high: weak, sloppy lane centering, slow oscillation, can\'t follow high curvature, high steering error causes snappy corrections.  Too low: overpower, saturation, jerky, fast oscillation, bang-bang control.  Just right: Highest value able to maintain good lane centering.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
       
-      'TUNE_LAT_INDI_time_constant_ls': Param(1.4, float, 'This scales the low-speed (and maybe high-speed if linked) exponential moving average of prior output steer.  Too high: sloppy lane centering.  Too low: noisy actuation, responds to every bump, maybe unable to maintain lane center due to rapid actuation.  Just right: above noisy actuation and lane centering instability\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_time_constant_hs', linked_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
-      
-      'TUNE_LAT_INDI_time_constant_hs': Param(1.4, float, 'This scales the high-speed exponential moving average of prior output steer.  Too high: sloppy lane centering.  Too low: noisy actuation, responds to every bump, maybe unable to maintain lane center due to rapid actuation.  Just right: above noisy actuation and lane centering instability\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_time_constant_ls', linked_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
-      
-      'TUNE_LAT_INDI_actuator_effectiveness_ls': Param(2.3, float, 'This scales the low-speed (and maybe high-speed if linked) actuator effectiveness. As it increases, actuation strength decreases.  Too high: weak, sloppy lane centering, slow oscillation, can\'t follow high curvature, high steering error causes snappy corrections.  Too low: overpower, saturation, jerky, fast oscillation, bang-bang control.  Just right: Highest value able to maintain good lane centering.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_actuator_effectiveness_hs', linked_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
-      
-      'TUNE_LAT_INDI_actuator_effectiveness_hs': Param(2.3, float, 'This scales the high-speed actuator effectiveness. As it increases, actuation strength decreases.  Too high: weak, sloppy lane centering, slow oscillation, can\'t follow high curvature, high steering error causes snappy corrections.  Too low: overpower, saturation, jerky, fast oscillation, bang-bang control.  Just right: Highest value able to maintain good lane centering.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param='TUNE_LAT_INDI_actuator_effectiveness_ls', linked_op_param_check_param='TUNE_LAT_INDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
-      
-      'TUNE_LAT_INDI_ls_mph': Param(0.0, float, 'At this speed, the low-speed values are used\n', live=True, min_val=0.0, max_val=100.0, unit="mph", show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
-      
-      'TUNE_LAT_INDI_hs_mph': Param(90.0, float, 'At this speed, the high-speed values are used\n', live=True, min_val=0.0, max_val=100.0, unit="mph", show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
+      'TUNE_LAT_INDI_bp_mph': Param([0.0, 90.0], [list, float], 'At this speed, the low-speed values are used\n', live=True, min_val=0.0, max_val=100.0, unit="mph", show_op_param='TUNE_LAT_type', show_op_param_check_val='indi'),
       
       #####
       
@@ -669,25 +643,15 @@ class opParams:
       
       'TUNE_LAT_TRXINDI_friction': Param(0.0, float, 'Scale the amount of friction for the torque lqr controller. Friction applies additional steer output linearly based on the amount of desired lateral jerk (rate of change of desired lateral acceleration)\n', live=True, min_val=0.0, max_val=1.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
       
-      'TUNE_LAT_TRXINDI_outer_gain_ls': Param(2.0, float, 'This scales the low-speed (and maybe high-speed if linked) Steer error gain.  Too high: twitchy hyper lane centering, oversteering.  Too low: sloppy, long hugging in turns (not to be confused with over/understeering), all over lane (no tendency to approach the center).  Just right: crisp lane centering\n', live=True, min_val=0.01, max_val=50.0, linked_op_param='TUNE_LAT_TRXINDI_outer_gain_hs', linked_op_param_check_param='TUNE_LAT_TRXINDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
+      'TUNE_LAT_TRXINDI_outer_gain': Param([2.0, 2.0], [list, float], 'This scales the low-speed (and maybe high-speed if linked) Steer error gain.  Too high: twitchy hyper lane centering, oversteering.  Too low: sloppy, long hugging in turns (not to be confused with over/understeering), all over lane (no tendency to approach the center).  Just right: crisp lane centering\n', live=True, min_val=0.01, max_val=50.0, linked_op_param_check_param='TUNE_LAT_TRXINDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
       
-      'TUNE_LAT_TRXINDI_outer_gain_hs': Param(2.0, float, 'This scales the high-speed Steer error gain.  Too high: twitchy hyper lane centering, oversteering.  Too low: sloppy, long hugging in turns (not to be confused with over/understeering), all over lane (no tendency to approach the center).  Just right: crisp lane centering\n', live=True, min_val=0.01, max_val=50.0, linked_op_param='TUNE_LAT_TRXINDI_outer_gain_ls', linked_op_param_check_param='TUNE_LAT_TRXINDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
+      'TUNE_LAT_TRXINDI_inner_gain': Param([3.5, 3.5], [list, float], 'This scales the low-speed (and maybe high-speed if linked) Steer rate error gain.  Too high: jerky oscillation in high curvature.  Too low: sloppy, cannot accomplish desired steer angle.  Just right: brief snap on entering high curvature\n', live=True, min_val=0.01, max_val=50.0, linked_op_param_check_param='TUNE_LAT_TRXINDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
       
-      'TUNE_LAT_TRXINDI_inner_gain_ls': Param(3.5, float, 'This scales the low-speed (and maybe high-speed if linked) Steer rate error gain.  Too high: jerky oscillation in high curvature.  Too low: sloppy, cannot accomplish desired steer angle.  Just right: brief snap on entering high curvature\n', live=True, min_val=0.01, max_val=50.0, linked_op_param='TUNE_LAT_TRXINDI_inner_gain_hs', linked_op_param_check_param='TUNE_LAT_TRXINDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
+      'TUNE_LAT_TRXINDI_time_constant': Param([1.4, 1.4], [list, float], 'This scales the low-speed (and maybe high-speed if linked) Exponential moving average of prior output steer.  Too high: sloppy lane centering.  Too low: noisy actuation, responds to every bump, maybe unable to maintain lane center due to rapid actuation.  Just right: above noisy actuation and lane centering instability\n', live=True, min_val=0.01, max_val=50.0, linked_op_param_check_param='TUNE_LAT_TRXINDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
       
-      'TUNE_LAT_TRXINDI_inner_gain_hs': Param(3.5, float, 'This scales the high-speed Steer rate error gain.  Too high: jerky oscillation in high curvature.  Too low: sloppy, cannot accomplish desired steer angle.  Just right: brief snap on entering high curvature\n', live=True, min_val=0.01, max_val=50.0, linked_op_param='TUNE_LAT_TRXINDI_inner_gain_ls', linked_op_param_check_param='TUNE_LAT_TRXINDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
+      'TUNE_LAT_TRXINDI_actuator_effectiveness': Param([2.3, 2.3], [list, float], 'This scales the low-speed (and maybe high-speed if linked) actuator effectiveness. As it increases, actuation strength decreases.  Too high: weak, sloppy lane centering, slow oscillation, can\'t follow high curvature, high steering error causes snappy corrections.  Too low: overpower, saturation, jerky, fast oscillation, bang-bang control.  Just right: Highest value able to maintain good lane centering.\n', live=True, min_val=0.01, max_val=50.0,  linked_op_param_check_param='TUNE_LAT_TRXINDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
       
-      'TUNE_LAT_TRXINDI_time_constant_ls': Param(1.4, float, 'This scales the low-speed (and maybe high-speed if linked) Exponential moving average of prior output steer.  Too high: sloppy lane centering.  Too low: noisy actuation, responds to every bump, maybe unable to maintain lane center due to rapid actuation.  Just right: above noisy actuation and lane centering instability\n', live=True, min_val=0.01, max_val=50.0, linked_op_param='TUNE_LAT_TRXINDI_time_constant_hs', linked_op_param_check_param='TUNE_LAT_TRXINDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
-      
-      'TUNE_LAT_TRXINDI_time_constant_hs': Param(1.4, float, 'This scales the high-speed Exponential moving average of prior output steer.  Too high: sloppy lane centering.  Too low: noisy actuation, responds to every bump, maybe unable to maintain lane center due to rapid actuation.  Just right: above noisy actuation and lane centering instability\n', live=True, min_val=0.01, max_val=50.0, linked_op_param='TUNE_LAT_TRXINDI_time_constant_ls', linked_op_param_check_param='TUNE_LAT_TRXINDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
-      
-      'TUNE_LAT_TRXINDI_actuator_effectiveness_ls': Param(2.3, float, 'This scales the low-speed (and maybe high-speed if linked) actuator effectiveness. As it increases, actuation strength decreases.  Too high: weak, sloppy lane centering, slow oscillation, can\'t follow high curvature, high steering error causes snappy corrections.  Too low: overpower, saturation, jerky, fast oscillation, bang-bang control.  Just right: Highest value able to maintain good lane centering.\n', live=True, min_val=0.01, max_val=50.0, linked_op_param='TUNE_LAT_TRXINDI_actuator_effectiveness_hs', linked_op_param_check_param='TUNE_LAT_TRXINDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
-      
-      'TUNE_LAT_TRXINDI_actuator_effectiveness_hs': Param(2.3, float, 'This scales the high-speed actuator effectiveness. As it increases, actuation strength decreases.  Too high: weak, sloppy lane centering, slow oscillation, can\'t follow high curvature, high steering error causes snappy corrections.  Too low: overpower, saturation, jerky, fast oscillation, bang-bang control.  Just right: Highest value able to maintain good lane centering.\n', live=True, min_val=0.01, max_val=50.0, linked_op_param='TUNE_LAT_TRXINDI_actuator_effectiveness_ls', linked_op_param_check_param='TUNE_LAT_TRXINDI_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
-      
-      'TUNE_LAT_TRXINDI_ls_mph': Param(0.0, float, 'At this speed, the low-speed values are used\n', live=True, min_val=0.0, max_val=100.0, unit="mph", show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
-      
-      'TUNE_LAT_TRXINDI_hs_mph': Param(90.0, float, 'At this speed, the high-speed values are used\n', live=True, min_val=0.0, max_val=100.0, unit="mph", show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
+      'TUNE_LAT_TRXINDI_bp_mph': Param([0.0, 90.0], [list, float], 'At this speed, the low-speed values are used\n', live=True, min_val=0.0, max_val=100.0, unit="mph", show_op_param='TUNE_LAT_type', show_op_param_check_val='torqueindi'),
       
       #####
       
@@ -784,6 +748,7 @@ class opParams:
       'FP': 'Follow Profiles',
       'LC': 'assisted Lane Change',
       'MADS': "Modified Assistive Driving Safety",
+      'CB': "Curve Braking (slowing down for turns)",
       'VTSC': 'Vision Turn Speed Controller',
       'MTSC': 'Map Turn Speed Controller',
       'SLC': 'Speed Limit Controller',
@@ -799,7 +764,7 @@ class opParams:
       'LQR': "Linear Quadratic Regulator controller",
       'LONG': "LONGitudinal control (gas/brake)",
       'OP': "One-Pedal driving",
-      'XR': "eXtended Radar capabilities",
+      'XR': "eXtended Radar lead/traffic detection",
       'LRL': "Long Range Lead detection",
     }
 
@@ -862,15 +827,15 @@ class opParams:
                                           force_update=force_update, 
                                           time_cur=sec_since_boot())
 
-  def put(self, key, value, write_linked=True):
+  def put(self, key, value):
     self._check_key_exists(key, 'put')
     if not self.fork_params[key].type_is_valid(value):
-      raise Exception(f'opParams: Tried to put a value of invalid type! {key = }, {value = }, {write_linked = }')
+      raise Exception(f'opParams: Tried to put a value of invalid type! {key = }, {value = }')
     if not self.fork_params[key].value_is_valid(value):
-      raise Exception(f'opParams: Tried to put an invalid value! {key = }, {value = }, {write_linked = }')
+      raise Exception(f'opParams: Tried to put an invalid value! {key = }, {value = }')
     value, clipped = self.fork_params[key].value_clipped(value)
     if clipped:
-      print(warning(f'Provided value was clipped to param bounds. {key = }, {value = }, {write_linked = }'))
+      print(warning(f'Provided value was clipped to param bounds. {key = }, {value = }'))
     self.params.update({key: value})
     if self.fork_params[key].param_param != '':
       if self.fork_params[key].param_param_use_ord and value in self.fork_params[key].allowed_vals:
@@ -884,12 +849,6 @@ class opParams:
         cloudlog.info(f"opParams: putting value in linked param: {value = }. {key = }")
         self.fork_params[key]._params.put(self.fork_params[key].param_param, put_val)
     _write_param(key, value)
-    if write_linked and self.fork_params[key].linked_op_param != '' \
-        and self.fork_params[key].linked_op_param in self.fork_params \
-        and self.fork_params[key].linked_op_param_check_param in self.fork_params \
-        and self.get(self.fork_params[key].linked_op_param_check_param, force_update=True):
-      cloudlog.info(f"opParams: putting value in linked param: {value = }. {key = }")
-      self.put(self.fork_params[key].linked_op_param, value, write_linked=False)
 
   def _load_params(self, can_import=False):
     if not os.path.exists(PARAMS_DIR):

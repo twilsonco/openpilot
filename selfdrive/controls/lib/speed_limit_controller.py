@@ -219,7 +219,7 @@ class SpeedLimitController():
   
   def get_offset(self):
     # Lookup table for speed limit percent offset depending on speed.
-    return [self._op_params.get('SLC_offset_low_speed'), self._op_params.get('SLC_offset_high_speed')]  # 9mph over by 75mph
+    return self._op_params.get('MISC_speed_limit_offset')  # 9mph over by 75mph
 
   @property
   def a_target(self):

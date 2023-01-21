@@ -104,12 +104,6 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           and self.op_params.fork_params[k].show_op_param in self.op_params.fork_params \
           and self.op_params.get(self.op_params.fork_params[k].show_op_param, force_update=True) != self.op_params.fork_params[k].show_op_param_check_val:
             tmp_removed.add(k)
-        elif self.op_params.fork_params[k].linked_op_param != '' \
-            and k not in tmp_removed \
-            and self.op_params.fork_params[k].linked_op_param in self.op_params.fork_params \
-            and self.op_params.fork_params[k].linked_op_param_check_param in self.op_params.fork_params \
-            and self.op_params.get(self.op_params.fork_params[k].linked_op_param_check_param, force_update=True):
-          tmp_removed.add(self.op_params.fork_params[k].linked_op_param)
       for p in tmp_removed:
         del self.params[p]
       
@@ -304,8 +298,8 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         to_print.append(COLORS.WARNING + '>>  Allowed values:{} {}{}{}'.format(COLORS.ENDC, COLORS.PRETTY_YELLOW, allowed_val_str, COLORS.ENDC))
       if param_info.min_val is not None or param_info.max_val is not None:
         to_print.append(COLORS.WARNING + '>>  Bounds:{} ({}, {})'.format(COLORS.ENDC, self.color_from_type(param_info.min_val), self.color_from_type(param_info.max_val)) + COLORS.ENDC)
-      if param_info.linked_op_param != '' and param_info.linked_op_param in self.op_params.fork_params and param_info.linked_op_param_check_param in self.op_params.fork_params and self.op_params.get(param_info.linked_op_param_check_param, force_update=True):
-        to_print.append(COLORS.WARNING + '>>  Linked to{} `{}`'.format(COLORS.ENDC, self.color_from_type(param_info.linked_op_param)) + COLORS.ENDC)
+      if param_info.linked_op_param_check_param != '' and param_info.linked_op_param_check_param in self.op_params.fork_params and self.op_params.get(param_info.linked_op_param_check_param, force_update=True):
+        to_print.append(COLORS.WARNING + '>>  ALL VALUES IN LIST ARE SYNCED' + COLORS.ENDC)
       to_print.append(COLORS.WARNING + '>>  Default value: {} {}'.format(self.color_from_type(param_info.default_value), param_info.unit) + COLORS.ENDC)
 
       if to_print:
@@ -358,11 +352,14 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
   def change_param_list(self, old_value, param_info, chosen_key):
     while True:
       self.info('Current value: {} (type: {})'.format(old_value, type(old_value).__name__), sleep_time=0)
-      self.prompt('\nEnter index to edit (0 to {}):'.format(len(old_value) - 1))
-      choice_idx = self.str_eval(input('>> '))
-      if choice_idx == '':
-        self.info('Exiting this parameter...')
-        return
+      if param_info.linked_op_param_check_param != '' and param_info.linked_op_param_check_param in self.op_params.fork_params and self.op_params.get(param_info.linked_op_param_check_param, force_update=True):
+        choice_idx = 0
+      else:
+        self.prompt('\nEnter index to edit (0 to {}):'.format(len(old_value) - 1))
+        choice_idx = self.str_eval(input('>> '))
+        if choice_idx == '':
+          self.info('Exiting this parameter...')
+          return
 
       if not isinstance(choice_idx, int) or choice_idx not in range(len(old_value)):
         self.error('Must be an integar within list range!')
@@ -388,11 +385,17 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           continue
         if param_info.value_clipped(new_value):
           self.warning('Value out of bounds: clipped to {}'.format(new_value))
-
-        old_value[choice_idx] = new_value
+          
+        if param_info.linked_op_param_check_param != '' and param_info.linked_op_param_check_param in self.op_params.fork_params and self.op_params.get(param_info.linked_op_param_check_param, force_update=True):
+          old_value = [new_value for i in range(len(old_value))]
+        else:
+          old_value[choice_idx] = new_value
 
         self.op_params.put(chosen_key, old_value)
         self.success('Saved {} with value: {}{} (type: {})'.format(chosen_key, self.color_from_type(new_value), COLORS.SUCCESS, type(new_value).__name__), end='\n')
+        break
+      
+      if new_value == '' and param_info.linked_op_param_check_param != '' and param_info.linked_op_param_check_param in self.op_params.fork_params and self.op_params.get(param_info.linked_op_param_check_param, force_update=True):
         break
       
   def C3_rebootless_restart(self, immediate=False):
