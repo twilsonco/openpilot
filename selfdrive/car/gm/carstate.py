@@ -86,6 +86,8 @@ class CarState(CarStateBase):
     self.is_ev = (self.car_fingerprint in [CAR.VOLT, CAR.VOLT18])
     self.do_sng = (self.car_fingerprint in [CAR.VOLT])
     
+    self.anti_stop_enabled = not self.do_sng and self._params.get_bool("AntiStopAndGoEnabled")
+    
     self.sessionInitTime = sec_since_boot()
     self.prev_distance_button = 0
     self.prev_lka_button = 0
@@ -276,11 +278,14 @@ class CarState(CarStateBase):
         self.accel_mode_change_last_t = t
       self.accel_mode = accel_mode
       self.showBrakeIndicator = self._params.get_bool("BrakeIndicator")
+      self.anti_stop_enabled = not self.do_sng and self._params.get_bool("AntiStopAndGoEnabled")
       if not self.disengage_on_gas:
         self.MADS_pause_steering_enabled = self._params.get_bool("MADSPauseBlinkerSteering")
         self.one_pedal_mode_enabled = self.MADS_enabled and self._params.get_bool("MADSOnePedalMode")
         self.MADS_lead_braking_enabled = self.MADS_enabled and self._params.get_bool("MADSLeadBraking")
 
+    ret.antiStopEnabled = self.anti_stop_enabled
+    
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
       
     gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))

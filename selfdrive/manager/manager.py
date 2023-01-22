@@ -47,6 +47,7 @@ def manager_init():
     ("IgnoreMissingNVME", "0"),
     ("SpeedLimitControl", "1"),
     ("EUSpeedLimitStyle", "0"),
+    ("AntiStopAndGoEnabled", "0"),
     ("SpeedLimitPercOffset", "1"),
     ("TurnSpeedControl", "1"),
     ("TurnVisionControl", "1"),

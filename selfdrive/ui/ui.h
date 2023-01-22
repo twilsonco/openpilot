@@ -289,6 +289,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   TRAFFIC_COUNT_STOPPED,
   TRAFFIC_COUNT_ADJACENT_ONGOING,
   TRAFFIC_ADJ_ONGOING_MIN_DISTANCE,
+  ANTI_STOP_BUFFER_DISTANCE,
   // EV info
   HVB_VOLTAGE,
   HVB_CURRENT,

@@ -85,6 +85,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_calibration.png",
                                   this));
   
+  toggles.append(new ParamControl("AntiStopAndGoEnabled",
+                                  "Anti-stop-and-go (tap-me)",
+                                  "Only '17 Volt can autoresume from a stop. For other cars, enable this to make OpenPilot instead avoid stopping in the first place.",
+                                  "../assets/offroad/icon_car_pedal.png",
+                                  this));
+  
   toggles.append(new ParamControl("LongRangeLeadsEnabled",
                                   "Longer-range lead detection (beta)",
                                   "This also allows for 10-20\% longer range detection using radar and the cars LKA camera.",
@@ -92,7 +98,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   this));
 
   toggles.append(new ParamControl("ExtendedRadar",
-                                  "Extended radar capabilities (alpha)",
+                                  "Extended radar capabilities (beta)",
                                   "Enables tracking of all cars; not just the one openpilot lead. Necessary for braking for car in front of lead, longer-range lead detection, traffic-based auto lane position, drawing of oncoming/ongoing lanes, and indication of non-lead cars.",
                                   "../assets/offroad/icon_plus.png",
                                   this));

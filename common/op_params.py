@@ -130,6 +130,7 @@ UI_METRICS = [
   'TRAFFIC_COUNT_STOPPED',
   'TRAFFIC_COUNT_ADJACENT_ONGOING',
   'TRAFFIC_ADJ_ONGOING_MIN_DISTANCE',
+  'ANTI_STOP_BUFFER_DISTANCE',
   #// EV info
   'HVB_VOLTAGE',
   'HVB_CURRENT',
@@ -447,6 +448,8 @@ class opParams:
       
       'FP_far_distance_offset_s': Param(0.0, float, 'Add or subtract follow distance from the far follow profile\n', live=True, min_val=-1.5, max_val=2.0, unit='seconds follow distance'),
       
+      # dynamic follow
+      
       'FP_DF_distance_gain_factor': Param(1.0, float, 'Scale the rate at which the follow profile increases to a higher, farther following profile. A larger number means it will return to medium/far follow more quickly after a cut-in.\n', min_val=0.01, max_val=20.0),
       
       'FP_DF_distance_penalty_factor': Param(1.0, float, 'Scale the follow profile penalty incurred based on cut-in forward distance. A higher value will result in more defensive driving after a cut-in, and for longer.\n', min_val=0.01, max_val=20.0),
@@ -454,6 +457,28 @@ class opParams:
       'FP_DF_velocity_penalty_factor': Param(1.0, float, 'Scale the follow profile penalty incurred based on relative velocity of cut-in. A higher value will result in more defensive driving after a cut-in, and for longer.\n', min_val=0.01, max_val=20.0),
       
       'FP_DF_traffic_penalty_factor': Param(1.0, float, 'Scale the amount of follow profile penalty per second incurred based on the follow distances of adjacent traffic. A higher value will cause defensive driving more rapidly in the presence of close-following adjacent traffic.\n', min_val=0.01, max_val=20.0),
+      
+      # anti-stop-and-go feature
+      
+      'FP_anti_stop_distance_buffer_bp_mph': Param([5.0, 25.0], [list, float], 'When a new lead is "seen", OpenPilot will use the lead\'s velocity to lookup the initial amount of extra stopping distance used to avoid coming to a stop behind the lead. The slower the lead goes, the greater the extra stopping distance hence more buffer time before stopping and having to tap gas/resume to resume. This parameter sets the "low" and "high" speed lookup values for initial stopping distance buffer.\n', min_val=0.0, max_val=55.0, unit='mph'),
+      
+      'FP_anti_stop_distance_buffer_m': Param(10.0, float, 'When a new lead is "seen", OpenPilot will use the lead\'s velocity to lookup the initial amount of extra stopping distance used to avoid coming to a stop behind the lead. The slower the lead goes, the greater the extra stopping distance hence more buffer time before stopping and having to tap gas/resume to resume. This parameter sets the amount of extra initial stopping distance buffer added when the lead is at "low" speed as defined above. At "high" speed and faster, no buffer is added.\n', min_val=0.0, max_val=20.0, unit='meters'),
+      
+      'FP_anti_stop_distance_rate_bp_mph': Param([2.0, 15.0, 25.0], [list, float], 'While a lead is consistent, the distance buffer is changed according to the lead velocity. This is the speed lookup table.\n', min_val=0.0001, max_val=80.0, unit='mph'),
+      
+      'FP_anti_stop_distance_rate_v_mph': Param([1.0, 0.0, -1.0], [list, float], 'While a lead is consistent, the distance buffer is changed according to the lead velocity. This is the value lookup table, where you think of the distance buffer changing as a relative velocity to the lead.\n', min_val=-5.0, max_val=5.0, unit='mph'),
+      
+      'FP_anti_stop_comfort_brake_ms2': Param(2.0, float, 'The buffer stopping distance isn\'t allowed to be so large that it causes uncomfortable braking. Set the max allowed amount of deceleration here.\n', min_val=0.1, max_val=3.5, unit='m/s²'),
+      
+      'FP_anti_stop_lead_brake_ms2': Param(2.5, float, 'This is used in conjunction with FP_anti_stop_comfort_brake_ms2 to determine the max allowable stop distance buffer. This sets the presumed amount of lead braking used in determining a safe stopping point.\n', min_val=0.1, max_val=3.5, unit='m/s²'),
+      
+      'FP_anti_stop_distance_smoothing_factor': Param(1.0, float, 'After a lead is present, the extra stopping distance changes, and this change is both smoothed and rate-capped. The rate is set by the FP_anti_stop_distance_rate_v_mph parameter. Here you set the amount of smoothing.\n', min_val=0.0, max_val=100.0),
+      
+      'FP_anti_stop_creep_speed_bp_mph': Param([0.2, 2.0], [list, float], 'Once you\'ve almost stopped behind a lead, OpenPilot will begin to creep forward. The eventual creep velocity is the first number here, and the second number is the speed at which it will begin to smoothly move the target distance forward, thus beginning to creep.\n', min_val=0.0001, max_val=55.0, unit='mph'),
+      
+      'FP_anti_stop_creep_speed_bp_mph': Param([0.2, 2.0], [list, float], 'Once you\'ve almost stopped behind a lead, OpenPilot will begin to creep forward. The eventual creep velocity is the first number here, and the second number is the speed at which it will begin to smoothly move the target distance forward, thus beginning to creep.\n', min_val=0.0001, max_val=55.0, unit='mph'),
+      
+      'FP_anti_stop_creep_tol_mph': Param(1.0, float, 'The anti-stop feature operates in three modes: inactive, distancing, creeping. When distancing, the extra stopping distance is based entirely on the lead velocity, and when creeping based entirely on your velocity. The switch between distancing and creeping states occurs at a particular speed, which is the higher value of FP_anti_stop_creep_speed_bp_mph plus the value specified here.\n', min_val=0.0, max_val=10.0, unit='mph'),
       
       #####
       
