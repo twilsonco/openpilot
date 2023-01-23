@@ -390,6 +390,27 @@ def stopped_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> A
     AlertStatus.normal, AlertSize.small,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3)
 
+def anti_stop_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  state = sm['longitudinalPlan'].antiStopControlState0.status
+  if state == 'inactive':
+    state = sm['longitudinalPlan'].antiStopControlState1.status
+    dist_buffer = sm['longitudinalPlan'].antiStopControlState1.distanceBuffer
+    time_buffer = sm['longitudinalPlan'].antiStopControlState1.timeBuffer
+  else:
+    dist_buffer = sm['longitudinalPlan'].antiStopControlState0.distanceBuffer
+    time_buffer = sm['longitudinalPlan'].antiStopControlState0.timeBuffer
+  
+  if not metric:
+    dist_buffer *= 3.28
+    dstr = 'ft'
+  else:
+    dstr = 'm'
+  
+  ostr = "Antistop {}: {:.1f}{} {:.1f}s".format(state, dist_buffer, dstr, time_buffer) if state in ['distancing','creeping'] else "Antistop {}".format(state)
+  
+  return Alert(ostr, "", AlertStatus.normal, AlertSize.small,
+    Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, 2.5)
+
 def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   axes = sm['testJoystick'].axes
   gb, steer = list(axes)[:2] if len(axes) else (0., 0.)
@@ -1290,5 +1311,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Cruise main turned off",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.antiStopAlert: {
+    ET.WARNING: anti_stop_alert,
   },
 }

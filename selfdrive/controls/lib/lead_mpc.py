@@ -126,6 +126,7 @@ class ANTI_STOP_STATE:
   DISTANCING = 1
   CREEPING = 2
   STOPPED = 3
+  ABORTED = 4
 
 class AntiStopDistance():
   def __init__(self):
@@ -133,17 +134,24 @@ class AntiStopDistance():
     self.stop_distance = FirstOrderFilter(0.0, 0.0, DT_MDL, min_val=0.0)
     self.stop_distance_last = 0.0
     self.max_stop_distance = 0.0
+    self.v_stop = 0.0
+    self.v_stop_last = 0.0
+    self.a_stop = 0.0
+    self.stop_time = 0.0
     self.update_op_params(force_update=True)
     self.lead_status_last = False
     self.status = ANTI_STOP_STATE.INACTIVE
   
   def reset(self):
     self.stop_distance.x = 0.0
+    self.v_stop = 0.0
+    self.stop_time = 0.0
     
   def update_op_params(self, force_update=False):
     self.stop_distance_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('FP_anti_stop_distance_buffer_bp_mph', force_update=force_update)]
     self.stop_distance_v = [self._op_params.get('FP_anti_stop_distance_buffer_m', force_update=force_update), 0.0]
     self.stop_distance_rate_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('FP_anti_stop_distance_rate_bp_mph', force_update=force_update)]
+    self.stop_distance_rate_max_speed = max(self.stop_distance_rate_bp)
     self.stop_distance_rate_v = [i * CV.MPH_TO_MS * DT_MDL for i in self._op_params.get('FP_anti_stop_distance_rate_v_mph', force_update=force_update)]
     self.stop_distance.max_val = self.stop_distance_v[0]
     self.stop_distance_comfort_brake = self._op_params.get('FP_anti_stop_comfort_brake_ms2', force_update=force_update)
@@ -155,28 +163,50 @@ class AntiStopDistance():
     self.v_creep_v = [self.v_creep_bp[0] * DT_MDL, 0.0]
     self.v_creep_tol = self._op_params.get('FP_anti_stop_creep_tol_mph', force_update=force_update) * CV.MPH_TO_MS
     
-  def update(self, v_ego, lead):
-    if lead.status:
-      self.max_stop_distance = max(0.0, lead.dRel + dist_to_stop(lead.vLeadK, self.stop_distance_lead_brake) - dist_to_stop(v_ego, self.stop_distance_comfort_brake))
+  def update(self, CS, lead):
+    if lead.status and (lead.vLeadK < self.stop_distance_rate_max_speed or self.stop_distance.x > 0.0) and CS.antiStopEnabled:
+      self.max_stop_distance = max(0.0, lead.dRel + dist_to_stop(lead.vLeadK, self.stop_distance_lead_brake) - dist_to_stop(CS.vEgo, self.stop_distance_comfort_brake))
       self.stop_distance.max_val = min(self.max_stop_distance, self.stop_distance_v[0])
-      if v_ego < self.v_creep_bp[-1] + self.v_creep_tol:
-        self.status = ANTI_STOP_STATE.STOPPED if self.stop_distance.x == 0.0 else ANTI_STOP_STATE.CREEPING
-        self.stop_distance.update(self.stop_distance.x - interp(v_ego, self.v_creep_bp, self.v_creep_v))
-      else:
-        if self.lead_status_last:
-          self.status = ANTI_STOP_STATE.DISTANCING if self.stop_distance.x < self.stop_distance_v[0] else ANTI_STOP_STATE.INACTIVE
-          self.stop_distance.update(self.stop_distance_last + interp(lead.vLeadK, self.stop_distance_rate_bp, self.stop_distance_rate_v))
+      if self.status in [ANTI_STOP_STATE.DISTANCING, ANTI_STOP_STATE.CREEPING] and CS.gas >= 1e-5 and self.stop_distance.x > self.stop_distance_v[0] * 0.2:
+        self.status = ANTI_STOP_STATE.ABORTED
+      elif self.status != ANTI_STOP_STATE.ABORTED:
+        if CS.vEgo < self.v_creep_bp[-1] + self.v_creep_tol:
+          self.status = ANTI_STOP_STATE.STOPPED if self.stop_distance.x == 0.0 else ANTI_STOP_STATE.CREEPING
+          self.stop_distance.update(self.stop_distance.x - interp(CS.vEgo, self.v_creep_bp, self.v_creep_v))
+          self.v_stop = (self.stop_distance_last - self.stop_distance.x) / DT_MDL # positive when stop point is moving away from you
+          self.stop_time = self.stop_distance.x / max(0.01, self.v_stop)
+          self.a_stop = (self.v_stop - self.v_stop_last) / DT_MDL
         else:
-          self.stop_distance.x = min(interp(lead.vLeadK, self.stop_distance_bp, self.stop_distance_v), self.max_stop_distance)
-          self.status = ANTI_STOP_STATE.DISTANCING
+          if self.lead_status_last:
+            self.status = ANTI_STOP_STATE.DISTANCING if self.stop_distance.x < self.stop_distance_v[0] else ANTI_STOP_STATE.INACTIVE
+            self.stop_distance.update(self.stop_distance_last + interp(lead.vLeadK, self.stop_distance_rate_bp, self.stop_distance_rate_v))
+            self.v_stop = (self.stop_distance_last - self.stop_distance.x) / DT_MDL # positive when stop point is moving away from you
+            self.stop_time = self.stop_distance.x / max(0.01, self.v_stop)
+            self.a_stop = (self.v_stop - self.v_stop_last) / DT_MDL
+          else:
+            self.stop_distance.x = min(interp(lead.vLeadK, self.stop_distance_bp, self.stop_distance_v), self.max_stop_distance)
+            self.status = ANTI_STOP_STATE.DISTANCING
+            self.v_stop = 0.0
+            self.a_stop = 0.0
+            self.stop_time = 100.0
+      elif CS.vEgo < 0.02:
+        self.status = ANTI_STOP_STATE.STOPPED
+      elif lead.vLeadK > self.stop_distance_rate_bp[1]:
+        self.status = ANTI_STOP_STATE.INACTIVE
     else:
       self.status = ANTI_STOP_STATE.INACTIVE
+    
+    if self.status in [ANTI_STOP_STATE.STOPPED, ANTI_STOP_STATE.INACTIVE, ANTI_STOP_STATE.ABORTED]:
       self.stop_distance.x = 0.0
-      
+      self.v_stop = 0.0
+      self.a_stop = 0.0
+      self.stop_time = 100.0
+    
+    self.v_stop_last = self.v_stop
     self.stop_distance_last = self.stop_distance.x
     self.lead_status_last = lead.status
 
-    return self.stop_distance.x
+    return self.stop_distance.x, self.v_stop, self.a_stop
     
   
 class DynamicFollow():
@@ -459,13 +489,13 @@ class LeadMpc():
     if follow_level < 0 or follow_level > 2:
       follow_level = 1
     fp = self._follow_profiles[follow_level]
-    anti_stop_stopping_distance = self.asd.update(CS.vEgo, lead) if CS.antiStopEnabled else 0.0
+    anti_stop_stopping_distance, anti_stop_v_lead, anti_stop_a_lead = self.asd.update(CS, lead)
     stopping_distance = fp[4] + self.stopping_distance_offset + anti_stop_stopping_distance
     
     if lead is not None and lead.status:
       x_lead = max(0, lead.dRel - stopping_distance)  # increase stopping distance to car by X [m]
-      v_lead = max(0.0, lead.vLead)
-      a_lead = lead.aLeadK
+      v_lead = max(0.0, lead.vLead + anti_stop_v_lead)
+      a_lead = lead.aLeadK + anti_stop_a_lead
 
       if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
         v_lead = 0.0

@@ -87,6 +87,7 @@ class CarState(CarStateBase):
     self.do_sng = (self.car_fingerprint in [CAR.VOLT])
     
     self.anti_stop_enabled = not self.do_sng and self._params.get_bool("AntiStopAndGoEnabled")
+    self.anti_stop_active = False
     
     self.sessionInitTime = sec_since_boot()
     self.prev_distance_button = 0
@@ -283,8 +284,6 @@ class CarState(CarStateBase):
         self.MADS_pause_steering_enabled = self._params.get_bool("MADSPauseBlinkerSteering")
         self.one_pedal_mode_enabled = self.MADS_enabled and self._params.get_bool("MADSOnePedalMode")
         self.MADS_lead_braking_enabled = self.MADS_enabled and self._params.get_bool("MADSLeadBraking")
-
-    ret.antiStopEnabled = self.anti_stop_enabled
     
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
       
@@ -570,6 +569,9 @@ class CarState(CarStateBase):
       ret.brakePressed = ret.brakePressed or self.regen_paddle_pressed
     ret.onePedalModeTemporary = self.one_pedal_mode_temporary
     ret.madsLeadBrakingActive = self.MADS_lead_braking_active and ret.vEgo > 0.02 and ret.gearShifter in ['drive','low'] and ret.gas < 1e-5 and not ret.brakePressed and ret.cruiseMain
+    
+    
+    ret.antiStopEnabled = self.anti_stop_enabled and self.long_active
     
     ret.slipperyRoadsActive = self.slippery_roads_active
     ret.lowVisibilityActive = self.low_visibility_active

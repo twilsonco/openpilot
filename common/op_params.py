@@ -478,8 +478,6 @@ class opParams:
       
       'FP_anti_stop_creep_speed_bp_mph': Param([0.2, 2.0], [list, float], 'Once you\'ve almost stopped behind a lead, OpenPilot will begin to creep forward. The eventual creep velocity is the first number here, and the second number is the speed at which it will begin to smoothly move the target distance forward, thus beginning to creep.\n', min_val=0.0001, max_val=55.0, unit='mph'),
       
-      'FP_anti_stop_creep_speed_bp_mph': Param([0.2, 2.0], [list, float], 'Once you\'ve almost stopped behind a lead, OpenPilot will begin to creep forward. The eventual creep velocity is the first number here, and the second number is the speed at which it will begin to smoothly move the target distance forward, thus beginning to creep.\n', min_val=0.0001, max_val=55.0, unit='mph'),
-      
       'FP_anti_stop_creep_tol_mph': Param(1.0, float, 'The anti-stop feature operates in three modes: inactive, distancing, creeping. When distancing, the extra stopping distance is based entirely on the lead velocity, and when creeping based entirely on your velocity. The switch between distancing and creeping states occurs at a particular speed, which is the higher value of FP_anti_stop_creep_speed_bp_mph plus the value specified here.\n', min_val=0.0, max_val=10.0, unit='mph'),
       
       #####

@@ -551,8 +551,10 @@ class CarInterface(CarInterfaceBase):
       if ret.vEgo <= self.CP.minSteerSpeed and (not self.CS.autoHoldActivated or self.CS.out.onePedalModeActive):
         if ret.standstill and (cruiseEnabled or self.CS.out.onePedalModeActive) and t - self.CS.sessionInitTime > 10. and not self.CS.resume_required:
           events.add(car.CarEvent.EventName.stoppedWaitForGas)
-        elif not ret.standstill and self.CS.out.gearShifter in ['drive','low'] and not steer_paused and self.CS.lkaEnabled:
+        elif not ret.standstill and self.CS.out.gearShifter in ['drive','low'] and not steer_paused and self.CS.lkaEnabled and not self.CS.anti_stop_active:
           events.add(car.CarEvent.EventName.belowSteerSpeed)
+      if ret.vEgo > 0.02 and self.CS.anti_stop_active:
+        events.add(car.CarEvent.EventName.antiStopAlert)
       if self.CS.autoHoldActivated:
         self.CS.lastAutoHoldTime = t
         events.add(car.CarEvent.EventName.autoHoldActivated)

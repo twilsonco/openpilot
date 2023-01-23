@@ -96,12 +96,13 @@ class Controls:
 
     self.sm = sm
     if self.sm is None:
-      ignore = ['driverCameraState', 'managerState'] if SIMULATION else ['liveWeatherData']
+      ignore = ['driverCameraState', 'managerState'] if SIMULATION else ['liveWeatherData','carState']
       if self.gray_panda_support_enabled:
         ignore += ['gpsLocationExternal']
       self.sm = messaging.SubMaster(['deviceState', 'pandaState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
-                                     'managerState', 'liveParameters', 'radarState', 'gpsLocationExternal', 'liveWeatherData'] + self.camera_packets + joystick_packet,
+                                     'managerState', 'liveParameters', 'radarState', 'gpsLocationExternal', 'liveWeatherData',
+                                     'carState'] + self.camera_packets + joystick_packet,
                                      ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan', 'gpsLocationExternal', 'liveWeatherData'])
 
     self.can_sock = can_sock
@@ -753,6 +754,7 @@ class Controls:
     self.CI.CS.coasting_lead_d = long_plan.leadDist
     self.CI.CS.coasting_lead_v = long_plan.leadV
     self.CI.CS.tr = long_plan.desiredFollowDistance
+    self.CI.CS.anti_stop_active = long_plan.antiStopControlState0.status != 'inactive' or long_plan.antiStopControlState1.status != 'inactive'
 
     actuators = car.CarControl.Actuators.new_message()
     actuators.longControlState = self.LoC.long_control_state

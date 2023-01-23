@@ -324,12 +324,19 @@ class Planner():
     longitudinalPlan.visionPredictedPathSource = self.vision_turn_controller._predicted_path_source
     longitudinalPlan.visionVf = float(self.vision_turn_controller._vf) if self.vision_turn_controller._vf is not None else -1.0
     
-    longitudinalPlan.antiStopDistanceBuffer0 = float(self.mpcs['lead0'].asd.stop_distance.x)
-    longitudinalPlan.antiStopDistanceBuffer1 = float(self.mpcs['lead1'].asd.stop_distance.x)
-    longitudinalPlan.antiStopState0 = self.mpcs['lead0'].asd.status
-    longitudinalPlan.antiStopState1 = self.mpcs['lead1'].asd.status
-    longitudinalPlan.antiStopMaxDistance0 = self.mpcs['lead0'].asd.max_stop_distance
-    longitudinalPlan.antiStopMaxDistance1 = self.mpcs['lead1'].asd.max_stop_distance
+    longitudinalPlan.antiStopControlState0.status = self.mpcs['lead0'].asd.status
+    longitudinalPlan.antiStopControlState0.distanceBuffer = float(self.mpcs['lead0'].asd.stop_distance.x)
+    longitudinalPlan.antiStopControlState0.maxDistance = self.mpcs['lead0'].asd.max_stop_distance
+    longitudinalPlan.antiStopControlState0.vStop = self.mpcs['lead0'].asd.v_stop
+    longitudinalPlan.antiStopControlState0.timeBuffer = self.mpcs['lead0'].asd.stop_time
+    longitudinalPlan.antiStopControlState0.aStop = self.mpcs['lead0'].asd.a_stop
+    
+    longitudinalPlan.antiStopControlState1.status = self.mpcs['lead1'].asd.status
+    longitudinalPlan.antiStopControlState1.distanceBuffer = float(self.mpcs['lead1'].asd.stop_distance.x)
+    longitudinalPlan.antiStopControlState1.maxDistance = self.mpcs['lead1'].asd.max_stop_distance
+    longitudinalPlan.antiStopControlState1.vStop = self.mpcs['lead1'].asd.v_stop
+    longitudinalPlan.antiStopControlState1.timeBuffer = self.mpcs['lead1'].asd.stop_time
+    longitudinalPlan.antiStopControlState1.aStop = self.mpcs['lead1'].asd.a_stop
     
     longitudinalPlan.dynamicFollowState0.pointsCurrent = self.mpcs['lead0'].df.points_cur
     longitudinalPlan.dynamicFollowState0.newLead = self.mpcs['lead0'].df.new_lead
