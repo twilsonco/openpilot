@@ -6,7 +6,9 @@ from common.colors import COLORS
 from common.numpy_fast import clip
 from common.params import Params
 from common.travis_checker import BASEDIR
+from datetime import datetime
 from enum import Enum
+import re
 from selfdrive.hardware import TICI
 from selfdrive.swaglog import cloudlog
 import threading
@@ -783,7 +785,7 @@ class opParams:
       'MISC': 'MISCellaneous OpenPilot settings',
       'MET': 'on-screed UI METrics',
       'LAT': "LATeral control (steering)",
-      'TRX': "Lateral acceleration \"torque\" controller (PID under the hood)",
+      'TRX': "Lateral acceleration \"torque\" controller",
       'PID': "Angle PID controller",
       'INDI': "Incremental Non-linear Dynamic Inversion controller",
       'LQR': "Linear Quadratic Regulator controller",
@@ -794,7 +796,10 @@ class opParams:
     }
 
     self._to_delete = []  # a list of unused params you want to delete from users' params file
-    self._to_reset = []  # a list of params you want reset to their default values
+    self._to_reset = {
+      '2023/01/22-22:28': [r'MET_.*'],
+      }  # a dict where each key is a date in 'yyyy/mm/dd-hh:mm' (24-hour) format, and the value is a list of names of params OR regular expressions to match params you want reset to their default values if the modification date is before the key date
+      # use something that doesn't match the date string format and the associated list of param names or regex's will apply no matter the modified date of the param
     self._calling_function = calling_function
     self._run_init(calling_function=calling_function)  # restores, reads, and updates params
 
@@ -918,6 +923,34 @@ class opParams:
       if key in self._to_delete:
         del self.params[key]
         os.remove(os.path.join(PARAMS_DIR, key))
-      elif key in self._to_reset and key in self.fork_params:
-        self.params[key] = self.fork_params[key].default_value
-        _write_param(key, self.params[key])
+    for k,v in self._to_reset.items():
+      try:
+        dt = datetime.strptime(k, '%Y/%m/%d-%H:%M') # cutoff date 'yyyy/mm/dd-hh:mm' 24-hour format
+      except:
+        dt = None
+      for key in v:
+        p = os.path.join(PARAMS_DIR, key)
+        if key in self.fork_params and os.path.exists(p): # key is exact match for param
+          dm = datetime.fromtimestamp(os.path.getmtime(p)) # modification date
+          if (dt is None or dm < dt) and self.params[key] != self.fork_params[key].default_value: # if param modification date older than cutoff, overwrite
+            cloudlog.warning(warning('Replacing value of param {}: {}, with updated default value: {}'.format(key, self.params[key], self.fork_params[key].default_value)))
+            self.params[key] = self.fork_params[key].default_value
+            _write_param(key, self.params[key])
+        else: # not exact match, try as regex
+          try:
+            r = re.compile(key)
+          except Exception as e:
+            cloudlog.warning(f"Failed to apply opParam reset for {key = }")
+            r = None
+          if r is not None:
+            for key2 in list(self.params):
+              m = r.match(key2)
+              if m is not None:
+                key1 = m.group()
+                p = os.path.join(PARAMS_DIR, key1)
+                if key1 in self.fork_params and os.path.exists(p):
+                  dm = datetime.fromtimestamp(os.path.getmtime(p)) # modification date
+                  if (dt is None or dm < dt) and self.params[key1] != self.fork_params[key1].default_value: # if param modification date older than cutoff, overwrite
+                    cloudlog.warning(warning('Replacing value of param {}: {}, with updated default value: {}'.format(key1, self.params[key1], self.fork_params[key1].default_value)))
+                    self.params[key1] = self.fork_params[key1].default_value
+                    _write_param(key1, self.params[key1])
