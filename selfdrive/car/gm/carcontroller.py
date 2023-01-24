@@ -220,6 +220,7 @@ class CarController():
             
             self.one_pedal_decel = clip(one_pedal_decel, min(self.one_pedal_decel, CS.out.aEgo + pitch_accel) - ONE_PEDAL_DECEL_RATE_LIMIT_UP * rate_limit_factor, max(self.one_pedal_decel, CS.out.aEgo + pitch_accel) + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN + rate_limit_factor)
             self.one_pedal_decel = max(self.one_pedal_decel, ONE_PEDAL_MAX_DECEL)
+            self.one_pedal_decel = min(self.one_pedal_decel, CS.out.aEgo)
             self.one_pedal_apply_brake = interp(self.one_pedal_decel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
           else:
             self.one_pedal_decel_in = clip(0.0 if CS.gear_shifter_ev == GEAR_SHIFTER2.DRIVE and CS.one_pedal_dl_coasting_enabled and CS.vEgo > 0.05 else min(CS.out.aEgo,self.threshold_accel), self.one_pedal_decel_in - ONE_PEDAL_DECEL_RATE_LIMIT_UP, self.one_pedal_decel_in + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)
