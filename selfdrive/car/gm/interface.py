@@ -171,6 +171,8 @@ class CarInterface(CarInterfaceBase):
         if candidate == Car.BOLT_EUV: 
           ret.longitudinalTuning.kpV = [2.4, 1.5]
           ret.longitudinalTuning.kiV = [0.72]
+          ret.longitudinalTuning.deadzoneBP = [0.]
+          ret.longitudinalTuning.deadzoneV = [0.5]
         else:
           ret.longitudinalTuning.kpV = [2.0, 1.5]
           ret.longitudinalTuning.kiV = [0.72]
@@ -298,6 +300,10 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.0
 
     elif candidate == CAR.BOLT_EUV:
+      ret.longitudinalTuning.kpV = [2.4, 1.5]
+      ret.longitudinalTuning.kiV = [0.72]
+      ret.longitudinalTuning.deadzoneBP = [0.]
+      ret.longitudinalTuning.deadzoneV = [0.5]
       ret.mass = 1669. + STD_CARGO_KG
       ret.wheelbase = 2.63779
       ret.steerRatio = 16.8
