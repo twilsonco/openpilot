@@ -1909,15 +1909,6 @@ static void ui_draw_measures(UIState *s){
             snprintf(val, sizeof(val), "%.1f:%.1f", dat1, dat2);
             snprintf(unit, sizeof(unit), "s");
             break;}
-          
-          case UIMeasure::ANTI_STOP_BUFFER_DISTANCE:
-            {
-            snprintf(name, sizeof(name), "ANTI STOP DIST");
-            float dat1 = scene.longitudinal_plan.getAntiStopControlState0().getDistanceBuffer();
-            float dat2 = scene.longitudinal_plan.getAntiStopControlState1().getDistanceBuffer();
-            snprintf(val, sizeof(val), "%.1f", MAX(dat1,dat2) * (scene.is_metric ? 1.0 : 3.28));
-            snprintf(unit, sizeof(unit), scene.is_metric ? "m" : "ft");
-            break;}
 
           case UIMeasure::LEAD_TTC:
             {

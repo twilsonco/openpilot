@@ -754,7 +754,6 @@ class Controls:
     self.CI.CS.coasting_lead_d = long_plan.leadDist
     self.CI.CS.coasting_lead_v = long_plan.leadV
     self.CI.CS.tr = long_plan.desiredFollowDistance
-    self.CI.CS.anti_stop_active = long_plan.antiStopControlState0.status != 'inactive' or long_plan.antiStopControlState1.status != 'inactive'
 
     actuators = car.CarControl.Actuators.new_message()
     actuators.longControlState = self.LoC.long_control_state

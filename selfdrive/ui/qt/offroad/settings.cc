@@ -85,12 +85,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_calibration.png",
                                   this));
   
-  toggles.append(new ParamControl("AntiStopAndGoEnabled",
-                                  "Anti-stop-and-go (tap-me)",
-                                  "Only '17 Volt can autoresume from a stop. For other cars, enable this to make OpenPilot instead avoid stopping in the first place.",
-                                  "../assets/offroad/icon_car_pedal.png",
-                                  this));
-  
   toggles.append(new ParamControl("LongRangeLeadsEnabled",
                                   "Longer-range lead detection (beta)",
                                   "This also allows for 10-20\% longer range detection using radar and the cars LKA camera.",
