@@ -438,7 +438,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kdBP = bp
       ret.longitudinalTuning.kdV = op_params.get('TUNE_LONG_kd', force_update=True)
       ret.longitudinalTuning.deadzoneBP = bp
-      ret.longitudinalTuning.deadzoneV = op_params.get('TUNE_LONG_deadzone', force_update=True)
+      ret.longitudinalTuning.deadzoneV = op_params.get('TUNE_LONG_deadzone_ms2', force_update=True)
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase

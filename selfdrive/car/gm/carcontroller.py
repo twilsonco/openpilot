@@ -90,8 +90,8 @@ class CarController():
     ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP = sorted(self._op_params.get('MADS_OP_rate_low_speed_factor_bp'))
     ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_V[1] = self._op_params.get('MADS_OP_rate_high_steer_factor')
     ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP = sorted(self._op_params.get('MADS_OP_rate_high_steer_factor_bp'))
-    ONE_PEDAL_MODE_DECEL_V = self._op_params.get('MADS_OP_decel_mss')
-    ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V = self._op_params.get('MADS_OP_regen_paddle_decel_mss')
+    ONE_PEDAL_MODE_DECEL_V = self._op_params.get('MADS_OP_decel_ms2')
+    ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V = self._op_params.get('MADS_OP_regen_paddle_decel_ms2')
     ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V + ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
     ONE_PEDAL_DECEL_RATE_LIMIT_UP = self._op_params.get('MADS_OP_rate_ramp_up') * DT_CTRL * 4 # m/s^2 per second for increasing braking force
     ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = self._op_params.get('MADS_OP_rate_ramp_down') * DT_CTRL * 4 # m/s^2 per second for decreasing

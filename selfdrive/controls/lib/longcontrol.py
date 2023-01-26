@@ -99,6 +99,8 @@ class LongControl():
     self.pos_accel_smooth_k = 0.0
     self.lead_gone_smooth_accel_time = 4.0
     self.gas_smooth_accel_time = 3.0
+    smooth_max_speed = 9.0
+    self.pos_accel_gas_smooth_speed_bp = [smooth_max_speed * 0.7, smooth_max_speed]
     self.pos_accel_smooth_min_speed = 1.0
     self.output_accel = FirstOrderFilter(0.0, 0.0, DT_CTRL)
     self.last_output_accel = 0.0
@@ -112,13 +114,15 @@ class LongControl():
     self.pid._k_p = [bp, self._op_params.get('TUNE_LONG_kp')]
     self.pid._k_i = [bp, self._op_params.get('TUNE_LONG_ki')]
     self.pid._k_d = [bp, self._op_params.get('TUNE_LONG_kd')]
-    self.deadzone_bp, self.deadzone_v = bp, self._op_params.get('TUNE_LONG_deadzone')
-    self.pos_accel_gas_smooth_k = self._op_params.get('AP_positive_accel_post_gas_smoothing_factor')
+    self.deadzone_bp, self.deadzone_v = bp, self._op_params.get('TUNE_LONG_deadzone_ms2')
+    self.pos_accel_gas_smooth_k = self._op_params.get('AP_positive_accel_post_resume_smoothing_factor')
+    smooth_max_speed = self._op_params.get('AP_positive_accel_post_resume_smoothing_max_speed_mph') * CV.MPH_TO_MS
+    self.pos_accel_gas_smooth_speed_bp = [smooth_max_speed * 0.7, smooth_max_speed]
     self.pos_accel_lead_smooth_k = self._op_params.get('AP_positive_accel_post_lead_smoothing_factor')
     self.pos_accel_smooth_k = self._op_params.get('AP_positive_accel_smoothing_factor')
-    self.pos_accel_smooth_min_speed = self._op_params.get('AP_positive_accel_smoothing_min_speed')
-    self.lead_gone_smooth_accel_time = self._op_params.get('AP_positive_accel_post_lead_smoothing_time')
-    self.gas_smooth_accel_time = self._op_params.get('AP_positive_accel_post_gas_smoothing_time')
+    self.pos_accel_smooth_min_speed = self._op_params.get('AP_positive_accel_smoothing_min_speed_mph') * CV.MPH_TO_MS
+    self.lead_gone_smooth_accel_time = self._op_params.get('AP_positive_accel_post_lead_smoothing_time_s')
+    self.gas_smooth_accel_time = self._op_params.get('AP_positive_accel_post_resume_smoothing_time_s')
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
@@ -224,6 +228,7 @@ class LongControl():
         self.output_accel.update(output_accel)
       elif time_since_gas < self.gas_smooth_accel_time:
         smooth_factor = interp(time_since_gas, [self.gas_smooth_accel_time * 0.5, self.gas_smooth_accel_time], [self.pos_accel_gas_smooth_k, 0.0])
+        smooth_factor = interp(CS.vEgo, self.pos_accel_gas_smooth_speed_bp, [smooth_factor, 0.0])
         self.output_accel.x = max(self.output_accel.x, CS.aEgo)
         self.output_accel.update_alpha(smooth_factor)
         self.output_accel.update(output_accel)

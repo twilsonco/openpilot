@@ -413,7 +413,7 @@ class opParams:
       
       'MISC_cluster_speed_smoothing_factor': Param(0.2, float, 'Adjust the smoothing used to determine the "current speed" shown on the Comma device\n', min_val=0.0, max_val=100.0),
       
-      'MISC_cluster_speed_deadzone': Param(0.12, float, 'Adjust the deadzone used to prevent the current speed from quickly alternating back and forth. Higher value means a more delayed response with less alternating.\n', min_val=0.0, max_val=0.45, unit='mph or km/h'),
+      'MISC_cluster_speed_deadzone': Param(0.12, float, 'Adjust the deadzone used to prevent the current speed from quickly alternating back and forth. Higher value means a more delayed response with less alternating. Units of this parameter depend on whether you have "metric" units enabled in OpenPilot.\n', min_val=0.0, max_val=0.45, unit='mph or km/h'),
       
       'MISC_speed_limit_offset': Param([0.2, 0.12], [list, float], '"Low" and "high" speed speed limit offsets over the current speed limit if seed limit offset is enabled in OpenPilot settings. The speed limit offset changes from low-speed amount (eg. 0.2 = 20% over) at 20mph to the high_speed offset amount by 80mph\n', live=True, min_val=0.0, max_val=0.5),
       
@@ -427,17 +427,19 @@ class opParams:
       
       'AP_following_accel_factor': Param(1.0, float, 'Scale acceleration when behind a pulling away lead.\n', live=True, min_val=0.01, max_val=20.0),
       
-      'AP_positive_accel_post_gas_smoothing_factor': Param(1.0, float, 'Adjust the smoothing applied to positive acceleration as OpenPilot resumes long control after you let off the gas pedal. Higher value is more smoothing.\n', live=True, min_val=0.0, max_val=20.0),
+      'AP_positive_accel_post_resume_smoothing_factor': Param(1.0, float, 'Adjust the smoothing applied to positive acceleration as OpenPilot resumes long control after you let off the gas pedal or otherwise resume long control. Higher value is more smoothing.\n', live=True, min_val=0.0, max_val=20.0),
       
-      'AP_positive_accel_post_gas_smoothing_time': Param(3.0, float, 'How long should positive acceleration smoothing be applied after resuming following a gas press?\n', live=True, min_val=0.0, max_val=20.0, unit='seconds'),
+      'AP_positive_accel_post_resume_smoothing_time_s': Param(3.0, float, 'How long should positive acceleration smoothing be applied after resuming following a resume event?\n', live=True, min_val=0.0, max_val=20.0, unit='seconds'),
+      
+      'AP_positive_accel_post_resume_smoothing_max_speed_mph': Param(20.0, float, 'Post-resume smoothing will only be used at or below this speed.\n', live=True, min_val=0.0, max_val=90.0, unit="mph"),
       
       'AP_positive_accel_post_lead_smoothing_factor': Param(1.0, float, 'Adjust the smoothing applied to positive acceleration immediately after a lead "disappears", say, after they slow for a hard right turn, so that OpenPilot doesn\'t abruptly let off the brakes and accelerate uncomfortably. Higher value is more smoothing.\n', live=True, min_val=0.0, max_val=20.0),
       
-      'AP_positive_accel_post_lead_smoothing_time': Param(4.0, float, 'How long should positive acceleration smoothing be applied after a lead having "disappeared"?\n', live=True, min_val=0.0, max_val=20.0, unit='seconds'),
+      'AP_positive_accel_post_lead_smoothing_time_s': Param(4.0, float, 'How long should positive acceleration smoothing be applied after a lead having "disappeared"?\n', live=True, min_val=0.0, max_val=20.0, unit='seconds'),
       
       'AP_positive_accel_smoothing_factor': Param(0.0, float, 'Adjust the smoothing applied to positive acceleration at all other times. Higher value is more smoothing.\n', live=True, min_val=0.0, max_val=20.0),
       
-      'AP_positive_accel_smoothing_min_speed': Param(2.0, float, 'Below this speed, no smoothing is applied to positive acceleration under any circumstances.\n', live=True, min_val=0.0, max_val=90.0, unit='mph'),
+      'AP_positive_accel_smoothing_min_speed_mph': Param(2.0, float, 'Below this speed, no smoothing is applied to positive acceleration under any circumstances.\n', live=True, min_val=0.0, max_val=90.0, unit='mph'),
       
       #####
       
@@ -491,9 +493,9 @@ class opParams:
       
       'MADS_steer_allow_nudgeless_lane_change': Param(False, bool, 'If true, nudgeless lane changes will apply when in MADS mode\n'),
       
-      'MADS_OP_decel_mss': Param([-1.0, -1.1], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is not pressed.\n', min_val=-2.5, max_val=0.0, unit='m/s²'),
+      'MADS_OP_decel_ms2': Param([-1.0, -1.1], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is not pressed.\n', min_val=-2.5, max_val=0.0, unit='m/s²'),
       
-      'MADS_OP_regen_paddle_decel_mss': Param([-1.3, -1.6], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is pressed.\n', min_val=-2.5, max_val=0.0, unit='m/s²'),
+      'MADS_OP_regen_paddle_decel_ms2': Param([-1.3, -1.6], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is pressed.\n', min_val=-2.5, max_val=0.0, unit='m/s²'),
       
       'MADS_OP_rate_ramp_up': Param(0.8, float, 'The rate at which one-pedal brake force increases (applying)\n', min_val=0.1, max_val=3.0, unit='m/s³'),
       
@@ -717,7 +719,7 @@ class opParams:
       
       'TUNE_LONG_kd': Param([0.3, 0.0, 0.0], [list, float], 'Values of kd used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.\n', live=True, min_val=0.0, max_val=5.0),
       
-      'TUNE_LONG_deadzone': Param([0.0, 0.0, 0.0], [list, float], 'Values of deadzone used at the corresponding speeds in TUNE_LONG_mph. Deadzone sets a minimum amount of desired acceleration before the gas or brakes are actually actuated. Deadzones are used to smooth jerky long control, if the gas/brake controls are too sensitive or if the planning is noisy.\n', live=True, min_val=0.0, max_val=5.0, unit='m/s²'),
+      'TUNE_LONG_deadzone_ms2': Param([0.0, 0.0, 0.0], [list, float], 'Values of deadzone used at the corresponding speeds in TUNE_LONG_mph. Deadzone sets a minimum amount of desired acceleration before the gas or brakes are actually actuated. Deadzones are used to smooth jerky long control, if the gas/brake controls are too sensitive or if the planning is noisy.\n', live=True, min_val=0.0, max_val=5.0, unit='m/s²'),
       
       #####
       
