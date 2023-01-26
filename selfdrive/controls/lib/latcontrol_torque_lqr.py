@@ -33,7 +33,7 @@ class LatControlTorqueLQR():
     self.sat_limit = CP.steerLimitTimer
     
     self._op_params = opParams(calling_function="latcontrol_torque_lqr.py")
-    self.roll_k = 1.0
+    self.roll_k = 0.0
 
     self.reset()
   

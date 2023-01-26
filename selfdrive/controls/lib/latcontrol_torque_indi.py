@@ -53,7 +53,7 @@ class LatControlTorqueINDI():
     self._k_f = CP.lateralTuning.torqueIndi.kf
     
     self._op_params = opParams(calling_function="latcontrol_torque_indi.py")
-    self.roll_k = 1.0
+    self.roll_k = 0.0
 
     self.reset()
   

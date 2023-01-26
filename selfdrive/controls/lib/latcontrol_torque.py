@@ -35,14 +35,14 @@ class LatControlTorque(LatControl):
     self.friction = CP.lateralTuning.torque.friction
     self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
     self._op_params = opParams(calling_function="latcontrol_torque.py")
-    self.roll_k = 0.5
+    self.roll_k = 0.55
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
     if self.tune_override:
       self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp', force_update=True)]
       self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v', force_update=True)
     else:
       self.low_speed_factor_bp = [10.0, 25.0]
-      self.low_speed_factor_v = [180.0, 50.0]
+      self.low_speed_factor_v = [225.0, 50.0]
   
   def update_op_params(self):
     if not self.tune_override:
