@@ -108,13 +108,6 @@ class LongControl():
     self.deadzone_bp, self.deadzone_v = CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV
   
   def update_op_params(self):
-    if not self.tune_override:
-      return
-    bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LONG_speed_mph')]
-    self.pid._k_p = [bp, self._op_params.get('TUNE_LONG_kp')]
-    self.pid._k_i = [bp, self._op_params.get('TUNE_LONG_ki')]
-    self.pid._k_d = [bp, self._op_params.get('TUNE_LONG_kd')]
-    self.deadzone_bp, self.deadzone_v = bp, self._op_params.get('TUNE_LONG_deadzone_ms2')
     self.pos_accel_gas_smooth_k = self._op_params.get('AP_positive_accel_post_resume_smoothing_factor')
     smooth_max_speed = self._op_params.get('AP_positive_accel_post_resume_smoothing_max_speed_mph') * CV.MPH_TO_MS
     self.pos_accel_gas_smooth_speed_bp = [smooth_max_speed * 0.7, smooth_max_speed]
@@ -123,6 +116,13 @@ class LongControl():
     self.pos_accel_smooth_min_speed = self._op_params.get('AP_positive_accel_smoothing_min_speed_mph') * CV.MPH_TO_MS
     self.lead_gone_smooth_accel_time = self._op_params.get('AP_positive_accel_post_lead_smoothing_time_s')
     self.gas_smooth_accel_time = self._op_params.get('AP_positive_accel_post_resume_smoothing_time_s')
+    if not self.tune_override:
+      return
+    bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LONG_speed_mph')]
+    self.pid._k_p = [bp, self._op_params.get('TUNE_LONG_kp')]
+    self.pid._k_i = [bp, self._op_params.get('TUNE_LONG_ki')]
+    self.pid._k_d = [bp, self._op_params.get('TUNE_LONG_kd')]
+    self.deadzone_bp, self.deadzone_v = bp, self._op_params.get('TUNE_LONG_deadzone_ms2')
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
