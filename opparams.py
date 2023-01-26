@@ -76,6 +76,8 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         self.info('Here are your live parameters:', sleep_time=0)
         self.info('(changes take effect within a second)', sleep_time=0)
       self.info('(startup (s) require car or OpenPilot restart)', sleep_time=0)
+      if not self.compact_view:
+        self.info('(parameters have default (.) or changed (C) values)', sleep_time=0)
       if (self.section != '' or not self.live_tuning) \
           and not self.live_tuning_enabled:
         if self.first_run:
@@ -146,11 +148,15 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       n_pad_idx = int(log10(len(self.params) + (0 if self.section != '' else len(sections))))+2
       n_pad_vals = max([len(str(i)) for i in values_list])+1
       for idx, param in enumerate(self.params):
-        line = '{} {} {} {}'.format(f"{idx + 1}.".rjust(n_pad_idx), f"{param}".ljust(n_pad,'.'), static[idx] , values_list[idx])
+        _color = blue_gradient[min(round(idx / len(self.params) * len(blue_gradient)), len(blue_gradient) - 1)]
+        if self.compact_view:
+          line = '{} {} {} {}'.format(f"{idx + 1}.".rjust(n_pad_idx), f"{param}".ljust(n_pad,'.'), static[idx] , values_list[idx])
+        else:
+          is_default = (self.op_params.get(param, force_update=True) == self.op_params.fork_params[param].default_value)
+          line = '{} {} {} {} {}'.format(f"{idx + 1}.".rjust(n_pad_idx), f"{param}".ljust(n_pad,'.'), static[idx], f"{COLORS.BASE(_color)}.{COLORS.ENDC}" if is_default else f"{COLORS.INFO}C{COLORS.ENDC}", values_list[idx])
         if idx == self.last_choice and self.last_choice is not None and self.last_choice < len(self.params):
           line = COLORS.OKGREEN + line
         else:
-          _color = blue_gradient[min(round(idx / len(self.params) * len(blue_gradient)), len(blue_gradient) - 1)]
           line = COLORS.BASE(_color) + line
         to_print.append(line)
       
