@@ -463,6 +463,10 @@ class opParams:
       
       #####
       
+      'XR_v_lat_derivative_period_s': Param(1.0, float, 'Lead relative lateral velocity is calculated as a numerical derivative (change in lateral position with respect to time). This parameter controls the time used to calculate the derivative.\n', min_val=0.1, max_val=10.0, unit="seconds"),
+      
+      'XR_v_lat_vLead_factor_bp_mph': Param([15.0, 25.0], [list, float], 'Lead relative lateral velocity only really needs to be calculated to better deal with leads turning out of your lane, which is only typically an issue at low speeds. Meanwhile, the lead lateral velocity data can be noisy compared to radar range data, so we don\'t want to use it when we don\'t need to. Therefore, we decrease the contribution of lateral velocity to total lead velocity at "high" lead speeds and use it at "low" lead speeds. Here you define the "low" and "high" speeds. Below the "low" speed, 100% of lateral velocity is used, and it decreases to 0% by the time the "high" speed is reached.\n', min_val=0.0, max_val=90.0, unit="mph"),
+      
       'XR_LRL_max_detection_distance_m': Param(150, int, 'Max distance [in meters] at which radar + vision data will be used to consider tracks (a.k.a. points) as a potential lead. WARNING: RADAR DETECTION DISTANCE IS ~150m, AND ABOVE THAT VISION DATA FROM THE VOLT LKA CAMERA WILL BE USED, WHICH CAN BE VERY NOISY, LEADING TO PHANTOM BRAKING. USE THE SMOOTHING PARAMETER TO TRY AND SMOOTH IT OR JUST DON\'T GO ABOVE 150m!\n', min_val=50, max_val=250, unit="meters"),
       
       'XR_LRL_smoothing_factor': Param(1.0, float, 'This adjusts the smoothing used for vision-only long-range leads, in order to reduce unnecessary braking from noise lead velocity data.\n', min_val=0.0, max_val=50.0),
