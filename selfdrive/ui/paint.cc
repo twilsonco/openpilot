@@ -4086,9 +4086,14 @@ static void ui_draw_vision_header(UIState *s) {
                                         nvgRGBAf(0, 0, 0, 0.45), nvgRGBAf(0, 0, 0, 0));
   ui_fill_rect(s->vg, {0, 0, s->fb_w , header_h}, gradient);
   ui_draw_vision_maxspeed(s);
-  ui_draw_vision_speedlimit(s);
   ui_draw_vision_speed(s);
-  ui_draw_vision_turnspeed(s);
+  if (s->scene.controls_state.getAlertSize() == cereal::ControlsState::AlertSize::NONE){
+    ui_draw_vision_turnspeed(s);
+    ui_draw_vision_speedlimit(s);
+  }
+  else if (s->scene.controls_state.getAlertSize() == cereal::ControlsState::AlertSize::SMALL){
+    ui_draw_vision_speedlimit(s);
+  }
   ui_draw_vision_event(s);
 }
 
