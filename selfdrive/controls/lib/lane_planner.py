@@ -366,23 +366,29 @@ class LaneOffset:
     lane_pos_auto = 0.
     timeout_override = False
     
-    if not (self._cs is None or self._cs.leftBlinker or self._cs.rightBlinker):
-      if self._left_traffic in [LANE_TRAFFIC.ONCOMING, LANE_TRAFFIC.ONGOING] \
-          and self._right_traffic == LANE_TRAFFIC.NONE \
-          and self._lane_probs[2] >= self.AUTO_MIN_LANELINE_PROB:
-        lane_pos_auto = -1.
-        timeout_override = True
-      elif self._right_traffic in [LANE_TRAFFIC.ONCOMING, LANE_TRAFFIC.ONGOING] \
-          and self._left_traffic == LANE_TRAFFIC.NONE \
-          and self._lane_probs[1] >= self.AUTO_MIN_LANELINE_PROB:
-        lane_pos_auto = 1.
-        timeout_override = True
+    
+    if self._left_traffic in [LANE_TRAFFIC.ONCOMING, LANE_TRAFFIC.ONGOING] \
+        and self._right_traffic == LANE_TRAFFIC.NONE \
+        and self._lane_probs[2] >= self.AUTO_MIN_LANELINE_PROB:
+      lane_pos_auto = -1.
+      timeout_override = True
+    elif self._right_traffic in [LANE_TRAFFIC.ONCOMING, LANE_TRAFFIC.ONGOING] \
+        and self._left_traffic == LANE_TRAFFIC.NONE \
+        and self._lane_probs[1] >= self.AUTO_MIN_LANELINE_PROB:
+      lane_pos_auto = 1.
+      timeout_override = True
     if lane_pos_auto != 0. \
         and ((self._lat_accel_cur >= self.AUTO_MAX_CUR_LAT_ACCEL \
           and np.sign(self._lat_curvature_cur) == np.sign(lane_pos_auto)) \
         or (self._lat_accel_pred >= self.AUTO_MAX_PRED_LAT_ACCEL \
           and np.sign(self._lat_curvature_pred) == np.sign(lane_pos_auto))):
       lane_pos_auto = 0.
+    
+    if self._cs is not None \
+        and (self._cs.leftBlinker and lane_pos_auto == -1. \
+        or self._cs.rightBlinker and lane_pos_auto == 1.):
+      lane_pos_auto = 0.
+      timeout_override = False
     
     if lane_pos_auto != self._lane_pos_auto:
       self._lane_state_changed_last_t = self._t
