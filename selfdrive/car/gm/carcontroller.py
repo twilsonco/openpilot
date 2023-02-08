@@ -55,7 +55,9 @@ class CarController():
     
     self.params = CarControllerParams()
     self._op_params = opParams("gm CarController")
-    self.override_long_tune = self._op_params.get('TUNE_LAT_do_override', force_update=True)
+    self.override_long_tune = self._op_params.get('TUNE_LONG_do_override', force_update=True)
+    self.override_lat_tune = self._op_params.get('TUNE_LAT_do_override', force_update=True)
+    self.min_steer_speed = self._op_params.get('TUNE_LAT_min_steer_speed_mph', force_update=True) * CV.MPH_TO_MS
 
     self.packer_pt = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.packer_obj = CANPacker(DBC[CP.carFingerprint]['radar'])
@@ -120,7 +122,7 @@ class CarController():
     if CS.lka_steering_cmd_counter != self.lka_steering_cmd_counter_last:
       self.lka_steering_cmd_counter_last = CS.lka_steering_cmd_counter
     elif (frame % P.STEER_STEP) == 0:
-      lkas_enabled = (enabled or CS.pause_long_on_gas_press or (CS.MADS_enabled and CS.cruiseMain)) and CS.lkaEnabled and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > P.MIN_STEER_SPEED and CS.lane_change_steer_factor > 0.
+      lkas_enabled = (enabled or CS.pause_long_on_gas_press or (CS.MADS_enabled and CS.cruiseMain)) and CS.lkaEnabled and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > self.min_steer_speed and CS.lane_change_steer_factor > 0.
       if lkas_enabled:
         new_steer = int(round(actuators.steer * P.STEER_MAX * CS.lane_change_steer_factor))
         P.v_ego = CS.out.vEgo
