@@ -768,7 +768,7 @@ class opParams:
       'TD': 'Traffic Detection',
       'TUNE': 'lateral/longitudinal tuning',
       'MISC': 'MISCellaneous OpenPilot settings',
-      'MET': 'on-screed UI METrics',
+      'MET': 'on-screen UI METrics',
       'LAT': "LATeral control (steering)",
       'TRX': "Lateral acceleration \"torque\" controller",
       'PID': "Angle PID controller",
