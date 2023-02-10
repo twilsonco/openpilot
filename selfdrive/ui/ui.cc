@@ -537,6 +537,10 @@ static void update_state(UIState *s) {
         scene.screen_dim_mode = MIN(1, scene.screen_dim_mode);
         Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
       }
+      else if (scene.screen_dim_mode != 2){
+        scene.screen_dim_mode = 2;
+        Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
+      }
     }
     else if (valid && scene.weather_info.valid 
             && time > data.getTimeSunset() 
