@@ -96,14 +96,14 @@ class Controls:
 
     self.sm = sm
     if self.sm is None:
-      ignore = ['driverCameraState', 'managerState'] if SIMULATION else ['liveWeatherData','carState']
+      ignore = ['driverCameraState', 'managerState'] if SIMULATION else ['liveWeatherData','carState','controlsState']
       if self.gray_panda_support_enabled:
         ignore += ['gpsLocationExternal']
       self.sm = messaging.SubMaster(['deviceState', 'pandaState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'managerState', 'liveParameters', 'radarState', 'gpsLocationExternal', 'liveWeatherData',
-                                     'carState'] + self.camera_packets + joystick_packet,
-                                     ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan', 'gpsLocationExternal', 'liveWeatherData'])
+                                     'carState','controlsState'] + self.camera_packets + joystick_packet,
+                                     ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan', 'gpsLocationExternal', 'liveWeatherData','controlsState'])
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -215,6 +215,7 @@ class Controls:
       params.put("EngagedDistance", "0.0")
       params.put("OpenPilotSecondsEngaged", "0.0")
     
+    self.parked_timer = 0.0
     self.distance_traveled_total = float(params.get("TripDistance", encoding="utf8"))
     self.car_running_timer_total = float(params.get("CarSecondsRunning", encoding="utf8"))
     self.car_running_timer_session = 0.0
@@ -307,6 +308,11 @@ class Controls:
       if CS.gearShifter in ['drive', 'low', 'reverse']:
         self.car_running_timer_session += self.params_check_freq
         self.car_running_timer_total += self.params_check_freq
+      if CS.gearShifter == 'park':
+        self.parked_timer += self.params_check_freq
+      else:
+        self.parked_timer = 0.0
+      self.CI.CS.parked_timer = self.parked_timer
       if not self.enabled and self.enabled_last and CS.vEgo > 0.5:
         self.disengagement_count_session += 1
         self.disengagement_count_total += 1
@@ -957,6 +963,7 @@ class Controls:
     controlsState.interactionTimer = int(self.interaction_timer)
     controlsState.interventionTimer = int(self.intervention_timer)
     controlsState.distractionTimer = int(self.distraction_timer)
+    controlsState.parkedTimer = int(self.parked_timer)
     
     controlsState.applyGas = int(self.CI.CC.apply_gas)
     controlsState.applyBrakeOut = int(-self.CI.CC.apply_brake_out)

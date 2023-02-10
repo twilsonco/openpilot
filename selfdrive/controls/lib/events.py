@@ -384,10 +384,14 @@ def autohold_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> 
 
 
 def stopped_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
-  return Alert(
-    "Stopped for %s | Gas to resume" % stotime(sm['longitudinalPlan'].secondsStopped),
-    "You can rest your foot now.",
-    AlertStatus.normal, AlertSize.small,
+  t = sm['controlsState'].parkedTimer
+  if sm['controlsState'].parkedTimer > 1:
+    t = stotime(t)
+    s = "Parked for %s" % t
+  else:
+    t = stotime(sm['longitudinalPlan'].secondsStopped)
+    s = "Stopped for %s | Gas to resume" % t
+  return Alert(s, "", AlertStatus.normal, AlertSize.small,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3)
 
 def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:

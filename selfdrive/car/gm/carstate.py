@@ -86,6 +86,9 @@ class CarState(CarStateBase):
     self.is_ev = (self.car_fingerprint in [CAR.VOLT, CAR.VOLT18])
     self.do_sng = (self.car_fingerprint in [CAR.VOLT])
     
+    self.parked_timer = 0
+    self.parked_timer_min_time = 120
+    
     self.sessionInitTime = sec_since_boot()
     self.prev_distance_button = 0
     self.prev_lka_button = 0
@@ -219,6 +222,8 @@ class CarState(CarStateBase):
     self.one_pedal_mode_regen_paddle_double_press_time = self._op_params.get('MADS_OP_double_press_time_s')
     self.min_lane_change_speed = self._op_params.get('MADS_steer_pause_speed_mph') * CV.MPH_TO_MS
     GAS_PRESSED_THRESHOLD = max(1e-5, self._op_params.get('TUNE_LONG_gas_overlap_cutoff') * 0.01)
+    
+    self.parked_timer_min_time = self._op_params.get('MISC_parked_timer_min_time_s')
     
     for i in range(10):
       key_op = f'MET_{i:02d}'

@@ -550,7 +550,7 @@ class CarInterface(CarInterfaceBase):
         events.add(car.CarEvent.EventName.blinkerSteeringPaused)
         steer_paused = True
       if ret.vEgo <= self.CP.minSteerSpeed and (not self.CS.autoHoldActivated or self.CS.out.onePedalModeActive):
-        if ret.standstill and (cruiseEnabled or self.CS.out.onePedalModeActive) and t - self.CS.sessionInitTime > 10. and not self.CS.resume_required:
+        if ret.standstill and (self.CS.parked_timer > self.CS.parked_timer_min_time or (cruiseEnabled or self.CS.out.onePedalModeActive) and t - self.CS.sessionInitTime > 10. and not self.CS.resume_required):
           events.add(car.CarEvent.EventName.stoppedWaitForGas)
         elif not ret.standstill and self.CS.out.gearShifter in ['drive','low'] and not steer_paused and self.CS.lkaEnabled:
           events.add(car.CarEvent.EventName.belowSteerSpeed)

@@ -417,6 +417,8 @@ class opParams:
       
       'MISC_speed_limit_offset': Param([0.2, 0.12], [list, float], '"Low" and "high" speed speed limit offsets over the current speed limit if seed limit offset is enabled in OpenPilot settings. The speed limit offset changes from low-speed amount (eg. 0.2 = 20% over) at 20mph to the high_speed offset amount by 80mph\n', live=True, min_val=0.0, max_val=0.5),
       
+      'MISC_parked_timer_min_time_s': Param(120, int, 'Controls how long you have to be sitting in park before the parked timer will begin to show. Set to a very high value to basically disable the timer.\n', min_val=0, unit='seconds'),
+      
       #####
       
       'AP_eco_accel_factor': Param(1.0, float, 'Scale eco acceleration.\n', live=True, min_val=0.01, max_val=20.0),
