@@ -27,6 +27,9 @@ class LatControlPID():
     self.pid._k_p = [bp, self._op_params.get("TUNE_LAT_PID_kp")]
     self.pid._k_i = [bp, self._op_params.get("TUNE_LAT_PID_ki")]
     self.pid._k_d = [bp, self._op_params.get("TUNE_LAT_PID_kd")]
+    self.pid._k_11 = [[0], [self._op_params.get('TUNE_LAT_PID_kp_e')]]
+    self.pid._k_12 = [[0], [self._op_params.get('TUNE_LAT_PID_ki_e')]]
+    self.pid._k_13 = [[0], [self._op_params.get('TUNE_LAT_PID_kd_e')]]
     self.pid.k_f = self._op_params.get('TUNE_LAT_PID_kf')
     self.roll_k = self._op_params.get('TUNE_LAT_PID_roll_compensation')
 

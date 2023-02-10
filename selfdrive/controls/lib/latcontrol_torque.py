@@ -51,6 +51,9 @@ class LatControlTorque(LatControl):
     self.pid._k_p = [[0], [self._op_params.get('TUNE_LAT_TRX_kp')]]
     self.pid._k_i = [[0], [self._op_params.get('TUNE_LAT_TRX_ki')]]
     self.pid._k_d = [[0], [self._op_params.get('TUNE_LAT_TRX_kd')]]
+    self.pid._k_11 = [[0], [self._op_params.get('TUNE_LAT_TRX_kp_e')]]
+    self.pid._k_12 = [[0], [self._op_params.get('TUNE_LAT_TRX_ki_e')]]
+    self.pid._k_13 = [[0], [self._op_params.get('TUNE_LAT_TRX_kd_e')]]
     self.pid.k_f = self._op_params.get('TUNE_LAT_TRX_kf')
     self.friction = self._op_params.get('TUNE_LAT_TRX_friction')
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
