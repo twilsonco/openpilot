@@ -2185,7 +2185,7 @@ static void ui_draw_measures(UIState *s){
             {
             snprintf(name, sizeof(name), "STR. ERR.");
             float angleSteers = scene.angleSteersErr > 0. ? scene.angleSteersErr : -scene.angleSteersErr;
-            if (scene.controls_state.getEnabled()) {
+            if (scene.controls_state.getLatActive()) {
               g = 255;
               b = 255;
               p = 0.2 * angleSteers;
