@@ -160,7 +160,7 @@ class PIDController:
     self.saturated = self._check_saturation(control, check_saturation, error)
     
     if self.outputs is not None:
-      self.outputs.append(control)
+      self.outputs.append(self.p + self.i) # don't include d for self-interaction, or f becuase it's not error-based
 
     self.control = clip(control, self.neg_limit, self.pos_limit)
     return self.control
