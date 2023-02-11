@@ -17,7 +17,6 @@ class CarControllerParams():
     self.STEER_DELTA_UP_V = [20., 10.] # [steer command]
     self.STEER_DELTA_DOWN_BP = [10., 20.] # [m/s]
     self.STEER_DELTA_DOWN_V = [32., 25.] # [steer command]
-    self.MIN_STEER_SPEED = 3.
     self.STEER_DRIVER_ALLOWANCE = 50   # allowed driver torque before start limiting
     self.STEER_DRIVER_MULTIPLIER = 4   # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 100     # from dbc
