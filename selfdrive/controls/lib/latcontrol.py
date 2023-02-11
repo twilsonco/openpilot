@@ -3,7 +3,7 @@ from abc import abstractmethod, ABC
 from common.realtime import DT_CTRL
 from common.numpy_fast import clip
 
-MIN_STEER_SPEED = 0.3
+MIN_STEER_SPEED = -1.0
 
 
 class LatControl(ABC):
