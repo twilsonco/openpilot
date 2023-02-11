@@ -148,10 +148,10 @@ class PIDController:
 
     i_new = float(self.i)
     if self.errors_i is not None:
-      if len(self.errors_i) == self._i_period:
+      if len(self.errors_i) == self._i_period: # subtract off oldest trapezoid
         i_new -= self._i_dt * self.ki * (self.errors_i[0] + self.errors_i[1])
       self.errors_i.append(error)
-      if len(self.errors_i) > 1:
+      if len(self.errors_i) > 1: # add in new trapezoid
         i_new += self._i_dt * self.ki * (self.errors_i[-2] + self.errors_i[-1])
     
     self.p = error * self.kp
