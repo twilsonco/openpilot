@@ -15,7 +15,7 @@ def apply_deadzone(error, deadzone):
 
 
 class PIDController:
-  def __init__(self, k_p=0., k_i=0., k_d=0., k_f=1., k_11=0., k_12=0., k_13=0., k_period=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, derivative_period=1., integral_period=10.):
+  def __init__(self, k_p=0., k_i=0., k_d=0., k_f=1., k_11=0., k_12=0., k_13=0., k_period=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, derivative_period=1., integral_period=2.5):
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
     self._k_d = k_d  # derivative gain
@@ -40,28 +40,34 @@ class PIDController:
 
     self.pos_limit = pos_limit
     self.neg_limit = neg_limit
+    
+    self._rate = rate
+    self._i_period_s = integral_period
 
     self.sat_count_rate = 1.0 / rate
     self.i_unwind_rate = 0.3 / rate
     self.i_rate = 1.0 / rate
+    self._i_raw = 0.0 # raw integral of error
     self.sat_limit = sat_limit
     
+    self._gain_update_factor = 0.0
+    
     if any([k > 0.0 for k in self._k_i[1]]):
-      self._i_period = min(2,round(integral_period * rate))  # period of time for integral calculation (seconds converted to frames)
+      self._i_period = max(2,round(integral_period * rate))  # period of time for integral calculation (seconds converted to frames)
       self._i_dt = 0.5 / rate # multiplied to get trapezoidal area at each step, hence the 1/2
       self.errors_i = deque(maxlen=self._i_period)
     else:
       self.errors_i = None
 
     if any([k > 0.0 for k in self._k_d[1]]):
-      self._d_period = min(2,round(derivative_period * rate))  # period of time for derivative calculation (seconds converted to frames)
+      self._d_period = max(2,round(derivative_period * rate))  # period of time for derivative calculation (seconds converted to frames)
       self._d_period_recip = 1. / self._d_period
       self.errors_d = deque(maxlen=self._d_period)
     else:
       self.errors_d = None
     
     if any([k > 0.0 for kk in [self._k_11[1], self._k_12[1], self._k_13[1]] for k in kk]):
-      self._k_period = min(2,round(k_period * rate))  # period of time for autotune calculation (seconds converted to frames)
+      self._k_period = max(2,round(k_period * rate))  # period of time for autotune calculation (seconds converted to frames)
       self.error_norms = deque(maxlen=self._k_period)
     else:
       self.error_norms = None
@@ -117,10 +123,19 @@ class PIDController:
     self.control = 0
     if self.errors_i is not None:
       self.errors_i = deque(maxlen=self._i_period)
+      self._i_raw = 0.0
     if self.errors_d is not None:
       self.errors_d = deque(maxlen=self._d_period)
     if self.error_norms is not None:
       self.error_norms = deque(maxlen=self._k_period)
+  
+  def update_i_period(self, integral_period):
+    if integral_period != self._i_period_s:
+      self._i_period_s = integral_period
+      self._i_period = max(2,round(integral_period * self._rate))  # period of time for integral calculation (seconds converted to frames)
+      self._i_dt = 0.5 / self._rate # multiplied to get trapezoidal area at each step, hence the 1/2
+      self.errors_i = deque(maxlen=self._i_period)
+      self._i_raw = 0.0
 
   def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
     self.speed = speed
@@ -137,27 +152,26 @@ class PIDController:
     if self.error_norms is not None and self.errors_d is not None and len(self.errors_d) > 0:
       abs_sp = setpoint if setpoint > 0. else -setpoint
       self.error_norms.append(self.errors_d[-1] / (abs_sp + 1.)) # use the last iteration's output
-      if len(self.error_norms) == int(self._k_period):
+      if len(self.error_norms) == self.error_norms.maxlen:
         delta_error_norm = self.error_norms[-1] - self.error_norms[0]
-        gain_update_factor = self.error_norms[-1] * delta_error_norm
-        if gain_update_factor != 0.:
-          abs_guf = abs(gain_update_factor)
+        self._gain_update_factor = self.error_norms[-1] * delta_error_norm
+        if self._gain_update_factor != 0.:
+          abs_guf = abs(self._gain_update_factor)
           self.kp *= 1. + min(5., self.k_11 * abs_guf)
-          self.ki *= 1. + clip(self.k_12 * gain_update_factor, -1., 5.)
+          self.ki *= 1. + clip(self.k_12 * self._gain_update_factor, -1., 5.)
           self.kd *= 1. + min(5., self.k_13 * abs_guf)
 
-    i_new = float(self.i)
     if self.errors_i is not None:
-      if len(self.errors_i) == self._i_period: # subtract off oldest trapezoid
-        i_new -= self._i_dt * self.ki * (self.errors_i[0] + self.errors_i[1])
+      if len(self.errors_i) == self.errors_i.maxlen: # subtract off oldest trapezoid
+        self._i_raw -= self._i_dt * (self.errors_i[0] + self.errors_i[1])
       self.errors_i.append(error)
       if len(self.errors_i) > 1: # add in new trapezoid
-        i_new += self._i_dt * self.ki * (self.errors_i[-2] + self.errors_i[-1])
+        self._i_raw += self._i_dt * (self.errors_i[-2] + self.errors_i[-1])
     
     self.p = error * self.kp
     self.f = feedforward * self.k_f
     
-    if self.errors_d is not None and len(self.errors_d) == int(self._d_period):  # makes sure we have enough history for period
+    if self.errors_d is not None and len(self.errors_d) == int(self.errors_d.maxlen):  # makes sure we have enough history for period
       self.d = clip((self.errors_d[-1] - self.errors_d[0]) * self._d_period_recip * self.kd, self.neg_limit, self.pos_limit)
     else:
       self.d = 0.
@@ -165,7 +179,7 @@ class PIDController:
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
-      i = i_new
+      i = self._i_raw * self.ki
       control = self.p + self.f + i + self.d
 
       # Update when changing i will move the control away from the limits

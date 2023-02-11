@@ -609,6 +609,8 @@ class opParams:
       
       'TUNE_LAT_TRX_ki': Param(0.13, float, ki_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
+      'TUNE_LAT_TRX_ki_period_s': Param(5.0, float, 'The amount of time over which steering error accumulates."\n', min_val=0.1, max_val=60.0, unit='seconds'),
+      
       'TUNE_LAT_TRX_kd': Param(2.0, float, kd_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_kp_e': Param(0.5, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kp is able to change. ", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
