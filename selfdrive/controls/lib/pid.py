@@ -27,6 +27,7 @@ class PIDController:
     if isinstance(self._k_d, Number):
       self._k_d = [[0], [self._k_d]]
 
+    # "autotuned" PID implementation from https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7150979
     self._k_11 = k_11  # proportional gain factor
     self._k_12 = k_12  # integral gain factor
     self._k_13 = k_13  # derivative gain factor
@@ -121,6 +122,9 @@ class PIDController:
     self.ki = self.k_i
     self.kd = self.k_d
     
+    if self.errors is not None:
+      self.errors.append(setpoint - measurement)
+    
     if self.error_norms is not None and self.errors is not None and len(self.errors) > 0:
       abs_sp = setpoint if setpoint > 0. else -setpoint
       self.error_norms.append(self.errors[-1] / (abs_sp + 1.)) # use the last iteration's output
@@ -138,8 +142,6 @@ class PIDController:
     self.p = error * self.kp
     self.f = feedforward * self.k_f
     
-    if self.errors is not None:
-      self.errors.append(setpoint - measurement)
     if self.errors is not None and len(self.errors) == int(self._d_period):  # makes sure we have enough history for period
       p_abs = abs(0.7*self.p)
       self.d = clip((self.errors[-1] - self.errors[0]) * self._d_period_recip * self.kd, -p_abs, p_abs)
