@@ -138,6 +138,8 @@ class PIDController:
     self.p = error * self.kp
     self.f = feedforward * self.k_f
     
+    if self.errors is not None:
+      self.errors.append(setpoint - measurement)
     if self.errors is not None and len(self.errors) == int(self._d_period):  # makes sure we have enough history for period
       p_abs = abs(0.7*self.p)
       self.d = clip((self.errors[-1] - self.errors[0]) * self._d_period_recip * self.kd, -p_abs, p_abs)
@@ -159,9 +161,6 @@ class PIDController:
 
     control = self.p + self.f + self.i + self.d
     self.saturated = self._check_saturation(control, check_saturation, error)
-    
-    if self.errors is not None:
-      self.errors.append(setpoint - measurement)
 
     self.control = clip(control, self.neg_limit, self.pos_limit)
     return self.control
