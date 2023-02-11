@@ -605,11 +605,11 @@ class opParams:
       
       'TUNE_LAT_TRX_friction': Param(0.14, float, 'The torque controller has two components to the feedforward, one based solely on desired lateral acceleration and is scaled by kf. The other is based on desired lateral jerk (rate of desired lateral acceleration) and is also called "friction" to depict the idea of overcoming the friction in the steering assembly. The concept it simple: the faster the desired lateral acceleration changes (i.e. high rate of change), the greater the friction response. This provides much smoother steering, especially when the steering angle is decreasing (returning to center).\n', live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_kp': Param(0.48, float, kp_desc, live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kp': Param(0.48, float, kp_desc, live=True, min_val=0.0001, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_ki': Param(0.13, float, ki_desc, live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_ki': Param(0.13, float, ki_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_kd': Param(2.0, float, kd_desc, live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kd': Param(2.0, float, kd_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_kp_e': Param(0.5, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kp is able to change. ", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
@@ -629,11 +629,11 @@ class opParams:
       
       'TUNE_LAT_PID_kf': Param(1.0, float, kf_desc, live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
-      'TUNE_LAT_PID_kp': Param([0.0, 0.16], [list, float], kp_desc + 'This scales the low-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_kp': Param([0.0, 0.16], [list, float], kp_desc + 'This scales the low-speed response.\n', live=True, min_val=0.0001, max_val=10.0, linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
-      'TUNE_LAT_PID_ki': Param([0.015, 0.02], [list, float], ki_desc + 'This scales the low-speed response.\n', live=True, min_val=0.01, max_val=10.0,  linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_ki': Param([0.015, 0.02], [list, float], ki_desc + 'This scales the low-speed response.\n', live=True, min_val=0.0, max_val=10.0,  linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
-      'TUNE_LAT_PID_kd': Param([0.6, 0.6], [list, float], kd_desc + 'This scales the low-speed response.\n', live=True, min_val=0.01, max_val=10.0, linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_kd': Param([0.6, 0.6], [list, float], kd_desc + 'This scales the low-speed response.\n', live=True, min_val=0.0, max_val=10.0, linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
       'TUNE_LAT_PID_kp_e': Param(0.5, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kp is able to change. ", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
