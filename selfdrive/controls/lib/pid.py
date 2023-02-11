@@ -48,15 +48,15 @@ class PIDController:
     if any([k > 0.0 for k in self._k_d[1]]):
       self._d_period = round(derivative_period * rate)  # period of time for derivative calculation (seconds converted to frames)
       self._d_period_recip = 1. / self._d_period
-      self.outputs = deque(maxlen=self._d_period)
+      self.errors = deque(maxlen=self._d_period)
     else:
-      self.outputs = None
+      self.errors = None
     
     if any([k > 0.0 for kk in [self._k_11[1], self._k_12[1], self._k_13[1]] for k in kk]):
       self._k_period = round(k_period * rate)  # period of time for autotune calculation (seconds converted to frames)
-      self.output_norms = deque(maxlen=self._k_period)
+      self.error_norms = deque(maxlen=self._k_period)
     else:
-      self.output_norms = None
+      self.error_norms = None
 
     self.reset()
 
@@ -107,10 +107,10 @@ class PIDController:
     self.sat_count = 0.0
     self.saturated = False
     self.control = 0
-    if self.outputs is not None:
-      self.outputs = deque(maxlen=self._d_period)
-    if self.output_norms is not None:
-      self.output_norms = deque(maxlen=self._k_period)
+    if self.errors is not None:
+      self.errors = deque(maxlen=self._d_period)
+    if self.error_norms is not None:
+      self.error_norms = deque(maxlen=self._k_period)
 
   def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
     self.speed = speed
@@ -121,12 +121,12 @@ class PIDController:
     self.ki = self.k_i
     self.kd = self.k_d
     
-    if self.output_norms is not None and self.outputs is not None and len(self.outputs) > 0:
+    if self.error_norms is not None and self.errors is not None and len(self.errors) > 0:
       abs_sp = setpoint if setpoint > 0. else -setpoint
-      self.output_norms.append(self.outputs[-1] / (abs_sp + 1.)) # use the last iteration's output
-      if len(self.output_norms) == int(self._k_period):
-        delta_error_norm = self.output_norms[-1] - self.output_norms[0]
-        gain_update_factor = self.output_norms[-1] * delta_error_norm
+      self.error_norms.append(self.errors[-1] / (abs_sp + 1.)) # use the last iteration's output
+      if len(self.error_norms) == int(self._k_period):
+        delta_error_norm = self.error_norms[-1] - self.error_norms[0]
+        gain_update_factor = self.error_norms[-1] * delta_error_norm
         if gain_update_factor != 0.:
           abs_guf = abs(gain_update_factor)
           self.kp *= 1. + min(2., self.k_11 * abs_guf)
@@ -138,8 +138,9 @@ class PIDController:
     self.p = error * self.kp
     self.f = feedforward * self.k_f
     
-    if self.outputs is not None and len(self.outputs) == int(self._d_period):  # makes sure we have enough history for period
-      self.d = clip((self.outputs[-1] - self.outputs[0]) * self._d_period_recip * self.kd, -abs(0.7*self.p), abs(0.7*self.p))
+    if self.errors is not None and len(self.errors) == int(self._d_period):  # makes sure we have enough history for period
+      p_abs = abs(0.7*self.p)
+      self.d = clip((self.errors[-1] - self.errors[0]) * self._d_period_recip * self.kd, -p_abs, p_abs)
     else:
       self.d = 0.
 
@@ -159,8 +160,8 @@ class PIDController:
     control = self.p + self.f + self.i + self.d
     self.saturated = self._check_saturation(control, check_saturation, error)
     
-    if self.outputs is not None:
-      self.outputs.append(self.p + self.i) # don't include d for self-interaction, or f becuase it's not error-based
+    if self.errors is not None:
+      self.errors.append(setpoint - measurement)
 
     self.control = clip(control, self.neg_limit, self.pos_limit)
     return self.control
