@@ -164,7 +164,10 @@ class PIDController:
     if self.errors_i is not None:
       if len(self.errors_i) == self.errors_i.maxlen: # subtract off oldest trapezoid
         self._i_raw -= self._i_dt * (self.errors_i[0] + self.errors_i[1])
-      self.errors_i.append(error)
+      if override or freeze_integrator:
+        self.errors_i.append(0.0)
+      else:
+        self.errors_i.append(error)
       if len(self.errors_i) > 1: # add in new trapezoid
         self._i_raw += self._i_dt * (self.errors_i[-2] + self.errors_i[-1])
     
@@ -176,9 +179,7 @@ class PIDController:
     else:
       self.d = 0.
 
-    if override:
-      self.i -= self.i_unwind_rate * float(np.sign(self.i))
-    else:
+    if self.errors_i is not None:
       i = self._i_raw * self.ki
       control = self.p + self.f + i + self.d
 
@@ -188,6 +189,12 @@ class PIDController:
          (error <= 0 and (control >= self.neg_limit or i > 0.0))) and \
          not freeze_integrator:
         self.i = i
+      elif self.errors_i is not None and len(self.errors_i) > 1:
+        # ramp down integral otherwise
+        self._i_raw -= self._i_dt * (self.errors_i[-2] + self.errors_i[-1])
+        self.errors_i[-1] = 0.0
+        self._i_raw += self._i_dt * (self.errors_i[-2] + self.errors_i[-1])
+        
 
     control = self.p + self.f + self.i + self.d
     self.saturated = self._check_saturation(control, check_saturation, error)
