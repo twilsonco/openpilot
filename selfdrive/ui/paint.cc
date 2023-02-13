@@ -1483,6 +1483,57 @@ static void ui_draw_measures(UIState *s){
             snprintf(val, sizeof(val), "%.1f", scene.car_state.getAEgo());
             snprintf(unit, sizeof(unit), "m/s²");
             break;}
+
+          case UIMeasure::TIME_TO_STOP_CUR:
+            {
+            float a = scene.car_state.getAEgo();
+            float t = a < 0.0 ? -scene.car_state.getVEgo() / a : 0.0;
+            snprintf(name, sizeof(name), "STOP TIME");
+            snprintf(val, sizeof(val), "%.1f", t);
+            snprintf(unit, sizeof(unit), "s");
+            break;}
+
+          case UIMeasure::TIME_TO_STOP_MIN:
+            {
+            float t = scene.car_state.getVEgo() / 7.0;
+            snprintf(name, sizeof(name), "MIN STOP TIME");
+            snprintf(val, sizeof(val), "%.1f", t);
+            snprintf(unit, sizeof(unit), "s");
+            break;}
+
+          case UIMeasure::DIST_TO_STOP_CUR:
+            {
+            float a = scene.car_state.getAEgo();
+            float v = scene.car_state.getVEgo();
+            float d = a < 0.0 ? -(v*v) / (2*a) : 0.0;
+            snprintf(name, sizeof(name), "STOP DIST");
+            if (!scene.is_metric){
+              d *= 3.28;
+              snprintf(val, sizeof(val), "%.1f", d);
+              snprintf(unit, sizeof(unit), "ft");
+            }
+            else{
+              snprintf(val, sizeof(val), "%.1f", d);
+              snprintf(unit, sizeof(unit), "m");
+            }
+            break;}
+          
+          case UIMeasure::DIST_TO_STOP_MIN:
+            {
+            float a = 7.0;
+            float v = scene.car_state.getVEgo();
+            float d = v*v / (2*a);
+            snprintf(name, sizeof(name), "MIN STOP DIST");
+            if (!scene.is_metric){
+              d *= 3.28;
+              snprintf(val, sizeof(val), "%.1f", d);
+              snprintf(unit, sizeof(unit), "ft");
+            }
+            else{
+              snprintf(val, sizeof(val), "%.1f", d);
+              snprintf(unit, sizeof(unit), "m");
+            }
+            break;}
           
           case UIMeasure::LAT_ACCEL:
             {
@@ -1494,7 +1545,8 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::KINETIC_ENERGY:
             {
             snprintf(name, sizeof(name), "KIN EN");
-            float T = scene.car_state.getVEgo()^2 * scene.mass;
+            float v = scene.car_state.getVEgo();
+            float T = v*v * scene.mass;
             if (T > 1e6){
               snprintf(val, sizeof(val), "%.1f", T * 1e-6);
               snprintf(unit, sizeof(unit), "MJ");
