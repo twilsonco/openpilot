@@ -1491,6 +1491,24 @@ static void ui_draw_measures(UIState *s){
             snprintf(unit, sizeof(unit), "m/s²");
             break;}
 
+          case UIMeasure::KINETIC_ENERGY:
+            {
+            snprintf(name, sizeof(name), "KIN EN");
+            float T = scene.car_state.getVEgo()^2 * scene.mass;
+            if (T > 1e6){
+              snprintf(val, sizeof(val), "%.1f", T * 1e-6);
+              snprintf(unit, sizeof(unit), "MJ");
+            }
+            else if (T > 1e3){
+              snprintf(val, sizeof(val), "%.1f", T * 1e-3);
+              snprintf(unit, sizeof(unit), "KJ");
+            }
+            else{
+              snprintf(val, sizeof(val), "%.0f", T);
+              snprintf(unit, sizeof(unit), "J");
+            }
+            break;}
+
           case UIMeasure::DRAG_FORCE:
             {
             snprintf(name, sizeof(name), "DRAG FRC");

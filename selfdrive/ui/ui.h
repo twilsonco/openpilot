@@ -196,6 +196,7 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   ENGINE_RPM_TEMPF,
   COOLANT_TEMPC,
   COOLANT_TEMPF,
+  KINETIC_ENERGY,
   ACCELERATION,
   LAT_ACCEL,//JERK,
   DRAG_FORCE,
@@ -336,6 +337,8 @@ typedef struct UIScene {
   bool show_debug_ui;
 
   bool map_open;
+
+  float mass = 2000.0;
 
   bool lead_info_print_enabled;
   std::deque<int> lead_x_vals, lead_y_vals;

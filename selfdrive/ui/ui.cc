@@ -797,6 +797,7 @@ static void update_state(UIState *s) {
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
     scene.is_using_torque_control = (sm["carParams"].getCarParams().getLateralTuning().which() == cereal::CarParams::LateralTuning::TORQUE);
+    scene.mass = sm["carParams"].getCarParams().getMass();
   }
   if (sm.updated("liveMapData")) {
     scene.current_road_name = sm["liveMapData"].getLiveMapData().getCurrentRoadName();
