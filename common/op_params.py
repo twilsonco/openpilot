@@ -443,6 +443,8 @@ class opParams:
       
       'AP_positive_accel_smoothing_min_speed_mph': Param(2.0, float, 'Below this speed, no smoothing is applied to positive acceleration under any circumstances.\n', live=True, min_val=0.0, max_val=90.0, unit='mph'),
       
+      'AP_post_resume_fast_accel_s': Param(6.0, float, 'This controls the amount of time higher acceleration is used after resuming from standstill.\n', min_val=0.0, max_val=20.0, unit='mph'),
+      
       #####
       
       'FP_close_gas_factor': Param(1.0, float, 'Controls how proactively OpenPilot will adjust in response to a change in the lead car velocity when using the close follow profile. Increase to make close follow more responsive.\n', live=True, min_val=0.1, max_val=2.0),

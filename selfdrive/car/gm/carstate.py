@@ -52,6 +52,8 @@ class CarState(CarStateBase):
     self._op_params = opParams("gm CarState")
     self.hvb_wattage = FirstOrderFilter(0.0, self._op_params.get('MET_power_meter_smoothing_factor'), DT_CTRL) # [kW]
     self.ui_metrics_params = [int(self._params.get(f'MeasureSlot{i:02d}', encoding="utf8")) for i in range(10)]
+    self.cruise_resume_high_accel_ramp_bp = [3.0, 6.0] # seconds of using accel_mode + 1 accel after resuming
+    self.cruise_resume_high_accel_ramp_v = [1.0, 0.0]
     self.update_op_params()
     
     self.gear_shifter = 'park'
@@ -113,6 +115,7 @@ class CarState(CarStateBase):
     self.cruise_enabled_last = False
     self.cruise_enabled_neg_accel_ramp_bp = [0.5, 1.0] # ramp up negative accel when engaging behind a lead over 0.75s with a .25s delay
     self.cruise_enabled_neg_accel_ramp_v = [0., 1.]
+    self.standstill_time_since_t = 0.0
     self.engineRPM = 0
     self.lastAutoHoldTime = 0.0
     self.time_in_drive_autohold = 0.0
@@ -225,6 +228,10 @@ class CarState(CarStateBase):
     
     self.parked_timer_min_time = self._op_params.get('MISC_parked_timer_min_time_s')
     
+    cruise_resume_high_accel_ramp_dur = self._op_params.get('AP_post_resume_fast_accel_s')
+    if cruise_resume_high_accel_ramp_dur != self.cruise_resume_high_accel_ramp_bp[-1]:
+      self.cruise_resume_high_accel_ramp_bp = [cruise_resume_high_accel_ramp_dur/2, cruise_resume_high_accel_ramp_dur] # seconds of using accel_mode + 1 accel after resuming
+    
     for i in range(10):
       key_op = f'MET_{i:02d}'
       key = f'MeasureSlot{i:02d}'
@@ -267,6 +274,11 @@ class CarState(CarStateBase):
     
     self.vEgo = ret.vEgo
     ret.standstill = ret.vEgoRaw < 0.01
+    
+    if ret.standstill:
+      self.standstill_time_since_t = 0.0
+    else:
+      self.standstill_time_since_t += DT_CTRL
 
     self.coasting_enabled_last = self.coasting_enabled
     if t - self.params_check_last_t >= self.params_check_freq:
