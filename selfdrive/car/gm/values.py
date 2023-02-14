@@ -13,11 +13,11 @@ class CarControllerParams():
     self.STEER_STEP = 3              # how often we update the steer cmd
     # self.STEER_DELTA_UP = 14          # ~1s time to peak torque (255/50hz/1s)
     # self.STEER_DELTA_DOWN = 34       # ~0.4s from peak torque to zero
-    self.STEER_DELTA_UP_BP = [10., 20.] # [m/s]
-    self.STEER_DELTA_UP_V = [20., 10.] # [steer command]
-    self.STEER_DELTA_DOWN_BP = [10., 20.] # [m/s]
-    self.STEER_DELTA_DOWN_V = [36., 15.] # [steer command]
-    self.STEER_DRIVER_ALLOWANCE = 50   # allowed driver torque before start limiting
+    self.STEER_DELTA_UP_BP = [0.0] # [m/s]
+    self.STEER_DELTA_UP_V = [10.] # [steer command/frame]
+    self.STEER_DELTA_DOWN_BP = [0.0] # [m/s]
+    self.STEER_DELTA_DOWN_V = [15.] # [steer command/frame]
+    self.STEER_DRIVER_ALLOWANCE = 65   # allowed driver torque before start limiting
     self.STEER_DRIVER_MULTIPLIER = 4   # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 100     # from dbc
     self.NEAR_STOP_BRAKE_PHASE = 0.5  # m/s, more aggressive braking near full stop
