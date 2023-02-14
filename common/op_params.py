@@ -533,7 +533,7 @@ class opParams:
       
       'TUNE_LAT_TRX_ki': Param(0.13, float, ki_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_ki_period_s': Param(5.0, float, 'The amount of time over which steering error accumulates."\n', min_val=0.1, max_val=60.0, unit='seconds'),
+      'TUNE_LAT_TRX_ki_period_s': Param(5.0, float, 'The amount of time over which steering error accumulates."\n', min_val=0.1, max_val=60.0, unit='seconds', show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_kd': Param(2.0, float, kd_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
@@ -559,7 +559,7 @@ class opParams:
       
       'TUNE_LAT_PID_ki': Param([0.015, 0.02], [list, float], ki_desc + 'This scales the low-speed response.\n', live=True, min_val=0.0, max_val=10.0,  linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
-      'TUNE_LAT_PID_ki_period_s': Param(5.0, float, 'The amount of time over which steering error accumulates."\n', min_val=0.1, max_val=60.0, unit='seconds'),
+      'TUNE_LAT_PID_ki_period_s': Param(5.0, float, 'The amount of time over which steering error accumulates."\n', min_val=0.1, max_val=60.0, unit='seconds', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
       'TUNE_LAT_PID_kd': Param([0.6, 0.6], [list, float], kd_desc + 'This scales the low-speed response.\n', live=True, min_val=0.0, max_val=10.0, linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
