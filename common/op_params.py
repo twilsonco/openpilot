@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os
-import json
+import json, csv
 from atomicwrites import atomic_write
 from common.colors import COLORS
 from common.numpy_fast import clip
@@ -28,6 +28,40 @@ BASEDIR = os.path.dirname(BASEDIR)
 PARAMS_DIR = os.path.join(BASEDIR, 'community', 'params')
 IMPORTED_PATH = os.path.join(PARAMS_DIR, '.imported')
 OLD_PARAMS_FILE = os.path.join(BASEDIR, 'op_params.json')
+
+HISTORY_FILE = os.path.join(BASEDIR, 'op_params_history.csv')
+HISTORY_DATETIME_FORMAT = "%Y/%m/%d %H:%M:%S"
+HISTORY_COLUMN_HEADINGS = [
+  "time of change",
+  "name",
+  "value",
+  "old value",
+  "reason"
+]
+
+# write history. cancel write by setting reason to False
+def write_history(data):
+  if isinstance(data, dict) and "reason" in data and data["reason"] != False:
+    if not os.path.exists(HISTORY_FILE):
+      with open(HISTORY_FILE, 'w') as f:
+        w = csv.DictWriter(f, fieldnames=HISTORY_COLUMN_HEADINGS)
+        w.writeheader()
+        w.writerow(data)
+    else:
+      with open(HISTORY_FILE, 'a') as f:
+        w = csv.DictWriter(f, fieldnames=HISTORY_COLUMN_HEADINGS)
+        w.writerow(data)
+
+def read_history(param_name=None):
+  out = []
+  if os.path.exists(HISTORY_FILE):
+    with open(HISTORY_FILE, 'r') as f:
+      r = csv.DictReader(f)
+      for row in r:
+        out.append({k:row[k] for k in HISTORY_COLUMN_HEADINGS})
+    if param_name is not None:
+      out = [p for p in out if p["name"] == param_name]
+  return out
 
 UI_DOT_H_PATH = 'selfdrive/ui/ui.h'
 def parse_UIMeasure_enum(ui_dot_h_path):
@@ -59,7 +93,13 @@ def _read_param(key):  # Returns None, False if a json error occurs
     return None, False
 
 
-def _write_param(key, value):
+def _write_param(key, value, reason=None):
+  log = {"time of change": datetime.now().strftime(HISTORY_DATETIME_FORMAT),
+        "name": key,
+        "value": value,
+        "old value": self.fork_params[key].value,
+        "reason": reason}
+  write_history(log)
   param_path = os.path.join(PARAMS_DIR, key)
   with atomic_write(param_path, overwrite=True) as f:
     f.write(json.dumps(value))
@@ -220,7 +260,7 @@ class Param:
         err_str = f"invalid {value = }"
       if not success:
         value = self.default_value
-        _write_param(key, value)
+        _write_param(key, value, reason="failed to update value, so writing default value")
         cloudlog.warning(f"{err_str} for '{key}'. Writing default value = {value}")
       self.value = value
       value, was_clipped = self.value_clipped(value)
@@ -243,7 +283,7 @@ def _import_params():
       with open(OLD_PARAMS_FILE, 'r') as f:
         old_params = json.loads(f.read())
       for key in old_params:
-        _write_param(key, old_params[key])
+        _write_param(key, old_params[key], reason="importing params")
       open(IMPORTED_PATH, 'w').close()
     except:  # pylint: disable=bare-except
       pass
@@ -758,7 +798,7 @@ class opParams:
                                           force_update=force_update, 
                                           time_cur=sec_since_boot())
 
-  def put(self, key, value):
+  def put(self, key, value, reason="changed by user"):
     self._check_key_exists(key, 'put')
     if not self.fork_params[key].type_is_valid(value):
       raise Exception(f'opParams: Tried to put a value of invalid type! {key = }, {value = }')
@@ -779,7 +819,7 @@ class opParams:
           else str(value)
         cloudlog.info(f"opParams: putting value in linked param: {value = }. {key = }")
         self.fork_params[key]._params.put(self.fork_params[key].param_param, put_val)
-    _write_param(key, value)
+    _write_param(key, value, reason=reason)
 
   def _load_params(self, can_import=False):
     if not os.path.exists(PARAMS_DIR):
@@ -796,7 +836,7 @@ class opParams:
         val_default = self.fork_params[key].default_value
         cloudlog.warning(f'opParams: Failed to initially load param "{key}" (got "{value}" from the read operation), loading with default value "{val_default}"')
         value = val_default
-        _write_param(key, value)
+        _write_param(key, value, reason="failure when loading params, so writing default value")
       params[key] = value
     return params
 
@@ -813,11 +853,11 @@ class opParams:
     for key, param in self.fork_params.items():
       if key not in self.params:
         self.params[key] = param.default_value
-        _write_param(key, self.params[key])
+        _write_param(key, self.params[key], reason="adding new param defaults")
       elif not param.type_is_valid(self.params[key]):
         print(warning('Value type of user\'s {} param not in allowed types, replacing with default!'.format(key)))
         self.params[key] = param.default_value
-        _write_param(key, self.params[key])
+        _write_param(key, self.params[key], reason="adding new param defaults (was corrected due to invalid value)")
 
   def _delete_and_reset(self):
     for key in list(self.params):
@@ -836,7 +876,7 @@ class opParams:
           if (dt is None or dm < dt) and self.params[key] != self.fork_params[key].default_value: # if param modification date older than cutoff, overwrite
             cloudlog.warning(warning('Replacing value of param {}: {}, with updated default value: {}'.format(key, self.params[key], self.fork_params[key].default_value)))
             self.params[key] = self.fork_params[key].default_value
-            _write_param(key, self.params[key])
+            _write_param(key, self.params[key], reason="overwriting due to fork update (exact match)")
         else: # not exact match, try as regex
           try:
             r = re.compile(key)
@@ -854,4 +894,4 @@ class opParams:
                   if (dt is None or dm < dt) and self.params[key1] != self.fork_params[key1].default_value: # if param modification date older than cutoff, overwrite
                     cloudlog.warning(warning('Replacing value of param {}: {}, with updated default value: {}'.format(key1, self.params[key1], self.fork_params[key1].default_value)))
                     self.params[key1] = self.fork_params[key1].default_value
-                    _write_param(key1, self.params[key1])
+                    _write_param(key1, self.params[key1], reason="overwriting due to fork update (regex match)")
