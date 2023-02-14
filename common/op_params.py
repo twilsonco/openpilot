@@ -93,11 +93,11 @@ def _read_param(key):  # Returns None, False if a json error occurs
     return None, False
 
 
-def _write_param(key, value, reason=None):
+def _write_param(key, value, reason=None, old_value=None):
   log = {"time of change": datetime.now().strftime(HISTORY_DATETIME_FORMAT),
         "name": key,
         "value": value,
-        "old value": self.fork_params[key].value,
+        "old value": old_value,
         "reason": reason}
   write_history(log)
   param_path = os.path.join(PARAMS_DIR, key)
@@ -800,6 +800,7 @@ class opParams:
 
   def put(self, key, value, reason="changed by user"):
     self._check_key_exists(key, 'put')
+    old_val = self.fork_params[key].value
     if not self.fork_params[key].type_is_valid(value):
       raise Exception(f'opParams: Tried to put a value of invalid type! {key = }, {value = }')
     if not self.fork_params[key].value_is_valid(value):
@@ -819,7 +820,7 @@ class opParams:
           else str(value)
         cloudlog.info(f"opParams: putting value in linked param: {value = }. {key = }")
         self.fork_params[key]._params.put(self.fork_params[key].param_param, put_val)
-    _write_param(key, value, reason=reason)
+    _write_param(key, value, reason=reason, old_value=old_val)
 
   def _load_params(self, can_import=False):
     if not os.path.exists(PARAMS_DIR):
@@ -875,8 +876,9 @@ class opParams:
           dm = datetime.fromtimestamp(os.path.getmtime(p)) # modification date
           if (dt is None or dm < dt) and self.params[key] != self.fork_params[key].default_value: # if param modification date older than cutoff, overwrite
             cloudlog.warning(warning('Replacing value of param {}: {}, with updated default value: {}'.format(key, self.params[key], self.fork_params[key].default_value)))
+            old_val = self.fork_params[key].value
             self.params[key] = self.fork_params[key].default_value
-            _write_param(key, self.params[key], reason="overwriting due to fork update (exact match)")
+            _write_param(key, self.params[key], reason="overwriting due to fork update (exact match)", old_value=old_val)
         else: # not exact match, try as regex
           try:
             r = re.compile(key)
@@ -893,5 +895,6 @@ class opParams:
                   dm = datetime.fromtimestamp(os.path.getmtime(p)) # modification date
                   if (dt is None or dm < dt) and self.params[key1] != self.fork_params[key1].default_value: # if param modification date older than cutoff, overwrite
                     cloudlog.warning(warning('Replacing value of param {}: {}, with updated default value: {}'.format(key1, self.params[key1], self.fork_params[key1].default_value)))
+                    old_val = self.fork_params[key1].value
                     self.params[key1] = self.fork_params[key1].default_value
-                    _write_param(key1, self.params[key1], reason="overwriting due to fork update (regex match)")
+                    _write_param(key1, self.params[key1], reason="overwriting due to fork update (regex match)", old_value=old_val)
