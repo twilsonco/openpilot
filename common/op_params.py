@@ -29,7 +29,7 @@ PARAMS_DIR = os.path.join(BASEDIR, 'community', 'params')
 IMPORTED_PATH = os.path.join(PARAMS_DIR, '.imported')
 OLD_PARAMS_FILE = os.path.join(BASEDIR, 'op_params.json')
 
-HISTORY_FILE = os.path.join(BASEDIR, 'op_params_history.csv')
+HISTORY_FILE = os.path.join(BASEDIR, 'community', 'op_params_history.csv')
 HISTORY_DATETIME_FORMAT = "%Y/%m/%d %H:%M:%S"
 HISTORY_COLUMN_HEADINGS = [
   "time of change",
