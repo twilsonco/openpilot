@@ -19,7 +19,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
     self.live_tuning_enabled = self.op_params.get('op_params_live_tune_enabled', force_update=True)
     self.live_tuning = self.live_tuning_enabled and self.op_params.get('op_edit_live_mode', force_update=True)
     if not self.live_tuning_enabled:
-      self.op_params.put('op_edit_live_mode', self.live_tuning, reason="disabling because live tune toggle is disabled in op settings")
+      self.op_params.put('op_edit_live_mode', self.live_tuning, reason=False)
     self.compact_view = self.op_params.get('op_edit_compact_view', force_update=True)
     self.section = self.op_params.get('op_edit_section', force_update=True)
     self.username = self.op_params.get('MISC_username', force_update=True)
@@ -71,7 +71,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           self.warning('and restart opparams.py in order to live-tune.\n')
           time.sleep(5)
           self.live_tuning = False
-          self.op_params.put('op_edit_live_mode', self.live_tuning, reason="disabling because live tune toggle is disabled in op settings")
+          self.op_params.put('op_edit_live_mode', self.live_tuning, reason=False)
           continue
         self.info('Here are your live parameters:', sleep_time=0)
         self.info('(changes take effect within a second)', sleep_time=0)
@@ -196,7 +196,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       elif parsed == 'live':
         self.last_choice = None
         self.live_tuning = not self.live_tuning
-        self.op_params.put('op_edit_live_mode', self.live_tuning)  # for next opEdit startup
+        self.op_params.put('op_edit_live_mode', self.live_tuning, reason=False)  # for next opEdit startup
       elif parsed == 'compact':
         self.last_choice = None
         self.compact_view = not self.compact_view
