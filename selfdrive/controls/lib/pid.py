@@ -1,6 +1,7 @@
 import numpy as np
 from numbers import Number
 from collections import deque
+from common.op_params import opParams
 from common.numpy_fast import clip, interp
 
 
@@ -16,6 +17,8 @@ def apply_deadzone(error, deadzone):
 
 class PIDController:
   def __init__(self, k_p=0., k_i=0., k_d=0., k_f=1., k_11=0., k_12=0., k_13=0., k_period=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, derivative_period=1., integral_period=2.5):
+    self._op_params = opParams(calling_function="pid.py")
+    self._k_i_scale = integral_period / self._op_params.get("TUNE_PID_ki_period_default_s")
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
     self._k_d = k_d  # derivative gain
@@ -136,6 +139,7 @@ class PIDController:
       self._i_dt = 0.5 / self._rate # multiplied to get trapezoidal area at each step, hence the 1/2
       self.errors_i = deque(maxlen=self._i_period)
       self._i_raw = 0.0
+      self._k_i_scale = integral_period / self._op_params.get("TUNE_PID_ki_period_default_s")
 
   def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
     self.speed = speed
@@ -180,7 +184,7 @@ class PIDController:
       self.d = 0.
 
     if self.errors_i is not None:
-      i = self._i_raw * self.ki
+      i = self._i_raw * self.ki * self._k_i_scale
       control = self.p + self.f + i + self.d
 
       # Update when changing i will move the control away from the limits
