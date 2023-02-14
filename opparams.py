@@ -309,7 +309,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       if len(history) > 1:
         history = history[-min(6,len(history)):-1]
         num_hist = len(history)
-      to_print.append(COLORS.WARNING + '>>  Last {}value{}:{}\n      {}'.format(f'{num_hist} ' if num_hist > 1 else '', 's' if num_hist > 1 else '', COLORS.ENDC, '\n      '.join([f'{val["time of change"]} {self.color_from_type(val["value"])}' for val in history])))
+        to_print.append(COLORS.WARNING + '>>  Last {}value{}:{}\n      {}'.format(f'{num_hist} ' if num_hist > 1 else '', 's' if num_hist > 1 else '', COLORS.ENDC, '\n      '.join([f'{val["time of change"]} {self.color_from_type(val["value"])}' for val in history])))
 
       if to_print:
         print('\n{}\n'.format('\n'.join(to_print)))
