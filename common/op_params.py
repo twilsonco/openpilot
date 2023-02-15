@@ -44,19 +44,19 @@ def write_history(data):
   if isinstance(data, dict) and "reason" in data and data["reason"] != False:
     if not os.path.exists(HISTORY_FILE):
       with open(HISTORY_FILE, 'w') as f:
-        w = csv.DictWriter(f, fieldnames=HISTORY_COLUMN_HEADINGS, delimiter=';;')
+        w = csv.DictWriter(f, fieldnames=HISTORY_COLUMN_HEADINGS, delimiter=';')
         w.writeheader()
         w.writerow(data)
     else:
       with open(HISTORY_FILE, 'a') as f:
-        w = csv.DictWriter(f, fieldnames=HISTORY_COLUMN_HEADINGS, delimiter=';;')
+        w = csv.DictWriter(f, fieldnames=HISTORY_COLUMN_HEADINGS, delimiter=';')
         w.writerow(data)
 
 def read_history(param_name=None):
   out = []
   if os.path.exists(HISTORY_FILE):
     with open(HISTORY_FILE, 'r') as f:
-      r = csv.DictReader(f, delimiter=';;')
+      r = csv.DictReader(f, delimiter=';')
       for row in r:
         out.append({k:row[k] for k in HISTORY_COLUMN_HEADINGS})
     if param_name is not None:
