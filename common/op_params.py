@@ -785,7 +785,7 @@ class opParams:
       if not all([type_valid, val_valid]):
         val = v.default_value
         cloudlog.info(f"opParams: {calling_function}:   Putting params with invalid initial value: {k} -> {v.value} to default value '{val}'. {type_valid = }, {val_valid = }")
-        self.put(k, val)
+        self.put(k, val, reason='replacing invalid value on startup')
       # elif v.param_param != '':
       #   cloudlog.info(f"opParams: {calling_function}:   Putting params with linked param_params: {k} -> {v.value}")
       #   self.put(k, val)
@@ -809,6 +809,7 @@ class opParams:
     if clipped:
       print(warning(f'Provided value was clipped to param bounds. {key = }, {value = }'))
     self.params.update({key: value})
+    self.fork_params[key].value = value
     if self.fork_params[key].param_param != '':
       if self.fork_params[key].param_param_use_ord and value in self.fork_params[key].allowed_vals:
         ind = self.fork_params[key].allowed_vals.index(value)
