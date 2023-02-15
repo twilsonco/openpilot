@@ -70,9 +70,9 @@ class CarInterface(CarInterfaceBase):
     if CI.CS.coasting_lead_d > 0. and time_since_engage < CI.CS.cruise_enabled_neg_accel_ramp_bp[-1]:
       accel_limits[0] *= interp(time_since_engage, CI.CS.cruise_enabled_neg_accel_ramp_bp, CI.CS.cruise_enabled_neg_accel_ramp_v)
       
-    if CI.CS.accel_mode < 2 and CI.CS.standstill_time_since_t < CI.CS.cruise_resume_high_accel_ramp_bp[-1]:
+    if CI.CS.accel_mode != 1 and CI.CS.standstill_time_since_t < CI.CS.cruise_resume_high_accel_ramp_bp[-1]:
       k = interp(CI.CS.standstill_time_since_t, CI.CS.cruise_resume_high_accel_ramp_bp, CI.CS.cruise_resume_high_accel_ramp_v)
-      higher_max_accel = calc_cruise_accel_limits(current_speed, following, CI.CS.accel_mode+1)[1]
+      higher_max_accel = calc_cruise_accel_limits(current_speed, following, 1 if CI.CS.accel_mode == 0 else 0)[1]
       accel_limits[1] = k * higher_max_accel + (1.0 - k) * accel_limits[1]
     
     accel_limits = [max(CI.params.ACCEL_MIN, accel_limits[0]), min(accel_limits[1], CI.params.ACCEL_MAX)]
