@@ -1487,9 +1487,14 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::TIME_TO_STOP_CUR:
             {
             float a = scene.car_state.getAEgo();
-            float t = a < 0.0 ? -scene.car_state.getVEgo() / a : 0.0;
+            float t = a < 0.5 ? -scene.car_state.getVEgo() / a : 0.0;
+            if (a > 0.0){
+              snprintf(val, sizeof(val), "%.1f", t);
+            }
+            else{
+              snprintf(val, sizeof(val), "---");
+            }
             snprintf(name, sizeof(name), "STOP TIME");
-            snprintf(val, sizeof(val), "%.1f", t);
             snprintf(unit, sizeof(unit), "s");
             break;}
 
@@ -1505,16 +1510,20 @@ static void ui_draw_measures(UIState *s){
             {
             float a = scene.car_state.getAEgo();
             float v = scene.car_state.getVEgo();
-            float d = a < 0.0 ? -(v*v) / (2*a) : 0.0;
+            float d = a < 0.5 ? -(v*v) / (2*a) : 0.0;
             snprintf(name, sizeof(name), "STOP DIST");
             if (!scene.is_metric){
               d *= 3.28;
-              snprintf(val, sizeof(val), "%.1f", d);
               snprintf(unit, sizeof(unit), "ft");
             }
             else{
-              snprintf(val, sizeof(val), "%.1f", d);
               snprintf(unit, sizeof(unit), "m");
+            }
+            if (d > 0.0){
+              snprintf(val, sizeof(val), "%.0f", d);
+            }
+            else{
+              snprintf(val, sizeof(val), "---");
             }
             break;}
           
@@ -1546,18 +1555,14 @@ static void ui_draw_measures(UIState *s){
             {
             snprintf(name, sizeof(name), "KIN EN");
             float v = scene.car_state.getVEgo();
-            float T = v*v * scene.mass;
-            if (T > 1e6){
-              snprintf(val, sizeof(val), "%.1f", T * 1e-6);
+            float T = v*v * scene.mass * 1e-3;
+            if (T > 1e3){
+              snprintf(val, sizeof(val), "%.0f", T * 1e-3);
               snprintf(unit, sizeof(unit), "MJ");
-            }
-            else if (T > 1e3){
-              snprintf(val, sizeof(val), "%.1f", T * 1e-3);
-              snprintf(unit, sizeof(unit), "KJ");
             }
             else{
               snprintf(val, sizeof(val), "%.0f", T);
-              snprintf(unit, sizeof(unit), "J");
+              snprintf(unit, sizeof(unit), "KJ");
             }
             break;}
 
