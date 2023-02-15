@@ -3693,7 +3693,7 @@ static void ui_draw_vision_power_meter(UIState *s) {
       }
       nvgFillColor(s->vg, COLOR_WHITE_ALPHA(180));
       nvgFontFace(s->vg, "sans-semibold");
-      snprintf(val, sizeof(val), (abs(pow) >= 10 ? "%.0f%s" : "%.1f%s"), pow, unit);
+      snprintf(val, sizeof(val), "%.0f%s", pow, unit);
       nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_TOP);
       nvgFontSize(s->vg, 100);
       nvgText(s->vg, outer_rect.right(), y + 5,val,NULL);
