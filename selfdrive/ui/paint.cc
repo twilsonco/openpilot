@@ -1487,7 +1487,7 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::TIME_TO_STOP_CUR:
             {
             float a = scene.car_state.getAEgo();
-            float t = a < 0.5 ? -scene.car_state.getVEgo() / a : 0.0;
+            float t = a < -0.5 ? -scene.car_state.getVEgo() / a : 0.0;
             if (a > 0.0){
               snprintf(val, sizeof(val), "%.1f", t);
             }
@@ -1510,7 +1510,7 @@ static void ui_draw_measures(UIState *s){
             {
             float a = scene.car_state.getAEgo();
             float v = scene.car_state.getVEgo();
-            float d = a < 0.5 ? -(v*v) / (2*a) : 0.0;
+            float d = a < -0.5 ? -(v*v) / (2*a) : 0.0;
             snprintf(name, sizeof(name), "STOP DIST");
             if (!scene.is_metric){
               d *= 3.28;
