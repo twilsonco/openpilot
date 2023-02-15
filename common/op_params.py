@@ -749,7 +749,7 @@ class opParams:
     self.live_tuning_enabled = Params().get_bool("OPParamsLiveTuneEnabled")
     cloudlog.info(f"opParams: loading opParams{f' from {calling_function}' if calling_function else ''}.\n   Live tuning: {self.live_tuning_enabled}")
     
-    self.fork_params['op_params_live_tune_enabled'] = Param(False, bool, 'Used to see if live tuning is enabled when using opparams.py (formerly op_edit.py)', hidden=True)
+    self.fork_params['op_params_live_tune_enabled'] = Param(self.live_tuning_enabled, bool, 'Used to see if live tuning is enabled when using opparams.py (formerly op_edit.py)', hidden=True)
     self.fork_params['MISC_username'] = Param(False, [type(None), str, bool], 'Your identifier provided with any crash logs sent to Sentry.\nHelps the developer reach out to you if anything goes wrong', is_common=False, fake_live=True)
     self.fork_params['op_edit_live_mode'] = Param(False, bool, 'This parameter controls which mode opEdit starts in', hidden=True)
     self.fork_params['op_edit_section'] = Param('', str, 'This parameter controls display of param sections', hidden=True)
@@ -765,7 +765,7 @@ class opParams:
     self._delete_and_reset()  # removes old params
     # cloudlog.info(f"opParams: {calling_function}:   delete and reset applied")
     if self.live_tuning_enabled:
-      self.put('op_params_live_tune_enabled', True)
+      self.put('op_params_live_tune_enabled', True, reason=False)
       
     # cloudlog.info(f"opParams: {calling_function}:   Putting params with linked param_params")
     for k,v in self.fork_params.items():
