@@ -69,7 +69,7 @@ class CarControllerParams():
     # determined by letting Volt regen to a stop in L gear from 75mph
   EV_GAS_BRAKE_THRESHOLD_BP = [1.2, 1.29, 1.52, 1.55, 1.6, 1.7, 1.8, 2.0, 2.2, 2.5, 5.52, 9.6, 20.5, 23.5, 35.0] # [m/s]
   EV_GAS_BRAKE_THRESHOLD_V = [0.13, 0.0, -0.14, -0.16, -0.18, -0.215, -0.255, -0.32, -0.41, -0.5, -0.72, -0.895, -1.125, -1.145, -1.16] # [m/s^s]
-  EV_GAS_BRAKE_THRESHOLD_ICE_V = [i/2 for i in [0.13, 0.0, -0.14, -0.16, -0.18, -0.215, -0.255, -0.32, -0.41, -0.5, -0.72, -0.895, -1.125, -1.145, -1.16]] # [m/s^s] less volt regen braking is available when ice is on
+  EV_GAS_BRAKE_THRESHOLD_ICE_V = [i*0.6 for i in EV_GAS_BRAKE_THRESHOLD_V] # [m/s^s] less volt regen braking is available when ice is on
   EV_GAS_BRAKE_THRESHOLD_MIN_V = min(EV_GAS_BRAKE_THRESHOLD_V)
   
   def update_gas_brake_threshold(self, v_ego, ice_on):
