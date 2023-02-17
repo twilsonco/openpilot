@@ -185,7 +185,7 @@ class LongControl():
       deadzone = interp(CS.vEgo, self.deadzone_bp, self.deadzone_v)
       freeze_integrator = prevent_overshoot
 
-      output_accel = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, deadzone=deadzone, feedforward=a_target, freeze_integrator=freeze_integrator, override=CS.gasPressed or CS.brakePressed)
+      output_accel = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, deadzone=deadzone, feedforward=a_target, freeze_integrator=freeze_integrator, override=CS.gas > 1e-5 or CS.brakePressed)
 
       if prevent_overshoot:
         output_accel = min(output_accel, 0.0)
