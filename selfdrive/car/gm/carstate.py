@@ -54,6 +54,7 @@ class CarState(CarStateBase):
     self.ui_metrics_params = [int(self._params.get(f'MeasureSlot{i:02d}', encoding="utf8")) for i in range(10)]
     self.cruise_resume_high_accel_ramp_bp = [3.0, 6.0] # seconds of using accel_mode + 1 accel after resuming
     self.cruise_resume_high_accel_ramp_v = [1.0, 0.0]
+    self.accel_limits_rate_limits = [i * DT_CTRL for i in [-1.0, 0.5]]
     self.update_op_params()
     
     self.gear_shifter = 'park'
@@ -111,10 +112,6 @@ class CarState(CarStateBase):
     self.regen_paddle_pressed_last_t = 0.0
     self.regen_paddle_released_last_t = 0.0
     self.cruiseMain = False
-    self.cruise_enabled_last_t = 0.
-    self.cruise_enabled_last = False
-    self.cruise_enabled_neg_accel_ramp_bp = [0.5, 1.0] # ramp up negative accel when engaging behind a lead over 0.75s with a .25s delay
-    self.cruise_enabled_neg_accel_ramp_v = [0., 1.]
     self.standstill_time_since_t = 0.0
     self.engineRPM = 0
     self.lastAutoHoldTime = 0.0
@@ -227,6 +224,8 @@ class CarState(CarStateBase):
     GAS_PRESSED_THRESHOLD = max(1e-5, self._op_params.get('TUNE_LONG_gas_overlap_cutoff') * 0.01)
     
     self.parked_timer_min_time = self._op_params.get('MISC_parked_timer_min_time_s')
+    self.accel_limits_rate_limits = [i * DT_CTRL for i in self._op_params.get('AP_accel_limit_rates_ms3')]
+    self.accel_limits_rate_speed_cutoff = self._op_params.get('AP_accel_limit_rates_speed_cutoff_mph') * CV.MPH_TO_MS
     
     cruise_resume_high_accel_ramp_dur = self._op_params.get('AP_post_resume_fast_accel_s')
     if cruise_resume_high_accel_ramp_dur != self.cruise_resume_high_accel_ramp_bp[-1]:
@@ -566,15 +565,6 @@ class CarState(CarStateBase):
     cruise_enabled = self.pcm_acc_status != AccState.OFF
     ret.cruiseState.enabled = cruise_enabled
     ret.cruiseState.standstill = False
-    
-    if cruise_enabled and not self.cruise_enabled_last:
-      if self.is_ev and self.gear_shifter_ev == GEAR_SHIFTER2.LOW:
-        self.cruise_enabled_neg_accel_ramp_v[0] = 0.15
-      else:
-        self.cruise_enabled_neg_accel_ramp_v[0] = 0.
-      self.cruise_enabled_last_t = t
-      
-    self.cruise_enabled_last = cruise_enabled
     ret.cruiseMain = self.cruiseMain
     
     ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active and self.time_in_drive_one_pedal >= self.MADS_long_min_time_in_drive

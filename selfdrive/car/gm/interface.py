@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from math import fabs, erf, atan
 from cereal import car
-from common.numpy_fast import interp
+from common.numpy_fast import interp, clip
 from common.realtime import sec_since_boot
 from common.op_params import opParams
 from common.params import Params, put_nonblocking
@@ -52,6 +52,7 @@ class CarInterface(CarInterfaceBase):
     self.mads_lead_braking_enabled = False
     self.mads_cruise_main = False
     self.autosteer_enabled = False
+    self.accel_limits_last = [-3.0, 1.5]
     
   params_check_last_t = 0.
   params_check_freq = 0.1 # check params at 10Hz
@@ -65,17 +66,23 @@ class CarInterface(CarInterfaceBase):
     # decrease min accel as necessary based on lead conditions
     stock_min_factor = interp(current_speed - CI.CS.coasting_lead_v, _A_MIN_V_STOCK_FACTOR_BP, _A_MIN_V_STOCK_FACTOR_V) if CI.CS.coasting_lead_d > 0. else 0.
     accel_limits[0] = stock_min_factor * CI.params.ACCEL_MIN + (1. - stock_min_factor) * accel_limits[0]
-    
-    time_since_engage = CI.CS.t - CI.CS.cruise_enabled_last_t
-    if CI.CS.coasting_lead_d > 0. and time_since_engage < CI.CS.cruise_enabled_neg_accel_ramp_bp[-1]:
-      accel_limits[0] *= interp(time_since_engage, CI.CS.cruise_enabled_neg_accel_ramp_bp, CI.CS.cruise_enabled_neg_accel_ramp_v)
       
     if CI.CS.accel_mode != 1 and CI.CS.standstill_time_since_t < CI.CS.cruise_resume_high_accel_ramp_bp[-1]:
       k = interp(CI.CS.standstill_time_since_t, CI.CS.cruise_resume_high_accel_ramp_bp, CI.CS.cruise_resume_high_accel_ramp_v)
-      higher_max_accel = calc_cruise_accel_limits(current_speed, following, 1 if CI.CS.accel_mode == 0 else 0)[1]
+      higher_max_accel = calc_cruise_accel_limits(current_speed, False, 1 if CI.CS.accel_mode == 0 else 0)[1]
       accel_limits[1] = k * higher_max_accel + (1.0 - k) * accel_limits[1]
     
-    accel_limits = [max(CI.params.ACCEL_MIN, accel_limits[0]), min(accel_limits[1], CI.params.ACCEL_MAX)]
+    if current_speed > CI.CS.accel_limits_rate_speed_cutoff:
+      accel_limits = [
+        clip(max(CI.params.ACCEL_MIN, accel_limits[0]), 
+            CI.accel_limits_last[0] + CI.CS.accel_limits_rate_limits[0], 
+            CI.accel_limits_last[0] + CI.CS.accel_limits_rate_limits[1]), 
+        clip(min(accel_limits[1], CI.params.ACCEL_MAX), 
+            CI.accel_limits_last[1] + CI.CS.accel_limits_rate_limits[0], 
+            CI.accel_limits_last[1] + CI.CS.accel_limits_rate_limits[1])
+        ]
+    
+    CI.accel_limits_last = accel_limits
     
     return accel_limits
 

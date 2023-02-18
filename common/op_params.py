@@ -341,6 +341,10 @@ class opParams:
       
       #####
       
+      'AP_accel_limit_rates_ms3': Param([-1.0, 0.5], [list, float], 'Rate at which acceleration profile is allowed to change. FIRST VALUE MUST BE NEGATIVE AND SECOND VALUE POSITIVE. IF FIRST VALUE IS TOO CLOSE TO ZERO, OPENPILOT MAY NOT BRAKE SOON ENOUGH WHEN APPROACHING A LEAD IN ECO ACCELERATION MODE.\n', live=True, min_val=0.1, max_val=10.0, unit="m/s³"),
+      
+      'AP_accel_limit_rates_speed_cutoff_mph': Param(4, float, 'Only apply accel limit rate limits below this speed.\n', live=True, min_val=0.0, max_val=20.0, unit="mph"),
+      
       'AP_eco_accel_factor': Param(1.0, float, 'Scale eco acceleration.\n', live=True, min_val=0.01, max_val=20.0),
       
       'AP_stock_accel_factor': Param(1.0, float, 'Scale stock acceleration. This is also the acceleration used if the acceleration profiles button is disabled\n', live=True, min_val=0.01, max_val=20.0, is_common=True),
