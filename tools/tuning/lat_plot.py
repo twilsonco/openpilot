@@ -6,6 +6,7 @@ from scipy.optimize import curve_fit
 from scipy.stats import describe
 from math import erf, fabs, atan, cos
 
+from common.numpy_fast import interp
 from selfdrive.config import Conversions as CV
 
 from tools.tuning.lat_settings import *
@@ -150,13 +151,13 @@ def get_steer_feedforward_volt_old(desired_angle, v_ego):
 
 # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
 def get_steer_feedforward_volt_torque_old(desired_lateral_accel, v_ego):
-  ANGLE_COEF = 0.10000000
-  ANGLE_COEF2 = 0.13122630
-  ANGLE_OFFSET = 0.00666167
-  SPEED_OFFSET = -3.29933821
-  SIGMOID_COEF_RIGHT = 0.53844801
-  SIGMOID_COEF_LEFT = 0.47000514
-  SPEED_COEF = 0.60112716
+  ANGLE_COEF = 0.08617848
+  ANGLE_COEF2 = 0.14
+  ANGLE_OFFSET = 0.00205026
+  SPEED_OFFSET = -3.48009247
+  SIGMOID_COEF_RIGHT = 0.56664089
+  SIGMOID_COEF_LEFT = 0.50360594
+  SPEED_COEF = 0.55322718
   return get_steer_feedforward_erf(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
 
 def get_steer_feedforward_volt(desired_angle, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
@@ -260,8 +261,12 @@ def old_feedforward(speed, angle):
     # return 0.0002 * (speed ** 2) * angle # old bolt and bolteuv
     # return 0.00004 * (speed ** 2) * angle # old silverado/sierra
     # return 0.000045 * (speed ** 2) * angle # old escalade
-    return 0.00005 * (speed ** 2) * angle
+    # return 0.00005 * (speed ** 2) * angle
+    return 0
+    return get_steer_feedforward_volt_old(angle, speed)
   else:
+    return 0
+    return get_steer_feedforward_volt_torque_old(angle, speed)
     # return np.vectorize(get_steer_feedforward_bolt_torque_old)(angle, speed)
     # kf = .33 # old volt torque
     # kf = 0.4 # old tahoe torque
@@ -287,55 +292,91 @@ def old_feedforward(speed, angle):
 
 
 def new_feedforward(speed, angle):
-  return feedforward(speed, angle, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
+  ds,dv = build_steer_correction_lists(DS4L, DS3L, DS2L, DS1L, DS1R, DS2R, DS3R, DS4R, DV4, DV3, DV2, DV1)
+  # LATACCELFACTOR = 2.0
+  # steer_lataccel_factors = [1.5, 1.15, 1.02, 1.0, 1.0, 1.0, 1.02, 1.15, 1.5]
+  # vego_lataccel_factors = [1.5, 1.5, 1.25, 1.0, 1.0]
+  # ds = steer_lataccel_factors
+  # dv = vego_lataccel_factors
+  return feedforward_generic(angle, speed, LATACCELFACTOR, ds,dv)
 
-def feedforward(speed, angle, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
-  if IS_ANGLE_PLOT:
-    # return ANGLE_COEF * angle * speed ** SPEED_COEF # tahoe angle fit
+steer_break_pts = [-1.0, -0.9, -0.75, -0.5, 0.0, 0.5, 0.75, 0.9, 1.0]
+vego_break_pts = [0.0, 10.0, 15.0, 20.0, 100.0]
+def feedforward_generic(lateral_accel_value, vego, latAccelFactor, steer_lataccel_factors, vego_lataccel_factors):
+  if type(lateral_accel_value) in [np.float64,float]:
+    steer_torque = lateral_accel_value / latAccelFactor
 
+    steer_correction_factor = np.interp(
+      steer_torque,
+      steer_break_pts,
+      steer_lataccel_factors
+    )
+
+    vego_correction_factor = np.interp(
+      vego,
+      vego_break_pts,
+      vego_lataccel_factors,
+    )
     
-    # great for volt
-    # return np.vectorize(get_steer_feedforward_sigmoid1)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
-    # x = ANGLE_COEF * (angle) / np.fmax(0.01,speed)
-    # sigmoid = x / (1. + np.fabs(x))
-    # return (np.vectorize(get_sigmoid_coef)(angle, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT) * sigmoid) * (0.01 + speed + SPEED_OFFSET) ** ANGLE_COEF2 + ANGLE_OFFSET * (angle * SPEED_COEF - np.arctan(angle * SPEED_COEF))
-    
-    return np.vectorize(get_steer_feedforward_suburban)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
+    combined_factors = min(latAccelFactor, steer_correction_factor * vego_correction_factor)
+    out = (steer_torque) / combined_factors
+    # print(f"{lateral_accel_value = :0.2f} {vego = :.1f} {out = :.2f}")
+    return out
   else:
-    # return ANGLE_COEF * (angle + ANGLE_OFFSET) / np.log(np.fmax(1.0, speed)) / (np.log(SPEED_COEF)) 
-    
-    # bolt
-    # x = ANGLE_COEF * (angle + ANGLE_OFFSET) * (40.23 / (np.fmax(0.05,speed + SPEED_OFFSET))**SPEED_COEF)
-    # sigmoid = np.vectorize(erf)(x)
-    # return (np.vectorize(get_sigmoid_coef)(angle + ANGLE_OFFSET) * sigmoid) + ANGLE_COEF2 * (angle + ANGLE_OFFSET)
-    
-    # suburban
-    return np.vectorize(get_steer_feedforward_volt_torque)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
-    
-    # great for volt
-    # return np.vectorize(get_steer_feedforward_erf)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
-    # x = ANGLE_COEF * (angle) * (40.23 / (np.fmax(0.05,speed + SPEED_OFFSET))**SPEED_COEF)
-    # sigmoid = np.vectorize(erf)(x)
-    # return (np.vectorize(get_sigmoid_coef)(angle, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT) * sigmoid) + ANGLE_COEF2 * angle
-    
-    # great for silverado/sierra
-    # x = ANGLE_COEF * (angle) * (40.23 / (np.fmax(0.2,speed)))
-    # sigmoid = np.vectorize(erf)(x)
-    # return (np.vectorize(get_sigmoid_coef)(angle) * sigmoid) + np.vectorize(get_slope)(angle) * angle
-    
-    # x = ANGLE_COEF * (angle)
-    # # sigmoid = x / (1. + np.fabs(x))
-    # sigmoid = np.vectorize(erf)(x)
-    # # sigmoid = np.arcsinh(x)
-    # return (np.vectorize(get_sigmoid_coef)(angle) * sigmoid) + 0.1 * angle
+    steer_torque = lateral_accel_value / latAccelFactor
 
-# def feedforward(speed, angle, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
+    steer_correction_factor = np.interp(
+      steer_torque,
+      steer_break_pts,
+      steer_lataccel_factors
+    )
 
-#   return angle * ANGLE_COEF / (np.maximum(speed - SPEED_OFFSET, 0.1) * SPEED_COEF)**SIGMOID_COEF_LEFT
+    vego_correction_factor = np.interp(
+      vego,
+      vego_break_pts,
+      vego_lataccel_factors,
+    )
+    combined_factors = np.minimum([latAccelFactor] * len(lateral_accel_value), steer_correction_factor * vego_correction_factor)
+    out = (steer_torque) / (steer_correction_factor * vego_correction_factor)
+    # print(lateral_accel_value, vego, out)
+    return out
+  
+# def feedforward_generic(lateral_accel_value, vego, latAccelFactor, steer_lataccel_factors, vego_lataccel_factors):
+#   steer_torque = lateral_accel_value / latAccelFactor
 
-def _fit_kf(x_input, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
+#   steer_correction_factor = np.interp(
+#     steer_torque,
+#     steer_break_pts,
+#     steer_lataccel_factors
+#   )
+
+#   vego_correction_factor = np.interp(
+#     vego,
+#     vego_break_pts,
+#     vego_lataccel_factors,
+#   )
+#   out = (steer_torque) / (steer_correction_factor * vego_correction_factor)
+#   # print(lateral_accel_value, vego, out)
+#   return out
+
+def build_steer_correction_lists(DS4L, DS3L, DS2L, DS1L, DS1R, DS2R, DS3R, DS4R, DV4, DV3, DV2, DV1):
+  ds = [1.0] * 9
+  DSL = [DS4L, DS3L, DS2L, DS1L]
+  DSL.reverse()
+  DSR = [DS1R, DS2R, DS3R, DS4R]
+  dv = [1.0] * 5
+  DV = [DV4, DV3, DV2, DV1]
+  DV.reverse()
+  for i in range(1,5):
+    ds[4-(i)] += sum(DSL[:i])
+    ds[4+(i)] += sum(DSR[:i])
+    dv[-(i+1)] += sum(DV[:i])
+  return ds,dv
+
+def _fit_kf(x_input, LATACCELFACTOR, DS4L, DS3L, DS2L, DS1L, DS1R, DS2R, DS3R, DS4R, DV4, DV3, DV2, DV1):
   speed, angle = x_input.copy()
-  return feedforward(speed, angle, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
+  ds,dv = build_steer_correction_lists(DS4L, DS3L, DS2L, DS1L, DS1R, DS2R, DS3R, DS4R, DV4, DV3, DV2, DV1)
+  return feedforward_generic(angle, speed, LATACCELFACTOR, ds,dv)
 
 def fit(speed, angle, steer, angle_plot=True):
   global IS_ANGLE_PLOT
@@ -347,34 +388,25 @@ def fit(speed, angle, steer, angle_plot=True):
   
   print("Performing fit...")
   
-  global ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF
+  global LATACCELFACTOR, DS4L, DS3L, DS2L, DS1L, DS1R, DS2R, DS3R, DS4R, DV4, DV3, DV2, DV1
+  
   params, _ = curve_fit(  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking
     _fit_kf,
     np.array([speed, angle]),
     np.array(steer),
     maxfev=900000,
-    # bounds=([0.001, 1., 0., 0., 0.001, 0.001, 0.001], # bolt
-    #     [5.0, 2.0, 1., 100., 5.0, 5.0, 10.]) if IS_ANGLE_PLOT else \
-    #     ([0.1, 0.01, -1., -20., 0.3, 0.3, -100.],
-    #     [5.0, 1.0, 1., 20., 5.0, 5.0, 100.]),
-    bounds=([0.001, 0.01, -90., 0., 0.1, 0.1, 0.001],
-        [100., 2.0, 90., 20., 5., 5.0, 10.]) if IS_ANGLE_PLOT else \
-        ([0.001, 0.1, -3., 1., 0.1, 0.1, 0.01],
-        [5., 2.0, 3., 40., 2.0, 2.0, 2.0])
-    # bounds=([0.001, 1., 0., 0., 0.001, 0.001, 0.001],
-    #         [5.0, 2.0, 1., 100., 5.0, 5.0, 0.5]) if IS_ANGLE_PLOT else \
-    #        ([0.001, 0.15, -np.inf, -100., 1., 1., -100.],
-    #         [5.0, 2.0, np.inf, 100., 5.0, 5.0, 100.])
+    bounds=([0.2] + [-1.0] * 8 + [-1.0] * 4,
+            [4.0] + [1.0] * 8 + [1.0] * 4)
   )
-  ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF = params
+  LATACCELFACTOR, DS4L, DS3L, DS2L, DS1L, DS1R, DS2R, DS3R, DS4R, DV4, DV3, DV2, DV1 = params
   print(f'Fit: {params}')
-  print(f"{ANGLE_COEF = :.8f}")
-  print(f"{ANGLE_COEF2 = :.8f}")
-  print(f"{ANGLE_OFFSET = :.8f}")
-  print(f"{SPEED_OFFSET = :.8f}")
-  print(f"{SIGMOID_COEF_RIGHT = :.8f}")
-  print(f"{SIGMOID_COEF_LEFT = :.8f}")
-  print(f"{SPEED_COEF = :.8f}")
+  steer_lataccel_factors, vego_lataccel_factors = build_steer_correction_lists(DS4L, DS3L, DS2L, DS1L, DS1R, DS2R, DS3R, DS4R, DV4, DV3, DV2, DV1)
+  # LATACCELFACTOR = 2.0
+  # steer_lataccel_factors = [1.5, 1.15, 1.02, 1.0, 1.0, 1.0, 1.02, 1.15, 1.5]
+  # vego_lataccel_factors = [1.5, 1.5, 1.25, 1.0, 1.0]
+  print(f"{LATACCELFACTOR = :.8f}")
+  print(f"{steer_lataccel_factors = }")
+  print(f"{vego_lataccel_factors = }")
 
   old_residual = np.fabs(old_feedforward(speed, angle) - steer)
   new_residual = np.fabs(new_feedforward(speed, angle) - steer)
@@ -388,13 +420,9 @@ def fit(speed, angle, steer, angle_plot=True):
   if not os.path.exists("plots"):
     os.mkdir("plots")
   with open("plots/out.txt","a") as f:
-    f.write(f"    {ANGLE_COEF = :.8f}\n")
-    f.write(f"    {ANGLE_COEF2 = :.8f}\n")
-    f.write(f"    {ANGLE_OFFSET = :.8f}\n")
-    f.write(f"    {SPEED_OFFSET = :.8f}\n")
-    f.write(f"    {SIGMOID_COEF_RIGHT = :.8f}\n")
-    f.write(f"    {SIGMOID_COEF_LEFT = :.8f}\n")
-    f.write(f"    {SPEED_COEF = :.8f}\n")
+    f.write(f"    {LATACCELFACTOR = :.8f}\n")
+    f.write(f"    {steer_lataccel_factors = }\n")
+    f.write(f"    {vego_lataccel_factors = }\n")
     f.write('mean absolute error: old {}, new {}\n'.format(round(old_mae, 4), round(new_mae, 4)))
     f.write('standard deviation: old {}, new {}\n'.format(round(old_std, 4), round(new_std, 4)))
     f.write(f"fit computed using {len(speed)} points")
@@ -447,19 +475,6 @@ def plot(speed, angle, steer):
       plot_steer = abs_steer[mask]
 
       params = None
-      if FIT_EACH_PLOT and sum(mask) > 4:
-        try:
-          global ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF
-          params, _ = curve_fit(  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking
-            _fit_kf,
-            np.array([plot_speed, plot_angle]),
-            np.array(plot_steer),
-            maxfev=9000,
-          )
-          ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF = params
-        except RuntimeError as e:
-          print(e)
-          continue
       
       angle_points_dict[angle_range_str] = len(plot_speed)
       # print(f'{angle_range_str} ({len(plot_speed)}): {params}')

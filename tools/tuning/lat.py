@@ -309,22 +309,22 @@ def filter(samples):
   
   # Some rlogs use [-300,300] for torque, others [-3,3]
   # Scale both from STEER_MAX to [-1,1]
-  # driver = np.max(np.abs(np.array([s.torque_driver for s in samples])))
-  # eps = np.max(np.abs(np.array([s.torque_eps for s in samples])))
-  # for s in samples:
-  #   if driver > 40 or eps > 40:
-  #     s.torque_driver /= 300
-  #     s.torque_eps /= 300
-  #   else:
-  #     s.torque_driver /= 3
-  #     s.torque_eps /= 3
+  driver = np.max(np.abs(np.array([s.torque_driver for s in samples])))
+  eps = np.max(np.abs(np.array([s.torque_eps for s in samples])))
+  for s in samples:
+    if driver > 40 or eps > 40:
+      s.torque_driver /= 300
+      s.torque_eps /= 300
+    else:
+      s.torque_driver /= 3
+      s.torque_eps /= 3
   # print(f'max eps torque = {eps:0.4f}')
   # print(f"max driver torque = {driver:0.4f}")
   
   # VW, str cmd units 0.01Nm, 3.0Nm max
-  for s in samples:
-    s.torque_driver /= 300
-    s.torque_eps = s.steer_cmd / 300
+  # for s in samples:
+  #   s.torque_driver /= 300
+  #   s.torque_eps = s.steer_cmd / 300
   
   #hyundai
   # driver torque units 0.01Nm
@@ -333,6 +333,18 @@ def filter(samples):
   # for s in samples:
   #   s.torque_driver /= 100 * 4
   #   s.torque_eps /= 5 * 4
+  
+  
+  # print(f"{s.enabled = }")
+  # print(f"{s.torque_driver = }")
+  # print(f"{s.torque_eps = }")
+  # print(f"{s.desired_curvature_rate = }")
+  # print(f"{s.desired_steer_rate = }")
+  # print(f"{s.steer_rate = }")
+  # print(f"{s.steer_angle = }")
+  # print(f"{s.lateral_accel = }")
+  # print(f"{s.v_ego = }")
+  
   
   # No steer pressed
   # data = np.array([s.torque_driver for s in samples])
@@ -344,8 +356,9 @@ def filter(samples):
   samples = samples[mask]
 
   # No steer rate: holding steady curve or straight
-  data = np.array([s.desired_curvature_rate for s in samples])
-  mask = np.abs(data) < 0.003 # determined from plotjuggler
+  data = np.array([s.steer_rate for s in samples])
+  # data = np.array([s.desired_curvature_rate for s in samples])
+  mask = np.abs(data) < 4 # determined from plotjuggler
   samples = samples[mask]
 
   # No steer rate: holding steady curve or straight
@@ -606,5 +619,6 @@ if __name__ == '__main__':
     with open(regfile, 'wb') as f:
       pickle.dump([speed, angle, steer], f)
 
+  print("running fit")
   fit(speed, angle, steer, IS_ANGLE_PLOT)
   plot(speed, angle, steer)

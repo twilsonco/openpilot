@@ -1,6 +1,6 @@
 import numpy as np
 
-PREPROCESS_ONLY = True
+PREPROCESS_ONLY = False
 REGULARIZED = False
 IS_ANGLE_PLOT = True
 SPEED_PLOTS = True # For all speeds at a fixed angle, plot steer
@@ -14,7 +14,7 @@ SIGMOID_SPEED = None
 SIGMOID = None
 SPEED = None
 
-BIN_COUNT = 50
+BIN_COUNT = 16
 BIN_SIGMA = np.inf
 BIN_STD = np.inf
 
