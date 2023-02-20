@@ -12,8 +12,7 @@ from selfdrive.car.gm.values import CAR, CruiseButtons, \
                                     FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.controls.lib.longitudinal_planner import _A_CRUISE_MAX_V_SPORT, \
-                                                        _A_CRUISE_MAX_BP, \
+from selfdrive.controls.lib.longitudinal_planner import _A_CRUISE_HIGHER_ACCEL_INDEX, \
                                                         calc_cruise_accel_limits
                                                         
 GearShifter = car.CarState.GearShifter
@@ -69,7 +68,7 @@ class CarInterface(CarInterfaceBase):
       
     if CI.CS.accel_mode != 1 and CI.CS.standstill_time_since_t < CI.CS.cruise_resume_high_accel_ramp_bp[-1]:
       k = interp(CI.CS.standstill_time_since_t, CI.CS.cruise_resume_high_accel_ramp_bp, CI.CS.cruise_resume_high_accel_ramp_v)
-      higher_max_accel = calc_cruise_accel_limits(current_speed, False, 1 if CI.CS.accel_mode == 0 else 0)[1]
+      higher_max_accel = calc_cruise_accel_limits(current_speed, False, _A_CRUISE_HIGHER_ACCEL_INDEX[CI.CS.accel_mode])[1]
       accel_limits[1] = k * higher_max_accel + (1.0 - k) * accel_limits[1]
     
     if current_speed > CI.CS.accel_limits_rate_speed_cutoff:
