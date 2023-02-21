@@ -64,12 +64,12 @@ class CarInterface(CarInterfaceBase):
   
   @staticmethod
   def torque_from_lateral_accel_bolt_euv(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, friction_compensation, v_ego, g_lat_accel, lateral_jerk_desired):
-    ANGLE_COEF = 0.16179233
-    ANGLE_COEF2 = 0.20691964
-    SPEED_OFFSET = -7.94958973
-    SIGMOID_COEF_RIGHT = 0.34906506
-    SIGMOID_COEF_LEFT = 0.20000000
-    SPEED_COEF = 0.38748798
+    ANGLE_COEF = 0.79289935
+    ANGLE_COEF2 = 0.24485508
+    SPEED_OFFSET = 1.00000000
+    SIGMOID_COEF_RIGHT = 0.30436939
+    SIGMOID_COEF_LEFT = 0.22542412
+    SPEED_COEF = 0.77320476
 
     x = ANGLE_COEF * lateral_accel_value * (40.23 / (max(0.2,v_ego + SPEED_OFFSET))**SPEED_COEF)
     sigmoid = erf(x)
