@@ -4,7 +4,8 @@ import math
 from typing import SupportsFloat
 
 from cereal import car, log
-from common.numpy_fast import clip
+from common.filter_simple import FirstOrderFilter
+from common.numpy_fast import clip, mean
 from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
 from common.params import Params, put_nonblocking
@@ -203,6 +204,7 @@ class Controls:
     self.desired_curvature = 0.0
     self.desired_curvature_rate = 0.0
     self.v_cruise_helper = VCruiseHelper(self.CP)
+    self.k_mean = FirstOrderFilter(0., 20, DT_CTRL)
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -605,6 +607,14 @@ class Controls:
 
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
+    
+    if self.sm.updated['lateralPlan'] and len(lat_plan.curvatures) > 0:
+      k_mean = mean(lat_plan.curvatures)
+      if abs(k_mean) > abs(self.k_mean.x):
+        self.k_mean.x = k_mean
+      else:
+        self.k_mean.update(k_mean)
+      self.CI.CC.params.future_curvature = self.k_mean.x
 
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
@@ -647,7 +657,7 @@ class Controls:
                                                                                        lat_plan.curvatureRates)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                              self.last_actuators, self.steer_limited, self.desired_curvature,
-                                                                             self.desired_curvature_rate, self.sm['liveLocationKalman'])
+                                                                             self.desired_curvature_rate, self.sm['liveLocationKalman'], mean_curvature=self.k_mean.x)
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0:
