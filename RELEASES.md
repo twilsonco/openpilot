@@ -1,3 +1,8 @@
+Version 0.9.1 TW (2023-02-20)
+========================
+* UPDATED BOLT EUV TORQUE FF
+* GM UPDATED STEER RATE LIMITS (PER COMMA)
+
 Version 0.9.1 (2022-12-XX)
 ========================
 * Adjust alert volume using ambient noise level
