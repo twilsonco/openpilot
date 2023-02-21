@@ -382,7 +382,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torque.ki = op_params.get('TUNE_LAT_TRX_ki', force_update=True)
         ret.lateralTuning.torque.kd = op_params.get('TUNE_LAT_TRX_kd', force_update=True)
         ret.lateralTuning.torque.kf = op_params.get('TUNE_LAT_TRX_kf', force_update=True)
-        ret.lateralTuning.torque.friction = op_params.get('TUNE_LAT_TRX_friction', force_update=True)
+        ret.lateralTuning.torque.friction = 0.0
       elif lat_type == 'pid':
         ret.lateralTuning.init('pid')
         bp = [i * CV.MPH_TO_MS for i in op_params.get(f"TUNE_LAT_PID_bp_mph", force_update=True)]
