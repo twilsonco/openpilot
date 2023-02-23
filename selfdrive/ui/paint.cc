@@ -1557,7 +1557,7 @@ static void ui_draw_measures(UIState *s){
             float v = scene.car_state.getVEgo();
             float T = v*v * scene.mass * 1e-3;
             if (T > 1e3){
-              snprintf(val, sizeof(val), "%.0f", T * 1e-3);
+              snprintf(val, sizeof(val), "%.2f", T * 1e-3);
               snprintf(unit, sizeof(unit), "MJ");
             }
             else{
