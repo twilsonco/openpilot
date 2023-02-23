@@ -289,6 +289,7 @@ class LongRangeLead():
     self.log()
     
   def log(self):
+    return
     if self._debug_counter >= self._debug_freq:
       cloudlog.info(f"{self._rate = }, {self._d_period = }, {self._d_period_recip = }, {self.y_rel_vals = }")
       self._debug_counter = 0
