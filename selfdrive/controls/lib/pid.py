@@ -155,7 +155,7 @@ class PIDController:
       self.errors_d.append(error)
     
     if self.error_norms is not None and self.errors_d is not None and len(self.errors_d) > 0:
-      self.error_norms.append(self.errors_d[-1] / log2(max(speed, 1.0)))
+      self.error_norms.append(self.errors_d[-1] / max(speed*0.1, 1.0))
       if len(self.error_norms) == self.error_norms.maxlen:
         delta_error_norm = self.error_norms[-1] - self.error_norms[0]
         self._gain_update_factor = self.error_norms[-1] * delta_error_norm
