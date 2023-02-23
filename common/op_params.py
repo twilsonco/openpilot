@@ -63,7 +63,7 @@ def read_history(param_name=None):
       out = [p for p in out if p["name"] == param_name]
   return out
 
-UI_DOT_H_PATH = 'selfdrive/ui/ui.h'
+UI_DOT_H_PATH = '/data/openpilot/selfdrive/ui/ui.h'
 def parse_UIMeasure_enum(ui_dot_h_path):
   try:
     with open(ui_dot_h_path, 'r') as f:

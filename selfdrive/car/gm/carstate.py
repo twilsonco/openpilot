@@ -236,9 +236,12 @@ class CarState(CarStateBase):
       key = f'MeasureSlot{i:02d}'
       metric_param = int(self._params.get(key, encoding="utf8"))
       if metric_param != self.ui_metrics_params[i]:
-        cloudlog.info(f"opParams: UI metric in slot {i} '{UI_METRICS[self.ui_metrics_params[i]]}' ({self.ui_metrics_params[i]}) updated to '{UI_METRICS[metric_param]}' ({metric_param}) onroad. Copying new metric to opParams '{key_op}'")
-        self._op_params.put(key_op, UI_METRICS[metric_param])
-        self.ui_metrics_params[i] = metric_param
+        if len(UI_METRICS) > self.ui_metrics_params[i]:
+          cloudlog.info(f"opParams: UI metric in slot {i} '{UI_METRICS[self.ui_metrics_params[i]]}' ({self.ui_metrics_params[i]}) updated to '{UI_METRICS[metric_param]}' ({metric_param}) onroad. Copying new metric to opParams '{key_op}'")
+          self._op_params.put(key_op, UI_METRICS[metric_param])
+          self.ui_metrics_params[i] = metric_param
+        else:
+          cloudlog.error(f"Failed to sync opparams and params in gm/carstate due to out of bounds error. {len(UI_METRICS) = } ≤ {self.ui_metrics_params[i] = }")
 
     
   def update(self, pt_cp, loopback_cp, chassis_cp):
