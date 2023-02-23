@@ -127,6 +127,8 @@ class CarInterface(CarInterfaceBase):
       return self.torque_from_lateral_accel_volt
     # elif self.CP.carFingerprint == CAR.BOLT_EV:
     #   return self.torque_from_lateral_accel_bolt
+    elif self.CP.carFingerprint == CAR.SILVERADO:
+      return self.torque_from_lateral_accel_silverado
     elif self.CP.carFingerprint == CAR.BOLT_EUV:
       return self.torque_from_lateral_accel_bolt_euv
     else:
