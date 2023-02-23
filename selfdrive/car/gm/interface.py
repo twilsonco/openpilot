@@ -48,18 +48,6 @@ def get_steer_feedforward_erf(angle, speed,
   linear = ANGLE_COEF2 * angle
   return sigmoid + linear
 
-def get_steer_feedforward_erf(angle, speed,
-                              ANGLE_COEF, 
-                              ANGLE_COEF2, 
-                              SPEED_OFFSET, 
-                              SIGMOID_COEF_RIGHT, 
-                              SIGMOID_COEF_LEFT, 
-                              SPEED_COEF):
-  x = ANGLE_COEF * (angle) * (40.0 / (max(0.05,speed + SPEED_OFFSET))**SPEED_COEF)
-  sigmoid = erf(x) * (SIGMOID_COEF_RIGHT if angle < 0. else SIGMOID_COEF_LEFT)
-  linear = ANGLE_COEF2 * angle
-  return sigmoid + linear
-
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
