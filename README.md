@@ -1,3 +1,9 @@
+### Which fork do you want?
+> **If you want "my" fork, read on.** 
+> If you're looking for my SunnyPilot fork, with improved gm controls and auto brake hold, use the following installer URL on your device, but head to the SunnyPilot github for more info.
+**`installer.comma.ai/twilsonco/sunny-test-c3`**
+Please (at least partially) direct your support for the SunnyPilot fork to SunnyPilot directly.
+
 # Table of Contents
 ------
 - [Table of Contents](#table-of-contents)
@@ -32,7 +38,7 @@
 ### Appreciate My Work?
 ------
 
-Please show your support by contributing to the ongoing development of this project.
+Check out the [commit history](https://github.com/twilsonco/openpilot/commits/tw-0.8.9-dev) of `tw-0.8.9-dev` to see the ongoing work you can support.
 
 **[Patreon (recurring contributions)](https://www.patreon.com/twilsonco)**
 
@@ -42,13 +48,47 @@ Please show your support by contributing to the ongoing development of this proj
 ------
 
 > This fork exists to improve OP performance and convenience for GM cars, specifically the Chevy Volt.
-> I started because the kegman fork wouldn't run on Comma Three, and the result is the best Volt driving experience in the known universe.
+> I started because the *kegman* fork wouldn't run on Comma Three, and the result is the best Volt driving experience in the known universe.
 
 > While most of the features in this fork are my original implementations, none of it would have been possible without the work of others in the community, which is often my starting point or inspiration, and nearly always a reference.
 > I reference code/concepts to their original authors to the best of my knowledge.
 > Feel free to let me know if I have missed or mistaken a reference.
 
-> **Pleae provide any positive/negative feedback on [Patreon](https://www.patreon.com/twilsonco) or much better the [comma](https://discord.comma.ai)/[openpilot](https://discord.gg/SgbgsdGWu5)/[retropilot](https://discord.gg/retropilot-660951518014341124) Discord servers, especially if you'd like your issues addressed.**
+> **Pleae provide any positive/negative feedback to me, twilsonco#9281, on the [comma](https://discord.comma.ai)/[openpilot](https://discord.gg/SgbgsdGWu5)/[retropilot](https://discord.gg/retropilot-660951518014341124) Discord servers, especially if you'd like your issues addressed.**
+
+
+### Supported Hardware
+------
+
+This fork is developed and used on a Comma Three in a 2018 Chevy Volt, and is also *known* to work on Comma Two and Comma Zero, and in 2017 Volt, 2018 Acadia, and supported Escalades.
+
+### Installation Instructions
+------
+
+#### Easy: using comma's [openpilot-installer-generator](https://github.com/sshane/openpilot-installer-generator)
+
+For fewer, but better tested updates, use `installer.comma.ai/twilsonco`,
+or to ride the bleeding edge, try the staging branch where new features are tested before they go to regular users: `installer.comma.ai/twilsonco/tw-0.8.9-staging`
+(*Be extra diligent and attentive when using the staging branch; it is considered experimental moreso than the regular branch!*)
+
+Or using Shane's installer with [these instructions](https://github.com/sshane/openpilot-installer-generator#usage) and the following url:
+`https://smiskol.com/fork/twilsonco`
+
+
+
+#### Less easy
+
+With a stock installation of OpenPilot confirmed working, SSH into device and run the following:
+
+`cd /data;mv openpilot openpilot_stock;git clone --recurse-submodules https://github.com/twilsonco/openpilot`
+
+Then, `sudo reboot`
+
+### Automatic Updates
+------
+
+This fork will auto-update while your device has internet access, and changes are automatically applied the next time the device restarts.
+If you're device stays connected to your car all the time, you'll be presented with a message to update when your car is off.
 
 #### Current Fork Features [✅ = optional via toggle]:
 -----
@@ -188,41 +228,6 @@ Please show your support by contributing to the ongoing development of this proj
   * Geo widget: GPS signal/coords/#satellites, altitude, percent grade of current road, ...
   * Device widget: CPU/memory/temps/fans/...
   * EV widget: high voltage battery info similar to that shown in the LeafSpyPro app
-
-### Supported Hardware
-------
-
-This fork is developed and used on a Comma Three in a 2018 Chevy Volt, and is also *known* to work on Comma Two and Comma Zero, and in 2017 Volt, 2018 Acadia, and supported Escalades.
-
-### Installation Instructions
-------
-
-#### Easy: using comma's [openpilot-installer-generator](https://github.com/sshane/openpilot-installer-generator)
-
-`installer.comma.ai/twilsonco`
-
-Or using Shane's installer with [these instructions](https://github.com/sshane/openpilot-installer-generator#usage) and the following url:
-`https://smiskol.com/fork/twilsonco`
-
-
-To ride the bleeding edge, try the staging branch where new features are tested before they go to regular users:
-(Be extra diligent and attentive when using the staging branch; it is considered experimental moreso than the regular branch!)
-`installer.comma.ai/twilsonco/tw-0.8.9-staging`
-`https://smiskol.com/fork/twilsonco/tw-0.8.9-staging`
-
-#### Less easy
-
-With a stock installation of OpenPilot confirmed working, SSH into device and run the following:
-
-`cd /data;mv openpilot openpilot_stock;git clone --recurse-submodules https://github.com/twilsonco/openpilot`
-
-Then, `sudo reboot`
-
-### Automatic Updates
-------
-
-This fork will auto-update while your device has internet access, and changes are automatically applied the next time the device restarts.
-If you're device stays connected to your car all the time, you'll be presented with a message to update when your car is off.
 
 ### Tuning
 ------
