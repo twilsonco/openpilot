@@ -161,7 +161,7 @@ class PIDController:
         self._gain_update_factor = self.error_norms[-1] * delta_error_norm
         if self._gain_update_factor != 0.:
           abs_guf = abs(self._gain_update_factor)
-          self.kp *= 1. + min(5., self.k_11 * abs_guf)
+          self.kp *= 1. + min(5., self.k_11 * max(0.0, self._gain_update_factor))
           self.ki *= 1. + clip(self.k_12 * self._gain_update_factor, -1., 5.)
           self.kd *= 1. + min(5., self.k_13 * abs_guf)
 
