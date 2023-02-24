@@ -1,3 +1,9 @@
+### Which fork do you want?
+> **If you want "my" fork, read on.** 
+> If you're looking for my SunnyPilot fork, with improved gm controls and auto brake hold, use the following installer URL on your device, but head to the SunnyPilot github for more info.
+**`installer.comma.ai/twilsonco/sunny-test-c3`**
+Please (at least partially) direct your support for the SunnyPilot fork to SunnyPilot directly.
+
 # Table of Contents
 ------
 - [Table of Contents](#table-of-contents)
@@ -32,7 +38,7 @@
 ### Appreciate My Work?
 ------
 
-Please show your support by contributing to the ongoing development of this project.
+Check out the [commit history](https://github.com/twilsonco/openpilot/commits/tw-0.8.9-dev) of `tw-0.8.9-dev` to see the ongoing work you can support.
 
 **[Patreon (recurring contributions)](https://www.patreon.com/twilsonco)**
 
@@ -42,13 +48,47 @@ Please show your support by contributing to the ongoing development of this proj
 ------
 
 > This fork exists to improve OP performance and convenience for GM cars, specifically the Chevy Volt.
-> I started because the kegman fork wouldn't run on Comma Three, and the result is the best Volt driving experience in the known universe.
+> I started because the *kegman* fork wouldn't run on Comma Three, and the result is the best Volt driving experience in the known universe.
 
 > While most of the features in this fork are my original implementations, none of it would have been possible without the work of others in the community, which is often my starting point or inspiration, and nearly always a reference.
 > I reference code/concepts to their original authors to the best of my knowledge.
 > Feel free to let me know if I have missed or mistaken a reference.
 
-> **Pleae provide any positive/negative feedback on [Patreon](https://www.patreon.com/twilsonco) or much better the [comma](https://discord.comma.ai)/[openpilot](https://discord.gg/SgbgsdGWu5)/[retropilot](https://discord.gg/retropilot-660951518014341124) Discord servers, especially if you'd like your issues addressed.**
+> **Pleae provide any positive/negative feedback to me, twilsonco#9281, on the [comma](https://discord.comma.ai)/[openpilot](https://discord.gg/SgbgsdGWu5)/[retropilot](https://discord.gg/retropilot-660951518014341124) Discord servers, especially if you'd like your issues addressed.**
+
+
+### Supported Hardware
+------
+
+This fork is developed and used on a Comma Three in a 2018 Chevy Volt, and is also *known* to work on Comma Two and Comma Zero, and in 2017 Volt, 2018 Acadia, and supported Escalades.
+
+### Installation Instructions
+------
+
+#### Easy: using comma's [openpilot-installer-generator](https://github.com/sshane/openpilot-installer-generator)
+
+For fewer, but better tested updates, use `installer.comma.ai/twilsonco`,
+or to ride the bleeding edge, try the staging branch where new features are tested before they go to regular users: `installer.comma.ai/twilsonco/tw-0.8.9-staging`
+(*Be extra diligent and attentive when using the staging branch; it is considered experimental moreso than the regular branch!*)
+
+Or using Shane's installer with [these instructions](https://github.com/sshane/openpilot-installer-generator#usage) and the following url:
+`https://smiskol.com/fork/twilsonco`
+
+
+
+#### Less easy
+
+With a stock installation of OpenPilot confirmed working, SSH into device and run the following:
+
+`cd /data;mv openpilot openpilot_stock;git clone --recurse-submodules https://github.com/twilsonco/openpilot`
+
+Then, `sudo reboot`
+
+### Automatic Updates
+------
+
+This fork will auto-update while your device has internet access, and changes are automatically applied the next time the device restarts.
+If you're device stays connected to your car all the time, you'll be presented with a message to update when your car is off.
 
 #### Current Fork Features [✅ = optional via toggle]:
 -----
@@ -70,14 +110,14 @@ Please show your support by contributing to the ongoing development of this proj
 - [Volt] Much improved steering control over stock (working on upstreaming)
 - [x] [✅] **MADS (Modified Assistive Driving Safety)**. Three independent, always-on safety features. Enable the MADS autosteer toggle in order to access the other features as well. If enabled, the max speed indicator is replaced by the MADS icon. *Reminder: You can use the cruise main button to cancel out all openpilot controls*. 
     * ***Autosteer*** (a.k.a. SunnyHaibin's MADS) comes on as soon as you start driving the car, before initially engaging, and even while brakes are pressed. *Toggle autosteer with the lane keep assist button on your steering wheel*. Optional toggle in settings to pause steering at low speeds when blinker is on and you're decelerating. When autosteer is enabled, the steering wheel icon will be colored ("disengaged" color when disabled).
-    * ***Lead braking*** will be applied automatically, so OpenPilot will smoothly slow for other cars *if neither the gas or brake pedal are pressed in the slightest*. Use either pedal to override lead braking. *Toggle lead braking with the ACC follow distance button on your steering wheel*. When lead braking is enabled, an additional white ring is shown around the MADS icon.
+    * ***Lead braking*** will be applied automatically, so OpenPilot will smoothly slow for other cars *if neither the gas or brake pedal are pressed in the slightest*. Volt regen-on-demand paddle can be used and lead braking will still be applied. Use either pedal to override lead braking. *Toggle lead braking with the ACC follow distance button on your steering wheel*. When lead braking is enabled, an additional white ring is shown around the MADS icon.
     * ***One-pedal driving*** [Volt only], where OpenPilot applies light braking when you're in L-mode and not pressing the gas, so you can come to a stop without using brakes. The feeling is as if L-mode regen braking brought you to a stop. Hold the regen-on-demand paddle for additional braking. *Toggle one-pedal driving with a double-press of the regen paddle*. You can also toggle one-pedal driving by tapping the MADS icon. When one-pedal driving is enabled, the MADS icon turns to the "engaged" color, or the "disengaged" color when disabled. (application of friction brakes originally suggested by cybertronicify — 10/06/2021)
     * ***One-pedal one-time stop***. Hold the Volt regen paddle to below 5mph and one pedal mode will engage temporarily to stop you once, then turn off when you resume driving.
 - [x] [Volt 2017] **Auto-resume** behind stopped lead car as they pull away; a.k.a. stop and go (ported from kegman)
 - [x] [Volt 2018] **Auto-creep** behind stopped lead car as they pull away (tap gas or resume button to resume)
 - [x] [GM] [✅] **AutoHold** (autohold brakes when stopped; ported from kegman)
 - [x] [GM] Adjustable follow "mode" using ACC distance button (ported from kegman, but smoother follow profiles)
-- [x] [✅] **Extended radar capabilities** (ALPHA)
+- [x] [✅] **Extended radar capabilities**
     * Brake for car in front of lead, avoiding pile-ups and able to brake when lead changes lanes right in front of a column of stopped cars
     * Indicate adjacent oncoming/ongoing traffic
     * Indicate all tracked cars, including those in front of the lead, and print all speeds
@@ -157,7 +197,7 @@ Please show your support by contributing to the ongoing development of this proj
 - [x] [GM] panda-based GM steering fault fix (thanks jshuler)
 - [x] Remember last follow mode (ported from kegman)
 - [x] Grey/White panda support
-- [ ] **opParams**: command-line editor to configure OpenPilot over SSH that lets you tune and change options instantaneously while driving. You can tune run `./opparams.py` immediately after [connecting over SSH](https://docs.comma.ai/tools/ssh/README.html#) and configure the following:
+- [x] **opParams**: command-line editor to configure and tune OpenPilot instantaneously from the passenger seat. You can tune run `./opparams.py` immediately after [connecting over SSH](https://docs.comma.ai/tools/ssh/README.html#) and configure the following:
     * acceleration profiles
     * traffic following profiles
     * camera (lane) offset
@@ -172,9 +212,9 @@ Please show your support by contributing to the ongoing development of this proj
     * lateral (six of them!) and longitudinal controllers
       * *can select and tune pid, torque, indi, lqr, torque indi, or torque lqr controllers*
     * select UI metrics (no more tapping! you can still tap though)
-    * enter your own OpenWeatherMap api key (no more txt file with key)
+    * enter your own OpenWeatherMap api key (instead of freeloading off mine!)
     * *perform a reboot-less restart on your Comma Three by running `./opparams.py -r`*
-    * *Started from @Shane's opParams implementation, made the read process for live tuning non-blocking so it has zero impact on performance, and added TONS of features*
+    * *Started from @Shane's opParams implementation and added TONS of features. Thanks Shane!*
 
 #### Planned Fork Features (in no particular order):
 -----
@@ -188,41 +228,6 @@ Please show your support by contributing to the ongoing development of this proj
   * Geo widget: GPS signal/coords/#satellites, altitude, percent grade of current road, ...
   * Device widget: CPU/memory/temps/fans/...
   * EV widget: high voltage battery info similar to that shown in the LeafSpyPro app
-
-### Supported Hardware
-------
-
-This fork is developed and used on a Comma Three in a 2018 Chevy Volt, and is also *known* to work on Comma Two and Comma Zero, and in 2017 Volt, 2018 Acadia, and supported Escalades.
-
-### Installation Instructions
-------
-
-#### Easy: using comma's [openpilot-installer-generator](https://github.com/sshane/openpilot-installer-generator)
-
-`installer.comma.ai/twilsonco`
-
-Or using Shane's installer with [these instructions](https://github.com/sshane/openpilot-installer-generator#usage) and the following url:
-`https://smiskol.com/fork/twilsonco`
-
-
-To ride the bleeding edge, try the staging branch where new features are tested before they go to regular users:
-(Be extra diligent and attentive when using the staging branch; it is considered experimental moreso than the regular branch!)
-`installer.comma.ai/twilsonco/tw-0.8.9-staging`
-`https://smiskol.com/fork/twilsonco/tw-0.8.9-staging`
-
-#### Less easy
-
-With a stock installation of OpenPilot confirmed working, SSH into device and run the following:
-
-`cd /data;mv openpilot openpilot_stock;git clone --recurse-submodules https://github.com/twilsonco/openpilot`
-
-Then, `sudo reboot`
-
-### Automatic Updates
-------
-
-This fork will auto-update while your device has internet access, and changes are automatically applied the next time the device restarts.
-If you're device stays connected to your car all the time, you'll be presented with a message to update when your car is off.
 
 ### Tuning
 ------
