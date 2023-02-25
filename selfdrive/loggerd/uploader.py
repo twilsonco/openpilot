@@ -171,6 +171,7 @@ class Uploader():
       else:
         with open(fn, "rb") as f:
           if key.endswith('.bz2') and not fn.endswith('.bz2'):
+            cloudlog.debug("Compressing file before uploading")
             data = bz2.compress(f.read())
             data = io.BytesIO(data)
           else:
