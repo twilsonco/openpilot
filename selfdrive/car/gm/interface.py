@@ -167,6 +167,24 @@ class CarInterface(CarInterfaceBase):
     x = ANGLE_COEF * (desired_lateral_accel + ANGLE_OFFSET) * (40.23 / (max(0.05,speed + SPEED_OFFSET))**SPEED_COEF)
     sigmoid = erf(x)
     return ((SIGMOID_COEF_RIGHT if (desired_lateral_accel + ANGLE_OFFSET) < 0. else SIGMOID_COEF_LEFT) * sigmoid) + ANGLE_COEF2 * (desired_lateral_accel + ANGLE_OFFSET)
+  
+  @staticmethod
+  def get_steer_feedforward_lacrosse(angle, speed):
+    ANGLE_COEF = 0.58539783
+    ANGLE_COEF2 = 0.32765082
+    ANGLE_OFFSET = 0.00460531
+    SPEED_OFFSET = 13.23075991
+    SIGMOID_COEF_RIGHT = 0.13719471
+    SIGMOID_COEF_LEFT = 0.13309956
+    SPEED_COEF = 0.06147823
+    x = ANGLE_COEF * (angle + ANGLE_OFFSET)
+    sigmoid = x / (1. + fabs(x))
+    return ((SIGMOID_COEF_RIGHT if (angle + ANGLE_OFFSET) > 0. else SIGMOID_COEF_LEFT) * sigmoid) * ((speed + SPEED_OFFSET) * SPEED_COEF) * ((fabs(angle + ANGLE_OFFSET) ** fabs(ANGLE_COEF2)))
+  
+  def get_steer_feedforward_lacrosse_torque(desired_lateral_accel, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
+    x = ANGLE_COEF * (desired_lateral_accel + ANGLE_OFFSET) * (40.23 / (max(0.05,speed + SPEED_OFFSET))**SPEED_COEF)
+    sigmoid = erf(x)
+    return ((SIGMOID_COEF_RIGHT if (desired_lateral_accel + ANGLE_OFFSET) < 0. else SIGMOID_COEF_LEFT) * sigmoid) + ANGLE_COEF2 * (desired_lateral_accel + ANGLE_OFFSET)
 
   def get_steer_feedforward_function(self):
     if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
@@ -175,6 +193,8 @@ class CarInterface(CarInterfaceBase):
       return self.get_steer_feedforward_acadia
     elif self.CP.carFingerprint == CAR.BOLT_EUV:
       return self.get_steer_feedforward_bolt_euv
+    elif self.CP.carFingerprint == CAR.BUICK_LACROSSE:
+      return self.get_steer_feedforward_lacrosse
     else:
       return CarInterfaceBase.get_steer_feedforward_default
   
@@ -185,6 +205,8 @@ class CarInterface(CarInterfaceBase):
       return self.get_steer_feedforward_acadia_torque
     elif self.CP.carFingerprint == CAR.BOLT_EUV:
       return self.get_steer_feedforward_bolt_euv_torque
+    elif self.CP.carFingerprint == CAR.BUICK_LACROSSE:
+      return self.get_steer_feedforward_lacrosse_torque
     else:
       return CarInterfaceBase.get_steer_feedforward_torque_default
 
@@ -240,7 +262,6 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = 0.45 * ret.wheelbase # from Volt Gen 1
       ret.steerActuatorDelay = 0.22
       if (Params().get_bool("EnableTorqueControl")):
-        max_lateral_accel = 3.0
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
         ret.lateralTuning.torque.kp = 0.48
@@ -255,7 +276,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kiV = [.015, 0.02]
         ret.lateralTuning.pid.kdBP = [0.]
         ret.lateralTuning.pid.kdV = [0.6]
-        ret.lateralTuning.pid.kf = 1. # !!! ONLY for sigmoid feedforward !!!
+        ret.lateralTuning.pid.kf = 1.0 # !!! ONLY for sigmoid feedforward !!!
       
 
       # Only tuned to reduce oscillations. TODO.
@@ -295,12 +316,11 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.24
 
       if (Params().get_bool("EnableTorqueControl")):
-        max_lateral_accel = 3.0
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 2.0 / max_lateral_accel
-        ret.lateralTuning.torque.ki = 0.6 / max_lateral_accel
-        ret.lateralTuning.torque.kd = 5.0 / max_lateral_accel
+        ret.lateralTuning.torque.kp = 0.66
+        ret.lateralTuning.torque.ki = 0.15
+        ret.lateralTuning.torque.kd = 2.0
         ret.lateralTuning.torque.kf = 1. # custom ff
         ret.lateralTuning.torque.friction = 0.01
       else:
@@ -310,12 +330,35 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kiV = [0.01, 0.016]
         ret.lateralTuning.pid.kdBP = [0.]
         ret.lateralTuning.pid.kdV = [0.7]
-        ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
+        ret.lateralTuning.pid.kf = 1.0 # get_steer_feedforward_acadia()
 
       ret.longitudinalTuning.kdBP = [5., 25.]
       ret.longitudinalTuning.kdV = [0.8, 0.4]
       ret.longitudinalTuning.kiBP = [5., 35.]
       ret.longitudinalTuning.kiV = [0.31, 0.34]
+      
+    elif candidate == CAR.BUICK_LACROSSE:
+      ret.mass = 1741. + STD_CARGO_KG
+      ret.wheelbase = 2.90
+      ret.steerRatio = 15.8
+      ret.centerToFront = ret.wheelbase * 0.4  # wild guess
+      ret.steerActuatorDelay = 0.22
+      if (Params().get_bool("EnableTorqueControl")):
+        ret.lateralTuning.init('torque')
+        ret.lateralTuning.torque.useSteeringAngle = True
+        ret.lateralTuning.torque.kp = 0.48
+        ret.lateralTuning.torque.ki = 0.13
+        ret.lateralTuning.torque.kd = 2.0
+        ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
+        ret.lateralTuning.torque.friction = 0.14
+      else:
+        ret.lateralTuning.pid.kpBP = [0., 40.]
+        ret.lateralTuning.pid.kpV = [0.05, 0.2]
+        ret.lateralTuning.pid.kiBP = [0., 40.]
+        ret.lateralTuning.pid.kiV = [0.01, 0.005]
+        ret.lateralTuning.pid.kdBP = [0.]
+        ret.lateralTuning.pid.kdV = [0.6]
+        ret.lateralTuning.pid.kf = 1.0 # !!! ONLY for sigmoid feedforward !!!
 
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
