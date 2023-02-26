@@ -241,6 +241,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "[Requires extended radar toggle] Draw paths to indicate whether adjacent lanes contain oncoming (red) or ongoing (green) traffic.",
                                   "../assets/offroad/icon_road.png",
                                   this));
+  toggles.append(new ParamControl("PrintCurrentSpeed",
+                                  "Print current speed",
+                                  "Print current vehicle speed on Comma device screen",
+                                  "../assets/offroad/icon_metric.png",
+                                  this));
   toggles.append(new ParamControl("PrintLeadInfo",
                                   "Print lead car info",
                                   "Prints lead car time and length distance, and absolute and relative velocity next to lead indicator",

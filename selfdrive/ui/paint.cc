@@ -3341,12 +3341,14 @@ static void ui_draw_vision_turnspeed(UIState *s) {
 }
 
 static void ui_draw_vision_speed(UIState *s) {
-  const int speed = s->scene.car_state.getClusterSpeed();
-  const std::string speed_str = std::to_string(speed);
-  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s, s->fb_w / 2, 210, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
-  ui_draw_text(s, s->fb_w / 2, 290, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
-  s->scene.speed_rect = {s->fb_w / 2 - 50, 150, 150, 300};
+  if (s->scene.show_cur_speed){
+    const int speed = s->scene.car_state.getClusterSpeed();
+    const std::string speed_str = std::to_string(speed);
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+    ui_draw_text(s, s->fb_w / 2, 210, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
+    ui_draw_text(s, s->fb_w / 2, 290, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
+    s->scene.speed_rect = {s->fb_w / 2 - 50, 150, 150, 300};
+  }
 }
 
 static void ui_draw_vision_event(UIState *s) {

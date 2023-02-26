@@ -314,6 +314,7 @@ static void update_state(UIState *s) {
   
   if (t - scene.paramsCheckLast > scene.paramsCheckFreq){
     scene.paramsCheckLast = t;
+    scene.show_cur_speed = Params().getBool("PrintCurrentSpeed");
     scene.disableDisengageOnGasEnabled = Params().getBool("DisableDisengageOnGas");
     scene.speed_limit_control_enabled = Params().getBool("SpeedLimitControl");
     scene.screen_dim_mode = std::stoi(Params().get("ScreenDimMode"));
@@ -971,6 +972,7 @@ static void update_status(UIState *s) {
         s->scene.screen_dim_mode_cur -= 1;
         Params().put("ScreenDimMode", std::to_string(s->scene.screen_dim_mode_cur).c_str(), 1);
       }
+      s->scene.show_cur_speed = Params().getBool("PrintCurrentSpeed");
       s->scene.power_meter_mode = std::stoi(Params().get("PowerMeterMode"));
       s->scene.power_meter_metric = Params().getBool("PowerMeterMetric");
       s->scene.end_to_end = Params().getBool("EndToEndToggle");

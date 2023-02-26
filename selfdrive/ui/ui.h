@@ -340,6 +340,8 @@ typedef struct UIScene {
   // Debug UI
   bool show_debug_ui;
 
+  bool show_cur_speed;
+
   bool map_open;
 
   float mass = 2000.0;

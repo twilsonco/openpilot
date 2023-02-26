@@ -260,6 +260,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"WeatherDisplayMode", PERSISTENT},
     {"WeatherDisplayEnabled", PERSISTENT},
     {"RegenBraking", PERSISTENT},
+    {"PrintCurrentSpeed", PERSISTENT},
     {"MADSOnePedalMode", PERSISTENT},
     {"MADSLeadBraking", PERSISTENT},
     {"MADSPauseBlinkerSteering", PERSISTENT},
