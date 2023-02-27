@@ -235,7 +235,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelayUpperBound = 0.42
 
     # Default lateral controller params.
-    ret.minSteerSpeed = 10.1 * CV.KPH_TO_MS
+    ret.minSteerSpeed = 6.7 * CV.MPH_TO_MS
     ret.lateralTuning.pid.kpBP = [0.]
     ret.lateralTuning.pid.kpV = [0.2]
     ret.lateralTuning.pid.kiBP = [0.]
@@ -327,7 +327,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kpBP = [i * CV.MPH_TO_MS for i in [0., 80.]]
         ret.lateralTuning.pid.kpV = [0., 0.16]
         ret.lateralTuning.pid.kiBP = [0., 35.]
-        ret.lateralTuning.pid.kiV = [0.01, 0.016]
+        ret.lateralTuning.pid.kiV = [0.005, 0.01]
         ret.lateralTuning.pid.kdBP = [0.]
         ret.lateralTuning.pid.kdV = [0.7]
         ret.lateralTuning.pid.kf = 1.0 # get_steer_feedforward_acadia()

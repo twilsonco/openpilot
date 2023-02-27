@@ -223,8 +223,13 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   this));
   toggles.append(new ParamControl("WeatherSafetyEnabled",
                                   "Weather safety",
-                                  "OpenPilot will automatically use softer acceleration, softer curve braking, follow traffic farther, or lower the speed limit offset in use. If you want, enter your own OpenWeatherMap.org api key into /data/OpenWeatherMap_apiKey.txt",
+                                  "OpenPilot will automatically use softer acceleration, softer curve braking, follow traffic farther, or lower the speed limit offset in use. If you want, enter your own OpenWeatherMap.org api key using opparams (connect over ssh and run `./opparams`)",
                                   "../assets/weather/10n.png",
+                                  this));
+  toggles.append(new ParamControl("AutoBrightness",
+                                  "Auto brightness",
+                                  "Set brightness automatically. High during the day and medium at night, after sunset. You can override this until the next car start by manually changing brightness by tapping the face icon at bottom-left.",
+                                  "../assets/offroad/icon_metric.png",
                                   this));
   toggles.append(new ParamControl("ColorPath",
                                   "Colored path",

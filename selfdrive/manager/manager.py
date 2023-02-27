@@ -41,6 +41,7 @@ def manager_init():
     ("ShowDebugUI", "0"),
     ("PrintCurrentSpeed", "1"),
     ("WeatherAlternateFrequency", "4"),
+    ("AutoBrightness", "1"),
     ("OPParamsRebootInNSeconds", "-1"),
     ("OPParamsLiveTuneEnabled", "0"),
     ("OPParamsLateralOverride", "0"),

@@ -31,7 +31,7 @@ class LatControlTorque(LatControl):
     self.pid = PIDController(CP.lateralTuning.torque.kp, CP.lateralTuning.torque.ki,
                             k_d=CP.lateralTuning.torque.kd, derivative_period=0.1,
                             k_11 = 0.5, k_12 = 0.5, k_13 = 0.5, k_period=0.1,
-                            k_f=CP.lateralTuning.torque.kf, integral_period=5.0,
+                            k_f=CP.lateralTuning.torque.kf, integral_period=1.5,
                             pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
     self._friction = CP.lateralTuning.torque.friction

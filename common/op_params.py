@@ -331,13 +331,13 @@ class opParams:
       
       'MISC_open_weather_map_api_key': Param(None, [str, None], 'You can provide your own api key for fetching weather information after signing up at https://home.openweathermap.org/users/sign_up. This is optional.\n', static=True),
       
-      'MISC_cluster_speed_smoothing_factor': Param(0.6, float, 'Adjust the smoothing used to determine the "current speed" shown on the Comma device\n', min_val=0.0, max_val=100.0),
+      'MISC_cluster_speed_smoothing_factor': Param(0.4, float, 'Adjust the smoothing used to determine the "current speed" shown on the Comma device\n', min_val=0.0, max_val=100.0),
       
-      'MISC_cluster_speed_deadzone': Param(0.02, float, 'Adjust the deadzone used to prevent the current speed from quickly alternating back and forth. Higher value means a more delayed response with less alternating. Units of this parameter depend on whether you have "metric" units enabled in OpenPilot.\n', min_val=0.0, max_val=0.45, unit='mph or km/h'),
+      'MISC_cluster_speed_deadzone': Param(0.01, float, 'Adjust the deadzone used to prevent the current speed from quickly alternating back and forth. Higher value means a more delayed response with less alternating. Units of this parameter depend on whether you have "metric" units enabled in OpenPilot.\n', min_val=0.0, max_val=0.45, unit='mph or km/h'),
       
       'MISC_speed_limit_offset': Param([0.2, 0.12], [list, float], '"Low" and "high" speed speed limit offsets over the current speed limit if seed limit offset is enabled in OpenPilot settings. The speed limit offset changes from low-speed amount (eg. 0.2 = 20% over) at 20mph to the high_speed offset amount by 80mph\n', live=True, min_val=0.0, max_val=0.5),
       
-      'MISC_parked_timer_min_time_s': Param(120, int, 'Controls how long you have to be sitting in park before the parked timer will begin to show. Set to a very high value to basically disable the timer.\n', min_val=0, unit='seconds'),
+      'MISC_parked_timer_min_time_s': Param(80, int, 'Controls how long you have to be sitting in park before the parked timer will begin to show. Set to a very high value to basically disable the timer.\n', min_val=0, unit='seconds'),
       
       #####
       
@@ -357,13 +357,13 @@ class opParams:
       
       'AP_positive_accel_post_resume_smoothing_time_s': Param(3.0, float, 'How long should positive acceleration smoothing be applied after resuming following a resume event?\n', live=True, min_val=0.0, max_val=20.0, unit='seconds'),
       
-      'AP_positive_accel_post_resume_smoothing_max_speed_mph': Param(45.0, float, 'Post-resume smoothing will only be used at or below this speed.\n', live=True, min_val=0.0, max_val=90.0, unit="mph"),
+      'AP_positive_accel_post_resume_smoothing_max_speed_mph': Param(30.0, float, 'Post-resume smoothing will only be used at or below this speed.\n', live=True, min_val=0.0, max_val=90.0, unit="mph"),
       
-      'AP_positive_accel_post_lead_smoothing_factor': Param(3.0, float, 'Adjust the smoothing applied to positive acceleration immediately after a lead "disappears", say, after they slow for a hard right turn, so that OpenPilot doesn\'t abruptly let off the brakes and accelerate uncomfortably. Higher value is more smoothing.\n', live=True, min_val=0.0, max_val=20.0),
+      'AP_positive_accel_post_lead_smoothing_factor': Param(1.5, float, 'Adjust the smoothing applied to positive acceleration immediately after a lead "disappears", say, after they slow for a hard right turn, so that OpenPilot doesn\'t abruptly let off the brakes and accelerate uncomfortably. Higher value is more smoothing.\n', live=True, min_val=0.0, max_val=20.0),
       
       'AP_positive_accel_post_lead_smoothing_time_s': Param(4.0, float, 'How long should positive acceleration smoothing be applied after a lead having "disappeared"?\n', live=True, min_val=0.0, max_val=20.0, unit='seconds'),
       
-      'AP_positive_accel_smoothing_factor': Param(0.2, float, 'Adjust the smoothing applied to positive acceleration at all other times. Higher value is more smoothing.\n', live=True, min_val=0.0, max_val=20.0),
+      'AP_positive_accel_smoothing_factor': Param(0.0, float, 'Adjust the smoothing applied to positive acceleration at all other times. Higher value is more smoothing.\n', live=True, min_val=0.0, max_val=20.0),
       
       'AP_positive_accel_smoothing_min_speed_mph': Param(2.0, float, 'Below this speed, no smoothing is applied to positive acceleration under any circumstances.\n', live=True, min_val=0.0, max_val=90.0, unit='mph'),
       
@@ -415,7 +415,7 @@ class opParams:
       
       'LC_minimum_speed_mph': Param(20.0, float, 'No OpenPilot assisted lane change below this speed\n', min_val=8.0, max_val=90.0, is_common=True, unit='mph'),
       
-      'LC_nudgeless_minimum_speed_mph': Param(40.0, float, 'No nudgeless lane change below this speed\n', min_val=8.0, max_val=90.0, is_common=True, unit='mph'),
+      'LC_nudgeless_minimum_speed_mph': Param(38.0, float, 'No nudgeless lane change below this speed\n', min_val=8.0, max_val=90.0, is_common=True, unit='mph'),
       
       'LC_nudgeless_delay_s': Param(1.5, float, 'Auto "nudgeless" lane change after this delay\n', min_val=0.0, max_val=10.0, is_common=True, unit='seconds'),
       
@@ -433,9 +433,9 @@ class opParams:
       
       'MADS_OP_rate_ramp_down': Param(0.8, float, 'The rate at which one-pedal brake force decreases (releasing brakes)\n', min_val=0.1, max_val=3.0, unit='m/s³'),
       
-      'MADS_OP_rate_low_speed_factor': Param(0.2, float, 'At low speed, the one-pedal ramp-up rate is scaled by this value. If you want one-pedal to apply the brakes sooner/later after releasing the gas/brakes at low speed, increase/decrease this value.\n', min_val=0.01, max_val=1.0),
+      'MADS_OP_rate_low_speed_factor': Param(0.5, float, 'At low speed, the one-pedal ramp-up rate is scaled by this value. If you want one-pedal to apply the brakes sooner/later after releasing the gas/brakes at low speed, increase/decrease this value.\n', min_val=0.01, max_val=1.0),
       
-      'MADS_OP_rate_low_speed_factor_bp': Param([0.0, 10.0], [list, float], 'Here you determine what constitutes "low" and "high" speed in regards to the MADS_OP_rate_low_speed_factor parameter.\n', min_val=0.0, max_val=100.0, unit="mph"),
+      'MADS_OP_rate_low_speed_factor_bp': Param([2.0, 10.0], [list, float], 'Here you determine what constitutes "low" and "high" speed in regards to the MADS_OP_rate_low_speed_factor parameter.\n', min_val=0.0, max_val=100.0, unit="mph"),
       
       'MADS_OP_rate_high_steer_factor': Param(0.2, float, 'The one-pedal ramp-up rate is scaled down at high steer angles to prevent it from applying brakes too quickly for example when turning sharply in a parking lot. If you want one-pedal to apply the brakes more/less quickly while the steering wheel is at "high" angles, then increase/decrease this value.\n', min_val=0.01, max_val=1.0),
       
@@ -517,37 +517,37 @@ class opParams:
       
       'TUNE_LAT_do_override': Param(False, bool, 'If true, the other params here will override the hardcoded lateral tune settings for any gm car. Changes to this opParam will also apply to the "Custom lateral override" toggle in OpenPilot settings.\n', param_param='OPParamsLateralOverride', fake_live=True, param_param_read_on_startup=True),
       
-      'TUNE_LAT_min_steer_speed_mph': Param(7.0, float, 'Lateral (steering) cannot engage below this speed.\n', min_val=0.0, max_val=60.0, unit='mph', fake_live=True),
+      'TUNE_LAT_min_steer_speed_mph': Param(6.7, float, 'Lateral (steering) cannot engage below this speed.\n', min_val=0.0, max_val=60.0, unit='mph', fake_live=True),
       
       'TUNE_LAT_type': Param('torque', [str, int], 'Type of lateral controller that will be used with the corresponding parameters. The default torque and pid tunes are for Volt, the indi tune is from Hyundai Genesis, and the lqr is from Toyota Rav4. Consult selfdrive/car/gm/interface.py to see the default values for your car for the "pid" (and possibly also the "torque") controllers.  torque: lateral acceleration-based pid controller.  pid: steering angle-based pid controller.  indi: incremental non-linear dynamic inversion controller.  lqr: linear quadratic regulator.  There are also "torque" versions of indi and lqr to experiment with. The torque INDI needs tuning, but the torque LQR needs it more. Let me know if you get those working well! The provided torque and pid tunes for Volt are the same very good tunes as hardcoded in the this fork of OpenPilot\n', live=True, fake_live=True, allowed_vals=['torque','pid','indi','lqr','torqueindi','torquelqr']),
       
-      'TUNE_PID_ki_period_default_s': Param(2.5, float, 'The PID integral term uses an actual integral of the error over the specified period. Given constant error, the longer the period, the greater the resulting error integral (sum). This default period is used to compute a scaling factor for the resulting error integral so that, as you change the PID integral period for one controller or another, you needn\'t change the corresponding ki value because the kf value will be scaled based on the ratio of the specified integral period to this default integral period. Increase this value to effectively lower all kf values used in the PID controller. This only updates live for lat (or long) control if lat (or long) override is enabled. Otherwise, an OpenPilot or vehicle restart is required for changes to take effect.\n', live=True, min_val=0.05, max_val=20.0),
+      'TUNE_PID_ki_period_default_s': Param(3.0, float, 'The PID integral term uses an actual integral of the error over the specified period. Given constant error, the longer the period, the greater the resulting error integral (sum). This default period is used to compute a scaling factor for the resulting error integral so that, as you change the PID integral period for one controller or another, you needn\'t change the corresponding ki value because the kf value will be scaled based on the ratio of the specified integral period to this default integral period. Increase this value to effectively lower all kf values used in the PID controller. This only updates live for lat (or long) control if lat (or long) override is enabled. Otherwise, an OpenPilot or vehicle restart is required for changes to take effect.\n', live=True, min_val=0.05, max_val=20.0),
       
       #####
       
-      'TUNE_LAT_TRX_roll_compensation': Param(0.55, float, 'Scale the amount of roll compensation for the torque controller\n', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_roll_compensation': Param(0.65, float, 'Scale the amount of roll compensation for the torque controller\n', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_use_steering_angle': Param(True, bool, 'The torque controller computes current lateral acceleration using the steering angle and current roll. Set this to false to instead use the internal Comma device sensors to measure lateral acceleration (it\'s terrible)\n', live=True, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_kf': Param(1.0, float, kf_desc, live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_friction_v': Param([0.2, 0.14], [list, float], 'The torque controller has two components to the feedforward, one based solely on desired lateral acceleration and is scaled by kf. The other is based on desired lateral jerk (rate of desired lateral acceleration) and is also called "friction" to depict the idea of overcoming the friction in the steering assembly. The concept it simple: the faster the desired lateral acceleration changes (i.e. high rate of change), the greater the friction response. This provides much smoother steering, especially when the steering angle is decreasing (returning to center).\n', live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_friction_v': Param([0.18, 0.14], [list, float], 'The torque controller has two components to the feedforward, one based solely on desired lateral acceleration and is scaled by kf. The other is based on desired lateral jerk (rate of desired lateral acceleration) and is also called "friction" to depict the idea of overcoming the friction in the steering assembly. The concept it simple: the faster the desired lateral acceleration changes (i.e. high rate of change), the greater the friction response. This provides much smoother steering, especially when the steering angle is decreasing (returning to center).\n', live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_friction_bp_mph': Param([0.0, 90.0], [list, float], 'These speeds corresponds to the low- and high-speed friction values.\n', live=True, min_val=0.0, max_val=100.0, unit="mph", show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_kp': Param(0.48, float, kp_desc, live=True, min_val=0.0001, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kp': Param(0.48, float, kp_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_ki': Param(0.13, float, ki_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_ki_period_s': Param(5.0, float, 'The amount of time over which steering error accumulates."\n', min_val=0.1, max_val=60.0, unit='seconds', show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_ki_period_s': Param(1.5, float, 'The amount of time over which steering error accumulates."\n', min_val=0.1, max_val=60.0, unit='seconds', show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_kd': Param(2.0, float, kd_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kd': Param(1.0, float, kd_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_kp_e': Param(0.5, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kp is able to change. ", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kp_e': Param(2.0, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kp is able to change. ", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_ki_e': Param(0.5, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much ki is able to change.", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_ki_e': Param(4.0, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much ki is able to change.", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_kd_e': Param(0.5, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kd is able to change.", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kd_e': Param(6.0, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kd is able to change.", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_low_speed_factor_v': Param([225.0, 50.0], [list, float], 'The torque controller corrects based on desired vs. actual lateral acceleration (curvature ⨉ speed²), so at low speeds both become very small, making for insufficient error correction. The "low speed factor" increases the perceived error in proportion to the curvature of the current curve. It should be higher at "low" speeds and then get lower at "high" speeds where lateral acceleration is sufficient. This parameter sets the "low" and "high" scaling factors. If OP fails to achieve low-speed curves, increase the value. If too high a value is used, OP will have a jerky, overshoot+correct response when turning at low speeds.\n', live=True, min_val=0.0, max_val=1000., show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
@@ -561,11 +561,11 @@ class opParams:
       
       'TUNE_LAT_PID_kf': Param(1.0, float, kf_desc, live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
-      'TUNE_LAT_PID_kp': Param([0.0, 0.16], [list, float], kp_desc + 'This scales the low-speed response.\n', live=True, min_val=0.0001, max_val=10.0, linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_kp': Param([0.0, 0.16], [list, float], kp_desc + 'This scales the low-speed response.\n', live=True, min_val=0.0, max_val=10.0, linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
       'TUNE_LAT_PID_ki': Param([0.015, 0.02], [list, float], ki_desc + 'This scales the low-speed response.\n', live=True, min_val=0.0, max_val=10.0,  linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
-      'TUNE_LAT_PID_ki_period_s': Param(5.0, float, 'The amount of time over which steering error accumulates."\n', min_val=0.1, max_val=60.0, unit='seconds', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_ki_period_s': Param(1.5, float, 'The amount of time over which steering error accumulates."\n', min_val=0.1, max_val=60.0, unit='seconds', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
       'TUNE_LAT_PID_kd': Param([0.6, 0.6], [list, float], kd_desc + 'This scales the low-speed response.\n', live=True, min_val=0.0, max_val=10.0, linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
@@ -667,7 +667,7 @@ class opParams:
       
       'TUNE_LONG_speed_mph': Param([12.0, 35.0, 80.0], [list, float], 'Lookup speeds used for corresponding values of kp, ki, and kd, such that the first value of kp,ki,kd is used when driving at the first speed here.\n', live=True, min_val=0.0, max_val=100.0, unit="mph"),
       
-      'TUNE_LONG_kp': Param([0.8, .9, 0.8], [list, float], 'Values of kp used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.\n', live=True, min_val=0.01, max_val=5.0),
+      'TUNE_LONG_kp': Param([0.8, .9, 0.8], [list, float], 'Values of kp used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.\n', live=True, min_val=0.0, max_val=5.0),
       
       'TUNE_LONG_ki': Param([0.08, 0.13, 0.13], [list, float], 'Values of ki used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.\n', live=True, min_val=0.0, max_val=5.0),
       
@@ -701,7 +701,7 @@ class opParams:
       
       'MET_reset_trip_metrics': Param(False, bool, 'Set this to true in order to, the next time you start your car, reset trip and EV "total" efficiency metrics. This sets the UI metric reset toggle in OpenPilot settings, so you can reset on-device or here using opparams.\n', param_param='MetricResetSwitch', param_param_read_on_startup=True, is_common=True, fake_live=True),
       
-      'MET_power_meter_smoothing_factor': Param(10.0, float, 'Use this to control the amount of smoothing applied to the wattage reading in order to smooth the power meter. On Volt, the power meter for power output is determined using the high-voltage battery wattage. Only total battery wattage is available to OpenPilot, so the power use is not exclusively that of the powertrain, and things like the AC/heater frequently cycle on/off, causing rapid spikes in the wattage.\n', min_val=0.0, max_val=1000.0),
+      'MET_power_meter_smoothing_factor': Param(25.0, float, 'Use this to control the amount of smoothing applied to the wattage reading in order to smooth the power meter. On Volt, the power meter for power output is determined using the high-voltage battery wattage. Only total battery wattage is available to OpenPilot, so the power use is not exclusively that of the powertrain, and things like the AC/heater frequently cycle on/off, causing rapid spikes in the wattage.\n', min_val=0.0, max_val=1000.0),
     }
     
     # params in a group must start with the group's short name

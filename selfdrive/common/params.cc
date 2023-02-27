@@ -261,6 +261,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"WeatherDisplayEnabled", PERSISTENT},
     {"RegenBraking", PERSISTENT},
     {"PrintCurrentSpeed", PERSISTENT},
+    {"AutoBrightness", PERSISTENT},
     {"MADSOnePedalMode", PERSISTENT},
     {"MADSLeadBraking", PERSISTENT},
     {"MADSPauseBlinkerSteering", PERSISTENT},

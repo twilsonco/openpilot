@@ -314,6 +314,7 @@ static void update_state(UIState *s) {
   
   if (t - scene.paramsCheckLast > scene.paramsCheckFreq){
     scene.paramsCheckLast = t;
+    scene.auto_brightness_enabled = Params().getBool("AutoBrightness");
     scene.show_cur_speed = Params().getBool("PrintCurrentSpeed");
     scene.disableDisengageOnGasEnabled = Params().getBool("DisableDisengageOnGas");
     scene.speed_limit_control_enabled = Params().getBool("SpeedLimitControl");
@@ -533,29 +534,31 @@ static void update_state(UIState *s) {
     auto data = sm["liveWeatherData"].getLiveWeatherData();
     auto time = data.getTimeCurrent();
     bool valid = data.getValid() && time > 0 && time - scene.weather_info.time < 1200; // only use weather data < 20 minutes old
-    if (valid && !scene.weather_info.valid){
-      if (time < data.getTimeSunrise() || time > data.getTimeSunset()){
+    if (scene.auto_brightness_enabled){
+      if (valid && !scene.weather_info.valid){
+        if (time < data.getTimeSunrise() || time > data.getTimeSunset()){
+          scene.screen_dim_mode = MIN(1, scene.screen_dim_mode);
+          Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
+        }
+        else if (scene.screen_dim_mode != 2){
+          scene.screen_dim_mode = 2;
+          Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
+        }
+      }
+      else if (valid && scene.weather_info.valid 
+              && time > data.getTimeSunset() 
+              && scene.weather_info.time <= data.getTimeSunset())
+      {
         scene.screen_dim_mode = MIN(1, scene.screen_dim_mode);
         Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
       }
-      else if (scene.screen_dim_mode != 2){
+      else if (valid && scene.weather_info.valid 
+              && time > data.getTimeSunrise() 
+              && scene.weather_info.time <= data.getTimeSunrise())
+      {
         scene.screen_dim_mode = 2;
         Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
       }
-    }
-    else if (valid && scene.weather_info.valid 
-            && time > data.getTimeSunset() 
-            && scene.weather_info.time <= data.getTimeSunset())
-    {
-      scene.screen_dim_mode = MIN(1, scene.screen_dim_mode);
-      Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
-    }
-    else if (valid && scene.weather_info.valid 
-            && time > data.getTimeSunrise() 
-            && scene.weather_info.time <= data.getTimeSunrise())
-    {
-      scene.screen_dim_mode = 2;
-      Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
     }
     scene.weather_info.valid = valid;
     scene.weather_info.time = time;
