@@ -1921,8 +1921,14 @@ static void ui_draw_measures(UIState *s){
             {
             snprintf(name, sizeof(name), "LN OFFSET");
             auto dat = scene.lateral_plan.getLaneOffset();
-            snprintf(val, sizeof(val), "%.1f", dat);
-            snprintf(unit, sizeof(unit), "m");
+            if (s->is_metric) {
+              snprintf(unit, sizeof(unit), "m");
+              snprintf(val, sizeof(val), "%.1f", dat);
+            }
+            else{
+              snprintf(unit, sizeof(unit), "ft");
+              snprintf(val, sizeof(val), "%.1f", dat * 3.28084);
+            }
             break;}
           
           case UIMeasure::TRAFFIC_COUNT_TOTAL:
