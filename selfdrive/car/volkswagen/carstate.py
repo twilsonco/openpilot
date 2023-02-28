@@ -342,14 +342,6 @@ class CarState(CarStateBase):
     ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"])
     ret.cruiseState.enabled = self.cruiseState_enabled = pt_cp.vl["Motor_2"]["GRA_Status"] in (1, 2)
 
-    if self.madsEnabled:
-      if (not self.belowLaneChangeSpeed and (self.leftBlinkerOn or self.rightBlinkerOn)) or\
-        not (self.leftBlinkerOn or self.rightBlinkerOn):
-        ret.steerFaultPermanent = hca_status in ("DISABLED", "FAULT")
-        ret.steerFaultTemporary = hca_status in ("INITIALIZING", "REJECTED")
-
-    self.mads_enabled = ret.cruiseState.available
-
     # Update control button states for turn signals and ACC controls.
     self.buttonStates["accelCruise"] = bool(pt_cp.vl["GRA_Neu"]["GRA_Up_kurz"])
     self.buttonStates["decelCruise"] = bool(pt_cp.vl["GRA_Neu"]["GRA_Down_kurz"])
@@ -423,6 +415,13 @@ class CarState(CarStateBase):
     ret.steerFaultPermanent = False
     ret.steerFaultTemporary = False
 
+    if self.madsEnabled:
+      if (not self.belowLaneChangeSpeed and (self.leftBlinkerOn or self.rightBlinkerOn)) or\
+        not (self.leftBlinkerOn or self.rightBlinkerOn):
+        ret.steerFaultPermanent = hca_status in ("DISABLED", "FAULT")
+        ret.steerFaultTemporary = hca_status in ("INITIALIZING", "REJECTED")
+
+    self.mads_enabled = ret.cruiseState.available
 
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = bool(pt_cp.vl["Bremse_1"]["ESP_Passiv_getastet"])
