@@ -334,10 +334,6 @@ class CarState(CarStateBase):
     self.acc_type = 0
     ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"])
     ret.cruiseState.enabled = self.cruiseState_enabled = pt_cp.vl["Motor_2"]["GRA_Status"] in (1, 2)
-    if self.CP.pcmCruise:
-      ret.accFaulted = pt_cp.vl["ACC_GRA_Anziege"]["ACA_StaGRA"] == 7
-    else:
-      ret.accFaulted = pt_cp.vl["Motor_2"]["GRA_Status"] == 3
 
     self.mads_enabled = ret.cruiseState.available
 
