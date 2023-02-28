@@ -416,7 +416,7 @@ class CarState(CarStateBase):
     ret.steerFaultPermanent = False
     ret.steerFaultTemporary = False
 
-    if self.madsEnabled:
+    if self.madsEnabled and ret.cruiseState.speed != 0:
       if (not self.belowLaneChangeSpeed and (self.leftBlinkerOn or self.rightBlinkerOn)) or\
         not (self.leftBlinkerOn or self.rightBlinkerOn):
         ret.steerFaultPermanent = hca_status in ("DISABLED", "FAULT")
