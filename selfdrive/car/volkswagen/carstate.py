@@ -345,9 +345,9 @@ class CarState(CarStateBase):
         if self.engagementCounter >= 50:
           self.engagementCounter = 25
         ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"])
+        ret.cruiseState.enabled = self.cruiseState_enabled = pt_cp.vl["Motor_2"]["GRA_Status"] in (1, 2)
     else:
       self.engagementCounter = 0
-    ret.cruiseState.enabled = self.cruiseState_enabled = pt_cp.vl["Motor_2"]["GRA_Status"] in (1, 2)
 
     self.mads_enabled = ret.cruiseState.available
 
