@@ -1,15 +1,19 @@
 from cereal import car
+from math import erf
 from panda import Panda
 from common.conversions import Conversions as CV
+from common.numpy_fast import interp
 from common.params import Params
 from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter, CarControllerParams, \
                                             BUTTON_STATES
+from selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
+FRICTION_THRESHOLD_LAT_JERK = 2.0
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
@@ -23,6 +27,30 @@ class CarInterface(CarInterfaceBase):
       self.cp_ext = self.cp_cam
 
     self.buttonStatesPrev = BUTTON_STATES.copy()
+  
+  @staticmethod
+  def torque_from_lateral_accel_passat_nms(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, friction_compensation, v_ego, g_lat_accel, lateral_jerk_desired):
+    ANGLE_COEF = 4.99998800
+    ANGLE_COEF2 = 0.19246255
+    SPEED_OFFSET = 9.38190347
+    SIGMOID_COEF_RIGHT = 0.20312216
+    SIGMOID_COEF_LEFT = 0.20310046
+    SPEED_COEF = 1.49621668
+    x = ANGLE_COEF * (lateral_accel_value) * (40.23 / (max(0.2,v_ego + SPEED_OFFSET))**SPEED_COEF)
+    sigmoid = erf(x)
+    out = ((SIGMOID_COEF_RIGHT if lateral_accel_value < 0. else SIGMOID_COEF_LEFT) * sigmoid) + ANGLE_COEF2 * lateral_accel_value
+    friction = interp(
+      lateral_jerk_desired,
+      [-FRICTION_THRESHOLD_LAT_JERK, FRICTION_THRESHOLD_LAT_JERK],
+      [-torque_params.friction, torque_params.friction]
+    )
+    return out + friction + g_lat_accel * 0.7
+  
+  def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
+    if self.CP.carFingerprint == CAR.PASSAT_NMS:
+      return self.torque_from_lateral_accel_passat_nms
+    else:
+      return CarInterfaceBase.torque_from_lateral_accel_linear
 
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
