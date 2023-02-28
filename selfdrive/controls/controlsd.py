@@ -614,7 +614,6 @@ class Controls:
         self.k_mean.x = k_mean
       else:
         self.k_mean.update(k_mean)
-      self.CI.CC.params.future_curvature = self.k_mean.x
 
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
