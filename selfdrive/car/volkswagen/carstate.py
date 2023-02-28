@@ -338,7 +338,15 @@ class CarState(CarStateBase):
 
     # Update ACC radar status.
     self.acc_type = 0
-    ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"]) and ret.cruiseState.speed != 0
+    self.engagementCounter = 0
+    if ret.cruiseState.speed != 0:
+      self.engagementCounter = self.engagementCounter + 1
+      if self.engagementCounter >= 25:
+        if self.engagementCounter >= 50:
+          self.engagementCounter = 25
+        ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"])
+    else:
+      self.engagementCounter = 0
     ret.cruiseState.enabled = self.cruiseState_enabled = pt_cp.vl["Motor_2"]["GRA_Status"] in (1, 2)
 
     self.mads_enabled = ret.cruiseState.available
