@@ -339,10 +339,11 @@ class CarState(CarStateBase):
     # Update ACC radar status.
     self.acc_type = 0
 
+    self.mads_enabled = ret.cruiseState.available
+
     ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"])
     ret.cruiseState.enabled = self.cruiseState_enabled = pt_cp.vl["Motor_2"]["GRA_Status"] in (1, 2)
 
-    self.mads_enabled = ret.cruiseState.available
 
     # Update control button states for turn signals and ACC controls.
     self.buttonStates["accelCruise"] = bool(pt_cp.vl["GRA_Neu"]["GRA_Up_kurz"])
