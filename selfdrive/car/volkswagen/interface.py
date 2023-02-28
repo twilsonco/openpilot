@@ -30,12 +30,12 @@ class CarInterface(CarInterfaceBase):
   
   @staticmethod
   def torque_from_lateral_accel_passat_nms(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, friction_compensation, v_ego, g_lat_accel, lateral_jerk_desired):
-    ANGLE_COEF = 4.99998726
-    ANGLE_COEF2 = 0.19249525
-    SPEED_OFFSET = 9.35958809
-    SIGMOID_COEF_RIGHT = 0.20307778
-    SIGMOID_COEF_LEFT = 0.20300700
-    SPEED_COEF = 1.49641419
+    ANGLE_COEF = 0.02874076
+    ANGLE_COEF2 = 0.13532990
+    SPEED_OFFSET = 39.99999842
+    SIGMOID_COEF_RIGHT = 0.496
+    SIGMOID_COEF_LEFT = 0.496
+    SPEED_COEF = 0.01000000
     x = ANGLE_COEF * (lateral_accel_value) * (40.23 / (max(0.2,v_ego + SPEED_OFFSET))**SPEED_COEF)
     sigmoid = erf(x)
     out = ((SIGMOID_COEF_RIGHT if lateral_accel_value < 0. else SIGMOID_COEF_LEFT) * sigmoid) + ANGLE_COEF2 * lateral_accel_value
