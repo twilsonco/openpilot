@@ -157,7 +157,12 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.62
       ret.minEnableSpeed = 20 * CV.KPH_TO_MS  # ACC "basic", no FtS
       ret.steerActuatorDelay = 0.2
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      # PQ lateral tuning HCA_Status 7
+      ret.lateralTuning.pid.kpBP = [0., 14., 20.]
+      ret.lateralTuning.pid.kiBP = [0., 14., 20.]
+      ret.lateralTuning.pid.kpV = [0.116, 0.13, 0.14]
+      ret.lateralTuning.pid.kiV = [0.09, 0.10, 0.11]
+      #CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.POLO_MK6:
       ret.mass = 1230 + STD_CARGO_KG
