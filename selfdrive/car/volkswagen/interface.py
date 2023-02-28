@@ -46,11 +46,11 @@ class CarInterface(CarInterfaceBase):
     )
     return out + friction + g_lat_accel * 0.7
   
-  def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
-    if self.CP.carFingerprint == CAR.PASSAT_NMS:
-      return self.torque_from_lateral_accel_passat_nms
-    else:
-      return CarInterfaceBase.torque_from_lateral_accel_linear
+  #def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
+  #  if self.CP.carFingerprint == CAR.PASSAT_NMS:
+  #    return self.torque_from_lateral_accel_passat_nms
+  #  else:
+  #    return CarInterfaceBase.torque_from_lateral_accel_linear
 
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
@@ -158,6 +158,8 @@ class CarInterface(CarInterfaceBase):
       ret.minEnableSpeed = 20 * CV.KPH_TO_MS  # ACC "basic", no FtS
       ret.steerActuatorDelay = 0.2
       # PQ lateral tuning HCA_Status 7
+      ret.lateralTuning.pid.kdBP = [0., 20.]
+      ret.lateralTuning.pid.kdV = [0.0, 0.0]
       ret.lateralTuning.pid.kpBP = [0., 14., 20.]
       ret.lateralTuning.pid.kiBP = [0., 14., 20.]
       ret.lateralTuning.pid.kpV = [0.116, 0.13, 0.14]
