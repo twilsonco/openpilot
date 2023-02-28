@@ -698,7 +698,7 @@ class PqExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers
   fwd_radar_signals = [
     ("ACS_Typ_ACC", "ACC_System"),               # Basic vs FtS (no SnG support on PQ)
-    ("ACA_StaACC", "ACC_GRA_Anziege"),           # ACC drivetrain coordinator status
+    ("ACA_StaGRA", "ACC_GRA_Anziege"),           # ACC drivetrain coordinator status
     ("ACA_V_Wunsch", "ACC_GRA_Anziege"),         # ACC set speed
   ]
   fwd_radar_checks = [
