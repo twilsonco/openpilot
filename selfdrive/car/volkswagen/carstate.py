@@ -420,7 +420,7 @@ class CarState(CarStateBase):
       if (not self.belowLaneChangeSpeed and (self.leftBlinkerOn or self.rightBlinkerOn)) or\
         not (self.leftBlinkerOn or self.rightBlinkerOn):
         ret.steerFaultPermanent = hca_status in ("DISABLED", "FAULT")
-        ret.steerFaultTemporary = hca_status in ("INITIALIZING", "REJECTED")
+        #ret.steerFaultTemporary = hca_status in ("INITIALIZING", "REJECTED")
 
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = bool(pt_cp.vl["Bremse_1"]["ESP_Passiv_getastet"])
