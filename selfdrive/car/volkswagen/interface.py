@@ -159,6 +159,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
       # PQ lateral tuning HCA_Status 7
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      ret.laterTuning.torque.kf = 1.10
 
     elif candidate == CAR.POLO_MK6:
       ret.mass = 1230 + STD_CARGO_KG
