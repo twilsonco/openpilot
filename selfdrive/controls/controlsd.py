@@ -635,10 +635,7 @@ class Controls:
         self.CI.CS.altitude = self.sm['gpsLocationExternal'].altitude
       if self.sm.updated['lateralPlan'] and len(self.sm['lateralPlan'].curvatures) > 0:
         k_mean = mean(self.sm['lateralPlan'].curvatures)
-        if abs(k_mean) > abs(self.k_mean.x):
-          self.k_mean.x = k_mean
-        else:
-          self.k_mean.update(k_mean)
+        self.k_mean.update(k_mean)
         self.CI.CC.params.future_curvature = self.k_mean.x
       
       self.CI.CS.speed_limit_active = (self.sm['longitudinalPlan'].speedLimitControlState == log.LongitudinalPlan.SpeedLimitControlState.active)
