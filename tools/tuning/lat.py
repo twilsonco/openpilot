@@ -48,11 +48,18 @@ from selfdrive.config import Conversions as CV
 from tools.lib.logreader import MultiLogIterator
 from tools.lib.route import Route
 
-MULTI_FILE = False
+MULTI_FILE = True
 
+MAX_DRIVER_TORQUE = 0.0
+MAX_EPS_TORQUE = 0.0
+MAX_SPEED = 0.0
+MIN_CURVATURE_RATE = 0.0
+MAX_CURVATURE_RATE = 0.0
+MIN_STEER_RATE = 0.0
+MAX_STEER_RATE = 0.0
 
 # Reduce samples using binning and outlier rejection
-def regularize(speed, angle, steer):
+def regularize(speed, angle, steer, sort_var):
   print("Regularizing...")
   # Bin by rounding
   speed_bin = np.around(speed*2)/2
@@ -69,14 +76,22 @@ def regularize(speed, angle, steer):
       sigma = np.std(steer[mask])
       mean = np.mean(steer[mask])
       inliers = mask & (np.fabs(steer - mean) <= BIN_SIGMA * sigma)
-
+      
       c = inliers.sum()
       s = np.std(steer[inliers])
       # Use this bin
       if c > BIN_COUNT and s < BIN_STD:
-        speed[i] = np.mean(speed[inliers])
-        angle[i] = np.mean(angle[inliers])
-        steer[i] = np.mean(steer[inliers])
+        sort_var_tmp = np.abs(sort_var[inliers])
+        sort_ids = np.argsort(sort_var_tmp)
+        
+        npts = max(BIN_COUNT, int(len(inliers) * 0.1))
+        speed_tmp = speed[inliers][sort_ids][:npts]
+        angle_tmp = angle[inliers][sort_ids][:npts]
+        steer_tmp = steer[inliers][sort_ids][:npts]
+        
+        speed[i] = np.mean(speed_tmp)
+        angle[i] = np.mean(angle_tmp)
+        steer[i] = np.mean(steer_tmp)
 
         count.append(c)
         std.append(s)
@@ -87,6 +102,7 @@ def regularize(speed, angle, steer):
       speed = speed[~mask]
       angle = angle[~mask]
       steer = steer[~mask]
+      sort_var = sort_var[~mask]
       speed_bin = speed_bin[~mask]
       angle_bin = angle_bin[~mask]
 
@@ -165,6 +181,7 @@ class CleanSample(NamedTuple):
   angle: float = np.nan
   speed: float = np.nan
   steer: float = np.nan
+  sort_var: float = np.nan
 
 def collect(lr):
   s = Sample()
@@ -188,7 +205,7 @@ def collect(lr):
     except:
       continue
   lr1 = list(lrd.values())
-  if not MULTI_FILE: print(f"{len(lr1)} messages")
+  # if not MULTI_FILE: print(f"{len(lr1)} messages")
   # type_set = set()
   for msg in sorted(lr1, key=lambda msg: msg.logMonoTime) if MULTI_FILE else tqdm(sorted(lr1, key=lambda msg: msg.logMonoTime)):
     # print(f'{msg.which() = }')
@@ -305,69 +322,124 @@ def collect(lr):
   return np.array(samples)
 
 def filter(samples):
+  global MAX_DRIVER_TORQUE, MAX_EPS_TORQUE, MAX_SPEED, MIN_CURVATURE_RATE, MAX_CURVATURE_RATE, MAX_STEER_RATE, MIN_STEER_RATE
   # Order these to remove the most samples first
+  
   
   # Some rlogs use [-300,300] for torque, others [-3,3]
   # Scale both from STEER_MAX to [-1,1]
-  # driver = np.max(np.abs(np.array([s.torque_driver for s in samples])))
-  # eps = np.max(np.abs(np.array([s.torque_eps for s in samples])))
-  # for s in samples:
-  #   if driver > 40 or eps > 40:
-  #     s.torque_driver /= 300
-  #     s.torque_eps /= 300
-  #   else:
-  #     s.torque_driver /= 3
-  #     s.torque_eps /= 3
-  # print(f'max eps torque = {eps:0.4f}')
-  # print(f"max driver torque = {driver:0.4f}")
-  
-  # VW, str cmd units 0.01Nm, 3.0Nm max
+  steer_torque_key = "torque_eps" # gm
+  MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
+  MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
+  MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
+  MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
+  MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
+  MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
   for s in samples:
-    s.torque_driver /= 300
-    s.torque_eps = s.steer_cmd / 300
+    if MAX_DRIVER_TORQUE > 40 or MAX_EPS_TORQUE > 40:
+      s.torque_driver /= 300
+      s.torque_eps /= 300
+    else:
+      s.torque_driver /= 3
+      s.torque_eps /= 3
+      
+  MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
+  
+  # VW MQB cars, str cmd units 0.01Nm, 3.0Nm max
+  # steer_torque_key = "steer_cmd" # vw
+  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
+  # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
+  # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
+  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
+  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
+  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
+  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
+  # for s in samples:
+  #   s.torque_driver /= 300
+    
+  # VW PQ cars {CAR.PASSAT_NMS, CAR.SHARAN_MK2}, str cmd units 0.01Nm, 3.0Nm max
+  # steer_torque_key = "steer_cmd" # vw
+  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
+  # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
+  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
+  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
+  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
+  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
+  # for s in samples:
+  #   s.torque_driver /= 300
+  #   setattr(s, steer_torque_key, getattr(s,steer_torque_key) * 3)
+  #   if s.v_ego > 89.4:
+  #     s.v_ego = 0.0
+      
+  # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
   
   #hyundai
   # driver torque units 0.01Nm
   # eps torque units 0.2Nm
   # max torque 4.0Nm
+  # steer_torque_key = "torque_eps" # vw
+  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
+  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
+  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
+  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
   # for s in samples:
   #   s.torque_driver /= 100 * 4
   #   s.torque_eps /= 5 * 4
   
-  # No steer pressed
+  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
+  # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
+  # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
+  
+  
+  # print(f'max eps torque = {eps:0.4f}')
+  # print(f"max driver torque = {driver:0.4f}")
+  
+  # Enabled and no steer pressed or not enabled and driver steer under threshold
+  mask = np.array([(s.enabled and s.torque_driver <= STEER_PRESSED_MIN) or (not s.enabled and s.torque_driver <= STEER_PRESSED_MAX) for s in samples])
+  samples = samples[mask]
+  
+  
+  # these next two can be used if only driver torque is available
+  # driver steer under threshold
   # data = np.array([s.torque_driver for s in samples])
-  # mask = np.abs(data) < STEER_PRESSED_MIN
+  # mask = np.abs(data) <= STEER_PRESSED_MAX
+  # samples = samples[mask]
+  
+  # NOT Enabled
+  # mask = np.array([not s.enabled for s in samples])
   # samples = samples[mask]
 
-  # Enabled
-  mask = np.array([s.enabled for s in samples])
-  samples = samples[mask]
-
   # No steer rate: holding steady curve or straight
-  data = np.array([s.desired_curvature_rate for s in samples])
-  mask = np.abs(data) < 0.003 # determined from plotjuggler
-  samples = samples[mask]
-
-  # No steer rate: holding steady curve or straight
-  # data = np.array([s.steer_rate for s in samples])
-  # mask = np.abs(data) < STEER_RATE_MIN
+  # data = np.array([s.desired_curvature_rate for s in samples])
+  # mask = np.abs(data) < 0.003 # determined from plotjuggler
   # samples = samples[mask]
+
+  # No steer rate: holding steady curve or straight
+  data = np.array([s.steer_rate for s in samples])
+  mask = np.abs(data) < STEER_RATE_MIN
+  samples = samples[mask]
 
   # GM no steering below 7 mph
+  # data = np.array([s.v_ego for s in samples])
+  # mask = SPEED_MIN * CV.MPH_TO_MS <= data
+  # mask &= data <= SPEED_MAX * CV.MPH_TO_MS
+  # samples = samples[mask]
+  
   data = np.array([s.v_ego for s in samples])
   mask = SPEED_MIN * CV.MPH_TO_MS <= data
   mask &= data <= SPEED_MAX * CV.MPH_TO_MS
   samples = samples[mask]
 
   # Not saturated
-  data = np.array([s.torque_eps for s in samples])
-  mask = np.abs(data) < 4.0
-  samples = samples[mask]
+  # data = np.array([s.torque_eps for s in samples])
+  # mask = np.abs(data) < 4.0
+  # samples = samples[mask]
 
   return [CleanSample(
     speed = s.v_ego,
     angle = -s.lateral_accel if not IS_ANGLE_PLOT else s.steer_angle - s.steer_offset,
-    steer = (s.torque_driver + s.torque_eps)
+    steer = (s.torque_driver + (getattr(s, steer_torque_key) if not np.isnan(getattr(s, steer_torque_key)) else 0.0)),
+    sort_var = getattr(s, BIN_SORT_VAR)
   ) for s in samples]
 
 def load_cache(path):
@@ -378,7 +450,7 @@ def load_cache(path):
   except Exception as e:
     print(e)
 
-def load(path, route=None, preprocess=False, dongleid=False):
+def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
   global MULTI_FILE
   ext = '.lat'
   latpath = None
@@ -421,26 +493,27 @@ def load(path, route=None, preprocess=False, dongleid=False):
       routes = set()
       latroutes = set()
       steer_offsets = []
-      for filename in tqdm(os.listdir(path)):
-        if filename.endswith(ext):
-          latpath = os.path.join(path, filename)
-          latroutes.add(filename.replace(ext,''))
-          # commented code was used to correct existing .lat files
-          # data1=load_cache(latpath)
-          # for s in data1:
-          #   s.torque_eps *= 3
-          #   s.torque_driver *= 3
-          # with open(latpath, 'wb') as f:
-          #   pickle.dump(data1, f)
-          if not PREPROCESS_ONLY:
-            tmpdata = load_cache(latpath)
-            try:
-              data.extend(filter(tmpdata))
-              old_num_points += len(tmpdata)
-              if not PREPROCESS_ONLY:
-                steer_offsets.extend(s.steer_offset for s in tmpdata)
-            except Exception as e:
-              print(f"failed to load lat file: {latpath}\n{e}")
+      if not preprocess:
+        for filename in tqdm(os.listdir(path)):
+          if filename.endswith(ext):
+            latpath = os.path.join(path, filename)
+            latroutes.add(filename.replace(ext,''))
+            # commented code was used to correct existing .lat files
+            # data1=load_cache(latpath)
+            # for s in data1:
+            #   s.torque_eps *= 3
+            #   s.torque_driver *= 3
+            # with open(latpath, 'wb') as f:
+            #   pickle.dump(data1, f)
+            if not PREPROCESS_ONLY:
+              tmpdata = load_cache(latpath)
+              try:
+                data.extend(filter(tmpdata))
+                old_num_points += len(tmpdata)
+                if not PREPROCESS_ONLY:
+                  steer_offsets.extend(s.steer_offset for s in tmpdata)
+              except Exception as e:
+                print(f"failed to load lat file: {latpath}\n{e}")
       if PREPROCESS_ONLY:
         if "realdata" in path or (preprocess and dongleid):
           MULTI_FILE = True
@@ -494,34 +567,46 @@ def load(path, route=None, preprocess=False, dongleid=False):
         else:
           # first make per-segment .lat files
           # get previously completed segments
+          print("Batch processing rlogs into lat files")
+          if outpath == "": outpath = path
+          print(f"{outpath = }")
           latsegs = set()
-          for filename in os.listdir(path):
-            if len(filename.split('--')) == 3 and filename.endswith('.lat'):
-              latsegs.add(filename.replace('.lat','--rlog.bz2').replace('|','_'))
-          num_files = len([ None for filename in os.listdir(path) if len(filename.split('--')) == 4 and filename.endswith('rlog.bz2') and filename not in latsegs ])
-          fi=0
-          for filename in os.listdir(path):
+          for filename in os.listdir(outpath):
+            if ext in filename.split("/")[-1]:
+              latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2').replace('|','_'))
+              latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2'))
+          filenames = sorted([filename for filename in os.listdir(path) if filename.endswith("rlog.bz2") and filename not in latsegs])
+          for filename in tqdm(filenames, desc="Preparing fit data from rlogs"):
             if len(filename.split('--')) == 4 and filename.endswith('rlog.bz2'):
+              seg_num = filename.split('--')[2]
+              route='--'.join(filename.split('--')[:2]).replace('_','|')
+              latfile = os.path.join(outpath, f"{route}--{seg_num}.lat")
               if filename not in latsegs:
-                fi+=1
-                print(f'loading rlog segment {fi} of {num_files} {filename}')
+                # print(f'loading rlog segment {fi} of {num_files} {filename}')
                 with tempfile.TemporaryDirectory() as d:
                   try:
                     shutil.copy(os.path.join(path,filename),os.path.join(d,filename))
-                    route='--'.join(filename.split('--')[:2]).replace('_','|')
                     r = Route(route, data_dir=d)
                     lr = MultiLogIterator(r.log_paths(), sort_by_time=True)
                     data1 = collect(lr)
                     if len(data1):
-                      seg_num = filename.split('--')[2]
-                      with open(os.path.join(path, f"{route}--{seg_num}.lat"), 'wb') as f:
+                      with open(latfile, 'wb') as f:
                         pickle.dump(data1, f)
-                    os.remove(os.path.join(path,filename))
+                    if outpath == path:
+                      os.remove(os.path.join(path,filename))
                   except Exception as e:
                     print(f"Failed to load segment file {filename}:\n{e}")
               else:
-                os.remove(os.path.join(path,filename))
+                if outpath == path:
+                  os.remove(os.path.join(path,filename))
       else:
+        print(f'max eps torque = {MAX_EPS_TORQUE:0.4f}')
+        print(f"max driver torque = {MAX_DRIVER_TORQUE:0.4f}")
+        print(f"max speed = {MAX_SPEED*2.24:0.4f} mph")
+        print(f"min curvature rate = {MIN_CURVATURE_RATE:0.4f}")
+        print(f"max curvature rate = {MAX_CURVATURE_RATE:0.4f}")
+        print(f"min steer rate = {MIN_STEER_RATE:0.4f}")
+        print(f"max steer rate = {MAX_STEER_RATE:0.4f}")
         print(f"{describe(steer_offsets) = }")
         for filename in os.listdir(path):
           if filename.endswith('rlog.bz2'):
@@ -563,15 +648,17 @@ def load(path, route=None, preprocess=False, dongleid=False):
   speed = np.array([sample.speed for sample in data])
   angle = np.array([sample.angle for sample in data])
   steer = np.array([sample.steer for sample in data])
-  print(f'Samples: {len(speed)}')
-  return speed, angle, steer
+  sort_var = np.array([sample.sort_var for sample in data])
+  print(f'Samples: {len(speed) = }, {len(angle) = }, {len(steer) = }')
+  return speed, angle, steer, sort_var
 
 
 if __name__ == '__main__':
   global IS_ANGLE_PLOT
   parser = argparse.ArgumentParser()
-  parser.add_argument('--path')
-  parser.add_argument('--route')
+  parser.add_argument('--path', type=str)
+  parser.add_argument('--outpath', type=str)
+  parser.add_argument('--route', type=str)
   parser.add_argument('--preprocess', action='store_true')
   parser.add_argument('--dongleid', type=str)
   args = parser.parse_args()
@@ -585,8 +672,8 @@ if __name__ == '__main__':
   #     speed, angle, steer = pickle.load(file)
   # else:
   #   print("Loading new data")
-  #   speed, angle, steer = load(args.path, args.route, args.preprocess, args.dongleid)
-  #   speed, angle, steer = regularize(speed, angle, steer)
+  #   speed, angle, steer, sort_var = load(args.path, args.route, args.preprocess, args.dongleid, args.outpath)
+  #   speed, angle, steer = regularize(speed, angle, steer, sort_var)
   #   with open(regfile, 'wb') as f:
   #     pickle.dump([speed, angle, steer], f)
 
@@ -601,8 +688,8 @@ if __name__ == '__main__':
       speed, angle, steer = pickle.load(file)
   else:
     print("Loading new data")
-    speed, angle, steer = load(args.path, args.route, args.preprocess, args.dongleid)
-    speed, angle, steer = regularize(speed, angle, steer)
+    speed, angle, steer, sort_var = load(args.path, args.route, args.preprocess, args.dongleid, args.outpath)
+    speed, angle, steer = regularize(speed, angle, steer, sort_var)
     with open(regfile, 'wb') as f:
       pickle.dump([speed, angle, steer], f)
 
