@@ -77,7 +77,7 @@ class LatControlTorque(LatControl):
     super().reset()
     self.pid.reset()
 
-  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, mean_curvature=0.0):
+  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, mean_curvature=0.0, use_roll=True):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     self.v_ego = CS.vEgo
 
@@ -87,7 +87,7 @@ class LatControlTorque(LatControl):
       self.pid.reset()
     else:
       if self.use_steering_angle:
-        actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
+        actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll if use_roll else 0.0)
       else:
         actual_curvature = llk.angularVelocityCalibrated.value[2] / CS.vEgo
       desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
@@ -101,7 +101,7 @@ class LatControlTorque(LatControl):
       pid_log.error = error
       
       ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
-      ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * self.roll_k
+      ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * (self.roll_k if use_roll else 0.0)
       frict = self.friction
       friction_compensation = interp(desired_lateral_jerk, 
                                      [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], 

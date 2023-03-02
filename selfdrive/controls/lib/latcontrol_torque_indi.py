@@ -101,10 +101,10 @@ class LatControlTorqueINDI():
 
     return self.sat_count > self.sat_limit
 
-  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, mean_curvature=0.0):
+  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, mean_curvature=0.0, use_roll=True):
     self.speed = CS.vEgo
     
-    actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
+    actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll if use_roll else 0.0)
     actual_curvature_rate = -VM.calc_curvature(math.radians(CS.steeringRateDeg), CS.vEgo, 0)
     
     desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
@@ -162,7 +162,7 @@ class LatControlTorqueINDI():
       else:
         self.output_steer = self.steer_filter.x + delta_u
       
-      ff_roll = -math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY * self.roll_k
+      ff_roll = -math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY * (self.roll_k if use_roll else 0.0)
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo)
       friction_compensation = interp(desired_lateral_jerk, 
                                      [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], 

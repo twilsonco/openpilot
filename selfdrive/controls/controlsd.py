@@ -6,6 +6,7 @@ from numbers import Number
 from cereal import car, log
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp, mean
+from common.op_params import opParams
 from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
 from common.params import Params, put_nonblocking
@@ -75,6 +76,9 @@ class Controls:
     self.oplongcontrol_last = False
     self.network_strength_last = log.DeviceState.NetworkStrength.unknown
     self.network_last_change_t = -60
+    
+    self._op_params = opParams("controlsd")
+    self.use_sensors = False
     
     self.gpsWasOK = False
 
@@ -579,6 +583,8 @@ class Controls:
     self.v_cruise_kph_last = self.v_cruise_kph
     
     cur_time = sec_since_boot()
+    
+    self.use_sensors = cur_time > self._op_params.get("TUNE_sensor_lockout_time_s")
 
     # if stock cruise is completely disabled, then we can use our own set speed logic
     if not self.CP.pcmCruise:
@@ -786,7 +792,7 @@ class Controls:
       # compute pitch-compensated accel
       if self.sm.updated['liveParameters']:
         self.pitch = apply_deadzone(self.sm['liveParameters'].pitchFutureLong, self.pitch_accel_deadzone)
-      actuators.accelPitchCompensated = actuators.accel + ACCELERATION_DUE_TO_GRAVITY * math.sin(self.pitch)
+      actuators.accelPitchCompensated = actuators.accel + ((ACCELERATION_DUE_TO_GRAVITY * math.sin(self.pitch)) if self.use_sensors else 0.0)
 
       # Steering PID loop and lateral MPC
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['lateralPlan']) * DT_CTRL
@@ -798,7 +804,7 @@ class Controls:
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.lat_active, 
                                                                              CS, self.CP, self.VM, params, 
                                                                              desired_curvature, desired_curvature_rate, self.sm['liveLocationKalman'],
-                                                                             mean_curvature=self.k_mean.x)
+                                                                             mean_curvature=self.k_mean.x, use_roll=self.use_sensors)
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0 and self.active:
