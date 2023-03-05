@@ -1,9 +1,8 @@
 import math
 from numbers import Number
 from collections import deque
-from numpy import sign
 from selfdrive.controls.lib.pid import PIDController
-from common.numpy_fast import clip, interp
+from common.numpy_fast import clip, interp, sign
 from common.op_params import opParams
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
@@ -41,6 +40,7 @@ class LatControlTorque(LatControl):
       self._friction = [[0], [self._friction]]
     self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
     self._op_params = opParams(calling_function="latcontrol_torque.py")
+    self.friction_power = self._op_params.get('TUNE_LAT_TRX_friction_power')
     self.roll_k = 0.55
     self.v_ego = 0.0
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
@@ -72,6 +72,7 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp')]
     self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v')
     self.lat_snap_friction = self._op_params.get('TUNE_LAT_TRX_lateral_snap_ff_kf')
+    self.friction_power = self._op_params.get('TUNE_LAT_TRX_friction_power')
     
   @property
   def friction(self):
@@ -109,17 +110,16 @@ class LatControlTorque(LatControl):
       actual_lateral_accel = actual_curvature * CS.vEgo**2
 
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)
-      setpoint = float(desired_lateral_accel + low_speed_factor * min(abs(desired_curvature), abs(mean_curvature)) * sign(desired_curvature))
-      measurement = float(actual_lateral_accel + low_speed_factor * min(abs(actual_curvature), abs(mean_curvature)) * sign(actual_curvature))
+      setpoint = desired_lateral_accel + low_speed_factor * min(abs(desired_curvature), abs(mean_curvature)) * sign(desired_curvature)
+      measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
       pid_log.error = error
       
       ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * (self.roll_k if use_roll else 0.0)
-      frict = self.friction
-      friction_compensation = interp(desired_lateral_jerk, 
-                                     [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], 
-                                     [-frict, frict])
+      friction_k = self.friction * FRICTION_THRESHOLD**(-self.friction_power)
+      desired_lateral_jerk_clipped = clip(desired_lateral_jerk, -FRICTION_THRESHOLD, FRICTION_THRESHOLD)
+      friction_compensation = sign(desired_lateral_jerk_clipped) * friction_k * abs(desired_lateral_jerk_clipped)**self.friction_power
       ff += friction_compensation
       lat_snap_friction = interp(desired_lateral_snap, 
                                      [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], 
