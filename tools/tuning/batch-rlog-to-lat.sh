@@ -1,4 +1,4 @@
-#!/usr/bin/env/bash
+#!/usr/bin/env bash
 
 rlogdir="/mnt/video/scratch-video/rlogs"
 latdir="/mnt/video/scratch-video/latfiles"
