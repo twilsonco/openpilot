@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import tempfile
 import shutil
 import os
