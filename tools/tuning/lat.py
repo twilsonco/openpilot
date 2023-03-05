@@ -17,6 +17,7 @@ import bz2
 import numpy as np
 # import seaborn as sns
 from tqdm import tqdm  # type: ignore
+from p_tqdm import p_map
 import re
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 
@@ -398,6 +399,14 @@ def filter(samples):
   mask = np.array([(s.enabled and s.torque_driver <= STEER_PRESSED_MIN) or (not s.enabled and s.torque_driver <= STEER_PRESSED_MAX) for s in samples])
   samples = samples[mask]
   
+  if IS_ANGLE_PLOT:
+    # only take high angles if there was enough lateral acceleration
+    max_lat_accel = 4.0
+    curv_per_deg = 1/3000.0
+    mask = np.array([s.enabled or np.abs(((s.steer_angle - s.steer_offset) * curv_per_deg) * s.v_ego**2) < max_lat_accel  for s in samples])
+    samples = samples[mask]
+    
+    
   
   # these next two can be used if only driver torque is available
   # driver steer under threshold
@@ -426,7 +435,10 @@ def filter(samples):
   # samples = samples[mask]
   
   data = np.array([s.v_ego for s in samples])
-  mask = SPEED_MIN * CV.MPH_TO_MS <= data
+  if IS_ANGLE_PLOT:
+    mask = SPEED_MIN_ANGLE * CV.MPH_TO_MS <= data
+  else:
+    mask = SPEED_MIN * CV.MPH_TO_MS <= data
   mask &= data <= SPEED_MAX * CV.MPH_TO_MS
   samples = samples[mask]
 
@@ -576,7 +588,7 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
               latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2').replace('|','_'))
               latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2'))
           filenames = sorted([filename for filename in os.listdir(path) if filename.endswith("rlog.bz2") and filename not in latsegs])
-          for filename in tqdm(filenames, desc="Preparing fit data from rlogs"):
+          def process_file(filename):
             if len(filename.split('--')) == 4 and filename.endswith('rlog.bz2'):
               seg_num = filename.split('--')[2]
               route='--'.join(filename.split('--')[:2]).replace('_','|')
@@ -599,6 +611,30 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
               else:
                 if outpath == path:
                   os.remove(os.path.join(path,filename))
+          p_map(process_file, filenames, desc="Preparing fit data from rlogs")
+          # for filename in tqdm(filenames, desc="Preparing fit data from rlogs"):
+          #   if len(filename.split('--')) == 4 and filename.endswith('rlog.bz2'):
+          #     seg_num = filename.split('--')[2]
+          #     route='--'.join(filename.split('--')[:2]).replace('_','|')
+          #     latfile = os.path.join(outpath, f"{route}--{seg_num}.lat")
+          #     if filename not in latsegs:
+          #       # print(f'loading rlog segment {fi} of {num_files} {filename}')
+          #       with tempfile.TemporaryDirectory() as d:
+          #         try:
+          #           shutil.copy(os.path.join(path,filename),os.path.join(d,filename))
+          #           r = Route(route, data_dir=d)
+          #           lr = MultiLogIterator(r.log_paths(), sort_by_time=True)
+          #           data1 = collect(lr)
+          #           if len(data1):
+          #             with open(latfile, 'wb') as f:
+          #               pickle.dump(data1, f)
+          #           if outpath == path:
+          #             os.remove(os.path.join(path,filename))
+          #         except Exception as e:
+          #           print(f"Failed to load segment file {filename}:\n{e}")
+          #     else:
+          #       if outpath == path:
+          #         os.remove(os.path.join(path,filename))
       else:
         print(f'max eps torque = {MAX_EPS_TORQUE:0.4f}')
         print(f"max driver torque = {MAX_DRIVER_TORQUE:0.4f}")
