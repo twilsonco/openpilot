@@ -1,7 +1,7 @@
 #!/usr/bin/env/bash
 
-rlogdir="/Volumes/video/scratch-video/rlogs"
-latdir="/Volumes/video/scratch-video/latfiles"
+rlogdir="/mnt/video/scratch-video/rlogs"
+latdir="/mnt/video/scratch-video/latfiles"
 
 cd "$rlogdir"
 
@@ -23,7 +23,7 @@ for make in *; do
       if [ ! -d "$curdir/$dongle" ]; then
         continue
       fi
-      /Users/haiiro/NoSync/opfeedforward/openpilot/tools/tuning/lat.py --preprocess --path "$curdir/$dongle" --outpath "$outdir"
+      python3 /home/haiiro/openpilot-batch/openpilot/tools/tuning/lat.py --preprocess --path "$curdir/$dongle" --outpath "$outdir"
     done
   done
 done

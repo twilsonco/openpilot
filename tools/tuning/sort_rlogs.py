@@ -147,4 +147,4 @@ def main(rlog_base_dir, out_dir):
 
 if __name__ == "__main__":
   # print(get_rlog_data("/Users/haiiro/Downloads/c11fcb510a549332_2023-03-03--17-09-04--0--rlog.bz2"))
-  main("/Volumes/video/scratch-video/rlog_api", "/Volumes/video/scratch-video/rlogs")
+  main("/mnt/video/scratch-video/rlog_api", "/mnt/video/scratch-video/rlogs")
