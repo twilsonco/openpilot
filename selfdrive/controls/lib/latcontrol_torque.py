@@ -1,8 +1,9 @@
 import math
 from numbers import Number
+from numpy import sign
 from collections import deque
 from selfdrive.controls.lib.pid import PIDController
-from common.numpy_fast import clip, interp, sign
+from common.numpy_fast import clip, interp
 from common.op_params import opParams
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
@@ -73,14 +74,15 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v')
     self.lat_snap_friction = self._op_params.get('TUNE_LAT_TRX_lateral_snap_ff_kf')
     self.friction_power = self._op_params.get('TUNE_LAT_TRX_friction_power')
+    self.friction_factor_bp = self._op_params.get('TUNE_LAT_TRX_friction_factor_bp')
+    self.friction_factor_v = self._op_params.get('TUNE_LAT_TRX_friction_factor_v')
+    self.friction_error_scale = self._op_params.get('TUNE_LAT_TRX_friction_error_scale')
+    self.friction_error_rate_scale = self._op_params.get('TUNE_LAT_TRX_friction_error_rate_scale')
     
   @property
   def friction(self):
     return interp(self.v_ego, self._friction[0], self._friction[1])
-    
   
-  
-
   def reset(self):
     super().reset()
     self.pid.reset()
@@ -110,8 +112,8 @@ class LatControlTorque(LatControl):
       actual_lateral_accel = actual_curvature * CS.vEgo**2
 
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)
-      setpoint = desired_lateral_accel + low_speed_factor * min(abs(desired_curvature), abs(mean_curvature)) * sign(desired_curvature)
-      measurement = actual_lateral_accel + low_speed_factor * actual_curvature
+      setpoint = float(desired_lateral_accel + low_speed_factor * min(abs(desired_curvature), abs(mean_curvature)) * sign(desired_curvature))
+      measurement = float(actual_lateral_accel + low_speed_factor * min(abs(actual_curvature), abs(mean_curvature)) * sign(actual_curvature))
       error = setpoint - measurement
       pid_log.error = error
       
@@ -119,7 +121,14 @@ class LatControlTorque(LatControl):
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * (self.roll_k if use_roll else 0.0)
       friction_k = self.friction * FRICTION_THRESHOLD**(-self.friction_power)
       desired_lateral_jerk_clipped = clip(desired_lateral_jerk, -FRICTION_THRESHOLD, FRICTION_THRESHOLD)
-      friction_compensation = sign(desired_lateral_jerk_clipped) * friction_k * abs(desired_lateral_jerk_clipped)**self.friction_power
+      friction_compensation = float(sign(desired_lateral_jerk_clipped) * friction_k * abs(desired_lateral_jerk_clipped)**self.friction_power)
+      
+      friction_factor = interp(abs(desired_lateral_accel), self.friction_factor_bp, self.friction_factor_v)
+      if sign(error) == sign(desired_lateral_jerk):
+        friction_factor = min(1.0, friction_factor + abs(error) * self.friction_error_scale)
+      if sign(self.pid.error_rate) == sign(desired_lateral_jerk):
+        friction_factor = min(1.0, friction_factor + abs(self.pid.error_rate) * self.friction_error_rate_scale)
+      friction_compensation *= friction_factor
       ff += friction_compensation
       lat_snap_friction = interp(desired_lateral_snap, 
                                      [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], 

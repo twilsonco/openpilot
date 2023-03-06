@@ -54,6 +54,7 @@ class PIDController:
     self.i_rate = 1.0 / rate
     self._i_raw = 0.0 # raw integral of error
     self.sat_limit = sat_limit
+    self.error_rate = 0.0
     
     self._gain_update_factor = 0.0
     
@@ -188,9 +189,11 @@ class PIDController:
     self.f = feedforward * self.k_f
     
     if self.errors_d is not None and len(self.errors_d) == int(self.errors_d.maxlen):  # makes sure we have enough history for period
-      self.d = clip((self.errors_d[-1] - self.errors_d[0]) * self._d_period_recip * self.kd, self.neg_limit, self.pos_limit)
+      self.error_rate = (self.errors_d[-1] - self.errors_d[0]) * self._d_period_recip
     else:
-      self.d = 0.
+      self.error_rate = 0.
+    
+    self.d = clip(self.error_rate * self.kd, self.neg_limit, self.pos_limit)
 
     if self.errors_i is not None:
       self.i = self._i_raw * self.ki * self._k_i_scale

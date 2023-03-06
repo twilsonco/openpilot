@@ -22,4 +22,9 @@ def mean(x):
   return sum(x) / len(x)
 
 def sign(x):
-  return 1.0 if x > 0.0 else -1.0 if x < 0.0 else 0.0
+  if x > 0.0:
+    return 1.0
+  elif x < 0.0:
+    return -1.0
+  else:
+    return 0.0
