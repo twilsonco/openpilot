@@ -622,7 +622,7 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
             if ext in filename.split("/")[-1]:
               latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2').replace('|','_'))
               latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2'))
-          print(f"{len(latsegs)} blacklisted files")
+          print(f"{len(latsegs)//2} blacklisted files")
           filenames = sorted([filename for filename in os.listdir(path) if filename.endswith("rlog.bz2") and filename not in latsegs])
           def process_file(filename):
             if len(filename.split('--')) == 4 and filename.endswith('rlog.bz2'):
