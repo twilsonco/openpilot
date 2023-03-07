@@ -608,6 +608,15 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
           if outpath == "": outpath = path
           print(f"{outpath = }")
           latsegs = set()
+          if not os.path.exists(outpath):
+            os.mkdir(outpath)
+          rlog_log_path = ""
+          if preprocess:
+            rlog_log_path = os.path.join(outpath, "/latfiles.txt") # prevents rerunning rlogs
+            if os.path.exists(rlog_log_path): 
+              # read in lat files saved by running `ls -1 /data/media/0/latfiles >> /data/media/0/latfiles.txt`
+              with open(rlog_log_path, 'r') as rll:
+                latsegs = latsegs | set(list(rll.read().split('\n')))
           for filename in os.listdir(outpath):
             if ext in filename.split("/")[-1]:
               latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2').replace('|','_'))
@@ -637,6 +646,14 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
                 if outpath == path:
                   os.remove(os.path.join(path,filename))
           p_map(process_file, filenames, desc="Preparing fit data from rlogs")
+          if preprocess:
+            for filename in filenames:
+                latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2').replace('|','_'))
+                latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2'))
+            with open(rlog_log_path, 'w') as rll:
+              for ls in sorted(list(latsegs)):
+                rll.write(f"\n{ls}")
+          
           # for filename in tqdm(filenames, desc="Preparing fit data from rlogs"):
           #   if len(filename.split('--')) == 4 and filename.endswith('rlog.bz2'):
           #     seg_num = filename.split('--')[2]
