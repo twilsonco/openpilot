@@ -2221,7 +2221,7 @@ static void ui_draw_measures(UIState *s){
             b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
             val_color = nvgRGBA(255, g, b, 200);
             // steering is in degrees
-            if (scene.angleSteers < 10.){
+            if (scene.angleSteers < 10. && scene.angleSteers > -10.){
               snprintf(val, sizeof(val), "%.1f%s", scene.angleSteers, deg);
             }
             else{
@@ -2244,20 +2244,10 @@ static void ui_draw_measures(UIState *s){
             val_color = nvgRGBA(255, g, b, 200);
             if (scene.controls_state.getEnabled()) {
               // steering is in degrees
-              if (scene.angleSteers < 10. && scene.angleSteersDes < 10.){
-                snprintf(val, sizeof(val), "%.1f%s:%.1f%s", scene.angleSteers, deg, scene.angleSteersDes, deg);
-              }
-              else{
-                snprintf(val, sizeof(val), "%.0f%s:%.0f%s", scene.angleSteers, deg, scene.angleSteersDes, deg);
-              }
+              snprintf(val, sizeof(val), "%.0f%s:%.0f%s", scene.angleSteers, deg, scene.angleSteersDes, deg);
               val_font_size += 12;
             }else{
-              if (scene.angleSteers < 10.){
-                snprintf(val, sizeof(val), "%.1f%s", scene.angleSteers, deg);
-              }
-              else{
-                snprintf(val, sizeof(val), "%.0f%s", scene.angleSteers, deg);
-              }
+              snprintf(val, sizeof(val), "%.0f%s", scene.angleSteers, deg);
             }
             }
             break;
@@ -2276,7 +2266,7 @@ static void ui_draw_measures(UIState *s){
               b = (b >= 0 ? (b <= 255 ? b : 255) : 0);
               val_color = nvgRGBA(255, g, b, 200);
               // steering is in degrees
-              if (angleSteers < 10.){
+              if (angleSteers < 10. && angleSteers > -10.){
                 snprintf(val, sizeof(val), "%.1f%s", scene.angleSteersErr, deg);
               }
               else{
