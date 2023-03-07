@@ -329,22 +329,22 @@ def filter(samples):
   
   # Some rlogs use [-300,300] for torque, others [-3,3]
   # Scale both from STEER_MAX to [-1,1]
-  steer_torque_key = "torque_eps" # gm
-  MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
-  MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
-  MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
-  MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
-  MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
-  MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
-  for s in samples:
-    if MAX_DRIVER_TORQUE > 40 or MAX_EPS_TORQUE > 40:
-      s.torque_driver /= 300
-      s.torque_eps /= 300
-    else:
-      s.torque_driver /= 3
-      s.torque_eps /= 3
+  # steer_torque_key = "torque_eps" # gm
+  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
+  # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
+  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
+  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
+  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
+  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
+  # for s in samples:
+  #   if MAX_DRIVER_TORQUE > 40 or MAX_EPS_TORQUE > 40:
+  #     s.torque_driver /= 300
+  #     s.torque_eps /= 300
+  #   else:
+  #     s.torque_driver /= 3
+  #     s.torque_eps /= 3
       
-  MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
+  # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
   
   # VW MQB cars, str cmd units 0.01Nm, 3.0Nm max
   # steer_torque_key = "steer_cmd" # vw
@@ -378,19 +378,36 @@ def filter(samples):
   # driver torque units 0.01Nm
   # eps torque units 0.2Nm
   # max torque 4.0Nm
-  # steer_torque_key = "torque_eps" # vw
-  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
-  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
-  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
-  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
-  # for s in samples:
-  #   s.torque_driver /= 100 * 4
-  #   s.torque_eps /= 5 * 4
+  steer_torque_key = "torque_eps" # vw
+  MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
+  MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
+  MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
+  MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
+  MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
+  MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
+  MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
+  for s in samples:
+    s.torque_driver /= 100 * 4
+    s.torque_eps /= 5 * 4
+  MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
   
   # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
   # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
   # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
   
+  # all chrysler and ram 1500: steer scaled to 261. 361 for ram hd
+  # steer_torque_key = "torque_eps" # vw
+  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
+  # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
+  # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
+  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
+  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
+  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
+  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
+  # for s in samples:
+  #   s.torque_driver /= 261
+  #   s.torque_eps /= 261
+  # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
   
   # print(f'max eps torque = {eps:0.4f}')
   # print(f"max driver torque = {driver:0.4f}")
@@ -398,6 +415,14 @@ def filter(samples):
   # Enabled and no steer pressed or not enabled and driver steer under threshold
   mask = np.array([(s.enabled and s.torque_driver <= STEER_PRESSED_MIN) or (not s.enabled and s.torque_driver <= STEER_PRESSED_MAX) for s in samples])
   samples = samples[mask]
+  
+  if not IS_ANGLE_PLOT:
+    mask = np.array([abs(s.torque_driver + getattr(s, steer_torque_key)) > 0.25 * abs(s.lateral_accel) for s in samples])
+    samples = samples[mask]
+  
+  # enabled
+  # mask = np.array([s.enabled for s in samples])
+  # samples = samples[mask]
   
   if IS_ANGLE_PLOT:
     # only take high angles if there was enough lateral acceleration
@@ -420,7 +445,7 @@ def filter(samples):
 
   # No steer rate: holding steady curve or straight
   # data = np.array([s.desired_curvature_rate for s in samples])
-  # mask = np.abs(data) < 0.003 # determined from plotjuggler
+  # mask = np.abs(data) < CURVATURE_RATE_MIN # determined from plotjuggler
   # samples = samples[mask]
 
   # No steer rate: holding steady curve or straight
