@@ -612,7 +612,8 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
             os.mkdir(outpath)
           rlog_log_path = ""
           if preprocess:
-            rlog_log_path = os.path.join(outpath, "/latfiles.txt") # prevents rerunning rlogs
+            rlog_log_path = os.path.join(outpath, "latfiles.txt") # prevents rerunning rlogs
+            print(f"Loading file blacklist: {rlog_log_path}")
             if os.path.exists(rlog_log_path): 
               # read in lat files saved by running `ls -1 /data/media/0/latfiles >> /data/media/0/latfiles.txt`
               with open(rlog_log_path, 'r') as rll:
@@ -621,6 +622,7 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
             if ext in filename.split("/")[-1]:
               latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2').replace('|','_'))
               latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2'))
+          print(f"{len(latsegs)} blacklisted files")
           filenames = sorted([filename for filename in os.listdir(path) if filename.endswith("rlog.bz2") and filename not in latsegs])
           def process_file(filename):
             if len(filename.split('--')) == 4 and filename.endswith('rlog.bz2'):
