@@ -1,11 +1,9 @@
 import math
-from numbers import Number
-from numpy import sign
-from collections import deque
 from selfdrive.controls.lib.pid import PIDController
-from common.numpy_fast import clip, interp
+from common.numpy_fast import interp, sign
 from common.op_params import opParams
 from selfdrive.config import Conversions as CV
+from selfdrive.controls.lib.drive_helpers import apply_deadzone
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from cereal import log
@@ -40,6 +38,7 @@ class LatControlTorque(LatControl):
     self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
     self.get_friction = CI.get_steer_feedforward_function_torque_lat_jerk()
     self._op_params = opParams(calling_function="latcontrol_torque.py")
+    self.friction_deadzone = self._op_params.get("TUNE_LAT_TRX_lateral_friction_deadzone", force_update=True)
     self.roll_k = 0.55
     self.v_ego = 0.0
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
@@ -66,6 +65,7 @@ class LatControlTorque(LatControl):
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
     self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp')]
     self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v')
+    self.friction_deadzone = self._op_params.get("TUNE_LAT_TRX_lateral_friction_deadzone")
   
   def reset(self):
     super().reset()
@@ -89,14 +89,14 @@ class LatControlTorque(LatControl):
       actual_lateral_accel = actual_curvature * CS.vEgo**2
 
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)
-      setpoint = float(desired_lateral_accel + low_speed_factor * min(abs(desired_curvature), abs(mean_curvature)) * sign(desired_curvature))
-      measurement = float(actual_lateral_accel + low_speed_factor * min(abs(actual_curvature), abs(mean_curvature)) * sign(actual_curvature))
+      setpoint = desired_lateral_accel + low_speed_factor * min(abs(desired_curvature), abs(mean_curvature)) * sign(desired_curvature)
+      measurement = actual_lateral_accel + low_speed_factor * min(abs(actual_curvature), abs(mean_curvature)) * sign(actual_curvature)
       error = setpoint - measurement
       pid_log.error = error
       
       ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * (self.roll_k if use_roll else 0.0)
-      friction_compensation = self.get_friction(desired_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD)
+      friction_compensation = self.get_friction(apply_deadzone(desired_lateral_jerk, self.friction_deadzone), self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD)
       ff += friction_compensation
       output_torque = self.pid.update(setpoint, measurement,
                                       override=CS.steeringPressed, feedforward=ff,
