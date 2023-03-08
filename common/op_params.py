@@ -533,9 +533,11 @@ class opParams:
       
       'TUNE_LAT_TRX_kf': Param(1.0, float, kf_desc, live=True, min_val=0.01, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_friction_v': Param(1.0, float, '(Leave at 1.0 for custom lateral jerk FF) The torque controller has two components to the feedforward, one based solely on desired lateral acceleration and is scaled by kf. The other is based on desired lateral jerk (rate of desired lateral acceleration) and is also called "friction" to depict the idea of overcoming the friction in the steering assembly. The concept it simple: the faster the desired lateral acceleration changes (i.e. high rate of change), the greater the friction response. This provides much smoother steering, especially when the steering angle is decreasing (returning to center).', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_friction': Param(1.0, float, '(Leave at 1.0 for custom lateral jerk FF) The torque controller has two components to the feedforward, one based solely on desired lateral acceleration and is scaled by kf. The other is based on desired lateral jerk (rate of desired lateral acceleration) and is also called "friction" to depict the idea of overcoming the friction in the steering assembly. The concept it simple: the faster the desired lateral acceleration changes (i.e. high rate of change), the greater the friction response. This provides much smoother steering, especially when the steering angle is decreasing (returning to center).', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_lateral_friction_deadzone': Param(0.12, float, 'Lateral jerk feedforward (friction) is essentially a sign function with a discontinuity at 0. That\'s annoying, so we put in a deadzone to avoid having it apply torque in one direction or the other at all times, even when going "straight". The amount of desired lateral jerk must be greater than this before taking effect.', live=True, min_val=0.0, max_val=2.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit="m/s³"),
+      
+      'TUNE_LAT_TRX_friction_error_rate_factor': Param(2.0, float, 'Friction is not allowed to contribute to steer error, and it is preemptive reduced before this occurs based on the error rate. Here you can increase/decrease the error rate used in this calculation so that friction is reduced earlier/later before friction begins to contribute to error. If set too high, false positives will become an issue and you\'ll be reducing friction when you shouldn\'t have.', live=True, min_val=0.1, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_kp': Param(0.48, float, kp_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
@@ -757,7 +759,7 @@ class opParams:
                            'TUNE_LAT_min_steer_speed_mph',
                            'TUNE_PID_ki_period_default_s',
                            'TUNE_LAT_TRX_roll_compensation',
-                           'TUNE_LAT_TRX_friction_v',
+                           'TUNE_LAT_TRX_friction',
                            'TUNE_LAT_TRX_kp',
                            'TUNE_LAT_TRX_ki_period_s',
                            'TUNE_LAT_TRX_kp_e',

@@ -61,11 +61,12 @@ class LatControlTorque(LatControl):
     self.pid._k_13 = [[0], [self._op_params.get('TUNE_LAT_TRX_kd_e')]]
     self.pid.update_i_period(self._op_params.get('TUNE_LAT_TRX_ki_period_s'))
     self.pid.k_f = self._op_params.get('TUNE_LAT_TRX_kf')
-    self.friction = self._op_params.get('TUNE_LAT_TRX_friction_v')
+    self.friction = self._op_params.get('TUNE_LAT_TRX_friction')
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
     self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp')]
     self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v')
-    self.friction_deadzone = self._op_params.get("TUNE_LAT_TRX_lateral_friction_deadzone")
+    self.friction_deadzone = self._op_params.get('TUNE_LAT_TRX_lateral_friction_deadzone')
+    self.friction_error_rate_factor = self._op_params.get('TUNE_LAT_TRX_friction_error_rate_factor')
   
   def reset(self):
     super().reset()
@@ -94,9 +95,20 @@ class LatControlTorque(LatControl):
       error = setpoint - measurement
       pid_log.error = error
       
+      # lateral jerk feedforward
+      friction_compensation = self.get_friction(apply_deadzone(desired_lateral_jerk, self.friction_deadzone), self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD)
+      friction_error_offset = 0.0
+      if sign(friction_compensation) != sign(error):
+        # friction can't increase error
+        friction_error_offset = abs(friction_compensation) * sign(error)
+      elif sign(friction_compensation) != sign(self.pid.error_rate):
+        # friction will preemptively decrease if about to become opposite sign of error
+        friction_error_offset = sign(self.pid.error_rate) * min(abs(friction_compensation), max(0.0, abs(self.pid.error_rate) * self.friction_error_rate_factor - abs(error)))
+      friction_compensation += friction_error_offset
+      
+      # lateral acceleration feedforward
       ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * (self.roll_k if use_roll else 0.0)
-      friction_compensation = self.get_friction(apply_deadzone(desired_lateral_jerk, self.friction_deadzone), self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD)
       ff += friction_compensation
       output_torque = self.pid.update(setpoint, measurement,
                                       override=CS.steeringPressed, feedforward=ff,
@@ -114,6 +126,7 @@ class LatControlTorque(LatControl):
       pid_log.desiredLateralAcceleration = desired_lateral_accel
       pid_log.desiredLateralJerk = desired_lateral_jerk
       pid_log.friction = friction_compensation
+      pid_log.frictionErrorOffset = friction_error_offset
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i
       pid_log.d = self.pid.d
