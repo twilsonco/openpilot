@@ -174,12 +174,14 @@ class CarInterface(CarInterfaceBase):
 
       return sigmoid1 + sigmoid2
     else:
-      ANGLE_COEF = 4.99947194 
-      ANGLE_COEF2 = 0.13380829 
-      ANGLE_OFFSET = 15.00001640 
-      SPEED_OFFSET = -0.23951963
-      SPEED_COEF = 1.09323650 
-      SPEED_COEF2 = 1.99999972 
+      ANGLE_COEF = 2.06223884
+      ANGLE_COEF2 = 0.17299524
+      ANGLE_OFFSET = 10.08002596
+      SPEED_OFFSET = -0.11092718
+      SIGMOID_COEF_1 = 0.17167717
+      SIGMOID_COEF_2 = 1.99966155
+      SPEED_COEF = 1.04884478
+      SPEED_COEF2 = 2.00000000
       
       x = ANGLE_COEF * (jerk) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF)
       sigmoid1 = x / (1. + fabs(x))
