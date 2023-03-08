@@ -463,7 +463,7 @@ static void update_state(UIState *s) {
     scene.car_state = sm["carState"].getCarState();
     if (scene.is_using_torque_control){// if lateral torque controller in use, angle error is stored in its unused error_rate.
       scene.lateralCorrection = scene.controls_state.getLateralControlState().getTorqueState().getOutput();
-      scene.angleSteersErr = scene.controls_state.getLateralControlState().getTorqueState().getErrorRate();
+      scene.angleSteersErr = scene.controls_state.getLateralControlState().getTorqueState().getSteerAngleError();
     }
     else{
       scene.lateralCorrection = scene.controls_state.getLateralControlState().getPidState().getOutput();
