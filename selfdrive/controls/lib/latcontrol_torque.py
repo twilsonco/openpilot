@@ -1,4 +1,5 @@
 import math
+from collections import deque
 from selfdrive.controls.lib.pid import PIDController
 from common.numpy_fast import interp, sign, clip
 from common.op_params import opParams
@@ -48,6 +49,9 @@ class LatControlTorque(LatControl):
     else:
       self.low_speed_factor_bp = [10.0, 25.0]
       self.low_speed_factor_v = [225.0, 50.0]
+      
+    # for actual lateral jerk calculation
+    self._lat_accels = deque(maxlen=self.pid._d_period)
   
   def update_op_params(self):
     if not self.tune_override:
@@ -71,6 +75,7 @@ class LatControlTorque(LatControl):
   def reset(self):
     super().reset()
     self.pid.reset()
+    self._lat_accels = deque(maxlen=self.pid._d_period)
 
   def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, mean_curvature=0.0, use_roll=True):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
@@ -88,6 +93,13 @@ class LatControlTorque(LatControl):
       desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       actual_lateral_accel = actual_curvature * CS.vEgo**2
+      
+      self._lat_accels.append(actual_lateral_accel)
+      if len(self._lat_accels) == int(self._lat_accels.maxlen):  # makes sure we have enough history for period
+        absjerk = abs(desired_lateral_jerk)
+        actual_lateral_jerk = (self._lat_accels[-1] - self._lat_accels[0]) * self.pid._d_period_recip
+      else:
+        actual_lateral_jerk = 0.0
 
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)
       setpoint = desired_lateral_accel + low_speed_factor * min(abs(desired_curvature), abs(mean_curvature)) * sign(desired_curvature)
@@ -129,6 +141,7 @@ class LatControlTorque(LatControl):
       pid_log.currentLateralAcceleration = actual_lateral_accel
       pid_log.desiredLateralAcceleration = desired_lateral_accel
       pid_log.desiredLateralJerk = desired_lateral_jerk
+      pid_log.currentLateralJerk = actual_lateral_jerk
       pid_log.friction = friction_compensation
       pid_log.frictionErrorOffset = friction_error_offset
       pid_log.p = self.pid.p
