@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-from math import fabs, erf, atan
+from math import fabs, erf, atan, cos
 from cereal import car
-from common.numpy_fast import interp, clip
+from common.numpy_fast import interp, clip, sign
 from common.realtime import sec_since_boot
 from common.op_params import opParams
 from common.params import Params, put_nonblocking
@@ -152,6 +152,49 @@ class CarInterface(CarInterfaceBase):
     SPEED_COEF2 = 0.37766423
     SPEED_OFFSET2 = -0.36618369
     return get_steer_feedforward_erf1(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
+  
+  @staticmethod
+  def get_steer_feedforward_torque_lat_jerk_volt(jerk, speed, lateral_acceleration, friction, friction_threshold):
+    if sign(lateral_acceleration) == sign(jerk):
+      ANGLE_COEF = 2.87742908
+      ANGLE_COEF2 = 3.0171422
+      SPEED_OFFSET = 0.32037237
+      SIGMOID_COEF_1 = 0.13778183
+      SIGMOID_COEF_2 = 0.78604993
+      SPEED_COEF = 0.11084122
+      SPEED_COEF2 = 1.84607376
+
+      x = ANGLE_COEF * (jerk) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF)
+      sigmoid1 = x / (1. + fabs(x))
+      sigmoid1 *= SIGMOID_COEF_1
+      
+      x = ANGLE_COEF2 * (jerk) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF2)
+      sigmoid2 = x / (1. + fabs(x))
+      sigmoid2 *= SIGMOID_COEF_2 / (fabs(speed)+1)
+
+      return sigmoid1 + sigmoid2
+    else:
+      ANGLE_COEF = 4.99947194 
+      ANGLE_COEF2 = 0.13380829 
+      ANGLE_OFFSET = 15.00001640 
+      SPEED_OFFSET = -0.23951963
+      SPEED_COEF = 1.09323650 
+      SPEED_COEF2 = 1.99999972 
+      
+      x = ANGLE_COEF * (jerk) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF)
+      sigmoid1 = x / (1. + fabs(x))
+      sigmoid1 *= SIGMOID_COEF_1
+      
+      x = ANGLE_COEF2 * (jerk) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF2)
+      sigmoid2 = x / (1. + fabs(x))
+      sigmoid2 *= SIGMOID_COEF_2
+      
+      max_speed = ANGLE_OFFSET
+      speed_norm = 0.5 * cos(clip(speed / max_speed, 0., 1.) * 3.14) + 0.5
+      
+      out = (1-speed_norm) * sigmoid1 + speed_norm * sigmoid2
+      return out
+
 
   @staticmethod
   def get_steer_feedforward_bolt_euv(angle, speed):
@@ -222,6 +265,12 @@ class CarInterface(CarInterfaceBase):
       return self.get_steer_feedforward_lacrosse_torque
     else:
       return CarInterfaceBase.get_steer_feedforward_torque_default
+  
+  def get_steer_feedforward_function_torque_lat_jerk(self):
+    if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
+      return self.get_steer_feedforward_torque_lat_jerk_volt
+    else:
+      return CarInterfaceBase.get_steer_feedforward_function_torque_lat_jerk_default
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):

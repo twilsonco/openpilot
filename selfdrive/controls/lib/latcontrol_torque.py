@@ -36,12 +36,10 @@ class LatControlTorque(LatControl):
                             k_f=CP.lateralTuning.torque.kf, integral_period=1.5,
                             pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
-    self._friction = CP.lateralTuning.torque.friction
-    if isinstance(self._friction, Number):
-      self._friction = [[0], [self._friction]]
+    self.friction = CP.lateralTuning.torque.friction
     self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
+    self.get_friction = CI.get_steer_feedforward_function_torque_lat_jerk()
     self._op_params = opParams(calling_function="latcontrol_torque.py")
-    self.friction_power = self._op_params.get('TUNE_LAT_TRX_friction_power')
     self.roll_k = 0.55
     self.v_ego = 0.0
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
@@ -51,10 +49,6 @@ class LatControlTorque(LatControl):
     else:
       self.low_speed_factor_bp = [10.0, 25.0]
       self.low_speed_factor_v = [225.0, 50.0]
-    
-    # for lateral snap calculation
-    self._lat_jerks = deque(maxlen=self.pid._d_period)
-    self.lat_snap_friction = self._op_params.get('TUNE_LAT_TRX_lateral_snap_ff_kf')
   
   def update_op_params(self):
     if not self.tune_override:
@@ -68,25 +62,14 @@ class LatControlTorque(LatControl):
     self.pid._k_13 = [[0], [self._op_params.get('TUNE_LAT_TRX_kd_e')]]
     self.pid.update_i_period(self._op_params.get('TUNE_LAT_TRX_ki_period_s'))
     self.pid.k_f = self._op_params.get('TUNE_LAT_TRX_kf')
-    self._friction = [self._op_params.get('TUNE_LAT_TRX_friction_bp_mph'), self._op_params.get('TUNE_LAT_TRX_friction_v')]
+    self.friction = self._op_params.get('TUNE_LAT_TRX_friction_v')
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
     self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp')]
     self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v')
-    self.lat_snap_friction = self._op_params.get('TUNE_LAT_TRX_lateral_snap_ff_kf')
-    self.friction_power = self._op_params.get('TUNE_LAT_TRX_friction_power')
-    self.friction_factor_bp = self._op_params.get('TUNE_LAT_TRX_friction_factor_bp')
-    self.friction_factor_v = self._op_params.get('TUNE_LAT_TRX_friction_factor_v')
-    self.friction_error_scale = self._op_params.get('TUNE_LAT_TRX_friction_error_scale')
-    self.friction_error_rate_scale = self._op_params.get('TUNE_LAT_TRX_friction_error_rate_scale')
-    
-  @property
-  def friction(self):
-    return interp(self.v_ego, self._friction[0], self._friction[1])
   
   def reset(self):
     super().reset()
     self.pid.reset()
-    self._lat_jerks = deque(maxlen=self.pid._d_period)
 
   def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, mean_curvature=0.0, use_roll=True):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
@@ -102,12 +85,6 @@ class LatControlTorque(LatControl):
       else:
         actual_curvature = llk.angularVelocityCalibrated.value[2] / CS.vEgo
       desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
-      self._lat_jerks.append(desired_lateral_jerk)
-      if len(self._lat_jerks) == int(self._lat_jerks.maxlen):  # makes sure we have enough history for period
-        absjerk = abs(desired_lateral_jerk)
-        desired_lateral_snap = clip((self._lat_jerks[-1] - self._lat_jerks[0]) * self.pid._d_period_recip, -absjerk, absjerk)
-      else:
-        desired_lateral_snap = 0.0
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       actual_lateral_accel = actual_curvature * CS.vEgo**2
 
@@ -119,21 +96,8 @@ class LatControlTorque(LatControl):
       
       ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * (self.roll_k if use_roll else 0.0)
-      friction_k = self.friction * FRICTION_THRESHOLD**(-self.friction_power)
-      desired_lateral_jerk_clipped = clip(desired_lateral_jerk, -FRICTION_THRESHOLD, FRICTION_THRESHOLD)
-      friction_compensation = float(sign(desired_lateral_jerk_clipped) * friction_k * abs(desired_lateral_jerk_clipped)**self.friction_power)
-      
-      friction_factor = interp(abs(desired_lateral_accel), self.friction_factor_bp, self.friction_factor_v)
-      if sign(error) == sign(desired_lateral_jerk):
-        friction_factor = min(1.0, friction_factor + abs(error) * self.friction_error_scale)
-      if sign(self.pid.error_rate) == sign(desired_lateral_jerk):
-        friction_factor = min(1.0, friction_factor + abs(self.pid.error_rate) * self.friction_error_rate_scale)
-      friction_compensation *= friction_factor
+      friction_compensation = self.get_friction(desired_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD)
       ff += friction_compensation
-      lat_snap_friction = interp(desired_lateral_snap, 
-                                     [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], 
-                                     [-self.lat_snap_friction, self.lat_snap_friction])
-      ff += lat_snap_friction
       output_torque = self.pid.update(setpoint, measurement,
                                       override=CS.steeringPressed, feedforward=ff,
                                       speed=CS.vEgo,
@@ -148,9 +112,7 @@ class LatControlTorque(LatControl):
       pid_log.currentLateralAcceleration = actual_lateral_accel
       pid_log.desiredLateralAcceleration = desired_lateral_accel
       pid_log.desiredLateralJerk = desired_lateral_jerk
-      pid_log.desiredLateralSnap = desired_lateral_snap
       pid_log.friction = friction_compensation
-      pid_log.latSnapFriction = lat_snap_friction
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i
       pid_log.d = self.pid.d
