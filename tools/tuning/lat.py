@@ -26,7 +26,7 @@ if not PREPROCESS_ONLY:
   from scipy.stats import describe
   from scipy.signal import correlate, correlation_lags
   import matplotlib.pyplot as plt
-  from tools.tuning.lat_plot import fit, plot
+  from tools.tuning.lat_plot import fit, plot, get_steer_feedforward_for_filter
   import sys
   if not os.path.isdir('plots'):
     os.mkdir('plots')
@@ -43,6 +43,7 @@ if not PREPROCESS_ONLY:
           # you might want to specify some extra behavior here.
           pass    
   sys.stdout = Logger()
+  get_lat_accel_ff = get_steer_feedforward_for_filter()
 
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.config import Conversions as CV
@@ -59,17 +60,92 @@ MAX_CURVATURE_RATE = 0.0
 MIN_STEER_RATE = 0.0
 MAX_STEER_RATE = 0.0
 
+def minmax(a):
+  minval=a[0]
+  maxval=a[0]
+  for v in a:
+    if v < minval:
+      minval = v
+    elif v > maxval:
+      maxval = v
+  return minval, maxval
+
+def sign(x):
+  if x > 0.0:
+    return 1.0
+  elif x < 0.0:
+    return -1.0
+  else:
+    return 0.0
+
+# def regularize(speed, angle, steer, sort_var):
+#   nbins = 100
+#   bin_count = 500
+#   speedmm = minmax(speed)
+#   speedstep = (speedmm[1] - speedmm[0]) / nbins
+#   anglemm = minmax(angle)
+#   anglestep = (anglemm[1] - anglemm[0]) / nbins
+#   speed_bins = np.arange(speedmm[0], speedmm[1], speedstep)
+#   angle_bins = np.arange(anglemm[0], anglemm[1], anglestep)
+  
+#   outspeed = []
+#   outangle = []
+#   outsteer = []
+  
+#   for i in range(nbins):
+#     for j in range(nbins):
+#       inds = [i for i,(sp,an) in enumerate(zip(speed,angle)) if abs(sp-speed_bins[i]) <= speedstep/2 and abs(an-angle_bins[j]) <= anglestep/2]
+#       spbin = speed[inds]
+#       anbin = angle[inds]
+#       stbin = steer[inds]
+      
+#       meanst = np.mean(stbin)
+#       std = np.std(stbin)
+      
+#       dev = np.abs(stbin - meanst)
+#       sortinds = np.argsort(dev)
+      
+#       count = min(len(sortinds), bin_count)
+      
+      
+#       spsort = spbin[sortinds][:count]
+#       ansort = anbin[sortinds][:count]
+#       stsort = stbin[sortinds][:count]
+      
+#       outspeed.append(np.mean(spsort))
+#       outangle.append(np.mean(ansort))
+#       outsteer.append(np.mean(stsort))
+      
+#       print(f"Regularizing {i = }, {j = }, {count = }, {std = }")
+  
+#   return np.array(speed), np.array(angle), np.array(steer)
+
+
+
 # Reduce samples using binning and outlier rejection
 def regularize(speed, angle, steer, sort_var):
   print("Regularizing...")
   # Bin by rounding
   speed_bin = np.around(speed*2)/2
-  angle_bin = np.around(angle*2, decimals=0 if IS_ANGLE_PLOT else 1)/2
+  angle_bin = np.around(angle*2, decimals=1)/2
 
   i = 0
+  iter = 0
   std = []
   count = []
+  n = len(speed)
+  if n > 1e6:
+    bin_count1 = 10000
+    bin_step = 100
+  elif n > 1e5:
+    bin_count1 = 2000
+    bin_step = 50
+  else:
+    bin_count1 = 100
+    bin_step = 5
+  bin_count = BIN_COUNT
   while i != len(speed):
+      iter += 1
       # Select bins by mask
       mask = (speed_bin == speed_bin[i]) & (angle_bin == angle_bin[i])
 
@@ -80,24 +156,21 @@ def regularize(speed, angle, steer, sort_var):
       
       c = inliers.sum()
       s = np.std(steer[inliers])
+      if iter % 100 == 0:
+        print(f"Regulararizing: {iter} steps. {i = } out of {len(speed)}")
       # Use this bin
-      if c > BIN_COUNT and s < BIN_STD:
-        sort_var_tmp = np.abs(sort_var[inliers])
-        sort_ids = np.argsort(sort_var_tmp)
-        
-        npts = max(BIN_COUNT, int(len(inliers) * 0.1))
-        speed_tmp = speed[inliers][sort_ids][:npts]
-        angle_tmp = angle[inliers][sort_ids][:npts]
-        steer_tmp = steer[inliers][sort_ids][:npts]
-        
-        speed[i] = np.mean(speed_tmp)
-        angle[i] = np.mean(angle_tmp)
-        steer[i] = np.mean(steer_tmp)
+      if bin_count == 1 or (c > bin_count and s < BIN_STD):
+        speed[i] = np.mean(speed[inliers])
+        angle[i] = np.mean(angle[inliers])
+        steer[i] = np.mean(steer[inliers])
 
         count.append(c)
         std.append(s)
         mask[i] = False
+        bin_count = BIN_COUNT
         i += 1
+      # else:
+      #   bin_count -= 25
 
       # Remove samples
       speed = speed[~mask]
@@ -329,22 +402,21 @@ def filter(samples):
   
   # Some rlogs use [-300,300] for torque, others [-3,3]
   # Scale both from STEER_MAX to [-1,1]
-  # steer_torque_key = "torque_eps" # gm
-  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
-  # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
-  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
-  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
-  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
-  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
-  # for s in samples:
-  #   if MAX_DRIVER_TORQUE > 40 or MAX_EPS_TORQUE > 40:
-  #     s.torque_driver /= 300
-  #     s.torque_eps /= 300
-  #   else:
-  #     s.torque_driver /= 3
-  #     s.torque_eps /= 3
-      
-  # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
+  steer_torque_key = "torque_eps" # gm
+  MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
+  MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
+  MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
+  MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
+  MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
+  MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
+  for s in samples:
+    if MAX_DRIVER_TORQUE > 40 or MAX_EPS_TORQUE > 40:
+      s.torque_driver /= 300
+      s.torque_eps /= 300
+    else:
+      s.torque_driver /= 3
+      s.torque_eps /= 3
+  MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
   
   # VW MQB cars, str cmd units 0.01Nm, 3.0Nm max
   # steer_torque_key = "steer_cmd" # vw
@@ -378,18 +450,18 @@ def filter(samples):
   # driver torque units 0.01Nm
   # eps torque units 0.2Nm
   # max torque 4.0Nm
-  steer_torque_key = "torque_eps" # vw
-  MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
-  MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
-  MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
-  MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
-  MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
-  MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
-  MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
-  for s in samples:
-    s.torque_driver /= 100 * 4
-    s.torque_eps /= 5 * 4
-  MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
+  # steer_torque_key = "torque_eps" # vw
+  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
+  # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
+  # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
+  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
+  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
+  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
+  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
+  # for s in samples:
+  #   s.torque_driver /= 100 * 4
+  #   s.torque_eps /= 5 * 4
+  # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
   
   # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
   # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
@@ -424,6 +496,16 @@ def filter(samples):
   # mask = np.array([s.enabled for s in samples])
   # samples = samples[mask]
   
+  # has lat accel and lat jerk data
+  samples = np.array([s for s in samples if np.isnan(s.lateral_accel_rate_no_roll) == False])
+  # # matching sign of lateral jerk and accel
+  # mask = np.array([sign(s.lateral_accel_rate_no_roll) == sign(s.lateral_accel) for s in samples])
+  # samples = samples[mask]
+  
+  # non-matching sign of lateral jerk and accel
+  mask = np.array([sign(s.lateral_accel_rate_no_roll) != sign(s.lateral_accel) for s in samples])
+  samples = samples[mask]
+  
   if IS_ANGLE_PLOT:
     # only take high angles if there was enough lateral acceleration
     max_lat_accel = 4.0
@@ -443,14 +525,14 @@ def filter(samples):
   # mask = np.array([not s.enabled for s in samples])
   # samples = samples[mask]
 
-  # No steer rate: holding steady curve or straight
-  # data = np.array([s.desired_curvature_rate for s in samples])
-  # mask = np.abs(data) < CURVATURE_RATE_MIN # determined from plotjuggler
+  # No steer angle
+  # data = np.array([s.steer_angle - s.steer_offset for s in samples])
+  # mask = np.abs(data) < STEER_ANGLE_MAX # determined from plotjuggler
   # samples = samples[mask]
-
-  # No steer rate: holding steady curve or straight
-  data = np.array([s.steer_rate for s in samples])
-  mask = np.abs(data) < STEER_RATE_MIN
+  
+  # No lateral accel
+  data = np.array([s.lateral_accel for s in samples])
+  mask = np.abs(data) < LAT_ACCEL_MAX # determined from plotjuggler
   samples = samples[mask]
 
   # GM no steering below 7 mph
@@ -471,6 +553,20 @@ def filter(samples):
   # data = np.array([s.torque_eps for s in samples])
   # mask = np.abs(data) < 4.0
   # samples = samples[mask]
+  
+  out = []
+  for s in samples:
+    speed = s.v_ego
+    angle = -s.lateral_accel_rate_no_roll
+    lat_accel_ff = get_lat_accel_ff(-s.lateral_accel, s.v_ego)
+    actual_steer = (s.torque_driver + (getattr(s, steer_torque_key) if not np.isnan(getattr(s, steer_torque_key)) else 0.0))
+    steer = actual_steer - lat_accel_ff
+    sort_var = 0.0
+    out.append(CleanSample(speed=speed, angle=angle, steer=steer, sort_var=sort_var))
+    # print(out[-1])
+  
+  return out
+  
 
   return [CleanSample(
     speed = s.v_ego,
@@ -531,6 +627,7 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
       latroutes = set()
       steer_offsets = []
       if not preprocess:
+        errors={}
         for filename in tqdm(os.listdir(path)):
           if filename.endswith(ext):
             latpath = os.path.join(path, filename)
@@ -550,7 +647,15 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
                 if not PREPROCESS_ONLY:
                   steer_offsets.extend(s.steer_offset for s in tmpdata)
               except Exception as e:
-                print(f"failed to load lat file: {latpath}\n{e}")
+                if e in errors:
+                  errors[e] += 1
+                else:
+                  errors[e] = 1
+        if len(errors) > 0:
+          nerr = sum(errors.values())
+          print(f"{nerr} lat files were not loaded due to errors:")
+          for e,n in errors.items():
+            print(f"({n}) {e}")
       if PREPROCESS_ONLY:
         if "realdata" in path or (preprocess and dongleid):
           MULTI_FILE = True
@@ -728,6 +833,12 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
   speed = np.array([sample.speed for sample in data])
   angle = np.array([sample.angle for sample in data])
   steer = np.array([sample.steer for sample in data])
+  
+  
+  print(f"{describe(speed) = }")
+  print(f"{describe(angle) = }")
+  print(f"{describe(steer) = }")
+  
   sort_var = np.array([sample.sort_var for sample in data])
   print(f'Samples: {len(speed) = }, {len(angle) = }, {len(steer) = }')
   return speed, angle, steer, sort_var

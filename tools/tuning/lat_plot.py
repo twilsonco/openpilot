@@ -44,6 +44,42 @@ def get_steer_feedforward_erf_old(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_O
   linear = ANGLE_COEF2 * (angle + ANGLE_OFFSET)
   return sigmoid + linear
 
+def get_torque_from_lateral_jerk_matching(jerk, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2):
+  x = ANGLE_COEF * (jerk) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF)
+  sigmoid1 = x / (1. + fabs(x))
+  sigmoid1 *= SIGMOID_COEF_RIGHT
+  
+  x = ANGLE_COEF2 * (jerk) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF2)
+  sigmoid2 = x / (1. + fabs(x))
+  sigmoid2 *= SIGMOID_COEF_LEFT / (fabs(speed)+1) # / (1 + fabs(jerk))
+  
+  # max_speed = ANGLE_OFFSET
+  # speed_norm = 0.5 * cos(clip(speed / max_speed, 0., 1.) * PI) + 0.5
+  
+  # out = (1-speed_norm) * sigmoid1 + speed_norm * sigmoid2
+  
+  # return out
+
+  return sigmoid1 + sigmoid2
+
+def get_torque_from_lateral_jerk_non_maching(jerk, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2):
+  x = ANGLE_COEF * (jerk) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF)
+  sigmoid1 = x / (1. + fabs(x))
+  sigmoid1 *= SIGMOID_COEF_RIGHT
+  
+  x = ANGLE_COEF2 * (jerk) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF2)
+  sigmoid2 = x / (1. + fabs(x))
+  sigmoid2 *= SIGMOID_COEF_LEFT
+  
+  max_speed = ANGLE_OFFSET
+  speed_norm = 0.5 * cos(clip(speed / max_speed, 0., 1.) * PI) + 0.5
+  
+  out = (1-speed_norm) * sigmoid1 + speed_norm * sigmoid2
+  
+  return out
+
+  return sigmoid1 + sigmoid2
+
 def get_steer_feedforward_torque_sigmoid(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
   x = ANGLE_COEF * (angle + ANGLE_OFFSET) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF)
   sigmoid = x / (1. + fabs(x))
@@ -225,6 +261,21 @@ def get_steer_feedforward_volt_torque_old(desired_lateral_accel, v_ego):#, ANGLE
   SPEED_OFFSET2 = -0.36618369
   return get_steer_feedforward_erf1(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
 
+def get_steer_feedforward_volt_torque_new(desired_lateral_accel, v_ego):#, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2):
+  ANGLE_COEF = 0.15461558
+  ANGLE_COEF2 = 0.22491234
+  ANGLE_OFFSET = -0.01173257
+  SPEED_OFFSET = 2.37065180
+  SIGMOID_COEF_RIGHT = 0.14917052
+  SIGMOID_COEF_LEFT = 0.13559770
+  SPEED_COEF = 0.49912791
+  SPEED_COEF2 = 0.37766423
+  SPEED_OFFSET2 = -0.36618369
+  return get_steer_feedforward_erf1(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
+
+# def get_torque_from_lateral_jerk_matching(desired_lateral_jerk, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2):
+#   return get_steer_feedforward_erf1(desired_lateral_jerk, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
+
 def get_steer_feedforward_volt(desired_angle, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
   # ANGLE_COEF = 1.23514093
   # ANGLE_COEF2 = 2.00000000
@@ -330,20 +381,7 @@ def old_feedforward(speed, angle):
     # return 0.000045 * (speed ** 2) * angle # old escalade
     # return 0.00005 * (speed ** 2) * angle
   else:
-    # return np.vectorize(get_steer_feedforward_bolt_torque_old)(angle, speed)
-    # kf = .33 # old volt torque, lacrosse
-    # kf = 0.4 # old tahoe torque
-    # kf = 0.35 # sonata 
-    # return np.vectorize(get_steer_feedforward_palisade_torque_old)(angle,speed)
-    # kf = 0.393 # palisade 
-    # kf = 1/1.4 # vw (golf, passat)
-    kf = 1/2.9638737459977467 # sonata 2020
-    # kf = 1/2.544642494803999 # palisade 2020
-    # kf = 1/2 # ram 1500
-    # kf = 1/1.593387270257916 #pacifica 2018
-    # return np.vectorize(get_steer_feedforward_volt_torque_old)(angle, speed)
-    # return np.vectorize(get_steer_feedforward_acadia_torque)(angle, speed)
-    return angle * kf
+    return angle * 0.5
     
     # return np.vectorize(get_steer_feedforward_suburban_torque_old)(angle, speed)
     # return np.vectorize(get_steer_feedforward_bolt_torque_old)(angle, speed)
@@ -380,6 +418,7 @@ def feedforward(speed, angle, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSE
     return np.vectorize(get_steer_feedforward_lacrosse)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
     return np.vectorize(get_steer_feedforward_suburban)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
   else:
+    # return np.vectorize(get_steer_feedforward_volt_torque(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2))
     # return ANGLE_COEF * (angle + ANGLE_OFFSET) / np.log(np.fmax(1.0, speed)) / (np.log(SPEED_COEF)) 
     
     # bolt
@@ -389,6 +428,9 @@ def feedforward(speed, angle, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSE
     
     # return np.vectorize(get_steer_feedforward_bolt_euv_torque)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
     # return np.vectorize(get_steer_feedforward_lacrosse_torque)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
+    
+    return np.vectorize(get_torque_from_lateral_jerk_matching)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
+    return np.vectorize(get_torque_from_lateral_jerk_non_maching)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
     
     # suburban
     return np.vectorize(get_steer_feedforward_volt_torque)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
@@ -431,8 +473,8 @@ def fit(speed, angle, steer, angle_plot=True):
   global ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2, BOUNDS
   BOUNDS = ([0.001, 0.01, 0.4, 0., 0.1, 0.1, 0.001, 0., 0.],
             [100., 2.0, 1.0, 20., 5., 5.0, 10., 1., 1.]) if IS_ANGLE_PLOT else \
-          ([0.001, 0.22, -3., 15.0, 0.1, 0.1, 0.1, 0.1, 30.0],
-          [5., 0.23, 3., 40., 0.5, 0.5, 2.0, 1.0, 40.0])
+          ([0.0, 0.0, 15.0, -40.0, 0.01, 0.01, 0.01, 0.01, -40.0],
+          [5.0, 5.0, 25.0, 40.0, 2.0, 2.0, 2.0, 2.0, 40.0])
   params, _ = curve_fit(  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking
     _fit_kf,
     np.array([speed, angle]),
@@ -605,7 +647,7 @@ def plot(speed, angle, steer):
     res = 1000
 
     _speeds = []
-    STEP = 10 # mph
+    STEP = 7 # mph
     for s in range(SPEED_MIN, 90, STEP):
       _speeds.append([s, s + STEP])
     _speeds = np.r_[_speeds]
@@ -665,7 +707,7 @@ def plot(speed, angle, steer):
         plt.xlabel('angle (deg)')
         plt.xlim(-55.,55.)
       else:
-        plt.xlabel('lateral acceleration (m/s^2)')
+        plt.xlabel('lateral jerk (m/s^3)')
         plt.xlim(-3.5,3.5)
       plt.ylabel('steer')
       plt.ylim(-1.5, 1.5)
@@ -695,9 +737,13 @@ def plot(speed, angle, steer):
       'rm -f ~/Downloads/plots/lat*.png',
       # 'rm -f ~/Downloads/plots/mph*.png',
       # 'rm -f regularized',
-      f'mv ~/Downloads/plots ~/Downloads/plots_{"angle" if IS_ANGLE_PLOT else "torque"}',
-      f'cp regularized ~/Downloads/plots_{"angle" if IS_ANGLE_PLOT else "torque"}/regularized'
+      f'mv ~/Downloads/plots ~/Downloads/plots_{"lat-jerk"}',
+      f'cp regularized ~/Downloads/plots_{"lat-jerk"}/regularized'
     ]
     for cmd in cmds:
       print(cmd)
       os.system(cmd)
+
+
+def get_steer_feedforward_for_filter():
+  return get_steer_feedforward_volt_torque_new
