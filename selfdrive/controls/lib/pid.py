@@ -67,7 +67,7 @@ class PIDController:
 
     if any([k > 0.0 for k in self._k_d[1]]):
       self._d_period = max(2,round(derivative_period * rate))  # period of time for derivative calculation (seconds converted to frames)
-      self._d_period_recip = 1. / self._d_period
+      self._d_period_recip = 1 / derivative_period
       self.errors_d = deque(maxlen=self._d_period)
     else:
       self.errors_d = None

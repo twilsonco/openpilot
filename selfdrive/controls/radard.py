@@ -308,7 +308,7 @@ class LongRangeLead():
   def reset_deriv(self, derivative_period=None, reason=''):
     if derivative_period is not None:
       self._d_period = round(derivative_period * self._rate)  # period of time for derivative calculation (seconds converted to frames)
-      self._d_period_recip = 1. / self._d_period
+      self._d_period_recip = 1 / derivative_period
     self.y_rel_vals = deque(maxlen=max(2, self._d_period))
     self.vLat = 0.0
     if self._debug_counter - self._reset_deriv_log_counter > self._reset_deriv_log_freq:

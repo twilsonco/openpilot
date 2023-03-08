@@ -30,8 +30,8 @@ class LatControlTorque(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
     self.pid = PIDController(CP.lateralTuning.torque.kp, CP.lateralTuning.torque.ki,
-                            k_d=CP.lateralTuning.torque.kd, derivative_period=0.1,
-                            k_11 = 0.5, k_12 = 0.5, k_13 = 0.5, k_period=0.1,
+                            k_d=CP.lateralTuning.torque.kd, derivative_period=0.2,
+                            k_11 = 0.5, k_12 = 0.5, k_13 = 0.5, k_period=0.2,
                             k_f=CP.lateralTuning.torque.kf, integral_period=1.5,
                             pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
@@ -96,7 +96,6 @@ class LatControlTorque(LatControl):
       
       self._lat_accels.append(actual_lateral_accel)
       if len(self._lat_accels) == int(self._lat_accels.maxlen):  # makes sure we have enough history for period
-        absjerk = abs(desired_lateral_jerk)
         actual_lateral_jerk = (self._lat_accels[-1] - self._lat_accels[0]) * self.pid._d_period_recip
       else:
         actual_lateral_jerk = 0.0

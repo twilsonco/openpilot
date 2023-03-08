@@ -391,7 +391,7 @@ class opParams:
       
       #####
       
-      'XR_v_lat_derivative_period_s': Param(1.0, float, 'Lead relative lateral velocity is calculated as a numerical derivative (change in lateral position with respect to time). This parameter controls the time used to calculate the derivative.\n', min_val=0.1, max_val=10.0, unit="seconds"),
+      'XR_v_lat_derivative_period_s': Param(0.5, float, 'Lead relative lateral velocity is calculated as a numerical derivative (change in lateral position with respect to time). This parameter controls the time used to calculate the derivative.\n', min_val=0.1, max_val=10.0, unit="seconds"),
       
       'XR_v_lat_vLead_factor_bp_mph': Param([15.0, 25.0], [list, float], 'Lead relative lateral velocity only really needs to be calculated to better deal with leads turning out of your lane, which is only typically an issue at low speeds. Meanwhile, the lead lateral velocity data can be noisy compared to radar range data, so we don\'t want to use it when we don\'t need to. Therefore, we decrease the contribution of lateral velocity to total lead velocity at "high" lead speeds and use it at "low" lead speeds. Here you define the "low" and "high" speeds. Below the "low" speed, 100% of lateral velocity is used, and it decreases to 0% by the time the "high" speed is reached.\n', min_val=0.0, max_val=90.0, unit="mph"),
       
@@ -545,7 +545,7 @@ class opParams:
       
       'TUNE_LAT_TRX_ki_period_s': Param(1.5, float, 'The amount of time over which steering error accumulates.', min_val=0.1, max_val=60.0, unit='seconds', show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_kd': Param(1.0, float, kd_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kd': Param(0.015, float, kd_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_kp_e': Param(2.0, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kp is able to change. ", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
@@ -571,7 +571,7 @@ class opParams:
       
       'TUNE_LAT_PID_ki_period_s': Param(1.5, float, 'The amount of time over which steering error accumulates."\n', min_val=0.1, max_val=60.0, unit='seconds', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
-      'TUNE_LAT_PID_kd': Param([0.6, 0.6], [list, float], kd_desc + 'This scales the low-speed response.\n', live=True, min_val=0.0, max_val=10.0, linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_kd': Param([0.007, 0.007], [list, float], kd_desc + 'This scales the low-speed response.\n', live=True, min_val=0.0, max_val=10.0, linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
       'TUNE_LAT_PID_kp_e': Param(0.5, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kp is able to change. ", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
@@ -677,7 +677,7 @@ class opParams:
       
       'TUNE_LONG_ki_period_s': Param(2.5, float, 'The amount of time over which steering error accumulates."\n', min_val=0.1, max_val=60.0, unit='seconds'),
       
-      'TUNE_LONG_kd': Param([0.3, 0.0, 0.0], [list, float], 'Values of kd used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.\n', live=True, min_val=0.0, max_val=5.0),
+      'TUNE_LONG_kd': Param([0.004, 0.0, 0.0], [list, float], 'Values of kd used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.\n', live=True, min_val=0.0, max_val=5.0),
       
       'TUNE_LONG_deadzone_ms2': Param([0.0, 0.0, 0.0], [list, float], 'Values of deadzone used at the corresponding speeds in TUNE_LONG_mph. Deadzone sets a minimum amount of desired acceleration before the gas or brakes are actually actuated. Deadzones are used to smooth jerky long control, if the gas/brake controls are too sensitive or if the planning is noisy.\n', live=True, min_val=0.0, max_val=5.0, unit='m/s²'),
       
@@ -769,6 +769,7 @@ class opParams:
                            'TUNE_LAT_PID_ki_period_s',
                            'TUNE_LONG_kp',
                            'MET_power_meter_smoothing_factor'],
+      '2023/03/08-16:00': [r'.*kd'],
       }  # a dict where each key is a date in 'yyyy/mm/dd-hh:mm' (24-hour) format, and the value is a list of names of params OR regular expressions to match params you want reset to their default values if the modification date is before the key date
       # use something that doesn't match the date string format and the associated list of param names or regex's will apply no matter the modified date of the param
     self._calling_function = calling_function

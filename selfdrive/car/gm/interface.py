@@ -330,7 +330,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torque.useSteeringAngle = True
         ret.lateralTuning.torque.kp = 0.48
         ret.lateralTuning.torque.ki = 0.13
-        ret.lateralTuning.torque.kd = 2.0
+        ret.lateralTuning.torque.kd = 0.03
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
         ret.lateralTuning.torque.friction = 0.14
       else:
@@ -339,7 +339,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kiBP = [0., 40.]
         ret.lateralTuning.pid.kiV = [.015, 0.02]
         ret.lateralTuning.pid.kdBP = [0.]
-        ret.lateralTuning.pid.kdV = [0.6]
+        ret.lateralTuning.pid.kdV = [0.007]
         ret.lateralTuning.pid.kf = 1.0 # !!! ONLY for sigmoid feedforward !!!
       
 
@@ -349,7 +349,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiBP = [5., 15., 35.]
       ret.longitudinalTuning.kiV = [0.08, 0.13, 0.13]
       ret.longitudinalTuning.kdBP = [5., 25.]
-      ret.longitudinalTuning.kdV = [0.3, 0.0]
+      ret.longitudinalTuning.kdV = [0.004, 0.0]
       ret.stoppingDecelRate = 0.2 # brake_travel/s while trying to stop
 
     elif candidate == CAR.MALIBU:
@@ -384,7 +384,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torque.useSteeringAngle = True
         ret.lateralTuning.torque.kp = 0.66
         ret.lateralTuning.torque.ki = 0.15
-        ret.lateralTuning.torque.kd = 2.0
+        ret.lateralTuning.torque.kd = 0.03
         ret.lateralTuning.torque.kf = 1. # custom ff
         ret.lateralTuning.torque.friction = 0.01
       else:
@@ -393,11 +393,11 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kiBP = [0., 35.]
         ret.lateralTuning.pid.kiV = [0.005, 0.01]
         ret.lateralTuning.pid.kdBP = [0.]
-        ret.lateralTuning.pid.kdV = [0.7]
+        ret.lateralTuning.pid.kdV = [0.008]
         ret.lateralTuning.pid.kf = 1.0 # get_steer_feedforward_acadia()
 
       ret.longitudinalTuning.kdBP = [5., 25.]
-      ret.longitudinalTuning.kdV = [0.8, 0.4]
+      ret.longitudinalTuning.kdV = [0.009, 0.005]
       ret.longitudinalTuning.kiBP = [5., 35.]
       ret.longitudinalTuning.kiV = [0.31, 0.34]
       
@@ -412,7 +412,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torque.useSteeringAngle = True
         ret.lateralTuning.torque.kp = 0.48
         ret.lateralTuning.torque.ki = 0.13
-        ret.lateralTuning.torque.kd = 2.0
+        ret.lateralTuning.torque.kd = 0.03
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
         ret.lateralTuning.torque.friction = 0.14
       else:
@@ -421,7 +421,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kiBP = [0., 40.]
         ret.lateralTuning.pid.kiV = [0.01, 0.005]
         ret.lateralTuning.pid.kdBP = [0.]
-        ret.lateralTuning.pid.kdV = [0.6]
+        ret.lateralTuning.pid.kdV = [0.007]
         ret.lateralTuning.pid.kf = 1.0 # !!! ONLY for sigmoid feedforward !!!
 
     elif candidate == CAR.BUICK_REGAL:
@@ -476,14 +476,14 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torque.useSteeringAngle = True
         ret.lateralTuning.torque.kp = 1.8 / max_lateral_accel
         ret.lateralTuning.torque.ki = 0.4 / max_lateral_accel
-        ret.lateralTuning.torque.kd = 4.0 / max_lateral_accel
+        ret.lateralTuning.torque.kd = 0.05 / max_lateral_accel
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
         ret.lateralTuning.torque.friction = 0.005
       else:
         ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 40.0], [0., 40.]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.1, 0.22], [0.01, 0.021]]
         ret.lateralTuning.pid.kdBP = [0.]
-        ret.lateralTuning.pid.kdV = [0.6]
+        ret.lateralTuning.pid.kdV = [0.007]
         ret.lateralTuning.pid.kf = 1. # use with get_feedforward_bolt_euv
     
     if Params().get_bool('OPParamsLateralOverride'):
