@@ -161,8 +161,11 @@ class PIDController:
     self.ki = self.k_i
     self.kd = self.k_d
     
+    self.error_rate = 0.
     if self.errors_d is not None:
       self.errors_d.append(error)
+      if len(self.errors_d) == int(self.errors_d.maxlen):  # makes sure we have enough history for period
+        self.error_rate = (self.errors_d[-1] - self.errors_d[0]) * self._d_period_recip
     
     if self.error_norms is not None and self.errors_d is not None and len(self.errors_d) > 0:
       self.error_norms.append(self.errors_d[-1] / max(speed*0.1, 1.0))
@@ -188,10 +191,6 @@ class PIDController:
     self.p = error * self.kp
     self.f = feedforward * self.k_f
     
-    if self.errors_d is not None and len(self.errors_d) == int(self.errors_d.maxlen):  # makes sure we have enough history for period
-      self.error_rate = (self.errors_d[-1] - self.errors_d[0]) * self._d_period_recip
-    else:
-      self.error_rate = 0.
     
     self.d = clip(self.error_rate * self.kd, self.neg_limit, self.pos_limit)
 
