@@ -1,6 +1,6 @@
 import math
 from selfdrive.controls.lib.pid import PIDController
-from common.numpy_fast import interp, sign
+from common.numpy_fast import interp, sign, clip
 from common.op_params import opParams
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import apply_deadzone
@@ -99,12 +99,16 @@ class LatControlTorque(LatControl):
       friction_compensation = self.get_friction(apply_deadzone(desired_lateral_jerk, self.friction_deadzone), self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD)
       friction_error_offset = 0.0
       if sign(friction_compensation) != sign(error):
-        # friction can't increase error
-        friction_error_offset = abs(friction_compensation) * sign(error)
+        if sign(friction_compensation) != sign(self.pid.error_rate):
+          # friction can't increase error. go to zero
+          friction_error_offset = abs(friction_compensation) * sign(error)
+        else:
+          # friction will increase preemptively before becoming the same sign as error
+          friction_error_offset = sign(self.pid.error_rate) * min(abs(friction_compensation), max(0.0, abs(self.pid.error_rate) * self.friction_error_rate_factor - abs(error)))
       elif sign(friction_compensation) != sign(self.pid.error_rate):
-        # friction will preemptively decrease if about to become opposite sign of error
+        # friction will preemptively decrease if about to become opposite sign as error
         friction_error_offset = sign(self.pid.error_rate) * min(abs(friction_compensation), max(0.0, abs(self.pid.error_rate) * self.friction_error_rate_factor - abs(error)))
-      friction_compensation += friction_error_offset
+      friction_compensation = clip(friction_compensation + friction_error_offset, -abs(friction_compensation), abs(friction_compensation))
       
       # lateral acceleration feedforward
       ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
