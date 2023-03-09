@@ -126,7 +126,7 @@ class LatControlTorque(LatControl):
       elif sign(friction_compensation) != sign(self.pid.error_rate):
         # friction will preemptively decrease if about to become opposite sign as error
         friction_error_offset = sign(self.pid.error_rate) * min(abs(friction_compensation), max(0.0, abs(self.pid.error_rate) * self.friction_error_rate_factor - abs(error)))
-      friction_compensation = clip(friction_compensation + friction_error_offset, -abs(friction_compensation), abs(friction_compensation))
+      # friction_compensation = clip(friction_compensation + friction_error_offset, -abs(friction_compensation), abs(friction_compensation))
       self.friction_compensation.update(friction_compensation)
       
       # lateral acceleration feedforward
