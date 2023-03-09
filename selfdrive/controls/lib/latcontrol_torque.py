@@ -52,8 +52,7 @@ class LatControlTorque(LatControl):
     else:
       self.low_speed_factor_bp = [10.0, 25.0]
       self.low_speed_factor_v = [225.0, 50.0]
-    self.friction_alpha = self._op_params.get('TUNE_LAT_TRX_friction_smoothing_factor', force_update=True)
-    self.friction_compensation = FirstOrderFilter(0., self.friction_alpha, DT_CTRL)
+    self.friction_compensation = FirstOrderFilter(0., 0.0, DT_CTRL)
       
     # for actual lateral jerk calculation
     self._lat_accels = deque(maxlen=self.pid._d_period)
@@ -75,11 +74,7 @@ class LatControlTorque(LatControl):
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
     self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp')]
     self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v')
-    self.friction_error_rate_factor = self._op_params.get('TUNE_LAT_TRX_friction_error_rate_factor')
-    friction_alpha = self._op_params.get('TUNE_LAT_TRX_friction_smoothing_factor')
-    if friction_alpha != self.friction_alpha:
-      self.friction_alpha = friction_alpha
-      self.friction_compensation.update_alpha(self.friction_alpha)
+    self.friction_alpha = [self._op_params.get('TUNE_LAT_TRX_friction_smoothing_factor_bp'), self._op_params.get('TUNE_LAT_TRX_friction_smoothing_factor_v')]
   
   def reset(self):
     super().reset()
@@ -116,20 +111,8 @@ class LatControlTorque(LatControl):
       pid_log.error = error
       
       # lateral jerk feedforward
-      friction_compensation = self.get_friction(desired_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD)
-      friction_error_offset = 0.0
-      if sign(friction_compensation) != sign(error):
-        if sign(friction_compensation) != sign(self.pid.error_rate):
-          # friction can't increase error. go to zero
-          friction_error_offset = abs(friction_compensation) * sign(error)
-        else:
-          # friction will increase preemptively before becoming the same sign as error
-          friction_error_offset = sign(self.pid.error_rate) * min(abs(friction_compensation), max(0.0, abs(self.pid.error_rate) * self.friction_error_rate_factor - abs(error)))
-      elif sign(friction_compensation) != sign(self.pid.error_rate):
-        # friction will preemptively decrease if about to become opposite sign as error
-        friction_error_offset = sign(self.pid.error_rate) * min(abs(friction_compensation), max(0.0, abs(self.pid.error_rate) * self.friction_error_rate_factor - abs(error)))
-      # friction_compensation = clip(friction_compensation + friction_error_offset, -abs(friction_compensation), abs(friction_compensation))
-      self.friction_compensation.update(friction_compensation)
+      self.friction_compensation.update_alpha(interp(abs(desired_lateral_accel), self.friction_alpha[0], self.friction_alpha[1]))
+      self.friction_compensation.update(self.get_friction(desired_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD))
       
       # lateral acceleration feedforward
       ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
@@ -152,7 +135,6 @@ class LatControlTorque(LatControl):
       pid_log.desiredLateralJerk = desired_lateral_jerk
       pid_log.currentLateralJerk = actual_lateral_jerk
       pid_log.friction = self.friction_compensation.x
-      pid_log.frictionErrorOffset = friction_error_offset
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i
       pid_log.d = self.pid.d
