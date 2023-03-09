@@ -1,12 +1,11 @@
 import math
-from collections import deque
 from selfdrive.controls.lib.pid import PIDController
+from common.differentiator import Differentiator
 from common.filter_simple import FirstOrderFilter
-from common.numpy_fast import interp, sign, clip
+from common.numpy_fast import interp, sign
 from common.op_params import opParams
 from common.realtime import DT_CTRL
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.drive_helpers import apply_deadzone
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from cereal import log
@@ -55,7 +54,7 @@ class LatControlTorque(LatControl):
     self.friction_compensation = FirstOrderFilter(0., 0.0, DT_CTRL)
       
     # for actual lateral jerk calculation
-    self._lat_accels = deque(maxlen=self.pid._d_period)
+    self.actual_lateral_jerk = Differentiator(self.pid.error_rate._d_period_s, 100.0)
   
   def update_op_params(self):
     if not self.tune_override:
@@ -69,6 +68,7 @@ class LatControlTorque(LatControl):
     self.pid._k_13 = [[0], [self._op_params.get('TUNE_LAT_TRX_kd_e')]]
     self.pid.update_i_period(self._op_params.get('TUNE_LAT_TRX_ki_period_s'))
     self.pid.update_d_period(self._op_params.get('TUNE_LAT_TRX_kd_period_s'))
+    self.actual_lateral_jerk.update_period(self.pid.error_rate._d_period_s)
     self.pid.k_f = self._op_params.get('TUNE_LAT_TRX_kf')
     self.friction = self._op_params.get('TUNE_LAT_TRX_friction')
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
@@ -79,7 +79,7 @@ class LatControlTorque(LatControl):
   def reset(self):
     super().reset()
     self.pid.reset()
-    self._lat_accels = deque(maxlen=self.pid._d_period)
+    self.actual_lateral_jerk.reset()
 
   def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, mean_curvature=0.0, use_roll=True):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
@@ -90,11 +90,7 @@ class LatControlTorque(LatControl):
     else:
       actual_curvature = llk.angularVelocityCalibrated.value[2] / CS.vEgo
     actual_lateral_accel = actual_curvature * CS.vEgo**2
-    self._lat_accels.append(actual_lateral_accel)
-    if len(self._lat_accels) == int(self._lat_accels.maxlen):  # makes sure we have enough history for period
-      actual_lateral_jerk = (self._lat_accels[-1] - self._lat_accels[0]) * self.pid._d_period_recip
-    else:
-      actual_lateral_jerk = 0.0
+    self.actual_lateral_jerk.update(actual_lateral_accel)
 
     if CS.vEgo < MIN_STEER_SPEED or not active:
       output_torque = 0.0
@@ -126,7 +122,7 @@ class LatControlTorque(LatControl):
       angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
       angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
       pid_log.steerAngleError = angle_steers_des - CS.steeringAngleDeg
-      pid_log.errorRate = self.pid.error_rate
+      pid_log.errorRate = self.pid.error_rate.x
 
       pid_log.active = True
       pid_log.desiredLateralAcceleration = desired_lateral_accel
@@ -143,7 +139,7 @@ class LatControlTorque(LatControl):
       pid_log.kd = self.pid.kd
       pid_log.gainUpdateFactor = self.pid._gain_update_factor
     pid_log.currentLateralAcceleration = actual_lateral_accel
-    pid_log.currentLateralJerk = actual_lateral_jerk
+    pid_log.currentLateralJerk = self.actual_lateral_jerk.x
       
 
     #TODO left is positive in this convention
