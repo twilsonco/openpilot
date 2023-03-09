@@ -85,25 +85,24 @@ class LatControlTorque(LatControl):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     self.v_ego = CS.vEgo
 
+    if self.use_steering_angle:
+      actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll if use_roll else 0.0)
+    else:
+      actual_curvature = llk.angularVelocityCalibrated.value[2] / CS.vEgo
+    actual_lateral_accel = actual_curvature * CS.vEgo**2
+    self._lat_accels.append(actual_lateral_accel)
+    if len(self._lat_accels) == int(self._lat_accels.maxlen):  # makes sure we have enough history for period
+      actual_lateral_jerk = (self._lat_accels[-1] - self._lat_accels[0]) * self.pid._d_period_recip
+    else:
+      actual_lateral_jerk = 0.0
+
     if CS.vEgo < MIN_STEER_SPEED or not active:
       output_torque = 0.0
       pid_log.active = False
       self.pid.reset()
     else:
-      if self.use_steering_angle:
-        actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll if use_roll else 0.0)
-      else:
-        actual_curvature = llk.angularVelocityCalibrated.value[2] / CS.vEgo
       desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
-      actual_lateral_accel = actual_curvature * CS.vEgo**2
-      
-      self._lat_accels.append(actual_lateral_accel)
-      if len(self._lat_accels) == int(self._lat_accels.maxlen):  # makes sure we have enough history for period
-        actual_lateral_jerk = (self._lat_accels[-1] - self._lat_accels[0]) * self.pid._d_period_recip
-      else:
-        actual_lateral_jerk = 0.0
-
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)
       setpoint = desired_lateral_accel + low_speed_factor * min(abs(desired_curvature), abs(mean_curvature)) * sign(desired_curvature)
       measurement = actual_lateral_accel + low_speed_factor * min(abs(actual_curvature), abs(mean_curvature)) * sign(actual_curvature)
@@ -130,10 +129,8 @@ class LatControlTorque(LatControl):
       pid_log.errorRate = self.pid.error_rate
 
       pid_log.active = True
-      pid_log.currentLateralAcceleration = actual_lateral_accel
       pid_log.desiredLateralAcceleration = desired_lateral_accel
       pid_log.desiredLateralJerk = desired_lateral_jerk
-      pid_log.currentLateralJerk = actual_lateral_jerk
       pid_log.friction = self.friction_compensation.x
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i
@@ -145,6 +142,8 @@ class LatControlTorque(LatControl):
       pid_log.ki = self.pid.ki
       pid_log.kd = self.pid.kd
       pid_log.gainUpdateFactor = self.pid._gain_update_factor
+    pid_log.currentLateralAcceleration = actual_lateral_accel
+    pid_log.currentLateralJerk = actual_lateral_jerk
       
 
     #TODO left is positive in this convention
