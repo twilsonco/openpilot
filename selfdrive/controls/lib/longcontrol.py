@@ -78,11 +78,13 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_targ
 class LongControl():
   def __init__(self, CP):
     self.long_control_state = LongCtrlState.off  # initialized to off
+    self._op_params = opParams(calling_function="longcontrol.py")
     self.pid = PIDController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
                             (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
                             (CP.longitudinalTuning.kdBP, CP.longitudinalTuning.kdV),
-                            derivative_period=0.2,
-                            k_11 = 0.5, k_12 = 0.5, k_13 = 0.5, k_period=0.2,
+                            derivative_period=self._op_params.get('TUNE_LONG_kd_period_s', force_update=True),
+                            integral_period=self._op_params.get('TUNE_LONG_ki_period_s', force_update=True),
+                            k_11 = 0.2, k_12 = 0.4, k_13 = 0.4, k_period=0.1,
                             rate=RATE,
                             sat_limit=0.8)
     self.v_pid = 0.0
@@ -93,7 +95,6 @@ class LongControl():
     self.a_target = 0.0
     self.brake_pressed_last_t = sec_since_boot()
     self.brake_pressed_time_since = 0.0
-    self._op_params = opParams(calling_function="longcontrol.py")
     self.pos_accel_gas_smooth_k = 0.5
     self.pos_accel_lead_smooth_k = 0.5
     self.pos_accel_smooth_k = 0.0
@@ -123,6 +124,7 @@ class LongControl():
     self.pid._k_i = [bp, self._op_params.get('TUNE_LONG_ki')]
     self.pid._k_d = [bp, self._op_params.get('TUNE_LONG_kd')]
     self.pid.update_i_period(self._op_params.get('TUNE_LONG_ki_period_s'))
+    self.pid.update_d_period(self._op_params.get('TUNE_LONG_kd_period_s'))
     self.deadzone_bp, self.deadzone_v = bp, self._op_params.get('TUNE_LONG_deadzone_ms2')
 
   def reset(self, v_pid):

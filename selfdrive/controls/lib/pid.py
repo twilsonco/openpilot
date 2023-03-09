@@ -66,6 +66,7 @@ class PIDController:
       self.errors_i = None
 
     if any([k > 0.0 for k in self._k_d[1]]):
+      self._d_period_s = derivative_period
       self._d_period = max(2,round(derivative_period * rate))  # period of time for derivative calculation (seconds converted to frames)
       self._d_period_recip = 1 / derivative_period
       self.errors_d = deque(maxlen=self._d_period)
@@ -144,13 +145,12 @@ class PIDController:
       self._i_raw = 0.0
       self._k_i_period = self._op_params.get("TUNE_PID_ki_period_default_s")
       self._k_i_scale = self._k_i_period / max(0.01, self._i_period_s)
-      
-  def _update_i_period(self):
-    k_i_period = self._op_params.get("TUNE_PID_ki_period_default_s")
-    if k_i_period != self._k_i_period:
-      self._k_i_period = k_i_period
-      self._i_period_s += 1.0
-      self.update_i_period(self._i_period_s - 1.0)
+  
+  def update_d_period(self, derivative_period):
+    if derivative_period != self._d_period_s:
+      self._d_period = max(2,round(derivative_period * self._rate))  # period of time for derivative calculation (seconds converted to frames)
+      self._d_period_recip = 1 / derivative_period
+      self.errors_d = deque(maxlen=self._d_period)
 
   def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
     self.speed = speed

@@ -31,16 +31,18 @@ def get_steer_feedforward(desired_lateral_accel, speed):
 class LatControlTorque(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
+    self._op_params = opParams(calling_function="latcontrol_torque.py")
     self.pid = PIDController(CP.lateralTuning.torque.kp, CP.lateralTuning.torque.ki,
-                            k_d=CP.lateralTuning.torque.kd, derivative_period=0.2,
-                            k_11 = 0.5, k_12 = 0.5, k_13 = 0.5, k_period=0.2,
-                            k_f=CP.lateralTuning.torque.kf, integral_period=1.5,
+                            k_d=CP.lateralTuning.torque.kd,
+                            k_11 = 0.5, k_12 = 0.5, k_13 = 0.5, k_period=0.1,
+                            k_f=CP.lateralTuning.torque.kf,
+                            integral_period=self._op_params.get('TUNE_LAT_TRX_ki_period_s', force_update=True),
+                            derivative_period=self._op_params.get('TUNE_LAT_TRX_kd_period_s', force_update=True),
                             pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
     self.friction = CP.lateralTuning.torque.friction
     self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
     self.get_friction = CI.get_steer_feedforward_function_torque_lat_jerk()
-    self._op_params = opParams(calling_function="latcontrol_torque.py")
     self.roll_k = 0.55
     self.v_ego = 0.0
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
@@ -67,6 +69,7 @@ class LatControlTorque(LatControl):
     self.pid._k_12 = [[0], [self._op_params.get('TUNE_LAT_TRX_ki_e')]]
     self.pid._k_13 = [[0], [self._op_params.get('TUNE_LAT_TRX_kd_e')]]
     self.pid.update_i_period(self._op_params.get('TUNE_LAT_TRX_ki_period_s'))
+    self.pid.update_d_period(self._op_params.get('TUNE_LAT_TRX_kd_period_s'))
     self.pid.k_f = self._op_params.get('TUNE_LAT_TRX_kf')
     self.friction = self._op_params.get('TUNE_LAT_TRX_friction')
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
