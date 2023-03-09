@@ -41,7 +41,6 @@ class LatControlTorque(LatControl):
     self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
     self.get_friction = CI.get_steer_feedforward_function_torque_lat_jerk()
     self._op_params = opParams(calling_function="latcontrol_torque.py")
-    self.friction_deadzone = self._op_params.get("TUNE_LAT_TRX_lateral_friction_deadzone", force_update=True)
     self.roll_k = 0.55
     self.v_ego = 0.0
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
