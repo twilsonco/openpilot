@@ -3343,8 +3343,8 @@ static void ui_draw_vision_speed(UIState *s) {
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
     ui_draw_text(s, s->fb_w / 2, 210, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
     ui_draw_text(s, s->fb_w / 2, 290, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
-    s->scene.speed_rect = {s->fb_w / 2 - 50, 150, 150, 300};
   }
+  s->scene.speed_rect = {s->fb_w / 2 - 50, 0, 200, 450};
 }
 
 static void ui_draw_vision_event(UIState *s) {
