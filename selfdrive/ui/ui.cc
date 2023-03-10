@@ -971,6 +971,7 @@ static void update_status(UIState *s) {
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
       s->scene.screen_tapped = Params().getBool("ScreenTapped");
+      s->scene.screen_tapped2 = s->scene.screen_tapped;
       if (Params().getBool("LowOverheadMode") && s->scene.screen_dim_mode_cur == s->scene.screen_dim_mode_max){
         s->scene.screen_dim_mode_cur -= 1;
         Params().put("ScreenDimMode", std::to_string(s->scene.screen_dim_mode_cur).c_str(), 1);
