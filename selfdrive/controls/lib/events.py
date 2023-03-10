@@ -1311,6 +1311,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
   
   EventName.opParamsParamChanged: {
-    ET.PERMANENT: opparams_param_changed_alert(),
+    ET.WARNING: opparams_param_changed_alert,
+    ET.PERMANENT: opparams_param_changed_alert,
   },
 }
