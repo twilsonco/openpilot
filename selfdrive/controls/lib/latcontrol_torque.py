@@ -54,10 +54,7 @@ class LatControlTorque(LatControl):
       self.low_speed_factor_v = [225.0, 50.0]
     self.friction_compensation = FirstOrderFilter(0., 0.0, DT_CTRL, rate_up=0.6 * DT_CTRL, rate_down=0.8*DT_CTRL)
     self.friction_integral = Integrator(1.0, 100)
-    self.friction_offset = 0.0
     self.friction_factor = 1.0
-    self.friction_decay_factor = 0.97 # 0.36 after 1/3s at 100hz
-    self.friction_growth_factor = 1.0 / self.friction_decay_factor
       
     # for actual lateral jerk calculation
     self.actual_lateral_jerk = Differentiator(self.pid.error_rate._d_period_s, 100.0)
@@ -78,7 +75,9 @@ class LatControlTorque(LatControl):
     self.friction_compensation.rate_up = self._op_params.get('TUNE_LAT_TRX_friction_rate_up')
     self.friction_compensation.rate_down = self._op_params.get('TUNE_LAT_TRX_friction_rate_down')
     self.friction_integral.update_period(self._op_params.get('TUNE_LAT_TRX_friction_integral_period_s'))
-    self.friction_integral_cap = self._op_params.get('TUNE_LAT_TRX_friction_integral_cap')
+    self.friction_max_time = self._op_params.get('TUNE_LAT_TRX_friction_max_time_s')
+    self.friction_decay_factor = self._op_params.get('TUNE_LAT_TRX_friction_ramp_factor')
+    self.friction_growth_factor = 1.0 / self.friction_decay_factor
     self.pid.k_f = self._op_params.get('TUNE_LAT_TRX_kf')
     self.friction = self._op_params.get('TUNE_LAT_TRX_friction')
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
@@ -122,7 +121,8 @@ class LatControlTorque(LatControl):
         self.friction_integral.reset()
         self.friction_factor = 1.0
       self.friction_integral.update(self.friction_compensation.x)
-      if abs(self.friction_integral.x) >= self.friction_integral_cap:
+      friction_integral_cap = self.friction_max_time * abs(self.get_friction(max(0.15, abs(desired_lateral_jerk)), self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD))
+      if abs(self.friction_integral.x) >= friction_integral_cap:
         self.friction_factor *= self.friction_decay_factor
       elif self.friction_factor < 1.0:
         self.friction_factor = min(1.0, self.friction_factor * self.friction_growth_factor)

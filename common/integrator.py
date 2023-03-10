@@ -25,8 +25,8 @@ class Integrator:
     
   def update_period(self, integral_period, force_update=False):
     if not self.passive and integral_period != self._i_period_s:
-      self._i_period_s = max(0.01, integral_period)
-      self._i_period = max(2,round(integral_period * self._rate))  # period of time for integral calculation (seconds converted to frames)
+      self._i_period_s = max(0.03, integral_period)
+      self._i_period = max(3,round(self._i_period_s * self._rate))  # period of time for integral calculation (seconds converted to frames)
       self._i_dt = 0.5 / self._rate # multiplied to get trapezoidal area at each step, hence the 1/2
       self.vals = deque(maxlen=self._i_period)
       self._x = 0.0
