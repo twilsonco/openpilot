@@ -400,7 +400,7 @@ def opparams_param_changed_alert(CP: car.CarParams, sm: messaging.SubMaster, met
               f"from '{oldval}' to '{newval}'", 
               AlertStatus.normal, AlertSize.mid,
               Priority.LOWER, VisualAlert.none, 
-              AudibleAlert.none, 0., 0.4, 3.0)
+              AudibleAlert.none, 0., 0.4, 5.0)
   
   
 def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:

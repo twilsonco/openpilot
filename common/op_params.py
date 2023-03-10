@@ -875,8 +875,8 @@ class opParams:
     if show_alert:
       _write_param('op_edit_param_changed', True, reason=reason, old_value=old_val, do_log=False)
       _write_param('op_edit_param_changed_name', key, reason=reason, old_value=old_val, do_log=False)
-      _write_param('op_edit_param_changed_val_old', old_val, reason=reason, old_value=old_val, do_log=False)
-      _write_param('op_edit_param_changed_val_new', value, reason=reason, old_value=old_val, do_log=False)
+      _write_param('op_edit_param_changed_val_old', str(old_val), reason=reason, old_value=old_val, do_log=False)
+      _write_param('op_edit_param_changed_val_new', str(value), reason=reason, old_value=old_val, do_log=False)
 
   def _load_params(self, can_import=False):
     if not os.path.exists(PARAMS_DIR):
