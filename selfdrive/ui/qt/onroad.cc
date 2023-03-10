@@ -86,7 +86,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
     bool ignorePress = false;
     if (!QUIState::ui_state.scene.screen_tapped2){
       QUIState::ui_state.scene.screen_tapped2 = true;
-      ignore_press = true;
+      ignorePress = true;
     }
     ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.speed_limit_sign_touch_rect, e);
     ignorePress = ignorePress || ptInBiggerRect(QUIState::ui_state.scene.laneless_btn_touch_rect, e);
