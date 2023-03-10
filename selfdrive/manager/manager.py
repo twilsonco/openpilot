@@ -35,6 +35,7 @@ def manager_init():
   default_params = [
     ("CompletedTrainingVersion", "1"),
     ("HasAcceptedTerms", "1"),
+    ("DisableUpdates", "0"),
     ("HandsOnWheelMonitoring", "0"),
     ("OpenpilotEnabledToggle", "1"),
     ("CommunityFeaturesToggle", "1"),

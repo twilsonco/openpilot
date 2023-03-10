@@ -336,7 +336,8 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
 def main():
   params = Params()
 
-  if params.get_bool("DisableUpdates"):
+  updates_allowed = not params.get_bool("DisableUpdates")
+  if not updates_allowed:
     raise RuntimeError("updates are disabled by the DisableUpdates param")
 
   if EON and os.geteuid() != 0:
@@ -372,52 +373,55 @@ def main():
   #  * every 1m, do a lightweight internet/update check
   #  * every 10m, do a full git fetch
   while not wait_helper.shutdown:
-    update_now = wait_helper.ready_event.is_set()
-    wait_helper.ready_event.clear()
+    if updates_allowed:
+      update_now = wait_helper.ready_event.is_set()
+      wait_helper.ready_event.clear()
 
-    # Don't run updater while onroad or if the time's wrong
-    time_wrong = datetime.datetime.utcnow().year < 2023
-    is_onroad = not params.get_bool("IsOffroad")
-    if is_onroad or time_wrong:
-      wait_helper.sleep(30)
-      cloudlog.info("not running updater, not offroad")
-      continue
+      # Don't run updater while onroad or if the time's wrong
+      time_wrong = datetime.datetime.utcnow().year < 2023
+      is_onroad = not params.get_bool("IsOffroad")
+      if is_onroad or time_wrong:
+        wait_helper.sleep(30)
+        cloudlog.info("not running updater, not offroad")
+        continue
 
-    # Attempt an update
-    exception = None
-    new_version = False
-    update_failed_count += 1
-    try:
-      init_overlay()
+      # Attempt an update
+      exception = None
+      new_version = False
+      update_failed_count += 1
+      try:
+        init_overlay()
 
-      internet_ok, update_available = check_for_update()
-      if internet_ok and not update_available:
-        update_failed_count = 0
+        internet_ok, update_available = check_for_update()
+        if internet_ok and not update_available:
+          update_failed_count = 0
 
-      # Fetch updates at most every 10 minutes
-      if internet_ok and (update_now or time.monotonic() - last_fetch_time > 60*10):
-        new_version = fetch_update(wait_helper)
-        update_failed_count = 0
-        last_fetch_time = time.monotonic()
+        # Fetch updates at most every 10 minutes
+        if internet_ok and (update_now or time.monotonic() - last_fetch_time > 60*10):
+          new_version = fetch_update(wait_helper)
+          update_failed_count = 0
+          last_fetch_time = time.monotonic()
 
-        if first_run and not new_version and os.path.isdir(NEOSUPDATE_DIR):
-          shutil.rmtree(NEOSUPDATE_DIR)
-        first_run = False
-    except subprocess.CalledProcessError as e:
-      cloudlog.event(
-        "update process failed",
-        cmd=e.cmd,
-        output=e.output,
-        returncode=e.returncode
-      )
-      exception = f"command failed: {e.cmd}\n{e.output}"
-      overlay_init.unlink(missing_ok=True)
-    except Exception as e:
-      cloudlog.exception("uncaught updated exception, shouldn't happen")
-      exception = str(e)
-      overlay_init.unlink(missing_ok=True)
+          if first_run and not new_version and os.path.isdir(NEOSUPDATE_DIR):
+            shutil.rmtree(NEOSUPDATE_DIR)
+          first_run = False
+      except subprocess.CalledProcessError as e:
+        cloudlog.event(
+          "update process failed",
+          cmd=e.cmd,
+          output=e.output,
+          returncode=e.returncode
+        )
+        exception = f"command failed: {e.cmd}\n{e.output}"
+        overlay_init.unlink(missing_ok=True)
+      except Exception as e:
+        cloudlog.exception("uncaught updated exception, shouldn't happen")
+        exception = str(e)
+        overlay_init.unlink(missing_ok=True)
 
-    set_params(new_version, update_failed_count, exception)
+      set_params(new_version, update_failed_count, exception)
+    else:
+      cloudlog.info("Updatedd: skipping update check due to setting of DisableUpdates param")
     wait_helper.sleep(60)
 
   dismount_overlay()
