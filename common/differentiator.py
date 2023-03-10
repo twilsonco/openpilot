@@ -8,7 +8,10 @@ class Differentiator:
     self._D = FirstOrderFilter(0.0, alpha, self.dt)
     self.passive = passive
     if not self.passive:
-      self.bounds = bounds
+      if not isinstance(bounds, list) or not all([type(v) == float for v in bounds]):
+        self.bounds = [-1e150, 1e150]
+      else:
+        self.bounds = bounds
       self._d_period_s = 0.0
       self._rate = rate
       self.update_period(derivative_period)
