@@ -393,7 +393,16 @@ def stopped_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> A
     s = "Stopped for %s | Gas to resume" % t
   return Alert(s, "", AlertStatus.normal, AlertSize.small,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3)
-
+  
+def opparams_param_changed_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  name, oldval, newval = [OPPARAMS.get(f"op_edit_param_changed_{k}", force_update=True) for k in ["name","val_old","val_new"]]
+  return Alert(f"opParams: changed '{name}'", 
+              f"from '{oldval}' to '{newval}'", 
+              AlertStatus.normal, AlertSize.mid,
+              Priority.LOWER, VisualAlert.none, 
+              AudibleAlert.none, 0., 0.4, 3.0)
+  
+  
 def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   axes = sm['testJoystick'].axes
   gb, steer = list(axes)[:2] if len(axes) else (0., 0.)
@@ -1299,5 +1308,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Cruise main turned off",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.opParamsParamChanged: {
+    ET.PERMANENT: opparams_param_changed_alert(),
   },
 }

@@ -405,6 +405,10 @@ class Controls:
     if self.low_visibility_activated:
       self.low_visibility_activated = False
       self.events.add(EventName.lowVisibilityActivated)
+      
+    if self._op_params.get("op_edit_param_changed"):
+      self._op_params.put("op_edit_param_changed", False, do_log=False)
+      self.events.add(EventName.lowVisibilityActivated)
 
     # Create events for battery, temperature, disk space, and memory
     if EON and self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:

@@ -44,7 +44,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         username = ''
         while username == '':
           username = input('>> ').strip()
-        self.op_params.put('MISC_username', username)
+        self.op_params.put('MISC_username', username, show_alert=True)
         self.username = username
         self.success('Thanks! Saved your username\n'
                      'Edit the \'username\' parameter at any time to update', sleep_time=1.5)
@@ -345,7 +345,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           self.warning('Value out of bounds: clipped to {}'.format(new_value))
 
         # if not param_info.static:  # stay in live tuning interface
-        self.op_params.put(chosen_key, new_value)
+        self.op_params.put(chosen_key, new_value, show_alert=True)
         self.success('Saved {} with value: {}{}{} (type: {})'.format(chosen_key, self.color_from_type(new_value), ' ' + param_info.unit, COLORS.SUCCESS, type(new_value).__name__))
         # else:  # else ask to save and break
         #   self.warning('\nOld value: {}{} (type: {})'.format(self.color_from_type(old_value), COLORS.WARNING, type(old_value).__name__))
@@ -400,7 +400,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         else:
           old_value[choice_idx] = new_value
 
-        self.op_params.put(chosen_key, old_value)
+        self.op_params.put(chosen_key, old_value, show_alert=True)
         self.success('Saved {} with value: {}{} (type: {})'.format(chosen_key, self.color_from_type(new_value), COLORS.SUCCESS, type(new_value).__name__), end='\n')
         break
       

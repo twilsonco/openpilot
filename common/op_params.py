@@ -93,13 +93,14 @@ def _read_param(key):  # Returns None, False if a json error occurs
     return None, False
 
 
-def _write_param(key, value, reason=None, old_value=None):
-  log = {"time of change": datetime.now().strftime(HISTORY_DATETIME_FORMAT),
-        "name": key,
-        "value": value,
-        "old value": old_value,
-        "reason": reason}
-  write_history(log)
+def _write_param(key, value, reason=None, old_value=None, do_log=True):
+  if do_log:
+    log = {"time of change": datetime.now().strftime(HISTORY_DATETIME_FORMAT),
+          "name": key,
+          "value": value,
+          "old value": old_value,
+          "reason": reason}
+    write_history(log)
   param_path = os.path.join(PARAMS_DIR, key)
   with atomic_write(param_path, overwrite=True) as f:
     f.write(json.dumps(value))
@@ -799,6 +800,10 @@ class opParams:
     self.fork_params['op_edit_live_mode'] = Param(False, bool, 'This parameter controls which mode opEdit starts in', hidden=True)
     self.fork_params['op_edit_section'] = Param('', str, 'This parameter controls display of param sections', hidden=True)
     self.fork_params['op_edit_compact_view'] = Param(True, bool, 'This parameter controls display of more or less parameters on the home screen', hidden=True)
+    self.fork_params['op_edit_param_changed'] = Param(False, bool, 'This triggers openpilot to show an alert with the changed param', hidden=True, live=True)
+    self.fork_params['op_edit_param_changed_name'] = Param("", str, 'Name of changed parameter', hidden=True, live=True)
+    self.fork_params['op_edit_param_changed_val_old'] = Param("", str, 'Changed parameter old value', hidden=True, live=True)
+    self.fork_params['op_edit_param_changed_val_new'] = Param("", str, 'Changed parameter new value', hidden=True, live=True)
     if not self.live_tuning_enabled:
       for p in self.fork_params:
         self.fork_params[p].live = False
@@ -843,7 +848,7 @@ class opParams:
                                           force_update=force_update, 
                                           time_cur=sec_since_boot())
 
-  def put(self, key, value, reason="changed by user"):
+  def put(self, key, value, reason="changed by user", show_alert=False, do_log=True):
     self._check_key_exists(key, 'put')
     old_val = self.fork_params[key].value
     if not self.fork_params[key].type_is_valid(value):
@@ -866,7 +871,12 @@ class opParams:
           else str(value)
         cloudlog.info(f"opParams: putting value in linked param: {value = }. {key = }")
         self.fork_params[key]._params.put(self.fork_params[key].param_param, put_val)
-    _write_param(key, value, reason=reason, old_value=old_val)
+    _write_param(key, value, reason=reason, old_value=old_val, do_log=do_log)
+    if show_alert:
+      _write_param('op_edit_param_changed', True, reason=reason, old_value=old_val, do_log=False)
+      _write_param('op_edit_param_changed_name', key, reason=reason, old_value=old_val, do_log=False)
+      _write_param('op_edit_param_changed_val_old', old_val, reason=reason, old_value=old_val, do_log=False)
+      _write_param('op_edit_param_changed_val_new', value, reason=reason, old_value=old_val, do_log=False)
 
   def _load_params(self, can_import=False):
     if not os.path.exists(PARAMS_DIR):
