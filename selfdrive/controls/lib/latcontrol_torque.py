@@ -57,7 +57,7 @@ class LatControlTorque(LatControl):
     self.friction_offset = 0.0
     self.friction_factor = 1.0
     self.friction_decay_factor = 0.97 # 0.36 after 1/3s at 100hz
-    self.friction_growth_factor = 1 / self.friction_decay_factor
+    self.friction_growth_factor = 1.0 / self.friction_decay_factor
       
     # for actual lateral jerk calculation
     self.actual_lateral_jerk = Differentiator(self.pid.error_rate._d_period_s, 100.0)
@@ -149,6 +149,7 @@ class LatControlTorque(LatControl):
       pid_log.desiredLateralJerk = desired_lateral_jerk
       pid_log.friction = friction_compensation
       pid_log.frictionFactor = self.friction_factor
+      pid_log.frictionIntegral = self.friction_integral.x
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i
       pid_log.d = self.pid.d
