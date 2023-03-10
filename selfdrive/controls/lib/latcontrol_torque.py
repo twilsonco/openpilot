@@ -51,7 +51,7 @@ class LatControlTorque(LatControl):
     else:
       self.low_speed_factor_bp = [10.0, 25.0]
       self.low_speed_factor_v = [225.0, 50.0]
-    self.friction_compensation = FirstOrderFilter(0., 0.0, DT_CTRL)
+    self.friction_compensation = FirstOrderFilter(0., 0.0, DT_CTRL, rate_up=0.6 * DT_CTRL, rate_down=0.8*DT_CTRL)
       
     # for actual lateral jerk calculation
     self.actual_lateral_jerk = Differentiator(self.pid.error_rate._d_period_s, 100.0)
