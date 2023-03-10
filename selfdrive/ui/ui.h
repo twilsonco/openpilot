@@ -406,6 +406,7 @@ typedef struct UIScene {
   float screen_dim_fade = -1., screen_dim_fade_last_t = 0., screen_dim_fade_step = 1;
   float screen_dim_fade_dur_up = 0.5, screen_dim_fade_dur_down = 2.;
   Rect screen_dim_touch_rect;
+  bool screen_tapped = false;
 
   cereal::PandaState::PandaType pandaType;
 
