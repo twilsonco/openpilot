@@ -3,12 +3,12 @@ from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip
 
 class Differentiator:
-  def __init__(self, derivative_period, rate, alpha=0.0, passive=False, bounds=None):
+  def __init__(self, derivative_period, rate, alpha=0.0, passive=False, bounds=[-1e150, 1e150]):
     self.dt = 1.0/rate
     self._D = FirstOrderFilter(0.0, alpha, self.dt)
     self.passive = passive
     if not self.passive:
-      self.bounds = bounds if bounds is not None else [-1e150, 1e150]
+      self.bounds = bounds
       self._d_period_s = 0.0
       self._rate = rate
       self.update_period(derivative_period)
