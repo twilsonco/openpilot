@@ -69,6 +69,8 @@ class LatControlTorque(LatControl):
     self.pid.update_i_period(self._op_params.get('TUNE_LAT_TRX_ki_period_s'))
     self.pid.update_d_period(self._op_params.get('TUNE_LAT_TRX_kd_period_s'))
     self.actual_lateral_jerk.update_period(self.pid.error_rate._d_period_s)
+    self.friction_compensation.rate_up = self._op_params.get('TUNE_LAT_TRX_friction_rate_up')
+    self.friction_compensation.rate_down = self._op_params.get('TUNE_LAT_TRX_friction_rate_down')
     self.pid.k_f = self._op_params.get('TUNE_LAT_TRX_kf')
     self.friction = self._op_params.get('TUNE_LAT_TRX_friction')
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
