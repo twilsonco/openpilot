@@ -537,7 +537,7 @@ class opParams:
       
       'TUNE_LAT_TRX_friction_rate_up': Param(1.0, float, 'Rate limit of friction when increasing the absolute value of friction.', live=True, min_val=0.1, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_friction_rate_down': Param(1.0, float, 'Rate limit of friction when decreasing the absolute value of friction.', live=True, min_val=0.1, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_friction_rate_down': Param(1.2, float, 'Rate limit of friction when decreasing the absolute value of friction.', live=True, min_val=0.1, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
             
       'TUNE_LAT_TRX_friction_smoothing_factor_bp': Param([0.5, 1.5], [list, float], 'Adjust the smoothing of friction based on lateral acceleration. Here you define the lateral acceleration values used in the lookup.', min_val=0.0, max_val=10.0, unit='m/s²'),
       
