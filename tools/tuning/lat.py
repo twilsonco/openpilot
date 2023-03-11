@@ -503,8 +503,8 @@ def filter(samples):
   # samples = samples[mask]
   
   # non-matching sign of lateral jerk and accel
-  mask = np.array([sign(s.lateral_accel_rate_no_roll) != sign(s.lateral_accel) for s in samples])
-  samples = samples[mask]
+  # mask = np.array([sign(s.lateral_accel_rate_no_roll) != sign(s.lateral_accel) for s in samples])
+  # samples = samples[mask]
   
   if IS_ANGLE_PLOT:
     # only take high angles if there was enough lateral acceleration
@@ -513,7 +513,10 @@ def filter(samples):
     mask = np.array([s.enabled or np.abs(((s.steer_angle - s.steer_offset) * curv_per_deg) * s.v_ego**2) < max_lat_accel  for s in samples])
     samples = samples[mask]
     
-    
+    # constant speed
+  data = np.array([s.a_ego for s in samples])
+  mask = np.abs(data) <= ACCEL_MAX
+  samples = samples[mask]
   
   # these next two can be used if only driver torque is available
   # driver steer under threshold
@@ -531,8 +534,13 @@ def filter(samples):
   # samples = samples[mask]
   
   # No lateral accel
+  # data = np.array([s.lateral_accel for s in samples])
+  # mask = np.abs(data) < LAT_ACCEL_MAX # determined from plotjuggler
+  # samples = samples[mask]
+  
+  # high lateral accel
   data = np.array([s.lateral_accel for s in samples])
-  mask = np.abs(data) < LAT_ACCEL_MAX # determined from plotjuggler
+  mask = np.abs(data) > LAT_ACCEL_MIN # determined from plotjuggler
   samples = samples[mask]
 
   # GM no steering below 7 mph
