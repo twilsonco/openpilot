@@ -536,9 +536,9 @@ class opParams:
       
       'TUNE_LAT_TRX_friction': Param(1.0, float, '(Leave at 1.0 for custom lateral jerk FF) The torque controller has two components to the feedforward, one based solely on desired lateral acceleration and is scaled by kf. The other is based on desired lateral jerk (rate of desired lateral acceleration) and is also called "friction" to depict the idea of overcoming the friction in the steering assembly. The concept it simple: the faster the desired lateral acceleration changes (i.e. high rate of change), the greater the friction response. This provides much smoother steering, especially when the steering angle is decreasing (returning to center).', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_friction_rate_up': Param(1.0, float, 'Rate limit of friction when increasing the absolute value of friction.', live=True, min_val=0.1, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_friction_rate_up': Param(1.0, float, 'Rate limit of friction when increasing the absolute value of friction.', live=True, min_val=0.1, max_val=100.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_friction_rate_down': Param(1.2, float, 'Rate limit of friction when decreasing the absolute value of friction.', live=True, min_val=0.1, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_friction_rate_down': Param(1.2, float, 'Rate limit of friction when decreasing the absolute value of friction.', live=True, min_val=0.1, max_val=100.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_friction_integral_period_s': Param(1.0, float, 'Period for integral of friction used to limit friction.', live=True, min_val=0.1, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit="seconds"),
       
