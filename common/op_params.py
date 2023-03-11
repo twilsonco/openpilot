@@ -542,7 +542,7 @@ class opParams:
       
       'TUNE_LAT_TRX_friction_integral_period_s': Param(1.0, float, 'Period for integral of friction used to limit friction.', live=True, min_val=0.1, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit="seconds"),
       
-      'TUNE_LAT_TRX_friction_max_time_s': Param(0.3, float, 'When friction is sent continuously, it can lead to oversteering. Instead it appears that friction should be send early to get the wheel moving, but then ramp down to avoid oversteer. Here you determine how long friction can send full speed before it starts to ramp down.', live=True, min_val=0.1, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit="seconds"),
+      'TUNE_LAT_TRX_friction_max_time_s': Param(0.3, float, 'When friction is sent continuously, it can lead to oversteering. Instead it appears that friction should be sent early to get the wheel moving, but then ramp down to avoid oversteer. Here you determine how long friction can send full speed before it starts to ramp down.', live=True, min_val=0.1, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit="seconds"),
       
      'TUNE_LAT_TRX_friction_ramp_factor': Param(0.97, float, 'When friction is sent continuously, it can lead to oversteering. Instead it appears that friction should be send early to get the wheel moving, but then ramp down to avoid oversteer. Here you determine how long friction can send full speed before it starts to ramp down. This value is multiplied at 100Hz, so a value of 0.97 means 0.97^100 ≈ 0.05 after 1s.', live=True, min_val=0.01, max_val=1.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit="seconds"),
             
