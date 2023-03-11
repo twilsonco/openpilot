@@ -118,9 +118,6 @@ class LatControlTorque(LatControl):
       self.friction_compensation.update_alpha(interp(abs(desired_lateral_accel), self.friction_alpha[0], self.friction_alpha[1]))
       self.friction_compensation.update(self.get_friction(desired_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD))
       self.friction_integral.update(self.friction_compensation.x)
-      if sign(desired_lateral_jerk) != sign(self.friction_integral.x):
-        self.friction_integral.reset()
-        self.friction_factor = 1.0
       friction_integral_cap = self.friction_max_time * abs(self.get_friction(max(0.15, abs(desired_lateral_jerk)), self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD))
       if abs(self.friction_integral.x) >= friction_integral_cap:
         self.friction_factor *= self.friction_decay_factor
