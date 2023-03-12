@@ -611,8 +611,10 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
           if not os.path.exists(outpath):
             os.mkdir(outpath)
           rlog_log_path = ""
+          rlog_log_mdate = 0
           if preprocess:
             rlog_log_path = os.path.join(outpath, "latfiles.txt") # prevents rerunning rlogs
+            rlog_log_mdate = os.path.getmtime(rlog_log_path)
             print(f"Loading file blacklist: {rlog_log_path}")
             if os.path.exists(rlog_log_path): 
               # read in lat files saved by running `ls -1 /data/media/0/latfiles >> /data/media/0/latfiles.txt`
@@ -620,8 +622,14 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
                 latsegs = latsegs | set(list(rll.read().split('\n')))
           for filename in os.listdir(outpath):
             if ext in filename.split("/")[-1]:
-              latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2').replace('|','_'))
-              latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2'))
+              p1 = filename.replace(outpath, path).replace('.lat','--rlog.bz2').replace('|','_')
+              p2 = filename.replace(outpath, path).replace('.lat','--rlog.bz2')
+              if rlog_log_mdate and os.path.getmtime(filename) > rlog_log_mdate:
+                for p in [p1,p2]: 
+                  if p in latsegs: del(latsegs[p])
+              else:
+                latsegs.add(p1)
+                latsegs.add(p2)
           print(f"{len(latsegs)//2} blacklisted files")
           filenames = sorted([filename for filename in os.listdir(path) if filename.endswith("rlog.bz2") and filename not in latsegs])
           def process_file(filename):
