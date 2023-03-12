@@ -158,6 +158,11 @@ void SNPEModel::addNavFeatures(float *state, int state_size) {
   navFeaturesBuffer = this->addExtra(state, state_size, 1);
 }
 
+void SNPEModel::addNavInstructions(float *state, int state_size) {
+  navInstructions = state;
+  navInstructionsBuffer = this->addExtra(state, state_size, 1);
+}
+
 void SNPEModel::addDrivingStyle(float *state, int state_size) {
     drivingStyle = state;
     drivingStyleBuffer = this->addExtra(state, state_size, 2);

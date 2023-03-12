@@ -6,6 +6,7 @@ public:
   virtual void addRecurrent(float *state, int state_size) {}
   virtual void addDesire(float *state, int state_size) {}
   virtual void addNavFeatures(float *state, int state_size) {}
+  virtual void addNavInstructions(float *state, int state_size) {}
   virtual void addDrivingStyle(float *state, int state_size) {}
   virtual void addTrafficConvention(float *state, int state_size) {}
   virtual void addCalib(float *state, int state_size) {}

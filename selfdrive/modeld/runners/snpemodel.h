@@ -30,6 +30,7 @@ public:
   void addDesire(float *state, int state_size);
   void addDrivingStyle(float *state, int state_size);
   void addNavFeatures(float *state, int state_size);
+  void addNavInstructions(float *state, int state_size);
   void addImage(float *image_buf, int buf_size);
   void addExtra(float *image_buf, int buf_size);
   void execute();
@@ -79,6 +80,8 @@ private:
   std::unique_ptr<zdl::DlSystem::IUserBuffer> desireBuffer;
   float *navFeatures;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> navFeaturesBuffer;
+  float *navInstructions;
+  std::unique_ptr<zdl::DlSystem::IUserBuffer> navInstructionsBuffer;
   float *drivingStyle;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> drivingStyleBuffer;
   float *calib;
