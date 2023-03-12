@@ -127,8 +127,6 @@ class LatControlTorque(LatControl):
       pid_log.desiredLateralAcceleration = desired_lateral_accel
       pid_log.desiredLateralJerk = desired_lateral_jerk
       pid_log.friction = friction_compensation
-      pid_log.frictionFactor = self.friction_factor
-      pid_log.frictionIntegral = self.friction_integral.x
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i
       pid_log.d = self.pid.d
