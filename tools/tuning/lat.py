@@ -636,7 +636,7 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
       steer_offsets = []
       if not preprocess:
         errors={}
-        for filename in tqdm(os.listdir(path)):
+        for filename in (pbar := tqdm(os.listdir(path))):
           if filename.endswith(ext):
             latpath = os.path.join(path, filename)
             latroutes.add(filename.replace(ext,''))
@@ -659,6 +659,8 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
                   errors[e] += 1
                 else:
                   errors[e] = 1
+            numerr = sum(errors.values()) if len(errors) > 0 else 0
+            pbar.set_description(f"{old_num_points} filtered to {len(data)} (skipped segments: {numerr})")
         if len(errors) > 0:
           nerr = sum(errors.values())
           print(f"{nerr} lat files were not loaded due to errors:")
