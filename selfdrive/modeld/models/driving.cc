@@ -53,6 +53,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 
 #ifdef NAV
   s->m->addNavFeatures(s->nav_features, NAV_FEATURE_LEN);
+  s->m->addNavInstructions(s->nav_instructions, NAV_INSTRUCTION_LEN);
 #endif
 
 }
@@ -78,7 +79,7 @@ LOGT("Desire enqueued");
 
 #ifdef NAV
   std::memcpy(s->nav_features, nav_features, sizeof(float)*NAV_FEATURE_LEN);
-  std::memcpy(s->nav_instructions, nav_instructions, sizeof(float)*NAV_FEATURE_LEN);
+  std::memcpy(s->nav_instructions, nav_instructions, sizeof(float)*NAV_INSTRUCTION_LEN);
 #endif
 
 #ifdef DRIVING_STYLE
