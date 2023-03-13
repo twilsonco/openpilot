@@ -141,7 +141,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     if (sm.updated("navInstruction")) {
       float distance = ((float)sm["navInstruction"].getNavInstruction().getManeuverDistance());
       std::string maneuver_type = sm["navInstruction"].getNavInstruction().getManeuverType();
-      int maneuver_idx = maneuver_type == "off ramp" ? 20 : 1;  // TODO: Need a proper mapping between mapbox and valhalla maneuver types
+      int maneuver_idx = maneuver_type == "off ramp" ? 20 : 4;  // TODO: Need a proper mapping between mapbox and valhalla maneuver types
       memset(nav_instructions, 0, NAV_INSTRUCTION_LEN);
       nav_instructions[maneuver_idx] = 1;
       nav_instructions[NAV_INSTRUCTION_LEN-1] = std::max(0.0f, std::min(2.0f, distance / 1000.0f));
