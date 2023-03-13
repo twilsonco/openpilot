@@ -624,7 +624,7 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
             if ext in filename.split("/")[-1]:
               p1 = filename.replace(outpath, path).replace('.lat','--rlog.bz2').replace('|','_')
               p2 = filename.replace(outpath, path).replace('.lat','--rlog.bz2')
-              if rlog_log_mdate and os.path.getmtime(filename) > rlog_log_mdate:
+              if rlog_log_mdate and os.path.getmtime(filename.replace("|","_")) > rlog_log_mdate:
                 for p in [p1,p2]: 
                   if p in latsegs: del(latsegs[p])
               else:
