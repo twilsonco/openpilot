@@ -74,7 +74,6 @@ class LatControlTorque(LatControl):
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
     self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp')]
     self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v')
-    self.friction_alpha = [self._op_params.get('TUNE_LAT_TRX_friction_smoothing_factor_bp'), self._op_params.get('TUNE_LAT_TRX_friction_smoothing_factor_v')]
   
   def reset(self):
     super().reset()
