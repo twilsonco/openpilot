@@ -1,13 +1,13 @@
 Version tw-0.8.12-15 (2023-🥧)
 ========================
-  * support for newer C3s (panda fan stall detection and internal fan controller added)
-  * support for Buick Lacrosse
-  * support for no-acc volts (see ed5e081)
+  * **support for newer C3s** (panda fan stall detection and internal fan controller added)
+  * **support for Buick Lacrosse**
+  * **support for no-acc volts** (see ed5e081; thanks Eric Brown!)
   * add toggle to disable openpilot updates
   * improved: controls:
     * Volt:
       * updated custom torque controller lateral acceleration feedforward function
-      * replace "friction" with custom lateral jerk feedforward function
+      * replace "friction" with **custom lateral jerk feedforward** function
         * "friction" in gm/interface.py or opparams is now a linear coefficient to cap the lateral jerk FF value when desired lateral jerk ≈ 0. For cars without custom lateral jerk FF (everything but Volt), friction specifies the max amount of "friction" torque sent.
       * lower steer actuator delay 
     * Acadia:
@@ -21,7 +21,7 @@ Version tw-0.8.12-15 (2023-🥧)
       * starts at the current accel, for all the smoothing and none of the lag
       * only smooths at low speeds, for no delay at higher speeds
     * removed post-resume negative acceleration smoothing; no longer required
-    * PID "autotuned" parameters now normalized based on speed, for more error response at low sped
+    * PID "autotuned" parameters now normalized based on speed, for more error response at low speed
   * improved: include lead lateral velocity in lead velocity calculation, only at low speed, to prevent op from slowing down as much for leads turning right
   * improved: automatic lane position:
     * revert to center position when opposite blinker is on (e.g. if in left position and right blinker is on, go back to center, but not if left blinker is on)
