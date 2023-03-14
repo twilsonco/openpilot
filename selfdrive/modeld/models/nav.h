@@ -10,6 +10,7 @@
 constexpr int NAV_INPUT_SIZE = 256*256;
 constexpr int NAV_FEATURE_LEN = 64;
 constexpr int NAV_DESIRE_LEN = 32;
+constexpr int NAV_INSTRUCTION_LEN = 41;
 
 constexpr int K_START = 1;
 constexpr int K_DESTINATION = 4;
