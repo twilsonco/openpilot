@@ -772,7 +772,7 @@ class opParams:
                            'TUNE_LAT_PID_ki_period_s',
                            'TUNE_LONG_kp',
                            'MET_power_meter_smoothing_factor'],
-      '2023/03/13-16:00': [r'.*_kd_period_s',
+      '2023/03/13-20:00': [r'.*_kd_period_s',
                            'TUNE_LAT_TRX_ki',
                            r'TUNE_LAT_TRX_k._e',
                            'TUNE_LONG_ki_period_s',
