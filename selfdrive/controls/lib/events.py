@@ -327,7 +327,7 @@ def pre_lane_change(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) ->
   alert = sm['lateralPlan'].laneChangeAlert
   direction = sm['lateralPlan'].laneChangeDirection
   dir_str = "left" if direction == LaneChangeDirection.left else "right"
-  str1 = f"Steer {dir_str} to Start Lane Change Once Safe"
+  str1 = f"Steer {dir_str} to start lane change"
   str2 = ""
   if alert == LaneChangeAlert.nudgelessBlockedNoLane:
     str2 = f"(auto lane change blocked: no {dir_str} lane)"
@@ -396,7 +396,7 @@ def stopped_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> A
   
 def opparams_param_changed_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   name, oldval, newval = [OPPARAMS.get(f"op_edit_param_changed_{k}", force_update=True) for k in ["name","val_old","val_new"]]
-  return Alert(f"opParams: changed '{name}'", 
+  return Alert(name, 
               f"from '{oldval}' to '{newval}'", 
               AlertStatus.normal, AlertSize.mid,
               Priority.LOWER, VisualAlert.none, 
