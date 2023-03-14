@@ -11,6 +11,27 @@ constexpr int NAV_INPUT_SIZE = 256*256;
 constexpr int NAV_FEATURE_LEN = 64;
 constexpr int NAV_DESIRE_LEN = 32;
 
+constexpr int K_START = 1;
+constexpr int K_DESTINATION = 4;
+constexpr int K_CONTINUE = 8;
+constexpr int K_SLIGHT_RIGHT = 9;
+constexpr int K_RIGHT = 10;
+constexpr int K_SHARP_RIGHT = 11;
+constexpr int K_UTURN_LEFT = 13;
+constexpr int K_SHARP_LEFT = 14;
+constexpr int K_LEFT = 15;
+constexpr int K_SLIGHT_LEFT = 16;
+constexpr int K_RAMP_STRAIGHT = 17;
+constexpr int K_RAMP_RIGHT = 18;
+constexpr int K_RAMP_LEFT = 19;
+constexpr int K_EXIT_RIGHT = 20;
+constexpr int K_EXIT_LEFT = 21;
+constexpr int K_STAY_STRAIGHT = 22;
+constexpr int K_STAY_RIGHT = 23;
+constexpr int K_STAY_LEFT = 24;
+constexpr int K_ROUNDABOUT_ENTER = 26;
+constexpr int K_ROUNDABOUT_EXIT = 27;
+
 struct NavModelOutputXY {
   float x;
   float y;

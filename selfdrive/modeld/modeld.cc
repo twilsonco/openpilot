@@ -57,6 +57,31 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
   return matmul3(yuv_transform, transform);
 }
 
+int get_maneuver_index(std::string &type, std::string &modifier) {
+  if (type == "arrive") return K_START;
+  if (type == "arrive") return K_DESTINATION;
+  if (type == "fork" && modifier == "slight left") return K_STAY_LEFT;
+  if (type == "fork" && modifier == "slight right") return K_STAY_RIGHT;
+  if (type == "fork" && modifier == "straight") return K_STAY_STRAIGHT;
+  if (type == "new name" && modifier == "straight") return K_CONTINUE;
+  if (type == "off ramp" && modifier == "slight left") return K_EXIT_LEFT;
+  if (type == "off ramp" && modifier == "slight right") return K_EXIT_RIGHT;
+  if (type == "on ramp" && modifier == "slight left") return K_RAMP_LEFT;
+  if (type == "on ramp" && modifier == "slight right") return K_RAMP_RIGHT;
+  if (type == "on ramp" && modifier == "straight") return K_RAMP_STRAIGHT;
+  if (type == "roundabout" && modifier == "left") return K_ROUNDABOUT_ENTER;
+  if (type == "roundabout" && modifier == "right") return K_ROUNDABOUT_ENTER;
+  if (type == "roundabout" && modifier == "straight") return K_ROUNDABOUT_EXIT;
+  if (modifier == "left") return K_LEFT;
+  if (modifier == "right") return K_RIGHT;
+  if (modifier == "sharp left") return K_SHARP_LEFT;
+  if (modifier == "sharp right") return K_SHARP_RIGHT;
+  if (modifier == "slight left") return K_SLIGHT_LEFT;
+  if (modifier == "slight right") return K_SLIGHT_RIGHT;
+  if (modifier == "uturn") return K_UTURN_LEFT;  // NOTE: Mapbox doesn't distinguish between left and right-hand uturns
+  return K_CONTINUE;
+}
+
 
 void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra_client) {
   // messaging
@@ -141,7 +166,8 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     if (sm.updated("navInstruction")) {
       float distance = ((float)sm["navInstruction"].getNavInstruction().getManeuverDistance());
       std::string maneuver_type = sm["navInstruction"].getNavInstruction().getManeuverType();
-      int maneuver_idx = maneuver_type == "off ramp" ? 20 : 4;  // TODO: Need a proper mapping between mapbox and valhalla maneuver types
+      std::string maneuver_modifier = sm["navInstruction"].getNavInstruction().getManeuverModifier();
+      int maneuver_idx = get_maneuver_index(maneuver_type, maneuver_modifier);
       memset(nav_instructions, 0, NAV_INSTRUCTION_LEN);
       nav_instructions[maneuver_idx] = 1;
       nav_instructions[NAV_INSTRUCTION_LEN-1] = std::max(0.0f, std::min(2.0f, distance / 1000.0f));
