@@ -1,3 +1,52 @@
+Version tw-0.8.12-15 (2023-🥧)
+========================
+  * support for newer C3s (panda fan stall detection and internal fan controller added)
+  * support for Buick Lacrosse
+  * support for no-acc volts (see ed5e081)
+  * add toggle to disable openpilot updates
+  * improved: controls:
+    * Volt:
+      * updated custom torque controller lateral acceleration feedforward function
+      * replace "friction" with custom lateral jerk feedforward function
+        * "friction" in gm/interface.py or opparams is now a linear coefficient to cap the lateral jerk FF value when desired lateral jerk ≈ 0. For cars without custom lateral jerk FF (everything but Volt), friction specifies the max amount of "friction" torque sent.
+      * lower steer actuator delay 
+    * Acadia:
+      * Updated torque controller feedforward
+    * revert PID derivative gain calculation to use error rate (instead of output)
+    * replace PID "integrator" (ema really) with explicit trapezoidal integrator with controllable period
+      * lat/long controllers use 1.5s integral period
+      * other controllers (i.e. fanspeed) use a 2s period, selected because it reproduced the values of the old integrator
+    * any amount of gas "overrides" the long controller, preventing integral windup 
+    * positive acceleration smoothing:
+      * starts at the current accel, for all the smoothing and none of the lag
+      * only smooths at low speeds, for no delay at higher speeds
+    * removed post-resume negative acceleration smoothing; no longer required
+    * PID "autotuned" parameters now normalized based on speed, for more error response at low sped
+  * improved: include lead lateral velocity in lead velocity calculation, only at low speed, to prevent op from slowing down as much for leads turning right
+  * improved: automatic lane position:
+    * revert to center position when opposite blinker is on (e.g. if in left position and right blinker is on, go back to center, but not if left blinker is on)
+  * improved: opparams
+    * see history for each param when accessed (full history in /data/community)
+    * add default param resetting mechanism so that improved defaults can be pushed to users
+    * indicate which parameters are changed from default
+    * show onscreen alert when live opparam is changed
+    * lots of cleanup and fingerpainting
+    * many new parameters
+  * UI improvements
+    * Hide current speed (toggle; can still tap where speed would be to cycle UI metric layouts)
+    * UI metrics:
+      * remove extra lines from power meter (they indicated drag/rolling/gravity power losses but it was incoherent to look at)
+      * second column hides when map is open
+      * some formatting improvements
+      * fix placement of metrics when in 2x4 layout
+      * new metrics:
+        * kinetic energy
+        * time/distance to stop from current speed
+        * "minimum" time/distance to stop based on 7m/s^2 deceleration rate (I looked it up somewhere)
+    * curve braking icon hides for alerts
+    * add parked timer that shows after 80 seconds (configure in opparams)
+  * ...many other small things (check the commit history)
+
 Version tw-0.8.12-14_tws (2023-01-17)
 ========================
   * one-pedal mode regen paddle integration
