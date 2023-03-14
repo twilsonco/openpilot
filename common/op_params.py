@@ -392,7 +392,7 @@ class opParams:
       
       #####
       
-      'XR_v_lat_derivative_period_s': Param(0.5, float, 'Lead relative lateral velocity is calculated as a numerical derivative (change in lateral position with respect to time). This parameter controls the time used to calculate the derivative.\n', min_val=0.1, max_val=10.0, unit="seconds"),
+      'XR_v_lat_derivative_period_s': Param(1.0, float, 'Lead relative lateral velocity is calculated as a numerical derivative (change in lateral position with respect to time). This parameter controls the time used to calculate the derivative.\n', min_val=0.1, max_val=10.0, unit="seconds"),
       
       'XR_v_lat_vLead_factor_bp_mph': Param([15.0, 25.0], [list, float], 'Lead relative lateral velocity only really needs to be calculated to better deal with leads turning out of your lane, which is only typically an issue at low speeds. Meanwhile, the lead lateral velocity data can be noisy compared to radar range data, so we don\'t want to use it when we don\'t need to. Therefore, we decrease the contribution of lateral velocity to total lead velocity at "high" lead speeds and use it at "low" lead speeds. Here you define the "low" and "high" speeds. Below the "low" speed, 100% of lateral velocity is used, and it decreases to 0% by the time the "high" speed is reached.\n', min_val=0.0, max_val=90.0, unit="mph"),
       
@@ -462,25 +462,25 @@ class opParams:
       
       'CB_VTSC_long_accel_factor': Param(1.0, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the output values of longitudinal acceleration. A value less/greater than 1.0 will decrease/increase the brake intensity for a given curve.\n', live=True, min_val=0.01, max_val=3.0),
       
-      'CB_VTSC_low_speed_scale_interchange': Param(0.85, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds on freeway/highway interchanges. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
+      'CB_VTSC_low_speed_scale_interchange': Param(0.83, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds on freeway/highway interchanges. By 55mph, no scaling is applied. A value less/greater than 1.0 will increase/decrease the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
       
-      'CB_VTSC_low_speed_scale_freeway': Param(1.0, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds on freeways. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
+      'CB_VTSC_low_speed_scale_freeway': Param(0.9, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds on freeways. By 55mph, no scaling is applied. A value less/greater than 1.0 will increase/decrease the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
       
-      'CB_VTSC_low_speed_scale_state_highway': Param(0.9, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds on freeways. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
+      'CB_VTSC_low_speed_scale_state_highway': Param(0.9, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds on freeways. By 55mph, no scaling is applied. A value less/greater than 1.0 will increase/decrease the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
       
-      'CB_VTSC_low_speed_scale_default': Param(1.05, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds for all other types of roads (e.g. neighborhood and most city streets). By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
+      'CB_VTSC_low_speed_scale_default': Param(0.95, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds for all other types of roads (e.g. neighborhood and most city streets). By 55mph, no scaling is applied. A value less/greater than 1.0 will increase/decrease the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
       
       #####
       
       'CB_MTSC_smoothing_factor': Param(0.3, float, 'The map turn controller output acceleration is smoothed. Increase/decrease for more/less smoothing.\n', live=True, min_val=0.01, max_val=3.0),
       
-      'CB_MTSC_speed_scale_interchange': Param(1.34, float, 'This scales the perceived car speed used by the vision turn speed controller at all speeds on interchanges. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
+      'CB_MTSC_speed_scale_interchange': Param(1.4, float, 'This scales the speed limit for a curve on interchanges. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
       
-      'CB_MTSC_speed_scale_freeway': Param(1.08, float, 'This scales the perceived car speed used by the vision turn speed controller at all speeds on freeways. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
+      'CB_MTSC_speed_scale_freeway': Param(1.15, float, 'This scales the speed limit for a curve on freeways. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
       
-      'CB_MTSC_speed_scale_state_highway': Param(1.08, float, 'This scales the perceived car speed used by the vision turn speed controller at all speeds on state highways. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
+      'CB_MTSC_speed_scale_state_highway': Param(1.15, float, 'This scales the speed limit for a curve on state highways. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
       
-      'CB_MTSC_speed_scale_default': Param(1.08, float, 'This scales the perceived car speed used by the vision turn speed controller at all speeds for all other types of roads (e.g. neighborhood and most city streets). By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
+      'CB_MTSC_speed_scale_default': Param(1.15, float, 'This scales the speed limit for a curve for all other types of roads (e.g. neighborhood and most city streets). By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.\n', live=True, min_val=0.01, max_val=2.0),
       
       'CB_MTSC_cutoff_speed_freeway_mph': Param(35.0, float, 'If you\'re on a freeway then map curve braking won\'t activate for turns whose curve speed is less than this\n', live=True, min_val=0.0, max_val=90.0),
       
@@ -522,13 +522,13 @@ class opParams:
       
       'TUNE_LAT_type': Param('torque', [str, int], 'Type of lateral controller that will be used with the corresponding parameters. The default torque and pid tunes are for Volt, the indi tune is from Hyundai Genesis, and the lqr is from Toyota Rav4. Consult selfdrive/car/gm/interface.py to see the default values for your car for the "pid" (and possibly also the "torque") controllers.  torque: lateral acceleration-based pid controller.  pid: steering angle-based pid controller.  indi: incremental non-linear dynamic inversion controller.  lqr: linear quadratic regulator.  There are also "torque" versions of indi and lqr to experiment with. The torque INDI needs tuning, but the torque LQR needs it more. Let me know if you get those working well! The provided torque and pid tunes for Volt are the same very good tunes as hardcoded in the this fork of OpenPilot\n', live=True, fake_live=True, allowed_vals=['torque','pid','indi','lqr','torqueindi','torquelqr']),
       
-      'TUNE_PID_ki_period_default_s': Param(3.0, float, 'The PID integral term uses an actual integral of the error over the specified period. Given constant error, the longer the period, the greater the resulting error integral (sum). This default period is used to compute a scaling factor for the resulting error integral so that, as you change the PID integral period for one controller or another, you needn\'t change the corresponding ki value because the kf value will be scaled based on the ratio of the specified integral period to this default integral period. Increase this value to effectively lower all kf values used in the PID controller. This only updates live for lat (or long) control if lat (or long) override is enabled. Otherwise, an OpenPilot or vehicle restart is required for changes to take effect.\n', live=True, min_val=0.05, max_val=20.0, unit="seconds"),
+      'TUNE_PID_ki_period_default_s': Param(2.0, float, 'The PID integral term uses an actual integral of the error over the specified period. Given constant error, the longer the period, the greater the resulting error integral (sum). This default period is used to compute a scaling factor for the resulting error integral so that, as you change the PID integral period for one controller or another, you needn\'t change the corresponding ki value because the kf value will be scaled based on the ratio of the specified integral period to this default integral period. Increase this value to effectively lower all kf values used in the PID controller. This only updates live for lat (or long) control if lat (or long) override is enabled. Otherwise, an OpenPilot or vehicle restart is required for changes to take effect.\n', live=True, min_val=0.05, max_val=20.0, unit="seconds"),
       
       'TUNE_sensor_lockout_time_s': Param(60, int, 'The device sensors are used to compensate steering and long control. This can be problematic shortly after startup before they\'ve calibrated and can give crazy values. Set the amount of time after device start until sensor readings are allowed to affect controls.\n', live=True, min_val=0, max_val=600, unit="seconds"),
       
       #####
       
-      'TUNE_LAT_TRX_roll_compensation': Param(0.65, float, 'Scale the amount of roll compensation for the torque controller\n', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_roll_compensation': Param(0.4, float, 'Scale the amount of roll compensation for the torque controller\n', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_use_steering_angle': Param(True, bool, 'The torque controller computes current lateral acceleration using the steering angle and current roll. Set this to false to instead use the internal Comma device sensors to measure lateral acceleration (it\'s terrible)\n', live=True, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
@@ -538,7 +538,7 @@ class opParams:
       
       'TUNE_LAT_TRX_kp': Param(0.48, float, kp_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_ki': Param(0.13, float, ki_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_ki': Param(0.11, float, ki_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_kd': Param(0.015, float, kd_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
@@ -546,11 +546,11 @@ class opParams:
       
       'TUNE_LAT_TRX_kd_period_s': Param(0.1, float, 'The amount of time used for the rate approximation.', min_val=0.02, max_val=2.0, unit='seconds', show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_kp_e': Param(2.0, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kp is able to change. ", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kp_e': Param(1.0, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kp is able to change. ", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_ki_e': Param(4.0, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much ki is able to change.", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_ki_e': Param(2.0, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much ki is able to change.", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_kd_e': Param(6.0, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kd is able to change.", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kd_e': Param(1.0, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kd is able to change.", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_low_speed_factor_v': Param([225.0, 50.0], [list, float], 'The torque controller corrects based on desired vs. actual lateral acceleration (curvature ⨉ speed²), so at low speeds both become very small, making for insufficient error correction. The "low speed factor" increases the perceived error in proportion to the curvature of the current curve. It should be higher at "low" speeds and then get lower at "high" speeds where lateral acceleration is sufficient. This parameter sets the "low" and "high" scaling factors. If OP fails to achieve low-speed curves, increase the value. If too high a value is used, OP will have a jerky, overshoot+correct response when turning at low speeds.\n', live=True, min_val=0.0, max_val=1000., show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
@@ -678,7 +678,7 @@ class opParams:
       
       'TUNE_LONG_kd': Param([0.004, 0.0, 0.0], [list, float], 'Values of kd used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.\n', live=True, min_val=0.0, max_val=5.0),
       
-      'TUNE_LONG_ki_period_s': Param(2.5, float, 'The amount of time over which steering error accumulates."\n', min_val=0.1, max_val=60.0, unit='seconds'),
+      'TUNE_LONG_ki_period_s': Param(1.5, float, 'The amount of time over which steering error accumulates."\n', min_val=0.1, max_val=60.0, unit='seconds'),
       
       'TUNE_LONG_kd_period_s': Param(0.1, float, 'The amount of time used for the rate approximation.', min_val=0.02, max_val=2.0, unit='seconds'),
       
@@ -708,7 +708,7 @@ class opParams:
       
       'MET_reset_trip_metrics': Param(False, bool, 'Set this to true in order to, the next time you start your car, reset trip and EV "total" efficiency metrics. This sets the UI metric reset toggle in OpenPilot settings, so you can reset on-device or here using opparams.\n', param_param='MetricResetSwitch', param_param_read_on_startup=True, is_common=True, fake_live=True),
       
-      'MET_power_meter_smoothing_factor': Param(25.0, float, 'Use this to control the amount of smoothing applied to the wattage reading in order to smooth the power meter. On Volt, the power meter for power output is determined using the high-voltage battery wattage. Only total battery wattage is available to OpenPilot, so the power use is not exclusively that of the powertrain, and things like the AC/heater frequently cycle on/off, causing rapid spikes in the wattage.\n', min_val=0.0, max_val=1000.0),
+      'MET_power_meter_smoothing_factor': Param(10.0, float, 'Use this to control the amount of smoothing applied to the wattage reading in order to smooth the power meter. On Volt, the power meter for power output is determined using the high-voltage battery wattage. Only total battery wattage is available to OpenPilot, so the power use is not exclusively that of the powertrain, and things like the AC/heater frequently cycle on/off, causing rapid spikes in the wattage.\n', min_val=0.0, max_val=1000.0),
     }
     
     # params in a group must start with the group's short name
@@ -772,7 +772,15 @@ class opParams:
                            'TUNE_LAT_PID_ki_period_s',
                            'TUNE_LONG_kp',
                            'MET_power_meter_smoothing_factor'],
-      '2023/03/08-16:00': [r'.*kd', r'.*_kd_period_s'],
+      '2023/03/13-16:00': [r'.*_kd_period_s',
+                           'TUNE_LAT_TRX_ki',
+                           r'TUNE_LAT_TRX_k._e',
+                           'TUNE_LONG_ki_period_s',
+                           'TUNE_PID_ki_period_default_s',
+                           'TUNE_LAT_TRX_roll_compensation',
+                           'MET_power_meter_smoothing_factor',
+                           r'CB_.*_speed_scale',
+                           'XR_v_lat_derivative_period_s'],
       }  # a dict where each key is a date in 'yyyy/mm/dd-hh:mm' (24-hour) format, and the value is a list of names of params OR regular expressions to match params you want reset to their default values if the modification date is before the key date
       # use something that doesn't match the date string format and the associated list of param names or regex's will apply no matter the modified date of the param
     self._calling_function = calling_function
