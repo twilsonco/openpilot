@@ -779,7 +779,7 @@ class opParams:
                            'TUNE_PID_ki_period_default_s',
                            'TUNE_LAT_TRX_roll_compensation',
                            'MET_power_meter_smoothing_factor',
-                           r'CB_.*_speed_scale',
+                           r'CB_.*_speed_scale.*',
                            'XR_v_lat_derivative_period_s'],
       }  # a dict where each key is a date in 'yyyy/mm/dd-hh:mm' (24-hour) format, and the value is a list of names of params OR regular expressions to match params you want reset to their default values if the modification date is before the key date
       # use something that doesn't match the date string format and the associated list of param names or regex's will apply no matter the modified date of the param
