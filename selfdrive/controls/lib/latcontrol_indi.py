@@ -54,11 +54,11 @@ class LatControlINDI():
     self.reset()
   
   def update_op_params(self):
-    bp = [i * CV.MPH_TO_MS for i in [self._op_params.get(f"TUNE_LAT_INDI_{s}s_mph") for s in ['l','h']]]
-    self._RC = (bp, [self._op_params.get(f"TUNE_LAT_INDI_time_constant_{s}s") for s in ['l','h']])
-    self._G = (bp, [self._op_params.get(f"TUNE_LAT_INDI_actuator_effectiveness_{s}s") for s in ['l','h']])
-    self._outer_loop_gain = (bp, [self._op_params.get(f"TUNE_LAT_INDI_outer_gain_{s}s") for s in ['l','h']])
-    self._inner_loop_gain = (bp, [self._op_params.get(f"TUNE_LAT_INDI_inner_gain_{s}s") for s in ['l','h']])
+    bp = [i * CV.MPH_TO_MS for i in self._op_params.get("TUNE_LAT_INDI_bp_mph")]
+    self._RC = (bp, self._op_params.get("TUNE_LAT_INDI_time_constant"))
+    self._G = (bp, self._op_params.get("TUNE_LAT_INDI_actuator_effectiveness"))
+    self._outer_loop_gain = (bp, self._op_params.get("TUNE_LAT_INDI_outer_gain"))
+    self._inner_loop_gain = (bp, self._op_params.get("TUNE_LAT_INDI_inner_gain"))
     self.roll_k = self._op_params.get('TUNE_LAT_INDI_roll_compensation')
 
   @property
@@ -95,7 +95,7 @@ class LatControlINDI():
 
     return self.sat_count > self.sat_limit
 
-  def update(self, active, CS, CP, VM, params, curvature, curvature_rate, llk = None, mean_curvature=0.0):
+  def update(self, active, CS, CP, VM, params, curvature, curvature_rate, llk = None, mean_curvature=0.0, use_roll=True):
     self.speed = CS.vEgo
     # Update Kalman filter
     y = np.array([[math.radians(CS.steeringAngleDeg)], [math.radians(CS.steeringRateDeg)]])
@@ -106,7 +106,7 @@ class LatControlINDI():
     indi_log.steeringRateDeg = math.degrees(self.x[1])
     indi_log.steeringAccelDeg = math.degrees(self.x[2])
 
-    steers_des = VM.get_steer_from_curvature(-curvature, CS.vEgo, params.roll * self.roll_k)
+    steers_des = VM.get_steer_from_curvature(-curvature, CS.vEgo, params.roll * self.roll_k if use_roll else 0.0)
     steers_des += math.radians(params.angleOffsetDeg)
     indi_log.steeringAngleDesiredDeg = math.degrees(steers_des)
 

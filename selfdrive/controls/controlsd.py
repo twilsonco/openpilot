@@ -6,6 +6,7 @@ from numbers import Number
 from cereal import car, log
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp, mean
+from common.op_params import opParams
 from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
 from common.params import Params, put_nonblocking
@@ -76,6 +77,9 @@ class Controls:
     self.network_strength_last = log.DeviceState.NetworkStrength.unknown
     self.network_last_change_t = -60
     
+    self._op_params = opParams("controlsd")
+    self.use_sensors = False
+    
     self.gpsWasOK = False
 
     # Setup sockets
@@ -96,13 +100,14 @@ class Controls:
 
     self.sm = sm
     if self.sm is None:
-      ignore = ['driverCameraState', 'managerState'] if SIMULATION else ['liveWeatherData']
+      ignore = ['driverCameraState', 'managerState'] if SIMULATION else ['liveWeatherData','carState','controlsState']
       if self.gray_panda_support_enabled:
         ignore += ['gpsLocationExternal']
       self.sm = messaging.SubMaster(['deviceState', 'pandaState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
-                                     'managerState', 'liveParameters', 'radarState', 'gpsLocationExternal', 'liveWeatherData'] + self.camera_packets + joystick_packet,
-                                     ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan', 'gpsLocationExternal', 'liveWeatherData'])
+                                     'managerState', 'liveParameters', 'radarState', 'gpsLocationExternal', 'liveWeatherData',
+                                     'carState','controlsState'] + self.camera_packets + joystick_packet,
+                                     ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan', 'gpsLocationExternal', 'liveWeatherData','controlsState'])
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -214,6 +219,7 @@ class Controls:
       params.put("EngagedDistance", "0.0")
       params.put("OpenPilotSecondsEngaged", "0.0")
     
+    self.parked_timer = 0.0
     self.distance_traveled_total = float(params.get("TripDistance", encoding="utf8"))
     self.car_running_timer_total = float(params.get("CarSecondsRunning", encoding="utf8"))
     self.car_running_timer_session = 0.0
@@ -306,6 +312,11 @@ class Controls:
       if CS.gearShifter in ['drive', 'low', 'reverse']:
         self.car_running_timer_session += self.params_check_freq
         self.car_running_timer_total += self.params_check_freq
+      if CS.gearShifter == 'park':
+        self.parked_timer += self.params_check_freq
+      else:
+        self.parked_timer = 0.0
+      self.CI.CS.parked_timer = self.parked_timer
       if not self.enabled and self.enabled_last and CS.vEgo > 0.5:
         self.disengagement_count_session += 1
         self.disengagement_count_total += 1
@@ -394,6 +405,10 @@ class Controls:
     if self.low_visibility_activated:
       self.low_visibility_activated = False
       self.events.add(EventName.lowVisibilityActivated)
+      
+    if self._op_params.get("op_edit_param_changed"):
+      self._op_params.put("op_edit_param_changed", False, do_log=False)
+      self.events.add(EventName.opParamsParamChanged)
 
     # Create events for battery, temperature, disk space, and memory
     if EON and self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
@@ -413,8 +428,9 @@ class Controls:
 
     # Alert if fan isn't spinning for 5 seconds
     if self.sm['pandaState'].pandaType in [PandaType.uno, PandaType.dos]:
-      if self.sm['pandaState'].fanSpeedRpm == 0 and self.sm['deviceState'].fanSpeedPercentDesired > 50:
-        if (self.sm.frame - self.last_functional_fan_frame) * DT_CTRL > 5.0:
+      if self.sm['pandaState'].fanSpeedRpm < 500 and self.sm['deviceState'].fanSpeedPercentDesired > 50:
+        # allow enough time for the fan controller in the panda to recover from stalls
+        if (self.sm.frame - self.last_functional_fan_frame) * DT_CTRL > 15.0:
           self.events.add(EventName.fanMalfunction)
       else:
         self.last_functional_fan_frame = self.sm.frame
@@ -571,6 +587,8 @@ class Controls:
     self.v_cruise_kph_last = self.v_cruise_kph
     
     cur_time = sec_since_boot()
+    
+    self.use_sensors = cur_time > self._op_params.get("TUNE_sensor_lockout_time_s")
 
     # if stock cruise is completely disabled, then we can use our own set speed logic
     if not self.CP.pcmCruise:
@@ -627,10 +645,7 @@ class Controls:
         self.CI.CS.altitude = self.sm['gpsLocationExternal'].altitude
       if self.sm.updated['lateralPlan'] and len(self.sm['lateralPlan'].curvatures) > 0:
         k_mean = mean(self.sm['lateralPlan'].curvatures)
-        if abs(k_mean) > abs(self.k_mean.x):
-          self.k_mean.x = k_mean
-        else:
-          self.k_mean.update(k_mean)
+        self.k_mean.update(k_mean)
         self.CI.CC.params.future_curvature = self.k_mean.x
       
       self.CI.CS.speed_limit_active = (self.sm['longitudinalPlan'].speedLimitControlState == log.LongitudinalPlan.SpeedLimitControlState.active)
@@ -725,7 +740,8 @@ class Controls:
     if self.active:
       self.current_alert_types.append(ET.WARNING)
       
-    self.lat_active = self.CI.CS.lkaEnabled and (self.active or ((self.CI.CS.cruiseMain and self.MADS_enabled) and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED))
+    self.lat_active = self.CI.CS.lkaEnabled and vEgo > self.CP.minSteerSpeed \
+                    and (self.active or ((self.CI.CS.cruiseMain and self.MADS_enabled) and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED))
 
     # Check if openpilot is engaged
     self.enabled = self.active or self.state == State.preEnabled
@@ -780,7 +796,7 @@ class Controls:
       # compute pitch-compensated accel
       if self.sm.updated['liveParameters']:
         self.pitch = apply_deadzone(self.sm['liveParameters'].pitchFutureLong, self.pitch_accel_deadzone)
-      actuators.accelPitchCompensated = actuators.accel + ACCELERATION_DUE_TO_GRAVITY * math.sin(self.pitch)
+      actuators.accelPitchCompensated = actuators.accel + ((ACCELERATION_DUE_TO_GRAVITY * math.sin(self.pitch)) if self.use_sensors else 0.0)
 
       # Steering PID loop and lateral MPC
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['lateralPlan']) * DT_CTRL
@@ -792,7 +808,7 @@ class Controls:
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.lat_active, 
                                                                              CS, self.CP, self.VM, params, 
                                                                              desired_curvature, desired_curvature_rate, self.sm['liveLocationKalman'],
-                                                                             mean_curvature=self.k_mean.x)
+                                                                             mean_curvature=self.k_mean.x, use_roll=self.use_sensors)
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0 and self.active:
@@ -956,6 +972,7 @@ class Controls:
     controlsState.interactionTimer = int(self.interaction_timer)
     controlsState.interventionTimer = int(self.intervention_timer)
     controlsState.distractionTimer = int(self.distraction_timer)
+    controlsState.parkedTimer = int(self.parked_timer)
     
     controlsState.applyGas = int(self.CI.CC.apply_gas)
     controlsState.applyBrakeOut = int(-self.CI.CC.apply_brake_out)

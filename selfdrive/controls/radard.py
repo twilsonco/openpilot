@@ -6,11 +6,12 @@ from collections import defaultdict, deque
 from common.filter_simple import FirstOrderFilter
 import cereal.messaging as messaging
 from cereal import car
-from common.numpy_fast import interp
+from common.numpy_fast import interp, clip
 from common.op_params import opParams
 from common.params import Params
 from common.realtime import Ratekeeper, Priority, config_realtime_process
 from selfdrive.config import RADAR_TO_CAMERA
+from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroid
 from selfdrive.controls.lib.lane_planner import TRAJECTORY_SIZE
 from selfdrive.controls.lib.radar_helpers import Cluster, Track
@@ -29,6 +30,10 @@ MIN_LANE_PROB = 0.6  # Minimum lanes probability to allow use.
 LEAD_PLUS_ONE_MIN_REL_DIST_V = [3.0, 6.0] # [m] min distance between lead+1 and lead at low and high distance
 LEAD_PLUS_ONE_MIN_REL_DIST_BP = [0., 100.] # [m] min distance between lead+1 and lead at low and high distance
 LEAD_PLUS_ONE_MAX_YREL_TO_LEAD = 3.0 # [m]
+
+LEAD_VLAT_DERIV_PERIOD = 1.0 # [s]
+LEAD_VLAT_VLEAD_FACTOR_SPEED_BP = [7.0, 15.0]
+LEAD_VLAT_VLEAD_FACTOR_SPEED_V = [1.0, 0.0]
 
 class KalmanParams():
   def __init__(self, dt):
@@ -260,10 +265,10 @@ def get_lead(v_ego, ready, clusters, lead_msg=None, low_speed_override=True, md=
 
 class LongRangeLead():
   
-  def __init__(self, dt):
+  def __init__(self, dt, derivative_period=1.0):
     self.DREL_BP = [LEAD_MIN_SMOOTHING_DISTANCE, LEAD_MAX_DISTANCE] # [m] used commonly between distance-based parameters
     self.D_DREL_MAX_V = [8., 20.] # [m] deviation between old and new leads necessary to trigger reset of values
-    self.ALPHA_V = [0, 1.] # raise/lower second value for more/less smoothing of long-range lead data
+    self.ALPHA_V = [0., 1.] # raise/lower second value for more/less smoothing of long-range lead data
     self.D_YREL_MAX = 0.8 # [m] max yrel deviation
     self.dRel = FirstOrderFilter(0., 0., dt, initialized=False)
     self.vRel = FirstOrderFilter(0., 0., dt, initialized=False)
@@ -271,7 +276,25 @@ class LongRangeLead():
     self.vLeadK = FirstOrderFilter(0., 0., dt, initialized=False)
     self.aLeadK = FirstOrderFilter(0., 0., dt, initialized=False)
     self.aLeadTau = FirstOrderFilter(0., 0., dt, initialized=False)
+    self.vLat = 0.0
     self.reset()
+    
+    self._rate = 1/dt
+    
+    self._debug_freq = 120
+    self._debug_counter = 120
+    self._reset_deriv_log_freq = 120
+    self._reset_deriv_log_counter = 0
+    self.reset_deriv(derivative_period=derivative_period)
+    self.log()
+    
+  def log(self):
+    return
+    if self._debug_counter >= self._debug_freq:
+      cloudlog.info(f"{self._rate = }, {self._d_period = }, {self._d_period_recip = }, {self.y_rel_vals = }")
+      self._debug_counter = 0
+    else:
+      self._debug_counter += 1
   
   def reset(self):
     self.lead_last = None
@@ -282,9 +305,21 @@ class LongRangeLead():
     self.aLeadK.initialized=False
     self.aLeadTau.initialized=False
   
-  def update(self, lead):
+  def reset_deriv(self, derivative_period=None, reason=''):
+    if derivative_period is not None:
+      self._d_period = round(derivative_period * self._rate)  # period of time for derivative calculation (seconds converted to frames)
+      self._d_period_recip = 1 / derivative_period
+    self.y_rel_vals = deque(maxlen=max(2, self._d_period))
+    self.vLat = 0.0
+    if self._debug_counter - self._reset_deriv_log_counter > self._reset_deriv_log_freq:
+      cloudlog.info(f"long range lead resetting vLat calculation. {reason = }")
+      self._reset_deriv_log_counter = self._debug_counter
+  
+  def update(self, lead, use_v_lat=False):
+    self.log()
     if not lead['status']:
       self.reset()
+      self.reset_deriv(reason=str(lead))
     else:
       if lead['checkSource'] == 'modelLead' or lead['dRel'] < self.DREL_BP[0] or \
           (self.lead_last is not None and self.lead_last['status'] and \
@@ -292,20 +327,40 @@ class LongRangeLead():
           abs(self.lead_last['yRel'] - lead['yRel']) > self.D_YREL_MAX)):
         self.reset()
       alpha = interp(lead['dRel'], self.DREL_BP, self.ALPHA_V)
-      self.dRel.update_alpha(alpha)
-      self.vRel.update_alpha(alpha)
-      self.vLead.update_alpha(alpha)
-      self.vLeadK.update_alpha(alpha)
-      self.aLeadK.update_alpha(alpha)
-      self.aLeadTau.update_alpha(alpha)
-      self.dRel.update(lead['dRel'])
-      self.vRel.update(lead['vRel'])
-      self.vLead.update(lead['vLead'])
-      self.vLeadK.update(lead['vLeadK'])
-      self.aLeadK.update(lead['aLeadK'])
-      self.aLeadTau.update(lead['aLeadTau'])
-    
-    self.lead_last = lead
+      if alpha == 0.0:
+        self.dRel.x = lead['dRel']
+        self.vRel.x = lead['vRel']
+        self.vLead.x = lead['vLead']
+        self.vLeadK.x = lead['vLeadK']
+        self.aLeadK.x = lead['aLeadK']
+        self.aLeadTau.x = lead['aLeadTau']
+      else:
+        self.dRel.update_alpha(alpha)
+        self.vRel.update_alpha(alpha)
+        self.vLead.update_alpha(alpha)
+        self.vLeadK.update_alpha(alpha)
+        self.aLeadK.update_alpha(alpha)
+        self.aLeadTau.update_alpha(alpha)
+        self.dRel.update(lead['dRel'])
+        self.vRel.update(lead['vRel'])
+        self.vLead.update(lead['vLead'])
+        self.vLeadK.update(lead['vLeadK'])
+        self.aLeadK.update(lead['aLeadK'])
+        self.aLeadTau.update(lead['aLeadTau'])
+      
+      self.vLat = 0.0
+      if lead['checkSource'] == 'modelLead' \
+          and self.lead_last is not None \
+          and self.lead_last['status'] \
+          and self.lead_last['checkSource'] == 'modelLead':
+        if abs(self.lead_last['dRel'] - lead['dRel']) > 2.5 \
+            or lead['dRel'] > 80.0 \
+            or lead['vLeadK'] < 0.5:
+          self.reset_deriv(reason=str(lead))
+      self.y_rel_vals.append(lead['yRel'])
+      if len(self.y_rel_vals) == self.y_rel_vals.maxlen:
+        cap = abs(lead['vLeadK']) * 0.5
+        self.vLat = clip((self.y_rel_vals[-1] - self.y_rel_vals[0]) * self._d_period_recip, -cap, cap)
     
     if lead['status'] and lead['checkSource'] != 'modelLead':
       lead['dRel'] = self.dRel.x
@@ -314,6 +369,17 @@ class LongRangeLead():
       lead['vLeadK'] = self.vLeadK.x
       lead['aLeadK'] = self.aLeadK.x
       lead['aLeadTau'] = self.aLeadTau.x
+    
+    lead['vLat'] = float(self.vLat)
+    if use_v_lat and self.vLat != 0.0:
+      v_lat_factor = interp(lead['vLeadK'], LEAD_VLAT_VLEAD_FACTOR_SPEED_BP, LEAD_VLAT_VLEAD_FACTOR_SPEED_V)
+      v_lead_mag = math.sqrt(lead['vLead']**2 + (v_lat_factor * self.vLat)**2)
+      v_lead_k_mag = math.sqrt(lead['vLeadK']**2 + (v_lat_factor * self.vLat)**2)
+      lead['vRel'] += v_lead_mag - lead['vLead']
+      lead['vLead'] = v_lead_mag
+      lead['vLeadK'] = v_lead_k_mag
+      
+    self.lead_last = lead
     
     return lead
 
@@ -344,7 +410,7 @@ class RadarD():
     self.ready = False
     
   def update_op_params(self):
-    global LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V, LEAD_PATH_DREL_MIN, LEAD_PATH_YREL_LOW_TOL, LEAD_MAX_DISTANCE, LEAD_MIN_SMOOTHING_DISTANCE, LEAD_MAX_Y_REL
+    global LEAD_PATH_YREL_MAX_BP, LEAD_PATH_YREL_MAX_V, LEAD_PATH_DREL_MIN, LEAD_PATH_YREL_LOW_TOL, LEAD_MAX_DISTANCE, LEAD_MIN_SMOOTHING_DISTANCE, LEAD_MAX_Y_REL, LEAD_VLAT_DERIV_PERIOD, LEAD_VLAT_VLEAD_FACTOR_SPEED_BP
     if self._op_param_last_update and self.current_time - self._op_param_last_update < 0.5:
       return
     self._op_param_last_update = self.current_time
@@ -355,6 +421,13 @@ class RadarD():
     LEAD_MIN_SMOOTHING_DISTANCE = self._op_params.get('XR_LRL_min_smoothing_distance_m') # [m]
     LEAD_MAX_DISTANCE = self._op_params.get('XR_LRL_max_detection_distance_m') # [m] beyond this distance, lead data is too noisy to use
     LEAD_MAX_Y_REL = self._op_params.get('XR_LRL_max_relative_y_distance_m') # [m] beyond this Y distance, long range leads are ignored
+    LEAD_VLAT_VLEAD_FACTOR_SPEED_BP = [i * CV.MPH_TO_MS for i in self._op_params.get('XR_v_lat_vLead_factor_bp_mph')]
+    d = self._op_params.get('XR_v_lat_derivative_period_s')
+    if d != LEAD_VLAT_DERIV_PERIOD:
+      LEAD_VLAT_DERIV_PERIOD = d
+      self.lead_one_lr.reset_deriv(d)
+      self.lead_two_lr.reset_deriv(d)
+      self.lead_one_plus_lr.reset_deriv(d)
     self.lead_one_lr.ALPHA_V[1] = self._op_params.get('XR_LRL_smoothing_factor')
     self.lead_two_lr.ALPHA_V[1] = self._op_params.get('XR_LRL_smoothing_factor')
     self.lead_one_plus_lr.ALPHA_V[1] = self._op_params.get('XR_LRL_smoothing_factor')
@@ -431,12 +504,12 @@ class RadarD():
     if enable_lead:
       if len(sm['modelV2'].leadsV3) > 1:
         radarState.leadOne = self.lead_one_lr.update(get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leadsV3[0], low_speed_override=True, \
-                  md=sm['modelV2'] if self.long_range_leads_enabled else None, lane_width=sm['lateralPlan'].laneWidth if self.long_range_leads_enabled else None))
+                  md=sm['modelV2'] if self.long_range_leads_enabled else None, lane_width=sm['lateralPlan'].laneWidth if self.long_range_leads_enabled else None), use_v_lat=self.extended_radar_enabled)
         radarState.leadTwo = self.lead_two_lr.update(get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leadsV3[1], low_speed_override=False, \
-                  md=sm['modelV2'] if self.long_range_leads_enabled else None, lane_width=sm['lateralPlan'].laneWidth if self.long_range_leads_enabled else None))
+                  md=sm['modelV2'] if self.long_range_leads_enabled else None, lane_width=sm['lateralPlan'].laneWidth if self.long_range_leads_enabled else None), use_v_lat=self.extended_radar_enabled)
       elif self.long_range_leads_enabled:
-        radarState.leadOne = self.lead_one_lr.update(get_lead(self.v_ego, self.ready, clusters, lead_msg=None, low_speed_override=True, md=sm['modelV2'], lane_width=sm['lateralPlan'].laneWidth))
-        radarState.leadTwo = self.lead_two_lr.update(get_lead(self.v_ego, self.ready, clusters, lead_msg=None, low_speed_override=False, md=sm['modelV2'], lane_width=sm['lateralPlan'].laneWidth))
+        radarState.leadOne = self.lead_one_lr.update(get_lead(self.v_ego, self.ready, clusters, lead_msg=None, low_speed_override=True, md=sm['modelV2'], lane_width=sm['lateralPlan'].laneWidth), use_v_lat=self.extended_radar_enabled)
+        radarState.leadTwo = self.lead_two_lr.update(get_lead(self.v_ego, self.ready, clusters, lead_msg=None, low_speed_override=False, md=sm['modelV2'], lane_width=sm['lateralPlan'].laneWidth), use_v_lat=self.extended_radar_enabled)
       
       if self.extended_radar_enabled and self.ready:
         ll,lc,lr = get_path_adjacent_leads(self.v_ego, sm['modelV2'], sm['lateralPlan'].laneWidth, clusters)
@@ -445,7 +518,7 @@ class RadarD():
             check_dist = interp(radarState.leadOne.dRel, LEAD_PLUS_ONE_MIN_REL_DIST_BP, LEAD_PLUS_ONE_MIN_REL_DIST_V)
             lc = [l for l in lc if l["dRel"] > radarState.leadOne.dRel + check_dist and abs(l["yRel"] - radarState.leadOne.yRel) <= LEAD_PLUS_ONE_MAX_YREL_TO_LEAD]
             if len(lc) > 0: # get the lead+1 car
-              radarState.leadOnePlus = self.lead_one_plus_lr.update(lc[0])
+              radarState.leadOnePlus = self.lead_one_plus_lr.update(lc[0], use_v_lat=self.extended_radar_enabled)
         except AttributeError:
           lc = []
           self.lead_one_plus_lr.reset()

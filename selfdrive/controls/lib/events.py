@@ -327,7 +327,7 @@ def pre_lane_change(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) ->
   alert = sm['lateralPlan'].laneChangeAlert
   direction = sm['lateralPlan'].laneChangeDirection
   dir_str = "left" if direction == LaneChangeDirection.left else "right"
-  str1 = f"Steer {dir_str} to Start Lane Change Once Safe"
+  str1 = f"Steer {dir_str} to start lane change"
   str2 = ""
   if alert == LaneChangeAlert.nudgelessBlockedNoLane:
     str2 = f"(auto lane change blocked: no {dir_str} lane)"
@@ -384,12 +384,25 @@ def autohold_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> 
 
 
 def stopped_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
-  return Alert(
-    "Stopped for %s | Gas to resume" % stotime(sm['longitudinalPlan'].secondsStopped),
-    "You can rest your foot now.",
-    AlertStatus.normal, AlertSize.small,
+  t = sm['controlsState'].parkedTimer
+  if sm['controlsState'].parkedTimer > 1:
+    t = stotime(t)
+    s = "Parked for %s" % t
+  else:
+    t = stotime(sm['longitudinalPlan'].secondsStopped)
+    s = "Stopped for %s | Gas to resume" % t
+  return Alert(s, "", AlertStatus.normal, AlertSize.small,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3)
-
+  
+def opparams_param_changed_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  name, oldval, newval = [OPPARAMS.get(f"op_edit_param_changed_{k}", force_update=True) for k in ["name","val_old","val_new"]]
+  return Alert(name, 
+              f"from '{oldval}' to '{newval}'", 
+              AlertStatus.normal, AlertSize.mid,
+              Priority.LOWER, VisualAlert.none, 
+              AudibleAlert.none, 0., 0.4, 5.0)
+  
+  
 def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   axes = sm['testJoystick'].axes
   gb, steer = list(axes)[:2] if len(axes) else (0., 0.)
@@ -830,6 +843,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.steerTempUnavailable: {
     ET.SOFT_DISABLE: SoftDisableAlert("Steering Temporarily Unavailable"),
+    ET.PERMANENT: Alert(
+      "Steering Temporarily Unavailable",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
     ET.NO_ENTRY: NoEntryAlert("Steering Temporarily Unavailable",
                               duration_hud_alert=0.),
   },
@@ -1290,5 +1308,10 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Cruise main turned off",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+  
+  EventName.opParamsParamChanged: {
+    ET.WARNING: opparams_param_changed_alert,
+    ET.PERMANENT: opparams_param_changed_alert,
   },
 }

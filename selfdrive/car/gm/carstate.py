@@ -52,6 +52,9 @@ class CarState(CarStateBase):
     self._op_params = opParams("gm CarState")
     self.hvb_wattage = FirstOrderFilter(0.0, self._op_params.get('MET_power_meter_smoothing_factor'), DT_CTRL) # [kW]
     self.ui_metrics_params = [int(self._params.get(f'MeasureSlot{i:02d}', encoding="utf8")) for i in range(10)]
+    self.cruise_resume_high_accel_ramp_bp = [3.0, 6.0] # seconds of using accel_mode + 1 accel after resuming
+    self.cruise_resume_high_accel_ramp_v = [1.0, 0.0]
+    self.accel_limits_rate_limits = [i * DT_CTRL for i in [-1.0, 0.5]]
     self.update_op_params()
     
     self.gear_shifter = 'park'
@@ -86,6 +89,9 @@ class CarState(CarStateBase):
     self.is_ev = (self.car_fingerprint in [CAR.VOLT, CAR.VOLT18])
     self.do_sng = (self.car_fingerprint in [CAR.VOLT])
     
+    self.parked_timer = 0
+    self.parked_timer_min_time = 120
+    
     self.sessionInitTime = sec_since_boot()
     self.prev_distance_button = 0
     self.prev_lka_button = 0
@@ -106,10 +112,7 @@ class CarState(CarStateBase):
     self.regen_paddle_pressed_last_t = 0.0
     self.regen_paddle_released_last_t = 0.0
     self.cruiseMain = False
-    self.cruise_enabled_last_t = 0.
-    self.cruise_enabled_last = False
-    self.cruise_enabled_neg_accel_ramp_bp = [0.5, 1.0] # ramp up negative accel when engaging behind a lead over 0.75s with a .25s delay
-    self.cruise_enabled_neg_accel_ramp_v = [0., 1.]
+    self.standstill_time_since_t = 0.0
     self.engineRPM = 0
     self.lastAutoHoldTime = 0.0
     self.time_in_drive_autohold = 0.0
@@ -130,7 +133,7 @@ class CarState(CarStateBase):
     self.coasting_enabled_last = self.coasting_enabled
     self.no_friction_braking = self._params.get_bool("RegenBraking")
     self.coasting_brake_over_speed_enabled = self._params.get_bool("CoastingBrakeOverSpeed")
-    base_BP = [self._op_params.get('MISC_coasting_low_speed_over', force_update=True), self._op_params.get('MISC_coasting_high_speed_over', force_update=True)]
+    base_BP = self._op_params.get('MISC_coasting_speed_over', force_update=True)
     self.coasting_over_speed_vEgo_BP = [[i + 0.1 for i in base_BP], [i + 0.15 for i in base_BP]]
     self.coasting_over_speed_regen_vEgo_BP = [base_BP, [i + 0.05 for i in base_BP]]
     self.coasting_over_speed_vEgo_BP_BP = [i * CV.MPH_TO_MS for i in [20., 80.]]
@@ -211,7 +214,7 @@ class CarState(CarStateBase):
     self.REGEN_PADDLE_STOP_SPEED = self._op_params.get('MADS_OP_one_time_stop_threshold_mph') * CV.MPH_TO_MS
     self.REGEN_PADDLE_STOP_PRESS_TIME = self._op_params.get('MADS_OP_one_time_stop_hold_s')
     
-    base_BP = [self._op_params.get('MISC_coasting_low_speed_over'), self._op_params.get('MISC_coasting_high_speed_over')]
+    base_BP = self._op_params.get('MISC_coasting_speed_over')
     self.coasting_over_speed_vEgo_BP = [[i + 0.1 for i in base_BP], [i + 0.15 for i in base_BP]]
     self.coasting_over_speed_regen_vEgo_BP = [base_BP, [i + 0.05 for i in base_BP]]
     
@@ -220,14 +223,25 @@ class CarState(CarStateBase):
     self.min_lane_change_speed = self._op_params.get('MADS_steer_pause_speed_mph') * CV.MPH_TO_MS
     GAS_PRESSED_THRESHOLD = max(1e-5, self._op_params.get('TUNE_LONG_gas_overlap_cutoff') * 0.01)
     
+    self.parked_timer_min_time = self._op_params.get('MISC_parked_timer_min_time_s')
+    self.accel_limits_rate_limits = [i * DT_CTRL for i in self._op_params.get('AP_accel_limit_rates_ms3')]
+    self.accel_limits_rate_speed_cutoff = self._op_params.get('AP_accel_limit_rates_speed_cutoff_mph') * CV.MPH_TO_MS
+    
+    cruise_resume_high_accel_ramp_dur = self._op_params.get('AP_post_resume_fast_accel_s')
+    if cruise_resume_high_accel_ramp_dur != self.cruise_resume_high_accel_ramp_bp[-1]:
+      self.cruise_resume_high_accel_ramp_bp = [cruise_resume_high_accel_ramp_dur/2, cruise_resume_high_accel_ramp_dur] # seconds of using accel_mode + 1 accel after resuming
+    
     for i in range(10):
       key_op = f'MET_{i:02d}'
       key = f'MeasureSlot{i:02d}'
       metric_param = int(self._params.get(key, encoding="utf8"))
       if metric_param != self.ui_metrics_params[i]:
-        cloudlog.info(f"opParams: UI metric in slot {i} '{UI_METRICS[self.ui_metrics_params[i]]}' ({self.ui_metrics_params[i]}) updated to '{UI_METRICS[metric_param]}' ({metric_param}) onroad. Copying new metric to opParams '{key_op}'")
-        self._op_params.put(key_op, UI_METRICS[metric_param])
-        self.ui_metrics_params[i] = metric_param
+        if len(UI_METRICS) > self.ui_metrics_params[i]:
+          cloudlog.info(f"opParams: UI metric in slot {i} '{UI_METRICS[self.ui_metrics_params[i]]}' ({self.ui_metrics_params[i]}) updated to '{UI_METRICS[metric_param]}' ({metric_param}) onroad. Copying new metric to opParams '{key_op}'")
+          self._op_params.put(key_op, UI_METRICS[metric_param])
+          self.ui_metrics_params[i] = metric_param
+        else:
+          cloudlog.error(f"Failed to sync opparams and params in gm/carstate due to out of bounds error. {len(UI_METRICS) = } ≤ {self.ui_metrics_params[i] = }")
 
     
   def update(self, pt_cp, loopback_cp, chassis_cp):
@@ -262,6 +276,11 @@ class CarState(CarStateBase):
     
     self.vEgo = ret.vEgo
     ret.standstill = ret.vEgoRaw < 0.01
+    
+    if ret.standstill:
+      self.standstill_time_since_t = 0.0
+    else:
+      self.standstill_time_since_t += DT_CTRL
 
     self.coasting_enabled_last = self.coasting_enabled
     if t - self.params_check_last_t >= self.params_check_freq:
@@ -280,7 +299,7 @@ class CarState(CarStateBase):
         self.MADS_pause_steering_enabled = self._params.get_bool("MADSPauseBlinkerSteering")
         self.one_pedal_mode_enabled = self.MADS_enabled and self._params.get_bool("MADSOnePedalMode")
         self.MADS_lead_braking_enabled = self.MADS_enabled and self._params.get_bool("MADSLeadBraking")
-
+    
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
       
     gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
@@ -549,15 +568,6 @@ class CarState(CarStateBase):
     cruise_enabled = self.pcm_acc_status != AccState.OFF
     ret.cruiseState.enabled = cruise_enabled
     ret.cruiseState.standstill = False
-    
-    if cruise_enabled and not self.cruise_enabled_last:
-      if self.is_ev and self.gear_shifter_ev == GEAR_SHIFTER2.LOW:
-        self.cruise_enabled_neg_accel_ramp_v[0] = 0.15
-      else:
-        self.cruise_enabled_neg_accel_ramp_v[0] = 0.
-      self.cruise_enabled_last_t = t
-      
-    self.cruise_enabled_last = cruise_enabled
     ret.cruiseMain = self.cruiseMain
     
     ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active and self.time_in_drive_one_pedal >= self.MADS_long_min_time_in_drive

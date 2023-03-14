@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import interp, clip
 from common.realtime import sec_since_boot, DT_MDL
 from common.op_params import opParams

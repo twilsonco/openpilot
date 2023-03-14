@@ -314,6 +314,8 @@ static void update_state(UIState *s) {
   
   if (t - scene.paramsCheckLast > scene.paramsCheckFreq){
     scene.paramsCheckLast = t;
+    scene.auto_brightness_enabled = Params().getBool("AutoBrightness");
+    scene.show_cur_speed = Params().getBool("PrintCurrentSpeed");
     scene.disableDisengageOnGasEnabled = Params().getBool("DisableDisengageOnGas");
     scene.speed_limit_control_enabled = Params().getBool("SpeedLimitControl");
     scene.screen_dim_mode = std::stoi(Params().get("ScreenDimMode"));
@@ -461,7 +463,7 @@ static void update_state(UIState *s) {
     scene.car_state = sm["carState"].getCarState();
     if (scene.is_using_torque_control){// if lateral torque controller in use, angle error is stored in its unused error_rate.
       scene.lateralCorrection = scene.controls_state.getLateralControlState().getTorqueState().getOutput();
-      scene.angleSteersErr = scene.controls_state.getLateralControlState().getTorqueState().getErrorRate();
+      scene.angleSteersErr = scene.controls_state.getLateralControlState().getTorqueState().getSteerAngleError();
     }
     else{
       scene.lateralCorrection = scene.controls_state.getLateralControlState().getPidState().getOutput();
@@ -532,25 +534,31 @@ static void update_state(UIState *s) {
     auto data = sm["liveWeatherData"].getLiveWeatherData();
     auto time = data.getTimeCurrent();
     bool valid = data.getValid() && time > 0 && time - scene.weather_info.time < 1200; // only use weather data < 20 minutes old
-    if (valid && !scene.weather_info.valid){
-      if (time < data.getTimeSunrise() || time > data.getTimeSunset()){
+    if (scene.auto_brightness_enabled){
+      if (valid && !scene.weather_info.valid){
+        if (time < data.getTimeSunrise() || time > data.getTimeSunset()){
+          scene.screen_dim_mode = MIN(1, scene.screen_dim_mode);
+          Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
+        }
+        else if (scene.screen_dim_mode != 2){
+          scene.screen_dim_mode = 2;
+          Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
+        }
+      }
+      else if (valid && scene.weather_info.valid 
+              && time > data.getTimeSunset() 
+              && scene.weather_info.time <= data.getTimeSunset())
+      {
         scene.screen_dim_mode = MIN(1, scene.screen_dim_mode);
         Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
       }
-    }
-    else if (valid && scene.weather_info.valid 
-            && time > data.getTimeSunset() 
-            && scene.weather_info.time <= data.getTimeSunset())
-    {
-      scene.screen_dim_mode = MIN(1, scene.screen_dim_mode);
-      Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
-    }
-    else if (valid && scene.weather_info.valid 
-            && time > data.getTimeSunrise() 
-            && scene.weather_info.time <= data.getTimeSunrise())
-    {
-      scene.screen_dim_mode = 2;
-      Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
+      else if (valid && scene.weather_info.valid 
+              && time > data.getTimeSunrise() 
+              && scene.weather_info.time <= data.getTimeSunrise())
+      {
+        scene.screen_dim_mode = 2;
+        Params().put("ScreenDimMode", std::to_string(scene.screen_dim_mode).c_str(), 1);
+      }
     }
     scene.weather_info.valid = valid;
     scene.weather_info.time = time;
@@ -793,6 +801,7 @@ static void update_state(UIState *s) {
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
     scene.is_using_torque_control = (sm["carParams"].getCarParams().getLateralTuning().which() == cereal::CarParams::LateralTuning::TORQUE);
+    scene.mass = sm["carParams"].getCarParams().getMass();
   }
   if (sm.updated("liveMapData")) {
     scene.current_road_name = sm["liveMapData"].getLiveMapData().getCurrentRoadName();
@@ -961,11 +970,13 @@ static void update_status(UIState *s) {
     if (s->scene.started) {
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
-
+      s->scene.screen_tapped = Params().getBool("ScreenTapped");
+      s->scene.screen_tapped2 = s->scene.screen_tapped;
       if (Params().getBool("LowOverheadMode") && s->scene.screen_dim_mode_cur == s->scene.screen_dim_mode_max){
         s->scene.screen_dim_mode_cur -= 1;
         Params().put("ScreenDimMode", std::to_string(s->scene.screen_dim_mode_cur).c_str(), 1);
       }
+      s->scene.show_cur_speed = Params().getBool("PrintCurrentSpeed");
       s->scene.power_meter_mode = std::stoi(Params().get("PowerMeterMode"));
       s->scene.power_meter_metric = Params().getBool("PowerMeterMetric");
       s->scene.end_to_end = Params().getBool("EndToEndToggle");

@@ -33,7 +33,7 @@ class LatControlTorqueLQR():
     self.sat_limit = CP.steerLimitTimer
     
     self._op_params = opParams(calling_function="latcontrol_torque_lqr.py")
-    self.roll_k = 1.0
+    self.roll_k = 0.0
 
     self.reset()
   
@@ -72,11 +72,11 @@ class LatControlTorqueLQR():
 
     return self.sat_count > self.sat_limit
 
-  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, mean_curvature=0.0):
+  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, mean_curvature=0.0, use_roll=True):
     lqr_log = log.ControlsState.LateralTorqueLQRState.new_message()
 
     if self.use_steering_angle:
-      actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
+      actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll if use_roll else 0.0)
       actual_curvature_rate = -VM.calc_curvature(math.radians(CS.steeringRateDeg), CS.vEgo, 0)
     else:
       actual_curvature = llk.angularVelocityCalibrated.value[2] / CS.vEgo
@@ -122,7 +122,7 @@ class LatControlTorqueLQR():
            (error <= 0 and (control >= -steers_max or i > 0.0)):
           self.i_lqr = i
 
-      ff_roll = -math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY * self.roll_k
+      ff_roll = -math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY * self.roll_k if use_roll else 0.0
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo)
       friction_compensation = interp(desired_lateral_jerk, 
                                      [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], 

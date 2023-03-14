@@ -35,7 +35,7 @@ ONE_PEDAL_SPEED_ERROR_FACTOR_V = [0.4, 0.2] # factor of error for non-lead braki
 ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T = 0.6 # [s]
 
 ONE_PEDAL_MODE_DECEL_V = [-1.0, -1.1] # m/s^2
-ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V = [-1.5, -1.6] # m/s^2
+ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V = [-1.3, -1.6] # m/s^2
 ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V + ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
 ONE_PEDAL_DECEL_RATE_LIMIT_UP = 0.8 * DT_CTRL * 4 # m/s^2 per second for increasing braking force
 ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.8 * DT_CTRL * 4 # m/s^2 per second for decreasing
@@ -55,7 +55,9 @@ class CarController():
     
     self.params = CarControllerParams()
     self._op_params = opParams("gm CarController")
-    self.override_long_tune = self._op_params.get('TUNE_LAT_do_override', force_update=True)
+    self.override_long_tune = self._op_params.get('TUNE_LONG_do_override', force_update=True)
+    self.override_lat_tune = self._op_params.get('TUNE_LAT_do_override', force_update=True)
+    self.min_steer_speed = self._op_params.get('TUNE_LAT_min_steer_speed_mph', force_update=True) * CV.MPH_TO_MS
 
     self.packer_pt = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.packer_obj = CANPacker(DBC[CP.carFingerprint]['radar'])
@@ -90,8 +92,8 @@ class CarController():
     ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP = sorted(self._op_params.get('MADS_OP_rate_low_speed_factor_bp'))
     ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_V[1] = self._op_params.get('MADS_OP_rate_high_steer_factor')
     ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP = sorted(self._op_params.get('MADS_OP_rate_high_steer_factor_bp'))
-    ONE_PEDAL_MODE_DECEL_V = self._op_params.get('MADS_OP_decel_mss')
-    ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V = self._op_params.get('MADS_OP_regen_paddle_decel_mss')
+    ONE_PEDAL_MODE_DECEL_V = self._op_params.get('MADS_OP_decel_ms2')
+    ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V = self._op_params.get('MADS_OP_regen_paddle_decel_ms2')
     ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V + ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
     ONE_PEDAL_DECEL_RATE_LIMIT_UP = self._op_params.get('MADS_OP_rate_ramp_up') * DT_CTRL * 4 # m/s^2 per second for increasing braking force
     ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = self._op_params.get('MADS_OP_rate_ramp_down') * DT_CTRL * 4 # m/s^2 per second for decreasing
@@ -120,7 +122,7 @@ class CarController():
     if CS.lka_steering_cmd_counter != self.lka_steering_cmd_counter_last:
       self.lka_steering_cmd_counter_last = CS.lka_steering_cmd_counter
     elif (frame % P.STEER_STEP) == 0:
-      lkas_enabled = (enabled or CS.pause_long_on_gas_press or (CS.MADS_enabled and CS.cruiseMain)) and CS.lkaEnabled and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > P.MIN_STEER_SPEED and CS.lane_change_steer_factor > 0.
+      lkas_enabled = (enabled or CS.pause_long_on_gas_press or (CS.MADS_enabled and CS.cruiseMain)) and CS.lkaEnabled and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > self.min_steer_speed and CS.lane_change_steer_factor > 0.
       if lkas_enabled:
         new_steer = int(round(actuators.steer * P.STEER_MAX * CS.lane_change_steer_factor))
         P.v_ego = CS.out.vEgo
@@ -220,6 +222,7 @@ class CarController():
             
             self.one_pedal_decel = clip(one_pedal_decel, min(self.one_pedal_decel, CS.out.aEgo + pitch_accel) - ONE_PEDAL_DECEL_RATE_LIMIT_UP * rate_limit_factor, max(self.one_pedal_decel, CS.out.aEgo + pitch_accel) + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN + rate_limit_factor)
             self.one_pedal_decel = max(self.one_pedal_decel, ONE_PEDAL_MAX_DECEL)
+            self.one_pedal_decel = min(self.one_pedal_decel, CS.out.aEgo)
             self.one_pedal_apply_brake = interp(self.one_pedal_decel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
           else:
             self.one_pedal_decel_in = clip(0.0 if CS.gear_shifter_ev == GEAR_SHIFTER2.DRIVE and CS.one_pedal_dl_coasting_enabled and CS.vEgo > 0.05 else min(CS.out.aEgo,self.threshold_accel), self.one_pedal_decel_in - ONE_PEDAL_DECEL_RATE_LIMIT_UP, self.one_pedal_decel_in + ONE_PEDAL_DECEL_RATE_LIMIT_DOWN)

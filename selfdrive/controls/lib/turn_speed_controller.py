@@ -57,23 +57,23 @@ class TurnSpeedController():
 
     self._next_speed_limit_prev = 0.
 
-    self._a_target = FirstOrderFilter(0., self._op_params.get('MTSC_smoothing_factor', force_update=True), DT_MDL)
+    self._a_target = FirstOrderFilter(0., self._op_params.get('CB_MTSC_smoothing_factor', force_update=True), DT_MDL)
 
   def get_speed_scale(self, road_rank):
     if road_rank == 0:
-      return [[0.0], [self._op_params.get('MTSC_speed_scale_freeway')]]
+      return [[0.0], [self._op_params.get('CB_MTSC_speed_scale_freeway')]]
     elif road_rank in [10, 20, 30]:
-      return [[0.0], [self._op_params.get('MTSC_speed_scale_state_highway')]]
+      return [[0.0], [self._op_params.get('CB_MTSC_speed_scale_state_highway')]]
     elif road_rank in [1,11,21,31]:
-      return [[0.0], [self._op_params.get('MTSC_speed_scale_interchange')]]
+      return [[0.0], [self._op_params.get('CB_MTSC_speed_scale_interchange')]]
     else:
-      return [[0.0], [self._op_params.get('MTSC_speed_scale_default')]]
+      return [[0.0], [self._op_params.get('CB_MTSC_speed_scale_default')]]
   
   def get_speed_cutoff(self, road_rank):
     if road_rank in [0,10]:
-      return self._op_params.get('MTSC_cutoff_speed_freeway_mph') * CV.MPH_TO_MS
+      return self._op_params.get('CB_MTSC_cutoff_speed_freeway_mph') * CV.MPH_TO_MS
     elif road_rank in [20,30]:
-      return self._op_params.get('MTSC_cutoff_speed_state_highway_mph') * CV.MPH_TO_MS
+      return self._op_params.get('CB_MTSC_cutoff_speed_state_highway_mph') * CV.MPH_TO_MS
     else:
       return 0.0
 
@@ -196,7 +196,7 @@ class TurnSpeedController():
     if time > self._last_params_update + 0.5:
       self._is_enabled = self._params.get_bool("TurnSpeedControl")
       self._last_params_update = time
-      self._a_target.update_alpha(self._op_params.get('MTSC_smoothing_factor'))
+      self._a_target.update_alpha(self._op_params.get('CB_MTSC_smoothing_factor'))
 
   def _update_calculations(self):
     # Update current velocity offset (error)

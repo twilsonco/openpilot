@@ -36,6 +36,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_openpilot.png",
                                   this));
 
+  toggles.append(new ParamControl("DisableUpdates",
+                                  "Disable automatic updates",
+                                  "When this is enabled, openpilot will not check for or install updates.",
+                                  "../assets/offroad/icon_openpilot.png",
+                                  this));
+
   toggles.append(new ParamControl("MetricResetSwitch",
                                   "On-screen information (tap me; reset)",
                                   "When the car is on, tap the current speed to unlock edit mode, then tap more to cycle the number of metrics shown on the right side. Tap each metric to change the information displayed. Use this toggle to, upon the next vehicle start, reset the distance travelled, disengagement/intervention/interaction/distraction counts, and EV consumption and efficiency trip and 5mi/8km metrics.",
@@ -92,7 +98,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   this));
 
   toggles.append(new ParamControl("ExtendedRadar",
-                                  "Extended radar capabilities (alpha)",
+                                  "Extended radar capabilities (beta)",
                                   "Enables tracking of all cars; not just the one openpilot lead. Necessary for braking for car in front of lead, longer-range lead detection, traffic-based auto lane position, drawing of oncoming/ongoing lanes, and indication of non-lead cars.",
                                   "../assets/offroad/icon_plus.png",
                                   this));
@@ -223,8 +229,13 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   this));
   toggles.append(new ParamControl("WeatherSafetyEnabled",
                                   "Weather safety",
-                                  "OpenPilot will automatically use softer acceleration, softer curve braking, follow traffic farther, or lower the speed limit offset in use. If you want, enter your own OpenWeatherMap.org api key into /data/OpenWeatherMap_apiKey.txt",
+                                  "OpenPilot will automatically use softer acceleration, softer curve braking, follow traffic farther, or lower the speed limit offset in use. If you want, enter your own OpenWeatherMap.org api key using opparams (connect over ssh and run `./opparams`)",
                                   "../assets/weather/10n.png",
+                                  this));
+  toggles.append(new ParamControl("AutoBrightness",
+                                  "Auto brightness",
+                                  "Set brightness automatically. High during the day and medium at night, after sunset. You can override this until the next car start by manually changing brightness by tapping the face icon at bottom-left.",
+                                  "../assets/offroad/icon_metric.png",
                                   this));
   toggles.append(new ParamControl("ColorPath",
                                   "Colored path",
@@ -240,6 +251,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Adjacent oncoming/ongoing paths",
                                   "[Requires extended radar toggle] Draw paths to indicate whether adjacent lanes contain oncoming (red) or ongoing (green) traffic.",
                                   "../assets/offroad/icon_road.png",
+                                  this));
+  toggles.append(new ParamControl("PrintCurrentSpeed",
+                                  "Print current speed",
+                                  "Print current vehicle speed on Comma device screen",
+                                  "../assets/offroad/icon_metric.png",
                                   this));
   toggles.append(new ParamControl("PrintLeadInfo",
                                   "Print lead car info",

@@ -196,7 +196,12 @@ typedef enum UIMeasure { //rearrange here to adjust order when cycling measures
   ENGINE_RPM_TEMPF,
   COOLANT_TEMPC,
   COOLANT_TEMPF,
+  KINETIC_ENERGY,
   ACCELERATION,
+  TIME_TO_STOP_CUR,
+  TIME_TO_STOP_MIN,
+  DIST_TO_STOP_CUR,
+  DIST_TO_STOP_MIN,
   LAT_ACCEL,//JERK,
   DRAG_FORCE,
   DRAG_POWER,
@@ -335,7 +340,11 @@ typedef struct UIScene {
   // Debug UI
   bool show_debug_ui;
 
+  bool show_cur_speed;
+
   bool map_open;
+
+  float mass = 2000.0;
 
   bool lead_info_print_enabled;
   std::deque<int> lead_x_vals, lead_y_vals;
@@ -366,6 +375,7 @@ typedef struct UIScene {
   Rect weather_touch_rect;
   bool weather_simple_show_percip = false;
   int weather_simple_alernate_wind_precip_update_freq = 4;
+  bool auto_brightness_enabled = false;
   
   // adjustable lane position
   Rect lane_pos_left_touch_rect = {1,1,1,1}, lane_pos_right_touch_rect = {1,1,1,1};
@@ -396,6 +406,8 @@ typedef struct UIScene {
   float screen_dim_fade = -1., screen_dim_fade_last_t = 0., screen_dim_fade_step = 1;
   float screen_dim_fade_dur_up = 0.5, screen_dim_fade_dur_down = 2.;
   Rect screen_dim_touch_rect;
+  bool screen_tapped = false;
+  bool screen_tapped2 = false;
 
   cereal::PandaState::PandaType pandaType;
 

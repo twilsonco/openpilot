@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import time, sys
-from common.op_params import opParams
+from common.op_params import opParams, read_history
 from common.params import Params
 import ast
 import difflib
@@ -19,7 +19,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
     self.live_tuning_enabled = self.op_params.get('op_params_live_tune_enabled', force_update=True)
     self.live_tuning = self.live_tuning_enabled and self.op_params.get('op_edit_live_mode', force_update=True)
     if not self.live_tuning_enabled:
-      self.op_params.put('op_edit_live_mode', self.live_tuning)
+      self.op_params.put('op_edit_live_mode', self.live_tuning, reason=False)
     self.compact_view = self.op_params.get('op_edit_compact_view', force_update=True)
     self.section = self.op_params.get('op_edit_section', force_update=True)
     self.username = self.op_params.get('MISC_username', force_update=True)
@@ -44,7 +44,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         username = ''
         while username == '':
           username = input('>> ').strip()
-        self.op_params.put('MISC_username', username)
+        self.op_params.put('MISC_username', username, show_alert=True)
         self.username = username
         self.success('Thanks! Saved your username\n'
                      'Edit the \'username\' parameter at any time to update', sleep_time=1.5)
@@ -71,11 +71,12 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           self.warning('and restart opparams.py in order to live-tune.\n')
           time.sleep(5)
           self.live_tuning = False
-          self.op_params.put('op_edit_live_mode', self.live_tuning)
+          self.op_params.put('op_edit_live_mode', self.live_tuning, reason=False)
           continue
         self.info('Here are your live parameters:', sleep_time=0)
         self.info('(changes take effect within a second)', sleep_time=0)
       self.info('(startup (s) require car or OpenPilot restart)', sleep_time=0)
+      self.info('(parameters have default (.) or changed (C) values)', sleep_time=0)
       if (self.section != '' or not self.live_tuning) \
           and not self.live_tuning_enabled:
         if self.first_run:
@@ -104,22 +105,16 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           and self.op_params.fork_params[k].show_op_param in self.op_params.fork_params \
           and self.op_params.get(self.op_params.fork_params[k].show_op_param, force_update=True) != self.op_params.fork_params[k].show_op_param_check_val:
             tmp_removed.add(k)
-        elif self.op_params.fork_params[k].linked_op_param != '' \
-            and k not in tmp_removed \
-            and self.op_params.fork_params[k].linked_op_param in self.op_params.fork_params \
-            and self.op_params.fork_params[k].linked_op_param_check_param in self.op_params.fork_params \
-            and self.op_params.get(self.op_params.fork_params[k].linked_op_param_check_param, force_update=True):
-          tmp_removed.add(self.op_params.fork_params[k].linked_op_param)
       for p in tmp_removed:
         del self.params[p]
       
       if len(self.params) == 0 and self.section != '':
         self.warning(f"No params to list!\n")
         self.section = ''
-        self.op_params.put('op_edit_section', self.section)
+        self.op_params.put('op_edit_section', self.section, reason=False)
         self.last_choice = None
         self.live_tuning = False
-        self.op_params.put('op_edit_live_mode', self.live_tuning)
+        self.op_params.put('op_edit_live_mode', self.live_tuning, reason=False)
         continue
         
       
@@ -152,11 +147,13 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       n_pad_idx = int(log10(len(self.params) + (0 if self.section != '' else len(sections))))+2
       n_pad_vals = max([len(str(i)) for i in values_list])+1
       for idx, param in enumerate(self.params):
-        line = '{} {} {} {}'.format(f"{idx + 1}.".rjust(n_pad_idx), f"{param}".ljust(n_pad,'.'), static[idx] , values_list[idx])
+        _color = blue_gradient[min(round(idx / len(self.params) * len(blue_gradient)), len(blue_gradient) - 1)]
+        is_default = (self.op_params.get(param, force_update=True) == self.op_params.fork_params[param].default_value)
+        is_default = f"{COLORS.BASE(_color)}.{COLORS.ENDC}" if is_default else f"{COLORS.INFO}C{COLORS.ENDC}"
+        line = '{} {} {} {} {}'.format(f"{idx + 1}.".rjust(n_pad_idx), f"{param}".ljust(n_pad,'.'), static[idx], is_default, values_list[idx])
         if idx == self.last_choice and self.last_choice is not None and self.last_choice < len(self.params):
           line = COLORS.OKGREEN + line
         else:
-          _color = blue_gradient[min(round(idx / len(self.params) * len(blue_gradient)), len(blue_gradient) - 1)]
           line = COLORS.BASE(_color) + line
         to_print.append(line)
       
@@ -191,7 +188,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         if choice >= len(self.params):
           choice -= len(self.params)
           self.section = sections[choice][0]
-          self.op_params.put('op_edit_section', self.section)
+          self.op_params.put('op_edit_section', self.section, reason=False)
           self.last_choice = None
         else:
           self.last_choice = choice
@@ -199,11 +196,11 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       elif parsed == 'live':
         self.last_choice = None
         self.live_tuning = not self.live_tuning
-        self.op_params.put('op_edit_live_mode', self.live_tuning)  # for next opEdit startup
+        self.op_params.put('op_edit_live_mode', self.live_tuning, reason=False)  # for next opEdit startup
       elif parsed == 'compact':
         self.last_choice = None
         self.compact_view = not self.compact_view
-        self.op_params.put('op_edit_compact_view', self.compact_view)
+        self.op_params.put('op_edit_compact_view', self.compact_view, reason=False)
       elif parsed == 'restart':
         self.C3_rebootless_restart()
       elif parsed == 'reset':
@@ -212,15 +209,15 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           for k in self.params:
             v = self.op_params.fork_params[k]
             if not v.hidden:
-              self.op_params.put(k,v.default_value)
+              self.op_params.put(k,v.default_value, reason="user resetting to default")
         else:
           for k, v in self.op_params.fork_params.items():
             if not v.hidden:
-              self.op_params.put(k,v.default_value)
+              self.op_params.put(k,v.default_value, reason="user resetting to default")
         continue
       elif parsed == 'home':
         self.section = ''
-        self.op_params.put('op_edit_section', self.section)
+        self.op_params.put('op_edit_section', self.section, reason=False)
         self.last_choice = None
         continue
       elif parsed == 'exit':
@@ -304,9 +301,15 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         to_print.append(COLORS.WARNING + '>>  Allowed values:{} {}{}{}'.format(COLORS.ENDC, COLORS.PRETTY_YELLOW, allowed_val_str, COLORS.ENDC))
       if param_info.min_val is not None or param_info.max_val is not None:
         to_print.append(COLORS.WARNING + '>>  Bounds:{} ({}, {})'.format(COLORS.ENDC, self.color_from_type(param_info.min_val), self.color_from_type(param_info.max_val)) + COLORS.ENDC)
-      if param_info.linked_op_param != '' and param_info.linked_op_param in self.op_params.fork_params and param_info.linked_op_param_check_param in self.op_params.fork_params and self.op_params.get(param_info.linked_op_param_check_param, force_update=True):
-        to_print.append(COLORS.WARNING + '>>  Linked to{} `{}`'.format(COLORS.ENDC, self.color_from_type(param_info.linked_op_param)) + COLORS.ENDC)
+      if param_info.linked_op_param_check_param != '' and param_info.linked_op_param_check_param in self.op_params.fork_params and self.op_params.get(param_info.linked_op_param_check_param, force_update=True):
+        to_print.append(COLORS.WARNING + '>>  ALL VALUES IN LIST ARE SYNCED' + COLORS.ENDC)
       to_print.append(COLORS.WARNING + '>>  Default value: {} {}'.format(self.color_from_type(param_info.default_value), param_info.unit) + COLORS.ENDC)
+      
+      history = read_history(chosen_key)
+      if len(history) > 1:
+        history = history[-min(6,len(history)):-1]
+        num_hist = len(history)
+        to_print.append(COLORS.WARNING + '>>  Last {}value{}:{}\n      {}'.format(f'{num_hist} ' if num_hist > 1 else '', 's' if num_hist > 1 else '', COLORS.ENDC, '\n      '.join([f'{val["time of change"]} -- {self.color_from_type(val["value"])}' for val in history])))
 
       if to_print:
         print('\n{}\n'.format('\n'.join(to_print)))
@@ -342,7 +345,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           self.warning('Value out of bounds: clipped to {}'.format(new_value))
 
         # if not param_info.static:  # stay in live tuning interface
-        self.op_params.put(chosen_key, new_value)
+        self.op_params.put(chosen_key, new_value, show_alert=True)
         self.success('Saved {} with value: {}{}{} (type: {})'.format(chosen_key, self.color_from_type(new_value), ' ' + param_info.unit, COLORS.SUCCESS, type(new_value).__name__))
         # else:  # else ask to save and break
         #   self.warning('\nOld value: {}{} (type: {})'.format(self.color_from_type(old_value), COLORS.WARNING, type(old_value).__name__))
@@ -358,11 +361,14 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
   def change_param_list(self, old_value, param_info, chosen_key):
     while True:
       self.info('Current value: {} (type: {})'.format(old_value, type(old_value).__name__), sleep_time=0)
-      self.prompt('\nEnter index to edit (0 to {}):'.format(len(old_value) - 1))
-      choice_idx = self.str_eval(input('>> '))
-      if choice_idx == '':
-        self.info('Exiting this parameter...')
-        return
+      if param_info.linked_op_param_check_param != '' and param_info.linked_op_param_check_param in self.op_params.fork_params and self.op_params.get(param_info.linked_op_param_check_param, force_update=True):
+        choice_idx = 0
+      else:
+        self.prompt('\nEnter index to edit (0 to {}):'.format(len(old_value) - 1))
+        choice_idx = self.str_eval(input('>> '))
+        if choice_idx == '':
+          self.info('Exiting this parameter...')
+          return
 
       if not isinstance(choice_idx, int) or choice_idx not in range(len(old_value)):
         self.error('Must be an integar within list range!')
@@ -388,11 +394,17 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           continue
         if param_info.value_clipped(new_value):
           self.warning('Value out of bounds: clipped to {}'.format(new_value))
+          
+        if param_info.linked_op_param_check_param != '' and param_info.linked_op_param_check_param in self.op_params.fork_params and self.op_params.get(param_info.linked_op_param_check_param, force_update=True):
+          old_value = [new_value for i in range(len(old_value))]
+        else:
+          old_value[choice_idx] = new_value
 
-        old_value[choice_idx] = new_value
-
-        self.op_params.put(chosen_key, old_value)
+        self.op_params.put(chosen_key, old_value, show_alert=True)
         self.success('Saved {} with value: {}{} (type: {})'.format(chosen_key, self.color_from_type(new_value), COLORS.SUCCESS, type(new_value).__name__), end='\n')
+        break
+      
+      if new_value == '' and param_info.linked_op_param_check_param != '' and param_info.linked_op_param_check_param in self.op_params.fork_params and self.op_params.get(param_info.linked_op_param_check_param, force_update=True):
         break
       
   def C3_rebootless_restart(self, immediate=False):

@@ -53,13 +53,14 @@ _A_CRUISE_MAX_BP = _A_CRUISE_MIN_BP
 
 _A_CRUISE_MIN_V_MODE_LIST = [_A_CRUISE_MIN_V, _A_CRUISE_MIN_V_SPORT, _A_CRUISE_MIN_V_ECO]
 _A_CRUISE_MAX_V_MODE_LIST = [_A_CRUISE_MAX_V, _A_CRUISE_MAX_V_SPORT, _A_CRUISE_MAX_V_ECO]
+_A_CRUISE_HIGHER_ACCEL_INDEX = [1, 1, 0]
 
 # Lookup table for turns - fast accel
 _A_TOTAL_MAX_V = [3.5, 4.0, 5.0]
 _A_TOTAL_MAX_BP = [0., 25., 55.]
 
 def calc_cruise_accel_limits(v_ego, following, accelMode):
-  if following and accelMode < 1:
+  if following and accelMode == 0:
     a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V_FOLLOWING)
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
   else:

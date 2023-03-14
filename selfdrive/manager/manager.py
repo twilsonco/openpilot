@@ -33,13 +33,16 @@ def manager_init():
   params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
 
   default_params = [
-    ("CompletedTrainingVersion", "0"),
-    ("HasAcceptedTerms", "0"),
+    ("CompletedTrainingVersion", "1"),
+    ("HasAcceptedTerms", "1"),
+    ("DisableUpdates", "0"),
     ("HandsOnWheelMonitoring", "0"),
     ("OpenpilotEnabledToggle", "1"),
     ("CommunityFeaturesToggle", "1"),
-    ("ShowDebugUI", "1"),
+    ("ShowDebugUI", "0"),
+    ("PrintCurrentSpeed", "1"),
     ("WeatherAlternateFrequency", "4"),
+    ("AutoBrightness", "1"),
     ("OPParamsRebootInNSeconds", "-1"),
     ("OPParamsLiveTuneEnabled", "0"),
     ("OPParamsLateralOverride", "0"),

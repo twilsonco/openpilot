@@ -237,7 +237,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"RecordFront", PERSISTENT},
     {"RecordFrontLock", PERSISTENT},  // for the internal fleet
     {"ReleaseNotes", PERSISTENT},
-    {"ScreenDimMode", CLEAR_ON_MANAGER_START},
+    {"ScreenDimMode", PERSISTENT},
     {"ShouldDoUpdate", CLEAR_ON_MANAGER_START},
     {"ShowDebugUI", PERSISTENT},
     {"WeatherSafetyEnabled", PERSISTENT},
@@ -260,6 +260,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"WeatherDisplayMode", PERSISTENT},
     {"WeatherDisplayEnabled", PERSISTENT},
     {"RegenBraking", PERSISTENT},
+    {"PrintCurrentSpeed", PERSISTENT},
+    {"AutoBrightness", PERSISTENT},
     {"MADSOnePedalMode", PERSISTENT},
     {"MADSLeadBraking", PERSISTENT},
     {"MADSPauseBlinkerSteering", PERSISTENT},

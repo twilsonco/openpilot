@@ -103,12 +103,12 @@ class LaneOffset:
     self.DUR_SLOW = self._op_params.get('LP_transition_duration_automatic_s', force_update=True) # [s] same, but slower for when position change is caused by auto lane offset
     self.STEP_SLOW = self.OFFSET / self.DUR_SLOW * DT_MDL * LANE_WIDTH_DEFAULT
     self.AUTO_ENABLE_TRAFFIC_MIN_SPEED = self._op_params.get('LP_auto_auto_minimum_speed_mph', force_update=True) * CV.MPH_TO_MS
-    self.AUTO_TRAFFIC_TIMEOUT_ONCOMING = self._op_params.get('TD_oncoming_timeout_s', force_update=True) # [s] amount of time auto lane position will be kept after last car is seen
-    self.AUTO_TRAFFIC_TIMEOUT_ONGOING = self._op_params.get('TD_ongoing_timeout_s', force_update=True) # [s] amount of time auto lane position will be kept after last car is seen
-    self.AUTO_TRAFFIC_MIN_TIME = self._op_params.get('TD_traffic_presence_cutoff_s', force_update=True) # [s] time an oncoming/ongoing car needs to be observed before it will be taken to indicate traffic
-    self.AUTO_TRAFFIC_MIN_SPEED = self._op_params.get('TD_min_traffic_moving_speed_mph', force_update=True) * CV.MPH_TO_MS # [m/s] need to go faster than this to be considered moving
-    self.AUTO_CUTOFF_STEER_ANGLE = self._op_params.get('TD_reset_steer_angle_deg', force_update=True) # [degrees] auto lane position reset traffic monitoring after this
-    self.TRAFFIC_NEW_DETECT_STEER_CUTOFF = self._op_params.get('TD_cutoff_steer_angle_deg', force_update=True) # [degrees] instantaneous traffic isn't detected if steer angle greater than this
+    self.AUTO_TRAFFIC_TIMEOUT_ONCOMING = self._op_params.get('XR_TD_oncoming_timeout_s', force_update=True) # [s] amount of time auto lane position will be kept after last car is seen
+    self.AUTO_TRAFFIC_TIMEOUT_ONGOING = self._op_params.get('XR_TD_ongoing_timeout_s', force_update=True) # [s] amount of time auto lane position will be kept after last car is seen
+    self.AUTO_TRAFFIC_MIN_TIME = self._op_params.get('XR_TD_traffic_presence_cutoff_s', force_update=True) # [s] time an oncoming/ongoing car needs to be observed before it will be taken to indicate traffic
+    self.AUTO_TRAFFIC_MIN_SPEED = self._op_params.get('XR_TD_min_traffic_moving_speed_mph', force_update=True) * CV.MPH_TO_MS # [m/s] need to go faster than this to be considered moving
+    self.AUTO_CUTOFF_STEER_ANGLE = self._op_params.get('XR_TD_reset_steer_angle_deg', force_update=True) # [degrees] auto lane position reset traffic monitoring after this
+    self.TRAFFIC_NEW_DETECT_STEER_CUTOFF = self._op_params.get('XR_TD_cutoff_steer_angle_deg', force_update=True) # [degrees] instantaneous traffic isn't detected if steer angle greater than this
     self.offset = 0.
     self.lane_pos = 0.
     self.offset_scale = interp(float(mass), [1607., 2729.], [1., 0.7]) # scales down offset based on vehicle width (assumed to go as mass)
@@ -170,12 +170,12 @@ class LaneOffset:
     self.DUR_SLOW = self._op_params.get('LP_transition_duration_automatic_s') # [s] same, but slower for when position change is caused by auto lane offset
     self.STEP_SLOW = self.OFFSET / self.DUR_SLOW * DT_MDL * LANE_WIDTH_DEFAULT
     self.AUTO_ENABLE_TRAFFIC_MIN_SPEED = self._op_params.get('LP_auto_auto_minimum_speed_mph') * CV.MPH_TO_MS
-    self.AUTO_TRAFFIC_TIMEOUT_ONCOMING = self._op_params.get('TD_oncoming_timeout_s') # [s] amount of time auto lane position will be kept after last car is seen
-    self.AUTO_TRAFFIC_TIMEOUT_ONGOING = self._op_params.get('TD_ongoing_timeout_s') # [s] amount of time auto lane position will be kept after last car is seen
-    self.AUTO_TRAFFIC_MIN_TIME = self._op_params.get('TD_traffic_presence_cutoff_s') # [s] time an oncoming/ongoing car needs to be observed before it will be taken to indicate traffic
-    self.AUTO_TRAFFIC_MIN_SPEED = self._op_params.get('TD_min_traffic_moving_speed_mph') * CV.MPH_TO_MS # [m/s] need to go faster than this to be considered moving
-    self.AUTO_CUTOFF_STEER_ANGLE = self._op_params.get('TD_reset_steer_angle_deg') # [degrees] auto lane position reset traffic monitoring after this
-    self.TRAFFIC_NEW_DETECT_STEER_CUTOFF = self._op_params.get('TD_cutoff_steer_angle_deg')
+    self.AUTO_TRAFFIC_TIMEOUT_ONCOMING = self._op_params.get('XR_TD_oncoming_timeout_s') # [s] amount of time auto lane position will be kept after last car is seen
+    self.AUTO_TRAFFIC_TIMEOUT_ONGOING = self._op_params.get('XR_TD_ongoing_timeout_s') # [s] amount of time auto lane position will be kept after last car is seen
+    self.AUTO_TRAFFIC_MIN_TIME = self._op_params.get('XR_TD_traffic_presence_cutoff_s') # [s] time an oncoming/ongoing car needs to be observed before it will be taken to indicate traffic
+    self.AUTO_TRAFFIC_MIN_SPEED = self._op_params.get('XR_TD_min_traffic_moving_speed_mph') * CV.MPH_TO_MS # [m/s] need to go faster than this to be considered moving
+    self.AUTO_CUTOFF_STEER_ANGLE = self._op_params.get('XR_TD_reset_steer_angle_deg') # [degrees] auto lane position reset traffic monitoring after this
+    self.TRAFFIC_NEW_DETECT_STEER_CUTOFF = self._op_params.get('XR_TD_cutoff_steer_angle_deg')
   
   def do_auto_enable_traffic(self, ret, v_ego):
     v_ego_diff = apply_deadzone(v_ego - self.AUTO_ENABLE_TRAFFIC_MIN_SPEED, self.AUTO_ENABLE_MIN_SPEED_DEADZONE)
@@ -366,23 +366,29 @@ class LaneOffset:
     lane_pos_auto = 0.
     timeout_override = False
     
-    if not (self._cs is None or self._cs.leftBlinker or self._cs.rightBlinker):
-      if self._left_traffic in [LANE_TRAFFIC.ONCOMING, LANE_TRAFFIC.ONGOING] \
-          and self._right_traffic == LANE_TRAFFIC.NONE \
-          and self._lane_probs[2] >= self.AUTO_MIN_LANELINE_PROB:
-        lane_pos_auto = -1.
-        timeout_override = True
-      elif self._right_traffic in [LANE_TRAFFIC.ONCOMING, LANE_TRAFFIC.ONGOING] \
-          and self._left_traffic == LANE_TRAFFIC.NONE \
-          and self._lane_probs[1] >= self.AUTO_MIN_LANELINE_PROB:
-        lane_pos_auto = 1.
-        timeout_override = True
+    
+    if self._left_traffic in [LANE_TRAFFIC.ONCOMING, LANE_TRAFFIC.ONGOING] \
+        and self._right_traffic == LANE_TRAFFIC.NONE \
+        and self._lane_probs[2] >= self.AUTO_MIN_LANELINE_PROB:
+      lane_pos_auto = -1.
+      timeout_override = True
+    elif self._right_traffic in [LANE_TRAFFIC.ONCOMING, LANE_TRAFFIC.ONGOING] \
+        and self._left_traffic == LANE_TRAFFIC.NONE \
+        and self._lane_probs[1] >= self.AUTO_MIN_LANELINE_PROB:
+      lane_pos_auto = 1.
+      timeout_override = True
     if lane_pos_auto != 0. \
         and ((self._lat_accel_cur >= self.AUTO_MAX_CUR_LAT_ACCEL \
           and np.sign(self._lat_curvature_cur) == np.sign(lane_pos_auto)) \
         or (self._lat_accel_pred >= self.AUTO_MAX_PRED_LAT_ACCEL \
           and np.sign(self._lat_curvature_pred) == np.sign(lane_pos_auto))):
       lane_pos_auto = 0.
+    
+    if self._cs is not None \
+        and (self._cs.leftBlinker and lane_pos_auto == -1. \
+        or self._cs.rightBlinker and lane_pos_auto == 1.):
+      lane_pos_auto = 0.
+      timeout_override = False
     
     if lane_pos_auto != self._lane_pos_auto:
       self._lane_state_changed_last_t = self._t
