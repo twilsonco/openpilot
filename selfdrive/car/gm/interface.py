@@ -155,7 +155,6 @@ class CarInterface(CarInterfaceBase):
   
   @staticmethod
   def get_steer_feedforward_torque_lat_jerk_volt(jerk, speed, lateral_acceleration, friction, friction_threshold):
-    linear = friction * jerk
     if sign(lateral_acceleration) == sign(jerk):
       ANGLE_COEF = 2.87742908
       ANGLE_COEF2 = 3.0171422
@@ -196,7 +195,11 @@ class CarInterface(CarInterfaceBase):
       speed_norm = 0.5 * cos(clip(speed / max_speed, 0., 1.) * 3.14) + 0.5
       
       out = (1-speed_norm) * sigmoid1 + speed_norm * sigmoid2
-    return sign(jerk) * min(abs(out), abs(linear))
+    if friction >= 0.0:
+      linear = friction * jerk
+      return sign(jerk) * min(abs(out), abs(linear))
+    else:
+      return out
 
 
   @staticmethod
@@ -330,10 +333,10 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
         ret.lateralTuning.torque.kp = 0.48
-        ret.lateralTuning.torque.ki = 0.13
-        ret.lateralTuning.torque.kd = 0.03
+        ret.lateralTuning.torque.ki = 0.11
+        ret.lateralTuning.torque.kd = 0.02
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
-        ret.lateralTuning.torque.friction = 0.5
+        ret.lateralTuning.torque.friction = -1.0 # for custom lateral jerk ff
       else:
         ret.lateralTuning.pid.kpBP = [0., 40.]
         ret.lateralTuning.pid.kpV = [0., .16]
