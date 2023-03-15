@@ -1,14 +1,12 @@
 import math
 from selfdrive.controls.lib.pid import PIDController
 from common.differentiator import Differentiator
-from common.filter_simple import FirstOrderFilter
-from common.integrator import Integrator
 from common.numpy_fast import interp, sign
 from common.op_params import opParams
-from common.realtime import DT_CTRL
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
+from selfdrive.modeld.constants import T_IDXS
 from cereal import log
 
 # At higher speeds (25+mph) we can assume:
@@ -24,6 +22,8 @@ from cereal import log
 
 
 FRICTION_THRESHOLD = 2.0
+
+LAT_PLAN_MIN_IDX = 5
 
 
 def get_steer_feedforward(desired_lateral_accel, speed):
@@ -45,13 +45,11 @@ class LatControlTorque(LatControl):
     self.get_friction = CI.get_steer_feedforward_function_torque_lat_jerk()
     self.roll_k = 0.55
     self.v_ego = 0.0
+    self.lat_plan_look_ahead = 1.5
+    self.lat_plan_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.lat_plan_look_ahead), None)
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
-    if self.tune_override:
-      self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp', force_update=True)]
-      self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v', force_update=True)
-    else:
-      self.low_speed_factor_bp = [10.0, 25.0]
-      self.low_speed_factor_v = [225.0, 50.0]
+    self.low_speed_factor_bp = [10.0, 25.0]
+    self.low_speed_factor_v = [225.0, 50.0]
       
     # for actual lateral jerk calculation
     self.actual_lateral_jerk = Differentiator(self.pid.error_rate._d_period_s, 100.0)
@@ -74,13 +72,15 @@ class LatControlTorque(LatControl):
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
     self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp')]
     self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v')
+    self.lat_plan_look_ahead = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_s')
+    self.lat_plan_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.lat_plan_look_ahead), None)
   
   def reset(self):
     super().reset()
     self.pid.reset()
     self.actual_lateral_jerk.reset()
 
-  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, mean_curvature=0.0, use_roll=True):
+  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, mean_curvature=0.0, use_roll=True, lat_plan=None):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     self.v_ego = CS.vEgo
 
@@ -96,7 +96,10 @@ class LatControlTorque(LatControl):
       pid_log.active = False
       self.pid.reset()
     else:
-      desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
+      min_planned_curvature_rate = min(list(lat_plan.curvatureRates)[LAT_PLAN_MIN_IDX:self.lat_plan_upper_idx] + [desired_curvature_rate], key=lambda x: abs(x))
+      if sign(min_planned_curvature_rate) != sign(desired_curvature_rate):
+        min_planned_curvature_rate = 0.0
+      desired_lateral_jerk = min_planned_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)
       setpoint = desired_lateral_accel + low_speed_factor * min(abs(desired_curvature), abs(mean_curvature)) * sign(desired_curvature)
