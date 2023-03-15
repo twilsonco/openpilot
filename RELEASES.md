@@ -1,4 +1,4 @@
-Version tw-0.8.12-15 (2023-🥧)
+Version tw-0.8.12-15 (2023-🥧+1)
 ========================
   * **support for newer C3s** (panda fan stall detection and internal fan controller added)
   * **support for Buick Lacrosse**
@@ -8,7 +8,8 @@ Version tw-0.8.12-15 (2023-🥧)
     * Volt:
       * updated custom torque controller lateral acceleration feedforward function
       * replace "friction" with **custom lateral jerk feedforward** function
-        * "friction" in gm/interface.py or opparams is now a linear coefficient to cap the lateral jerk FF value when desired lateral jerk ≈ 0. For cars without custom lateral jerk FF (everything but Volt), friction specifies the max amount of "friction" torque sent.
+        * ~~"friction" in gm/interface.py or opparams is now a linear coefficient to cap the lateral jerk FF value when desired lateral jerk ≈ 0. For cars without custom lateral jerk FF (everything but Volt), friction specifies the max amount of "friction" torque sent.~~ This is still possible by setting the value of friction for Volt to be ≥ 0.0, but it should be left at -1.0 to disable this linear cap.
+        * Now future planned lateral jerk is used as a check on the amount of lateral jerk feedforward. This change removes the need for the linear cap.
       * lower steer actuator delay 
     * Acadia:
       * Updated torque controller feedforward
