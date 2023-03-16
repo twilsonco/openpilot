@@ -97,6 +97,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
 
   mat3 model_transform_main = {};
   mat3 model_transform_extra = {};
+  bool nav_enabled = false;
   bool live_calib_seen = false;
   float driving_style[DRIVING_STYLE_LEN] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
   float nav_features[NAV_FEATURE_LEN] = {0};
@@ -163,13 +164,13 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       vec_desire[desire] = 1.0;
     }
 
-    if (sm.updated("navModel")) {
+    if (sm.updated("navModel") && nav_enabled) {
       auto nav_model_features = sm["navModel"].getNavModel().getFeatures();
       for (int i=0; i<NAV_FEATURE_LEN; i++) {
         nav_features[i] = nav_model_features[i];
       }
     }
-    if (sm.updated("navInstruction")) {
+    if (sm.updated("navInstruction") && sm["navInstruction"].getValid()) {
       float distance = ((float)sm["navInstruction"].getNavInstruction().getManeuverDistance());
       std::string maneuver_type = sm["navInstruction"].getNavInstruction().getManeuverType();
       std::string maneuver_modifier = sm["navInstruction"].getNavInstruction().getManeuverModifier();
@@ -177,6 +178,15 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       memset(nav_instructions, 0, sizeof(float)*NAV_INSTRUCTION_LEN);
       nav_instructions[maneuver_idx] = 1;
       nav_instructions[NAV_INSTRUCTION_LEN-1] = std::max(0.0f, std::min(2.0f, distance / 1000.0f));
+      nav_enabled = true;
+    }
+
+    // Disable nav inputs if the navInstruction message isn't valid
+    if (nav_enabled && !sm["navInstruction"].getValid()) {
+      memset(nav_features, 0, sizeof(float)*NAV_FEATURE_LEN);
+      memset(nav_instructions, 0, sizeof(float)*NAV_INSTRUCTION_LEN);
+      memset(model.nav_instructions, 0, sizeof(float)*NAV_INSTRUCTION_LEN*(HISTORY_BUFFER_LEN+1));
+      nav_enabled = false;
     }
 
     // tracked dropped frames
