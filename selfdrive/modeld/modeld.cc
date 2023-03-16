@@ -60,14 +60,14 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
 int get_maneuver_index(std::string &type, std::string &modifier) {
   if (type == "arrive") return K_START;
   if (type == "arrive") return K_DESTINATION;
-  if (type == "fork" && modifier == "slight left") return K_STAY_LEFT;
-  if (type == "fork" && modifier == "slight right") return K_STAY_RIGHT;
+  if (type == "fork" && (modifier == "left" || modifier == "slight left")) return K_STAY_LEFT;
+  if (type == "fork" && (modifier == "right" || modifier == "slight right")) return K_STAY_RIGHT;
   if (type == "fork" && modifier == "straight") return K_STAY_STRAIGHT;
   if (type == "new name" && modifier == "straight") return K_CONTINUE;
-  if (type == "off ramp" && modifier == "slight left") return K_EXIT_LEFT;
-  if (type == "off ramp" && modifier == "slight right") return K_EXIT_RIGHT;
-  if (type == "on ramp" && modifier == "slight left") return K_RAMP_LEFT;
-  if (type == "on ramp" && modifier == "slight right") return K_RAMP_RIGHT;
+  if (type == "off ramp" && (modifier == "left" || modifier == "slight left")) return K_EXIT_LEFT;
+  if (type == "off ramp" && (modifier == "right" || modifier == "slight right")) return K_EXIT_RIGHT;
+  if (type == "on ramp" && (modifier == "left" || modifier == "slight left")) return K_RAMP_LEFT;
+  if (type == "on ramp" && (modifier == "right" || modifier == "slight right")) return K_RAMP_RIGHT;
   if (type == "on ramp" && modifier == "straight") return K_RAMP_STRAIGHT;
   if (type == "roundabout" && modifier == "left") return K_ROUNDABOUT_ENTER;
   if (type == "roundabout" && modifier == "right") return K_ROUNDABOUT_ENTER;
