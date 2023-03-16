@@ -1,4 +1,5 @@
 from collections import deque
+from common.numpy_fast import sign
 from common.op_params import opParams
 
 class Integrator:
@@ -8,6 +9,7 @@ class Integrator:
       self._op_params = opParams(calling_function="common/integrator.py")
       self._i_period_s = 0.0
       self._rate = rate
+      self._unwind_rate = 0.3 / rate
       self.update_period(integral_period, force_update=True)
   
   @property
@@ -40,8 +42,9 @@ class Integrator:
       self._x -= self._i_dt * (self.vals[0] + self.vals[1])
     if override:
       self.vals.append(0.0)
+      self._x -= self._unwind_rate * float(sign(self._x))
     else:
       self.vals.append(val)
-    if len(self.vals) > 1: # add in new trapezoid
-      self._x += self._i_dt * (self.vals[-2] + self.vals[-1])
+      if len(self.vals) > 1: # add in new trapezoid
+        self._x += self._i_dt * (self.vals[-2] + self.vals[-1])
     return self._x * self._k_i_scale
