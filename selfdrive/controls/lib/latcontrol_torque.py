@@ -47,8 +47,8 @@ class LatControlTorque(LatControl):
     self.v_ego = 0.0
     self.lat_plan_look_ahead = 1.5
     self.friction_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.lat_plan_look_ahead), 16)
-    self.lowspeed_factor_look_ahead = 0.7
-    self.lowspeed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.lowspeed_factor_look_ahead), 16)
+    self.low_speed_factor_look_ahead = 0.7
+    self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.low_speed_factor_look_ahead), 16)
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
     self.low_speed_factor_bp = [10.0, 25.0]
     self.low_speed_factor_v = [225.0, 50.0]
@@ -74,6 +74,8 @@ class LatControlTorque(LatControl):
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
     self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp')]
     self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v')
+    self.low_speed_factor_look_ahead = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_lookahead_s')
+    self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.lat_plan_look_ahead), None)
     self.lat_plan_look_ahead = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_s')
     self.friction_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.lat_plan_look_ahead), None)
   
@@ -105,7 +107,7 @@ class LatControlTorque(LatControl):
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)
-      lookahead_desired_curvature = min(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.lowspeed_factor_upper_idx] + [desired_curvature], key=lambda x: abs(x))
+      lookahead_desired_curvature = min(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx] + [desired_curvature], key=lambda x: abs(x))
       if sign(lookahead_desired_curvature) != sign(desired_curvature):
         lookahead_desired_curvature = 0.0
       setpoint = desired_lateral_accel + low_speed_factor * lookahead_desired_curvature
