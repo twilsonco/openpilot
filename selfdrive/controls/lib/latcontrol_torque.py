@@ -34,7 +34,7 @@ class LatControlTorque(LatControl):
     self._op_params = opParams(calling_function="latcontrol_torque.py")
     self.pid = PIDController(CP.lateralTuning.torque.kp, CP.lateralTuning.torque.ki,
                             k_d=CP.lateralTuning.torque.kd,
-                            k_11 = 1.0, k_12 = 2.0, k_13 = 1.0, k_period=0.1,
+                            k_11 = 1.0, k_12 = 1.5, k_13 = 1.0, k_period=0.1,
                             k_f=CP.lateralTuning.torque.kf,
                             integral_period=self._op_params.get('TUNE_LAT_TRX_ki_period_s', force_update=True),
                             derivative_period=self._op_params.get('TUNE_LAT_TRX_kd_period_s', force_update=True),
