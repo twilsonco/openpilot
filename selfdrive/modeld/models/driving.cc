@@ -53,9 +53,8 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 
 #ifdef NAV
   s->m->addNavFeatures(s->nav_features, NAV_FEATURE_LEN);
-  s->m->addNavInstructions(s->nav_instructions, NAV_INSTRUCTION_LEN);
+  s->m->addNavInstructions(s->nav_instructions, NAV_INSTRUCTION_LEN*(HISTORY_BUFFER_LEN+1));
 #endif
-
 }
 
 ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf, const mat3 &transform, const mat3 &transform_wide,
@@ -79,7 +78,8 @@ LOGT("Desire enqueued");
 
 #ifdef NAV
   std::memcpy(s->nav_features, nav_features, sizeof(float)*NAV_FEATURE_LEN);
-  std::memcpy(s->nav_instructions, nav_instructions, sizeof(float)*NAV_INSTRUCTION_LEN);
+  std::memmove(&s->nav_instructions[0], &s->nav_instructions[NAV_INSTRUCTION_LEN], sizeof(float) * NAV_INSTRUCTION_LEN*HISTORY_BUFFER_LEN);
+  std::memcpy(&s->nav_instructions[NAV_INSTRUCTION_LEN*HISTORY_BUFFER_LEN], nav_instructions, sizeof(float)*NAV_INSTRUCTION_LEN);
 #endif
 
 #ifdef DRIVING_STYLE

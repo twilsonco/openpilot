@@ -267,7 +267,7 @@ struct ModelState {
 #endif
 #ifdef NAV
   float nav_features[NAV_FEATURE_LEN] = {};
-  float nav_instructions[NAV_INSTRUCTION_LEN] = {};
+  float nav_instructions[NAV_INSTRUCTION_LEN*(HISTORY_BUFFER_LEN+1)] = {};
 #endif
 };
 
