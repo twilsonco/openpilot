@@ -45,8 +45,8 @@ class LatControlTorque(LatControl):
     self.get_friction = CI.get_steer_feedforward_function_torque_lat_jerk()
     self.roll_k = 0.55
     self.v_ego = 0.0
-    self.lat_plan_look_ahead = 1.5
-    self.friction_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.lat_plan_look_ahead), 16)
+    self.friction_look_ahead = 1.5
+    self.friction_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.friction_look_ahead), 16)
     self.low_speed_factor_look_ahead = 0.7
     self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.low_speed_factor_look_ahead), 16)
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
@@ -75,9 +75,9 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp')]
     self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v')
     self.low_speed_factor_look_ahead = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_lookahead_s')
-    self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.lat_plan_look_ahead), None)
-    self.lat_plan_look_ahead = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_s')
-    self.friction_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.lat_plan_look_ahead), None)
+    self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.low_speed_factor_look_ahead), None)
+    self.friction_look_ahead = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_s')
+    self.friction_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.friction_look_ahead), None)
   
   def reset(self):
     super().reset()
