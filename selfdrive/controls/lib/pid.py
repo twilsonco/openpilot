@@ -142,7 +142,7 @@ class PIDController:
           self.kd *= 1. + min(5., self.k_13 * abs_guf)
     
     self.p = error * self.kp
-    self.i = self.error_integral.update(error) * self.ki
+    self.i = self.error_integral.update(error, override=override or freeze_integrator) * self.ki
     self.d = self.error_rate.update(error) * self.kd
     self.f = feedforward * self.k_f
         
