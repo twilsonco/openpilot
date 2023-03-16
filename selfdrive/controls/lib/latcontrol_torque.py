@@ -74,10 +74,12 @@ class LatControlTorque(LatControl):
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
     self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp')]
     self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v')
-    self.low_speed_factor_look_ahead = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_lookahead_s')
-    self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.low_speed_factor_look_ahead), None)
-    self.friction_look_ahead = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_s')
-    self.friction_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.friction_look_ahead), None)
+    look_ahead = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_lookahead_s')
+    if look_ahead != self.low_speed_factor_look_ahead:
+      self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.low_speed_factor_look_ahead), None)
+    look_ahead = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_s')
+    if look_ahead != self.friction_look_ahead:
+      self.friction_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.friction_look_ahead), None)
   
   def reset(self):
     super().reset()
