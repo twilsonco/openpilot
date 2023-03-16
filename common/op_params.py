@@ -538,11 +538,11 @@ class opParams:
       
       'TUNE_LAT_TRX_friction_lookahead_s': Param(1.5, float, "The instantaneous desired lateral jerk is too erratic, so it is checked against future planned lateral jerk so that short-lived jerk does not produce a feedforward response. This is done by taking the future lateral jerk value of minimum absolute value. If the sign of this minimized lateral jerk value is opposite that of the current desired jerk, then it is set to zero. So it can only limit the value of friction, never increase it. Here you are deciding how long a planned lateral jerk must persist before the lateral jerk feedforward acts on it. Change this in multiples of 0.2s, since lesser changes will likely have no effect do to the discretization of future lateral jerk values.", live=True, min_val=0.3, max_val=2.2, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit='seconds'),
       
-      'TUNE_LAT_TRX_kp': Param(0.48, float, kp_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kp': Param(0.45, float, kp_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_ki': Param(0.11, float, ki_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_ki': Param(0.06, float, ki_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_kd': Param(0.02, float, kd_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kd': Param(0.01, float, kd_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_ki_period_s': Param(1.5, float, 'The amount of time over which steering error accumulates.', min_val=0.1, max_val=60.0, unit='seconds', show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
