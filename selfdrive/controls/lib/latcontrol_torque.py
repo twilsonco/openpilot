@@ -98,10 +98,10 @@ class LatControlTorque(LatControl):
       pid_log.active = False
       self.pid.reset()
     else:
-      min_planned_curvature_rate = min(list(lat_plan.curvatureRates)[LAT_PLAN_MIN_IDX:self.lat_plan_upper_idx] + [desired_curvature_rate], key=lambda x: abs(x))
-      if sign(min_planned_curvature_rate) != sign(desired_curvature_rate):
-        min_planned_curvature_rate = 0.0
-      desired_lateral_jerk = min_planned_curvature_rate * CS.vEgo**2
+      lookahead_curvature_rate = min(list(lat_plan.curvatureRates)[LAT_PLAN_MIN_IDX:self.lat_plan_upper_idx] + [desired_curvature_rate], key=lambda x: abs(x))
+      if sign(lookahead_curvature_rate) != sign(desired_curvature_rate):
+        lookahead_curvature_rate = 0.0
+      desired_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)
