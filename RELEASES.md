@@ -11,6 +11,7 @@ Version tw-0.8.12-15 (2023-🥧+1)
         * ~~"friction" in gm/interface.py or opparams is now a linear coefficient to cap the lateral jerk FF value when desired lateral jerk ≈ 0. For cars without custom lateral jerk FF (everything but Volt), friction specifies the max amount of "friction" torque sent.~~ This is still possible by setting the value of friction for Volt to be ≥ 0.0, but it should be left at -1.0 to disable this linear cap.
         * Now future planned lateral jerk is used as a check on the amount of lateral jerk feedforward. This change removes the need for the linear cap.
       * lower steer actuator delay 
+      * revert use of future curvature in torque controller "low speed factor" as it was neutering the ability to correct steer angle on straights at very low speeds
     * Acadia:
       * Updated torque controller feedforward
     * revert PID derivative gain calculation to use error rate (instead of output)
