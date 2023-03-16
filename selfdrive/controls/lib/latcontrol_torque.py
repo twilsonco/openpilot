@@ -46,7 +46,7 @@ class LatControlTorque(LatControl):
     self.roll_k = 0.55
     self.v_ego = 0.0
     self.lat_plan_look_ahead = 1.5
-    self.lat_plan_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.lat_plan_look_ahead), 16)
+    self.friction_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.lat_plan_look_ahead), 16)
     self.lowspeed_factor_look_ahead = 0.7
     self.lowspeed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.lowspeed_factor_look_ahead), 16)
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
@@ -75,7 +75,7 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_low_speed_factor_bp')]
     self.low_speed_factor_v = self._op_params.get('TUNE_LAT_TRX_low_speed_factor_v')
     self.lat_plan_look_ahead = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_s')
-    self.lat_plan_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.lat_plan_look_ahead), None)
+    self.friction_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.lat_plan_look_ahead), None)
   
   def reset(self):
     super().reset()
@@ -98,7 +98,7 @@ class LatControlTorque(LatControl):
       pid_log.active = False
       self.pid.reset()
     else:
-      lookahead_curvature_rate = min(list(lat_plan.curvatureRates)[LAT_PLAN_MIN_IDX:self.lat_plan_upper_idx] + [desired_curvature_rate], key=lambda x: abs(x))
+      lookahead_curvature_rate = min(list(lat_plan.curvatureRates)[LAT_PLAN_MIN_IDX:self.friction_upper_idx] + [desired_curvature_rate], key=lambda x: abs(x))
       if sign(lookahead_curvature_rate) != sign(desired_curvature_rate):
         lookahead_curvature_rate = 0.0
       desired_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
