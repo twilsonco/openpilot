@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import math
 import argparse
 import os
 import sys
@@ -47,7 +48,10 @@ class GTP:
     out.description = json.dumps(self.d)
     for k in ["lat", "lon", "speed"]:
       del(self.d[k])
-    out.comment = "\n".join([f"{k}: {v}" if type(v) != float else f"{k}: {v:0.2f}" for k,v in sorted(self.d.items(),key=lambda x:x[0])])
+    cmt = ""
+    perline = 1
+    sortitm = sorted(self.d.items(),key=lambda x:x[0])
+    out.comment = "\n".join([", ".join([f"{k}: {v}" if type(v) != float else f"{k}: {' ' if v >= 0.0 else ''}{v:3.2f}" for k,v in sortitm[i:min(i+perline, len(sortitm))]]) for i in range(0,len(sortitm), perline)])
     return out
 
 def main(argv):
@@ -69,8 +73,6 @@ def main(argv):
   gpx.tracks.append(gpx_track)
   gpx_segment = gpxpy.gpx.GPXTrackSegment()
   gpx_track.segments.append(gpx_segment)
-  
-  gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(2.1234, 5.1234, elevation=1234))
 
   try:
     done = False
@@ -92,15 +94,15 @@ def main(argv):
         gtp.d["steerAngle"] = float(msg.carState.steeringAngleDeg)
         gtp.d["steerTorqueEPS"] = float(msg.carState.steeringTorqueEps)
         gtp.d["steerTorque"] = float(msg.carState.steeringTorque)
-        gtp.d["blinkerLeft"] = float(msg.carState.leftBlinker)
-        gtp.d["blinkerRight"] = float(msg.carState.rightBlinker)
-        gtp.d["doorOpen"] = float(msg.carState.doorOpen)
-        gtp.d["seatbeltUnlatched"] = float(msg.carState.seatbeltUnlatched)
-        gtp.d["blindspotLeft"] = float(msg.carState.leftBlindspot)
-        gtp.d["blinkspotRight"] = float(msg.carState.rightBlindspot)
+        gtp.d["blinkerLeft"] = bool(msg.carState.leftBlinker)
+        gtp.d["blinkerRight"] = bool(msg.carState.rightBlinker)
+        gtp.d["doorOpen"] = bool(msg.carState.doorOpen)
+        gtp.d["seatbeltUnlatched"] = bool(msg.carState.seatbeltUnlatched)
+        gtp.d["bsmLeft"] = bool(msg.carState.leftBlindspot)
+        gtp.d["bsmRight"] = bool(msg.carState.rightBlindspot)
       elif typ == 'controlsState':
-        gtp.d["opEnabled"] = float(msg.controlsState.enabled)
-        gtp.d["opActive"] = float(msg.controlsState.active)
+        gtp.d["opEnabled"] = bool(msg.controlsState.enabled)
+        gtp.d["opActive"] = bool(msg.controlsState.active)
       elif typ == 'lateralPlan':
         gtp.d["opDesCurvature"] = float(msg.lateralPlan.curvatures[1])
       elif typ == 'longitudinalPlan':
@@ -121,10 +123,10 @@ def main(argv):
       elif typ == 'ubloxGnss' and msg.ubloxGnss.which() == 'measurementReport':
         gtp.d["satellites"] = int(msg.ubloxGnss.measurementReport.numMeas)
       elif typ == 'liveLocationKalman' and gtp.d["speed"] is not None:
-        gtp.d["accelLat"] = float(msg.liveLocationKalman.angularVelocityCalibrated.value[2] / max(0.01, gtp.d["speed"]))
+        gtp.d["accelLat"] = float(msg.liveLocationKalman.angularVelocityCalibrated.value[2] * gtp.d["speed"])
       elif typ == 'driverMonitoringState':
-        gtp.d["driverDistracted"] = bool(msg.driverMonitoringState.isDistracted)
-        gtp.d["driverFaceDetected"] = bool(msg.driverMonitoringState.faceDetected)
+        gtp.d["dmDistracted"] = bool(msg.driverMonitoringState.isDistracted)
+        gtp.d["dmFaceDetected"] = bool(msg.driverMonitoringState.faceDetected)
       
       if gtp.is_valid():
         if i > 0:
@@ -136,11 +138,14 @@ def main(argv):
         gtp.d["driveTime"] = time
         gtp.d["avgSpeed"] = avg_speed
         
-        gpx_segment.points.append(gtp.to_gtp())
-        gtp = GTP()
-        i += 1
         if i % 1000 == 0:
-          print(f"Added {i} points...")
+          print(f'Added {i} points. {gtp.d["time"].strftime("%m/%d/%Y %H:%M:%S")} ({gtp.d["driveTime"]/60:0.1f}m), dist = {gtp.d["distance"]:0.1f}, speed = {gtp.d["speed"]:0.1f}')
+        gpx_segment.points.append(gtp.to_gtp())
+        i += 1
+        if i > 2:
+          if gpx_segment.points[-2].speed_between(gpx_segment.points[-3]) / max(1.0, gpx_segment.points[-1].speed_between(gpx_segment.points[-2])) > 100.0:
+            gpx_segment.points = gpx_segment.points[-2:]
+        gtp = GTP()
         
   except StopIteration:
     print(f'Added {i} points')
