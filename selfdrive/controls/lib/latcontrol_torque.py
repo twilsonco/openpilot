@@ -25,6 +25,17 @@ FRICTION_THRESHOLD = 2.0
 
 LAT_PLAN_MIN_IDX = 5
 
+def get_lookahead_value(future_vals, current_val):
+  same_sign_vals = [v for v in future_vals if sign(v) == sign(current_val)]
+  
+  # if any future val has opposite sign of current val, return 0
+  if len(same_sign_vals) < len(future_vals):
+    return 0.0
+  
+  # otherwise return the value with minimum absolute value
+  min_val = min(same_sign_vals + [current_val], key=lambda x: abs(x))
+  return min_val
+
 
 def get_steer_feedforward(desired_lateral_accel, speed):
   return desired_lateral_accel
@@ -102,17 +113,13 @@ class LatControlTorque(LatControl):
       pid_log.active = False
       self.pid.reset()
     else:
-      lookahead_curvature_rate = min(list(lat_plan.curvatureRates)[LAT_PLAN_MIN_IDX:self.friction_upper_idx] + [desired_curvature_rate], key=lambda x: abs(x))
-      if sign(lookahead_curvature_rate) != sign(desired_curvature_rate):
-        lookahead_curvature_rate = 0.0
+      lookahead_curvature_rate = get_lookahead_value(list(lat_plan.curvatureRates)[LAT_PLAN_MIN_IDX:self.friction_upper_idx], desired_curvature_rate)
       desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
       lookahead_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)
-      lookahead_desired_curvature = min(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx] + [desired_curvature], key=lambda x: abs(x))
-      if sign(lookahead_desired_curvature) != sign(desired_curvature):
-        lookahead_desired_curvature = 0.0
+      lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
       setpoint = desired_lateral_accel + low_speed_factor * lookahead_desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
