@@ -452,6 +452,11 @@ def filter(samples):
   data = np.array([s.steer_rate for s in samples])
   mask = np.abs(data) < STEER_RATE_MIN
   samples = samples[mask]
+  
+  # constant speed
+  data = np.array([s.a_ego for s in samples])
+  mask = np.abs(data) <= LONG_ACCEL_MAX
+  samples = samples[mask]
 
   # GM no steering below 7 mph
   # data = np.array([s.v_ego for s in samples])
@@ -531,7 +536,8 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
       latroutes = set()
       steer_offsets = []
       if not preprocess:
-        for filename in tqdm(os.listdir(path)):
+        errors={}
+        for filename in (pbar := tqdm(os.listdir(path))):
           if filename.endswith(ext):
             latpath = os.path.join(path, filename)
             latroutes.add(filename.replace(ext,''))
@@ -550,7 +556,17 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
                 if not PREPROCESS_ONLY:
                   steer_offsets.extend(s.steer_offset for s in tmpdata)
               except Exception as e:
-                print(f"failed to load lat file: {latpath}\n{e}")
+                if e in errors:
+                  errors[e] += 1
+                else:
+                  errors[e] = 1
+          numerr = sum(errors.values()) if len(errors) > 0 else 0
+          pbar.set_description(f"{old_num_points} filtered to {len(data)} (skipped segments: {numerr})")
+        if len(errors) > 0:
+          nerr = sum(errors.values())
+          print(f"{nerr} lat files were not loaded due to errors:")
+          for e,n in errors.items():
+            print(f"({n}) {e}")
       if PREPROCESS_ONLY:
         if "realdata" in path or (preprocess and dongleid):
           MULTI_FILE = True
