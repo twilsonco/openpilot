@@ -105,7 +105,8 @@ class LatControlTorque(LatControl):
       lookahead_curvature_rate = min(list(lat_plan.curvatureRates)[LAT_PLAN_MIN_IDX:self.friction_upper_idx] + [desired_curvature_rate], key=lambda x: abs(x))
       if sign(lookahead_curvature_rate) != sign(desired_curvature_rate):
         lookahead_curvature_rate = 0.0
-      desired_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
+      desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
+      lookahead_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)
@@ -118,7 +119,7 @@ class LatControlTorque(LatControl):
       pid_log.error = error
       
       # lateral jerk feedforward
-      friction_compensation = self.get_friction(desired_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD)
+      friction_compensation = self.get_friction(lookahead_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD)
       
       # lateral acceleration feedforward
       ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
@@ -149,6 +150,8 @@ class LatControlTorque(LatControl):
       pid_log.ki = self.pid.ki
       pid_log.kd = self.pid.kd
       pid_log.gainUpdateFactor = self.pid._gain_update_factor
+      pid_log.lookaheadCurvature = lookahead_desired_curvature
+      pid_log.lookaheadCurvatureRate = lookahead_curvature_rate
     pid_log.currentLateralAcceleration = actual_lateral_accel
     pid_log.currentLateralJerk = self.actual_lateral_jerk.x
       
