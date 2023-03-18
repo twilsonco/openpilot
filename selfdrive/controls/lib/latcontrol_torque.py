@@ -56,7 +56,7 @@ class LatControlTorque(LatControl):
     self.get_friction = CI.get_steer_feedforward_function_torque_lat_jerk()
     self.roll_k = 0.55
     self.v_ego = 0.0
-    self.friction_look_ahead = 1.5
+    self.friction_look_ahead = 2.2
     self.friction_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.friction_look_ahead), 16)
     self.low_speed_factor_look_ahead = 0.7
     self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.low_speed_factor_look_ahead), 16)
