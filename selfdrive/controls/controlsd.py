@@ -799,12 +799,10 @@ class Controls:
       actuators.accelPitchCompensated = actuators.accel + ((ACCELERATION_DUE_TO_GRAVITY * math.sin(self.pitch)) if self.use_sensors else 0.0)
 
       # Steering PID loop and lateral MPC
-      t_since_plan = 0.0 # this is unnecessary: (self.sm.frame - self.sm.rcv_frame['lateralPlan']) * DT_CTRL
       desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                              lat_plan.psis,
                                                                              lat_plan.curvatures,
-                                                                             lat_plan.curvatureRates,
-                                                                             t_since_plan)
+                                                                             lat_plan.curvatureRates)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.lat_active, 
                                                                              CS, self.CP, self.VM, params, 
                                                                              desired_curvature, desired_curvature_rate, self.sm['liveLocationKalman'],
