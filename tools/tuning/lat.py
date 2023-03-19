@@ -503,8 +503,8 @@ def filter(samples):
   # samples = samples[mask]
   
   # non-matching sign of lateral jerk and accel
-  # mask = np.array([sign(s.lateral_accel_rate_no_roll) != sign(s.lateral_accel) for s in samples])
-  # samples = samples[mask]
+  mask = np.array([sign(s.lateral_accel_rate_no_roll) != sign(s.lateral_accel) for s in samples])
+  samples = samples[mask]
   
   if IS_ANGLE_PLOT:
     # only take high angles if there was enough lateral acceleration
@@ -539,9 +539,9 @@ def filter(samples):
   # samples = samples[mask]
   
   # high lateral accel
-  data = np.array([s.lateral_accel for s in samples])
-  mask = np.abs(data) > LAT_ACCEL_MIN # determined from plotjuggler
-  samples = samples[mask]
+  # data = np.array([s.lateral_accel for s in samples])
+  # mask = np.abs(data) > LAT_ACCEL_MIN # determined from plotjuggler
+  # samples = samples[mask]
 
   # GM no steering below 7 mph
   # data = np.array([s.v_ego for s in samples])
@@ -660,7 +660,7 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
                 else:
                   errors[e] = 1
             numerr = sum(errors.values()) if len(errors) > 0 else 0
-            pbar.set_description(f"{old_num_points} filtered to {len(data)} (skipped segments: {numerr})")
+            pbar.set_description(f"Imported {len(data)} points (filtered out {(old_num_points-len(data))/max(1,old_num_points)*100.0:.1f}% of {old_num_points}) (skipped segments: {numerr})")
         if len(errors) > 0:
           nerr = sum(errors.values())
           print(f"{nerr} lat files were not loaded due to errors:")

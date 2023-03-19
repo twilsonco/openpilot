@@ -62,7 +62,7 @@ def get_torque_from_lateral_jerk_matching(jerk, speed, ANGLE_COEF, ANGLE_COEF2, 
 
   return sigmoid1 + sigmoid2
 
-def get_torque_from_lateral_jerk_non_maching(jerk, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2):
+def get_torque_from_lateral_jerk_non_matching(jerk, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2):
   x = ANGLE_COEF * (jerk) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF)
   sigmoid1 = x / (1. + fabs(x))
   sigmoid1 *= SIGMOID_COEF_RIGHT
@@ -262,16 +262,14 @@ def get_steer_feedforward_volt_torque_old(desired_lateral_accel, v_ego):#, ANGLE
   return get_steer_feedforward_erf1(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
 
 def get_steer_feedforward_volt_torque_new(desired_lateral_accel, v_ego):#, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2):
-  ANGLE_COEF = 0.15461558
-  ANGLE_COEF2 = 0.22491234
-  ANGLE_OFFSET = -0.01173257
-  SPEED_OFFSET = 2.37065180
-  SIGMOID_COEF_RIGHT = 0.14917052
-  SIGMOID_COEF_LEFT = 0.13559770
-  SPEED_COEF = 0.49912791
-  SPEED_COEF2 = 0.37766423
-  SPEED_OFFSET2 = -0.36618369
-  return get_steer_feedforward_erf1(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
+  ANGLE_COEF = 0.08617848
+  ANGLE_COEF2 = 0.14
+  ANGLE_OFFSET = 0.00205026
+  SPEED_OFFSET = -3.48009247
+  SIGMOID_COEF_RIGHT = 0.56664089
+  SIGMOID_COEF_LEFT = 0.50360594
+  SPEED_COEF = 0.55322718
+  return get_steer_feedforward_erf_old(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
 
 # def get_torque_from_lateral_jerk_matching(desired_lateral_jerk, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2):
 #   return get_steer_feedforward_erf1(desired_lateral_jerk, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
@@ -430,7 +428,7 @@ def feedforward(speed, angle, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSE
     # return np.vectorize(get_steer_feedforward_lacrosse_torque)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
     
     return np.vectorize(get_torque_from_lateral_jerk_matching)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
-    return np.vectorize(get_torque_from_lateral_jerk_non_maching)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
+    # return np.vectorize(get_torque_from_lateral_jerk_non_matching)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
     
     # suburban
     return np.vectorize(get_steer_feedforward_volt_torque)(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)

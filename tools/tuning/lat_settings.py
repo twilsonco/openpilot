@@ -1,7 +1,7 @@
 import numpy as np
 
 PREPROCESS_ONLY = False
-REGULARIZED = False
+REGULARIZED = True
 IS_ANGLE_PLOT = True
 SPEED_PLOTS = True # For all speeds at a fixed angle, plot steer
 ANGLE_PLOTS = True # For all angles at a fixed speed, plot steer
@@ -26,7 +26,7 @@ MAX_COMMAND = 300 # TODO: autodetect from fingerprint
 SECTION_DELAY = 5. # TODO
 MIN_SECTION_SECONDS = 1.0
 
-SPEED_MIN = 0
+SPEED_MIN = 4
 SPEED_MIN_ANGLE = 6.7
 SPEED_MAX = 100
 STEER_PRESSED_MIN = 0.5
@@ -35,6 +35,6 @@ STEER_RATE_MIN = 2.0
 STEER_ANGLE_MAX = 5.0
 LAT_ACCEL_MAX = 0.1
 LAT_ACCEL_MIN = 1.0
-ACCEL_MAX = 0.2
+ACCEL_MAX = 0.5
 
 CURVATURE_RATE_MIN = 0.003
