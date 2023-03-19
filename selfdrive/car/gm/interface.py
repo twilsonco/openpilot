@@ -197,11 +197,8 @@ class CarInterface(CarInterfaceBase):
       speed_norm = 0.5 * cos(clip(speed / max_speed, 0., 1.) * 3.14) + 0.5
       
       out = (1-speed_norm) * sigmoid1 + speed_norm * sigmoid2
-    if friction >= 0.0:
-      linear = friction * jerk
-      return sign(jerk) * min(abs(out), abs(linear))
-    else:
-      return out
+      
+    return out * friction
 
 
   @staticmethod
@@ -338,7 +335,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torque.ki = 0.08
         ret.lateralTuning.torque.kd = 0.03
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
-        ret.lateralTuning.torque.friction = -1.0 # for custom lateral jerk ff
+        ret.lateralTuning.torque.friction = 1.0 # for custom lateral jerk ff
       else:
         ret.lateralTuning.pid.kpBP = [0., 40.]
         ret.lateralTuning.pid.kpV = [0., .16]
