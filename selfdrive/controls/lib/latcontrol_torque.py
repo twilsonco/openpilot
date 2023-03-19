@@ -131,7 +131,7 @@ class LatControlTorque(LatControl):
       pid_log.error = error
       
       # lateral jerk feedforward
-      friction_compensation = self.get_friction(lookahead_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD)
+      friction_compensation = self.get_friction(lookahead_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD, ff_roll * (self.roll_k if use_roll else 0.0))
       if sign(lookahead_lateral_jerk) != sign(desired_lateral_accel):
         # at higher lateral acceleration, it takes less jerk to initiate the return to center
         friction_compensation *= interp(abs(desired_lateral_accel), self.friction_curve_exit_ramp_bp, self.friction_curve_exit_ramp_v)

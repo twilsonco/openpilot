@@ -83,7 +83,7 @@ class CarInterfaceBase():
     return desired_lateral_accel
   
   @staticmethod
-  def get_steer_feedforward_function_torque_lat_jerk_default(desired_lateral_jerk, v_ego, desired_lateral_acceleration, friction, friction_threshold):
+  def get_steer_feedforward_function_torque_lat_jerk_default(desired_lateral_jerk, v_ego, desired_lateral_acceleration, friction, friction_threshold, g_lat_accel):
     if friction < 0.0:
       f = 0.0
     else:
