@@ -56,13 +56,16 @@ class LatControlTorque(LatControl):
     self.get_friction = CI.get_steer_feedforward_function_torque_lat_jerk()
     self.roll_k = 0.55
     self.v_ego = 0.0
-    self.friction_look_ahead = 2.2
+    self.friction_look_ahead = 1.5
     self.friction_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.friction_look_ahead), 16)
+    self.friction_curve_exit_ramp_bp = [0.6, 1.8] # lateral acceleration
+    self.friction_curve_exit_ramp_v = [1.0, 0.1]
     self.low_speed_factor_look_ahead = 0.7
     self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.low_speed_factor_look_ahead), 16)
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
     self.low_speed_factor_bp = [10.0, 25.0]
     self.low_speed_factor_v = [175.0, 20.0]
+    
       
     # for actual lateral jerk calculation
     self.actual_lateral_jerk = Differentiator(self.pid.error_rate._d_period_s, 100.0)
@@ -91,6 +94,8 @@ class LatControlTorque(LatControl):
     look_ahead = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_s')
     if look_ahead != self.friction_look_ahead:
       self.friction_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.friction_look_ahead), None)
+    self.friction_curve_exit_ramp_bp = self._op_params.get('TUNE_LAT_TRX_friction_curve_exit_ramp_bp')
+    self.friction_curve_exit_ramp_v = [1.0, self._op_params.get('TUNE_LAT_TRX_friction_curve_exit_ramp_v')]
   
   def reset(self):
     super().reset()
@@ -127,6 +132,9 @@ class LatControlTorque(LatControl):
       
       # lateral jerk feedforward
       friction_compensation = self.get_friction(lookahead_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD)
+      if sign(lookahead_lateral_jerk) != sign(desired_lateral_accel):
+        # at higher lateral acceleration, it takes less jerk to initiate the return to center
+        friction_compensation *= interp(abs(desired_lateral_accel), self.friction_curve_exit_ramp_bp, self.friction_curve_exit_ramp_v)
       
       # lateral acceleration feedforward
       ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY

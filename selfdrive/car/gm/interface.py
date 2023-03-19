@@ -156,6 +156,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_steer_feedforward_torque_lat_jerk_volt(jerk, speed, lateral_acceleration, friction, friction_threshold):
     if sign(lateral_acceleration) == sign(jerk):
+      # entering curve
       ANGLE_COEF = 2.87742908
       ANGLE_COEF2 = 3.0171422
       SPEED_OFFSET = 0.32037237
@@ -174,6 +175,7 @@ class CarInterface(CarInterfaceBase):
 
       out = sigmoid1 + sigmoid2
     else:
+      # exiting curve
       ANGLE_COEF = 2.06223884
       ANGLE_COEF2 = 0.17299524
       ANGLE_OFFSET = 10.08002596
