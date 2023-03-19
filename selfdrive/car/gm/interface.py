@@ -155,13 +155,14 @@ class CarInterface(CarInterfaceBase):
   def get_steer_feedforward_torque_lat_jerk_volt(jerk, speed, lateral_acceleration, friction, friction_threshold):
     if sign(lateral_acceleration) == sign(jerk):
       # entering curve
-      ANGLE_COEF = 2.87742908
-      ANGLE_COEF2 = 3.0171422
-      SPEED_OFFSET = 0.32037237
-      SIGMOID_COEF_1 = 0.13778183
-      SIGMOID_COEF_2 = 0.78604993
-      SPEED_COEF = 0.11084122
-      SPEED_COEF2 = 1.84607376
+      ANGLE_COEF = 5.00000000
+      ANGLE_COEF2 = 0.18950076
+      ANGLE_OFFSET = 15.00059323
+      SPEED_OFFSET = -1.32036601
+      SIGMOID_COEF_1 = 0.11900164
+      SIGMOID_COEF_2 = 1.42607235
+      SPEED_COEF = 0.47329761
+      SPEED_COEF2 = 1.88198222
 
       x = ANGLE_COEF * (jerk) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF)
       sigmoid1 = x / (1. + fabs(x))
@@ -174,14 +175,14 @@ class CarInterface(CarInterfaceBase):
       out = sigmoid1 + sigmoid2
     else:
       # exiting curve
-      ANGLE_COEF = 2.06223884
-      ANGLE_COEF2 = 0.17299524
-      ANGLE_OFFSET = 10.08002596
-      SPEED_OFFSET = -0.11092718
-      SIGMOID_COEF_1 = 0.17167717
-      SIGMOID_COEF_2 = 1.99966155
-      SPEED_COEF = 1.04884478
-      SPEED_COEF2 = 2.00000000
+      ANGLE_COEF = 4.99683211
+      ANGLE_COEF2 = 0.03618608
+      ANGLE_OFFSET = 15.00000144
+      SPEED_OFFSET = -1.23191266
+      SIGMOID_COEF_1 = 0.22412302
+      SIGMOID_COEF_2 = 1.99877713
+      SPEED_COEF = 1.35854322
+      SPEED_COEF2 = 1.50516678
       
       x = ANGLE_COEF * (jerk) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF)
       sigmoid1 = x / (1. + fabs(x))
