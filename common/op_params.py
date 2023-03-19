@@ -791,6 +791,7 @@ class opParams:
                            'XR_v_lat_derivative_period_s'],
       '2023/03/16-21:00': [r'TUNE_LAT_TRX_.*',
                            r'.*ki_period.*'],
+      '2023/03/19-02:00': ['TUNE_LAT_TRX_friction'],
       }  # a dict where each key is a date in 'yyyy/mm/dd-hh:mm' (24-hour) format, and the value is a list of names of params OR regular expressions to match params you want reset to their default values if the modification date is before the key date
       # use something that doesn't match the date string format and the associated list of param names or regex's will apply no matter the modified date of the param
     self._calling_function = calling_function
