@@ -45,18 +45,19 @@ def get_steer_feedforward_erf_old(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_O
   return sigmoid + linear
 
 def get_steer_feedforward_torque_sigmoid(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
-  x = ANGLE_COEF * (angle + ANGLE_OFFSET) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF)
+  # x = ANGLE_COEF * (angle + ANGLE_OFFSET) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF)
+  x = ANGLE_COEF * (angle) * (40.23 / (max(1.0,speed + SPEED_OFFSET))**SPEED_COEF)
   sigmoid = x / (1. + fabs(x))
-  sigmoid *= (SIGMOID_COEF_RIGHT if (angle + ANGLE_OFFSET) < 0. else SIGMOID_COEF_LEFT)
-  linear = ANGLE_COEF2 * (angle + ANGLE_OFFSET)
+  # sigmoid *= (SIGMOID_COEF_RIGHT if (angle + ANGLE_OFFSET) < 0. else SIGMOID_COEF_LEFT)
+  sigmoid *= SIGMOID_COEF_RIGHT
+  linear = ANGLE_COEF2 * (angle)
   return sigmoid + linear
 
 def get_steer_feedforward_torque_sigmoid1(lateral_accel_value, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2):
   x = ANGLE_COEF * (lateral_accel_value + ANGLE_OFFSET) * (40.23 / (max(1.0,v_ego + SPEED_OFFSET))**SPEED_COEF)
-  sigmoid_factor = (SIGMOID_COEF_RIGHT if (lateral_accel_value + ANGLE_OFFSET) < 0. else SIGMOID_COEF_LEFT)
+  sigmoid_factor = (SIGMOID_COEF_RIGHT if (lateral_accel_value + ANGLE_OFFSET) < 0. else SIGMOID_COEF_LEFT)  
   sigmoid = x / (1. + fabs(x))
-  sigmoid *= sigmoid_factor * sigmoid_factor
-  sigmoid *= max(0.2, 40.23 / (max(1.0,v_ego + SPEED_OFFSET2))**SPEED_COEF2)
+  sigmoid += SPEED_COEF2 * sigmoid**2 * max(0.0, (v_ego + SPEED_OFFSET2)) / (1 + abs(lateral_accel_value))**2
   linear = ANGLE_COEF2 * (lateral_accel_value + ANGLE_OFFSET)
   return sigmoid + linear
 
@@ -246,7 +247,7 @@ def get_steer_feedforward_volt_torque(desired_lateral_accel, v_ego, ANGLE_COEF, 
   # SPEED_COEF = 0.57397696
   # return get_steer_feedforward_erf1(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
   # return get_steer_feedforward_torque_sigmoid1(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
-  return get_steer_feedforward_torque_sigmoid1(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2)
+  return get_steer_feedforward_torque_sigmoid(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
 
 # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
 def get_steer_feedforward_acadia_torque(desired_lateral_accel, v_ego):#, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
@@ -341,7 +342,7 @@ def old_feedforward(speed, angle):
     # kf = 1/2.544642494803999 # palisade 2020
     # kf = 1/2 # ram 1500
     # kf = 1/1.593387270257916 #pacifica 2018
-    # return np.vectorize(get_steer_feedforward_volt_torque_old)(angle, speed)
+    return np.vectorize(get_steer_feedforward_volt_torque_old)(angle, speed)
     # return np.vectorize(get_steer_feedforward_acadia_torque)(angle, speed)
     return angle * kf
     
@@ -431,8 +432,8 @@ def fit(speed, angle, steer, angle_plot=True):
   global ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2, BOUNDS
   BOUNDS = ([0.001, 0.01, 0.4, 0., 0.1, 0.1, 0.001, 0., 0.],
             [100., 2.0, 1.0, 20., 5., 5.0, 10., 1., 1.]) if IS_ANGLE_PLOT else \
-          ([0.001, 0.22, -3., 15.0, 0.1, 0.1, 0.1, 0.1, 30.0],
-          [5., 0.23, 3., 40., 0.5, 0.5, 2.0, 1.0, 40.0])
+          ([0.001, 0.25, -3., -10., 0.1, 0.1, 0.1, 0.0, -10.0],
+          [5., 0.5, 3., 40., 2.0, 2.0, 2.0, 1.0, 40.0])
   params, _ = curve_fit(  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking
     _fit_kf,
     np.array([speed, angle]),
