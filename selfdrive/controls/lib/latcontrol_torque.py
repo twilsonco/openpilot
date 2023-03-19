@@ -63,8 +63,8 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_look_ahead = 0.7
     self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.low_speed_factor_look_ahead), 16)
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
-    self.low_speed_factor_bp = [10.0, 25.0]
-    self.low_speed_factor_v = [175.0, 20.0]
+    self.low_speed_factor_bp = [0.0, 30.0]
+    self.low_speed_factor_v = [15.0, 5.0]
     
       
     # for actual lateral jerk calculation
@@ -123,7 +123,7 @@ class LatControlTorque(LatControl):
       lookahead_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       
-      low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)
+      low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
       lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
       setpoint = desired_lateral_accel + low_speed_factor * lookahead_desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
