@@ -152,6 +152,12 @@ class CarInterface(CarInterfaceBase):
     return get_steer_feedforward_erf(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
   
   @staticmethod
+  def get_steer_feedforward_torque_roll_volt(g_lat_accel, v_ego):
+    ANGLE_COEF = 0.48780343
+    SPEED_COEF = 0.24314538
+    return ANGLE_COEF * g_lat_accel / (max(1.0, v_ego))**SPEED_COEF
+  
+  @staticmethod
   def get_steer_feedforward_torque_lat_jerk_volt(jerk, speed, lateral_acceleration, friction, friction_threshold, g_lat_accel):
     if sign(lateral_acceleration) == sign(jerk):
       # entering curve
@@ -197,8 +203,8 @@ class CarInterface(CarInterfaceBase):
       
       out = (1-speed_norm) * sigmoid1 + speed_norm * sigmoid2
     
-    if sign(out) == sign(g_lat_accel):
-      out = max(0.0, abs(out) - abs(g_lat_accel)) * sign(out)
+    # if sign(out) == sign(g_lat_accel):
+    #   out = max(0.0, abs(out) - abs(g_lat_accel)) * sign(out)
     
     return out * friction
 
@@ -278,6 +284,12 @@ class CarInterface(CarInterfaceBase):
       return self.get_steer_feedforward_torque_lat_jerk_volt
     else:
       return CarInterfaceBase.get_steer_feedforward_function_torque_lat_jerk_default
+    
+  def get_steer_feedforward_function_torque_roll(self):
+    if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
+      return self.get_steer_feedforward_torque_roll_volt
+    else:
+      return CarInterfaceBase.get_steer_feedforward_function_torque_roll_default
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):

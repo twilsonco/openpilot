@@ -53,6 +53,7 @@ class LatControlTorque(LatControl):
     self.friction = CP.lateralTuning.torque.friction
     self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
     self.get_friction = CI.get_steer_feedforward_function_torque_lat_jerk()
+    self.get_roll_ff = CI.get_steer_feedforward_function_torque_roll()
     self.roll_k = 0.55
     self.v_ego = 0.0
     self.friction_look_ahead = 1.5
@@ -128,16 +129,16 @@ class LatControlTorque(LatControl):
       error = setpoint - measurement
       pid_log.error = error
 
-      ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
+      ff_roll = self.get_roll_ff(math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY, self.v_ego) * (self.roll_k if use_roll else 0.0)
       
       # lateral jerk feedforward
-      friction_compensation = self.get_friction(lookahead_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD, ff_roll * (self.roll_k if use_roll else 0.0))
+      friction_compensation = self.get_friction(lookahead_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD, ff_roll)
       if sign(lookahead_lateral_jerk) != sign(desired_lateral_accel):
         # at higher lateral acceleration, it takes less jerk to initiate the return to center
         friction_compensation *= interp(abs(desired_lateral_accel), self.friction_curve_exit_ramp_bp, self.friction_curve_exit_ramp_v)
       
       # lateral acceleration feedforward
-      ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * (self.roll_k if use_roll else 0.0)
+      ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll
       ff += friction_compensation
       output_torque = self.pid.update(setpoint, measurement,
                                       override=CS.steeringPressed, feedforward=ff,

@@ -83,6 +83,10 @@ class CarInterfaceBase():
     return desired_lateral_accel
   
   @staticmethod
+  def get_steer_feedforward_function_torque_roll_default(g_lat_accel, v_ego):
+    return g_lat_accel
+  
+  @staticmethod
   def get_steer_feedforward_function_torque_lat_jerk_default(desired_lateral_jerk, v_ego, desired_lateral_acceleration, friction, friction_threshold, g_lat_accel):
     if friction < 0.0:
       f = 0.0
@@ -103,6 +107,10 @@ class CarInterfaceBase():
   @staticmethod
   def get_steer_feedforward_function_torque_lat_jerk():
     return CarInterfaceBase.get_steer_feedforward_function_torque_lat_jerk_default
+  
+  @staticmethod
+  def get_steer_feedforward_function_torque_roll():
+    return CarInterfaceBase.get_steer_feedforward_function_torque_roll_default
 
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
