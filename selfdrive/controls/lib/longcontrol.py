@@ -122,7 +122,6 @@ class LongControl():
     self.pid._k_p = [bp, self._op_params.get('TUNE_LONG_kp')]
     self.pid._k_i = [bp, self._op_params.get('TUNE_LONG_ki')]
     self.pid._k_d = [bp, self._op_params.get('TUNE_LONG_kd')]
-    self.pid.update_i_period(self._op_params.get('TUNE_LONG_ki_period_s'))
     self.pid.update_d_period(self._op_params.get('TUNE_LONG_kd_period_s'))
     self.deadzone_bp, self.deadzone_v = bp, self._op_params.get('TUNE_LONG_deadzone_ms2')
 
