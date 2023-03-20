@@ -127,6 +127,8 @@ class LatControlTorque(LatControl):
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
       pid_log.error = error
+
+      ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
       
       # lateral jerk feedforward
       friction_compensation = self.get_friction(lookahead_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD, ff_roll * (self.roll_k if use_roll else 0.0))
@@ -135,7 +137,6 @@ class LatControlTorque(LatControl):
         friction_compensation *= interp(abs(desired_lateral_accel), self.friction_curve_exit_ramp_bp, self.friction_curve_exit_ramp_v)
       
       # lateral acceleration feedforward
-      ff_roll = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll * (self.roll_k if use_roll else 0.0)
       ff += friction_compensation
       output_torque = self.pid.update(setpoint, measurement,
