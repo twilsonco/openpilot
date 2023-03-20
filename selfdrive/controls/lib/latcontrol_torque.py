@@ -47,7 +47,6 @@ class LatControlTorque(LatControl):
                             k_d=CP.lateralTuning.torque.kd,
                             k_11 = 1.0, k_12 = 4.0, k_13 = 3.0, k_period=0.1,
                             k_f=CP.lateralTuning.torque.kf,
-                            integral_period=self._op_params.get('TUNE_LAT_TRX_ki_period_s', force_update=True),
                             derivative_period=self._op_params.get('TUNE_LAT_TRX_kd_period_s', force_update=True),
                             pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
@@ -80,7 +79,6 @@ class LatControlTorque(LatControl):
     self.pid._k_11 = [[0], [self._op_params.get('TUNE_LAT_TRX_kp_e')]]
     self.pid._k_12 = [[0], [self._op_params.get('TUNE_LAT_TRX_ki_e')]]
     self.pid._k_13 = [[0], [self._op_params.get('TUNE_LAT_TRX_kd_e')]]
-    self.pid.update_i_period(self._op_params.get('TUNE_LAT_TRX_ki_period_s'))
     self.pid.update_d_period(self._op_params.get('TUNE_LAT_TRX_kd_period_s'))
     self.actual_lateral_jerk.update_period(self.pid.error_rate._d_period_s)
     self.pid.k_f = self._op_params.get('TUNE_LAT_TRX_kf')

@@ -83,7 +83,6 @@ class LongControl():
                             (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
                             (CP.longitudinalTuning.kdBP, CP.longitudinalTuning.kdV),
                             derivative_period=self._op_params.get('TUNE_LONG_kd_period_s', force_update=True),
-                            integral_period=self._op_params.get('TUNE_LONG_ki_period_s', force_update=True),
                             k_11 = 0.2, k_12 = 0.4, k_13 = 0.4, k_period=0.1,
                             rate=RATE,
                             sat_limit=0.8)

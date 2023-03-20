@@ -522,8 +522,6 @@ class opParams:
       
       'TUNE_LAT_type': Param('torque', [str, int], 'Type of lateral controller that will be used with the corresponding parameters. The default torque and pid tunes are for Volt, the indi tune is from Hyundai Genesis, and the lqr is from Toyota Rav4. Consult selfdrive/car/gm/interface.py to see the default values for your car for the "pid" (and possibly also the "torque") controllers.  torque: lateral acceleration-based pid controller.  pid: steering angle-based pid controller.  indi: incremental non-linear dynamic inversion controller.  lqr: linear quadratic regulator.  There are also "torque" versions of indi and lqr to experiment with. The torque INDI needs tuning, but the torque LQR needs it more. Let me know if you get those working well! The provided torque and pid tunes for Volt are the same very good tunes as hardcoded in the this fork of OpenPilot\n', live=True, fake_live=True, allowed_vals=['torque','pid','indi','lqr','torqueindi','torquelqr']),
       
-      'TUNE_PID_ki_period_default_s': Param(2.0, float, 'The PID integral term uses an actual integral of the error over the specified period. Given constant error, the longer the period, the greater the resulting error integral (sum). This default period is used to compute a scaling factor for the resulting error integral so that, as you change the PID integral period for one controller or another, you needn\'t change the corresponding ki value because the kf value will be scaled based on the ratio of the specified integral period to this default integral period. Increase this value to effectively lower all kf values used in the PID controller. This only updates live for lat (or long) control if lat (or long) override is enabled. Otherwise, an OpenPilot or vehicle restart is required for changes to take effect.\n', live=True, min_val=0.05, max_val=20.0, unit="seconds"),
-      
       'TUNE_sensor_lockout_time_s': Param(60, int, 'The device sensors are used to compensate steering and long control. This can be problematic shortly after startup before they\'ve calibrated and can give crazy values. Set the amount of time after device start until sensor readings are allowed to affect controls.\n', live=True, min_val=0, max_val=600, unit="seconds"),
       
       #####
@@ -547,8 +545,6 @@ class opParams:
       'TUNE_LAT_TRX_ki': Param(0.08, float, ki_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_kd': Param(0.03, float, kd_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
-      
-      'TUNE_LAT_TRX_ki_period_s': Param(1.5, float, 'The amount of time over which steering error accumulates.', min_val=0.1, max_val=60.0, unit='seconds', show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_kd_period_s': Param(0.1, float, 'The amount of time used for the rate approximation.', min_val=0.02, max_val=2.0, unit='seconds', show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
@@ -577,8 +573,6 @@ class opParams:
       'TUNE_LAT_PID_ki': Param([0.015, 0.02], [list, float], ki_desc + 'This scales the low-speed response.\n', live=True, min_val=0.0, max_val=10.0,  linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
       'TUNE_LAT_PID_kd': Param([0.007, 0.007], [list, float], kd_desc + 'This scales the low-speed response.\n', live=True, min_val=0.0, max_val=10.0, linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
-      
-      'TUNE_LAT_PID_ki_period_s': Param(1.5, float, 'The amount of time over which steering error accumulates."\n', min_val=0.1, max_val=60.0, unit='seconds', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
       'TUNE_LAT_PID_kd_period_s': Param(0.1, float, 'The amount of time used for the rate approximation.', min_val=0.02, max_val=2.0, unit='seconds', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
@@ -686,8 +680,6 @@ class opParams:
       
       'TUNE_LONG_kd': Param([0.004, 0.0, 0.0], [list, float], 'Values of kd used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.\n', live=True, min_val=0.0, max_val=5.0),
       
-      'TUNE_LONG_ki_period_s': Param(1.5, float, 'The amount of time over which steering error accumulates."\n', min_val=0.1, max_val=60.0, unit='seconds'),
-      
       'TUNE_LONG_kd_period_s': Param(0.1, float, 'The amount of time used for the rate approximation.', min_val=0.02, max_val=2.0, unit='seconds'),
       
       'TUNE_LONG_deadzone_ms2': Param([0.0, 0.0, 0.0], [list, float], 'Values of deadzone used at the corresponding speeds in TUNE_LONG_mph. Deadzone sets a minimum amount of desired acceleration before the gas or brakes are actually actuated. Deadzones are used to smooth jerky long control, if the gas/brake controls are too sensitive or if the planning is noisy.\n', live=True, min_val=0.0, max_val=5.0, unit='m/s²'),
@@ -768,29 +760,23 @@ class opParams:
                            'MADS_OP_rate_low_speed_factor',
                            'MADS_OP_rate_low_speed_factor',
                            'TUNE_LAT_min_steer_speed_mph',
-                           'TUNE_PID_ki_period_default_s',
                            'TUNE_LAT_TRX_roll_compensation',
                            'TUNE_LAT_TRX_friction',
                            'TUNE_LAT_TRX_kp',
-                           'TUNE_LAT_TRX_ki_period_s',
                            'TUNE_LAT_TRX_kp_e',
                            'TUNE_LAT_TRX_ki_e',
                            'TUNE_LAT_TRX_kd_e',
                            'TUNE_LAT_PID_kp',
-                           'TUNE_LAT_PID_ki_period_s',
                            'TUNE_LONG_kp',
                            'MET_power_meter_smoothing_factor'],
       '2023/03/13-20:00': [r'.*_kd_period_s',
                            'TUNE_LAT_TRX_ki',
                            r'TUNE_LAT_TRX_k._e',
-                           'TUNE_LONG_ki_period_s',
-                           'TUNE_PID_ki_period_default_s',
                            'TUNE_LAT_TRX_roll_compensation',
                            'MET_power_meter_smoothing_factor',
                            r'CB_.*_speed_scale.*',
                            'XR_v_lat_derivative_period_s'],
-      '2023/03/16-21:00': [r'TUNE_LAT_TRX_.*',
-                           r'.*ki_period.*'],
+      '2023/03/16-21:00': [r'TUNE_LAT_TRX_.*'],
       '2023/03/19-02:00': ['TUNE_LAT_TRX_friction',
                            r'.*low_speed_factor_.*'],
       }  # a dict where each key is a date in 'yyyy/mm/dd-hh:mm' (24-hour) format, and the value is a list of names of params OR regular expressions to match params you want reset to their default values if the modification date is before the key date

@@ -2,10 +2,8 @@ import numpy as np
 from numbers import Number
 from collections import deque
 from common.differentiator import Differentiator
-from common.integrator import Integrator
 from common.op_params import opParams
 from common.numpy_fast import clip, interp
-from math import log2
 
 
 def apply_deadzone(error, deadzone):
@@ -19,7 +17,7 @@ def apply_deadzone(error, deadzone):
 
 
 class PIDController:
-  def __init__(self, k_p=0., k_i=0., k_d=0., k_f=1., k_11=0., k_12=0., k_13=0., k_period=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, derivative_period=1., integral_period=2.5):
+  def __init__(self, k_p=0., k_i=0., k_d=0., k_f=1., k_11=0., k_12=0., k_13=0., k_period=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, derivative_period=1.):
     self._op_params = opParams(calling_function="pid.py")
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
@@ -48,9 +46,10 @@ class PIDController:
 
     self.sat_count_rate = 1.0 / rate
     self.sat_limit = sat_limit
+    self.i_unwind_rate = 0.3 / rate
+    self.i_rate = 1.0 / rate
     
     self._gain_update_factor = 0.0
-    self.error_integral = Integrator(integral_period, rate, passive=not any([k > 0.0 for k in self._k_i[1]]))
     self.error_rate = Differentiator(derivative_period, rate, 
                                      passive=not any([k > 0.0 for k in self._k_d[1]]),
                                      bounds=[neg_limit, pos_limit])
@@ -110,13 +109,9 @@ class PIDController:
     self.sat_count = 0.0
     self.saturated = False
     self.control = 0
-    self.error_integral.reset()
     self.error_rate.reset()
     if self.error_norms is not None:
       self.error_norms = deque(maxlen=self._k_period)
-  
-  def update_i_period(self, integral_period):
-    self.error_integral.update_period(integral_period)
   
   def update_d_period(self, derivative_period):
     self.error_rate.update_period(derivative_period)
@@ -142,9 +137,20 @@ class PIDController:
           self.kd *= 1. + min(5., self.k_13 * abs_guf)
     
     self.p = error * self.kp
-    self.i = self.error_integral.update(error, override=override or freeze_integrator) * self.ki
     self.d = self.error_rate.update(error) * self.kd
     self.f = feedforward * self.k_f
+    
+    if override:
+      self.i -= self.i_unwind_rate * float(np.sign(self.i))
+    else:
+      i = self.i + error * self.ki * self.i_rate
+      control = self.p + self.f + i + self.d
+      # Update when changing i will move the control away from the limits
+      # or when i will move towards the sign of the error
+      if ((error >= 0 and (control <= self.pos_limit or i < 0.0)) or
+         (error <= 0 and (control >= self.neg_limit or i > 0.0))) and \
+         not freeze_integrator:
+        self.i = i
         
     control = self.p + self.f + self.i + self.d
     self.saturated = self._check_saturation(control, check_saturation, error)
