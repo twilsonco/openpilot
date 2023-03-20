@@ -457,7 +457,7 @@ def fit(speed, angle, steer, angle_plot=True):
   global ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF, SPEED_COEF2, SPEED_OFFSET2, BOUNDS
   BOUNDS = ([0.001, 0.01, 0.4, 0., 0.1, 0.1, 0.001, 0., 0.],
             [100., 2.0, 1.0, 20., 5., 5.0, 10., 1., 1.]) if IS_ANGLE_PLOT else \
-          ([0.001, 0.05, -3., -10., 0.5, 0.5, 0.1, 0.0, -10.0],
+          ([0.001, 0.15, -3., -10., 0.5, 0.5, 0.1, 0.0, -10.0],
           [5., 0.5, 3., 40., 1.0, 1.0, 2.0, 1.0, 40.0])
           # ([0.0, 0.0, 15.0, -40.0, 0.01, 0.01, 0.01, 0.01, -40.0],
           # [5.0, 5.0, 25.0, 40.0, 2.0, 2.0, 2.0, 2.0, 40.0])
