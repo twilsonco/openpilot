@@ -26,7 +26,7 @@ if not PREPROCESS_ONLY:
   from scipy.stats import describe
   from scipy.signal import correlate, correlation_lags
   import matplotlib.pyplot as plt
-  from tools.tuning.lat_plot import fit, plot
+  from tools.tuning.lat_plot import fit, plot, get_steer_feedforward_for_filter
   import sys
   if not os.path.isdir('plots'):
     os.mkdir('plots')
@@ -43,6 +43,7 @@ if not PREPROCESS_ONLY:
           # you might want to specify some extra behavior here.
           pass    
   sys.stdout = Logger()
+  get_lat_accel_ff = get_steer_feedforward_for_filter()
 
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.config import Conversions as CV
@@ -342,6 +343,7 @@ def collect(lr):
 
 def lookahead_lookback_filter(samples, comp_func, n_forward = 0, n_back = 0):
   return np.array([s for i,s in enumerate(samples) if \
+    i > n_back and i < len(samples) - n_forward and \
     all([comp_func(s1) for s1 in samples[max(0,i-n_back):min(len(samples), i+n_forward+1)]])])
 
 def filter(samples):
@@ -437,7 +439,21 @@ def filter(samples):
   mask = np.array([(s.enabled and s.torque_driver <= STEER_PRESSED_MIN) or (not s.enabled and s.torque_driver <= STEER_PRESSED_MAX) for s in samples])
   samples = samples[mask]
   
+  # has lat accel and lat jerk data
+  # samples = np.array([s for s in samples if np.isnan(s.lateral_accel_rate_no_roll) == False])
+  # # matching sign of lateral jerk and accel
+  # mask = np.array([sign(s.lateral_accel_rate_no_roll) == sign(s.lateral_accel) for s in samples])
+  # samples = samples[mask]
+  
+  # non-matching sign of lateral jerk and accel
+  # mask = np.array([sign(s.lateral_accel_rate_no_roll) != sign(s.lateral_accel) for s in samples])
+  # samples = samples[mask]
+  
   if not IS_ANGLE_PLOT:
+    # samples = np.array([s for s in samples if \
+    #   (sign(s.torque_driver + getattr(s, steer_torque_key)) == sign(-s.lateral_accel) \
+    #     or abs(s.torque_driver + getattr(s, steer_torque_key)) < 0.15) \
+    #   and abs(s.torque_driver + getattr(s, steer_torque_key)) > 0.15 * abs(s.lateral_accel)])
     samples = np.array([s for s in samples if \
       abs(s.torque_driver + getattr(s, steer_torque_key)) > 0.15 * abs(s.lateral_accel)])
   
@@ -470,11 +486,11 @@ def filter(samples):
   # samples = samples[mask]
 
   # No steer rate: holding steady curve or straight
-  # data = np.array([s.steer_rate for s in samples])
-  # mask = np.abs(data) < STEER_RATE_MIN
-  # samples = samples[mask]
+  data = np.array([s.steer_rate for s in samples])
+  mask = np.abs(data) < STEER_RATE_MIN
+  samples = samples[mask]
   
-  samples = lookahead_lookback_filter(samples, lambda s:abs(s.steer_rate) < STEER_RATE_MIN, 10, 10)
+  # samples = lookahead_lookback_filter(samples, lambda s:abs(s.steer_rate) < STEER_RATE_MIN, 1, 1)
   
   # constant speed
   data = np.array([s.a_ego for s in samples])
@@ -499,6 +515,19 @@ def filter(samples):
   # data = np.array([s.torque_eps for s in samples])
   # mask = np.abs(data) < 4.0
   # samples = samples[mask]
+  
+  # out = []
+  # for s in samples:
+  #   speed = s.v_ego
+  #   angle = -s.lateral_accel if not IS_ANGLE_PLOT else s.steer_angle - s.steer_offset
+  #   lat_jerk_ff = get_lat_accel_ff(-s.lateral_accel_rate_no_roll, s.v_ego, -s.lateral_accel)
+  #   actual_steer = (s.torque_driver + (getattr(s, steer_torque_key) if not np.isnan(getattr(s, steer_torque_key)) else 0.0))
+  #   steer = actual_steer - lat_jerk_ff
+  #   sort_var = 0.0
+  #   out.append(CleanSample(speed=speed, angle=angle, steer=steer, sort_var=sort_var))
+  #   # print(out[-1])
+  
+  # return out
 
   return [CleanSample(
     speed = s.v_ego,
@@ -579,7 +608,7 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
                 if not PREPROCESS_ONLY:
                   steer_offsets.extend(s.steer_offset for s in tmpdata)
               except Exception as e:
-                print(e)
+                # print(e)
                 if e in errors:
                   errors[e] += 1
                 else:
