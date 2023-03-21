@@ -618,10 +618,10 @@ static void update_state(UIState *s) {
                 "%0.1f°C (feels like %0.1f)",
                 data.getTemperature(),
                 data.getTemperatureFeelsLike());
-        if (data.getTimeSunset() > time && data.getTimeSunSet() - time <= 3600){
+        if (data.getTimeSunset() > time && data.getTimeSunset() - time <= 3600){
           sprintf(scene.weather_info.desc_full2,
                 "%s (sunset in %d minutes)",
-                desc.c_str(), int(float(data.getTimeSunSet() - time)/60.0));
+                desc.c_str(), int(float(data.getTimeSunset() - time)/60.0));
         }
         else if (data.getTimeSunrise() > time && data.getTimeSunrise() - time <= 3600){
           sprintf(scene.weather_info.desc_full2,
