@@ -126,7 +126,8 @@ class PIDController:
     self.kd = self.k_d
     
     if self.error_norms is not None:
-      self.error_norms.append(error / max(speed*0.1, 1.0))
+      abs_sp = setpoint if setpoint >= 0. else -setpoint
+      self.error_norms.append(error / (abs_sp + 1.))
       if len(self.error_norms) == self.error_norms.maxlen:
         delta_error_norm = self.error_norms[-1] - self.error_norms[0]
         self._gain_update_factor = self.error_norms[-1] * delta_error_norm
