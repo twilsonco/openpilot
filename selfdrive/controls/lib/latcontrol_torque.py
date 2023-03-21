@@ -121,7 +121,7 @@ class LatControlTorque(LatControl):
       desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
       lookahead_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
-      max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.friction_upper_idx]] + [max_future_lateral_accel], key=lambda x: abs(x))
+      max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.friction_upper_idx]] + [desired_lateral_accel], key=lambda x: abs(x))
       
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
       lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
