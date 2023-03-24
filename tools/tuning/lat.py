@@ -441,6 +441,7 @@ def filter(samples):
   
   # has lat accel and lat jerk data
   # samples = np.array([s for s in samples if np.isnan(s.lateral_accel_rate_no_roll) == False])
+  
   # # matching sign of lateral jerk and accel
   # mask = np.array([sign(s.lateral_accel_rate_no_roll) == sign(s.lateral_accel) for s in samples])
   # samples = samples[mask]
@@ -516,18 +517,18 @@ def filter(samples):
   # mask = np.abs(data) < 4.0
   # samples = samples[mask]
   
-  # out = []
-  # for s in samples:
-  #   speed = s.v_ego
-  #   angle = -s.lateral_accel if not IS_ANGLE_PLOT else s.steer_angle - s.steer_offset
-  #   lat_jerk_ff = get_lat_accel_ff(-s.lateral_accel_rate_no_roll, s.v_ego, -s.lateral_accel)
-  #   actual_steer = (s.torque_driver + (getattr(s, steer_torque_key) if not np.isnan(getattr(s, steer_torque_key)) else 0.0))
-  #   steer = actual_steer - lat_jerk_ff
-  #   sort_var = 0.0
-  #   out.append(CleanSample(speed=speed, angle=angle, steer=steer, sort_var=sort_var))
-  #   # print(out[-1])
+  out = []
+  for s in samples:
+    speed = s.v_ego
+    angle = math.sin(s.roll) * 9.81
+    lat_jerk_ff = get_lat_accel_ff(-s.lateral_accel, s.v_ego)
+    actual_steer = (s.torque_driver + (getattr(s, steer_torque_key) if not np.isnan(getattr(s, steer_torque_key)) else 0.0))
+    steer = actual_steer - lat_jerk_ff
+    sort_var = 0.0
+    out.append(CleanSample(speed=speed, angle=angle, steer=steer, sort_var=sort_var))
+    # print(out[-1])
   
-  # return out
+  return out
 
   return [CleanSample(
     speed = s.v_ego,
