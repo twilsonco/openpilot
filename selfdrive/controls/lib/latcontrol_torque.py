@@ -36,7 +36,6 @@ def get_lookahead_value(future_vals, current_val):
   min_val = min(same_sign_vals + [current_val], key=lambda x: abs(x))
   return min_val
 
-
 def get_steer_feedforward(desired_lateral_accel, speed):
   return desired_lateral_accel
 class LatControlTorque(LatControl):
@@ -110,6 +109,8 @@ class LatControlTorque(LatControl):
     else:
       actual_curvature = llk.angularVelocityCalibrated.value[2] / CS.vEgo
     actual_lateral_accel = actual_curvature * CS.vEgo**2
+    if self.use_steering_angle:
+      actual_lateral_accel += abs(CS.aEgo) * actual_curvature
     self.actual_lateral_jerk.update(actual_lateral_accel)
 
     if CS.vEgo < MIN_STEER_SPEED or not active:
@@ -121,6 +122,8 @@ class LatControlTorque(LatControl):
       desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
       lookahead_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
+      desired_lateral_accel += abs(CS.aEgo) * desired_curvature
+      max_future_lateral_accel = 0.0
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.friction_upper_idx]] + [desired_lateral_accel], key=lambda x: abs(x))
       
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
