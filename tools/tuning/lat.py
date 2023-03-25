@@ -72,7 +72,7 @@ def sign(x):
 def regularize(speed, angle, steer, sort_var):
   print("Regularizing...")
   # Bin by rounding
-  speed_bin = np.around(speed*2)/2
+  speed_bin = np.around(speed*2, decimals=1)/2
   angle_bin = np.around(angle*2, decimals=1)/2
 
   i = 0
@@ -345,6 +345,11 @@ def lookahead_lookback_filter(samples, comp_func, n_forward = 0, n_back = 0):
   return np.array([s for i,s in enumerate(samples) if \
     i > n_back and i < len(samples) - n_forward and \
     all([comp_func(s1) for s1 in samples[max(0,i-n_back):min(len(samples), i+n_forward+1)]])])
+  
+def lookahead_lookback_filter_abs_diff(samples, comp_val, comp_property, n_forward = 0, n_back = 0):
+  return np.array([s for i,s in enumerate(samples) if \
+    i > n_back and i < len(samples) - n_forward and \
+    all([abs(getattr(s1, comp_property) - getattr(s, comp_property)) <= comp_val for s1 in samples[max(0,i-n_back):min(len(samples), i+n_forward+1)]])])
 
 def filter(samples):
   global MAX_DRIVER_TORQUE, MAX_EPS_TORQUE, MAX_SPEED, MIN_CURVATURE_RATE, MAX_CURVATURE_RATE, MAX_STEER_RATE, MIN_STEER_RATE
@@ -455,7 +460,9 @@ def filter(samples):
     #     or abs(s.torque_driver + getattr(s, steer_torque_key)) < 0.15) \
     #   and abs(s.torque_driver + getattr(s, steer_torque_key)) > 0.15 * abs(s.lateral_accel)])
     samples = np.array([s for s in samples if \
-      abs(s.torque_driver + getattr(s, steer_torque_key)) > 0.15 * abs(s.lateral_accel)])
+      (sign(s.torque_driver + getattr(s, steer_torque_key) - get_lat_accel_ff(-s.lateral_accel, s.v_ego)) != sign(s.lateral_accel) or \
+        abs(s.torque_driver + getattr(s, steer_torque_key) - get_lat_accel_ff(-s.lateral_accel, s.v_ego)) < 0.05) and \
+      abs(s.torque_driver + getattr(s, steer_torque_key) - get_lat_accel_ff(-s.lateral_accel, s.v_ego)) > 0.1 * abs(s.lateral_accel)])
   
   # enabled
   # mask = np.array([s.enabled for s in samples])
@@ -481,21 +488,24 @@ def filter(samples):
   # samples = samples[mask]
 
   # No steer rate: holding steady curve or straight
-  # data = np.array([s.desired_curvature_rate for s in samples])
+  # data = np.array([s.desired_curvature_rate for s in samples]) 
   # mask = np.abs(data) < CURVATURE_RATE_MIN # determined from plotjuggler
   # samples = samples[mask]
 
   # No steer rate: holding steady curve or straight
-  data = np.array([s.steer_rate for s in samples])
-  mask = np.abs(data) < STEER_RATE_MIN
-  samples = samples[mask]
+  # data = np.array([s.steer_rate for s in samples])
+  # mask = np.abs(data) < STEER_RATE_MIN
+  # samples = samples[mask]
   
-  # samples = lookahead_lookback_filter(samples, lambda s:abs(s.steer_rate) < STEER_RATE_MIN, 1, 1)
+  samples = lookahead_lookback_filter(samples, lambda s:abs(s.steer_rate) < STEER_RATE_MIN, 2, 2)
   
-  # constant speed
-  data = np.array([s.a_ego for s in samples])
-  mask = np.abs(data) <= LONG_ACCEL_MAX
-  samples = samples[mask]
+  # has long accel
+  # data = np.array([s.a_ego for s in samples])
+  # mask = np.abs(data) >= LONG_ACCEL_MIN
+  # samples = samples[mask]
+  
+  # constant accel (0.25m/s^2 per second)
+  samples = lookahead_lookback_filter_abs_diff(samples, 0.3 * DT_CTRL, "a_ego", 2, 2)
 
   # GM no steering below 7 mph
   # data = np.array([s.v_ego for s in samples])
@@ -516,18 +526,20 @@ def filter(samples):
   # mask = np.abs(data) < 4.0
   # samples = samples[mask]
   
-  # out = []
-  # for s in samples:
-  #   speed = s.v_ego
-  #   angle = -s.lateral_accel if not IS_ANGLE_PLOT else s.steer_angle - s.steer_offset
-  #   lat_jerk_ff = get_lat_accel_ff(-s.lateral_accel_rate_no_roll, s.v_ego, -s.lateral_accel)
-  #   actual_steer = (s.torque_driver + (getattr(s, steer_torque_key) if not np.isnan(getattr(s, steer_torque_key)) else 0.0))
-  #   steer = actual_steer - lat_jerk_ff
-  #   sort_var = 0.0
-  #   out.append(CleanSample(speed=speed, angle=angle, steer=steer, sort_var=sort_var))
-  #   # print(out[-1])
+  out = []
+  for s in samples:
+    speed = s.a_ego
+    speed = abs(speed)
+    angle = -s.lateral_accel if not IS_ANGLE_PLOT else s.steer_angle - s.steer_offset
+    ff = get_lat_accel_ff(-s.lateral_accel, s.v_ego)
+    actual_steer = (s.torque_driver + (getattr(s, steer_torque_key) if not np.isnan(getattr(s, steer_torque_key)) else 0.0))
+    steer = actual_steer - ff
+    # steer *= -1.0
+    sort_var = 0.0
+    out.append(CleanSample(speed=speed, angle=angle, steer=steer, sort_var=sort_var))
+    # print(out[-1])
   
-  # return out
+  return out
 
   return [CleanSample(
     speed = s.v_ego,
@@ -614,7 +626,7 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
                 else:
                   errors[e] = 1
           numerr = sum(errors.values()) if len(errors) > 0 else 0
-          pbar.set_description(f"Imported {len(data)} points (filtered out {(old_num_points-len(data))/max(1,old_num_points)*100.0:.1f}% of {old_num_points}) (skipped segments: {numerr})")
+          pbar.set_description(f"Imported {len(data)} points (filtered out {(old_num_points-len(data))/max(1,old_num_points)*100.0:.2f}% of {old_num_points}) (skipped segments: {numerr})")
         if len(errors) > 0:
           nerr = sum(errors.values())
           print(f"{nerr} lat files were not loaded due to errors:")
