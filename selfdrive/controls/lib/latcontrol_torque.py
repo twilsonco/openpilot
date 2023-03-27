@@ -3,6 +3,7 @@ from selfdrive.controls.lib.pid import PIDController
 from common.differentiator import Differentiator
 from common.numpy_fast import interp, sign
 from common.op_params import opParams
+from common.realtime import DT_MDL
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
@@ -47,6 +48,7 @@ class LatControlTorque(LatControl):
                             k_11 = 1.0, k_12 = 2.0, k_13 = 3.0, k_period=0.1,
                             k_f=CP.lateralTuning.torque.kf,
                             derivative_period=self._op_params.get('TUNE_LAT_TRX_kd_period_s', force_update=True),
+                            derivative_rate=1/DT_MDL,
                             pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
     self.friction = CP.lateralTuning.torque.friction

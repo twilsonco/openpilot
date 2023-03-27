@@ -17,7 +17,7 @@ def apply_deadzone(error, deadzone):
 
 
 class PIDController:
-  def __init__(self, k_p=0., k_i=0., k_d=0., k_f=1., k_11=0., k_12=0., k_13=0., k_period=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, derivative_period=1.):
+  def __init__(self, k_p=0., k_i=0., k_d=0., k_f=1., k_11=0., k_12=0., k_13=0., k_period=1., pos_limit=None, neg_limit=None, rate=100, derivative_rate=100, sat_limit=0.8, derivative_period=1.):
     self._op_params = opParams(calling_function="pid.py")
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
@@ -50,7 +50,9 @@ class PIDController:
     self.i_rate = 1.0 / rate
     
     self._gain_update_factor = 0.0
-    self.error_rate = Differentiator(derivative_period, rate, 
+    self.error_update_iter = 0
+    self.error_rate_update_freq = int(round(rate / derivative_rate))
+    self.error_rate = Differentiator(derivative_period, derivative_rate, 
                                      passive=not any([k > 0.0 for k in self._k_d[1]]),
                                      bounds=[neg_limit*5, pos_limit*5])
     
@@ -138,7 +140,11 @@ class PIDController:
           self.kd *= 1. + min(5., self.k_13 * abs_guf)
     
     self.p = error * self.kp
-    self.d = self.error_rate.update(error) * self.kd
+    if self.error_update_iter >= self.error_rate_update_freq:
+      self.error_update_iter = 0
+      self.error_rate.update(error)
+    self.error_update_iter += 1
+    self.d = self.error_rate.x * self.kd
     self.f = feedforward * self.k_f
     
     if override:
