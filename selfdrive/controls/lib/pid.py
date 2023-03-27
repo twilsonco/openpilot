@@ -54,7 +54,7 @@ class PIDController:
     self.error_rate_update_freq = int(round(rate / derivative_rate))
     self.error_rate = Differentiator(derivative_period, derivative_rate, 
                                      passive=not any([k > 0.0 for k in self._k_d[1]]),
-                                     bounds=[neg_limit*5, pos_limit*5])
+                                     bounds=[neg_limit*5, pos_limit*5] if (neg_limit is not None and pos_limit is not None) else [None,None])
     
     if any([k > 0.0 for kk in [self._k_11[1], self._k_12[1], self._k_13[1]] for k in kk]):
       self._k_period = max(2,round(k_period * derivative_rate))  # period of time for autotune calculation (seconds converted to frames)
