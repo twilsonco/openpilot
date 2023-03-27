@@ -50,14 +50,14 @@ class PIDController:
     self.i_rate = 1.0 / rate
     
     self._gain_update_factor = 0.0
-    self.error_update_iter = 0
+    self.error_rate_update_iter = 0
     self.error_rate_update_freq = int(round(rate / derivative_rate))
     self.error_rate = Differentiator(derivative_period, derivative_rate, 
                                      passive=not any([k > 0.0 for k in self._k_d[1]]),
                                      bounds=[neg_limit*5, pos_limit*5])
     
     if any([k > 0.0 for kk in [self._k_11[1], self._k_12[1], self._k_13[1]] for k in kk]):
-      self._k_period = max(2,round(k_period * rate))  # period of time for autotune calculation (seconds converted to frames)
+      self._k_period = max(2,round(k_period * derivative_rate))  # period of time for autotune calculation (seconds converted to frames)
       self.error_norms = deque(maxlen=self._k_period)
     else:
       self.error_norms = None
@@ -127,23 +127,23 @@ class PIDController:
     self.ki = self.k_i
     self.kd = self.k_d
     
-    if self.error_norms is not None:
-      abs_sp = setpoint if setpoint >= 0. else -setpoint
-      self.error_norms.append(error / (abs_sp + 1.))
-      if len(self.error_norms) == self.error_norms.maxlen:
-        delta_error_norm = self.error_norms[-1] - self.error_norms[0]
-        self._gain_update_factor = self.error_norms[-1] * delta_error_norm
-        if self._gain_update_factor != 0.:
-          abs_guf = abs(self._gain_update_factor)
-          self.kp *= 1. + min(5., self.k_11 * abs_guf)
-          self.ki *= 1. + clip(self.k_12 * self._gain_update_factor, -1., 5.)
-          self.kd *= 1. + min(5., self.k_13 * abs_guf)
+    if self.error_rate_update_iter >= self.error_rate_update_freq:
+      self.error_rate_update_iter = 0
+      self.error_rate.update(error)
+      if self.error_norms is not None:
+        abs_sp = setpoint if setpoint >= 0. else -setpoint
+        self.error_norms.append(error / (abs_sp + 1.))
+        if len(self.error_norms) == self.error_norms.maxlen:
+          delta_error_norm = self.error_norms[-1] - self.error_norms[0]
+          self._gain_update_factor = self.error_norms[-1] * delta_error_norm
+          if self._gain_update_factor != 0.:
+            abs_guf = abs(self._gain_update_factor)
+            self.kp *= 1. + min(5., self.k_11 * abs_guf)
+            self.ki *= 1. + clip(self.k_12 * self._gain_update_factor, -1., 5.)
+            self.kd *= 1. + min(5., self.k_13 * abs_guf)
+    self.error_rate_update_iter += 1
     
     self.p = error * self.kp
-    if self.error_update_iter >= self.error_rate_update_freq:
-      self.error_update_iter = 0
-      self.error_rate.update(error)
-    self.error_update_iter += 1
     self.d = self.error_rate.x * self.kd
     self.f = feedforward * self.k_f
     
