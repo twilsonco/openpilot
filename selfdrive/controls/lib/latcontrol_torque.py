@@ -128,7 +128,7 @@ class LatControlTorque(LatControl):
       
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
       lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
-      setpoint = desired_lateral_accel + low_speed_factor * lookahead_desired_curvature
+      setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
       pid_log.error = error
