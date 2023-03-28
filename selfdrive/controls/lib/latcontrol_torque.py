@@ -145,10 +145,14 @@ class LatControlTorque(LatControl):
       
       # lateral jerk feedforward
       friction_compensation = self.get_friction(lookahead_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD, ff_roll)
-      friction_compensation *= interp(max_future_lateral_accel, [0.0, 1.5], [0.2, 1.0])
+      friction_lat_accel_downscale_factor = interp(max_future_lateral_accel, [0.0, 1.5], [0.5, 1.0])
+      friction_compensation *= friction_lat_accel_downscale_factor
       if sign(lookahead_lateral_jerk) != sign(desired_lateral_accel):
         # at higher lateral acceleration, it takes less jerk to initiate the return to center
         friction_compensation *= interp(abs(desired_lateral_accel), self.friction_curve_exit_ramp_bp, self.friction_curve_exit_ramp_v)
+      
+      lateral_jerk_error = desired_lateral_jerk - self.actual_lateral_jerk.x
+      lateral_jerk_error *= friction_lat_accel_downscale_factor
       
       # lateral acceleration feedforward
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll
@@ -158,7 +162,7 @@ class LatControlTorque(LatControl):
                                       speed=CS.vEgo,
                                       freeze_integrator=CS.steeringRateLimited or abs(CS.steeringTorque) > 0.3 or CS.vEgo < 5,
                                       error_normalizer=max_future_lateral_accel,
-                                      D=desired_lateral_jerk - self.actual_lateral_jerk.x)
+                                      D=lateral_jerk_error)
 
       # record steering angle error to the unused pid_log.error_rate
       angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
