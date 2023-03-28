@@ -69,7 +69,8 @@ class LatControlTorque(LatControl):
     
       
     # for actual lateral jerk calculation
-    self.actual_lateral_jerk = Differentiator(self.pid.error_rate._d_period_s, 100.0)
+    self.actual_lateral_jerk = Differentiator(self.pid.error_rate._d_period_s, 1/DT_MDL)
+    self.lat_plan_last = None
   
   def update_op_params(self):
     if not self.tune_override:
@@ -114,7 +115,9 @@ class LatControlTorque(LatControl):
     actual_lateral_accel = actual_curvature * CS.vEgo**2
     if self.use_steering_angle:
       actual_lateral_accel += abs(CS.aEgo) * actual_curvature
-    self.actual_lateral_jerk.update(actual_lateral_accel)
+    if lat_plan != self.lat_plan_last:
+      self.actual_lateral_jerk.update(actual_lateral_accel)
+    self.lat_plan_last = lat_plan
 
     if CS.vEgo < MIN_STEER_SPEED or not active:
       output_torque = 0.0
@@ -154,7 +157,8 @@ class LatControlTorque(LatControl):
                                       override=CS.steeringPressed, feedforward=ff,
                                       speed=CS.vEgo,
                                       freeze_integrator=CS.steeringRateLimited or abs(CS.steeringTorque) > 0.3 or CS.vEgo < 5,
-                                      error_normalizer=max_future_lateral_accel)
+                                      error_normalizer=max_future_lateral_accel,
+                                      D=desired_lateral_jerk - self.actual_lateral_jerk.x)
 
       # record steering angle error to the unused pid_log.error_rate
       angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))

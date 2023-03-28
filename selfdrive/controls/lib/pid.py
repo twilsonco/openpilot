@@ -118,7 +118,7 @@ class PIDController:
   def update_d_period(self, derivative_period):
     self.error_rate.update_period(derivative_period)
 
-  def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False, error_normalizer = None):
+  def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False, error_normalizer=None, D=None):
     self.speed = speed
 
     error = float(apply_deadzone(setpoint - measurement, deadzone))
@@ -129,7 +129,8 @@ class PIDController:
     
     if self.error_rate_update_iter >= self.error_rate_update_freq:
       self.error_rate_update_iter = 0
-      self.error_rate.update(error)
+      if D is None:
+        self.error_rate.update(error)
       if self.error_norms is not None:
         abs_sp = abs(error_normalizer if error_normalizer is not None else setpoint)
         self.error_norms.append(error / (abs_sp + 1.))
@@ -144,7 +145,7 @@ class PIDController:
     self.error_rate_update_iter += 1
     
     self.p = error * self.kp
-    self.d = self.error_rate.x * self.kd
+    self.d = (self.error_rate.x if D is None else D) * self.kd
     self.f = feedforward * self.k_f
     
     if override:
