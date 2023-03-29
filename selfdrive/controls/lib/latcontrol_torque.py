@@ -5,6 +5,7 @@ from common.numpy_fast import interp, sign
 from common.op_params import opParams
 from common.realtime import DT_MDL
 from selfdrive.config import Conversions as CV
+from selfdrive.controls.lib.drive_helpers import apply_deadzone
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from selfdrive.modeld.constants import T_IDXS
@@ -161,7 +162,7 @@ class LatControlTorque(LatControl):
                                       override=CS.steeringPressed, feedforward=ff,
                                       speed=CS.vEgo,
                                       freeze_integrator=CS.steeringRateLimited or abs(CS.steeringTorque) > 0.3 or CS.vEgo < 5,
-                                      error_normalizer=max_future_lateral_accel,
+                                      error_normalizer=apply_deadzone(max_future_lateral_accel, 0.2),
                                       D=lateral_jerk_error)
 
       # record steering angle error to the unused pid_log.error_rate
