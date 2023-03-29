@@ -129,8 +129,7 @@ class PIDController:
     
     if self.error_rate_update_iter >= self.error_rate_update_freq:
       self.error_rate_update_iter = 0
-      if D is None:
-        self.error_rate.update(error)
+      self.error_rate.update(error)
       if self.error_norms is not None:
         abs_sp = abs(error_normalizer if error_normalizer is not None else setpoint)
         self.error_norms.append(error / (abs_sp + 1.))
