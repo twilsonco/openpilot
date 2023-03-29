@@ -4,12 +4,15 @@ from common.differentiator import Differentiator
 from common.numpy_fast import interp, sign
 from common.op_params import opParams
 from common.realtime import DT_MDL
+from selfdrive.car.gm.values import CAR
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import apply_deadzone
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from selfdrive.modeld.constants import T_IDXS
 from cereal import log
+
+ROLL_FF_CARS = [CAR.VOLT, CAR.VOLT18]
 
 # At higher speeds (25+mph) we can assume:
 # Lateral acceleration achieved by a specific car correlates to
@@ -46,7 +49,7 @@ class LatControlTorque(LatControl):
     self._op_params = opParams(calling_function="latcontrol_torque.py")
     self.pid = PIDController(CP.lateralTuning.torque.kp, CP.lateralTuning.torque.ki,
                             k_d=CP.lateralTuning.torque.kd,
-                            k_11 = 1.0, k_12 = 2.0, k_13 = 3.0, k_period=0.1,
+                            k_11 = 20.0, k_12 = 20.0, k_13 = 10.0, k_period=0.1,
                             k_f=CP.lateralTuning.torque.kf,
                             derivative_period=self._op_params.get('TUNE_LAT_TRX_kd_period_s', force_update=True),
                             derivative_rate=1/DT_MDL,
@@ -56,13 +59,13 @@ class LatControlTorque(LatControl):
     self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
     self.get_friction = CI.get_steer_feedforward_function_torque_lat_jerk()
     self.get_roll_ff = CI.get_steer_feedforward_function_torque_roll()
-    self.roll_k = 0.55
+    self.roll_k = 0.55 if CP.carFingerprint not in ROLL_FF_CARS else 1.0
     self.v_ego = 0.0
-    self.friction_look_ahead_v = [1.2, 2.2]
-    self.friction_look_ahead_bp = [0.0, 35.0]
+    self.friction_look_ahead_v = [0.8, 1.8]
+    self.friction_look_ahead_bp = [9.0, 35.0]
     self.friction_curve_exit_ramp_bp = [0.6, 1.8] # lateral acceleration
-    self.friction_curve_exit_ramp_v = [1.0, 0.1]
-    self.low_speed_factor_look_ahead = 0.7
+    self.friction_curve_exit_ramp_v = [1.0, 0.7]
+    self.low_speed_factor_look_ahead = 0.3
     self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.low_speed_factor_look_ahead), 16)
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
     self.low_speed_factor_bp = [0.0, 30.0]
