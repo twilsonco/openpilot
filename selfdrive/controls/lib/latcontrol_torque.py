@@ -143,6 +143,7 @@ class LatControlTorque(LatControl):
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
+      error /= (1.0 + apply_deadzone(max_future_lateral_accel, 0.2))
       pid_log.error = error
 
       ff_roll = self.get_roll_ff(math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY, self.v_ego) * (self.roll_k if use_roll else 0.0)
