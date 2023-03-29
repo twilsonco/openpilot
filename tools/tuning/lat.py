@@ -620,6 +620,9 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
               # read in lat files saved by running `ls -1 /data/media/0/latfiles >> /data/media/0/latfiles.txt`
               with open(rlog_log_path, 'r') as rll:
                 latsegs = latsegs | set(list(rll.read().split('\n')))
+            with open(rlog_log_path, 'w') as rll:
+              for ls in sorted(list(latsegs)):
+                rll.write(f"\n{ls}")
           for filename in os.listdir(outpath):
             if ext in filename.split("/")[-1]:
               p1 = filename.replace(outpath, path).replace('.lat','--rlog.bz2').replace('|','_')
