@@ -614,9 +614,10 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
           rlog_log_mdate = 0
           if preprocess:
             rlog_log_path = os.path.join(outpath, "latfiles.txt") # prevents rerunning rlogs
-            rlog_log_mdate = os.path.getmtime(rlog_log_path)
-            print(f"Loading file blacklist: {rlog_log_path}")
+            rlog_log_mdate = 0
             if os.path.exists(rlog_log_path): 
+              rlog_log_mdate = os.path.getmtime(rlog_log_path)
+              print(f"Loading file blacklist: {rlog_log_path}")
               # read in lat files saved by running `ls -1 /data/media/0/latfiles >> /data/media/0/latfiles.txt`
               with open(rlog_log_path, 'r') as rll:
                 latsegs = latsegs | set(list(rll.read().split('\n')))
