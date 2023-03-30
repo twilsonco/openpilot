@@ -1,9 +1,10 @@
 import math
 from selfdrive.controls.lib.pid import PIDController
 from common.differentiator import Differentiator
+from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import interp, sign
 from common.op_params import opParams
-from common.realtime import DT_MDL
+from common.realtime import DT_MDL, DT_CTRL
 from selfdrive.car.gm.values import CAR
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import apply_deadzone
@@ -70,6 +71,7 @@ class LatControlTorque(LatControl):
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
     self.low_speed_factor_bp = [0.0, 30.0]
     self.low_speed_factor_v = [15.0, 5.0]
+    self.max_future_lateral_accel_filtered = FirstOrderFilter(0.0, 1.0, DT_CTRL)
     
       
     # for actual lateral jerk calculation
@@ -107,6 +109,7 @@ class LatControlTorque(LatControl):
     super().reset()
     self.pid.reset()
     self.actual_lateral_jerk.reset()
+    self.max_future_lateral_accel_filtered.x = 0.0
 
   def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, use_roll=True, lat_plan=None):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
@@ -137,13 +140,17 @@ class LatControlTorque(LatControl):
       desired_lateral_accel += abs(CS.aEgo) * desired_curvature
       max_future_lateral_accel = 0.0
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_lateral_accel], key=lambda x: abs(x))
+      if abs(max_future_lateral_accel) > abs(self.max_future_lateral_accel_filtered.x):
+        self.max_future_lateral_accel_filtered.x = max_future_lateral_accel
+      else:
+        self.max_future_lateral_accel_filtered.update(max_future_lateral_accel)
       
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
       lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
-      error /= (1.0 + apply_deadzone(abs(max_future_lateral_accel), 0.2))
+      error /= (1.0 + max(apply_deadzone(abs(self.max_future_lateral_accel_filtered.x), 0.2) * 3.0, 2.0))
       pid_log.error = error
 
       ff_roll = self.get_roll_ff(math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY, self.v_ego) * (self.roll_k if use_roll else 0.0)
