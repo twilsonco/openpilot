@@ -75,7 +75,10 @@ class LatControlTorque(LatControl):
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
     self.low_speed_factor_bp = [0.0, 30.0]
     self.low_speed_factor_v = [15.0, 5.0]
-    self.max_future_lateral_accel_filtered = FirstOrderFilter(0.0, 1.0, DT_CTRL)
+    self.max_future_lateral_accel = 0.0
+    self.max_future_lateral_accel_rate = 1 * DT_CTRL
+    self.max_future_lateral_accel_time_out = 2.0 / DT_CTRL
+    self.max_future_lateral_accel_low_frame_count = 0
     
       
     # for actual lateral jerk calculation
@@ -113,7 +116,7 @@ class LatControlTorque(LatControl):
     super().reset()
     self.pid.reset()
     self.actual_lateral_jerk.reset()
-    self.max_future_lateral_accel_filtered.x = 0.0
+    self.max_future_lateral_accel = 0.0
 
   def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, use_roll=True, lat_plan=None):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
@@ -144,7 +147,14 @@ class LatControlTorque(LatControl):
       desired_lateral_accel += abs(CS.aEgo) * desired_curvature
       max_future_lateral_accel = 0.0
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_lateral_accel], key=lambda x: abs(x))
-      self.max_future_lateral_accel_filtered.update(max_future_lateral_accel)
+      if max_future_lateral_accel > self.max_future_lateral_accel:
+        self.max_future_lateral_accel = max_future_lateral_accel
+        self.max_future_lateral_accel_low_frame_count = 0
+      else:
+        self.max_future_lateral_accel_low_frame_count += 1
+        if self.max_future_lateral_accel_low_frame_count > self.max_future_lateral_accel_time_out:
+          delta = max(self.max_future_lateral_accel_rate, self.max_future_lateral_accel, key=lambda x: abs(x))
+          self.max_future_lateral_accel -= sign(self.max_future_lateral_accel) * delta
       
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
       lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
@@ -152,7 +162,7 @@ class LatControlTorque(LatControl):
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
       error_scale_factor = 3.0
-      error_scale_factor = error_scale_factor / (1.0 + max(apply_deadzone(abs(self.max_future_lateral_accel_filtered.x), 0.2) * error_scale_factor, error_scale_factor - 1))
+      error_scale_factor = error_scale_factor / (1.0 + max(apply_deadzone(abs(self.max_future_lateral_accel), 0.2) * error_scale_factor, error_scale_factor - 1))
       error *= error_scale_factor
       pid_log.error = error
 
@@ -210,7 +220,7 @@ class LatControlTorque(LatControl):
       pid_log.lookaheadCurvature = lookahead_desired_curvature
       pid_log.lookaheadCurvatureRate = lookahead_curvature_rate
       pid_log.f2 = ff_nn * self.pid.k_f
-      pid_log.maxFutureLatAccel = self.max_future_lateral_accel_filtered.x
+      pid_log.maxFutureLatAccel = self.max_future_lateral_accel
       pid_log.errorScaleFactor = error_scale_factor
     pid_log.currentLateralAcceleration = actual_lateral_accel
     pid_log.currentLateralJerk = self.actual_lateral_jerk.x
