@@ -11,7 +11,7 @@ from selfdrive.car.gm.values import CAR, CruiseButtons, \
                                     AccState, CarControllerParams, \
                                     FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
-from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.interfaces import CarInterfaceBase, FluxModel
 from selfdrive.controls.lib.longitudinal_planner import _A_CRUISE_HIGHER_ACCEL_INDEX, \
                                                         calc_cruise_accel_limits
                                                         
@@ -278,6 +278,10 @@ class CarInterface(CarInterfaceBase):
       return self.get_steer_feedforward_lacrosse_torque
     else:
       return CarInterfaceBase.get_steer_feedforward_torque_default
+    
+  def get_steer_feedforward_function_torque_nn(self):
+    if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
+      self.ff_nn_model = FluxModel("selfdrive/car/gm/models/voltlat.json")
   
   def get_steer_feedforward_function_torque_lat_jerk(self):
     if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:

@@ -14,6 +14,7 @@ from selfdrive.modeld.constants import T_IDXS
 from cereal import log
 
 ROLL_FF_CARS = [CAR.VOLT, CAR.VOLT18]
+NN_FF_CARS = [CAR.VOLT, CAR.VOLT18]
 
 # At higher speeds (25+mph) we can assume:
 # Lateral acceleration achieved by a specific car correlates to
@@ -57,6 +58,9 @@ class LatControlTorque(LatControl):
                             pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
     self.friction = CP.lateralTuning.torque.friction
+    self.CI = CI
+    if CP.carFingerprint in NN_FF_CARS:
+      self.CI.get_steer_feedforward_function_torque_nn()
     self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
     self.get_friction = CI.get_steer_feedforward_function_torque_lat_jerk()
     self.get_roll_ff = CI.get_steer_feedforward_function_torque_roll()
@@ -154,7 +158,8 @@ class LatControlTorque(LatControl):
       error *= error_scale_factor / (1.0 + max(apply_deadzone(abs(self.max_future_lateral_accel_filtered.x), 0.2) * error_scale_factor, error_scale_factor - 1))
       pid_log.error = error
 
-      ff_roll = self.get_roll_ff(math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY, self.v_ego) * (self.roll_k if use_roll else 0.0)
+      lateral_accel_g = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
+      ff_roll = self.get_roll_ff(lateral_accel_g, self.v_ego) * (self.roll_k if use_roll else 0.0)
       
       # lateral jerk feedforward
       friction_compensation = self.get_friction(lookahead_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD, ff_roll)
@@ -170,6 +175,10 @@ class LatControlTorque(LatControl):
       # lateral acceleration feedforward
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll
       ff += friction_compensation
+      
+      if self.CI.ff_nn_model is not None:
+        ff = self.CI.ff_nn_model.evaluate([CS.vEgo, desired_lateral_accel, lookahead_lateral_jerk, lateral_accel_g])
+      
       output_torque = self.pid.update(setpoint, measurement,
                                       override=CS.steeringPressed, feedforward=ff,
                                       speed=CS.vEgo,
