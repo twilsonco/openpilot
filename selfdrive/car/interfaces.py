@@ -70,7 +70,7 @@ class FluxModel:
 
         output_array = self.forward(input_array)
 
-        return output_array[0, 0]
+        return float(output_array[0, 0])
 
 # generic car and radar interfaces
 
