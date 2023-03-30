@@ -1,0 +1,7 @@
+{
+  "_comment": "PFEIFER - MADS",
+  "mem_name": "DisengageLatOnBlinker",
+  "name": "Disengage Lateral on Blinker",
+  "description": "Disables lateral while a blinker is being activated. Only changes behavior of Always on Lateral.",
+  "icon": "../assets/img_experimental_white.svg"
+}

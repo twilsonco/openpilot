@@ -34,7 +34,7 @@
 #endif
 
 constexpr int MAIN_FPS = 20;
-const int MAIN_BITRATE = 10000000;
+const int MAIN_BITRATE = 15000000;
 const int DCAM_BITRATE = MAIN_BITRATE;
 
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead

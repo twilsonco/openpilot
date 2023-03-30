@@ -1,0 +1,7 @@
+{
+  "_comment": "PFEIFER - GA",
+  "mem_name": "GapAdjustEnabled",
+  "name": "Gap Adjust",
+  "description": "Enables Gap Adjust. Allows using the distance button on the steering wheel to control the car follow distance.",
+  "icon": "../assets/img_experimental_white.svg"
+}

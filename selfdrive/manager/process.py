@@ -23,6 +23,11 @@ from cereal import log
 WATCHDOG_FN = "/dev/shm/wd_"
 ENABLE_WATCHDOG = os.getenv("NO_WATCHDOG") is None
 
+# PFEIFER - MAPD {{
+import sys
+sys.path.append(os.path.join(BASEDIR, "third_party/mapd"))
+# }} PFEIFER - MAPD
+
 
 def launcher(proc: str, name: str) -> None:
   try:

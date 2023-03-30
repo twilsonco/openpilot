@@ -1,0 +1,7 @@
+{
+  "_comment": "PFEIFER - MADS",
+  "mem_name": "MadsEnabled",
+  "name": "Always on Lateral",
+  "description": "When enabled lateral control will be engaged even when longitudinal is not. Main cruise button toggles lateral control on and off.",
+  "icon": "../assets/img_experimental_white.svg"
+}

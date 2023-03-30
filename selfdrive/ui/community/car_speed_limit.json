@@ -1,0 +1,7 @@
+{
+  "_comment": "PFEIFER - CSL",
+  "mem_name": "CarSpeedLimitEnabled",
+  "name": "Car Speed Limit",
+  "description": "Enables detecting the speed limit from the car can messages.",
+  "icon": "../assets/img_experimental_white.svg"
+}

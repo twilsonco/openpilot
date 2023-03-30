@@ -9,9 +9,13 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.car.hyundai.hyundaicanfd import CanBus
 from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CAN_GEARS, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
 from selfdrive.car.interfaces import CarStateBase
+# PFEIFER - IMPORT {{
+from selfdrive.importer import m
+# }}
 
 PREV_BUTTON_SAMPLES = 8
 CLUSTER_SAMPLE_RATE = 20  # frames
+
 
 
 class CarState(CarStateBase):
@@ -44,6 +48,14 @@ class CarState(CarStateBase):
     self.cluster_speed_counter = CLUSTER_SAMPLE_RATE
 
     self.params = CarControllerParams(CP)
+
+  # PFEIFER - CSL {{
+  def calculate_speed_limit(self, cp):
+    if "SpeedLim_Nav_Clu" not in cp.vl["Navi_HU"]:
+      return 0
+    speed_limit = cp.vl["Navi_HU"]["SpeedLim_Nav_Clu"]
+    return speed_limit if speed_limit not in (0, 255) else 0
+  # }} PFEIFER - CSL
 
   def update(self, cp, cp_cam):
     if self.CP.carFingerprint in CANFD_CAR:
@@ -152,7 +164,22 @@ class CarState(CarStateBase):
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
     self.prev_cruise_buttons = self.cruise_buttons[-1]
     self.cruise_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"])
+    # PFEIFER - mads {{
+    self.prev_main_buttons = self.main_buttons[-1]
+    # }} PFEIFER - mads
     self.main_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwMain"])
+    # PFEIFER - mads {{
+    if self.prev_main_buttons == 0 and self.main_buttons[-1] != 0:
+      m['mads'].mads.toggle_lateral_allowed()
+    # }} PFEIFER - mads
+
+    # PFEIFER - CSL {{
+    if m['mem'].get('CarSpeedLimitEnabled', False, True):
+      sl = self.calculate_speed_limit(cp)
+      if sl > 0:
+
+        m['speed_limit'].slc.speed_limit = sl * speed_conv
+    # }} PFEIFER - CSL
 
     return ret
 
@@ -365,6 +392,12 @@ class CarState(CarStateBase):
     else:
       signals.append(("CF_Lvr_Gear", "LVR12"))
       checks.append(("LVR12", 100))
+
+    # PFEIFER - CSL {{
+    if m['mem'].get('CarSpeedLimitEnabled', False, True):
+      signals.append(("SpeedLim_Nav_Clu", "Navi_HU"))
+      checks.append(("Navi_HU", 5))
+    # }} PFEIFER - CSL
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 

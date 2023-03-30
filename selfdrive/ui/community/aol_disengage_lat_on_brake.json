@@ -1,0 +1,7 @@
+{
+  "_comment": "PFEIFER - MADS",
+  "mem_name": "DisengageLatOnBrake",
+  "name": "Disengage Lateral on Brake Pedal",
+  "description": "Disables lateral while the brake is being applied. Only changes behavior of Always on Lateral.",
+  "icon": "../assets/img_experimental_white.svg"
+}

@@ -15,6 +15,10 @@ from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 
+# PFEIFER - IMPORT {{
+from selfdrive.importer import m
+# }} PFEIFER - IMPORT
+
 ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
@@ -60,6 +64,10 @@ class CarInterfaceBase(ABC):
   def __init__(self, CP, CarController, CarState):
     self.CP = CP
     self.VM = VehicleModel(CP)
+    # PFEIFER - BM {{
+    self.BM = m['button_manager'].ButtonManager()
+    # }} PFEIFER - BM
+
 
     self.frame = 0
     self.steering_unpressed = 0
@@ -83,6 +91,7 @@ class CarInterfaceBase(ABC):
     self.CC = None
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
+
 
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):

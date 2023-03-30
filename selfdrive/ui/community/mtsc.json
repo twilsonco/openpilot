@@ -1,0 +1,7 @@
+{
+  "_comment": "PFEIFER - MTSC",
+  "mem_name": "TurnMapControl",
+  "name": "M-TSC - Map Turn Speed Control",
+  "description": "Enables M-TSC. When enabled, the car will slow down when it predicts a lateral acceleration greater than 2.0 m/s^2.",
+  "icon": "../assets/img_experimental_white.svg"
+}

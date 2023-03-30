@@ -68,6 +68,25 @@ private:
   void updateToggles();
 };
 
+// PFEIFER - CUI {{
+class CommunityPanel : public ListWidget {
+  Q_OBJECT
+public:
+  explicit CommunityPanel(SettingsWindow *parent);
+  void showEvent(QShowEvent *event) override;
+  QString community_path;
+
+public slots:
+  void expandToggleDescription(const QString &param);
+
+private:
+  Params params;
+  std::map<std::string, MemControl*> toggles;
+
+  void updateToggles();
+};
+// }} PFEIFER - CUI
+
 class SoftwarePanel : public ListWidget {
   Q_OBJECT
 public:

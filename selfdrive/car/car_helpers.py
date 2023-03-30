@@ -12,15 +12,21 @@ from selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus,
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
+# PFEIFER - IMPORT {{
+from selfdrive.importer import m
+# }} PFEIFER - IMPORT
 
 EventName = car.CarEvent.EventName
 
 
 def get_startup_event(car_recognized, controller_available, fw_seen):
-  if is_comma_remote() and is_tested_branch():
-    event = EventName.startup
-  else:
-    event = EventName.startupMaster
+  #if is_comma_remote() and is_tested_branch():
+  #  event = EventName.startup
+  #else:
+  #  event = EventName.startupMaster
+  # PFEIFER - no-branch-warning {{
+  event = EventName.startup
+  # }} PFEIFER - no-branch-warning
 
   if not car_recognized:
     if fw_seen:
@@ -180,7 +186,17 @@ def fingerprint(logcan, sendcan, num_pandas):
 
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
-  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
+  # PFEIFER - SINGLE {{
+  singleCarEnabled = m['mem'].get('SingleCarEnabled', False, True)
+  previousFingerprint = m['mem'].get('PreviousFingerprint', None, True)
+  if singleCarEnabled and previousFingerprint != None:
+    candidate, fingerprints, vin, car_fw, source, exact_match = previousFingerprint
+  else:
+  # }} PFEIFER - SINGLE
+    candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
+  # PFEIFER - SINGLE {{
+  m['mem'].update('PreviousFingerprint', [candidate, fingerprints, vin, car_fw, source, exact_match ], True)
+  # }} PFEIFER - SINGLE
 
   if candidate is None:
     cloudlog.event("car doesn't match any fingerprints", fingerprints=fingerprints, error=True)

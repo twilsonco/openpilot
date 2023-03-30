@@ -25,6 +25,7 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/input.h"
+#include "selfdrive/ui/qt/mem.h"
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon, confirm
@@ -108,6 +109,44 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     updateToggles();
   });
 }
+
+// PFEIFER - CUI {{
+CommunityPanel::CommunityPanel(SettingsWindow *parent) : ListWidget(parent) {
+  community_path = QCoreApplication::applicationDirPath() + QDir::separator() + "community" ;
+  QDir community_dir(community_path);
+  QStringList community_defs = community_dir.entryList(QStringList() << "*.json" ,QDir::Files);
+  std::vector<std::tuple<QString, QString, QString, QString>> toggle_defs{};
+  foreach(QString filename, community_defs) {
+    QFile file(community_path + QDir::separator() + filename);
+    file.open(QIODevice::ReadOnly | QIODevice::Text);
+    QString val = file.readAll();
+    file.close();
+    QJsonDocument d = QJsonDocument::fromJson(val.toUtf8());
+    toggle_defs.push_back(std::make_tuple(
+      d.object()["mem_name"].toString(),
+      d.object()["name"].toString(),
+      d.object()["description"].toString(),
+      d.object()["icon"].toString()
+    ));
+  }
+
+  for (auto &[param, title, desc, icon] : toggle_defs) {
+    auto toggle = new MemControl(param, title, desc, icon, this);
+    toggle->setEnabled(true);
+    addItem(toggle);
+    toggles[param.toStdString()] = toggle;
+  }
+}
+void CommunityPanel::expandToggleDescription(const QString &param) {
+  toggles[param.toStdString()]->showDescription();
+}
+
+void CommunityPanel::showEvent(QShowEvent *event) {
+}
+
+// }} PFEIFER - CUI
+
+
 
 void TogglesPanel::expandToggleDescription(const QString &param) {
   toggles[param.toStdString()]->showDescription();
@@ -339,12 +378,28 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   // close button
   QPushButton *close_btn = new QPushButton(tr("×"));
+  //close_btn->setStyleSheet(R"(
+  //  QPushButton {
+  //    font-size: 140px;
+  //    padding-bottom: 20px;
+  //    font-weight: bold;
+  //    border 1px grey solid;
+  //    border-radius: 100px;
+  //    background-color: #292929;
+  //    font-weight: 400;
+  //  }
+  //  QPushButton:pressed {
+  //    background-color: #3B3B3B;
+  //  }
+  //)");
+  //close_btn->setFixedSize(200, 200);
+  // PFEIFER - CUI {{
   close_btn->setStyleSheet(R"(
     QPushButton {
       font-size: 140px;
       padding-bottom: 20px;
       border 1px grey solid;
-      border-radius: 100px;
+      border-radius: 65px;
       background-color: #292929;
       font-weight: 400;
     }
@@ -352,7 +407,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       background-color: #3B3B3B;
     }
   )");
-  close_btn->setFixedSize(200, 200);
+  // }} PFEIFER - CUI
+
+  close_btn->setFixedSize(130, 130);
   sidebar_layout->addSpacing(45);
   sidebar_layout->addWidget(close_btn, 0, Qt::AlignCenter);
   QObject::connect(close_btn, &QPushButton::clicked, this, &SettingsWindow::closeSettings);
@@ -365,10 +422,18 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   TogglesPanel *toggles = new TogglesPanel(this);
   QObject::connect(this, &SettingsWindow::expandToggleDescription, toggles, &TogglesPanel::expandToggleDescription);
 
+  // PFEIFER - CUI {{
+  CommunityPanel *c_toggles = new CommunityPanel(this);
+  QObject::connect(this, &SettingsWindow::expandToggleDescription, c_toggles, &CommunityPanel::expandToggleDescription);
+  // }} PFEIFER - CUI
+
   QList<QPair<QString, QWidget *>> panels = {
     {tr("Device"), device},
     {tr("Network"), new Networking(this)},
     {tr("Toggles"), toggles},
+    // PFEIFER - CUI {{
+    {tr("Community"), c_toggles},
+    // }} PFEIFER - CUI
     {tr("Software"), new SoftwarePanel(this)},
   };
 
@@ -383,12 +448,30 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     QPushButton *btn = new QPushButton(name);
     btn->setCheckable(true);
     btn->setChecked(nav_btns->buttons().size() == 0);
-    btn->setStyleSheet(R"(
+    // btn->setStyleSheet(QString(R"(
+    //   QPushButton {
+    //     color: grey;
+    //     border: none;
+    //     background: none;
+    //     font-size: 65px;
+    //     font-weight: 500;
+    //     padding-top: %1px;
+    //     padding-bottom: %1px;
+    //   }
+    //   QPushButton:checked {
+    //     color: white;
+    //   }
+    //   QPushButton:pressed {
+    //     color: #ADADAD;
+    //   }
+    // )").arg(padding));
+    // PFEIFER - CUI {{
+    btn->setStyleSheet(QString(R"(
       QPushButton {
         color: grey;
         border: none;
         background: none;
-        font-size: 65px;
+        font-size: 63px;
         font-weight: 500;
       }
       QPushButton:checked {
@@ -398,6 +481,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
         color: #ADADAD;
       }
     )");
+    // }} PFEIFER - CUI
     btn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);

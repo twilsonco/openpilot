@@ -1,0 +1,7 @@
+{
+  "_comment": "PFEIFER - VTSC",
+  "mem_name": "TurnVisionControl",
+  "name": "V-TSC - Vision Turn Speed Control",
+  "description": "Enables V-TSC. When enabled, the car will slow down when it predicts a lateral acceleration greater than 2.0 m/s^2.",
+  "icon": "../assets/img_experimental_white.svg"
+}

@@ -8,6 +8,9 @@ from system.swaglog import cloudlog
 # WARNING: imports outside of constants will not trigger a rebuild
 from selfdrive.modeld.constants import index_function
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
+# PFEIFER - IMPORT {{
+from selfdrive.importer import m
+# }} PFEIFER - IMPORT
 
 if __name__ == '__main__':  # generating code
   from third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
@@ -57,6 +60,10 @@ MAX_ACCEL = 2.0
 T_FOLLOW = 1.45
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
+
+# PFEIFER - GA {{
+m['gap_adjust'].ga.setup(default_gap=T_FOLLOW)
+# }} PFEIFER - GA
 
 def get_stopped_equivalence_factor(v_lead):
   return (v_lead**2) / (2 * COMFORT_BRAKE)
@@ -208,6 +215,7 @@ class LongitudinalMpc:
     # self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.solver.reset()
     # self.solver.options_set('print_level', 2)
+    self.x_solution = np.zeros(N+1)
     self.v_solution = np.zeros(N+1)
     self.a_solution = np.zeros(N+1)
     self.prev_a = np.array(self.a_solution)
@@ -254,6 +262,10 @@ class LongitudinalMpc:
       a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
       cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, a_change_cost, J_EGO_COST]
       constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]
+      # PFEIFER - GA {{
+      cost_weights = m['gap_adjust'].ga.cost_weights(prev_accel_constraint)
+      constraint_cost_weights = m['gap_adjust'].ga.constraint_cost_weights()
+      # }} PFEIFER - GA
     elif self.mode == 'blended':
       a_change_cost = 40.0 if prev_accel_constraint else 0
       cost_weights = [0., 0.1, 0.2, 5.0, a_change_cost, 1.0]
@@ -314,6 +326,10 @@ class LongitudinalMpc:
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
+    # PFEIFER - GA {{
+    m['gap_adjust'].ga.update()
+    # }} PFEIFER - GA
+
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
@@ -335,6 +351,9 @@ class LongitudinalMpc:
                                  v_lower,
                                  v_upper)
       cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped)
+      # PFEIFER - GA {{
+      cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped, m['gap_adjust'].ga.gap_time)
+      # }} PFEIFER - GA
       x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
       self.source = SOURCES[np.argmin(x_obstacles[0])]
 
@@ -369,6 +388,10 @@ class LongitudinalMpc:
     self.params[:,2] = np.min(x_obstacles, axis=1)
     self.params[:,3] = np.copy(self.prev_a)
     self.params[:,4] = T_FOLLOW
+    # PFEIFER - GA {{
+    if self.mode == 'acc':
+      self.params[:,4] = m['gap_adjust'].ga.gap_time
+    # }} PFEIFER - GA
 
     self.run()
     if (np.any(lead_xv_0[FCW_IDXS,0] - self.x_sol[FCW_IDXS,0] < CRASH_DISTANCE) and
@@ -411,6 +434,7 @@ class LongitudinalMpc:
     for i in range(N):
       self.u_sol[i] = self.solver.get(i, 'u')
 
+    self.x_solution = self.x_sol[:,0]
     self.v_solution = self.x_sol[:,1]
     self.a_solution = self.x_sol[:,2]
     self.j_solution = self.u_sol[:,0]

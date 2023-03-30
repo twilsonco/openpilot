@@ -10,6 +10,9 @@
 #include "selfdrive/ui/qt/maps/map.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #endif
+// PFEIFER - SPEED {{
+#include "selfdrive/ui/qt/mem.h"
+// }} PFEIFER - SPEED
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
@@ -52,6 +55,12 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
 void OnroadWindow::updateState(const UIState &s) {
   QColor bgColor = bg_colors[s.status];
+  // PFEIFER - mads {{
+  if(s.status == STATUS_DISENGAGED && readMemBool("LateralAllowed", false, false)){
+      bgColor = bg_colors[STATUS_LAT_ALLOWED];
+  }
+  // }} PFEIFER - mads
+
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
   if (s.sm->updated("controlsState") || !alert.equal({})) {
     if (alert.type == "controlsUnresponsive") {
@@ -239,7 +248,10 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
 
   const bool cs_alive = sm.alive("controlsState");
-  const bool nav_alive = sm.alive("navInstruction") && sm["navInstruction"].getValid();
+  // const bool nav_alive = sm.alive("navInstruction") && sm["navInstruction"].getValid();
+  // PFEIFER - SPEED {{
+  bool nav_alive = sm.alive("navInstruction") && sm["navInstruction"].getValid();
+  // }} PFEIFER - SPEED
 
   const auto cs = sm["controlsState"].getControlsState();
 
@@ -264,6 +276,21 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
 
   auto speed_limit_sign = sm["navInstruction"].getNavInstruction().getSpeedLimitSign();
   float speed_limit = nav_alive ? sm["navInstruction"].getNavInstruction().getSpeedLimit() : 0.0;
+  // PFEIFER - SPEED {{
+  speed_limit = readMemDouble("speedLimit", 0, false);
+  float speed_limit_offset = readMemDouble("SpeedLimitOffset", 0, false);
+  speed_limit_offset *= (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
+  setProperty("speedLimitOffset", speed_limit_offset);
+  if (speed_limit > 0) {
+    nav_alive = true;
+    speed_limit_sign = cereal::NavInstruction::SpeedLimitSign::MUTCD;
+  }
+  // }} PFEIFER - SPEED
+  // PFEIFER - MAPD {{
+  QString roadNameStr = readMemString("mapCurrentRoadName", "", false);
+  setProperty("roadName", roadNameStr);
+  // }} PFEIFER - MAPD
+
   speed_limit *= (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
 
   setProperty("speedLimit", speed_limit);
@@ -301,6 +328,12 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   p.fillRect(0, 0, width(), header_h, bg);
 
   QString speedLimitStr = (speedLimit > 1) ? QString::number(std::nearbyint(speedLimit)) : "–";
+  QString speedLimitOffsetStr = "";
+  if (speedLimitOffset < -1){
+    speedLimitOffsetStr = QString::number(std::nearbyint(speedLimitOffset));
+  } else if (speedLimitOffset > 1) {
+    speedLimitOffsetStr = "+" + QString::number(std::nearbyint(speedLimitOffset));
+  }
   QString speedStr = QString::number(std::nearbyint(speed));
   QString setSpeedStr = is_cruise_set ? QString::number(std::nearbyint(setSpeed)) : "–";
 
@@ -313,6 +346,10 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   int rect_height = 204;
   if (has_us_speed_limit) rect_height = 402;
   else if (has_eu_speed_limit) rect_height = 392;
+
+  // PFEIFER - SPEED {{
+  if (speedLimitOffsetStr.size() > 0) rect_height += 30;
+  // }} PFEIFER - SPEED
 
   int top_radius = 32;
   int bottom_radius = has_eu_speed_limit ? 100 : 32;
@@ -372,7 +409,10 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   if (has_us_speed_limit) {
     const int border_width = 6;
     const int sign_width = rect_width - 24;
-    const int sign_height = 186;
+    int sign_height = 186;
+    // PFEIFER - SPEED {{
+    if (speedLimitOffsetStr != "") sign_height = 215;
+    // }} PFEIFER - SPEED
 
     // White outer square
     QRect sign_rect_outer(set_speed_rect.left() + 12, set_speed_rect.bottom() - 11 - sign_height, sign_width, sign_height);
@@ -405,6 +445,12 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
     speed_limit_rect.moveCenter({sign_rect.center().x(), 0});
     speed_limit_rect.moveTop(sign_rect_outer.top() + 85);
     p.drawText(speed_limit_rect, Qt::AlignCenter, speedLimitStr);
+
+    configFont(p, "Inter", 40, "Bold");
+    QRect speed_limit_offset_rect = getTextRect(p, Qt::AlignCenter, speedLimitOffsetStr);
+    speed_limit_offset_rect.moveCenter({sign_rect.center().x(), 0});
+    speed_limit_offset_rect.moveTop(sign_rect_outer.top() + 155);
+    p.drawText(speed_limit_offset_rect, Qt::AlignCenter, speedLimitOffsetStr);
   }
 
   // EU (Vienna style) sign
@@ -437,6 +483,12 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   drawText(p, rect().center().x(), 210, speedStr);
   configFont(p, "Inter", 66, "Regular");
   drawText(p, rect().center().x(), 290, speedUnit, 200);
+
+  // PFEIFER - MAPD {{
+  configFont(p, "Inter", 50, "Bold");
+  drawText(p, rect().center().x(), 55, roadName);
+  // }} PFEIFER - MAPD
+
 
   p.restore();
 }
@@ -617,6 +669,7 @@ void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::RadarState
   float g_yo = sz / 10;
 
   QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_yo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo}};
+
   painter.setBrush(QColor(218, 202, 37, 255));
   painter.drawPolygon(glow, std::size(glow));
 

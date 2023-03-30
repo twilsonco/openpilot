@@ -1,0 +1,7 @@
+{
+  "_comment": "PFEIFER - SINGLE",
+  "mem_name": "SingleCarEnabled",
+  "name": "Single Car",
+  "description": "When enabled the last fingerprinted car will be stored and used to prevent refingerprinting.",
+  "icon": "../assets/img_experimental_white.svg"
+}

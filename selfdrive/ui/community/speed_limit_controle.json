@@ -1,0 +1,7 @@
+{
+  "_comment": "PFEIFER - SLC",
+  "mem_name": "SpeedLimitControlEnabled",
+  "name": "Speed Limit Control",
+  "description": "Enables using the speed limit as max speed when speed limit data is available and speed limit is below the current max speed. An offset is determined by max speed - speed limit when the gap button is double pressed.",
+  "icon": "../assets/img_experimental_white.svg"
+}

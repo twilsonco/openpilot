@@ -1,0 +1,7 @@
+{
+  "_comment": "PFEIFER - ETSC",
+  "mem_name": "ExperimentalTurnControl",
+  "name": "E-TSC - Experimental Turn Speed Control",
+  "description": "Enables E-TSC. Automatically toggles experimental mode for curves.",
+  "icon": "../assets/img_experimental_white.svg"
+}

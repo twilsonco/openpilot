@@ -8,6 +8,10 @@ from selfdrive.car.hyundai import hyundaicanfd, hyundaican
 from selfdrive.car.hyundai.hyundaicanfd import CanBus
 from selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CAR
 
+# PFEIFER - IMPORT {{
+from selfdrive.importer import m
+# }} PFEIFER - IMPORT
+
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
@@ -73,6 +77,9 @@ class CarController:
     accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
     stopping = actuators.longControlState == LongCtrlState.stopping
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
+    # PFEIFER - CMS {{
+    set_speed_in_units = m["current_max_speed"].cms.max_speed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
+    # }} PFEIFER - CMS
 
     # HUD messages
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint,
@@ -175,9 +182,20 @@ class CarController:
               self.last_button_frame = self.frame
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
-        # TODO: unclear if this is needed
-        jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0
-        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
+        # calculate jerk from plan, give a small offset for the upper limit for the cars ecu
+        lower_jerk = clip(abs(accel - self.accel_last) * 50, 0., 3.0)
+        upper_jerk = lower_jerk + 0.5
+
+        if CS.out.vEgoRaw < 4.:
+          if accel > 0:
+            # When accelerating from very low speeds or stopped, allow more jerk to prevent a slow takeoff
+            lower_jerk = max(0.5, lower_jerk)
+            upper_jerk = lower_jerk + 0.5
+          else:
+            # When decelerating from very low speeds allow more jerk to prevent a slow stop
+            lower_jerk = max(0.2, lower_jerk)
+            upper_jerk = lower_jerk + 0.5
+        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, upper_jerk, lower_jerk, int(self.frame / 2),
                                                         hud_control.leadVisible, set_speed_in_units, stopping, CC.cruiseControl.override))
 
       # 20 Hz LFA MFA message

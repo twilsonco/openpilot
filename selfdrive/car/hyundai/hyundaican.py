@@ -1,6 +1,10 @@
 import crcmod
 from selfdrive.car.hyundai.values import CAR, CHECKSUM, CAMERA_SCC_CAR
 
+# PFEIFER - IMPORT {{
+from selfdrive.importer import m
+# }} PFEIFER - IMPORT
+
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
 def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
@@ -96,12 +100,15 @@ def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, set_speed, stopping, long_override):
+def create_acc_commands(packer, enabled, accel, upper_jerk, lower_jerk, idx, lead_visible, set_speed, stopping, long_override):
   commands = []
 
   scc11_values = {
     "MainMode_ACC": 1,
-    "TauGapSet": 4,
+    # "TauGapSet": 4,
+    # PFEIFER - GA {{
+    "TauGapSet": m['gap_adjust'].ga.gap_level + 1,
+    # }} PFEIFER - GA
     "VSetDis": set_speed if enabled else 0,
     "AliveCounterACC": idx % 0x10,
     "ObjValid": 1, # close lead makes controls tighter
@@ -127,8 +134,8 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
   scc14_values = {
     "ComfortBandUpper": 0.0, # stock usually is 0 but sometimes uses higher values
     "ComfortBandLower": 0.0, # stock usually is 0 but sometimes uses higher values
-    "JerkUpperLimit": upper_jerk, # stock usually is 1.0 but sometimes uses higher values
-    "JerkLowerLimit": 5.0, # stock usually is 0.5 but sometimes uses higher values
+    "JerkUpperLimit": min(3.0, upper_jerk), # stock usually is 1.0 but sometimes uses higher values
+    "JerkLowerLimit": max(0.1, lower_jerk), # stock usually is 0.5 but sometimes uses higher values
     "ACCMode": 2 if enabled and long_override else 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
     "ObjGap": 2 if lead_visible else 0, # 5: >30, m, 4: 25-30 m, 3: 20-25 m, 2: < 20 m, 0: no lead
   }

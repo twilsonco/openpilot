@@ -9,6 +9,10 @@ from selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 from selfdrive.controls.lib.lateral_planner import LateralPlanner
 import cereal.messaging as messaging
 
+# PFEIFER - IMPORT {{
+from selfdrive.importer import m
+# }} PFEIFER - IMPORT
+
 def cumtrapz(x, t):
   return np.concatenate([[0], np.cumsum(((x[0:-1] + x[1:])/2) * np.diff(t))])
 
@@ -38,19 +42,25 @@ def plannerd_thread(sm=None, pm=None):
   lateral_planner = LateralPlanner(CP)
 
   if sm is None:
-    sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2'],
+    # sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2', 'liveParameters'],
+    # PFEIFER - VTSC {{
+    sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2', 'liveParameters', 'lateralPlan'],
+    # }}
                              poll=['radarState', 'modelV2'], ignore_avg_freq=['radarState'])
 
   if pm is None:
     pm = messaging.PubMaster(['longitudinalPlan', 'lateralPlan', 'uiPlan'])
 
   while True:
+    # PFEIFER - MEM {{
+    m['mem'].check(True)
+    # }} PFEIFER - MEM
     sm.update()
 
     if sm.updated['modelV2']:
       lateral_planner.update(sm)
       lateral_planner.publish(sm, pm)
-      longitudinal_planner.update(sm)
+      longitudinal_planner.update(sm, lateral_planner)
       longitudinal_planner.publish(sm, pm)
       publish_ui_plan(sm, pm, lateral_planner, longitudinal_planner)
 

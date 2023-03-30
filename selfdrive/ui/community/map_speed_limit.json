@@ -1,0 +1,7 @@
+{
+  "_comment": "PFEIFER - MSL",
+  "mem_name": "MapSpeedLimitEnabled",
+  "name": "Map Speed Limit",
+  "description": "Enables detecting the speed limit from Open Street Maps.",
+  "icon": "../assets/img_experimental_white.svg"
+}

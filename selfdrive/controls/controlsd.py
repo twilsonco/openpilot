@@ -28,6 +28,10 @@ from selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from system.hardware import HARDWARE
 
+# PFEIFER - IMPORT {{
+from selfdrive.importer import m
+# }}
+
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
@@ -56,6 +60,9 @@ ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None, CI=None):
+    # PFEIFER - mads {{
+    m['mads'].mads.setup(self)
+    # }} PFEIFER - mads
     config_realtime_process(4, Priority.CTRL_HIGH)
 
     # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
@@ -107,7 +114,9 @@ class Controls:
     self.CP.alternativeExperience = 0
     if not self.disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
-
+    # PFEIFER - mads {{
+    self.CP.alternativeExperience |= m['mads'].mads.alternative_experience
+    # }} PFEIFER - mads
     # read params
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
@@ -549,6 +558,11 @@ class Controls:
     self.active = self.state in ACTIVE_STATES
     if self.active:
       self.current_alert_types.append(ET.WARNING)
+    # PFEIFER - MADS {{
+    m['mads'].mads.update(CS)
+    if not self.active and m['mads'].mads.lat_active:
+      self.current_alert_types.append(ET.WARNING)
+    # }} PFEIFER - MADS
 
   def state_control(self, CS):
     """Given the state, this function returns a CarControl packet"""
@@ -575,6 +589,9 @@ class Controls:
     standstill = CS.vEgo <= max(self.CP.minSteerSpeed, MIN_LATERAL_CONTROL_SPEED) or CS.standstill
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
                    (not standstill or self.joystick_mode)
+    # PFEIFER - mads {{
+    CC.latActive = m['mads'].mads.lat_active
+    # }} PFEIFER - mads
     CC.longActive = self.enabled and not self.events.any(ET.OVERRIDE_LONGITUDINAL) and self.CP.openpilotLongitudinalControl
 
     actuators = CC.actuators
@@ -605,7 +622,8 @@ class Controls:
       self.desired_curvature, self.desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                                        lat_plan.psis,
                                                                                        lat_plan.curvatures,
-                                                                                       lat_plan.curvatureRates)
+                                                                                       lat_plan.curvatureRates,
+                                                                                       long_plan.distances)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                              self.last_actuators, self.steer_limited, self.desired_curvature,
                                                                              self.desired_curvature_rate, self.sm['liveLocationKalman'])
@@ -832,6 +850,9 @@ class Controls:
     self.CC = CC
 
   def step(self):
+    # PFEIFER - MEM {{
+    m['mem'].check(True)
+    # }} PFEIFER - MEM
     start_time = sec_since_boot()
     self.prof.checkpoint("Ratekeeper", ignore=True)
 

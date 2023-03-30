@@ -51,6 +51,12 @@ class AnnotatedCameraWidget : public CameraWidget {
   Q_PROPERTY(QString speedUnit MEMBER speedUnit);
   Q_PROPERTY(float setSpeed MEMBER setSpeed);
   Q_PROPERTY(float speedLimit MEMBER speedLimit);
+  // PFEIFER - SPEED {{
+  Q_PROPERTY(float speedLimitOffset MEMBER speedLimitOffset);
+  // }} PFEIFER - SPEED
+  // PFEIFER - MAPD {{
+  Q_PROPERTY(QString roadName MEMBER roadName);
+  // }} PFEIFER - MAPD
   Q_PROPERTY(bool is_cruise_set MEMBER is_cruise_set);
   Q_PROPERTY(bool has_eu_speed_limit MEMBER has_eu_speed_limit);
   Q_PROPERTY(bool has_us_speed_limit MEMBER has_us_speed_limit);
@@ -75,6 +81,12 @@ private:
   QString speedUnit;
   float setSpeed;
   float speedLimit;
+  // PFEIFER - SPEED {{
+  float speedLimitOffset;
+  // }} PFEIFER - SPEED
+  // PFEIFER - MAPD {{
+  QString roadName;
+  // }} PFEIFER - MAPD
   bool is_cruise_set = false;
   bool is_metric = false;
   bool dmActive = false;
@@ -123,6 +135,9 @@ private:
   QColor bg = bg_colors[STATUS_DISENGAGED];
   QWidget *map = nullptr;
   QHBoxLayout* split;
+  // PFEIFER - mads {{
+  Params params;
+  // }} PFEIFER - mads
 
 private slots:
   void offroadTransition(bool offroad);

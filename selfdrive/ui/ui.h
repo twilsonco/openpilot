@@ -85,6 +85,9 @@ typedef enum UIStatus {
   STATUS_ENGAGED,
   STATUS_WARNING,
   STATUS_ALERT,
+  // PFEIFER - mads {{
+  STATUS_LAT_ALLOWED,
+  // }} PFEIFER - mads
 } UIStatus;
 
 const QColor bg_colors [] = {
@@ -93,6 +96,9 @@ const QColor bg_colors [] = {
   [STATUS_ENGAGED] = QColor(0x17, 0x86, 0x44, 0xf1),
   [STATUS_WARNING] = QColor(0xDA, 0x6F, 0x25, 0xf1),
   [STATUS_ALERT] = QColor(0xC9, 0x22, 0x31, 0xf1),
+  // PFEIFER - mads {{
+  [STATUS_LAT_ALLOWED] = QColor(0x6f, 0xc0, 0xc9, 0xf1),
+  // }} PFEIFER - mads
 };
 
 typedef struct UIScene {

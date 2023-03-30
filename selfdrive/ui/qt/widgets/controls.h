@@ -9,6 +9,10 @@
 #include "common/params.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
+// PFEIFER - CUI {{
+#include "selfdrive/ui/qt/mem.h"
+// }} PFEIFER - CUI
+
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
 
@@ -196,6 +200,67 @@ private:
   bool confirm = false;
   bool store_confirm = false;
 };
+
+// PFEIFER - CUI {{
+// widget to toggle Mem
+class MemControl : public ToggleControl {
+  Q_OBJECT
+
+public:
+  MemControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
+    key = param;
+    QObject::connect(this, &MemControl::toggleFlipped, [=](bool state) {
+      QString content("<body><h2 style=\"text-align: center;\">" + title + "</h2><br>"
+                      "<p style=\"text-align: center; margin: 0 128px; font-size: 50px;\">" + getDescription() + "</p></body>");
+      ConfirmationDialog dialog(content, tr("Enable"), tr("Cancel"), true, this);
+
+      bool confirmed = store_confirm && readMemBool(key + "Confirmed", false, true);
+      if (!confirm || confirmed || !state || dialog.exec()) {
+        if (store_confirm && state) writeMemBool(key + "Confirmed", true, true);
+        writeMemBool(key, state, true);
+        setIcon(state);
+      } else {
+        toggle.togglePosition();
+      }
+    });
+  }
+
+  void setConfirmation(bool _confirm, bool _store_confirm) {
+    confirm = _confirm;
+    store_confirm = _store_confirm;
+  };
+
+  void setActiveIcon(const QString &icon) {
+    active_icon_pixmap = QPixmap(icon).scaledToWidth(80, Qt::SmoothTransformation);
+  }
+
+  void refresh() {
+    bool state = readMemBool(key, false, true);
+    if (state != toggle.on) {
+      toggle.togglePosition();
+      setIcon(state);
+    }
+  };
+
+  void showEvent(QShowEvent *event) override {
+    refresh();
+  };
+
+private:
+  void setIcon(bool state) {
+    if (state && !active_icon_pixmap.isNull()) {
+      icon_label->setPixmap(active_icon_pixmap);
+    } else if (!icon_pixmap.isNull()) {
+      icon_label->setPixmap(icon_pixmap);
+    }
+  };
+
+  QPixmap active_icon_pixmap;
+  QString key;
+  bool confirm = false;
+  bool store_confirm = false;
+};
+// }} PFEIFER - CUI
 
 class ListWidget : public QWidget {
   Q_OBJECT

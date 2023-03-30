@@ -1,0 +1,7 @@
+{
+  "_comment": "PFEIFER - NLC",
+  "mem_name": "NudgelessLaneChangeEnabled",
+  "name": "Nudgeless Lane Change",
+  "description": "Enables Nudgeless Lane Change. When enabled openpilot will immediately start changing lanes upon turning on the blinker if there is nothing detected in the blindspot.",
+  "icon": "../assets/img_experimental_white.svg"
+}
