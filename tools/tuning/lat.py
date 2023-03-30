@@ -20,6 +20,7 @@ from tqdm import tqdm  # type: ignore
 from p_tqdm import p_map
 import re
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
+from pathlib import Path
 
 from tools.tuning.lat_settings import *
 if not PREPROCESS_ONLY:
@@ -610,20 +611,18 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
           latsegs = set()
           if not os.path.exists(outpath):
             os.mkdir(outpath)
-          rlog_log_path = ""
-          rlog_log_mdate = 0
-          if preprocess:
-            rlog_log_path = os.path.join(outpath, "latfiles.txt") # prevents rerunning rlogs
-            rlog_log_mdate = 0
-            if os.path.exists(rlog_log_path): 
-              rlog_log_mdate = os.path.getmtime(rlog_log_path)
-              print(f"Loading file blacklist: {rlog_log_path}")
-              # read in lat files saved by running `ls -1 /data/media/0/latfiles >> /data/media/0/latfiles.txt`
-              with open(rlog_log_path, 'r') as rll:
-                latsegs = latsegs | set(list(rll.read().split('\n')))
-            with open(rlog_log_path, 'w') as rll:
-              for ls in sorted(list(latsegs)):
-                rll.write(f"\n{ls}")
+          rlog_log_path = os.path.join(outpath, "latfiles.txt") # prevents rerunning rlogs
+          if os.path.exists(rlog_log_path): 
+            print(f"Loading file blacklist: {rlog_log_path}")
+            # read in lat files saved by running `ls -1 /data/media/0/latfiles >> /data/media/0/latfiles.txt`
+            with open(rlog_log_path, 'r') as rll:
+              latsegs = latsegs | set(list(rll.read().split('\n')))
+          else:
+            Path(rlog_log_path).touch()
+          rlog_log_mdate = os.path.getmtime(rlog_log_path)
+          with open(rlog_log_path, 'w') as rll:
+            for ls in sorted(list(latsegs)):
+              rll.write(f"\n{ls}")
           for filename in os.listdir(outpath):
             if ext in filename.split("/")[-1]:
               p1 = filename.replace(outpath, path).replace('.lat','--rlog.bz2').replace('|','_')
