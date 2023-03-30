@@ -176,12 +176,12 @@ class LatControlTorque(LatControl):
       
       if self.CI.ff_nn_model is not None:
         ff_nn = self.CI.ff_nn_model.evaluate([CS.vEgo, desired_lateral_accel, lookahead_lateral_jerk, -lateral_accel_g])
-        ff = ff_nn
       else:
         ff_nn = 0.0
       
       output_torque = self.pid.update(setpoint, measurement,
-                                      override=CS.steeringPressed, feedforward=ff,
+                                      override=CS.steeringPressed, 
+                                      feedforward=ff if self.CI.ff_nn_model is None else ff_nn,
                                       speed=CS.vEgo,
                                       freeze_integrator=CS.steeringRateLimited or abs(CS.steeringTorque) > 0.3 or CS.vEgo < 5,
                                       error_normalizer=apply_deadzone(max_future_lateral_accel, 0.2),
