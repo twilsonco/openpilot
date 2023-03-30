@@ -9,6 +9,7 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.car.hyundai.hyundaicanfd import CanBus
 from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CAN_GEARS, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
 from selfdrive.car.interfaces import CarStateBase
+from common.params import Params
 
 PREV_BUTTON_SAMPLES = 8
 CLUSTER_SAMPLE_RATE = 20  # frames
@@ -18,6 +19,10 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+
+    # PFEIFER - mads {{
+    self._params = Params()
+    # }}
 
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
@@ -152,7 +157,15 @@ class CarState(CarStateBase):
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
     self.prev_cruise_buttons = self.cruise_buttons[-1]
     self.cruise_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"])
+    # PFEIFER - mads {{
+    self.prev_main_buttons = self.main_buttons[-1]
+    # }} PFEIFER - mads
     self.main_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwMain"])
+    # PFEIFER - mads {{
+    if self.prev_main_buttons == 0 and self.main_buttons[-1] != 0:
+      lateral_allowed = self._params.get_bool("LateralAllowed")
+      self._params.put_bool("LateralAllowed", not lateral_allowed)
+    # }} PFEIFER - mads
 
     return ret
 

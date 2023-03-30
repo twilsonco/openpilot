@@ -73,6 +73,26 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("Display speed in km/h instead of mph."),
       "../assets/offroad/icon_metric.png",
     },
+    // PFEIFER - mads {{
+    {
+      "MadsEnabled",
+      tr("Always on Lateral"),
+      tr("When enabled lateral control will be engaged even when longitudinal is not. Main cruise button toggles lateral control on and off."),
+      "../assets/img_experimental_white.svg",
+    },
+    {
+      "DisengageLatOnBrake",
+      tr("Disengage Lateral on Brake Pedal"),
+      tr("Disables lateral while the brake is being applied. Only changes behavior of Always on Lateral."),
+      "../assets/img_experimental_white.svg",
+    },
+    {
+      "DisengageLatOnBlinker",
+      tr("Disengage Lateral on Blinker"),
+      tr("Disables lateral while a blinker is being activated. Only changes behavior of Always on Lateral."),
+      "../assets/img_experimental_white.svg",
+    },
+    // }} PFEIFER - mads
 #ifdef ENABLE_MAPS
     {
       "NavSettingTime24h",

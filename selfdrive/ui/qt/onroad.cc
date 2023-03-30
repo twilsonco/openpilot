@@ -52,6 +52,13 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
 void OnroadWindow::updateState(const UIState &s) {
   QColor bgColor = bg_colors[s.status];
+  // PFEIFER - mads {{
+  params = Params();
+  if(s.status == STATUS_DISENGAGED && params.getBool("LateralAllowed")){
+      bgColor = bg_colors[STATUS_LAT_ALLOWED];
+  }
+  // }} PFEIFER - mads
+
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
   if (s.sm->updated("controlsState") || !alert.equal({})) {
     if (alert.type == "controlsUnresponsive") {

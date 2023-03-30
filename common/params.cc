@@ -203,6 +203,13 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Offroad_UnofficialHardware", CLEAR_ON_MANAGER_START},
     {"Offroad_UpdateFailed", CLEAR_ON_MANAGER_START},
     {"Offroad_Recalibration", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
+
+// PFEIFER - mads {{
+    {"MadsEnabled", PERSISTENT},
+    {"LateralAllowed", CLEAR_ON_MANAGER_START},
+    {"DisengageLatOnBrake", PERSISTENT},
+    {"DisengageLatOnBlinker", PERSISTENT},
+// }} PFEIFER - mads
 };
 
 } // namespace
