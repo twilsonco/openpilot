@@ -152,7 +152,8 @@ class LatControlTorque(LatControl):
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
       error_scale_factor = 3.0
-      error *= error_scale_factor / (1.0 + max(apply_deadzone(abs(self.max_future_lateral_accel_filtered.x), 0.2) * error_scale_factor, error_scale_factor - 1))
+      error_scale_factor = error_scale_factor / (1.0 + max(apply_deadzone(abs(self.max_future_lateral_accel_filtered.x), 0.2) * error_scale_factor, error_scale_factor - 1))
+      error *= error_scale_factor
       pid_log.error = error
 
       lateral_accel_g = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
@@ -174,7 +175,10 @@ class LatControlTorque(LatControl):
       ff += friction_compensation
       
       if self.CI.ff_nn_model is not None:
-        ff = self.CI.ff_nn_model.evaluate([CS.vEgo, desired_lateral_accel, lookahead_lateral_jerk, -lateral_accel_g])
+        ff_nn = self.CI.ff_nn_model.evaluate([CS.vEgo, desired_lateral_accel, lookahead_lateral_jerk, -lateral_accel_g])
+        ff = ff_nn
+      else:
+        ff_nn = 0.0
       
       output_torque = self.pid.update(setpoint, measurement,
                                       override=CS.steeringPressed, feedforward=ff,
@@ -205,6 +209,9 @@ class LatControlTorque(LatControl):
       pid_log.gainUpdateFactor = self.pid._gain_update_factor
       pid_log.lookaheadCurvature = lookahead_desired_curvature
       pid_log.lookaheadCurvatureRate = lookahead_curvature_rate
+      pid_log.f2 = ff_nn
+      pid_log.maxFutureLatAccel = self.max_future_lateral_accel_filtered.x
+      pid_log.errorScaleFactor = error_scale_factor
     pid_log.currentLateralAcceleration = actual_lateral_accel
     pid_log.currentLateralJerk = self.actual_lateral_jerk.x
       
