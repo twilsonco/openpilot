@@ -144,10 +144,7 @@ class LatControlTorque(LatControl):
       desired_lateral_accel += abs(CS.aEgo) * desired_curvature
       max_future_lateral_accel = 0.0
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_lateral_accel], key=lambda x: abs(x))
-      if abs(max_future_lateral_accel) > abs(self.max_future_lateral_accel_filtered.x):
-        self.max_future_lateral_accel_filtered.x = max_future_lateral_accel
-      else:
-        self.max_future_lateral_accel_filtered.update(max_future_lateral_accel)
+      self.max_future_lateral_accel_filtered.update(max_future_lateral_accel)
       
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
       lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
