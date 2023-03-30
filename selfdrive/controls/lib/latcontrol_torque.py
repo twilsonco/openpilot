@@ -174,7 +174,7 @@ class LatControlTorque(LatControl):
       ff += friction_compensation
       
       if self.CI.ff_nn_model is not None:
-        ff = self.CI.ff_nn_model.evaluate([CS.vEgo, desired_lateral_accel, lookahead_lateral_jerk, lateral_accel_g])
+        ff = self.CI.ff_nn_model.evaluate([CS.vEgo, desired_lateral_accel, lookahead_lateral_jerk, -lateral_accel_g])
       
       output_torque = self.pid.update(setpoint, measurement,
                                       override=CS.steeringPressed, feedforward=ff,
