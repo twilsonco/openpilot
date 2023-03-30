@@ -200,7 +200,7 @@ class LatControlTorque(LatControl):
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i
       pid_log.d = self.pid.d
-      pid_log.f = self.pid.f
+      pid_log.f = ff * self.pid.k_f
       pid_log.output = -output_torque
       pid_log.saturated = self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS)
       pid_log.kp = self.pid.kp
@@ -209,7 +209,7 @@ class LatControlTorque(LatControl):
       pid_log.gainUpdateFactor = self.pid._gain_update_factor
       pid_log.lookaheadCurvature = lookahead_desired_curvature
       pid_log.lookaheadCurvatureRate = lookahead_curvature_rate
-      pid_log.f2 = ff_nn
+      pid_log.f2 = ff_nn * self.pid.k_f
       pid_log.maxFutureLatAccel = self.max_future_lateral_accel_filtered.x
       pid_log.errorScaleFactor = error_scale_factor
     pid_log.currentLateralAcceleration = actual_lateral_accel
