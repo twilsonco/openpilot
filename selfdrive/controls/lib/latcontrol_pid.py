@@ -16,7 +16,7 @@ class LatControlPID():
                              k_11 = 0.5, k_12 = 1., k_13 = 2., k_period=0.1,
                              k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, neg_limit=-1.0,
                              sat_limit=CP.steerLimitTimer,
-                             derivative_period=self._op_params.get('TUNE_LAT_PID_kd_period_s', force_update=True))
+                             derivative_period=0.1)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
     self.roll_k = 1.0
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
