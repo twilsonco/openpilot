@@ -105,6 +105,9 @@ class CarInterfaceBase():
     self.CC = None
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
+  
+  def get_ff_nn(self, v_ego, lateral_accel, lateral_jerk, lateral_g_accel):
+    return self.ff_nn_model.evaluate([v_ego, lateral_accel, lateral_jerk, -lateral_g_accel])
 
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed, CI = None):
@@ -159,7 +162,7 @@ class CarInterfaceBase():
     return CarInterfaceBase.get_steer_feedforward_torque_default
   
   @staticmethod
-  def get_steer_feedforward_function_torque_nn():
+  def initialize_feedforward_function_torque_nn():
     return CarInterfaceBase.get_steer_feedforward_torque_nn_default
   
   @staticmethod

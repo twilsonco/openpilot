@@ -59,7 +59,7 @@ class LatControlTorque(LatControl):
     self.friction = CP.lateralTuning.torque.friction
     self.CI = CI
     if CP.carFingerprint in NN_FF_CARS:
-      self.CI.get_steer_feedforward_function_torque_nn()
+      self.CI.initialize_feedforward_function_torque_nn()
     self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
     self.get_friction = CI.get_steer_feedforward_function_torque_lat_jerk()
     self.get_roll_ff = CI.get_steer_feedforward_function_torque_roll()
@@ -175,20 +175,20 @@ class LatControlTorque(LatControl):
         friction_compensation *= interp(abs(desired_lateral_accel), self.friction_curve_exit_ramp_bp, self.friction_curve_exit_ramp_v)
       
       lateral_jerk_error = desired_lateral_jerk - self.actual_lateral_jerk.x
-      lateral_jerk_error *= friction_lat_accel_downscale_factor
+      # lateral_jerk_error *= friction_lat_accel_downscale_factor
       
       # lateral acceleration feedforward
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll
       ff += friction_compensation
       
       if self.CI.ff_nn_model is not None:
-        ff_nn = self.CI.ff_nn_model.evaluate([CS.vEgo, desired_lateral_accel, lookahead_lateral_jerk, -lateral_accel_g])
+        ff_nn = self.CI.get_ff_nn(CS.vEgo, desired_lateral_accel, lookahead_lateral_jerk, lateral_accel_g)
       else:
-        ff_nn = 0.0
+        ff_nn = None
       
       output_torque = self.pid.update(setpoint, measurement,
                                       override=CS.steeringPressed, 
-                                      feedforward=ff if self.CI.ff_nn_model is None else ff_nn,
+                                      feedforward=ff if ff_nn is None else ff_nn,
                                       speed=CS.vEgo,
                                       freeze_integrator=CS.steeringRateLimited or abs(CS.steeringTorque) > 0.3 or CS.vEgo < 5,
                                       D=lateral_jerk_error)

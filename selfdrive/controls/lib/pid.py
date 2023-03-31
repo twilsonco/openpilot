@@ -142,8 +142,8 @@ class PIDController:
     self.f = feedforward * self.k_f
     
     if self.outputs is not None and len(self.outputs) == int(self._d_period):  # makes sure we have enough history for period
+      self.error_rate = (self.outputs[-1] - self.outputs[0]) * self._d_period_recip
       if D is None:
-        self.error_rate = (self.outputs[-1] - self.outputs[0]) * self._d_period_recip
         self.d = clip(self.error_rate * self.kd, -abs(self.p), abs(self.p))
       else:
         self.d = D * self.kd
