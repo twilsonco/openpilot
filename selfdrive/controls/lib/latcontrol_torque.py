@@ -81,7 +81,7 @@ class LatControlTorque(LatControl):
     
       
     # for actual lateral jerk calculation
-    self.actual_lateral_jerk = Differentiator(self.pid.error_rate._d_period_s, 1/DT_MDL)
+    self.actual_lateral_jerk = Differentiator(0.1, 1/DT_MDL)
     self.lat_plan_last = None
   
   def update_op_params(self):
