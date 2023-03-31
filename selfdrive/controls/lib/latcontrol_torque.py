@@ -53,8 +53,7 @@ class LatControlTorque(LatControl):
                             k_d=CP.lateralTuning.torque.kd,
                             k_11 = 1.0, k_12 = 1.0, k_13 = 12.0, k_period=0.1,
                             k_f=CP.lateralTuning.torque.kf,
-                            derivative_period=self._op_params.get('TUNE_LAT_TRX_kd_period_s', force_update=True),
-                            derivative_rate=1/DT_MDL,
+                            derivative_period=0.1,
                             pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
     self.friction = CP.lateralTuning.torque.friction
@@ -95,8 +94,6 @@ class LatControlTorque(LatControl):
     self.pid._k_11 = [[0], [self._op_params.get('TUNE_LAT_TRX_kp_e')]]
     self.pid._k_12 = [[0], [self._op_params.get('TUNE_LAT_TRX_ki_e')]]
     self.pid._k_13 = [[0], [self._op_params.get('TUNE_LAT_TRX_kd_e')]]
-    self.pid.update_d_period(self._op_params.get('TUNE_LAT_TRX_kd_period_s'))
-    self.actual_lateral_jerk.update_period(self.pid.error_rate._d_period_s)
     self.pid.k_f = self._op_params.get('TUNE_LAT_TRX_kf')
     self.friction = self._op_params.get('TUNE_LAT_TRX_friction')
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
@@ -194,7 +191,6 @@ class LatControlTorque(LatControl):
                                       feedforward=ff if self.CI.ff_nn_model is None else ff_nn,
                                       speed=CS.vEgo,
                                       freeze_integrator=CS.steeringRateLimited or abs(CS.steeringTorque) > 0.3 or CS.vEgo < 5,
-                                      error_normalizer=apply_deadzone(max_future_lateral_accel, 0.2),
                                       D=lateral_jerk_error)
 
       # record steering angle error to the unused pid_log.error_rate

@@ -349,9 +349,9 @@ class CarInterface(CarInterfaceBase):
       if (Params().get_bool("EnableTorqueControl")):
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 0.35
-        ret.lateralTuning.torque.ki = 0.05
-        ret.lateralTuning.torque.kd = 0.13
+        ret.lateralTuning.torque.kp = 0.48
+        ret.lateralTuning.torque.ki = 0.15
+        ret.lateralTuning.torque.kd = 0.02
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
         ret.lateralTuning.torque.friction = 1.0 # for custom lateral jerk ff
       else:
