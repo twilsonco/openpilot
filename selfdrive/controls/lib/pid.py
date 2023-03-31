@@ -45,6 +45,7 @@ class PIDController:
     self.i_rate = 1.0 / rate
     self.sat_limit = sat_limit
     self.error_rate = 0.0
+    self._gain_update_factor = 0.0
 
     if any([k > 0.0 for k in self._k_d[1]]):
       self._d_period = round(derivative_period * rate)  # period of time for derivative calculation (seconds converted to frames)
@@ -128,6 +129,7 @@ class PIDController:
       if len(self.output_norms) == int(self._k_period):
         delta_error_norm = self.output_norms[-1] - self.output_norms[0]
         gain_update_factor = self.output_norms[-1] * delta_error_norm
+        self._gain_update_factor = gain_update_factor
         if gain_update_factor != 0.:
           abs_guf = abs(gain_update_factor)
           self.kp *= 1. + self.k_11 * abs_guf
