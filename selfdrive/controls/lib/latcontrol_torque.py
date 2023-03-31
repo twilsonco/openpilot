@@ -161,6 +161,7 @@ class LatControlTorque(LatControl):
       error_scale_factor = 2.0
       error_scale_factor = 1.0 / (1.0 + min(apply_deadzone(abs(self.max_future_lateral_accel), 0.4) * error_scale_factor, error_scale_factor - 1))
       # error *= error_scale_factor
+      # setpoint = error + measurement
       pid_log.error = error
 
       lateral_accel_g = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
