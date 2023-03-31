@@ -12,6 +12,7 @@ class Differentiator:
     else:
       self.bounds = bounds
     self._d_period_s = 0.0
+    self._d_period = 0.01
     self._rate = rate
     if not self.passive:
       self.update_period(derivative_period)
