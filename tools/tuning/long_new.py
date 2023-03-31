@@ -20,6 +20,7 @@ from tqdm import tqdm  # type: ignore
 from p_tqdm import p_map
 import re
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
+from opendbc.can.parser import CANParser
 
 from tools.tuning.lat_settings import *
 if not PREPROCESS_ONLY:
@@ -52,13 +53,13 @@ from tools.lib.route import Route
 
 MULTI_FILE = True
 
-MAX_DRIVER_TORQUE = 0.0
+MAX_GAS = 0.0
 MAX_EPS_TORQUE = 0.0
 MAX_SPEED = 0.0
-MIN_CURVATURE_RATE = 0.0
-MAX_CURVATURE_RATE = 0.0
-MIN_STEER_RATE = 0.0
-MAX_STEER_RATE = 0.0
+MIN_GAS = 0.0
+MAX_GAS = 0.0
+MIN_BRAKE = 0.0
+MAX_BRAKE = 0.0
 
 def sign(x):
   if x < 0.0:
@@ -187,7 +188,7 @@ class Sample():
   desired_curvature: float = np.nan
   desired_curvature_rate: float = np.nan
   lateral_accel: float = np.nan
-  lateral_jerk_w_roll: float = np.nan
+  lateral_jerk_w_roll_w_roll: float = np.nan
   lateral_jerk: float = np.nan
   roll: float = np.nan
   curvature_device: float = np.nan
@@ -204,7 +205,6 @@ class Sample():
   car_make: str = ''
   car_fp: str = ''
   long_actuator_delay: float = np.nan
-  
 
 class CleanSample(NamedTuple):
   angle: float = np.nan
@@ -221,6 +221,17 @@ def collect(lr):
   section_end: int = 0
   last_msg_time: int = 0
   
+    # Select CAN signals
+  # Volt has electric traction motor for accel / regen, and friction brakes.
+  signals = [
+      ("GasRegenCmd", "ASCMGasRegenCmd"),
+  ]
+  cp1 = CANParser("gm_global_a_powertrain_generated", signals, enforce_checks=False)
+  signals = [
+      ("FrictionBrakeCmd", "EBCMFrictionBrakeCmd"),
+  ]
+  cp2 = CANParser("gm_global_a_chassis", signals, enforce_checks=False)
+  can1_updated = can2_updated = False
   CP = None
   VM = None
   lat_angular_velocity = np.nan
@@ -247,6 +258,10 @@ def collect(lr):
         s.steer_rate = msg.carState.steeringRateDeg
         s.torque_eps = msg.carState.steeringTorqueEps
         s.torque_driver = msg.carState.steeringTorque
+        s.gas = msg.carState.gas
+        s.gas_pressed = msg.carState.gasPressed
+        s.brake = msg.carState.brake
+        s.brake_pressed = msg.carState.brakePressed
       elif msg.which() == 'liveParameters':
         s.steer_offset = msg.liveParameters.angleOffsetDeg
         s.steer_offset_average = msg.liveParameters.angleOffsetAverageDeg  
@@ -271,6 +286,25 @@ def collect(lr):
       elif VM is None and msg.which() == 'carParams':
         CP = msg.carParams
         VM = VehicleModel(CP)
+      elif msg.which() == 'can':
+        # print(msg.can[0])
+        byt = [msg.as_builder().to_bytes()]
+        print(byt)
+        if not can1_updated or not can2_updated:
+
+          # print(cp1.update_strings(bytes))
+          for u in cp1.update_strings(byt):
+            print(u)
+            if u == 715:  # ASCMGasRegenCmd
+              can1_updated = True
+              print("gas")
+              break
+          for u in cp2.update_strings(byt):
+            print(u)
+            if u == 789:  # EBCMFrictionBrakeCmd
+              can2_updated = True
+              print("brake")
+              break
       else:
         continue
 
@@ -280,15 +314,23 @@ def collect(lr):
               not np.isnan(s.desired_curvature_rate) and \
               not np.isnan(s.desired_curvature) and \
               VM is not None and \
-              not np.isnan(yaw_rate)
+              not np.isnan(yaw_rate) and \
+              can1_updated and \
+              can2_updated
       
       if valid:
+        can1_updated = can2_updated = False
+        s.car_make = CP.carName
+        s.car_fp = CP.carFingerprint
+        s.long_actuator_delay = (CP.longitudinalActuatorDelayUpperBound + CP.longitudinalActuatorDelayLowerBound) / 2
+        s.gas_cmd = cp1.vl["ASCMGasRegenCmd"]["GasRegenCmd"]
+        s.brake_cmd = cp2.vl["EBCMFrictionBrakeCmd"]["FrictionBrakeCmd"]
         VM.update_params(max(stiffnessFactor, 0.1), max(steerRatio, 0.1))
         current_curvature = -VM.calc_curvature(math.radians(s.steer_angle - s.steer_offset), s.v_ego, s.roll)
         current_curvature_rate = -VM.calc_curvature(math.radians(s.steer_rate), s.v_ego, s.roll)
         current_curvature_rate_no_roll = -VM.calc_curvature(math.radians(s.steer_rate), s.v_ego, 0.)
         s.lateral_accel = current_curvature * s.v_ego**2
-        s.lateral_jerk_w_roll = current_curvature_rate * s.v_ego**2
+        s.lateral_jerk_w_roll_w_roll = current_curvature_rate * s.v_ego**2
         s.lateral_jerk = current_curvature_rate_no_roll * s.v_ego**2
         s.curvature_device = (yaw_rate / s.v_ego) if s.v_ego > 0.01 else 0.
         s.lateral_accel_device = yaw_rate * s.v_ego  - (np.sin(s.roll) * ACCELERATION_DUE_TO_GRAVITY)
@@ -356,48 +398,46 @@ def lookahead_lookback_filter(samples, comp_func, n_forward = 0, n_back = 0):
     all([comp_func(s1) for s1 in samples[max(0,i-n_back):min(len(samples), i+n_forward+1)]])])
 
 def filter(samples):
-  global MAX_DRIVER_TORQUE, MAX_EPS_TORQUE, MAX_SPEED, MIN_CURVATURE_RATE, MAX_CURVATURE_RATE, MAX_STEER_RATE, MIN_STEER_RATE
+  global MIN_GAS, MAX_GAS, MAX_BRAKE, MIN_BRAKE
   # Order these to remove the most samples first
   
   
   # Some rlogs use [-300,300] for torque, others [-3,3]
   # Scale both from STEER_MAX to [-1,1]
   steer_torque_key = "torque_eps" # gm
-  MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
-  MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
-  MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
-  MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
-  MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
-  MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
-  for s in samples:
-    if MAX_DRIVER_TORQUE > 40 or MAX_EPS_TORQUE > 40:
-      s.torque_driver /= 300
-      s.torque_eps /= 300
-    else:
-      s.torque_driver /= 3
-      s.torque_eps /= 3
+  MIN_GAS = min(MIN_GAS, np.min(np.array([s.gas_cmd for s in samples])))
+  MAX_GAS = max(MAX_GAS, np.max(np.array([s.gas_cmd for s in samples])))
+  MIN_BRAKE = min(MIN_BRAKE, np.min(np.array([s.brake_cmd for s in samples])))
+  MAX_BRAKE = max(MAX_BRAKE, np.max(np.array([s.brake_cmd for s in samples])))
+  # for s in samples:
+  #   if MAX_GAS > 40 or MAX_EPS_TORQUE > 40:
+  #     s.torque_driver /= 300
+  #     s.torque_eps /= 300
+  #   else:
+  #     s.torque_driver /= 3
+  #     s.torque_eps /= 3
   MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
   
   # VW MQB cars, str cmd units 0.01Nm, 3.0Nm max
   # steer_torque_key = "steer_cmd" # vw
-  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
+  # MAX_GAS = max(MAX_GAS, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
   # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
   # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
-  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
-  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
-  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
-  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
+  # MIN_GAS = min(MIN_GAS, np.min(np.array([s.desired_curvature_rate for s in samples])))
+  # MAX_GAS = max(MAX_GAS, np.max(np.array([s.desired_curvature_rate for s in samples])))
+  # MIN_BRAKE = min(MIN_BRAKE, np.min(np.array([s.steer_rate for s in samples])))
+  # MAX_BRAKE = max(MAX_BRAKE, np.max(np.array([s.steer_rate for s in samples])))
   # for s in samples:
   #   s.torque_driver /= 300
     
   # VW PQ cars {CAR.PASSAT_NMS, CAR.SHARAN_MK2}, str cmd units 0.01Nm, 3.0Nm max
   # steer_torque_key = "steer_cmd" # vw
-  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
+  # MAX_GAS = max(MAX_GAS, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
   # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
-  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
-  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
-  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
-  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
+  # MIN_GAS = min(MIN_GAS, np.min(np.array([s.desired_curvature_rate for s in samples])))
+  # MAX_GAS = max(MAX_GAS, np.max(np.array([s.desired_curvature_rate for s in samples])))
+  # MIN_BRAKE = min(MIN_BRAKE, np.min(np.array([s.steer_rate for s in samples])))
+  # MAX_BRAKE = max(MAX_BRAKE, np.max(np.array([s.steer_rate for s in samples])))
   # for s in samples:
   #   s.torque_driver /= 300
   #   setattr(s, steer_torque_key, getattr(s,steer_torque_key) * 3)
@@ -411,31 +451,31 @@ def filter(samples):
   # eps torque units 0.2Nm
   # max torque 4.0Nm
   # steer_torque_key = "torque_eps" # vw
-  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
+  # MAX_GAS = max(MAX_GAS, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
   # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
   # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
-  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
-  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
-  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
-  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
+  # MIN_GAS = min(MIN_GAS, np.min(np.array([s.desired_curvature_rate for s in samples])))
+  # MAX_GAS = max(MAX_GAS, np.max(np.array([s.desired_curvature_rate for s in samples])))
+  # MIN_BRAKE = min(MIN_BRAKE, np.min(np.array([s.steer_rate for s in samples])))
+  # MAX_BRAKE = max(MAX_BRAKE, np.max(np.array([s.steer_rate for s in samples])))
   # for s in samples:
   #   s.torque_driver /= 100 * 4
   #   s.torque_eps /= 5 * 4
   # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
   
-  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
+  # MAX_GAS = max(MAX_GAS, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
   # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
   # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
   
   # all chrysler and ram 1500: steer scaled to 261. 361 for ram hd
   # steer_torque_key = "torque_eps" # vw
-  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
+  # MAX_GAS = max(MAX_GAS, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
   # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
   # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
-  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
-  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
-  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
-  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
+  # MIN_GAS = min(MIN_GAS, np.min(np.array([s.desired_curvature_rate for s in samples])))
+  # MAX_GAS = max(MAX_GAS, np.max(np.array([s.desired_curvature_rate for s in samples])))
+  # MIN_BRAKE = min(MIN_BRAKE, np.min(np.array([s.steer_rate for s in samples])))
+  # MAX_BRAKE = max(MAX_BRAKE, np.max(np.array([s.steer_rate for s in samples])))
   # for s in samples:
   #   s.torque_driver /= 261
   #   s.torque_eps /= 261
@@ -555,14 +595,14 @@ def load_cache(path):
 
 def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
   global MULTI_FILE
-  ext = '.lat'
+  ext = '.opfit'
   latpath = None
   allpath = None
 
   if not path and not route:
     exit(1)
   if path is not None:
-    allpath = os.path.join(path, 'all.lat')
+    allpath = os.path.join(path, 'all.opfit')
   if route is not None:
     if path is not None:
       latpath = os.path.join(path, f'{route}{ext}')
@@ -626,7 +666,7 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
           pbar.set_description(f"Imported {len(data)} points (filtered out {(old_num_points-len(data))/max(1,old_num_points)*100.0:.1f}% of {old_num_points}) (skipped segments: {numerr})")
         if len(errors) > 0:
           nerr = sum(errors.values())
-          print(f"{nerr} lat files were not loaded due to errors:")
+          print(f"{nerr} opfit files were not loaded due to errors:")
           for e,n in errors.items():
             print(f"({n}) {e}")
       if PREPROCESS_ONLY:
@@ -635,17 +675,17 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
           # we're on device going through rlogs
           if preprocess and dongleid:
             dongle_id = dongleid
-            rlog_path = "/Users/haiiro/Downloads/latfiles_batch"
-            rlog_log_path = "/Users/haiiro/Downloads/latfiles.txt" # prevents rerunning rlogs
+            rlog_path = "/Users/haiiro/Downloads/opfitfiles_batch"
+            rlog_log_path = "/Users/haiiro/Downloads/opfitfiles.txt" # prevents rerunning rlogs
           else:
             with open("/data/params/d/DongleId","r") as df:
               dongle_id = df.read()
-            rlog_path = "/data/media/0/latfiles"
-            rlog_log_path = "/data/media/0/latfiles.txt" # prevents rerunning rlogs
+            rlog_path = "/data/media/0/opfitfiles"
+            rlog_log_path = "/data/media/0/opfitfiles.txt" # prevents rerunning rlogs
           print(f"{dongle_id = }")
           if not os.path.exists(rlog_path):
             os.mkdir(rlog_path)
-          latsegs = set([f for f in os.listdir(rlog_path) if ".lat" in f])
+          latsegs = set([f for f in os.listdir(rlog_path) if ".opfit" in f])
           if os.path.exists(rlog_log_path): 
             # read in lat files saved by running `ls -1 /data/media/0/latfiles >> /data/media/0/latfiles.txt`
             with open(rlog_log_path, 'r') as rll:
@@ -653,10 +693,10 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
           with open(rlog_log_path, 'w') as rll:
             for ls in sorted(list(latsegs)):
               rll.write(f"\n{ls}")
-          filenames = sorted([filename for filename in os.listdir(path) if len(filename.split('--')) == 3 and f"{dongle_id}|{filename}.lat" not in latsegs])
+          filenames = sorted([filename for filename in os.listdir(path) if len(filename.split('--')) == 3 and f"{dongle_id}|{filename}.opfit" not in latsegs])
           print(f"Preparing fit data from {len(filenames)} rlog segments")
           for filename in tqdm(filenames, desc="Preparing fit data from rlogs"):
-            if len(filename.split('--')) == 3 and f"{dongle_id}|{filename}.lat" not in latsegs:
+            if len(filename.split('--')) == 3 and f"{dongle_id}|{filename}.opfit" not in latsegs:
               with tempfile.TemporaryDirectory() as d:
                 if os.path.exists(os.path.join(path,filename,"rlog")):
                   shutil.copy(os.path.join(path,filename,"rlog"),os.path.join(d,f"{dongle_id}_{filename}--rlog"))
@@ -671,14 +711,14 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
                   lr = MultiLogIterator([lp for lp in r.log_paths() if lp])
                   data1 = collect(lr)
                   if len(data1):
-                    with open(os.path.join(rlog_path, f"{route}--{seg_num}.lat"), 'wb') as f:
+                    with open(os.path.join(rlog_path, f"{route}--{seg_num}.opfit"), 'wb') as f:
                       pickle.dump(data1, f)
                 except Exception as e:
                   print(f"Failed to load segment file {filename}: {e}")
                   continue
                 finally:
                   with open(rlog_log_path, 'a') as rll:
-                    rll.write(f"\n{route}--{seg_num}.lat")
+                    rll.write(f"\n{route}--{seg_num}.opfit")
         else:
           # first make per-segment .lat files
           # get previously completed segments
@@ -690,21 +730,21 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
             os.mkdir(outpath)
           rlog_log_path = ""
           if preprocess:
-            rlog_log_path = os.path.join(outpath, "/latfiles.txt") # prevents rerunning rlogs
+            rlog_log_path = os.path.join(outpath, "/opfitfiles.txt") # prevents rerunning rlogs
             if os.path.exists(rlog_log_path): 
               # read in lat files saved by running `ls -1 /data/media/0/latfiles >> /data/media/0/latfiles.txt`
               with open(rlog_log_path, 'r') as rll:
                 latsegs = latsegs | set(list(rll.read().split('\n')))
           for filename in os.listdir(outpath):
             if ext in filename.split("/")[-1]:
-              latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2').replace('|','_'))
-              latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2'))
+              latsegs.add(filename.replace(outpath, path).replace('.opfit','--rlog.bz2').replace('|','_'))
+              latsegs.add(filename.replace(outpath, path).replace('.opfit','--rlog.bz2'))
           filenames = sorted([filename for filename in os.listdir(path) if filename.endswith("rlog.bz2") and filename not in latsegs])
           def process_file(filename):
             if len(filename.split('--')) == 4 and filename.endswith('rlog.bz2'):
               seg_num = filename.split('--')[2]
               route='--'.join(filename.split('--')[:2]).replace('_','|')
-              latfile = os.path.join(outpath, f"{route}--{seg_num}.lat")
+              latfile = os.path.join(outpath, f"{route}--{seg_num}.opfit")
               if filename not in latsegs:
                 # print(f'loading rlog segment {fi} of {num_files} {filename}')
                 with tempfile.TemporaryDirectory() as d:
@@ -723,11 +763,13 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
               else:
                 if outpath == path:
                   os.remove(os.path.join(path,filename))
-          p_map(process_file, filenames, desc="Preparing fit data from rlogs")
+          for filename in filenames:
+            process_file(filename)
+          # p_map(process_file, filenames, desc="Preparing fit data from rlogs")
           if preprocess:
             for filename in filenames:
-                latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2').replace('|','_'))
-                latsegs.add(filename.replace(outpath, path).replace('.lat','--rlog.bz2'))
+                latsegs.add(filename.replace(outpath, path).replace('.opfit','--rlog.bz2').replace('|','_'))
+                latsegs.add(filename.replace(outpath, path).replace('.opfit','--rlog.bz2'))
             with open(rlog_log_path, 'w') as rll:
               for ls in sorted(list(latsegs)):
                 rll.write(f"\n{ls}")
@@ -757,12 +799,12 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
           #         os.remove(os.path.join(path,filename))
       else:
         print(f'max eps torque = {MAX_EPS_TORQUE:0.4f}')
-        print(f"max driver torque = {MAX_DRIVER_TORQUE:0.4f}")
+        print(f"max driver torque = {MAX_GAS:0.4f}")
         print(f"max speed = {MAX_SPEED*2.24:0.4f} mph")
-        print(f"min curvature rate = {MIN_CURVATURE_RATE:0.4f}")
-        print(f"max curvature rate = {MAX_CURVATURE_RATE:0.4f}")
-        print(f"min steer rate = {MIN_STEER_RATE:0.4f}")
-        print(f"max steer rate = {MAX_STEER_RATE:0.4f}")
+        print(f"min curvature rate = {MIN_GAS:0.4f}")
+        print(f"max curvature rate = {MAX_GAS:0.4f}")
+        print(f"min steer rate = {MIN_BRAKE:0.4f}")
+        print(f"max steer rate = {MAX_BRAKE:0.4f}")
         print(f"{describe(steer_offsets) = }")
         for filename in os.listdir(path):
           if filename.endswith('rlog.bz2'):
@@ -778,7 +820,7 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
             lr = MultiLogIterator(r.log_paths(), sort_by_time=True)
             data1 = collect(lr)
             if len(data1):
-              with open(os.path.join(path, f"{route}.lat"), 'wb') as f:
+              with open(os.path.join(path, f"{route}.opfit"), 'wb') as f:
                 pickle.dump(data1, f)
               data.extend(filter(data1))
               old_num_points += len(data1)
