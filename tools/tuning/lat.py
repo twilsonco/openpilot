@@ -177,6 +177,15 @@ class Sample():
   steer_cmd: float = np.nan
   desired_steer_angle: float = np.nan
   desired_steer_rate: float = np.nan
+  gas_cmd: float = np.nan
+  gas: float = np.nan
+  gas_pressed: bool = False
+  brake_cmd: float = np.nan
+  brake: float = np.nan
+  brake_pressed: bool = False
+  car_make: str = ''
+  car_fp: str = ''
+  long_actuator_delay: float = np.nan
   
 
 class CleanSample(NamedTuple):
@@ -220,6 +229,10 @@ def collect(lr):
         s.steer_rate = msg.carState.steeringRateDeg
         s.torque_eps = msg.carState.steeringTorqueEps
         s.torque_driver = msg.carState.steeringTorque
+        s.gas = msg.carState.gas
+        s.gas_pressed = msg.carState.gasPressed
+        s.brake = msg.carState.brake
+        s.brake_pressed = msg.carState.brakePressed
       elif msg.which() == 'liveParameters':
         s.steer_offset = msg.liveParameters.angleOffsetDeg
         s.steer_offset_average = msg.liveParameters.angleOffsetAverageDeg  
@@ -229,7 +242,14 @@ def collect(lr):
         continue
       elif msg.which() == 'carControl':
         s.enabled = msg.carControl.enabled
-        s.steer_cmd = msg.carControl.actuatorsOutput.steer
+        if hasattr(msg.carControl, "actuatorsOutput"):
+          s.steer_cmd = msg.carControl.actuatorsOutput.steer
+          s.gas_cmd = msg.carControl.actuatorsOutput.gas
+          s.brake_cmd = msg.carControl.actuatorsOutput.brake
+        else:
+          s.steer_cmd = msg.carControl.actuators.steer
+          s.gas_cmd = msg.carControl.actuators.gas
+          s.brake_cmd = msg.carControl.actuators.brake
         continue
       elif msg.which() == 'liveLocationKalman':
         yaw_rate = msg.liveLocationKalman.angularVelocityCalibrated.value[2]
@@ -256,6 +276,9 @@ def collect(lr):
               not np.isnan(yaw_rate)
       
       if valid:
+        s.car_make = CP.carName
+        s.car_fp = CP.carFingerprint
+        s.long_actuator_delay = (CP.longitudinalActuatorDelayUpperBound + CP.longitudinalActuatorDelayLowerBound) / 2
         VM.update_params(max(stiffnessFactor, 0.1), max(steerRatio, 0.1))
         current_curvature = -VM.calc_curvature(math.radians(s.steer_angle - s.steer_offset), s.v_ego, s.roll)
         current_curvature_rate = -VM.calc_curvature(math.radians(s.steer_rate), s.v_ego, s.roll)
@@ -318,7 +341,7 @@ def collect(lr):
   #   samples.extend(section)
 
 
-  if len(samples) == 0:
+  if len(samples) == 0 or not any([s.v_ego > 0.5 for s in samples]):
     return np.array([])
 
   return np.array(samples)
