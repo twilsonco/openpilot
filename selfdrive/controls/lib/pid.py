@@ -128,13 +128,13 @@ class PIDController:
       self.output_norms.append(self.outputs[-1] / (abs_sp + 1.)) # use the last iteration's output
       if len(self.output_norms) == int(self._k_period):
         delta_error_norm = self.output_norms[-1] - self.output_norms[0]
-        gain_update_factor = self.output_norms[-1] * delta_error_norm
+        gain_update_factor = clip(self.output_norms[-1] * delta_error_norm, -1.0, 1.0)
         self._gain_update_factor = gain_update_factor
         if gain_update_factor != 0.:
           abs_guf = abs(gain_update_factor)
-          self.kp *= 1. + self.k_11 * abs_guf
-          self.ki *= 1. + self.k_12 * gain_update_factor
-          self.kd *= 1. + self.k_13 * abs_guf
+          self.kp = self.kp * (1. + self.k_11 * abs_guf)
+          self.ki = self.ki * (0.3 + self.k_12 * gain_update_factor)
+          self.kd = self.kd * (1. + self.k_13 * abs_guf)
 
       
     
