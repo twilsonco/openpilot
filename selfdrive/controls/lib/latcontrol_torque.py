@@ -76,7 +76,7 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_bp = [0.0, 30.0]
     self.low_speed_factor_v = [15.0, 5.0]
     self.max_future_lateral_accel = 0.0
-    self.max_future_lateral_accel_decay_rate = 0.98
+    self.max_future_lateral_accel_decay_rate = 0.99
     self.max_future_lateral_accel_time_out = 2.0 / DT_CTRL
     self.max_future_lateral_accel_low_frame_count = 0
     
