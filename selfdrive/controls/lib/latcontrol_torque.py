@@ -197,7 +197,7 @@ class LatControlTorque(LatControl):
       angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
       angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
       pid_log.steerAngleError = angle_steers_des - CS.steeringAngleDeg
-      pid_log.errorRate = self.pid.error_rate.x
+      pid_log.errorRate = self.pid.error_rate
 
       pid_log.active = True
       pid_log.desiredLateralAcceleration = desired_lateral_accel

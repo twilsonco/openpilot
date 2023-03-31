@@ -44,6 +44,7 @@ class PIDController:
     self.i_unwind_rate = 0.3 / rate
     self.i_rate = 1.0 / rate
     self.sat_limit = sat_limit
+    self.error_rate = 0.0
 
     if any([k > 0.0 for k in self._k_d[1]]):
       self._d_period = round(derivative_period * rate)  # period of time for derivative calculation (seconds converted to frames)
@@ -140,7 +141,8 @@ class PIDController:
     
     if self.outputs is not None and len(self.outputs) == int(self._d_period):  # makes sure we have enough history for period
       if D is None:
-        self.d = clip((self.outputs[-1] - self.outputs[0]) * self._d_period_recip * self.kd, -abs(self.p), abs(self.p))
+        self.error_rate = (self.outputs[-1] - self.outputs[0]) * self._d_period_recip
+        self.d = clip(self.error_rate * self.kd, -abs(self.p), abs(self.p))
       else:
         self.d = D * self.kd
     else:
