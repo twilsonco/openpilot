@@ -5,11 +5,11 @@ from common.op_params import opParams
 class Integrator:
   def __init__(self, integral_period, rate, passive=False):
     self.passive = passive
+    self._i_period_s = 0.0
+    self._rate = rate
+    self._unwind_rate = 0.3 / rate
     if not self.passive:
       self._op_params = opParams(calling_function="common/integrator.py")
-      self._i_period_s = 0.0
-      self._rate = rate
-      self._unwind_rate = 0.3 / rate
       self.update_period(integral_period, force_update=True)
   
   @property
