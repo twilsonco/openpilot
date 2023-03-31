@@ -76,7 +76,7 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_bp = [0.0, 30.0]
     self.low_speed_factor_v = [15.0, 5.0]
     self.max_future_lateral_accel = 0.0
-    self.max_future_lateral_accel_rate = 1 * DT_CTRL
+    self.max_future_lateral_accel_decay_rate = 0.98
     self.max_future_lateral_accel_time_out = 2.0 / DT_CTRL
     self.max_future_lateral_accel_low_frame_count = 0
     
@@ -145,16 +145,14 @@ class LatControlTorque(LatControl):
       lookahead_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       desired_lateral_accel += abs(CS.aEgo) * desired_curvature
-      max_future_lateral_accel = 0.0
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_lateral_accel], key=lambda x: abs(x))
-      if max_future_lateral_accel > self.max_future_lateral_accel:
+      if abs(max_future_lateral_accel) > abs(self.max_future_lateral_accel):
         self.max_future_lateral_accel = max_future_lateral_accel
         self.max_future_lateral_accel_low_frame_count = 0
       else:
         self.max_future_lateral_accel_low_frame_count += 1
         if self.max_future_lateral_accel_low_frame_count > self.max_future_lateral_accel_time_out:
-          delta = max(self.max_future_lateral_accel_rate, self.max_future_lateral_accel, key=lambda x: abs(x))
-          self.max_future_lateral_accel -= sign(self.max_future_lateral_accel) * delta
+          self.max_future_lateral_accel *= self.max_future_lateral_accel_decay_rate
       
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
       lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
