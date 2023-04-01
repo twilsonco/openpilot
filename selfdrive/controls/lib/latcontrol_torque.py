@@ -158,10 +158,9 @@ class LatControlTorque(LatControl):
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
-      error_scale_factor = 2.0
+      error_scale_factor = 3.0
       error_scale_factor = 1.0 / (1.0 + min(apply_deadzone(abs(self.max_future_lateral_accel), 0.4) * error_scale_factor, error_scale_factor - 1))
-      # error *= error_scale_factor
-      # setpoint = error + measurement
+      error *= error_scale_factor
       pid_log.error = error
 
       lateral_accel_g = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
@@ -192,7 +191,8 @@ class LatControlTorque(LatControl):
                                       feedforward=ff if ff_nn is None else ff_nn,
                                       speed=CS.vEgo,
                                       freeze_integrator=CS.steeringRateLimited or abs(CS.steeringTorque) > 0.3 or CS.vEgo < 5,
-                                      D=lateral_jerk_error)
+                                      D=lateral_jerk_error,
+                                      error=error)
 
       # record steering angle error to the unused pid_log.error_rate
       angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))

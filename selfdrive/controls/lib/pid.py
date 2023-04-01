@@ -114,10 +114,10 @@ class PIDController:
     if self.output_norms is not None:
       self.output_norms = deque(maxlen=self._k_period)
 
-  def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False, D = None):
+  def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False, D = None, error=None):
     self.speed = speed
 
-    error = float(apply_deadzone(setpoint - measurement, deadzone))
+    error = float(apply_deadzone((setpoint - measurement) if error is None else error, deadzone))
 
     self.kp = self.k_p
     self.ki = self.k_i
