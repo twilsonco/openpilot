@@ -346,7 +346,7 @@ class opParams:
       
       'AP_accel_limit_rates_speed_cutoff_mph': Param(4, float, 'Only apply accel limit rate limits below this speed.\n', live=True, min_val=0.0, max_val=20.0, unit="mph"),
       
-      'AP_eco_accel_factor': Param(1.0, float, 'Scale eco acceleration.\n', live=True, min_val=0.01, max_val=20.0),
+      'AP_eco_accel_factor': Param(1.2, float, 'Scale eco acceleration.\n', live=True, min_val=0.01, max_val=20.0),
       
       'AP_stock_accel_factor': Param(1.0, float, 'Scale stock acceleration. This is also the acceleration used if the acceleration profiles button is disabled\n', live=True, min_val=0.01, max_val=20.0, is_common=True),
       
