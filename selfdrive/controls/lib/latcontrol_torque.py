@@ -190,7 +190,7 @@ class LatControlTorque(LatControl):
       
       output_torque = self.pid.update(setpoint, measurement,
                                       override=CS.steeringPressed, 
-                                      feedforward=ff if ff_nn is None and not self.use_nn_ff else ff_nn,
+                                      feedforward=ff if ff_nn is None or not self.use_nn_ff else ff_nn,
                                       speed=CS.vEgo,
                                       freeze_integrator=CS.steeringRateLimited or abs(CS.steeringTorque) > 0.3 or CS.vEgo < 5,
                                       D=lateral_jerk_error,
