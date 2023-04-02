@@ -291,7 +291,7 @@ def _import_params():
 
 
 class opParams:
-  def __init__(self, calling_function=''):
+  def __init__(self, calling_function='', check_for_reset=False):
     """
       To add your own parameter to opParams in your fork, simply add a new entry in self.fork_params, instancing a new Param class with at minimum a default value.
       The allowed_types and description args are not required but highly recommended to help users edit their parameters with opEdit safely.
@@ -781,11 +781,14 @@ class opParams:
       }  # a dict where each key is a date in 'yyyy/mm/dd-hh:mm' (24-hour) format, and the value is a list of names of params OR regular expressions to match params you want reset to their default values if the modification date is before the key date
       # use something that doesn't match the date string format and the associated list of param names or regex's will apply no matter the modified date of the param
     self._calling_function = calling_function
-    self._run_init(calling_function=calling_function)  # restores, reads, and updates params
+    self._run_init(calling_function=calling_function, check_for_reset=check_for_reset)  # restores, reads, and updates params
 
-  def _run_init(self, calling_function = ''):  # does first time initializing of default params
+  def _run_init(self, calling_function = '', check_for_reset=False):  # does first time initializing of default params
     # Two required parameters for opEdit
     self.live_tuning_enabled = Params().get_bool("OPParamsLiveTuneEnabled")
+    do_reset = Params().get_bool("OPParamsReset")
+    if do_reset:
+      Params().put_bool("OPParamsReset", False)
     cloudlog.info(f"opParams: loading opParams{f' from {calling_function}' if calling_function else ''}.\n   Live tuning: {self.live_tuning_enabled}")
     
     self.fork_params['op_params_live_tune_enabled'] = Param(self.live_tuning_enabled, bool, 'Used to see if live tuning is enabled when using opparams.py (formerly op_edit.py)', hidden=True)
@@ -805,7 +808,7 @@ class opParams:
     # cloudlog.info(f"opParams: {calling_function}:   Loaded op_params")
     self._add_default_params()  # adds missing params and resets values with invalid types to self.params
     # cloudlog.info(f"opParams: {calling_function}:   added default params")
-    self._delete_and_reset()  # removes old params
+    self._delete_and_reset(full_reset=do_reset)  # removes old params
     # cloudlog.info(f"opParams: {calling_function}:   delete and reset applied")
     if self.live_tuning_enabled:
       self.put('op_params_live_tune_enabled', True, reason=False)
@@ -909,41 +912,47 @@ class opParams:
         self.params[key] = param.default_value
         _write_param(key, self.params[key], reason="adding new param defaults (was corrected due to invalid value)")
 
-  def _delete_and_reset(self):
+  def _delete_and_reset(self, full_reset=False):
     for key in list(self.params):
       if key in self._to_delete:
         del self.params[key]
         os.remove(os.path.join(PARAMS_DIR, key))
-    for k,v in self._to_reset.items():
-      try:
-        dt = datetime.strptime(k, '%Y/%m/%d-%H:%M') # cutoff date 'yyyy/mm/dd-hh:mm' 24-hour format
-      except:
-        dt = None
-      for key in v:
-        p = os.path.join(PARAMS_DIR, key)
-        if key in self.fork_params and os.path.exists(p): # key is exact match for param
-          dm = datetime.fromtimestamp(os.path.getmtime(p)) # modification date
-          if (dt is None or dm < dt) and self.params[key] != self.fork_params[key].default_value: # if param modification date older than cutoff, overwrite
-            cloudlog.warning(warning('Replacing value of param {}: {}, with updated default value: {}'.format(key, self.params[key], self.fork_params[key].default_value)))
-            old_val = self.fork_params[key].value
-            self.params[key] = self.fork_params[key].default_value
-            _write_param(key, self.params[key], reason="overwriting due to fork update (exact match)", old_value=old_val)
-        else: # not exact match, try as regex
-          try:
-            r = re.compile(key)
-          except Exception as e:
-            cloudlog.warning(f"Failed to apply opParam reset for {key = }")
-            r = None
-          if r is not None:
-            for key2 in list(self.params):
-              m = r.match(key2)
-              if m is not None:
-                key1 = m.group()
-                p = os.path.join(PARAMS_DIR, key1)
-                if key1 in self.fork_params and os.path.exists(p):
-                  dm = datetime.fromtimestamp(os.path.getmtime(p)) # modification date
-                  if (dt is None or dm < dt) and self.params[key1] != self.fork_params[key1].default_value: # if param modification date older than cutoff, overwrite
-                    cloudlog.warning(warning('Replacing value of param {}: {}, with updated default value: {}'.format(key1, self.params[key1], self.fork_params[key1].default_value)))
-                    old_val = self.fork_params[key1].value
-                    self.params[key1] = self.fork_params[key1].default_value
-                    _write_param(key1, self.params[key1], reason="overwriting due to fork update (regex match)", old_value=old_val)
+    if full_reset:
+      for k,v in self.fork_params.items():
+        if k in self.params and v.default_value != self.params[k]:
+          self.params[k] = v.default_value
+          _write_param(k, self.params[k], reason="full reset")
+    else:
+      for k,v in self._to_reset.items():
+        try:
+          dt = datetime.strptime(k, '%Y/%m/%d-%H:%M') # cutoff date 'yyyy/mm/dd-hh:mm' 24-hour format
+        except:
+          dt = None
+        for key in v:
+          p = os.path.join(PARAMS_DIR, key)
+          if key in self.fork_params and os.path.exists(p): # key is exact match for param
+            dm = datetime.fromtimestamp(os.path.getmtime(p)) # modification date
+            if (dt is None or dm < dt) and self.params[key] != self.fork_params[key].default_value: # if param modification date older than cutoff, overwrite
+              cloudlog.warning(warning('Replacing value of param {}: {}, with updated default value: {}'.format(key, self.params[key], self.fork_params[key].default_value)))
+              old_val = self.fork_params[key].value
+              self.params[key] = self.fork_params[key].default_value
+              _write_param(key, self.params[key], reason="overwriting due to fork update (exact match)", old_value=old_val)
+          else: # not exact match, try as regex
+            try:
+              r = re.compile(key)
+            except Exception as e:
+              cloudlog.warning(f"Failed to apply opParam reset for {key = }")
+              r = None
+            if r is not None:
+              for key2 in list(self.params):
+                m = r.match(key2)
+                if m is not None:
+                  key1 = m.group()
+                  p = os.path.join(PARAMS_DIR, key1)
+                  if key1 in self.fork_params and os.path.exists(p):
+                    dm = datetime.fromtimestamp(os.path.getmtime(p)) # modification date
+                    if (dt is None or dm < dt) and self.params[key1] != self.fork_params[key1].default_value: # if param modification date older than cutoff, overwrite
+                      cloudlog.warning(warning('Replacing value of param {}: {}, with updated default value: {}'.format(key1, self.params[key1], self.fork_params[key1].default_value)))
+                      old_val = self.fork_params[key1].value
+                      self.params[key1] = self.fork_params[key1].default_value
+                      _write_param(key1, self.params[key1], reason="overwriting due to fork update (regex match)", old_value=old_val)

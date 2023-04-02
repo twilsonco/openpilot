@@ -90,6 +90,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "This enables the longitudinal tune specified in opParams.",
                                   "../assets/offroad/icon_calibration.png",
                                   this));
+
+  toggles.append(new ParamControl("OPParamsReset",
+                                  "Reset OPParams to defaults",
+                                  "If enabled, then the next time OPParams runs, by starting openpilot or by running ./opparams.py, all parameters will be reset to their default values. This toggle will then be disabled.",
+                                  "../assets/offroad/icon_calibration.png",
+                                  this));
   
   toggles.append(new ParamControl("LongRangeLeadsEnabled",
                                   "Longer-range lead detection (beta)",

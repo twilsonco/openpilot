@@ -47,6 +47,7 @@ def manager_init():
     ("OPParamsLiveTuneEnabled", "0"),
     ("OPParamsLateralOverride", "0"),
     ("OPParamsLongitudinalOverride", "0"),
+    ("OPParamsReset", "0"),
     ("IgnoreMissingNVME", "0"),
     ("SpeedLimitControl", "1"),
     ("EUSpeedLimitStyle", "0"),
