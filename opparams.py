@@ -14,7 +14,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
     if restart or restart_immediate:
       self.C3_rebootless_restart(restart_immediate)
       return
-    self.op_params = opParams(calling_function="opparams editor")
+    self.op_params = opParams(calling_function="opparams editor", check_for_reset=True)
     self.params = None
     self.live_tuning_enabled = self.op_params.get('op_params_live_tune_enabled', force_update=True)
     self.live_tuning = self.live_tuning_enabled and self.op_params.get('op_edit_live_mode', force_update=True)

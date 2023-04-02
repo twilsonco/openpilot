@@ -786,7 +786,7 @@ class opParams:
   def _run_init(self, calling_function = '', check_for_reset=False):  # does first time initializing of default params
     # Two required parameters for opEdit
     self.live_tuning_enabled = Params().get_bool("OPParamsLiveTuneEnabled")
-    do_reset = Params().get_bool("OPParamsReset")
+    do_reset = check_for_reset and Params().get_bool("OPParamsReset")
     if do_reset:
       Params().put_bool("OPParamsReset", False)
     cloudlog.info(f"opParams: loading opParams{f' from {calling_function}' if calling_function else ''}.\n   Live tuning: {self.live_tuning_enabled}")
@@ -918,6 +918,7 @@ class opParams:
         del self.params[key]
         os.remove(os.path.join(PARAMS_DIR, key))
     if full_reset:
+      cloudlog.warning(warning("opParams: Performing a full reset of all params!"))
       for k,v in self.fork_params.items():
         if k in self.params and v.default_value != self.params[k]:
           self.params[k] = v.default_value

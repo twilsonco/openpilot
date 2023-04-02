@@ -77,7 +77,7 @@ class Controls:
     self.network_strength_last = log.DeviceState.NetworkStrength.unknown
     self.network_last_change_t = -60
     
-    self._op_params = opParams("controlsd")
+    self._op_params = opParams("controlsd", check_for_reset=True)
     self.use_sensors = False
     
     self.gpsWasOK = False
