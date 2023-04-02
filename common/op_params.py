@@ -528,7 +528,9 @@ class opParams:
       
       'TUNE_LAT_TRX_roll_compensation': Param(0.4, float, 'Scale the amount of roll compensation for the torque controller\n', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_use_steering_angle': Param(True, bool, 'The torque controller computes current lateral acceleration using the steering angle and current roll. Set this to false to instead use the internal Comma device sensors to measure lateral acceleration (it\'s terrible)\n', live=True, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_use_steering_angle': Param(True, bool, 'The torque controller computes current lateral acceleration using the steering angle and current roll. Set this to false to instead use the internal Comma device sensors to measure lateral acceleration (it\'s terrible)', live=True, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      
+      'TUNE_LAT_TRX_use_NN_FF': Param(False, bool, 'Use the experimental neural network feedforward for the torque controller.', live=True, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', param_param='EnableTorqueNNFF', param_param_read_on_startup=True, fake_live=True),
       
       'TUNE_LAT_TRX_kf': Param(1.0, float, kf_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       

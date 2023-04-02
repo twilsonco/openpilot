@@ -4,6 +4,7 @@ from common.differentiator import Differentiator
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import interp, sign
 from common.op_params import opParams
+from common.params import Params
 from common.realtime import DT_MDL, DT_CTRL
 from selfdrive.car.gm.values import CAR
 from selfdrive.config import Conversions as CV
@@ -58,6 +59,7 @@ class LatControlTorque(LatControl):
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
     self.friction = CP.lateralTuning.torque.friction
     self.CI = CI
+    self.use_nn_ff = Params().get_bool("EnableTorqueNNFF")
     if CP.carFingerprint in NN_FF_CARS:
       self.CI.initialize_feedforward_function_torque_nn()
     self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
@@ -188,7 +190,7 @@ class LatControlTorque(LatControl):
       
       output_torque = self.pid.update(setpoint, measurement,
                                       override=CS.steeringPressed, 
-                                      feedforward=ff if ff_nn is None else ff_nn,
+                                      feedforward=ff if ff_nn is None and not self.use_nn_ff else ff_nn,
                                       speed=CS.vEgo,
                                       freeze_integrator=CS.steeringRateLimited or abs(CS.steeringTorque) > 0.3 or CS.vEgo < 5,
                                       D=lateral_jerk_error,
