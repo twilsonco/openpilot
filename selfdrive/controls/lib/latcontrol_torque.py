@@ -128,9 +128,7 @@ class LatControlTorque(LatControl):
     else:
       actual_curvature = llk.angularVelocityCalibrated.value[2] / CS.vEgo
     actual_lateral_accel = actual_curvature * CS.vEgo**2
-    if self.use_steering_angle:
-      actual_lateral_accel += abs(CS.aEgo) * actual_curvature
-    elif lat_plan != self.lat_plan_last:
+    if not self.use_steering_angle and lat_plan != self.lat_plan_last:
       self.actual_lateral_jerk.update(actual_lateral_accel)
     self.lat_plan_last = lat_plan
 
@@ -145,7 +143,6 @@ class LatControlTorque(LatControl):
       desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
       lookahead_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
-      desired_lateral_accel += abs(CS.aEgo) * desired_curvature
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_lateral_accel], key=lambda x: abs(x))
       if abs(max_future_lateral_accel) > abs(self.max_future_lateral_accel):
         self.max_future_lateral_accel = max_future_lateral_accel
