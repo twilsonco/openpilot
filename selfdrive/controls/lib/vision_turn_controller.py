@@ -180,7 +180,7 @@ class VisionTurnController():
     self._TURNING_LAT_ACC_TH = 0.8 * lat_accel_factor  # Lat Acc threshold to trigger turning turn state.
     self._LEAVING_LAT_ACC_TH = 0.7 * lat_accel_factor  # Lat Acc threshold to trigger leaving turn state.
     self._FINISH_LAT_ACC_TH = 0.4 * lat_accel_factor  # Lat Acc threshold to trigger end of turn cycle.
-    self._A_LAT_REG_MAX = 1.8 * lat_accel_factor  # Maximum lateral acceleration
+    self._A_LAT_REG_MAX = 2.0 * lat_accel_factor  # Maximum lateral acceleration
     # Lookup table for the minimum smooth deceleration during the ENTERING state
     # depending on the actual maximum absolute lateral acceleration predicted on the turn ahead.
     self._ENTERING_SMOOTH_DECEL_V = [i * long_accel_factor for i in [0.0, -0.2, -1.0]]  # min decel value allowed on ENTERING state
