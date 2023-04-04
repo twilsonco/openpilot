@@ -312,7 +312,7 @@ class CarController():
       if enabled and self.brakes_allowed:
         self.apply_brake_out = self.apply_brake_in
 
-      if CS.cruiseMain and not enabled and ((CS.autoHold and not CS.regen_paddle_pressed and CS.time_in_drive_autohold >= CS.MADS_long_min_time_in_drive) or (CS.one_pedal_mode_active and CS.time_in_drive_one_pedal >= CS.MADS_long_min_time_in_drive)) and CS.autoHoldActive and not CS.out.gas > 1e-5 and CS.out.vEgo < 0.02:
+      if CS.cruiseMain and not enabled and not CS.park_assist_active and ((CS.autoHold and not CS.regen_paddle_pressed and CS.time_in_drive_autohold >= CS.MADS_long_min_time_in_drive) or (CS.one_pedal_mode_active and CS.time_in_drive_one_pedal >= CS.MADS_long_min_time_in_drive)) and CS.autoHoldActive and not CS.out.gas > 1e-5 and CS.out.vEgo < 0.02:
         # Auto Hold State
         standstill = CS.pcm_acc_status == AccState.STANDSTILL
 

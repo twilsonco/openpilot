@@ -84,6 +84,7 @@ class CarState(CarStateBase):
     self.rolling_resistance_power = 0.
     self.observed_efficiency = FirstOrderFilter(float(self._params.get("EVDriveTrainEfficiency", encoding="utf8")), 50., 0.05)
     self.brake_cmd = 0
+    self.park_assist_active = False
     
     self.t = 0.
     self.is_ev = (self.car_fingerprint in [CAR.VOLT, CAR.VOLT18])
@@ -332,6 +333,8 @@ class CarState(CarStateBase):
         self.apply_brake_percent = int(round(interp(t - self.sessionInitTime, [i * 3. for i in range(4)], ([100,0]*2))))
     ret.frictionBrakePercent = int(round(self.apply_brake_percent))
     
+    self.park_assist_active = chassis_cp.vl["PACMParkAssitCmd"]["RequestActive"] == 1
+    
 
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
     ret.gasPressed = ret.gas > GAS_PRESSED_THRESHOLD
@@ -570,7 +573,7 @@ class CarState(CarStateBase):
     ret.cruiseState.standstill = False
     ret.cruiseMain = self.cruiseMain
     
-    ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active and self.time_in_drive_one_pedal >= self.MADS_long_min_time_in_drive
+    ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active and self.time_in_drive_one_pedal >= self.MADS_long_min_time_in_drive and not self.park_assist_active
     if self.long_active:
       ret.brakePressed = ret.brakePressed or self.regen_paddle_pressed
     ret.onePedalModeTemporary = self.one_pedal_mode_temporary
@@ -694,10 +697,12 @@ class CarState(CarStateBase):
     signals = [
         # sig_name, sig_address, default
         ("FrictionBrakePressure", "EBCMFrictionBrakeStatus", 0),
+        ("RequestActive", "PACMParkAssitCmd", 0),
     ]
     
     checks = [
       ("EBCMFrictionBrakeStatus", 1),
+      ("PACMParkAssitCmd", 1),
     ]
 
     return CANParser(DBC[CP.carFingerprint]['chassis'], signals, checks, CanBus.CHASSIS)
