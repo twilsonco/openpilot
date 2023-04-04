@@ -680,8 +680,6 @@ class opParams:
       
       'TUNE_LONG_kd': Param([0.004, 0.0, 0.0], [list, float], 'Values of kd used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.\n', live=True, min_val=0.0, max_val=5.0),
       
-      'TUNE_LONG_kd_period_s': Param(0.1, float, 'The amount of time used for the rate approximation.', min_val=0.02, max_val=2.0, unit='seconds'),
-      
       'TUNE_LONG_deadzone_ms2': Param([0.0, 0.0, 0.0], [list, float], 'Values of deadzone used at the corresponding speeds in TUNE_LONG_mph. Deadzone sets a minimum amount of desired acceleration before the gas or brakes are actually actuated. Deadzones are used to smooth jerky long control, if the gas/brake controls are too sensitive or if the planning is noisy.\n', live=True, min_val=0.0, max_val=5.0, unit='m/s²'),
       
       #####
