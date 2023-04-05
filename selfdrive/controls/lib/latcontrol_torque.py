@@ -141,11 +141,11 @@ class LatControlTorque(LatControl):
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_lateral_accel], key=lambda x: abs(x))
       if self.in_curve:
-        if abs(desired_lateral_accel) < 0.4 and abs(max_future_lateral_accel) < 0.4:
+        if abs(desired_lateral_accel) < 0.4:
           self.in_curve = False
       elif abs(desired_lateral_accel) > 1.0:
         self.in_curve = True
-      if self.in_curve:
+      if self.in_curve and abs(max_future_lateral_accel) < 0.4:
         error_scale_lat_accel = min([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_lateral_accel], key=lambda x: abs(x))
       else:
         error_scale_lat_accel = max_future_lateral_accel
