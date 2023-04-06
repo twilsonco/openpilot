@@ -862,12 +862,12 @@ class opParams:
       if self.fork_params[key].param_param_use_ord and value in self.fork_params[key].allowed_vals:
         ind = self.fork_params[key].allowed_vals.index(value)
         self.fork_params[key]._params.put(self.fork_params[key].param_param, str(ind))
-        cloudlog.info(f"opParams: putting value in linked param using ordinal {ind} for {value = }. {key = }")
+        cloudlog.info(f"opParams: putting value in linked param {self.fork_params[key].param_param} using ordinal {ind} for {value = }. {key = }")
       else:
         put_val = value if type(value) == str \
           else str(int(value)) if type(value) == bool \
           else str(value)
-        cloudlog.info(f"opParams: putting value in linked param: {value = }. {key = }")
+        cloudlog.info(f"opParams: putting value in linked param {self.fork_params[key].param_param}: {value = }. {key = }")
         self.fork_params[key]._params.put(self.fork_params[key].param_param, put_val)
     _write_param(key, value, reason=reason, old_value=old_val, do_log=do_log)
     if show_alert:
