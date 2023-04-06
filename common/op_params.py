@@ -78,7 +78,7 @@ def parse_UIMeasure_enum(ui_dot_h_path):
   enum_defs = enum_defs.split('} UIMeasure;')[0]
 
   # Get a list of enum names from the definition   
-  enum_names = [l.strip().split(',')[0].split(' = ')[0] for l in enum_defs.split('') if len(l.strip()) > 2 and '//' not in l.strip().split(',')[0].split(' = ')[0]]
+    enum_names = [l.strip().split(',')[0].split(' = ')[0] for l in enum_defs.split('\n') if len(l.strip()) > 2 and '//' not in l.strip().split(',')[0].split(' = ')[0]]
   
   return enum_names[:-1] if len(enum_names) > 1 else enum_names
 
