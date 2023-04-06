@@ -156,7 +156,7 @@ class LatControlTorque(LatControl):
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
-      error_scale_factor = 3.0
+      error_scale_factor = 2.5
       error_scale_factor = 1.0 / (1.0 + min(apply_deadzone(abs(error_scale_lat_accel), 0.4) * error_scale_factor, error_scale_factor - 1))
       error *= error_scale_factor
       pid_log.error = error
