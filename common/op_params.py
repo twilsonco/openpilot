@@ -546,11 +546,11 @@ class opParams:
       
       'TUNE_LAT_TRX_friction_curve_exit_ramp_v': Param(0.7, float, 'Lateral jerk feedforward can push with or against the lateral acceleration feedforward, so it can help push into a curve, or help push out of a curve. At high values of lateral acceleration, in tight curves, you do not need any additional help to return to straight, and in fact the lateral jerk feedforward can cause steering issues by "helping" when it is not necessary. To address this, lateral jerk FF is decreased according to lateral acceleration when exiting curves. Here you set the "full" damping amount, applied for lateral acceleration values at or above the "high" value set above.', live=True, min_val=0.0, max_val=1.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_kp': Param(0.52, float, kp_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kp': Param(0.48, float, kp_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_ki': Param(0.17, float, ki_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_ki': Param(0.15, float, ki_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_kd': Param(0.13, float, kd_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_kd': Param(0.12, float, kd_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_kp_e': Param(1.0, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kp is able to change.", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
