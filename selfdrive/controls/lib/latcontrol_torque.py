@@ -67,7 +67,7 @@ class LatControlTorque(LatControl):
     self.get_roll_ff = CI.get_steer_feedforward_function_torque_roll()
     self.roll_k = 0.55 if CP.carFingerprint not in ROLL_FF_CARS else 1.0
     self.v_ego = 0.0
-    self.friction_look_ahead_v = [0.8, 1.8]
+    self.friction_look_ahead_v = [0.3, 1.2]
     self.friction_look_ahead_bp = [9.0, 35.0]
     self.friction_curve_exit_ramp_bp = [0.6, 1.8] # lateral acceleration
     self.friction_curve_exit_ramp_v = [1.0, 0.7]
