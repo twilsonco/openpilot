@@ -7,6 +7,7 @@ Version tw-0.8.12-16 (2023-4-7)
     * Error downscalling in curves to allow feedforward to do most of the work, resulting in smoother steering wheel motion.
   * Weather: full view shows imminent sunrise/sunset
   * OPParams: add toggle to reset all opparams to defaults on next start
+  * Volt: disable autohold + one pedal mode when park assist is active.
 
 Version tw-0.8.12-15 (2023-🥧+1)
 ========================
