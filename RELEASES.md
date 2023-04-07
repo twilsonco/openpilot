@@ -3,7 +3,7 @@ Version tw-0.8.12-16 (2023-4-7)
   * Improved "torque" lateral control
     * Volt neural network feedforward (optional with toggle)
     * Volt 3-part composite fit feedforward with lateral accel, lateral jerk, and lateral gravitaional accel components
-    * Revamped AZNPIDF lateral controller for more robust currections and better centering on straights
+    * Revamped AZNPIDF lateral controller for more robust corrections and better centering on straights
     * Error downscalling in curves to allow feedforward to do most of the work, resulting in smoother steering wheel motion.
   * Weather: full view shows imminent sunrise/sunset
   * OPParams: add toggle to reset all opparams to defaults on next start
