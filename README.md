@@ -35,6 +35,21 @@ Please (at least partially) direct your support for the SunnyPilot fork to Sunny
 ![](https://github.com/twilsonco/openpilot/blob/tw-0.8.9-dev/fork_image_metrics.png?raw=true)
 ![](https://github.com/twilsonco/openpilot/blob/tw-0.8.9-dev/fork_image_misc.png?raw=true)
 
+### Videos
+------
+<table>
+  <tr>
+    <td><a href="https://youtu.be/9hXuDye1HT0" title="YouTube" rel="noopener"><img src="https://i.imgur.com/kPEPNvB.png"></a></td>
+    <td><a href="https://youtu.be/NuFGm8Jhlp0" title="YouTube" rel="noopener"><img src="https://i.imgur.com/CCXiCJi.png"></a></td>
+    <td><a href="https://youtu.be/8i4mUsxL-jk" title="YouTube" rel="noopener"><img src="https://i.imgur.com/mhZfclR.png"></a></td>
+  </tr>
+  <tr>
+    <td><a href="https://youtu.be/Ssx_1S5sJXw" title="YouTube" rel="noopener"><img src="https://i.imgur.com/rAVCth7.png"></a></td>
+    <td><a href="https://youtu.be/O7F07dESH2g" title="YouTube" rel="noopener"><img src="https://i.imgur.com/1Xkggr4.png"></a></td>
+    <td><a href="https://youtu.be/sir1iIg8InI" title="YouTube" rel="noopener"><img src="https://i.imgur.com/nVzVIpX.png"></a></td>
+  </tr>
+</table>
+
 ### Appreciate My Work?
 ------
 
@@ -273,21 +288,6 @@ What is openpilot?
 ------
 
 [openpilot](http://github.com/commaai/openpilot) is an open source driver assistance system. Currently, openpilot performs the functions of Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW) and Lane Departure Warning (LDW) for a growing variety of [supported car makes, models and model years](docs/CARS.md). In addition, while openpilot is engaged, a camera based Driver Monitoring (DM) feature alerts distracted and asleep drivers. See more about [the vehicle integration](docs/INTEGRATION.md) and [limitations](docs/LIMITATIONS.md).
-
-<table>
-  <tr>
-    <td><a href="https://www.youtube.com/watch?v=mgAbfr42oI8" title="YouTube" rel="noopener"><img src="https://i.imgur.com/kAtT6Ei.png"></a></td>
-    <td><a href="https://www.youtube.com/watch?v=394rJKeh76k" title="YouTube" rel="noopener"><img src="https://i.imgur.com/lTt8cS2.png"></a></td>
-    <td><a href="https://www.youtube.com/watch?v=1iNOc3cq8cs" title="YouTube" rel="noopener"><img src="https://i.imgur.com/ANnuSpe.png"></a></td>
-    <td><a href="https://www.youtube.com/watch?v=Vr6NgrB-zHw" title="YouTube" rel="noopener"><img src="https://i.imgur.com/Qypanuq.png"></a></td>
-  </tr>
-  <tr>
-    <td><a href="https://www.youtube.com/watch?v=Ug41KIKF0oo" title="YouTube" rel="noopener"><img src="https://i.imgur.com/3caZ7xM.png"></a></td>
-    <td><a href="https://www.youtube.com/watch?v=NVR_CdG1FRg" title="YouTube" rel="noopener"><img src="https://i.imgur.com/bAZOwql.png"></a></td>
-    <td><a href="https://www.youtube.com/watch?v=tkEvIdzdfUE" title="YouTube" rel="noopener"><img src="https://i.imgur.com/EFINEzG.png"></a></td>
-    <td><a href="https://www.youtube.com/watch?v=_P-N1ewNne4" title="YouTube" rel="noopener"><img src="https://i.imgur.com/gAyAq22.png"></a></td>
-  </tr>
-</table>
 
 
 Running in a car
