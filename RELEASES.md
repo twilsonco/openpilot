@@ -1,7 +1,7 @@
-Version tw-0.8.12-16 (2023-4-7)
+Version tw-0.8.12-16 (2023-4-7,9)
 ========================
   * Improved "torque" lateral control
-    * Volt neural network feedforward (optional with toggle)
+    * Volt neural network feedforward (optional with toggle) (updated 4/9)
     * Volt 3-part composite fit feedforward with lateral accel, lateral jerk, and lateral gravitaional accel components
     * Revamped AZNPIDF lateral controller for more robust corrections and better centering on straights
     * Error downscalling in curves to allow feedforward to do most of the work, resulting in smoother steering wheel motion.
