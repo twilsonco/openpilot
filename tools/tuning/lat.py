@@ -204,6 +204,7 @@ class Sample():
   car_make: str = ''
   car_fp: str = ''
   long_actuator_delay: float = np.nan
+  t: float = np.nan
   
 
 class CleanSample(NamedTuple):
