@@ -6,6 +6,9 @@ latdir="/mnt/video/scratch-video/latfiles"
 cd "$rlogdir"
 
 for make in *; do
+  if [[ "$make" != "gm" ]]; then
+    continue
+  fi
   makedir="$rlogdir/$make"
   if [ ! -d "$makedir" ]; then
     continue
