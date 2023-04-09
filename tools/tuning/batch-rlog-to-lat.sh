@@ -6,15 +6,16 @@ latdir="/mnt/video/scratch-video/latfiles"
 cd "$rlogdir"
 
 for make in *; do
-  if [[ "$make" != "gm" ]]; then
-    continue
-  fi
   makedir="$rlogdir/$make"
   if [ ! -d "$makedir" ]; then
     continue
   fi
   cd "$makedir"
   for car in *; do
+    if [[ "$car" !~ ".*VOLT.*" ]]
+    then
+      continue
+    fi
     curdir="$makedir/$car"
     if [ ! -d "$curdir" ]; then
       continue
