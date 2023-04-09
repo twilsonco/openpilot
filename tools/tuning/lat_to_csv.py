@@ -79,7 +79,8 @@ def pickle_files_to_csv(input_dir):
     # random.shuffle(pickle_files)
     for pickle_file in tqdm(pickle_files):
         with open(os.path.join(input_dir, pickle_file), 'rb') as f:
-            data.extend([s for s in pickle.load(f) if s.v_ego > 0.1])
+            pk = pickle.load(f)
+            data.extend([s for s in pk if s.v_ego > 0.01])
             # print(f"{data[-1].torque_driver = }")
             # i+=1
             # if i > 1500:
@@ -94,13 +95,22 @@ def pickle_files_to_csv(input_dir):
           make = s.car_make
           model = s.car_fp
         
-    s = [s for s in data if ((s.enabled and s.torque_driver <= 0.5) or (not s.enabled and s.torque_driver <= 2.0))]
+    # data = [s for s in data if ((s.enabled and s.torque_driver <= 0.5) or (not s.enabled and s.torque_driver <= 2.0))]
+    # data = [vars(s) for s in data]
+    
+    # Need to determine values of what the lateral accel and jerk will be in the future at each point,
+    # so it can be utilized by the model
+    # This could be done using the model's predicted future conditions at each time point but those aren't 
+    # accurate relative to what actually happened, and I'd have to regenerate lat files to use the model predictions.
+    # On the road, the FF model will have access to up to 2.5s into the future of lateral accel and jerk, and
+    # this comes over 10 or so data points. That's probably too many. A value of around 0.4s is the baseline based
+    # on steer actuator delays, so we'll include 
     
     
     # pickle.dump(data, open(output_csv.replace(".csv", ".pkl"), "wb"))
     # pickle.dump(data, lzma.open(output_csv.replace(".csv", ".pkl.xz"), "wb"))
     print("creating dataframe")
-    data = pd.DataFrame([vars(s) for s in data], columns=[
+    df = pd.DataFrame([vars(s) for s in data], columns=[
         'v_ego',
         # 'a_ego',
         'lateral_accel',
@@ -110,9 +120,8 @@ def pickle_files_to_csv(input_dir):
     
     # Write the DataFrame to a CSV file
     print("writing csv")
-    data.to_csv(os.path.join(input_dir,f"{model}.csv"), index=False, float_format='%.8g')
+    df.to_csv(os.path.join(input_dir,f"{model}.csv"), index=False, float_format='%.8g')
 
 # Example usage:
 input_dir = '/Users/haiiro/NoSync/latfiles/gm/CHEVROLET VOLT PREMIER 2018'
-output_csv = '/Users/haiiro/NoSync/voltlat_large.csv'
-pickle_files_to_csv(input_dir, output_csv)
+pickle_files_to_csv(input_dir)
