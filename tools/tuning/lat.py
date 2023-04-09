@@ -186,6 +186,7 @@ class Sample():
   car_make: str = ''
   car_fp: str = ''
   long_actuator_delay: float = np.nan
+  t: float = np.nan
   
 
 class CleanSample(NamedTuple):
@@ -222,6 +223,7 @@ def collect(lr):
     # print(f'{msg.which() = }')
     try:
       # type_set.add(msg.which())
+      s.t = msg.logMonoTime
       if msg.which() == 'carState':
         s.v_ego  = msg.carState.vEgo
         s.a_ego  = msg.carState.aEgo
