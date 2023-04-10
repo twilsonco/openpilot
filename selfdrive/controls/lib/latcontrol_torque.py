@@ -191,7 +191,7 @@ class LatControlTorque(LatControl):
       ff += friction_compensation
       
       if self.CI.ff_nn_model is not None:
-        ff_nn = self.CI.get_ff_nn(CS.vEgo, desired_lateral_accel, lookahead_lateral_jerk, lateral_accel_g)
+        ff_nn = self.CI.get_ff_nn(CS.vEgo, desired_lateral_accel, lookahead_lateral_jerk, params.roll)
       else:
         ff_nn = None
       

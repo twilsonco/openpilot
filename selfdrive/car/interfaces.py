@@ -175,8 +175,8 @@ class CarInterfaceBase():
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
   
-  def get_ff_nn(self, v_ego, lateral_accel, lateral_jerk, lateral_g_accel):
-    return self.ff_nn_model.evaluate([v_ego, lateral_accel, lateral_jerk, -lateral_g_accel])
+  def get_ff_nn(self, v_ego, lateral_accel, lateral_jerk, roll):
+    return self.ff_nn_model.evaluate([v_ego, lateral_accel, lateral_jerk, -roll])
 
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed, CI = None):
