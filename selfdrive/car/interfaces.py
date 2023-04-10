@@ -39,7 +39,7 @@ class FluxModel:
     self.output_size = params["output_size"]
     self.input_mean = np.array(params["input_mean"], dtype=np.float32).T
     self.input_std = np.array(params["input_std"], dtype=np.float32).T
-    test_dict = params["test_dict"]
+    test_dict = params["test_dict_zero_bias"] if zero_bias else params["test_dict"]
     self.layers = []
 
     for layer_params in params["layers"]:
