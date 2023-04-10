@@ -54,9 +54,7 @@ class FluxModel:
     
     self.test(test_dict)
     if not self.test_passed:
-      raise ValueError("NN FF model failed test: {params_file}")
-    cloudlog.info(f"NN FF model loaded")
-    cloudlog.info(self.summary(do_print=False))
+      raise ValueError(f"NN FF model failed test: {params_file}")
 
   # Begin activation functions.
   # These are called by name using the keys in the model json file
@@ -110,6 +108,7 @@ class FluxModel:
         num_passed += 1
       else:
         num_failed += 1
+        raise ValueError(f"NN FF model failed test at value {input_list}: expected {expected_output}, got {model_output}")
 
     summary_str = (
       f"Test results: PASSED ({num_passed} inputs tested) "
