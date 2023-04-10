@@ -76,7 +76,6 @@ class LatControlTorque(LatControl):
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
     self.low_speed_factor_bp = [0.0, 30.0]
     self.low_speed_factor_v = [15.0, 5.0]
-    self.in_curve = False
     self.steer_pressed_frames_since = 0
     
       
@@ -149,15 +148,7 @@ class LatControlTorque(LatControl):
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       desired_lateral_accel += CS.aEgo * desired_curvature
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_lateral_accel], key=lambda x: abs(x))
-      if self.in_curve:
-        if abs(desired_lateral_accel) < 0.4:
-          self.in_curve = False
-      elif abs(desired_lateral_accel) > 1.0:
-        self.in_curve = True
-      if self.in_curve and abs(max_future_lateral_accel) < 0.4:
-        error_scale_lat_accel = min([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_lateral_accel], key=lambda x: abs(x))
-      else:
-        error_scale_lat_accel = max_future_lateral_accel
+      error_scale_lat_accel = max_future_lateral_accel
       
       low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
       lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
