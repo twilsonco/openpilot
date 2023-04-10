@@ -31,7 +31,7 @@ ACCEL_MIN = -3.5
 class FluxModel:
   # dict used to rename activation functions whose names aren't valid python identifiers
   activation_function_names = {'σ': 'sigmoid'}
-  def __init__(self, params_file, zero_bias=True):
+  def __init__(self, params_file, zero_bias=False):
     with open(params_file, "r") as f:
       params = json.load(f)
 
