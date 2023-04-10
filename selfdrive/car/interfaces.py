@@ -56,6 +56,8 @@ class FluxModel:
     if not self.test_passed:
       raise ValueError(f"NN FF model failed test: {params_file}")
 
+    cloudlog.info(f"NN FF model loaded")
+    cloudlog.info(self.summary(do_print=False))
   # Begin activation functions.
   # These are called by name using the keys in the model json file
   def sigmoid(self, x):
