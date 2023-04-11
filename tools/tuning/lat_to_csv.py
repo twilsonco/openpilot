@@ -96,14 +96,17 @@ def pickle_files_to_csv(input_dir):
     i=0
     # random.shuffle(pickle_files)
     print("Loading pickle files...")
-    record_times = np.array([0.2, 0.4, 1.0, 2.0])
     columns = [
       'v_ego',
       # 'a_ego',
       'lateral_accel',
       'lateral_jerk',
       'roll', # actually lateral gravitational acceleration
-      'steer_cmd'] + [f"lateral_accel_{i}" for i in range(len(record_times))] + [f"lateral_jerk_{i}" for i in range(len(record_times))] + [f"roll_{i}" for i in range(len(record_times))]
+      'steer_cmd',
+      "lateral_accel_1",
+      "lateral_jerk_1",
+      "roll_1"
+      ]
     for pickle_file in tqdm(pickle_files):
       with open(os.path.join(input_dir, pickle_file), 'rb') as f:
         try:
@@ -142,8 +145,10 @@ def pickle_files_to_csv(input_dir):
     
     # desired_points = 15000000
     CTRL_RATE = 100
-    max_time = 2.01
-    print(f"Record times: {record_times}")
+    t = 0.3
+    max_time = t + 0.02
+    max_time *= 2.0
+    print(f"Record time: {t}")
     max_len = int(max_time * CTRL_RATE)
     i = int(max_len / 2)
     lat_accel_deque = deque(maxlen=max_len)
@@ -170,11 +175,17 @@ def pickle_files_to_csv(input_dir):
         roll_deque.append(s['roll'])
       
       if len(lat_accel_deque) == max_len:
-        sout = sample_deque[0]
+        sout = sample_deque[len(sample_deque) // 2]
         Ts = [(s['t'] - sout['t']) * 1e-9 for s in sample_deque]
-        sout = {**sout, **{f"lateral_accel_{i}": interp(t, Ts, lat_accel_deque) - sout['lateral_accel'] for i, t in enumerate(record_times)}}
-        sout = {**sout, **{f"lateral_jerk_{i}": interp(t, Ts, lat_jerk_deque) - sout['lateral_jerk'] for i, t in enumerate(record_times)}}
-        sout = {**sout, **{f"roll_{i}": interp(t, Ts, roll_deque) - sout['roll'] for i, t in enumerate(record_times)}}
+        # record values 0.3s in the past and future
+        # first past
+        sout["lateral_accel_m1"] = interp(-t, Ts, lat_accel_deque) - sout['lateral_accel']
+        sout["lateral_jerk_m1"] = interp(-t, Ts, lat_jerk_deque) - sout['lateral_jerk']
+        sout["roll_pm"] = interp(-t, Ts, roll_deque) - sout['roll']
+        # then future
+        sout["lateral_accel_p1"] = interp(t, Ts, lat_accel_deque) - sout['lateral_accel']
+        sout["lateral_jerk_p1"] = interp(t, Ts, lat_jerk_deque) - sout['lateral_jerk']
+        sout["roll_p1"] = interp(t, Ts, roll_deque) - sout['roll']
         sout = {k: sout[k] for k in columns}
         outdata.append(sout)
         # if len(outdata) >= desired_points:
@@ -195,7 +206,7 @@ def pickle_files_to_csv(input_dir):
     # df.to_csv(os.path.join(input_dir,f"{model}.csv"), index=False)#, float_format='%.8g')
     # feather.write_dataframe(df, os.path.join(input_dir,f"{model}.feather"))
     # df.to_feather(os.path.join(input_dir,f"{model}.feather"))
-    feather.write_feather(df, os.path.join(input_dir,f"{model}_large.feather"), version=1)
+    feather.write_feather(df, os.path.join(input_dir,f"{model}_large2.feather"), version=1)
 
 # Example usage:
 input_dir = '/Users/haiiro/NoSync/latfiles/gm/CHEVROLET VOLT PREMIER 2018'
