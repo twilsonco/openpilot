@@ -36,6 +36,7 @@ ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T = 0.6 # [s]
 
 ONE_PEDAL_MODE_DECEL_V = [-1.0, -1.1] # m/s^2
 ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V = [-1.3, -1.6] # m/s^2
+ONE_PEDAL_MODE_ONE_TIME_DECEL_V = [-1.3, -1.6] # m/s^2
 ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V + ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
 ONE_PEDAL_DECEL_RATE_LIMIT_UP = 0.8 * DT_CTRL * 4 # m/s^2 per second for increasing braking force
 ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = 0.8 * DT_CTRL * 4 # m/s^2 per second for decreasing
@@ -86,15 +87,18 @@ class CarController():
     self.threshold_accel = 0.0
   
   def update_op_params(self):
-    global ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_V, ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_V, ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP, ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_BP, ONE_PEDAL_MODE_DECEL_V, ONE_PEDAL_MAX_DECEL, ONE_PEDAL_DECEL_RATE_LIMIT_UP, ONE_PEDAL_DECEL_RATE_LIMIT_DOWN, ONE_PEDAL_SPEED_ERROR_FACTOR_V, ONE_PEDAL_ACCEL_PITCH_FACTOR_V, ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V, ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V
+    global ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_V, ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_V, ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP, ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_BP, ONE_PEDAL_MODE_DECEL_V, ONE_PEDAL_MAX_DECEL, ONE_PEDAL_DECEL_RATE_LIMIT_UP, ONE_PEDAL_DECEL_RATE_LIMIT_DOWN, ONE_PEDAL_SPEED_ERROR_FACTOR_V, ONE_PEDAL_ACCEL_PITCH_FACTOR_V, ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V, ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V, ONE_PEDAL_MODE_ONE_TIME_DECEL_V
     
     ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_V[0] = self._op_params.get('MADS_OP_rate_low_speed_factor')
     ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP = sorted(self._op_params.get('MADS_OP_rate_low_speed_factor_bp'))
     ONE_PEDAL_DECEL_RATE_LIMIT_STEER_FACTOR_V[1] = self._op_params.get('MADS_OP_rate_high_steer_factor')
     ONE_PEDAL_DECEL_RATE_LIMIT_SPEED_FACTOR_BP = sorted(self._op_params.get('MADS_OP_rate_high_steer_factor_bp'))
     ONE_PEDAL_MODE_DECEL_V = self._op_params.get('MADS_OP_decel_ms2')
-    ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V = self._op_params.get('MADS_OP_regen_paddle_decel_ms2')
-    ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V + ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
+    k = self._op_params.get('MADS_OP_regen_paddle_decel_factor')
+    ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V = [k * v for v in ONE_PEDAL_MODE_DECEL_V]
+    k = self._op_params.get('MADS_OP_one_time_stop_decel_factor')
+    ONE_PEDAL_MODE_ONE_TIME_DECEL_V = [k * v for v in ONE_PEDAL_MODE_DECEL_V]
+    ONE_PEDAL_MAX_DECEL = min(ONE_PEDAL_MODE_DECEL_V + ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V + ONE_PEDAL_MODE_ONE_TIME_DECEL_V) - 0.5 # don't allow much more than the lowest requested amount
     ONE_PEDAL_DECEL_RATE_LIMIT_UP = self._op_params.get('MADS_OP_rate_ramp_up') * DT_CTRL * 4 # m/s^2 per second for increasing braking force
     ONE_PEDAL_DECEL_RATE_LIMIT_DOWN = self._op_params.get('MADS_OP_rate_ramp_down') * DT_CTRL * 4 # m/s^2 per second for decreasing
     ONE_PEDAL_SPEED_ERROR_FACTOR_V = self._op_params.get('MADS_OP_speed_error_factor') # factor of error for non-lead braking decel
@@ -207,9 +211,13 @@ class CarController():
           pitch_accel *= interp(CS.vEgo, ONE_PEDAL_ACCEL_PITCH_FACTOR_BP, ONE_PEDAL_ACCEL_PITCH_FACTOR_V if pitch_accel <= 0 else ONE_PEDAL_ACCEL_PITCH_FACTOR_INCLINE_V)
           
           if CS.gear_shifter_ev in ONE_PEDAL_ALLOWED_GEARS:
-            self.one_pedal_decel_in = interp(CS.vEgo, 
-                                             ONE_PEDAL_MODE_DECEL_BP, 
-                                             ONE_PEDAL_MODE_DECEL_V if CS.gear_shifter_ev == GEAR_SHIFTER2.LOW else ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V)
+            if CS.gear_shifter_ev != GEAR_SHIFTER2.LOW:
+              decel_v = ONE_PEDAL_MODE_REGEN_PADDLE_DECEL_V
+            elif CS.out.onePedalModeTemporary:
+              decel_v = ONE_PEDAL_MODE_ONE_TIME_DECEL_V
+            else:
+              decel_v = ONE_PEDAL_MODE_DECEL_V
+            self.one_pedal_decel_in = interp(CS.vEgo, ONE_PEDAL_MODE_DECEL_BP, decel_v)
             
             error_factor = interp(CS.vEgo, ONE_PEDAL_SPEED_ERROR_FACTOR_BP, ONE_PEDAL_SPEED_ERROR_FACTOR_V)
             error = self.one_pedal_decel_in - min(0.0, CS.out.aEgo + pitch_accel)

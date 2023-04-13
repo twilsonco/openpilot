@@ -428,7 +428,9 @@ class opParams:
       
       'MADS_OP_decel_ms2': Param([-1.0, -1.1], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is not pressed.', min_val=-2.5, max_val=0.0, unit='m/s²'),
       
-      'MADS_OP_regen_paddle_decel_ms2': Param([-1.3, -1.6], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is pressed.', min_val=-2.5, max_val=0.0, unit='m/s²'),
+      'MADS_OP_regen_paddle_decel_factor': Param(1.3, float, 'When the regen paddle is pressed, the deceleration values defined above are scaled according to this value.', min_val=1.0, max_val=3.0),
+      
+      'MADS_OP_one_time_stop_decel_factor': Param(0.8, float, 'One pedal driving "one time stop" is when one pedal driving mode is temporarily enabled, to bring you to a stop one time, activated by holding the regen paddle as you come to a stop, and indicated by a "warning"-color behind the MADS/one-pedal icon. The one-pedal mode deceleration values defined above are scaled according to this value.', min_val=0.1, max_val=3.0),
       
       'MADS_OP_rate_ramp_up': Param(0.8, float, 'The rate at which one-pedal brake force increases (applying)', min_val=0.1, max_val=3.0, unit='m/s³'),
       
