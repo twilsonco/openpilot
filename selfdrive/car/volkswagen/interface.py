@@ -168,6 +168,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.AUDI_A3_MK3:
       ret.mass = 1335 + STD_CARGO_KG
       ret.wheelbase = 2.61
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.AUDI_Q2_MK1:
       ret.mass = 1205 + STD_CARGO_KG
