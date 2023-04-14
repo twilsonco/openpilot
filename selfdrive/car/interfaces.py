@@ -1,5 +1,10 @@
+import numpy as np
+import json
 import yaml
+import operator
+import re
 import os
+import ast
 import time
 from abc import abstractmethod, ABC
 from typing import Any, Dict, Optional, Tuple, List, Callable
@@ -29,6 +34,109 @@ TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/params.yam
 TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override.yaml')
 TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.yaml')
 
+class FluxModel:
+  # dict used to rename activation functions whose names aren't valid python identifiers
+  activation_function_names = {'σ': 'sigmoid'}
+  def __init__(self, params_file, zero_bias=False):
+    with open(params_file, "r") as f:
+      params = json.load(f)
+
+    self.input_size = params["input_size"]
+    self.output_size = params["output_size"]
+    self.input_mean = np.array(params["input_mean"], dtype=np.float32).T
+    self.input_std = np.array(params["input_std"], dtype=np.float32).T
+    test_dict = params["test_dict_zero_bias"] if zero_bias else params["test_dict"]
+    self.layers = []
+
+    for layer_params in params["layers"]:
+      W = np.array(layer_params[next(key for key in layer_params.keys() if key.endswith('_W'))], dtype=np.float32).T
+      b = np.array(layer_params[next(key for key in layer_params.keys() if key.endswith('_b'))], dtype=np.float32).T
+      if zero_bias:
+        b = np.zeros_like(b)
+      activation = layer_params["activation"]
+      for k, v in self.activation_function_names.items():
+        activation = activation.replace(k, v)
+      self.layers.append((W, b, activation))
+    
+    self.test(test_dict)
+    if not self.test_passed:
+      raise ValueError(f"NN FF model failed test: {params_file}")
+    
+  # Begin activation functions.
+  # These are called by name using the keys in the model json file
+  def sigmoid(self, x):
+    return 1 / (1 + np.exp(-x))
+
+  def identity(self, x):
+    return x
+  # End activation functions
+
+  def forward(self, x):
+    for W, b, activation in self.layers:
+      if hasattr(self, activation):
+        x = getattr(self, activation)(x.dot(W) + b)
+      else:
+        raise ValueError(f"Unknown activation: {activation}")
+    return x
+
+  def evaluate(self, input_array):
+    input_array = np.array(input_array, dtype=np.float32)#.reshape(1, -1)
+
+    if input_array.shape[0] != self.input_size:
+      raise ValueError(f"Input array last dimension {input_array.shape[-1]} does not match the expected length {self.input_size}")
+    # Rescale the input array using the input_mean and input_std
+    input_array = (input_array - self.input_mean) / self.input_std
+
+    output_array = self.forward(input_array)
+
+    return float(output_array[0, 0])
+  
+  def test(self, test_data: dict) -> str:
+    num_passed = 0
+    num_failed = 0
+    allowed_chars = r'^[-\d.,\[\] ]+$'
+
+    for input_str, expected_output in test_data.items():
+      if not re.match(allowed_chars, input_str):
+        raise ValueError(f"Invalid characters in NN FF model testing input string: {input_str}")
+
+      input_list = ast.literal_eval(input_str)
+      model_output = self.evaluate(input_list)
+
+      if abs(model_output - expected_output) <= 1e-6:
+        num_passed += 1
+      else:
+        num_failed += 1
+        raise ValueError(f"NN FF model failed test at value {input_list}: expected {expected_output}, got {model_output}")
+
+    summary_str = (
+      f"Test results: PASSED ({num_passed} inputs tested) "
+    )
+    
+    self.test_passed = num_failed == 0
+    self.test_str = summary_str
+
+  def summary(self, do_print=True):
+    summary_lines = [
+      "FluxModel Summary:",
+      f"Input size: {self.input_size}",
+      f"Output size: {self.output_size}",
+      f"Number of layers: {len(self.layers)}",
+      self.test_str,
+      "Layer details:"
+    ]
+
+    for i, (W, b, activation) in enumerate(self.layers):
+      summary_lines.append(
+          f"  Layer {i + 1}: W: {W.shape}, b: {b.shape}, f: {activation}"
+      )
+    
+    summary_str = "\n".join(summary_lines)
+
+    if do_print:
+      print(summary_str)
+
+    return summary_str
 
 def get_torque_params(candidate):
   with open(TORQUE_SUBSTITUTE_PATH) as f:
@@ -67,6 +175,7 @@ class CarInterfaceBase(ABC):
     self.no_steer_warning = False
     self.silent_steer_warning = True
     self.v_ego_cluster_seen = False
+    self.ff_nn_model = None
 
     self.CS = None
     self.can_parsers = []
@@ -83,6 +192,23 @@ class CarInterfaceBase(ABC):
     self.CC = None
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
+  
+  def get_ff_nn(self, v_ego, lateral_accel, lateral_jerk, roll):
+    return self.ff_nn_model.evaluate([v_ego, lateral_accel, lateral_jerk, -roll])
+  
+  def get_nn_ff_model_path(self, car):
+    return os.path.join("data/openpilot/selfdrive/car/torque_data/lat_models", f'{car}.json')
+  
+  def has_nn_ff(self, car):
+    model_path = self.get_nn_ff_model_path(car)
+    if os.path.isfile(model_path):
+      return True
+    else:
+      return False
+  
+  def initialize_ff_nn(self, car):
+    if self.has_nn_ff(car):
+      self.ff_nn_model = FluxModel(self.get_nn_ff_model_path(car))
 
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):

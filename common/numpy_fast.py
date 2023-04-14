@@ -17,3 +17,11 @@ def interp(x, xp, fp):
 
 def mean(x):
   return sum(x) / len(x)
+
+def sign(x):
+  if x > 0.0:
+    return 1.0
+  elif x < 0.0:
+    return -1.0
+  else:
+    return 0.0
