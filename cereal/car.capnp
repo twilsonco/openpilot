@@ -131,6 +131,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     controlsMismatchLong @130;
     cruiseEngageBlocked @131;
 
+    autoHoldActivated @132;
+
     radarCanErrorDEPRECATED @15;
     communityFeatureDisallowedDEPRECATED @62;
     radarCommIssueDEPRECATED @67;
@@ -231,6 +233,8 @@ struct CarState {
   gapAdjustCruiseTr @53 :Int32;
   endToEndLong @54 :Bool;
   customStockLong @55 :CustomStockLong;
+
+  autoHoldActivated @56 :Bool;
 
   struct CustomStockLong {
     cruiseButton @0 :Int16;

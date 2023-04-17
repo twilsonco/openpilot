@@ -1064,4 +1064,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.NO_ENTRY: NoEntryAlert("LKAS Disabled"),
   },
 
+  EventName.autoHoldActivated: {
+    ET.PERMANENT: Alert(
+    "AutoHolding | Gas to resume",
+    "You can rest your foot now.",
+    AlertStatus.normal, AlertSize.small,
+    Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3),
+  },
 }

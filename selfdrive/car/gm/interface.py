@@ -4,6 +4,8 @@ from math import fabs
 from panda import Panda
 
 from common.conversions import Conversions as CV
+from common.realtime import sec_since_boot
+
 from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config, create_mads_event
 from selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
 from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
@@ -203,6 +205,8 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback)
     self.sp_update_params(self.CS)
+    
+    t = sec_since_boot()
 
     buttonEvents = []
 
@@ -277,12 +281,32 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowEngageSpeed)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
+    if self.CS.autoHoldActivated:
+      events.add(car.CarEvent.EventName.autoHoldActivated)
     if ret.vEgo < self.CP.minSteerSpeed and self.CS.madsEnabled and ret.vEgo > 0.05:
       events.add(EventName.belowSteerSpeed)
+      
+    if self.CS.autoHoldActivated:
+      self.CS.lastAutoHoldTime = t
+    if EventName.accFaulted in events.events and \
+        (t - self.CS.sessionInitTime < 10.0 or
+        t - self.CS.lastAutoHoldTime < 1.0):
+      events.events.remove(EventName.accFaulted)
 
     ret.events = events.to_msg()
 
     return ret
 
   def apply(self, c, now_nanos):
-    return self.CC.update(c, self.CS, now_nanos)
+    can_sends =  self.CC.update(c, self.CS, now_nanos)
+    # Release Auto Hold and creep smoothly when regenpaddle pressed
+    if self.CS.regenPaddlePressed and self.CS.autoHold:
+      self.CS.autoHoldActive = False
+
+    if self.CS.autoHold and not self.CS.autoHoldActive and not self.CS.regenPaddlePressed:
+      if self.CS.out.vEgo > 0.03:
+        self.CS.autoHoldActive = True
+      elif self.CS.out.vEgo < 0.02 and self.CS.out.brakePressed:
+        self.CS.autoHoldActive = True
+        
+    return can_sends
