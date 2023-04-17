@@ -276,7 +276,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowEngageSpeed)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
-    if ret.vEgo < self.CP.minSteerSpeed and self.CS.madsEnabled:
+    if ret.vEgo < self.CP.minSteerSpeed and self.CS.madsEnabled and ret.vEgo > 0.05:
       events.add(EventName.belowSteerSpeed)
 
     ret.events = events.to_msg()
