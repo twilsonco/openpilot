@@ -11,6 +11,7 @@ from selfdrive.modeld.constants import T_IDXS
 _ACTIVE_LIMIT_MIN_ACC = -0.5  # m/s^2 Maximum deceleration allowed while active.
 _ACTIVE_LIMIT_MAX_ACC = 0.5   # m/s^2 Maximum acelration allowed while active.
 
+SPEED_LIMIT_SCALE = 1.2
 
 _DEBUG = False
 
@@ -124,7 +125,7 @@ class TurnSpeedController():
     if map_data.turnSpeedLimitValid and self._v_ego > 0.:
       speed_limit_end_time = (map_data.turnSpeedLimitEndDistance / self._v_ego) - gps_fix_age
       if speed_limit_end_time > 0.:
-        speed_limit = map_data.turnSpeedLimit
+        speed_limit = map_data.turnSpeedLimit * SPEED_LIMIT_SCALE
 
     # When we have no ahead speed limit to consider or all are greater than current speed limit
     # or car has stopped, then provide current value and reset tracking.
