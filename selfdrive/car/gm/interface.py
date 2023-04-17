@@ -4,6 +4,7 @@ from math import fabs, exp
 from panda import Panda
 
 from common.conversions import Conversions as CV
+from common.realtime import sec_since_boot
 from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
 from selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
 from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
@@ -77,6 +78,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kpV = [2.0, 1.5]
       ret.longitudinalTuning.kiV = [0.72]
       ret.stoppingDecelRate = 2.0  # reach brake quickly after enabling
+      ret.stopAccel = -2.0
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
 
@@ -93,6 +95,7 @@ class CarInterface(CarInterfaceBase):
       # supports stop and go, but initial engage must (conservatively) be above 18mph
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.minSteerSpeed = 7 * CV.MPH_TO_MS
+      ret.stoppingDecelRate = 0.02
 
       # Tuning
       ret.longitudinalTuning.kpV = [2.4, 1.5]
@@ -111,11 +114,12 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     tire_stiffness_factor = 0.444  # not optimized yet
 
-    ret.steerLimitTimer = 0.4
+    ret.steerLimitTimer = 0.8
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
     ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
     if candidate == CAR.VOLT:
+      ret.minEnableSpeed = -1
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
@@ -124,6 +128,11 @@ class CarInterface(CarInterfaceBase):
 
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       ret.steerActuatorDelay = 0.2
+      
+      ret.longitudinalTuning.kpBP = [5., 15., 35.]
+      ret.longitudinalTuning.kpV = [0.8, .9, 0.8]
+      ret.longitudinalTuning.kiBP = [5., 15., 35.]
+      ret.longitudinalTuning.kiV = [0.08, 0.13, 0.13]
 
     elif candidate == CAR.MALIBU:
       ret.mass = 1496. + STD_CARGO_KG
@@ -227,6 +236,8 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback)
+    
+    t = sec_since_boot()
 
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
       buttonEvents = [create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)]
@@ -252,12 +263,32 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowEngageSpeed)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
-    if ret.vEgo < self.CP.minSteerSpeed:
+    if self.CS.autoHoldActivated:
+      events.add(car.CarEvent.EventName.autoHoldActivated)
+    if ret.vEgo < self.CP.minSteerSpeed and ret.vEgo > 0.05:
       events.add(EventName.belowSteerSpeed)
+      
+    if self.CS.autoHoldActivated:
+      self.CS.lastAutoHoldTime = t
+    if EventName.accFaulted in events.events and \
+        (t - self.CS.sessionInitTime < 10.0 or
+        t - self.CS.lastAutoHoldTime < 1.0):
+      events.events.remove(EventName.accFaulted)
 
     ret.events = events.to_msg()
 
     return ret
 
   def apply(self, c, now_nanos):
-    return self.CC.update(c, self.CS, now_nanos)
+    can_sends =  self.CC.update(c, self.CS, now_nanos)
+    # Release Auto Hold and creep smoothly when regenpaddle pressed
+    if self.CS.regenPaddlePressed and self.CS.autoHold:
+      self.CS.autoHoldActive = False
+
+    if self.CS.autoHold and not self.CS.autoHoldActive and not self.CS.regenPaddlePressed:
+      if self.CS.out.vEgo > 0.03:
+        self.CS.autoHoldActive = True
+      elif self.CS.out.vEgo < 0.02 and self.CS.out.brakePressed:
+        self.CS.autoHoldActive = True
+        
+    return can_sends

@@ -115,6 +115,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     resumeBlocked @113;
     steerTimeLimit @115;
 
+    autoHoldActivated @116;
+
     radarCanErrorDEPRECATED @15;
     communityFeatureDisallowedDEPRECATED @62;
     radarCommIssueDEPRECATED @67;
@@ -204,6 +206,8 @@ struct CarState {
 
   # clutch (manual transmission only)
   clutchPressed @28 :Bool;
+
+  autoHoldActivated @46 :Bool;
 
   # blindspot sensors
   leftBlindspot @33 :Bool; # Is there something blocking the left lane change
