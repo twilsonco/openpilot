@@ -6,7 +6,7 @@ from common.realtime import sec_since_boot
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD
+from selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD, CAR
 
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
@@ -28,7 +28,7 @@ class CarState(CarStateBase):
     self.buttons_counter = 0
     
     self.regenPaddlePressed = False
-    self.autoHold = True
+    self.autoHold = CP.carFingerprint != CAR.BOLT_EUV
     self.autoHoldActive = False
     self.autoHoldActivated = False
     self.lastAutoHoldTime = 0.0
