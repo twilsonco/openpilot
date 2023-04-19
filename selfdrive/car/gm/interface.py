@@ -56,7 +56,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kpV = [2.0, 1.5]
       ret.longitudinalTuning.kiV = [0.72]
       ret.stopAccel = -2.0
-      ret.stoppingDecelRate = 2.0  # reach brake quickly after enabling
+      ret.stoppingDecelRate = 2.0 # reach brake quickly after enabling
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
 
@@ -73,6 +73,7 @@ class CarInterface(CarInterfaceBase):
       # supports stop and go, but initial engage must (conservatively) be above 18mph
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.minSteerSpeed = 7 * CV.MPH_TO_MS
+      ret.stoppingDecelRate = 0.02
 
       # Tuning
       ret.longitudinalTuning.kpV = [2.4, 1.5]
@@ -91,7 +92,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     tire_stiffness_factor = 0.444  # not optimized yet
 
-    ret.steerLimitTimer = 0.4
+    ret.steerLimitTimer = 0.8
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
     ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
