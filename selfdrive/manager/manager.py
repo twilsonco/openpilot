@@ -62,6 +62,7 @@ def manager_init():
     ("CustomSounds", "1"),
     ("SilentEngageDisengage", "1"),
     ("MADSEnabled", "1"),
+    ("MADSAutosteerEnabled", "1"),
     ("DisableDisengageOnGas", "1"),
     ("ScreenDimMode", "2"),
     ("AccelModeButton", "1"),

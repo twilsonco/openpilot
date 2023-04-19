@@ -151,6 +151,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DisableUpdates", PERSISTENT},
     {"DisableDisengageOnGas", PERSISTENT},
     {"MADSEnabled", PERSISTENT},
+    {"MADSAutosteerEnabled", PERSISTENT},
     {"DisableOnroadUploads", PERSISTENT},
     {"LongRangeLeadsEnabled", PERSISTENT},
     {"LowOverheadMode", PERSISTENT},

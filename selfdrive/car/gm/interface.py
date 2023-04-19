@@ -69,6 +69,7 @@ class CarInterface(CarInterfaceBase):
     self.mads_cruise_main = False
     self.autosteer_enabled = False
     self.accel_limits_last = [-3.0, 1.5]
+    self.cruise_enabled_last = False
     
   params_check_last_t = 0.
   params_check_freq = 0.1 # check params at 10Hz
@@ -649,11 +650,16 @@ class CarInterface(CarInterfaceBase):
 
     if self.CS.lka_button and self.CS.lka_button != self.CS.prev_lka_button:
       self.CS.lkaEnabled = not self.CS.lkaEnabled
+      if self.CS.MADS_enabled:
+        put_nonblocking("MADSAutosteerEnabled", str(int(self.CS.lkaEnabled)))
       be = car.CarState.ButtonEvent.new_message()
       be.pressed = True
       be.type = ButtonType.altButton1
       buttonEvents.append(be)
       cloudlog.info("button press event: LKA button. new value: %i" % self.CS.lkaEnabled)
+    elif not cruiseEnabled and self.cruise_enabled_last:
+      self.CS.lkaEnabled = self.CS._params.get_bool("MADSAutosteerEnabled")
+    self.cruise_enabled_last = cruiseEnabled
     
     ret.buttonEvents = buttonEvents
     

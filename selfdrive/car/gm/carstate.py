@@ -380,7 +380,8 @@ class CarState(CarStateBase):
     self.prev_cruise_main = self.cruiseMain
     self.cruiseMain = ret.cruiseState.available
     if self.cruiseMain and not self.prev_cruise_main:
-      self.lkaEnabled = True
+      if self.MADS_enabled:
+        self.lkaEnabled = self._params.get_bool("MADSAutosteerEnabled")
     elif not self.cruiseMain:
       self.lkaEnabled = False
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
