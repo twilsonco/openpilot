@@ -960,4 +960,28 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     AlertStatus.normal, AlertSize.small,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3),
   },
+  
+  EventName.torqueNNFFLoadSuccess: {
+    ET.PERMANENT: Alert(
+      "e2e NN torque controller loaded successfully",
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 6.0),
+  },
+  
+  EventName.torqueNNFFLoadFailure: {
+    ET.PERMANENT: Alert(
+      "e2e NN torque controller failed to load!",
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 6.0),
+  },
+  
+  EventName.torqueNNFFNotLoaded: {
+  ET.PERMANENT: Alert(
+    "e2e NN torque controller not loaded",
+    "car not found",
+    AlertStatus.userPrompt, AlertSize.mid,
+    Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 6.0),
+  },
 }

@@ -120,13 +120,15 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.83
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 16.33  # 11.82 is spec end-to-end
+      ret.nnffFingerprint = CAR.ACCORD
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.8467
 
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       if eps_modified:
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.09]]
-      else:
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
+        ret.lateralTuning.torque.kp *= 0.6
+        ret.lateralTuning.torque.ki *= 0.6
+        ret.lateralTuning.torque.kf *= 0.6
 
     elif candidate == CAR.ACURA_ILX:
       ret.mass = 3095. * CV.LB_TO_KG + STD_CARGO_KG
@@ -252,7 +254,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.59  # as spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.INSIGHT:
       ret.mass = 2987. * CV.LB_TO_KG + STD_CARGO_KG

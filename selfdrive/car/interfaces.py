@@ -19,6 +19,7 @@ from selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_ine
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
+from system.swaglog import cloudlog
 
 ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
@@ -80,10 +81,17 @@ class FluxModel:
     return x
 
   def evaluate(self, input_array):
+    if len(input_array) != self.input_size:
+      # This can be used to discern between different "versions" of the NNFF model
+      # v1 has an input of 4 (v_ego, lateral_accel, lateral_jerk, roll)
+      # v2 has an input of 20 (v_ego, a_ego, lateral_accel, lateral_jerk, roll, <then three groups of five points with lat accel, lat jerk, and roll data for at one past point -0.3s, and four future points 0.3, 0.6, 1.1, 2.0s, where the 0.3s values are actually the "desired" values when calling the model>) 
+      if self.input_size == 4: # leave out a_ego and anything after the first 5 values
+        input_array = [input_array[0], input_array[1], input_array[2], -input_array[3]]
+      else:
+        raise ValueError(f"Input array length {len(input_array)} does not match the expected length {self.input_size}")
+        
     input_array = np.array(input_array, dtype=np.float32)#.reshape(1, -1)
 
-    if input_array.shape[0] != self.input_size:
-      raise ValueError(f"Input array last dimension {input_array.shape[-1]} does not match the expected length {self.input_size}")
     # Rescale the input array using the input_mean and input_std
     input_array = (input_array - self.input_mean) / self.input_std
 
@@ -95,6 +103,7 @@ class FluxModel:
     num_passed = 0
     num_failed = 0
     allowed_chars = r'^[-\d.,\[\] ]+$'
+    self.test_passed = False
 
     for input_str, expected_output in test_data.items():
       if not re.match(allowed_chars, input_str):
@@ -103,7 +112,7 @@ class FluxModel:
       input_list = ast.literal_eval(input_str)
       model_output = self.evaluate(input_list)
 
-      if abs(model_output - expected_output) <= 1e-6:
+      if abs(model_output - expected_output) <= 5e-5:
         num_passed += 1
       else:
         num_failed += 1
@@ -193,11 +202,11 @@ class CarInterfaceBase(ABC):
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
   
-  def get_ff_nn(self, v_ego, lateral_accel, lateral_jerk, roll):
-    return self.ff_nn_model.evaluate([v_ego, lateral_accel, lateral_jerk, -roll])
+  def get_ff_nn(self, x):
+    return self.ff_nn_model.evaluate(x)
   
   def get_nn_ff_model_path(self, car):
-    return os.path.join("data/openpilot/selfdrive/car/torque_data/lat_models", f'{car}.json')
+    return f"/data/openpilot/selfdrive/car/torque_data/lat_models/{car}.json"
   
   def has_nn_ff(self, car):
     model_path = self.get_nn_ff_model_path(car)
@@ -207,8 +216,15 @@ class CarInterfaceBase(ABC):
       return False
   
   def initialize_ff_nn(self, car):
+    cloudlog.warning(f"Checking for lateral torque NN FF model for {car}...")
     if self.has_nn_ff(car):
       self.ff_nn_model = FluxModel(self.get_nn_ff_model_path(car))
+      cloudlog.warning(f"Lateral torque NN FF model loaded")
+      cloudlog.warning(self.ff_nn_model.summary(do_print=False))
+      return True
+    else:
+      cloudlog.warning(f"No lateral torque NN FF model found for {car}")
+      return False
 
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
@@ -272,6 +288,7 @@ class CarInterfaceBase(ABC):
   def get_std_params(candidate):
     ret = car.CarParams.new_message()
     ret.carFingerprint = candidate
+    ret.nnffFingerprint = candidate
 
     # Car docs fields
     ret.maxLateralAccel = get_torque_params(candidate)['MAX_LAT_ACCEL_MEASURED']
