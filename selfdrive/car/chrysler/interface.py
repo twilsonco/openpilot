@@ -38,11 +38,8 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2242. + STD_CARGO_KG
       ret.wheelbase = 3.089
       ret.steerRatio = 16.2  # Pacifica Hybrid 2017
-
-      ret.lateralTuning.init('pid')
-      ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15, 0.30], [0.03, 0.05]]
-      ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.torque.kf = 1.2
+      ret.nnffFingerprint = CAR.PACIFICA_2019_HYBRID
 
     # Jeep
     elif candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
