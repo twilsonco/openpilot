@@ -63,6 +63,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.88   # 14.5 is spec end-to-end
       tire_stiffness_factor = 0.5533
       ret.mass = 3650. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
+      ret.nnffFingerprint = CAR.RAV4H
 
     elif candidate == CAR.COROLLA:
       ret.wheelbase = 2.70
@@ -91,6 +92,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7933
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
+      ret.nnffFingerprint = CAR.CAMRYH_TSS2
 
     elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
       stop_and_go = True
@@ -121,6 +123,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV = [0.6]
       ret.lateralTuning.pid.kiV = [0.1]
       ret.lateralTuning.pid.kf = 0.00007818594
+      ret.nnffFingerprint = CAR.RAV4H_TSS2
 
       # 2019+ RAV4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
       # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
