@@ -117,6 +117,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.GOLF_MK7:
       ret.mass = 1397 + STD_CARGO_KG
       ret.wheelbase = 2.62
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.JETTA_MK7:
       ret.mass = 1328 + STD_CARGO_KG
@@ -137,6 +138,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.POLO_MK6:
       ret.mass = 1230 + STD_CARGO_KG
       ret.wheelbase = 2.55
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.SHARAN_MK2:
       ret.mass = 1639 + STD_CARGO_KG
@@ -155,6 +157,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.TIGUAN_MK2:
       ret.mass = 1715 + STD_CARGO_KG
       ret.wheelbase = 2.74
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.TOURAN_MK2:
       ret.mass = 1516 + STD_CARGO_KG
