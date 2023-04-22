@@ -51,7 +51,8 @@ def get_rlog_data_from_list(fnames):
       rlog_info = get_rlog_data(fname)
       if rlog_info is not None and None not in rlog_info.values():
         return rlog_info
-    except:
+    except Exception as e:
+      print(f"Failed to get rlog data for {fname}")
       continue
   return None
 
