@@ -12,9 +12,6 @@ for make in *; do
   fi
   cd "$makedir"
   for car in *; do
-    if [[ ! "$car" == *"VOLT"* ]]; then
-      continue
-    fi
     curdir="$makedir/$car"
     if [ ! -d "$curdir" ]; then
       continue
