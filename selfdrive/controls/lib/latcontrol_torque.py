@@ -76,7 +76,9 @@ class LatControlTorque(LatControl):
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
     self.low_speed_factor_bp = [0.0, 30.0]
     self.low_speed_factor_v = [15.0, 5.0]
-    self.steer_pressed_frames_since = 0
+    
+    self.error_scale_recip = 3.0
+    self.error_scale_factor = FirstOrderFilter(1.0, 0.5, DT_CTRL)
     
       
     # for actual lateral jerk calculation
@@ -102,6 +104,8 @@ class LatControlTorque(LatControl):
     if look_ahead != self.low_speed_factor_look_ahead:
       self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.low_speed_factor_look_ahead), None)
     look_ahead = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_v')
+    self.error_scale_recip = self._op_params.get('TUNE_LAT_TRX_error_downscale_in_curves')
+    self.error_scale_factor.update_alpha(self._op_params.get('TUNE_LAT_TRX_error_downscale_smoothing'))
     
     self.friction_look_ahead_v = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_v')
     self.friction_look_ahead_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_friction_lookahead_bp')]
@@ -129,11 +133,6 @@ class LatControlTorque(LatControl):
     elif lat_plan != self.lat_plan_last:
       self.actual_lateral_jerk.update(actual_lateral_accel)
     self.lat_plan_last = lat_plan
-    
-    if CS.steeringPressed:
-      self.steer_pressed_frames_since = 0
-    else:
-      self.steer_pressed_frames_since += 1
 
     if CS.vEgo < MIN_STEER_SPEED or not active:
       output_torque = 0.0
@@ -148,19 +147,21 @@ class LatControlTorque(LatControl):
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       desired_lateral_accel += CS.aEgo * desired_curvature
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_lateral_accel], key=lambda x: abs(x))
-      error_scale_lat_accel = max_future_lateral_accel
+      error_scale_factor = 1.0 / (1.0 + min(apply_deadzone(abs(max_future_lateral_accel), 0.3) * self.error_scale_recip, self.error_scale_recip - 1))
+      if error_scale_factor < self.error_scale_factor.x:
+        self.error_scale_factor.x = error_scale_factor
+      else:
+        self.error_scale_factor.update(error_scale_factor)
       
-      low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
+      if self.CI.ff_nn_model is not None:
+        low_speed_factor = 0.0
+      else:
+        low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
       lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
-      error_scale_factor = 2
-      if self.steer_pressed_frames_since > 150:
-        error_scale_factor = 1.0 / (1.0 + min(apply_deadzone(abs(error_scale_lat_accel), 0.4) * error_scale_factor, error_scale_factor - 1))
-      else:
-        error_scale_factor = 1.0 / error_scale_factor
-      error *= error_scale_factor
+      error *= self.error_scale_factor.x
       pid_log.error = error
 
       lateral_accel_g = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
@@ -182,7 +183,9 @@ class LatControlTorque(LatControl):
       ff += friction_compensation
       
       if self.CI.ff_nn_model is not None:
-        ff_nn = self.CI.get_ff_nn(CS.vEgo, desired_lateral_accel, lookahead_lateral_jerk, params.roll)
+        ff_nn = self.CI.get_ff_nn(CS.vEgo, desired_lateral_accel, 
+                  self.error_scale_factor.x * lookahead_lateral_jerk + (1.0 - self.error_scale_factor.x) * desired_lateral_jerk, 
+                  params.roll)
       else:
         ff_nn = None
       
@@ -217,8 +220,8 @@ class LatControlTorque(LatControl):
       pid_log.lookaheadCurvature = lookahead_desired_curvature
       pid_log.lookaheadCurvatureRate = lookahead_curvature_rate
       pid_log.f2 = ff_nn * self.pid.k_f
-      pid_log.maxFutureLatAccel = error_scale_lat_accel
-      pid_log.errorScaleFactor = error_scale_factor
+      pid_log.maxFutureLatAccel = max_future_lateral_accel
+      pid_log.errorScaleFactor = self.error_scale_factor.x
     pid_log.currentLateralAcceleration = actual_lateral_accel
     pid_log.currentLateralJerk = self.actual_lateral_jerk.x
       
