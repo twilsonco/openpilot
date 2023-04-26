@@ -93,6 +93,7 @@ class LateralPlanner():
     self.plan_yaw = np.zeros((TRAJECTORY_SIZE,))
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
     self.y_pts = np.zeros(TRAJECTORY_SIZE)
+    self.y_pts_full = np.zeros(TRAJECTORY_SIZE)
     self.d_path_w_lines_xyz = np.zeros((TRAJECTORY_SIZE, 3))
     self.second = 0.0
     self.lane_pos = 0. # 0., -1., 1. = center, left, right
@@ -358,6 +359,7 @@ class LateralPlanner():
       self.laneless_mode_status_buffer = False
 
     y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:,1])
+    self.y_pts_full = np.interp(v_ego * self.t_idxs, np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:,1])
     heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
     self.y_pts = y_pts
 
@@ -399,6 +401,7 @@ class LateralPlanner():
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'modelV2'])
     plan_send.lateralPlan.laneWidth = float(self.LP.lane_width)
     plan_send.lateralPlan.dPathPoints = [float(x) for x in self.y_pts]
+    plan_send.lateralPlan.dPathPointsFull = [float(x) for x in self.y_pts_full]
     plan_send.lateralPlan.psis = [float(x) for x in self.mpc_solution.psi[0:CONTROL_N]]
     plan_send.lateralPlan.curvatures = [float(x) for x in self.mpc_solution.curvature[0:CONTROL_N]]
     plan_send.lateralPlan.curvatureRates = [float(x) for x in self.mpc_solution.curvature_rate[0:CONTROL_N-1]] +[0.0]

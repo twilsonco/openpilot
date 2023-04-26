@@ -223,9 +223,14 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
   }
 }
 
-static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
-                             float y_off, float z_off, line_vertices_data *pvd, int max_idx, bool allow_invert=true, float y_offset = 0.) {
-  const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
+static void update_line_data(UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
+                             float y_off, float z_off, line_vertices_data *pvd, int max_idx, bool allow_invert=true, float y_offset = 0., bool use_lat_plan = false) {
+  const auto line_x = line.getX(), line_z = line.getZ();
+  UIScene &scene = s->scene;
+  auto line_y = use_lat_plan ? scene.lateral_plan.getDPathPointsFull() : line.getY();
+  if (line_y.size() != line_x.size()){
+    return;
+  }
   std::vector<vertex_data> left_points, right_points;
   for (int i = 0; i <= max_idx; i++) {
     vertex_data left, right;
@@ -253,7 +258,6 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
 }
 
 static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
-  SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
   auto model_position = model.getPosition();
   float max_distance = std::clamp(model_position.getX()[TRAJECTORY_SIZE - 1],
@@ -275,8 +279,6 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     scene.road_edge_stds[i] = road_edge_stds[i];
     update_line_data(s, road_edges[i], 0.025, 0, &scene.road_edge_vertices[i], max_idx);
   }
-  
-  scene.lateral_plan = sm["lateralPlan"].getLateralPlan();
 
   // update path
   auto lead_one = model.getLeadsV3()[0];
@@ -285,7 +287,8 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
   }
   max_idx = get_path_length_idx(model_position, max_distance);
-  update_line_data(s, model_position, scene.end_to_end ? 0.8 : 0.5, 1.32, &scene.track_vertices, max_idx, false);
+  update_line_data(s, model_position, 1.2, 1.32, &scene.track_vertices, max_idx, false);
+  update_line_data(s, model_position, 0.4, 1.32, &scene.track_inside_vertices, max_idx, false, 0., true);
   max_idx = get_path_length_idx(model_position, max_distance + 30.);
   float lw = 0.5 * scene.lateralPlan.laneWidth;
   for (int i = 0; i < 2; ++i){

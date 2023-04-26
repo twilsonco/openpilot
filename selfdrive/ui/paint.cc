@@ -626,7 +626,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
       if (scene.car_state.getLkaEnabled()){
         if (scene.color_path){
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
-            interp_alert_color(fabs(scene.lateralCorrection), 150), 
+            interp_alert_color(fabs(scene.lateralCorrection), 90), 
             interp_alert_color(fabs(scene.lateralCorrection), 0));
         }
         else{
@@ -637,7 +637,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
       }
       else{
         track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                          COLOR_WHITE_ALPHA(130), COLOR_WHITE_ALPHA(0));
+                                          COLOR_WHITE_ALPHA(100), COLOR_WHITE_ALPHA(0));
       }
     } 
     else { // differentiate laneless mode color (Grace blue)
@@ -648,27 +648,33 @@ static void ui_draw_vision_lane_lines(UIState *s) {
           g = 255.f * COLOR_GRACE_BLUE.g + r;
           g = CLIP(g, 255.f * COLOR_GRACE_BLUE.g, 255.f * COLOR_GRACE_BLUE.b);
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                      nvgRGBA(r, g, 255.f * COLOR_GRACE_BLUE.b, 160), 
+                                      nvgRGBA(r, g, 255.f * COLOR_GRACE_BLUE.b, 100), 
                                       nvgRGBA(r, g, 255.f * COLOR_GRACE_BLUE.b, 0));
         }
         else{
           track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                    COLOR_GRACE_BLUE_ALPHA(160), 
+                                    COLOR_GRACE_BLUE_ALPHA(100), 
                                     COLOR_GRACE_BLUE_ALPHA(0));
         }
       }
       else{
         track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                          COLOR_WHITE_ALPHA(130), COLOR_WHITE_ALPHA(0));
+                                          COLOR_WHITE_ALPHA(80), COLOR_WHITE_ALPHA(0));
       }
     }
   } else {
     // Draw white vision track
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                          COLOR_WHITE_ALPHA(130), COLOR_WHITE_ALPHA(0));
+                                          COLOR_WHITE_ALPHA(80), COLOR_WHITE_ALPHA(0));
   }
   // paint path
-  ui_draw_line(s, scene.track_vertices, nullptr, &track_bg);
+  auto track_bg_big = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                  COLOR_WHITE_ALPHA(70), COLOR_WHITE_ALPHA(40));
+  ui_draw_line(s, scene.track_vertices, nullptr, &track_bg_big);
+
+  if (scene.controls_state.getLatActive() && scene.car_state.getLkaEnabled()){
+    ui_draw_line(s, scene.track_inside_vertices, nullptr, &track_bg);
+  }
 
   // now oncoming/ongoing lanes
 
