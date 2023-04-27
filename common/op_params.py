@@ -524,6 +524,12 @@ class opParams:
       
       'TUNE_LAT_low_speed_extra_actuator_delay_s': Param(1.0, float, 'At very low speed, look out further into future curvatures to more proactively make sharp, low-speed curves.', min_val=0.0, max_val=2.0, unit='s', live=True),
       
+      'TUNE_LAT_mpc_path_cost': Param(1.5, float, 'This value represents the weight given to the path tracking error, i.e., the deviation of the vehicle from the desired path. Increasing this value will prioritize staying close to the desired path, while decreasing it may result in larger deviations from the path.', min_val=0.0, max_val=1000.0, live=True),
+      
+      'TUNE_LAT_mpc_heading_cost': Param(1.5, float, 'This value is the weight given to the lateral motion of the vehicle, specifically the heading error. Increasing this value will prioritize minimizing the heading error and aligning the vehicle with the desired path. Decreasing it may result in larger heading errors.', min_val=0.0, max_val=1000.0, live=True),
+      
+      'TUNE_LAT_mpc_steer_rate_cost': Param(0.6, float, 'This value represents the weight given to the rate of change of the steering angle. Increasing this value will prioritize minimizing the rate of steering angle changes, resulting in smoother steering movements. Decreasing it may lead to more abrupt steering movements.', min_val=0.0, max_val=1000.0, live=True),
+      
       'TUNE_LAT_type': Param('torque', [str, int], 'Type of lateral controller that will be used with the corresponding parameters. The default torque and pid tunes are for Volt, the indi tune is from Hyundai Genesis, and the lqr is from Toyota Rav4. Consult selfdrive/car/gm/interface.py to see the default values for your car for the "pid" (and possibly also the "torque") controllers.  torque: lateral acceleration-based pid controller.  pid: steering angle-based pid controller.  indi: incremental non-linear dynamic inversion controller.  lqr: linear quadratic regulator.  There are also "torque" versions of indi and lqr to experiment with. The torque INDI needs tuning, but the torque LQR needs it more. Let me know if you get those working well! The provided torque and pid tunes for Volt are the same very good tunes as hardcoded in the this fork of OpenPilot', live=True, fake_live=True, allowed_vals=['torque','pid','indi','lqr','torqueindi','torquelqr']),
       
       'TUNE_sensor_lockout_time_s': Param(60, int, 'The device sensors are used to compensate steering and long control. This can be problematic shortly after startup before they\'ve calibrated and can give crazy values. Set the amount of time after device start until sensor readings are allowed to affect controls.', live=True, min_val=0, max_val=600, unit="seconds"),
@@ -732,7 +738,7 @@ class opParams:
       'TUNE': 'lateral/longitudinal tuning',
       'MISC': 'MISCellaneous OpenPilot settings',
       'MET': 'on-screen UI METrics',
-      'LAT': "LATeral control (steering)",
+      'LAT': "LATeral planning/control (steering)",
       'TRX': "Lateral acceleration \"torque\" controller",
       'PID': "Angle PID controller",
       'INDI': "Incremental Non-linear Dynamic Inversion controller",
