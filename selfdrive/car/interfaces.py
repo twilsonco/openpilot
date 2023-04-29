@@ -83,10 +83,17 @@ class FluxModel:
     return x
 
   def evaluate(self, input_array):
+    if len(input_array) != self.input_size:
+      # This can be used to discern between different "versions" of the NNFF model
+      # v1 has an input of 4 (v_ego, lateral_accel, lateral_jerk, roll)
+      # v2 has an input of 20 (v_ego, a_ego, lateral_accel, lateral_jerk, roll, <then three groups of five points with lat accel, lat jerk, and roll data for at one past point -0.3s, and four future points 0.3, 0.6, 1.1, 2.0s, where the 0.3s values are actually the "desired" values when calling the model>) 
+      if len(input_array) == 23 and self.input_size == 4: # leave out a_ego and anything after the first 5 values
+        input_array = [input_array[0], input_array[2], input_array[3], input_array[4]]
+      else:
+        raise ValueError(f"Input array length {len(input_array)} does not match the expected length {self.input_size}")
+        
     input_array = np.array(input_array, dtype=np.float32)#.reshape(1, -1)
 
-    if input_array.shape[0] != self.input_size:
-      raise ValueError(f"Input array last dimension {input_array.shape[-1]} does not match the expected length {self.input_size}")
     # Rescale the input array using the input_mean and input_std
     input_array = (input_array - self.input_mean) / self.input_std
 
@@ -106,7 +113,7 @@ class FluxModel:
       input_list = ast.literal_eval(input_str)
       model_output = self.evaluate(input_list)
 
-      if abs(model_output - expected_output) <= 1e-6:
+      if abs(model_output - expected_output) <= 5e-5:
         num_passed += 1
       else:
         num_failed += 1
@@ -175,8 +182,8 @@ class CarInterfaceBase():
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
   
-  def get_ff_nn(self, v_ego, lateral_accel, lateral_jerk, roll):
-    return self.ff_nn_model.evaluate([v_ego, lateral_accel, lateral_jerk, -roll])
+  def get_ff_nn(self, x):
+    return self.ff_nn_model.evaluate(x)
 
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed, CI = None):

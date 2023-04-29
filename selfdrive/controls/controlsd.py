@@ -799,16 +799,15 @@ class Controls:
       actuators.accelPitchCompensated = actuators.accel + ((ACCELERATION_DUE_TO_GRAVITY * math.sin(self.pitch)) if self.use_sensors else 0.0)
 
       # Steering PID loop and lateral MPC
-      extra_delay = interp(CS.vEgo, [4.0, 10.0], [self._op_params.get("TUNE_LAT_low_speed_extra_actuator_delay_s"), 0.0])
       desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                              lat_plan.psis,
                                                                              lat_plan.curvatures,
-                                                                             lat_plan.curvatureRates,
-                                                                             extra_delay)
+                                                                             lat_plan.curvatureRates)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.lat_active, 
                                                                              CS, self.CP, self.VM, params, 
                                                                              desired_curvature, desired_curvature_rate, self.sm['liveLocationKalman'],
-                                                                             use_roll=self.use_sensors, lat_plan=lat_plan)
+                                                                             use_roll=self.use_sensors, lat_plan=lat_plan,
+                                                                             model_data=self.sm['modelV2'])
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0 and self.active:

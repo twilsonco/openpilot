@@ -64,7 +64,7 @@ class LatControlLQR():
 
     return self.sat_count > self.sat_limit
 
-  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, mean_curvature=0.0, use_roll=True, lat_plan=None):
+  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, mean_curvature=0.0, use_roll=True, lat_plan=None, model_data=None):
     lqr_log = log.ControlsState.LateralLQRState.new_message()
 
     steers_max = get_steer_max(CP, CS.vEgo)

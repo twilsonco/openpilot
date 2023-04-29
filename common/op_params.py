@@ -522,8 +522,6 @@ class opParams:
       
       'TUNE_LAT_min_steer_speed_mph': Param(6.7, float, 'Lateral (steering) cannot engage below this speed.', min_val=0.0, max_val=60.0, unit='mph', fake_live=True),
       
-      'TUNE_LAT_low_speed_extra_actuator_delay_s': Param(0.0, float, 'At very low speed, look out further into future curvatures to more proactively make sharp, low-speed curves.', min_val=0.0, max_val=2.0, unit='s', live=True),
-      
       'TUNE_LAT_mpc_path_cost': Param(1.1, float, 'This value represents the weight given to the path tracking error, i.e., the deviation of the vehicle from the desired path. Increasing this value will prioritize staying close to the desired path, while decreasing it may result in larger deviations from the path.', min_val=0.0, max_val=1000.0, live=True),
       
       'TUNE_LAT_mpc_heading_cost': Param(1.1, float, 'This value is the weight given to the lateral motion of the vehicle, specifically the heading error. Increasing this value will prioritize minimizing the heading error and aligning the vehicle with the desired path. Decreasing it may result in larger heading errors.', min_val=0.0, max_val=1000.0, live=True),
@@ -791,8 +789,7 @@ class opParams:
       '2023/03/16-21:00': [r'TUNE_LAT_TRX_.*'],
       '2023/03/19-02:00': ['TUNE_LAT_TRX_friction',
                            r'.*low_speed_factor_.*'],
-      '2023/04/27-09:00': [r'TUNE_LAT_TRX_.*',
-                           'TUNE_LAT_low_speed_extra_actuator_delay_s'],
+      '2023/04/27-09:00': [r'TUNE_LAT_TRX_.*'],
       '2023/04/28-2:40:00': [r'TUNE_LAT_mpc_.*'],
       }  # a dict where each key is a date in 'yyyy/mm/dd-hh:mm' (24-hour) format, and the value is a list of names of params OR regular expressions to match params you want reset to their default values if the modification date is before the key date
       # use something that doesn't match the date string format and the associated list of param names or regex's will apply no matter the modified date of the param

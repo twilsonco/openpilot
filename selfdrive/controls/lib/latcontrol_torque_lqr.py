@@ -72,7 +72,7 @@ class LatControlTorqueLQR():
 
     return self.sat_count > self.sat_limit
 
-  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, use_roll=True, lat_plan=None):
+  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, use_roll=True, lat_plan=None, model_data=None):
     lqr_log = log.ControlsState.LateralTorqueLQRState.new_message()
 
     if self.use_steering_angle:
