@@ -1,3 +1,8 @@
+Version tw-0.8.12-17 (2023-4-30)
+========================
+   * [Volt] e2e neural network lateral controller replaces NNFF
+   * UI path gets a face lift
+
 Version tw-0.8.12-16 (2023-4-7,9)
 ========================
   * Improved "torque" lateral control
