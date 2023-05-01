@@ -92,8 +92,6 @@ class LatControlTorque(LatControl):
       self.nnff_time_offset = CP.steerActuatorDelay + 0.2
       self.nnff_future_times = [i + self.nnff_time_offset for i in [0.3, 0.5, 0.9, 1.7]]
       self.lat_accel_deque = deque(maxlen=20) # past data for NNFF model should be at -0.2s
-      self.lat_jerk_deque = deque(maxlen=20)
-      self.roll_deque = deque(maxlen=20)
     
       
     # for actual lateral jerk calculation
@@ -198,35 +196,21 @@ class LatControlTorque(LatControl):
                           + interp(t, T_IDXS, model_data.velocity.y)**2) \
                             for t in self.nnff_future_times]
         future_curvatures = [interp(t, T_IDXS, lat_plan.curvatures) for t in self.nnff_future_times]
-        future_curvature_rates = [interp(t, T_IDXS, lat_plan.curvatureRates) for t in self.nnff_future_times]
         
         delta_lat_accel_future = [(i * v**2) - desired_lateral_accel for i, v in zip(future_curvatures, future_speeds)]
-        delta_lat_jerk_future = [(i * v**2) - desired_lateral_jerk for i, v in zip(future_curvature_rates, future_speeds)]
         # roll gets all four values from the model; sign is flipped
-        delta_roll_future = [-interp(t, T_IDXS, model_data.orientation.x) for t in self.nnff_future_times]
         roll = -params.roll
-        desired_roll = -interp(self.nnff_time_offset, T_IDXS, model_data.orientation.x) + roll
 
         if len(self.lat_accel_deque) == self.lat_accel_deque.maxlen:
           past_lat_accel_delta = self.lat_accel_deque[0] - desired_lateral_accel
-          past_lat_jerk_delta = self.lat_jerk_deque[0] - desired_lateral_jerk
-          past_roll_delta = self.roll_deque[0] - desired_roll
         else:
           past_lat_accel_delta = 0.0
-          past_lat_jerk_delta = 0.0
-          past_roll_delta = 0.0
         self.lat_accel_deque.append(desired_lateral_accel)
-        self.lat_jerk_deque.append(desired_lateral_jerk)
-        self.roll_deque.append(roll)
         
         lat_accel_error_neg = actual_lateral_accel - desired_lateral_accel
-        lat_jerk_error_neg = self.actual_lateral_jerk._D.x - desired_lateral_jerk
-        roll_delta_neg = roll - desired_roll
         
-        nnff_input = [CS.vEgo, CS.aEgo, desired_lateral_accel, desired_lateral_jerk, desired_roll] + \
-                      [past_lat_accel_delta, lat_accel_error_neg] + delta_lat_accel_future + \
-                      [past_lat_jerk_delta, lat_jerk_error_neg] + delta_lat_jerk_future + \
-                      [past_roll_delta, roll_delta_neg] + delta_roll_future
+        nnff_input = [CS.vEgo, CS.aEgo, desired_lateral_accel, roll] + \
+                      [past_lat_accel_delta, lat_accel_error_neg] + delta_lat_accel_future
         ff_nn = self.CI.get_ff_nn(nnff_input)
       else:
         ff_nn = None
