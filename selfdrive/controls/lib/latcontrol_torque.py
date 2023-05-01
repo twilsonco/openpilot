@@ -199,7 +199,7 @@ class LatControlTorque(LatControl):
         
         delta_lat_accel_future = [(i * v**2) - desired_lateral_accel for i, v in zip(future_curvatures, future_speeds)]
         # roll gets all four values from the model; sign is flipped
-        roll = -params.roll
+        roll = params.roll
 
         if len(self.lat_accel_deque) == self.lat_accel_deque.maxlen:
           past_lat_accel_delta = self.lat_accel_deque[0] - desired_lateral_accel
