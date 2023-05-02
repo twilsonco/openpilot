@@ -205,7 +205,7 @@ class LatControlTorque(LatControl):
           past_lat_accel_delta = self.lat_accel_deque[0] - desired_lateral_accel
         else:
           past_lat_accel_delta = 0.0
-        self.lat_accel_deque.append(desired_lateral_accel)
+        self.lat_accel_deque.append(actual_lateral_accel)
         
         lat_accel_error_neg = actual_lateral_accel - desired_lateral_accel
         
