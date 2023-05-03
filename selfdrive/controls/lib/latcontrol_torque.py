@@ -199,7 +199,7 @@ class LatControlTorque(LatControl):
         
         delta_lat_accel_future = [(i * v**2) - desired_lateral_accel for i, v in zip(future_curvatures, future_speeds)]
         # roll gets all four values from the model; sign is flipped
-        roll = params.roll
+        roll = -params.roll
 
         if len(self.lat_accel_deque) == self.lat_accel_deque.maxlen:
           past_lat_accel_delta = self.lat_accel_deque[0] - desired_lateral_accel
@@ -209,7 +209,7 @@ class LatControlTorque(LatControl):
         
         lat_accel_error_neg = actual_lateral_accel - desired_lateral_accel
         
-        nnff_input = [CS.vEgo, CS.aEgo, desired_lateral_accel, desired_lateral_jerk, roll] + \
+        nnff_input = [CS.vEgo, desired_lateral_accel, desired_lateral_jerk, roll] + \
                       [past_lat_accel_delta, lat_accel_error_neg] + delta_lat_accel_future
         ff_nn = self.CI.get_ff_nn(nnff_input)
       else:
