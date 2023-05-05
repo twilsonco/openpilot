@@ -240,6 +240,11 @@ class Param:
     
     if self.is_list:
       self.allowed_types.remove(list)
+    
+    if len(self.allowed_types) > 1 and self.allowed_types[0] == None:
+      tmp = self.allowed_types[0]
+      self.allowed_types[0] = self.allowed_types[1]
+      self.allowed_types[1] = tmp
 
   def _get_val(self, key, force_update=False, time_cur=-1.0):
     do_update = not self.static and time_cur >= 0.0 and time_cur - self.last_read >= self.read_frequency
