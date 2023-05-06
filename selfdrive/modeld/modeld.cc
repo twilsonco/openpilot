@@ -177,7 +177,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       int maneuver_idx = get_maneuver_index(maneuver_type, maneuver_modifier);
       memset(nav_instructions, 0, sizeof(float)*NAV_INSTRUCTION_LEN);
       nav_instructions[maneuver_idx] = 1;
-      nav_instructions[NAV_INSTRUCTION_LEN-1] = std::max(0.0f, std::min(2.0f, distance / 1000.0f));
+      nav_instructions[NAV_INSTRUCTION_LEN-1] = std::max(0.0f, std::min(2.0f, std::floor(distance / 100.0f) / 10.0f));
       nav_enabled = true;
     }
 
