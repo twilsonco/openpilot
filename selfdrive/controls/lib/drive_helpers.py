@@ -164,15 +164,12 @@ def rate_limit(new_value, last_value, dw_step, up_step):
 
 
 def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates, velocities):
-  if len(psis) != CONTROL_N:
+  if len(psis) != CONTROL_N or len(velocities) != CONTROL_N:
     psis = [0.0]*CONTROL_N
     curvatures = [0.0]*CONTROL_N
     curvature_rates = [0.0]*CONTROL_N
     velocities = [0.0]*CONTROL_N
-  if len(velocities) != CONTROL_N:
-    velocities = [0.0]*CONTROL_N
   v_ego = max(MIN_SPEED, v_ego)
-
 
   # TODO this needs more thought, use .2s extra for now to estimate other delays
   delay = CP.steerActuatorDelay + .2
