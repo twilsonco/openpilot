@@ -193,7 +193,7 @@ def pickle_files_to_csv(input_dir):
     
     # Write the DataFrame to a CSV file
     print("writing file")
-    # df.to_csv(os.path.join(input_dir,f"{model}.csv"), index=False)#, float_format='%.8g')
+    df.head(10).copy().to_csv(os.path.join(input_dir,f"{model}_torque-model-input_sample.csv"), index=False)#, float_format='%.8g')
     # feather.write_dataframe(df, os.path.join(input_dir,f"{model}.feather"))
     # df.to_feather(os.path.join(input_dir,f"{model}.feather"))
     feather.write_feather(df, os.path.join(input_dir,f"{model}_torque-model-input.feather"), version=1)

@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
-
+import gc
 import os
 import re
+import bisect
 import pickle
 import datetime
 import pandas as pd
+import copy
 from tqdm import tqdm  # type: ignore
 import numpy as np
 from scipy.stats import describe
+from sklearn.cluster import DBSCAN
+from sklearn.mixture import GaussianMixture
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import LocalOutlierFactor
 import math
 import random
 from collections import deque, defaultdict
@@ -16,6 +22,42 @@ import pyarrow.feather as feather
 import selfdrive.car.toyota.values as toyota
 from matplotlib import pyplot as plt
 from matplotlib.cm import ScalarMappable
+
+def smooth_list(l, window_size):
+    """
+    Computes a smoothed copy of a list of floats using a moving average.
+    
+    Parameters:
+        l (list): The list of floats to be smoothed.
+        window_size (int): The size of the moving window to use for the moving average.
+        
+    Returns:
+        A new list of floats that is a smoothed copy of the input list.
+    """
+    if not l:
+        return []
+    if window_size == 1:
+        return l
+
+    # Pad the list with zeros at the beginning and end to avoid edge effects
+    pad = [0] * (window_size // 2)
+    padded_list = pad + l + pad
+
+    # Compute the moving average
+    smoothed_list = []
+    for i in range(window_size // 2, len(padded_list) - window_size // 2):
+        window = padded_list[i - window_size // 2:i + window_size // 2 + 1]
+        smoothed_list.append(sum(window) / float(window_size))
+
+    return smoothed_list
+
+def sign(x):
+  if x < 0.0:
+    return -1.0
+  elif x > 0.0:
+    return 1.0
+  else:
+    return 0.0
 
 def lookahead_lookback_filter(samples, comp_func, n_forward = 0, n_back = 0):
   return [s for i,s in enumerate(samples) if \
@@ -84,95 +126,147 @@ class Sample():
   t: float = np.nan
 
 class CleanLatSample():
-  def __init__(self, s):
-    self.v_ego = s.v_ego
-    self.a_ego = s.a_ego
-    self.torque_eps = s.torque_eps
-    self.torque_driver = s.torque_driver
+  def __init__(self, s, route = ""):
+    self.v_ego = float(s.v_ego)
+    self.a_ego = float(s.a_ego)
+    self.torque_eps = float(s.torque_eps)
+    self.torque_driver = float(s.torque_driver)
     self.torque_adjusted: float = 0.0
-    self.steer_cmd = s.steer_cmd
-    self.lateral_accel = s.lateral_accel
-    self.lateral_jerk = s.lateral_jerk
+    self.steer_cmd = float(s.steer_cmd)
+    self.lateral_accel = float(s.lateral_accel)
+    self.lateral_jerk = float(s.lateral_jerk)
+    self.roll = float(s.roll)
     self.car_fp = s.car_fp
     self.car_make = s.car_make
     self.t = s.t
     self.enabled: bool = s.enabled
+    self.route: str = route
 
 def describe_to_string(describe_output):
     nobs, minmax, mean, var, skew, kurtosis = describe_output
     min_val, max_val = minmax
     return f"nobs={nobs:0.1f}, min_max=({min_val:0.1f}, {max_val:0.1f}), mean={mean:0.1f}, var={var:0.1f}, skew={skew:0.1f}, kurtosis={kurtosis:0.1f}"
 
+def insert_and_merge(intervals, new_interval):
+    index = bisect.bisect_left(intervals, new_interval)
+    intervals.insert(index, new_interval)
 
+    # Merge intervals with the previous interval if they overlap
+    if index > 0 and intervals[index - 1][1] >= intervals[index][0]:
+        intervals[index - 1] = (intervals[index - 1][0], max(intervals[index - 1][1], intervals[index][1]))
+        intervals.pop(index)
+        index -= 1
+
+    # Merge intervals with the next interval if they overlap
+    while index < len(intervals) - 1 and intervals[index][1] >= intervals[index + 1][0]:
+        intervals[index] = (intervals[index][0], max(intervals[index][1], intervals[index + 1][1]))
+        intervals.pop(index + 1)
 
 def compute_adjusted_steer_torque(samples, eps_stats, driver_stats):
+  blacklist_neighbor_secs = 0.5
+  max_ratio = 30.0
+  max_abs_long_accel = 1.2
+  # check_func = lambda s: abs(s.torque_driver) < 0.15 and abs(s.a_ego) < max_abs_long_accel
+  check_func = lambda s: not s.enabled and abs(s.torque_eps) < 0.15 and abs(s.a_ego) < max_abs_long_accel
+  nlalb = 5
+  use_driver_torque = True
   if len(samples) == 0:
     return [], 0.0
-  # mean_eps = eps_stats[2]
-  # std_eps = np.sqrt(eps_stats[3])
-  # mean_driver = driver_stats[2]
-  # std_driver = np.sqrt(driver_stats[3])
   if samples[0].car_make == 'gm':
-    recip = 1.0 / 3.0
+    # check_func = lambda s: abs(s.torque_driver) < 0.15 and abs(s.a_ego) < max_abs_long_accel and (s.v_ego > 12.0 or abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 35 or abs(s.lateral_accel) <= 0.2)
+    recip_driver = 1.0 / 3.0
+    recip_eps = 1.0 / 3.0
   elif samples[0].car_make == 'volkswagen':
-    recip = 1.0 / 300.0
+    use_driver_torque = True
+    check_func = lambda s: not s.enabled and s.steer_cmd == 0.0 and abs(s.torque_eps) == 0.0 and abs(s.a_ego) < max_abs_long_accel
+    recip_driver = 1.0 / 300.0
+    recip_eps = 1.0
   elif samples[0].car_make == 'hyundai':
-    if "KIA" in samples[0].car_fp:
-      recip = 1.0 / 600.0
-    elif "IONIQ" in samples[0].car_fp:
-      recip = 1.0 / 600.0
+    check_func = lambda s: abs(s.a_ego) < max_abs_long_accel
+    if any([k in samples[0].car_fp for k in ["KIA", "IONIQ", "GENESIS"]]):
+      recip_driver = 1.0 / 600.0
     else:
-      recip = 1.0 / 400.0
+      recip_driver = 1.0 / 400.0
+    if any([k in samples[0].car_fp for k in ["SONATA"]]):
+      check_func = lambda s: (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 15) or (abs(s.lateral_accel) <= 0.5) and abs(s.a_ego) < max_abs_long_accel
+      nlalb = 0
   elif samples[0].car_make == 'chrysler':
-    recip = 1.0 / (261.0 if samples[0].car_fp != 'RAM HD 5TH GEN' else 361)
+    recip_driver = 1.0 / 361.0
+    check_func = lambda s: abs(s.a_ego) < max_abs_long_accel
   elif samples[0].car_make == 'toyota':
-    recip = 1 / 400.0
+    check_func = lambda s: abs(s.a_ego) < max_abs_long_accel # and (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 15) or (abs(s.lateral_accel) <= 0.5)
+    nlalb = 0
+    if any([k in samples[0].car_fp for k in ["COROLLA HYBRID"]]):
+      check_func = lambda s: not s.enabled and (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 8) or (abs(s.lateral_accel) <= 0.4) and abs(s.a_ego) < max_abs_long_accel
+    recip_driver = 1 / 400.0
   elif samples[0].car_make == 'honda':
-    recip = 1.0 / 2400.0
+    use_driver_torque = True
+    check_func = lambda s: not s.enabled and abs(s.a_ego) < max_abs_long_accel
+    recip_driver = 1.0 / 3000.0
+  elif samples[0].car_make == 'subaru':
+    check_func = lambda s: abs(s.a_ego) < max_abs_long_accel
+    recip_driver = 1.0 / 300.0
+  elif samples[0].car_make == 'ford':
+    recip_driver = 1.0 / 3.5
+  elif samples[0].car_make == 'mazda':
+    check_func = lambda s: not s.enabled and abs(s.a_ego) < max_abs_long_accel
+    recip_driver = 1.0 / 20.0
   else:
-    recip = 0.0
+    recip_driver = 1.0
     
   for s in samples:
-    s.torque_adjusted = s.torque_driver  * recip
-  
-  
-  samples = lookahead_lookback_filter(samples, lambda s:not s.enabled or s.steer_cmd == 0.0, 5, 5)
-  # samples = [s for s in samples if not s.enabled and s.steer_cmd == 0.0 and (std_eps < 0.01 or abs(s.torque_eps - mean_eps) < 0.1 * std_eps)]
-  
-  return samples, recip
-
-def get_adjusted_steer_torque(sample):
-  if sample.car_make == 'gm':
-    recip = 1.0 / 3.0
-    return (sample.torque_driver + sample.torque_eps) * recip
-      
-  elif sample.car_make == 'volkswagen':
-    recip = 1.0 / 300.0
-    return sample.torque_driver * recip
-    
-  elif sample.car_make == 'hyundai':
-    if "KIA" in sample.car_fp:
-      recip = 1.0 / 800.0
+    s.torque_driver *= recip_driver
+    s.torque_eps *= recip_eps
+    if not use_driver_torque:
+      s.torque_adjusted = s.torque_eps
     else:
-      recip = 1.0 / 300.0
-    return sample.torque_driver * recip
+      s.torque_adjusted = s.torque_driver
+    
+  mean_eps = eps_stats[2]
+  std_eps = np.sqrt(eps_stats[3])
+  mean_driver = driver_stats[2]
+  std_driver = np.sqrt(driver_stats[3])
   
-  elif sample.car_make == 'chrysler':
-    recip = 1.0 / (261.0 if sample.car_fp != 'RAM HD 5TH GEN' else 361)
-    return sample.torque_driver * recip 
+  mean_torque_adjusted = mean_driver
+  std_torque_adjusted = std_driver
+
+  # blacklist = []
+  # blacklist_neighbor_secs = 0.5 * 1e9
+  # blacklist_neighbor_secs_half = blacklist_neighbor_secs * 0.5
+
+  # for s in samples:
+  #     if (abs(s.torque_adjusted) > 0.01 and
+  #         abs(s.lateral_accel) / abs(s.torque_adjusted) > max_ratio):
+  #       interval = (s.t - blacklist_neighbor_secs_half, s.t + blacklist_neighbor_secs_half)
+  #       insert_and_merge(blacklist, interval)
+
+  # filtered_samples = []
+  # for s in samples:
+  #     if all(s.t < interval[0] or s.t > interval[1] for interval in blacklist):
+  #         filtered_samples.append(s)
+  # samples = filtered_samples
   
-  elif sample.car_make == 'toyota':
-    return sample.torque_driver / (2 * toyota.EPS_SCALE[sample.car_fp])
+  # samples = [s for s in samples if (sign(s.torque_adjusted) == sign(s.lateral_accel)) or ((sign(s.torque_adjusted) != sign(s.lateral_accel)) and (abs(s.lateral_accel) <= 1.2))]
+  # a_ego = smooth_list([s.a_ego for s in samples], 51)
+    
+  # # print  10 raw and smoothed a_ego values
+  # print("a_ego raw: ", [s.a_ego for s in samples[100:110]])
+  # print(f"a_ego smoothed: {a_ego[100:110]}")
   
-  elif sample.car_make == 'honda':
-    recip = 1.0 / 2400.0
-    return sample.torque_driver * recip
+  # for s in samples:
+  #   s.route = ""
+    # s.a_ego = a_ego.pop(0)
+    
   
-  return 0.0
+  
+  samples = lookahead_lookback_filter(samples, check_func, nlalb, nlalb)
+  
+  return samples, recip_driver
+
 
 torque_eps_key = defaultdict(lambda: "torque_eps", {'volkswagen': 'steer_cmd'})
     
-def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False):
+def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_output=True):
     # List all pickle files in the input directory
     carname = os.path.basename(input_dir)
     pickle_files = sorted([f for f in os.listdir(input_dir) if f.endswith('.lat')])
@@ -216,7 +310,6 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False):
       # "roll_1"
       ]
     
-    driver_only_makes = ['toyota', 'honda', 'hyundai', 'volkswagen', 'chrysler']
     samples = []
     random.shuffle(pickle_files)
     for pickle_file in tqdm(pickle_files):
@@ -226,18 +319,18 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False):
         except:
           continue
         for s in pk:
-          samples.append(CleanLatSample(s))
+          if s.v_ego < 0.1:
+            continue
+          samples.append(CleanLatSample(s, pickle_file))
           if print_stats:
             samples[-1].v_ego *= 2.24
-            # sout = {k:v for k,v in vars(s).items() if k in columns}
-            # sout['torque_adjusted'] = get_adjusted_steer_torque(s)
-            # sout['car_make'] = s.car_make
-            # sout['torque_eps'] = s.torque_eps
-            # # sout['t'] = s.t
-            # data.append(sout)
-        # if i > 100:
-        #   break
-        # i += 1
+        if i > 50:
+          # break
+          pass
+        i += 1
+    
+    if len(samples) == 0:
+      return
         
     eps = [s.torque_eps for s in samples]
     lat_accel = [s.lateral_accel for s in samples]
@@ -251,6 +344,11 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False):
     if print_stats and len(samples) > 0:
       
       print("Preparing plots")
+      
+      # want to color points by dongle id, so get index of each point in unique list of dongle ids
+      unique_dongle_ids = list(set([s.route[:16] for s in samples]))
+      dongle_id_inds = [unique_dongle_ids.index(s.route[:16]) for s in samples]
+      color_vals = dongle_id_inds
       
 
       v_ego_stats = describe([s.v_ego for s in samples])
@@ -295,17 +393,20 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False):
           
           # plot the data in the left column with -torque_eps as y value
           data = [sample for sample in samples if v_ego_min <= sample.v_ego < v_ego_max \
-                                                  and abs(sample.a_ego) < 0.2 \
                                                   and sample.enabled \
                                                   and abs(sample.torque_driver - mean_driver) < 0.25 * std_driver]
+          
           dlen = human_readable(len(data))
           data = random.sample(data, min(batch_size, len(data)))
+          dongle_id_inds = [unique_dongle_ids.index(s.route[:16]) for s in data]
+          color_vals = dongle_id_inds
+          # data = data[:min(batch_size, len(data))]
           # print(f"    {len(data)} eps samples")
           if len(data) > 0:
             ax = axs[i][0]
             y = [sample.torque_eps for sample in data]
             max_abs_y = max([abs(y) for y in y] + [1.0])
-            ax.scatter([-sample.lateral_accel for sample in data], y, s=1, alpha=0.1, c=[sample.v_ego for sample in data], cmap='viridis')
+            ax.scatter([-sample.lateral_accel for sample in data], y, s=1, alpha=0.1, c=color_vals, cmap='viridis')
             ax.set_title(("EPS steer torque @ " if i == 0 else "") + f"{v_ego_min:0.0f}-{v_ego_max:0.0f}mph ({dlen})", fontsize=12)
             if i == 4:
               ax.set_xlabel("lateral_accel [m/s²]", fontsize=10)
@@ -315,18 +416,42 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False):
           
           # plot the data in the center column with torque_driver as y value
           data = [sample for sample in samples if v_ego_min <= sample.v_ego < v_ego_max \
-                                                  and abs(sample.a_ego) < 0.2 \
-                                                  and abs(sample.steer_cmd) == 0.0 \
                                                   and not sample.enabled]
                                                   #and (std_eps < 0.001 or (abs(sample.torque_eps - mean_eps) < 0.25 * std_eps))]
           dlen = human_readable(len(data))
           data = random.sample(data, min(batch_size, len(data)))
+          dongle_id_inds = [unique_dongle_ids.index(s.route[:16]) for s in data]
+          color_vals = dongle_id_inds
+          
+          # data = data[:min(batch_size, len(data))]
           # print(f"    {len(data)} driver samples")
           if len(data) > 0:
             ax = axs[i][1]
             y = [sample.torque_driver for sample in data]
             max_abs_y = max([abs(y) for y in y] + [1.0])
-            ax.scatter([-sample.lateral_accel for sample in data], y, s=1, alpha=0.1, c=[sample.v_ego for sample in data], cmap='viridis')
+            x = [-sample.lateral_accel for sample in data]
+            
+            # dataset = np.column_stack((x, y))
+            
+            # apply clustering to the data
+            # Standardize the dataset
+            # scaler = StandardScaler()
+            # scaled_dataset = scaler.fit_transform(dataset)
+
+            # Apply the DBSCAN algorithm
+            # dbscan = DBSCAN(eps=0.5, min_samples=5)
+            # dbscan.fit(scaled_dataset)
+            
+            # Apply the Gaussian Mixture Model
+            # gmm = GaussianMixture(n_components=2)
+            # gmm.fit(scaled_dataset)
+            # labels = gmm.predict(scaled_dataset)
+            
+            # Apply the Local Outlier Factor algorithm
+            # lof = LocalOutlierFactor(n_neighbors=20, contamination=0.1)
+            # outlier_labels = lof.fit_predict(dataset)
+
+            ax.scatter(x, y, s=1, alpha=0.1, c=color_vals, cmap='viridis')
             ax.set_title(("Driver steer torque @ " if i == 0 else "") + f"{v_ego_min:0.0f}-{v_ego_max:0.0f}mph ({dlen})", fontsize=12)
             if i == 4:
               ax.set_xlabel("lateral_accel [m/s²]", fontsize=10)
@@ -335,14 +460,12 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False):
             ax.set_ylim(-max_abs_y, max_abs_y)
           
           # plot the data in the right column with adjusted torque value
-          data = [sample for sample in samples if v_ego_min <= sample.v_ego < v_ego_max \
-                                                  and abs(sample.a_ego) < 0.2 \
-                                                  and abs(sample.steer_cmd) == 0.0 \
-                                                  and not sample.enabled]
+          data = copy.deepcopy([sample for sample in samples if v_ego_min <= sample.v_ego < v_ego_max])
           if len(data) > 0:
             data, recip = compute_adjusted_steer_torque(data, eps_stats, driver_stats)
             dlen = human_readable(len(data))
             data = random.sample(data, min(batch_size, len(data)))
+            # data = data[:min(batch_size, len(data))]
             # print(f"    {len(data)} adjusted samples")
             ax = axs[i][2]
             y = [s.torque_adjusted for s in data]
@@ -355,7 +478,7 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False):
               plt.colorbar(sm)
             else:
               ax.scatter([-sample.lateral_accel for sample in data], y, s=1, alpha=0.1, c=colors, cmap='viridis')
-            ax.set_title((f"Adj. driver ({recip:.2e}) @ " if i == 0 else "") + f"{v_ego_min:0.0f}-{v_ego_max:0.0f}mph ({dlen})", fontsize=12)
+            ax.set_title((f"Adj. torque ({recip:.2e}) @ " if i == 0 else "") + f"{v_ego_min:0.0f}-{v_ego_max:0.0f}mph ({dlen})", fontsize=12)
             if i == 4:
               ax.set_xlabel("Lateral Acceleraion [m/s²]", fontsize=10)
             ax.grid(True)
@@ -374,167 +497,180 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False):
       # adjust the spacing between subplots
       np.set_printoptions(precision=2)
       approx_logtime = len(pickle_files) / 60.0
-      fig.suptitle(f"{carname} ({approx_logtime:0.0f} hrs of log data) | lat_accel vs. eps/driver torque, colored by speed (up to {human_readable(batch_size)} pts per plot)\neps: {describe_to_string(eps_stats)}\ndriver: {describe_to_string(driver_stats)}\nlat accel: {describe_to_string(lat_accel_stats)}\nv_ego {describe_to_string(v_ego_stats)}", fontsize=9)
+      fig.suptitle(f"{carname} ({approx_logtime:0.0f} hrs of log data) | lat_accel vs. eps/driver torque\nLeft two columns colored by user, right colored by speed (up to {human_readable(batch_size)} pts per plot)\neps: {describe_to_string(eps_stats)}\ndriver: {describe_to_string(driver_stats)}\nlat accel: {describe_to_string(lat_accel_stats)}\nlat jerk {describe_to_string(describe([s.lateral_jerk for s in samples]))}\nv_ego {describe_to_string(v_ego_stats)}", fontsize=9)
       fig.subplots_adjust(top=0.85)
       plt.tight_layout()
       
       plt.savefig(os.path.join(input_dir, f"{carname} lat_accel_vs_torque.png"))
-      plt.close(fig) 
-
+      plt.clf()
+      plt.close("all")
 
       # show the plots
       # plt.show()
       
       # print(f"Done with {samples[0].car_fp}")
-      return
     
-    print("Processing data...")
-    # for s in data:
-    #     s.lateral_accel *= -1.0
-    #     s.lateral_jerk *= -1.0
-    #     s['steer_cmd'] = get_steer_torque(s)
-    #     s.roll = -sin(s.roll) * 9.81
-    #     if make == "" and s['car_make'] != "":
-    #       make = s['car_make']
-    #       model = s.car_fp
-        
-    # data = [s for s in data if ((s.enabled and s['torque_driver'] <= 0.5) or (not s.enabled and s['torque_driver'] <= 2.0))]
-    # data = [vars(s) for s in data]
-    
-    # Need to determine values of what the lateral accel and jerk will be in the future at each point,
-    # so it can be utilized by the model
-    # This could be done using the model's predicted future conditions at each time point but those aren't 
-    # accurate relative to what actually happened, and I'd have to regenerate lat files to use the model predictions.
-    # On the road, the FF model will have access to up to 2.0s (2.5s minus a max assumed steer actuator delay of 0.5s) into the future of lateral accel and jerk, and
-    # this comes over 10 or so data points. We'll sample at 0.25s for 7 points to get to 2.0s.
-    # This also requires checking the times of each point.
-    
-    # take v_ego from mph back to m/s
-    if print_stats:
-      for s in samples:
-        s.v_ego /= 2.24
-        
-    data = samples
-    data, recip = compute_adjusted_steer_torque(data, eps_stats, driver_stats)
-    
-    eps = [s.torque_eps for s in samples]
-    lat_accel = [s.lateral_accel for s in samples]
-    driver = [s.torque_driver for s in samples]
-    eps_stats = describe(eps)
-    driver_stats = describe(driver)
-    lat_accel_stats = describe(lat_accel)
-    
-    mean_eps = eps_stats[2]
-    std_eps = np.sqrt(eps_stats[3])
-    
-    if True:
-      outdata = []
-      dt_max = 0.03
-      for s in data:
-        try:
-          sout = {k: s[k] for k in columns}
-          if s['car_make'] in driver_only_makes and not (abs(s['steer_cmd']) == 0.0 and (std_eps < 0.001 or (abs(s['torque_eps'] - mean_eps) < 0.25 * std_eps))):
+    if save_output:
+      
+      print("Processing data...")
+      # for s in data:
+      #     s.lateral_accel *= -1.0
+      #     s.lateral_jerk *= -1.0
+      #     s['steer_cmd'] = get_steer_torque(s)
+      #     s.roll = -sin(s.roll) * 9.81
+      #     if make == "" and s['car_make'] != "":
+      #       make = s['car_make']
+      #       model = s.car_fp
+          
+      # data = [s for s in data if ((s.enabled and s['torque_driver'] <= 0.5) or (not s.enabled and s['torque_driver'] <= 2.0))]
+      # data = [vars(s) for s in data]
+      
+      # Need to determine values of what the lateral accel and jerk will be in the future at each point,
+      # so it can be utilized by the model
+      # This could be done using the model's predicted future conditions at each time point but those aren't 
+      # accurate relative to what actually happened, and I'd have to regenerate lat files to use the model predictions.
+      # On the road, the FF model will have access to up to 2.0s (2.5s minus a max assumed steer actuator delay of 0.5s) into the future of lateral accel and jerk, and
+      # this comes over 10 or so data points. We'll sample at 0.25s for 7 points to get to 2.0s.
+      # This also requires checking the times of each point.
+      
+      # take v_ego from mph back to m/s
+      if print_stats:
+        for s in samples:
+          s.v_ego /= 2.24
+          
+      data = samples
+      print(f"  {len(data)} samples")
+      data, recip = compute_adjusted_steer_torque(data, eps_stats, driver_stats)
+      print(f"  {len(data)} samples after adjusting steer torque")
+      
+      if False:
+        outdata = []
+        while len(data) > 0:
+          try:
+            s = data.pop()
+            sout = vars(s)
+            sout['lateral_accel'] *= -1.0
+            sout['lateral_jerk'] *= -1.0
+            sout['steer_cmd'] = sout['torque_adjusted']
+            s['roll'] *= -1.0
+            sout = {k: sout[k] for k in columns}
+            outdata.append(sout)
+          except Exception as e:
+            print(f"  {e}")
             continue
-          s['lateral_accel'] *= -1.0
-          s['lateral_jerk'] *= -1.0
-          s['steer_cmd'] = s['torque_adjusted']
-          # s['roll'] *= -1.0
-          outdata.append(sout)
-        except:
-          continue
-    else:
-      # desired_points = 15000000
-      CTRL_RATE = 100
-      record_times = np.array([-0.3, 0.3, 0.6, 1.1, 2.0])
-      columns = [
-        'v_ego',
-        # 'a_ego',
-        'lateral_accel',
-        'lateral_jerk',
-        'roll',
-        'steer_cmd'] + [f"lateral_accel_{i}" for i in range(len(record_times))] + [f"lateral_jerk_{i}" for i in range(len(record_times))] + [f"roll_{i}" for i in range(len(record_times))]
-      max_time = max(record_times) - min(record_times) + 0.04
-      zero_time_ind = int(-min(record_times) * 100 + 1)
-      print(f"Record times: {record_times}")
-      max_len = int(max_time * CTRL_RATE)
-      i = int(max_len / 2)
-      lat_accel_deque = deque(maxlen=max_len)
-      lat_jerk_deque = deque(maxlen=max_len)
-      roll_deque = deque(maxlen=max_len)
-      sample_deque = deque(maxlen=max_len)
-      outdata = []
-      dt_max = 0.03
-      for s in tqdm(data):
-        sout = vars(s)
-        sout['lateral_accel'] *= -1.0
-        sout['lateral_jerk'] *= -1.0
-        # s['roll'] *= -1.0
-        if len(sample_deque) > 0 and (s['t'] - sample_deque[-1]['t']) * 1e-9 > dt_max:
-          lat_accel_deque = deque(maxlen=max_len)
-          lat_jerk_deque = deque(maxlen=max_len)
-          roll_deque = deque(maxlen=max_len)
-          sample_deque = deque(maxlen=max_len)
-        else:
-          sample_deque.append(sout)
-          lat_accel_deque.append(sout['lateral_accel'])
-          lat_jerk_deque.append(sout['lateral_jerk'])
-          roll_deque.append(sout['roll'])
-        
-        if len(lat_accel_deque) == max_len:
-          sout = sample_deque[zero_time_ind]
-          Ts = [(s['t'] - sout['t']) * 1e-9 for s in sample_deque]
-          sout = {**sout, **{f"lateral_accel_{i}": interp(t, Ts, lat_accel_deque) - sout['lateral_accel'] for i, t in enumerate(record_times)}}
-          sout = {**sout, **{f"lateral_jerk_{i}": interp(t, Ts, lat_jerk_deque) - sout['lateral_jerk'] for i, t in enumerate(record_times)}}
-          sout = {**sout, **{f"roll_{i}": interp(t, Ts, roll_deque) - sout['roll'] for i, t in enumerate(record_times)}}
-          sout = {k: sout[k] for k in columns}
-          outdata.append(sout)
-          # if len(outdata) >= desired_points:
-          #   break
-        
-    # outdata = [vars(s) for s in data]
-    
-    
-    
-    
-    # pickle.dump(data, open(output_csv.replace(".csv", ".pkl"), "wb"))
-    # pickle.dump(data, lzma.open(output_csv.replace(".csv", ".pkl.xz"), "wb"))
-    print("creating dataframe")
-    df = pd.DataFrame(outdata)
-    
-    # Write the DataFrame to a CSV file
-    print("writing file")
-    # df.to_csv(os.path.join(input_dir,f"{model}.csv"), index=False)#, float_format='%.8g')
-    # feather.write_dataframe(df, os.path.join(input_dir,f"{model}.feather"))
-    # df.to_feather(os.path.join(input_dir,f"{model}.feather"))
-    feather.write_feather(df, os.path.join(input_dir,f"{model}.feather"), version=1)
+      else:
+        # desired_points = 15000000
+        data.reverse() # so we can pop() from the end
+        CTRL_RATE = 100
+        record_times = [-0.3, 0.3]
+        steer_delay = 0.3
+        steer_delay_frames = int(steer_delay * CTRL_RATE)
+        record_times_strings = [f"{'m' if i < 0.0 else 'p'}{int(abs(round(i*10))):02d}" for i in record_times]
+        record_times = np.array(record_times)
+        columns = ['steer_cmd', 'v_ego', 'lateral_accel', 'lateral_jerk', 'roll'] \
+                + [f"lateral_accel_{i}" for i in record_times_strings] \
+                + [f"lateral_jerk_{i}" for i in record_times_strings] \
+                + [f"roll_{i}" for i in record_times_strings]
+        max_time = max(record_times) - (min(record_times+[0.0]) - steer_delay) + 0.04
+        zero_time_ind = int((-min(record_times+[0.0]) + 0.04 + steer_delay) * CTRL_RATE)
+        print(f"Record times: {record_times}")
+        max_len = int(max_time * CTRL_RATE)
+        lat_accel_deque = deque(maxlen=max_len)
+        lat_jerk_deque = deque(maxlen=max_len)
+        roll_deque = deque(maxlen=max_len)
+        sample_deque = deque(maxlen=max_len)
+        outdata = []
+        dt_max = 0.2
+        with tqdm(total=len(data)) as pbar:
+          while len(data) > 0:
+            pbar.update(1)
+            sample = data.pop()
+            s = vars(sample)
+            s['lateral_accel'] *= -1.0
+            s['lateral_jerk'] *= -1.0
+            s['steer_cmd'] = s['torque_adjusted']
+            s['roll'] *= -1.0
+            if len(sample_deque) > 0 and (s['t'] - sample_deque[-1]['t']) * 1e-9 > dt_max:
+              lat_accel_deque = deque(maxlen=max_len)
+              lat_jerk_deque = deque(maxlen=max_len)
+              roll_deque = deque(maxlen=max_len)
+              sample_deque = deque(maxlen=max_len)
+            else:
+              sample_deque.append(s)
+              lat_accel_deque.append(s['lateral_accel'])
+              lat_jerk_deque.append(s['lateral_jerk'])
+              roll_deque.append(s['roll'])
+            
+            if len(lat_accel_deque) == max_len:
+              sout = sample_deque[zero_time_ind]
+              # fix steer delay, fetching the torque from steer_delay seconds ago so it corresponds to the conditions now.
+              sout['steer_cmd'] = sample_deque[zero_time_ind - steer_delay_frames]['steer_cmd']
+              Ts = [(s['t'] - sout['t']) * 1e-9 for s in sample_deque]
+              sout = {**sout, **{f"lateral_accel_{ts}": interp(t, Ts, lat_accel_deque) for t,ts in zip(record_times, record_times_strings)}}
+              sout = {**sout, **{f"lateral_jerk_{ts}": interp(t, Ts, lat_jerk_deque) for t,ts in zip(record_times, record_times_strings)}}
+              sout = {**sout, **{f"roll_{ts}": interp(t, Ts, roll_deque) for t,ts in zip(record_times, record_times_strings)}}
+              sout = {k: sout[k] for k in columns}
+              outdata.append(sout)
+              # if len(outdata) >= desired_points:
+              #   break
+          
+      # outdata = [vars(s) for s in data]
+      
+      del data
+      
+      # pickle.dump(data, open(output_csv.replace(".csv", ".pkl"), "wb"))
+      # pickle.dump(data, lzma.open(output_csv.replace(".csv", ".pkl.xz"), "wb"))
+      print("creating dataframe")
+      df = pd.DataFrame(outdata)
+      
+      # print 5 random rows
+      print(df.sample(10))
+      
+      # Write the DataFrame to a CSV file
+      print("writing file")
+      df.sample(100).copy().to_csv(os.path.join(input_dir,f"{model}_torque-model-input_sample.csv"), index=False)#, float_format='%.8g')
+      # df.to_csv(os.path.join(input_dir,f"{model}.csv"), index=False)#, float_format='%.8g')
+      # feather.write_dataframe(df, os.path.join(input_dir,f"{model}.feather"))
+      # df.to_feather(os.path.join(input_dir,f"{model}.feather"))
+      feather.write_feather(df, os.path.join(input_dir,f"{model}_e2e.feather"), version=1)
+
+    return model
 
 # Example usage:
 input_dir = '/Users/haiiro/NoSync/latfiles'
 # compile a regex pattern to match valid subdirectory names
-pattern = re.compile(r'^[A-Z0-9 ]+$')
+pattern = re.compile(r'^[\-A-Z0-9a-z() ]+$')
+def has_upper_word(text):
+    words = text.split()
+    for word in words:
+        if word.isupper():
+            return True
+    return False
 
 # iterate over all directories and subdirectories in the specified path
 whitelist = ["toyota", "honda", "hyundai", "chrysler"]
-whitelist = ["toyota", "hyundai", "gm", "chrysler"]
+whitelist = ["VOLT PREMIER 2018"]
+blacklist = []
 dirlist=[]
 for root, dirs, files in os.walk(input_dir):
     for dir_name in dirs:
         # check if the directory name matches the regex pattern
-        if pattern.match(dir_name):
+        if pattern.match(dir_name) and has_upper_word(dir_name):
             d = os.path.join(root, dir_name)
-            # if not any([w in d.lower() for w in whitelist]):
-            #   continue
-            # print(f"Processing {d}...")
+            if (len(whitelist) > 0 and not any([w in d for w in whitelist])) or (any([b in d for b in blacklist])):
+              continue
+            print(f"Processing {d}...")
             # try:
-            dirlist.append(d)
-            # pickle_files_to_csv(d, check_modified=False, print_stats=True)
+            # dirlist.append(d)
+            model = pickle_files_to_csv(d, check_modified=False, print_stats=True, save_output=True)
+            blacklist.append(dir_name)
             # except Exception as e:
             #   print(f"Error processing {d}: {e}")
             #   continue
 
-def process_dir(d):
-  pickle_files_to_csv(d, check_modified=False, print_stats=True)
+# def process_dir(d):
+#   pickle_files_to_csv(d, check_modified=False, print_stats=True)
 
-for d in dirlist:
-  print(f"Processing {d}...")
-  process_dir(d)
+# for d in dirlist:
+#   print(f"Processing {d}...")
+#   process_dir(d)
