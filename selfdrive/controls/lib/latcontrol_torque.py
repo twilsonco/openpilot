@@ -31,6 +31,7 @@ NN_FF_CARS = [CAR.VOLT, CAR.VOLT18]
 
 
 FRICTION_THRESHOLD = 2.0
+ERR_FRICTION_THRESHOLD = 0.3
 
 LAT_PLAN_MIN_IDX = 5
 
@@ -186,9 +187,14 @@ class LatControlTorque(LatControl):
       lateral_jerk_error = desired_lateral_jerk - self.actual_lateral_jerk.x
       # lateral_jerk_error *= friction_lat_accel_downscale_factor
       
+      # error-based friction term
+      error_friction = interp(error, [-ERR_FRICTION_THRESHOLD, ERR_FRICTION_THRESHOLD], [-0.15, 0.15])
+      error_friction *= self.error_scale_factor.x
+      
       # lateral acceleration feedforward
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll
       ff += friction_compensation
+      ff += error_friction
       
       if self.use_nn_ff:
         # prepare input data for NNFF model
@@ -212,6 +218,7 @@ class LatControlTorque(LatControl):
         nnff_input = [CS.vEgo, desired_lateral_accel, desired_lateral_jerk, roll] + \
                       [past_lat_accel_delta, lat_accel_error_neg] + delta_lat_accel_future
         ff_nn = self.CI.get_ff_nn(nnff_input)
+        ff_nn += error_friction
       else:
         ff_nn = None
       
