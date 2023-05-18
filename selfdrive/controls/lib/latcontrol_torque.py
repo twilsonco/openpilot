@@ -36,6 +36,9 @@ ERR_FRICTION_THRESHOLD = 0.3
 LAT_PLAN_MIN_IDX = 5
 
 def get_lookahead_value(future_vals, current_val):
+  if len(future_vals) == 0:
+    return current_val
+  
   same_sign_vals = [v for v in future_vals if sign(v) == sign(current_val)]
   
   # if any future val has opposite sign of current val, return 0
@@ -91,12 +94,12 @@ class LatControlTorque(LatControl):
       # Past value is computed using observed car lat accel, jerk, and roll
       # actual current values are passed as the -0.3s value, the desired values are passed as the actual lat accel etc values, and the future values are interpolated from predicted planner/model data
       self.nnff_time_offset = CP.steerActuatorDelay + 0.2
-      future_times = [0.3, 0.75]
+      future_times = [0.3, 0.8]
       self.nnff_future_times = [i + self.nnff_time_offset for i in future_times]
-      history_frames = 30
-      self.lat_accel_deque = deque(maxlen=history_frames)
-      self.lat_jerk_deque = deque(maxlen=history_frames)
-      self.roll_deque = deque(maxlen=history_frames)
+      history_check_frames = [30] # 0.3 seconds ago
+      self.history_frame_offsets = [history_check_frames[0] - i for i in history_check_frames]
+      self.lat_accel_deque = deque(maxlen=history_check_frames[0])
+      self.roll_deque = deque(maxlen=history_check_frames[0])
     
       
     # for actual lateral jerk calculation
@@ -188,12 +191,12 @@ class LatControlTorque(LatControl):
         # at higher lateral acceleration, it takes less jerk to initiate the return to center
         friction_compensation *= interp(abs(desired_lateral_accel), self.friction_curve_exit_ramp_bp, self.friction_curve_exit_ramp_v)
       
-      lateral_jerk_error = desired_lateral_jerk - self.actual_lateral_jerk.x
+      lateral_jerk_error = 0 if lookahead_lateral_jerk != 0 else lookahead_lateral_jerk - self.actual_lateral_jerk.x
       # lateral_jerk_error *= friction_lat_accel_downscale_factor
       
       # error-based friction term
-      error_friction = interp(error, [-ERR_FRICTION_THRESHOLD, ERR_FRICTION_THRESHOLD], [-0.15, 0.15])
-      error_friction *= self.error_scale_factor.x
+      error_friction = interp(error, [-ERR_FRICTION_THRESHOLD, ERR_FRICTION_THRESHOLD], [-0.1, 0.1])
+      error_friction *= interp(CS.vEgo, [20.0, 30.0], [1.0, 0.3])
       
       # lateral acceleration feedforward
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll
@@ -202,26 +205,25 @@ class LatControlTorque(LatControl):
       
       if self.use_nn_ff:
         # prepare input data for NNFF model
-        future_speeds = [CS.vEgo] + [math.sqrt(interp(t, T_IDXS, model_data.velocity.x)**2 \
+        future_speeds = [math.sqrt(interp(t, T_IDXS, model_data.velocity.x)**2 \
                                             + interp(t, T_IDXS, model_data.velocity.y)**2) \
                                               for t in self.nnff_future_times]
-        future_curvatures = [desired_curvature] + [interp(t, T_IDXS, lat_plan.curvatures) for t in self.nnff_future_times]
-        future_curvature_rates = [desired_curvature_rate] + [interp(t, T_IDXS, lat_plan.curvatureRates) for t in self.nnff_future_times]
+        future_curvatures = [interp(t, T_IDXS, lat_plan.curvatures) for t in self.nnff_future_times]
         
         roll = params.roll
-        future_rolls = [interp(t, T_IDXS, model_data.orientation.x) + roll for t in self.nnff_future_times]
-        future_lateral_accels = [k * v**2 for k, v in zip(future_curvatures, future_speeds)]
-        future_lateral_jerks = [k * v**2 for k, v in zip(future_curvature_rates, future_speeds)]
         
         self.lat_accel_deque.append(desired_lateral_accel)
-        self.lat_jerk_deque.append(desired_lateral_jerk)
         self.roll_deque.append(roll)
         
-        nnff_input = [CS.vEgo, desired_lateral_accel, desired_lateral_jerk, roll] \
-                    + [self.lat_accel_deque[0]] + future_lateral_accels \
-                    + [self.lat_jerk_deque[0]] + future_lateral_jerks \
-                    + [self.roll_deque[0]] + future_rolls
-        ff_nn = self.torque_from_nn(nnff_input)
+        past_lateral_accels = [self.lat_accel_deque[min(len(self.lat_accel_deque)-1, i)] for i in self.history_frame_offsets]
+        future_lateral_accels = [k * v**2 for k, v in zip(future_curvatures, future_speeds)]
+        past_rolls = [self.roll_deque[min(len(self.roll_deque)-1, i)] for i in self.history_frame_offsets]
+        future_rolls = [interp(t, T_IDXS, model_data.orientation.x) + roll for t in self.nnff_future_times]
+        
+        nnff_input = [CS.vEgo, desired_lateral_accel, lookahead_lateral_jerk, roll] \
+                    + past_lateral_accels + future_lateral_accels \
+                    + past_rolls + future_rolls
+        ff_nn = self.CI.get_ff_nn(nnff_input)
         ff_nn += error_friction
       else:
         ff_nn = None
