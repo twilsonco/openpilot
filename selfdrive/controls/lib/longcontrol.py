@@ -34,7 +34,7 @@ ACCEL_MAX_ISO = 3.5 # m/s^2
 def long_control_state_trans(active, long_control_state, v_ego, v_target, v_target_future, v_pid,
                              output_accel, brake_pressed, cruise_standstill, min_speed_can, 
                              MADS_lead_braking_enabled=False, gas=0.0, gear_shifter='',
-                             long_plan_source='', time_since_brake_press=100.0):
+                             long_plan_source='', time_since_brake_press=100.0, brake_release_vego=0.0):
   """Update longitudinal control state machine"""
   accelerating = v_target_future > v_target
   stopping_condition = (v_ego < 2.0 and cruise_standstill) or \
@@ -45,7 +45,7 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_targ
   starting_condition = v_target_future > STARTING_TARGET_SPEED and accelerating and not cruise_standstill
 
   if not active:
-    if (time_since_brake_press > 3.0 or v_ego > 2.0) \
+    if (time_since_brake_press > 3.0 or brake_release_vego > 2.0) \
         and gear_shifter in ['drive','low'] \
         and MADS_lead_braking_enabled \
         and gas < 1e-5 \
@@ -102,6 +102,7 @@ class LongControl():
     smooth_max_speed = 9.0
     self.pos_accel_gas_smooth_speed_bp = [smooth_max_speed * 0.7, smooth_max_speed]
     self.pos_accel_smooth_min_speed = 1.0
+    self.brake_release_vego = 0.0
     self.output_accel = FirstOrderFilter(0.0, 0.0, DT_CTRL)
     self.last_output_accel = 0.0
     self.tune_override = self._op_params.get('TUNE_LAT_do_override', force_update=True)
@@ -163,7 +164,8 @@ class LongControl():
                                                        CS.brakePressed, CS.cruiseState.standstill, CP.minSpeedCan, MADS_lead_braking_enabled=MADS_lead_braking_enabled,gas=CS.gas,
                                                        gear_shifter=CS.gearShifter,
                                                        long_plan_source=long_plan.longitudinalPlanSource,
-                                                       time_since_brake_press=self.brake_pressed_time_since)
+                                                       time_since_brake_press=self.brake_pressed_time_since,
+                                                       brake_release_vego=self.brake_release_vego)
 
     v_ego_pid = max(CS.vEgo, CP.minSpeedCan)  # Without this we get jumps, CAN bus reports 0 when speed < 0.3
 
@@ -213,6 +215,8 @@ class LongControl():
       self.last_gas_t = t
     self.active_last = active
     self.brake_pressed_time_since = t - self.brake_pressed_last_t
+    if self.brake_pressed_time_since < 0.02:
+      self.brake_release_vego = CS.vEgo
     lead_present = long_plan.leadDist > 0.
     if not lead_present and self.lead_present_last:
       self.lead_gone_t = t
