@@ -480,7 +480,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       QPushButton:pressed {
         color: #ADADAD;
       }
-    )");
+    )"));
     // }} PFEIFER - CUI
     btn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     nav_btns->addButton(btn);
