@@ -165,19 +165,26 @@ def insert_and_merge(intervals, new_interval):
 def compute_adjusted_steer_torque(samples, eps_stats, driver_stats):
   blacklist_neighbor_secs = 0.5
   max_ratio = 30.0
-  max_abs_long_accel = 1.2
+  max_abs_long_accel = 0.8
   # check_func = lambda s: abs(s.torque_driver) < 0.15 and abs(s.a_ego) < max_abs_long_accel
-  check_func = lambda s: not s.enabled and abs(s.torque_eps) < 0.15 and abs(s.a_ego) < max_abs_long_accel
+  check_func = lambda s: not s.enabled and abs(s.torque_eps) == 0.0 and abs(s.a_ego) < max_abs_long_accel
   nlalb = 5
-  use_driver_torque = True
+  torque_func = lambda s: s.torque_eps
+  recip_eps = 1.0
   if len(samples) == 0:
     return [], 0.0
   if samples[0].car_make == 'gm':
-    # check_func = lambda s: abs(s.torque_driver) < 0.15 and abs(s.a_ego) < max_abs_long_accel and (s.v_ego > 12.0 or abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 35 or abs(s.lateral_accel) <= 0.2)
+    check_func = lambda s: abs(s.a_ego) < max_abs_long_accel and \
+      ((s.enabled and abs(s.torque_driver) < 0.05 and \
+        abs(s.lateral_accel) <= 0.1 or \
+        (s.v_ego > 12.0 or abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 35)) \
+       or \
+      (not s.enabled and s.torque_eps == 0.0))
     recip_driver = 1.0 / 3.0
     recip_eps = 1.0 / 3.0
+    torque_func = lambda s: s.torque_driver + s.torque_eps
   elif samples[0].car_make == 'volkswagen':
-    use_driver_torque = True
+    torque_func = lambda s: s.torque_driver
     check_func = lambda s: not s.enabled and s.steer_cmd == 0.0 and abs(s.torque_eps) == 0.0 and abs(s.a_ego) < max_abs_long_accel
     recip_driver = 1.0 / 300.0
     recip_eps = 1.0
@@ -194,13 +201,19 @@ def compute_adjusted_steer_torque(samples, eps_stats, driver_stats):
     recip_driver = 1.0 / 361.0
     check_func = lambda s: abs(s.a_ego) < max_abs_long_accel
   elif samples[0].car_make == 'toyota':
-    check_func = lambda s: abs(s.a_ego) < max_abs_long_accel # and (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 15) or (abs(s.lateral_accel) <= 0.5)
+    # check_func = lambda s: s.enabled and abs(s.a_ego) < 2.0 and (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 25 or (abs(s.lateral_accel) <= 0.3))
+    check_func = lambda s: abs(s.a_ego) < max_abs_long_accel and \
+      (s.enabled and abs(s.torque_driver) < 0.05 and \
+        abs(s.lateral_accel) <= 0.3 or \
+        (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 25))
+    torque_func = lambda s: s.torque_eps
     nlalb = 0
     if any([k in samples[0].car_fp for k in ["COROLLA HYBRID"]]):
       check_func = lambda s: not s.enabled and (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 8) or (abs(s.lateral_accel) <= 0.4) and abs(s.a_ego) < max_abs_long_accel
     recip_driver = 1 / 400.0
+    recip_eps = 1/2000.0
   elif samples[0].car_make == 'honda':
-    use_driver_torque = True
+    torque_func = lambda s: s.torque_driver
     check_func = lambda s: not s.enabled and abs(s.a_ego) < max_abs_long_accel
     recip_driver = 1.0 / 3000.0
   elif samples[0].car_make == 'subaru':
@@ -217,10 +230,7 @@ def compute_adjusted_steer_torque(samples, eps_stats, driver_stats):
   for s in samples:
     s.torque_driver *= recip_driver
     s.torque_eps *= recip_eps
-    if not use_driver_torque:
-      s.torque_adjusted = s.torque_eps
-    else:
-      s.torque_adjusted = s.torque_driver
+    s.torque_adjusted = torque_func(s)
     
   mean_eps = eps_stats[2]
   std_eps = np.sqrt(eps_stats[3])
@@ -562,8 +572,8 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
         # desired_points = 15000000
         data.reverse() # so we can pop() from the end
         CTRL_RATE = 100
-        record_times = [-0.3, 0.3]
-        steer_delay = 0.3
+        record_times = [-0.4, -0.2, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8]
+        steer_delay = 0.0
         steer_delay_frames = int(steer_delay * CTRL_RATE)
         record_times_strings = [f"{'m' if i < 0.0 else 'p'}{int(abs(round(i*10))):02d}" for i in record_times]
         record_times = np.array(record_times)
@@ -572,7 +582,7 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
                 + [f"lateral_jerk_{i}" for i in record_times_strings] \
                 + [f"roll_{i}" for i in record_times_strings]
         max_time = max(record_times) - (min(record_times+[0.0]) - steer_delay) + 0.04
-        zero_time_ind = int((-min(record_times+[0.0]) + 0.04 + steer_delay) * CTRL_RATE)
+        zero_time_ind = 0 if min(record_times) > 0.0 else int((-min(record_times+[0.0]) + 0.04 + steer_delay) * CTRL_RATE)
         print(f"Record times: {record_times}")
         max_len = int(max_time * CTRL_RATE)
         lat_accel_deque = deque(maxlen=max_len)
@@ -604,7 +614,7 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
             if len(lat_accel_deque) == max_len:
               sout = sample_deque[zero_time_ind]
               # fix steer delay, fetching the torque from steer_delay seconds ago so it corresponds to the conditions now.
-              sout['steer_cmd'] = sample_deque[zero_time_ind - steer_delay_frames]['steer_cmd']
+              # sout['steer_cmd'] = sample_deque[zero_time_ind - steer_delay_frames]['steer_cmd']
               Ts = [(s['t'] - sout['t']) * 1e-9 for s in sample_deque]
               sout = {**sout, **{f"lateral_accel_{ts}": interp(t, Ts, lat_accel_deque) for t,ts in zip(record_times, record_times_strings)}}
               sout = {**sout, **{f"lateral_jerk_{ts}": interp(t, Ts, lat_jerk_deque) for t,ts in zip(record_times, record_times_strings)}}
