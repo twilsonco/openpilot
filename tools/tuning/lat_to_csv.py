@@ -579,7 +579,6 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
         record_times = np.array(record_times)
         columns = ['steer_cmd', 'v_ego', 'lateral_accel', 'lateral_jerk', 'roll'] \
                 + [f"lateral_accel_{i}" for i in record_times_strings] \
-                + [f"lateral_jerk_{i}" for i in record_times_strings] \
                 + [f"roll_{i}" for i in record_times_strings]
         max_time = max(record_times) - (min(record_times+[0.0]) - steer_delay) + 0.04
         zero_time_ind = 0 if min(record_times) > 0.0 else int((-min(record_times+[0.0]) + 0.04 + steer_delay) * CTRL_RATE)
@@ -617,7 +616,6 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
               # sout['steer_cmd'] = sample_deque[zero_time_ind - steer_delay_frames]['steer_cmd']
               Ts = [(s['t'] - sout['t']) * 1e-9 for s in sample_deque]
               sout = {**sout, **{f"lateral_accel_{ts}": interp(t, Ts, lat_accel_deque) for t,ts in zip(record_times, record_times_strings)}}
-              sout = {**sout, **{f"lateral_jerk_{ts}": interp(t, Ts, lat_jerk_deque) for t,ts in zip(record_times, record_times_strings)}}
               sout = {**sout, **{f"roll_{ts}": interp(t, Ts, roll_deque) for t,ts in zip(record_times, record_times_strings)}}
               sout = {k: sout[k] for k in columns}
               outdata.append(sout)
