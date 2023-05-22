@@ -228,14 +228,15 @@ static void update_line_data(UIState *s, const cereal::ModelDataV2::XYZTData::Re
   const auto line_x = line.getX(), line_z = line.getZ();
   UIScene &scene = s->scene;
   auto line_y = use_lat_plan ? scene.lateral_plan.getDPathPointsFull() : line.getY();
+  float path_offset = use_lat_plan ? 0. : scene.lane_pos_offset;
   if (line_y.size() != line_x.size()){
     return;
   }
   std::vector<vertex_data> left_points, right_points;
   for (int i = 0; i <= max_idx; i++) {
     vertex_data left, right;
-    bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off + y_offset, line_z[i] + z_off, &left);
-    bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off + y_offset, line_z[i] + z_off, &right);
+    bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off + y_offset + path_offset, line_z[i] + z_off, &left);
+    bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off + y_offset + path_offset, line_z[i] + z_off, &right);
     if (l && r) {
       // For wider lines the drawn polygon will "invert" when going over a hill and cause artifacts
       if (!allow_invert && left_points.size() && left.y > left_points.back().y) {
@@ -867,6 +868,7 @@ static void update_state(UIState *s) {
 
     scene.lateralPlan.laneWidth = data.getLaneWidth();
     scene.lateralPlan.laneCenter = data.getLaneDistFromCenter();
+    scene.lane_pos_offset = data.getLaneOffset();
     scene.lateralPlan.dProb = data.getDProb();
     scene.lateralPlan.lProb = data.getLProb();
     scene.lateralPlan.rProb = data.getRProb();

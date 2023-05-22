@@ -381,6 +381,7 @@ typedef struct UIScene {
   Rect lane_pos_left_touch_rect = {1,1,1,1}, lane_pos_right_touch_rect = {1,1,1,1};
   bool lane_pos_enabled = false;
   int lane_pos = 0; // 0, 1, -1 = center, left, right
+  float lane_pos_offset = 0.0; // in meters
   float lane_pos_dist_short = 800.; // ≈1/3 mile short timeout
   float lane_pos_dist_long = 16000.; // 10 mile long timeout
   float lane_pos_timeout_dist = lane_pos_dist_short;
