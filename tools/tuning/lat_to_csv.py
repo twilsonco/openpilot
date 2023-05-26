@@ -166,15 +166,17 @@ def compute_adjusted_steer_torque(samples, eps_stats, driver_stats):
   blacklist_neighbor_secs = 0.5
   max_ratio = 30.0
   max_abs_long_accel = 0.8
+  max_lat_jerk = 100.0
   # check_func = lambda s: abs(s.torque_driver) < 0.15 and abs(s.a_ego) < max_abs_long_accel
-  check_func = lambda s: not s.enabled and abs(s.torque_eps) == 0.0 and abs(s.a_ego) < max_abs_long_accel
+  check_func = lambda s: not s.enabled and abs(s.torque_eps) == 0.0 and abs(s.a_ego) < max_abs_long_accel and abs(s.lateral_jerk) < max_lat_jerk
   nlalb = 5
   torque_func = lambda s: s.torque_eps
   recip_eps = 1.0
+  recip_driver = 1.0
   if len(samples) == 0:
     return [], 0.0
   if samples[0].car_make == 'gm':
-    check_func = lambda s: abs(s.a_ego) < max_abs_long_accel and \
+    check_func = lambda s: abs(s.a_ego) < max_abs_long_accel and abs(s.lateral_jerk) < max_lat_jerk and \
       ((s.enabled and abs(s.torque_driver) < 0.05 and \
         abs(s.lateral_accel) <= 0.1 or \
         (s.v_ego > 12.0 or abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 35)) \
@@ -187,18 +189,19 @@ def compute_adjusted_steer_torque(samples, eps_stats, driver_stats):
     torque_func = lambda s: s.torque_driver
     check_func = lambda s: not s.enabled and s.steer_cmd == 0.0 and abs(s.torque_eps) == 0.0 and abs(s.a_ego) < max_abs_long_accel
     recip_driver = 1.0 / 300.0
-    recip_eps = 1.0
   elif samples[0].car_make == 'hyundai':
     check_func = lambda s: abs(s.a_ego) < max_abs_long_accel
     if any([k in samples[0].car_fp for k in ["KIA", "IONIQ", "GENESIS"]]):
       recip_driver = 1.0 / 600.0
     else:
       recip_driver = 1.0 / 400.0
+    recip_eps = 1.0 / 15.0
     if any([k in samples[0].car_fp for k in ["SONATA"]]):
       check_func = lambda s: (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 15) or (abs(s.lateral_accel) <= 0.5) and abs(s.a_ego) < max_abs_long_accel
       nlalb = 0
   elif samples[0].car_make == 'chrysler':
     recip_driver = 1.0 / 361.0
+    recip_eps = 1.0 / 300.0
     check_func = lambda s: abs(s.a_ego) < max_abs_long_accel
   elif samples[0].car_make == 'toyota':
     # check_func = lambda s: s.enabled and abs(s.a_ego) < 2.0 and (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 25 or (abs(s.lateral_accel) <= 0.3))
@@ -206,12 +209,11 @@ def compute_adjusted_steer_torque(samples, eps_stats, driver_stats):
       (s.enabled and abs(s.torque_driver) < 0.05 and \
         abs(s.lateral_accel) <= 0.3 or \
         (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 25))
-    torque_func = lambda s: s.torque_eps
     nlalb = 0
     if any([k in samples[0].car_fp for k in ["COROLLA HYBRID"]]):
       check_func = lambda s: not s.enabled and (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 8) or (abs(s.lateral_accel) <= 0.4) and abs(s.a_ego) < max_abs_long_accel
     recip_driver = 1 / 400.0
-    recip_eps = 1/2000.0
+    recip_eps = 1 / 1500.0
   elif samples[0].car_make == 'honda':
     torque_func = lambda s: s.torque_driver
     check_func = lambda s: not s.enabled and abs(s.a_ego) < max_abs_long_accel
@@ -219,13 +221,14 @@ def compute_adjusted_steer_torque(samples, eps_stats, driver_stats):
   elif samples[0].car_make == 'subaru':
     check_func = lambda s: abs(s.a_ego) < max_abs_long_accel
     recip_driver = 1.0 / 300.0
+    recip_eps = 1.0 / 1000.0
   elif samples[0].car_make == 'ford':
     recip_driver = 1.0 / 3.5
+    torque_func = lambda s: s.torque_driver
   elif samples[0].car_make == 'mazda':
     check_func = lambda s: not s.enabled and abs(s.a_ego) < max_abs_long_accel
+    torque_func = lambda s: s.torque_driver
     recip_driver = 1.0 / 20.0
-  else:
-    recip_driver = 1.0
     
   for s in samples:
     s.torque_driver *= recip_driver
@@ -572,7 +575,7 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
         # desired_points = 15000000
         data.reverse() # so we can pop() from the end
         CTRL_RATE = 100
-        record_times = [-0.4, -0.2, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8]
+        record_times = [0.3, 0.8]
         steer_delay = 0.0
         steer_delay_frames = int(steer_delay * CTRL_RATE)
         record_times_strings = [f"{'m' if i < 0.0 else 'p'}{int(abs(round(i*10))):02d}" for i in record_times]
@@ -636,11 +639,11 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
       
       # Write the DataFrame to a CSV file
       print("writing file")
-      df.sample(100).copy().to_csv(os.path.join(input_dir,f"{model}_torque-model-input_sample.csv"), index=False)#, float_format='%.8g')
+      df.sample(100).copy().to_csv(os.path.join(input_dir,f"{model}_sample.csv"), index=False)#, float_format='%.8g')
       # df.to_csv(os.path.join(input_dir,f"{model}.csv"), index=False)#, float_format='%.8g')
       # feather.write_dataframe(df, os.path.join(input_dir,f"{model}.feather"))
       # df.to_feather(os.path.join(input_dir,f"{model}.feather"))
-      feather.write_feather(df, os.path.join(input_dir,f"{model}_e2e.feather"), version=1)
+      feather.write_feather(df, os.path.join(input_dir,f"{model}.feather"), version=1)
 
     return model
 
@@ -670,7 +673,7 @@ for root, dirs, files in os.walk(input_dir):
             print(f"Processing {d}...")
             # try:
             # dirlist.append(d)
-            model = pickle_files_to_csv(d, check_modified=False, print_stats=True, save_output=True)
+            model = pickle_files_to_csv(d, check_modified=False, print_stats=False, save_output=True)
             blacklist.append(dir_name)
             # except Exception as e:
             #   print(f"Error processing {d}: {e}")
