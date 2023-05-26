@@ -226,7 +226,7 @@ class LatControlTorque(LatControl):
         ff_nn = self.CI.get_ff_nn(nnff_input)
         ff_nn += error_friction
       else:
-        ff_nn = None
+        ff_nn = 0.0
       
       output_torque = self.pid.update(setpoint, measurement,
                                       override=CS.steeringPressed, 
