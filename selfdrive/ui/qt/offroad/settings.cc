@@ -280,9 +280,9 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_openpilot.png",
                                   this));
 
-  toggles.append(new ParamControl("EnableTorqueNNFF",
-                                  "\"torque\" neural network feedforward",
-                                  "(Restart car to take effect) Use the experimental neural network feedforward instead of the composite, three-part feedforward (which is still completely derived from car data).",
+  toggles.append(new ParamControl("EnableNNFF",
+                                  "Neural network feedforward",
+                                  "(Restart car to take effect) Use the experimental neural network feedforward for both torque or lat_pid lateral control.",
                                   "../assets/offroad/icon_openpilot.png",
                                   this));
 

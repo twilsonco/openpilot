@@ -81,7 +81,7 @@ def manager_init():
     ("OpenPilotSecondsEngaged", "0"),
     ("EndToEndToggle", "1"),
     ("EnableTorqueControl", "1"),
-    ("EnableTorqueNNFF", "0"),
+    ("EnableNNFF", "0"),
     ("LanelessMode", "2"),
     ("LanePositionEnabled", "1"),
     ("AutoAutoLanePosition", "1"),

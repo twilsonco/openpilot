@@ -284,6 +284,10 @@ class CarInterface(CarInterfaceBase):
     if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
       self.ff_nn_model = FluxModel("/data/openpilot/selfdrive/car/gm/models/CHEVROLET VOLT PREMIER 2017.json")
   
+  def initialize_feedforward_function_nn(self):
+    if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
+      self.ff_nn_model = FluxModel("/data/openpilot/selfdrive/car/gm/models/CHEVROLET VOLT PREMIER 2017 steer angle.json")
+  
   def get_steer_feedforward_function_torque_lat_jerk(self):
     if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
       return self.get_steer_feedforward_torque_lat_jerk_volt

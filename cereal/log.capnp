@@ -700,6 +700,8 @@ struct ControlsState @0x97ff69c53601abf1 {
     kp @10 :Float32;
     ki @11 :Float32;
     kd @12 :Float32;
+    f2 @13 :Float32;
+    nnffInput @14 :List(Float32);
    }
 
   struct LateralTorqueState {

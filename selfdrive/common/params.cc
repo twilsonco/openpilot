@@ -143,7 +143,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DisableRadar", PERSISTENT}, // WARNING: THIS DISABLES AEB
     {"EndToEndToggle", PERSISTENT},
     {"EnableTorqueControl", PERSISTENT},
-    {"EnableTorqueNNFF", PERSISTENT},
+    {"EnableNNFF", PERSISTENT},
     {"CompletedTrainingVersion", PERSISTENT},
     {"ColorPath", PERSISTENT},
     {"AlternateColors", PERSISTENT},

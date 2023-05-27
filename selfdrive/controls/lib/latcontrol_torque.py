@@ -64,7 +64,7 @@ class LatControlTorque(LatControl):
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
     self.friction = CP.lateralTuning.torque.friction
     self.CI = CI
-    self.use_nn_ff = Params().get_bool("EnableTorqueNNFF")
+    self.use_nn_ff = Params().get_bool("EnableNNFF")
     if CP.carFingerprint in NN_FF_CARS:
       self.CI.initialize_feedforward_function_torque_nn()
     self.use_nn_ff = self.use_nn_ff and self.CI.ff_nn_model is not None
@@ -178,6 +178,7 @@ class LatControlTorque(LatControl):
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
       error *= self.error_scale_factor.x
+      setpoint = measurement + error
       pid_log.error = error
 
       lateral_accel_g = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY

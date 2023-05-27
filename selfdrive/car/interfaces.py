@@ -216,6 +216,10 @@ class CarInterfaceBase():
     return desired_lateral_accel
   
   @staticmethod
+  def get_steer_feedforward_nn_default(v_ego, desired_lateral_accel, desired_lateral_jerk, lateral_accel_g):
+    return desired_lateral_accel
+  
+  @staticmethod
   def get_steer_feedforward_function_torque_roll_default(g_lat_accel, v_ego):
     return g_lat_accel
   
@@ -240,6 +244,10 @@ class CarInterfaceBase():
   @staticmethod
   def initialize_feedforward_function_torque_nn():
     return CarInterfaceBase.get_steer_feedforward_torque_nn_default
+  
+  @staticmethod
+  def initialize_feedforward_function_nn():
+    return CarInterfaceBase.get_steer_feedforward_nn_default
   
   @staticmethod
   def get_steer_feedforward_function_torque_lat_jerk():
