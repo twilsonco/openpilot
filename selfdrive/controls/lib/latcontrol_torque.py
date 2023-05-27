@@ -83,7 +83,7 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_bp = [0.0, 30.0]
     self.low_speed_factor_v = [15.0, 5.0]
     
-    self.error_scale_recip = 3.0
+    self.error_scale_recip = 2.0
     self.error_scale_factor = FirstOrderFilter(1.0, 0.5, DT_CTRL)
     
     if self.use_nn_ff:

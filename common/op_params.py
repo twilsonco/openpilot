@@ -545,7 +545,7 @@ class opParams:
       
       'TUNE_LAT_TRX_use_NN_FF': Param(False, bool, 'Use the experimental neural network feedforward for the torque controller.', live=True, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', param_param='EnableNNFF', param_param_read_on_startup=True, fake_live=True),
       
-      'TUNE_LAT_TRX_error_downscale_in_curves': Param(3.0, float, 'Downscale error when under high lateral acceleration, thereby allowing feedforward to control everything. The error is downscaled to a little as the reciprocal of this value, so if it\'s set to 5, then the error will scale down to 1/5th in sharp corners.', live=True, min_val=1.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_error_downscale_in_curves': Param(2.0, float, 'Downscale error when under high lateral acceleration, thereby allowing feedforward to control everything. The error is downscaled to a little as the reciprocal of this value, so if it\'s set to 5, then the error will scale down to 1/5th in sharp corners.', live=True, min_val=1.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_error_downscale_smoothing': Param(0.5, float, 'The error scaling factor is filtered so that it changes smoothly. A higher value here is more smoothing (and more lag). This factor also controls the use of instantaneous vs "lookahead" lateral jerk for calculating friction or NNFF, such that when error is downscaled, more instantaneous lateral jerk is used in order to let feedforward be as responsive as possible.', live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
