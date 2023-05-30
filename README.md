@@ -1,6 +1,9 @@
 ### Which fork do you want?
 * C2 users: you might be stuck on the `tw-c2` branch if this branch (`tw-main`) doesn't work.
 * C3 users: depending on how new your C3 is, support might have been lost with my "tw" branches, so you'll want to use my SunnyPilot fork `sunnu-dev` (will update as this changes).
+* `tw-main` is a stable branch based on a 1-ish year old build
+* `tw-staging` receives more updates and newer features
+* `tw-dev` is modified often and is for breaking; use at your own risk
 * I'll list relevent branches here as they're made.
 * What's the difference?
     * "My fork" is based on OpenPilot v0.8.9 from Winter 2021
