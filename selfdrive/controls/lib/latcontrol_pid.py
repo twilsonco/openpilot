@@ -123,7 +123,8 @@ class LatControlPID():
                                                 for t in self.nnff_future_times]
           future_curvatures = [interp(t, T_IDXS, lat_plan.curvatures) for t in self.nnff_future_times]
           max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_curvature], key=lambda x: abs(x))
-          error_scale_factor = 1.0 / (1.0 + min(apply_deadzone(abs(max_future_lateral_accel), 0.3) * self.error_scale_recip, self.error_scale_recip - 1))
+          lookahead_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
+          error_scale_factor = 1.0 / (1.0 + min(apply_deadzone(abs(lookahead_lateral_jerk), 0.3) * self.error_scale_recip, self.error_scale_recip - 1))
           if error_scale_factor < self.error_scale_factor.x:
             self.error_scale_factor.x = error_scale_factor
           else:
