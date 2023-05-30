@@ -283,6 +283,10 @@ class CarInterface(CarInterfaceBase):
   def initialize_feedforward_function_torque_nn(self):
     if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
       self.ff_nn_model = FluxModel("/data/openpilot/selfdrive/car/gm/models/CHEVROLET VOLT PREMIER 2017.json")
+    elif self.CP.carFingerprint == CAR.BUICK_LACROSSE:
+      self.ff_nn_model = FluxModel("/data/openpilot/selfdrive/car/gm/models/BUICK LACROSSE 2017.json")
+    elif self.CP.carFingerprint == CAR.ACADIA:
+      self.ff_nn_model = FluxModel("/data/openpilot/selfdrive/car/gm/models/GMC ACADIA DENALI 2018.json")
   
   def initialize_feedforward_function_nn(self):
     if self.CP.carFingerprint in [CAR.VOLT, CAR.VOLT18]:
