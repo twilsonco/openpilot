@@ -12,6 +12,10 @@
         * It provides support for newer C3s
         * *Please (at least partially) direct your support for the SunnyPilot fork to SunnyPilot directly.*
 
+### Join us on Discord!
+* Find us in the "[twilsonco Volt GM fork](https://discord.com/channels/469524606043160576/884811574773157949)" thread in the [GM channel](https://discord.com/channels/469524606043160576/524611823090008065) of the [Comma.ai Discord server](https://discord.comma.ai).
+* Also find help in the "[twilsonco fork](https://discord.com/channels/771493367246094347/954439641023524884)" thread in the [GM channel](https://discord.com/channels/771493367246094347/772164144643702855) of the [OpenPilot Community Discord server](https://discord.gg/XnYqf6ZB9A)
+
 # Table of Contents
 ------
 - [Table of Contents](#table-of-contents)
