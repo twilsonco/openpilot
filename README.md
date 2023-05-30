@@ -1,8 +1,13 @@
 ### Which fork do you want?
-> **If you want "my" fork, read on.** 
-> If you're looking for my SunnyPilot fork, with improved gm controls and auto brake hold, use the following installer URL on your device, but head to the SunnyPilot github for more info.
-**`installer.comma.ai/twilsonco/sunny-test-c3`**
-Please (at least partially) direct your support for the SunnyPilot fork to SunnyPilot directly.
+* C2 users: you might be stuck on the `tw-c2` branch if this branch (`tw-main`) doesn't work.
+* C3 users: depending on how new your C3 is, support might have been lost with my "tw" branches, so you'll want to use my SunnyPilot fork `sunnu-dev` (will update as this changes).
+* I'll list relevent branches here as they're made.
+* What's the difference?
+    * "My fork" is based on OpenPilot v0.8.9 from Winter 2021
+        * Uses the last of the "medium models" for planning the driving path, which is rock solid dependable, unlike the newer models that cut curners bad
+    * `sunny-dev` is based on SunnyPilot, a popular fork with some great features, and it stays up to date with upstream OpenPilot software.
+        * It provides support for newer C3s
+        * *Please (at least partially) direct your support for the SunnyPilot fork to SunnyPilot directly.*
 
 # Table of Contents
 ------
