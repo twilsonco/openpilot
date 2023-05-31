@@ -158,13 +158,17 @@ class LatControlPID():
       deadzone = 0.0
 
       check_saturation = (CS.vEgo > 10) and not CS.steeringRateLimited and not CS.steeringPressed
-      output_steer = self.pid.update(angle_steers_des, CS.steeringAngleDeg, check_saturation=check_saturation, override=CS.steeringPressed,
-                                     feedforward=steer_feedforward if ff_nn is None or not self.use_nn_ff else ff_nn, speed=CS.vEgo, deadzone=deadzone)
+      output_steer = self.pid.update(angle_steers_des, CS.steeringAngleDeg, 
+                                     check_saturation=check_saturation, 
+                                     override=CS.steeringPressed,
+                                     feedforward=steer_feedforward if (ff_nn is None or not self.use_nn_ff) else ff_nn,
+                                     D=steer_rate_desired - steer_rate_actual,
+                                     speed=CS.vEgo, deadzone=deadzone)
       pid_log.active = True
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i
       pid_log.d = self.pid.d
-      pid_log.f = self.pid.f
+      pid_log.f = steer_feedforward * self.pid.k_f
       if self.use_nn_ff:
         pid_log.f2 = ff_nn * self.pid.k_f
         pid_log.nnffInput = nnff_input
