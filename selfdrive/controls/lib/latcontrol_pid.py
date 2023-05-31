@@ -16,6 +16,8 @@ from cereal import log
 NN_FF_CARS = [CAR.VOLT, CAR.VOLT18]
 LAT_PLAN_MIN_IDX = 5
 
+ERR_FRICTION_THRESHOLD = 0.3
+
 def get_lookahead_value(future_vals, current_val):
   if len(future_vals) == 0:
     return current_val
@@ -152,6 +154,14 @@ class LatControlPID():
                     + past_steer_angles + future_steer_angles \
                     + past_rolls + future_rolls
         ff_nn = self.CI.get_ff_nn(nnff_input)
+        
+        desired_lateral_accel = desired_curvature * CS.vEgo**2
+        actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll if use_roll else 0.0)
+        actual_lateral_accel = actual_curvature * CS.vEgo**2
+        lat_accel_error = desired_lateral_accel - actual_lateral_accel
+        error_friction = interp(lat_accel_error, [-ERR_FRICTION_THRESHOLD, ERR_FRICTION_THRESHOLD], [-0.1, 0.1])
+        error_friction *= interp(CS.vEgo, [20.0, 30.0], [1.0, 0.3])
+        ff_nn += error_friction
       else:
         ff_nn = 0.0
 
