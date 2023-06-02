@@ -724,7 +724,20 @@ static void update_state(UIState *s) {
           scene.adjacent_leads_left_str = "";
           char val[16];
           int cnt = 0;
+          scene.adjacent_lead_left_ttp_str = "";
           for (int i = 0; i < leads_vec.size(); ++i){
+            if (i == 0 && leads_vec[i].getVRel() < 0.0 && leads_vec[i].getVLead() > 0.0){
+              float const v = leads_vec[i].getVRel();
+              float const d = leads_vec[i].getDRel();
+              float ttp = -d / v;
+              if (ttp > 99.0){
+                scene.adjacent_lead_left_ttp_str = "99s+"; 
+              }
+              else{
+                snprintf(val, sizeof(val), "%.0fs", ttp);
+                scene.adjacent_lead_left_ttp_str = val;
+              }
+            }
             if (cnt > 0){
               scene.adjacent_leads_left_str += " ";
             }
@@ -745,7 +758,20 @@ static void update_state(UIState *s) {
           scene.adjacent_leads_right_str = "";
           char val[16];
           int cnt = 0;
+          scene.adjacent_lead_right_ttp_str = "";
           for (int i = 0; i < leads_vec.size(); ++i){
+            if (i == 0 && leads_vec[i].getVRel() < 0.0 && leads_vec[i].getVLead() > 0.0){
+              float const v = leads_vec[i].getVRel();
+              float const d = leads_vec[i].getDRel();
+              float ttp = -d / v;
+              if (ttp > 99.0){
+                scene.adjacent_lead_right_ttp_str = "99s+"; 
+              }
+              else{
+                snprintf(val, sizeof(val), "%.0fs", ttp);
+                scene.adjacent_lead_right_ttp_str = val;
+              }
+            }
             if (cnt > 0){
               scene.adjacent_leads_right_str += " ";
             }

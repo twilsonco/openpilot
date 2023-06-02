@@ -498,12 +498,27 @@ static void draw_adjacent_lead_speeds(UIState *s, bool lead_drawn){
       nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
       int x = s->fb_w * 11 / 32;
       nvgText(s->vg,x,y,s->scene.adjacent_leads_left_str.c_str(),NULL);
+      nvgText(s->vg,x,y-60,s->scene.adjacent_lead_left_ttp_str.c_str(),NULL);
 
       // right leads
       nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BOTTOM);
       nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
       x = s->fb_w * 21 / 32;
       nvgText(s->vg,x,y,s->scene.adjacent_leads_right_str.c_str(),NULL);
+      nvgText(s->vg,x,y-60,s->scene.adjacent_lead_right_ttp_str.c_str(),NULL);
+    }
+    else{ // still print time to pass along bottom
+      // left lead
+      nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BOTTOM);
+      nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+      int x = s->fb_w * 11 / 32;
+      nvgText(s->vg,x,y,s->scene.adjacent_lead_left_ttp_str.c_str(),NULL);
+
+      // right lead
+      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BOTTOM);
+      nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
+      x = s->fb_w * 21 / 32;
+      nvgText(s->vg,x,y,s->scene.adjacent_lead_right_ttp_str.c_str(),NULL);
     }
      
     // center leads
@@ -522,7 +537,7 @@ static void draw_adjacent_lead_speeds(UIState *s, bool lead_drawn){
     for (auto const & v : s->scene.adjacent_leads_center_strs){
       if (first && lead_drawn){
         auto l1p_v = s->scene.radarState.getLeadOnePlus().getVLeadK();
-        if (s->scene.lead_v - l1p_v > 7.){
+        if (s->scene.lead_v - l1p_v > 3.){
           nvgFontFace(s->vg, "sans-bold");
           nvgFillColor(s->vg, COLOR_RED_ALPHA(200));
           nvgFontSize(s->vg, 110);

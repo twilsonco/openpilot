@@ -354,7 +354,7 @@ typedef struct UIScene {
   bool adjacent_paths_enabled;
   bool adjacent_lead_info_print_enabled;
   bool adjacent_lead_info_print_at_lead;
-  std::string adjacent_leads_left_str, adjacent_leads_right_str;
+  std::string adjacent_leads_left_str, adjacent_leads_right_str, adjacent_lead_left_ttp_str, adjacent_lead_right_ttp_str;
   std::vector<std::string> adjacent_leads_center_strs;
   Rect adjacent_lead_info_touch_rect = {1,1,1,1};
 
