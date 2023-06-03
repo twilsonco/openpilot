@@ -165,6 +165,7 @@ class Planner():
     self.lead_0_plus = sm['radarState'].leadOnePlus
     
     self.mpcs['lead0'].df.lateralPlan = sm['lateralPlan']
+    self.mpcs['lead1'].df.lateralPlan = sm['lateralPlan']
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = self.lead_0.status and self.lead_0.dRel < 45.0 and self.lead_0.vLeadK > v_ego and self.lead_0.aLeadK > 0.0
@@ -184,6 +185,7 @@ class Planner():
     
     if sm['carState'].gearShifter == GearShifter.drive and self.gear_shifter_last != GearShifter.drive:
       self.mpcs['lead0'].df.reset()
+      self.mpcs['lead1'].df.reset()
     self.gear_shifter_last = sm['carState'].gearShifter
     
     if long_control_state == LongCtrlState.off or sm['carState'].gasPressed:
