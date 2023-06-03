@@ -419,8 +419,8 @@ class LaneOffset:
           left_lane_visible = self._lat_plan.lProb > 0.3
           l_lane_change_prob = md.meta.desirePrediction[Desire.laneChangeLeft - 1]
           r_lane_change_prob = md.meta.desirePrediction[Desire.laneChangeRight - 1]
-          l_lane_close = left_lane_visible and (md.laneLines[1].y[0] > -(0.5 + self.offset))
-          r_lane_close = right_lane_visible and (md.laneLines[2].y[0] < (0.5 - self.offset))
+          l_lane_close = left_lane_visible and (md.laneLines[1].y[0] > -(0.9 + self.offset))
+          r_lane_close = right_lane_visible and (md.laneLines[2].y[0] < (0.9 - self.offset))
           l_lane_depart = l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close
           r_lane_depart = r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close
           lane_depart = l_lane_depart or r_lane_depart
