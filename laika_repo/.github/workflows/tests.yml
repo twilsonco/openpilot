@@ -1,0 +1,38 @@
+name: tests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.8.2'
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install libcurl4-openssl-dev libssl-dev
+        pip install -r requirements_examples.txt pytest-cov pytest
+    - name: Run unittests
+      run: py.test --cov .
+      env:
+        NASA_USERNAME: ${{ secrets.NASA_USERNAME }}
+        NASA_PASSWORD: ${{ secrets.NASA_PASSWORD }}
+    - name: Test install
+      run: |
+        python setup.py install
+        cd / && python -c 'import laika'
+  lint:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8.2'
+      - name: Run static analysis
+        run: |
+          sudo apt update && sudo apt-get install cppcheck
+          pip install pre-commit==2.15.0 pylint==2.11.1
+          pre-commit run --all
