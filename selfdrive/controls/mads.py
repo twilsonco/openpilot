@@ -5,6 +5,7 @@ from common.params import Params
 from selfdrive.controls.lib.latcontrol import MIN_LATERAL_CONTROL_SPEED
 from panda import ALTERNATIVE_EXPERIENCE
 from selfdrive.controls.lib.events import EngagementAlert, AudibleAlert
+from common.params import put_bool_nonblocking
 
 State = log.ControlsState.OpenpilotState
 ACTIVE_STATES = (State.enabled, State.softDisabling, State.overriding)
@@ -23,12 +24,13 @@ class Mads:
     self.invalid_gear = invalid_gear
     self.last_lat_allowed = False
     self.stopped = True
+    self.mem_params = Params("/dev/shm/params");
 
     self.params = Params()
 
   def update(self, car_state, op_state, car_params, sm, alert_manager):
     panda_states = sm['pandaStates']
-    lateral_allowed = self.params.get_bool("LateralAllowed")
+    lateral_allowed = self.mem_params.get_bool("LateralAllowed")
     if self.last_lat_allowed != lateral_allowed:
       alert = None
       if lateral_allowed:
@@ -48,7 +50,8 @@ class Mads:
 
     # Always allow lateral when controls are allowed
     if any(ps.controlsAllowed for ps in panda_states) and not lateral_allowed:
-      self.params.put_bool("LateralAllowed", True)
+      self.mem_params.put_bool("LateralAllowed", True)
+      put_bool_nonblocking("LateralAllowed", True)
 
   @property
   def lat_active(self):
@@ -66,7 +69,7 @@ class Mads:
       return False
 
     # If the car lateral control is not active lat cannot be active
-    if self.params.get_bool('MadsEnabled') and not self.params.get_bool("LateralAllowed"):
+    if self.params.get_bool('MadsEnabled') and not self.mem_params.get_bool("LateralAllowed"):
       return False
 
     # If mads is disabled then lat is only active when openpilot is active

@@ -9,7 +9,7 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.car.hyundai.hyundaicanfd import CanBus
 from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CAN_GEARS, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
 from selfdrive.car.interfaces import CarStateBase
-from common.params import Params
+from common.params import Params, put_bool_nonblocking
 
 PREV_BUTTON_SAMPLES = 8
 CLUSTER_SAMPLE_RATE = 20  # frames
@@ -21,7 +21,7 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
     # PFEIFER - mads {{
-    self._params = Params()
+    self._params = Params("/dev/shm/params")
     # }}
 
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
@@ -165,6 +165,7 @@ class CarState(CarStateBase):
     if self.prev_main_buttons == 0 and self.main_buttons[-1] != 0:
       lateral_allowed = self._params.get_bool("LateralAllowed")
       self._params.put_bool("LateralAllowed", not lateral_allowed)
+      put_bool_nonblocking("LateralAllowed", not lateral_allowed)
     # }} PFEIFER - mads
 
     return ret
