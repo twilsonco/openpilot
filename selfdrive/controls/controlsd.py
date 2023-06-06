@@ -16,7 +16,7 @@ from system.version import is_release_branch, get_short_branch
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lateral_planner import CAMERA_OFFSET
-from selfdrive.controls.lib.drive_helpers import VCruiseHelper, get_lag_adjusted_curvature
+from selfdrive.controls.lib.drive_helpers import VCruiseHelper, get_lag_adjusted_curvature, get_lag_adjusted_curvature_old
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_LATERAL_CONTROL_SPEED
 from selfdrive.controls.lib.longcontrol import LongControl
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -181,6 +181,8 @@ class Controls:
     self.steer_limited = False
     self.desired_curvature = 0.0
     self.desired_curvature_rate = 0.0
+    self.desired_curvature_debug = 0.0
+    self.desired_curvature_rate_debug = 0.0
     self.experimental_mode = False
     self.v_cruise_helper = VCruiseHelper(self.CP)
     self.recalibrating_seen = False
@@ -633,6 +635,10 @@ class Controls:
       actuators.accel = self.LoC.update(CC.longActive, CS, long_plan, pid_accel_limits, t_since_plan, self.experimental_mode)
 
       # Steering PID loop and lateral MPC
+      self.desired_curvature_debug, self.desired_curvature_rate_debug = get_lag_adjusted_curvature_old(self.CP, CS.vEgo,
+                                                                                       lat_plan.psis,
+                                                                                       lat_plan.curvatures,
+                                                                                       lat_plan.curvatureRates)
       self.desired_curvature, self.desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                                        lat_plan.psis,
                                                                                        lat_plan.curvatures,
@@ -806,6 +812,8 @@ class Controls:
     controlsState.curvature = curvature
     controlsState.desiredCurvature = self.desired_curvature
     controlsState.desiredCurvatureRate = self.desired_curvature_rate
+    controlsState.desiredCurvatureDebug = self.desired_curvature_rate_debug
+    controlsState.desiredCurvatureRateDebug = self.desired_curvature_rate_debug
     controlsState.state = self.state
     controlsState.engageable = not self.events.any(ET.NO_ENTRY)
     controlsState.longControlState = self.LoC.long_control_state

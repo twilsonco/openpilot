@@ -661,6 +661,9 @@ struct ControlsState @0x97ff69c53601abf1 {
   desiredCurvatureRate @62 :Float32;
   forceDecel @51 :Bool;
 
+  desiredCurvatureDebug @66 :Float32;  # lag adjusted curvatures used by lateral controllers
+  desiredCurvatureRateDebug @67 :Float32;
+
   # UI alerts
   alertText1 @24 :Text;
   alertText2 @25 :Text;
