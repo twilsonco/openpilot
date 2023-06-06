@@ -17,6 +17,7 @@ V_CRUISE_INITIAL_EXPERIMENTAL_MODE = 105
 IMPERIAL_INCREMENT = 1.6  # should be CV.MPH_TO_KPH, but this causes rounding errors
 
 MIN_SPEED = 1.0
+MIN_DIST = 1.0
 CONTROL_N = 17
 CAR_ROTATION_RADIUS = 0.0
 
@@ -163,12 +164,12 @@ def rate_limit(new_value, last_value, dw_step, up_step):
   return clip(new_value, last_value + dw_step, last_value + up_step)
 
 
-def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates, velocities):
-  if len(psis) != CONTROL_N or len(velocities) != CONTROL_N:
+def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates, distances):
+  if len(psis) != CONTROL_N or len(distances) != CONTROL_N:
     psis = [0.0]*CONTROL_N
     curvatures = [0.0]*CONTROL_N
     curvature_rates = [0.0]*CONTROL_N
-    velocities = [0.0]*CONTROL_N
+    distances = [0.0]*CONTROL_N
   v_ego = max(MIN_SPEED, v_ego)
 
   # TODO this needs more thought, use .2s extra for now to estimate other delays
@@ -179,9 +180,11 @@ def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates, vel
   # psi to calculate a simple linearization of desired curvature
   current_curvature_desired = curvatures[0]
   psi = interp(delay, T_IDXS[:CONTROL_N], psis)
-  v = interp(delay, T_IDXS[:CONTROL_N], velocities)
-  v = max(MIN_SPEED, (v + velocities[0]) / 2)
-  average_curvature_desired = psi / (v * delay)
+  distance = interp(delay, T_IDXS[:CONTROL_N], distances)
+  distance = max(MIN_DIST, distance)
+
+  average_curvature_desired = psi / distance
+
   desired_curvature = 2 * average_curvature_desired - current_curvature_desired
 
   # This is the "desired rate of the setpoint" not an actual desired rate
