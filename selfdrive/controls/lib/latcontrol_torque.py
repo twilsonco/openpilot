@@ -16,7 +16,6 @@ from selfdrive.modeld.constants import T_IDXS
 from cereal import log
 
 ROLL_FF_CARS = [CAR.VOLT, CAR.VOLT18]
-NN_FF_CARS = [CAR.VOLT, CAR.VOLT18]
 
 # At higher speeds (25+mph) we can assume:
 # Lateral acceleration achieved by a specific car correlates to
@@ -65,8 +64,7 @@ class LatControlTorque(LatControl):
     self.friction = CP.lateralTuning.torque.friction
     self.CI = CI
     self.use_nn_ff = Params().get_bool("EnableNNFF")
-    if CP.carFingerprint in NN_FF_CARS:
-      self.CI.initialize_feedforward_function_torque_nn()
+    self.CI.initialize_feedforward_function_torque_nn()
     self.use_nn_ff = self.use_nn_ff and self.CI.ff_nn_model is not None
     self.get_steer_feedforward = CI.get_steer_feedforward_function_torque()
     self.get_friction = CI.get_steer_feedforward_function_torque_lat_jerk()

@@ -13,7 +13,6 @@ from selfdrive.modeld.constants import T_IDXS
 from common.params import Params
 from cereal import log
 
-NN_FF_CARS = [CAR.VOLT, CAR.VOLT18]
 LAT_PLAN_MIN_IDX = 5
 
 ERR_FRICTION_THRESHOLD = 0.3
@@ -44,8 +43,7 @@ class LatControlPID():
                              derivative_period=0.1)
     self.CI = CI
     self.use_nn_ff = Params().get_bool("EnableNNFF")
-    if CP.carFingerprint in NN_FF_CARS:
-      self.CI.initialize_feedforward_function_nn()
+    self.CI.initialize_feedforward_function_nn()
     self.use_nn_ff = self.use_nn_ff and self.CI.ff_nn_model is not None
     self.look_ahead_v = [0.3, 1.2]
     self.look_ahead_bp = [9.0, 35.0]
