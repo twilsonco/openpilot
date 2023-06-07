@@ -330,7 +330,7 @@ class CarInterface(CarInterfaceBase):
     tire_stiffness_factor = 0.444  # not optimized yet
     
     ret.longitudinalActuatorDelayLowerBound = 0.42
-    ret.longitudinalActuatorDelayUpperBound = 0.42
+    ret.longitudinalActuatorDelayUpperBound = 0.5
 
     # Default lateral controller params.
     ret.minSteerSpeed = 6.7 * CV.MPH_TO_MS
