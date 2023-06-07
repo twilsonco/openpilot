@@ -183,13 +183,14 @@ class VisionTurnController():
     self._A_LAT_REG_MAX = 2.0 * lat_accel_factor  # Maximum lateral acceleration
     # Lookup table for the minimum smooth deceleration during the ENTERING state
     # depending on the actual maximum absolute lateral acceleration predicted on the turn ahead.
-    self._ENTERING_SMOOTH_DECEL_V = [i * long_accel_factor for i in [0.0, -0.2, -1.0]]  # min decel value allowed on ENTERING state
+    self._ENTERING_SMOOTH_DECEL_V = [i * long_accel_factor for i in [0.0, -0.2, -0.7]]  # min decel value allowed on ENTERING state
     self._ENTERING_SMOOTH_DECEL_BP = [i * lat_accel_factor for i in [1.25, 1.3, 2.4]]  # absolute value of lat acc ahead
     # Lookup table for the acceleration for the TURNING state
     # depending on the current lateral acceleration of the vehicle.
-    self._TURNING_ACC_V = [i * long_accel_factor if i < 0.0 else i for i in [0.5, 0.0, -0.8]]  # acc value
-    self._TURNING_ACC_BP = [i * lat_accel_factor for i in [1.4, 1.9, 2.4]]  # absolute value of current lat acc
+    self._TURNING_ACC_V = [i * long_accel_factor if i < 0.0 else i for i in [0.5, 0.0, -0.7]]  # acc value
+    self._TURNING_ACC_BP = [i * lat_accel_factor for i in [1.4, 1.9, 2.2]]  # absolute value of current lat acc
     self._LEAVING_ACC = 0.7 * lat_accel_factor  # Confortable acceleration to regain speed while leaving a turn.
+    self._ACCEL_MIN = min(self._ENTERING_SMOOTH_DECEL_V + self._TURNING_ACC_V)
     
     
   
@@ -324,7 +325,7 @@ class VisionTurnController():
     
     self._lat_sat_last = lat_sat
     
-    self._max_v_for_current_curvature = math.sqrt(self._A_LAT_REG_MAX / current_curvature) if current_curvature > 0 \
+    self._max_v_for_current_curvature = math.sqrt(self._A_LAT_REG_MAX / current_curvature) if current_curvature != 0 \
       else V_CRUISE_MAX * CV.KPH_TO_MS
     
     # get model-predicted relative road roll, with current roll
@@ -426,7 +427,9 @@ class VisionTurnController():
       a_target = self._LEAVING_ACC
 
     if self._soften_decel:
-      a_target = max(a_target, 0.4)
+      a_target = max(a_target, -0.4)
+    else:
+      a_target = max(a_target, self._ACCEL_MIN)
     # update solution values.
     self._a_target.update(a_target)
 
