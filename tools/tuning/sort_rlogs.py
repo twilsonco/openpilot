@@ -9,6 +9,7 @@ import pathlib
 from tools.lib.logreader import MultiLogIterator
 from tools.lib.route import Route
 
+del_files=[]
 
 def get_rlog_data(filename):
   if filename.endswith("rlog") or filename.endswith("rlog.bz2"):
@@ -29,7 +30,7 @@ def get_rlog_data(filename):
           if None in [fp, cn] and msg.which() == 'carParams':
             fp = msg.carParams.carFingerprint
             cn = msg.carParams.carName
-          elif did is None and msg.which() == 'initData':
+          if did is None and msg.which() == 'initData':
             did = msg.initData.dongleId
         except Exception as e:
           continue
@@ -46,6 +47,7 @@ def get_rlog_data(filename):
   return None
 
 def get_rlog_data_from_list(fnames):
+  global del_files
   for fname in fnames:
     try:
       rlog_info = get_rlog_data(fname)
@@ -53,6 +55,7 @@ def get_rlog_data_from_list(fnames):
         return rlog_info
     except Exception as e:
       print(f"Failed to get rlog data for {fname}")
+      del_files.append(fname)
       continue
   return None
 
@@ -63,6 +66,7 @@ def get_rlog_data_from_list(fnames):
 # per dongle-id.
 
 def main(rlog_base_dir, out_dir):
+  global del_files
   # get list of all rlogs
   rlog_set = []
   blacklistfile = os.path.join(rlog_base_dir,"blacklist.txt")
@@ -79,7 +83,10 @@ def main(rlog_base_dir, out_dir):
     for fname in file_list:
       full_name = os.path.join(dir_name, fname)
       route = fname[:37].replace('_','|')
-      if "/." in full_name or route in blacklist:
+      if "/." in full_name:
+        continue
+      if route in blacklist:
+        del_files.append(fname)
         continue
       if fname.endswith("rlog") or fname.endswith("rlog.bz2"):
         rlog_set.append(full_name)
@@ -140,6 +147,13 @@ def main(rlog_base_dir, out_dir):
   with open(blacklistfile, 'w') as rll:
     for ls in sorted(list(blacklist)):
       rll.write(f"\n{ls}")
+  
+  # delete del_files
+  for f in del_files:
+    try:
+      os.remove(f)
+    except Exception as e:
+      print(f"Failed to delete file {f} with error: {e}")
   
   print("Done")
   
