@@ -154,7 +154,7 @@ class CarController:
         # Send dashboard UI commands (ACC status)
         send_fcw = hud_alert == VisualAlert.fcw
         can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, CC.enabled and CS.out.cruiseState.enabled,
-                                                            hud_v_cruise * CV.MS_TO_KPH, hud_control.leadVisible, send_fcw, CS.gac_tr))
+                                                            hud_v_cruise * CV.MS_TO_KPH, hud_control.leadVisible, send_fcw))
       else:
         accel_g = ACCELERATION_DUE_TO_GRAVITY * apply_deadzone(self.pitch.x, PITCH_DEADZONE) # driving uphill is positive pitch
         accel += accel_g
