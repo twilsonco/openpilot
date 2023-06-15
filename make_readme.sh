@@ -17,12 +17,14 @@ for dir in *; do
   echo `ls`
   # Encode the directory name for use in a URL
   encoded_dirname=$(echo "$dir" | sed 's/ /%20/g')
+  # dirname as lowercase with spaces changed to hyphens
+  dirname_hyphen=$(echo "$dir" | sed 's/ /-/g' | tr '[:upper:]' '[:lower:]')
   # Get the directory name without the trailing slash
   dirname=$(basename "$dir")
   # Initialize counter for images in current row
   row_counter=0
   # Initialize table of contents for this directory
-  section_table_of_contents="## [$dirname](#$encoded_dirname) ($(ls -1q "$dir"/*.png | wc -l) cars)\n"
+  section_table_of_contents="## $dirname\n"
   # Initialize table of images for this directory
   table_body="| 🛣️ | 🚗 |\n| --- | --- |\n"
   # Loop through all image files in this directory
@@ -34,7 +36,7 @@ for dir in *; do
     # Encode the filename for use in a URL
     encoded_filename=$(echo "$file" | sed 's/ /%20/g')
     # Append a new cell to the current row with the image and its file name
-    cell="| [$filename](#$encoded_filename)  ![$filename](https://github.com/twilsonco/openpilot/blob/log-info/data/$encoded_dirname/$encoded_filename?raw=true)"
+    cell="| [$filename](#table-of-contents)  ![$filename](https://github.com/twilsonco/openpilot/blob/log-info/data/$encoded_dirname/$encoded_filename?raw=true)"
     # Increment row counter
     row_counter=$((row_counter+1))
     # If we've reached the end of a row, add a new line to the table
@@ -47,13 +49,13 @@ for dir in *; do
   cd ..
 
   # Combine table of contents and table of images into a single table for this directory
-  section_table="$section_table_of_contents\n\n$table_body"
+  section_table="\n$section_table_of_contents\n\n$table_body"
 
   # Append the table for this directory to the README body
   readme_body="$readme_body$section_table"
 
   # Add a new entry to the table of contents for all directories
-  table_of_contents="$table_of_contents- [$dirname](#$encoded_dirname) ($(ls -1q "$dir"/*.png | wc -l) cars)\n"
+  table_of_contents="$table_of_contents- [$dirname](#$dirname_hyphen) ($(ls -1q "$dir"/*.png | wc -l) cars)\n"
 done
 cd ..
 
