@@ -133,6 +133,8 @@ class CleanLatSample():
     self.torque_driver = float(s.torque_driver)
     self.torque_adjusted: float = 0.0
     self.steer_cmd = float(s.steer_cmd)
+    self.steer_angle = float(s.steer_angle)
+    self.steer_rate = float(s.steer_rate)
     self.lateral_accel = float(s.lateral_accel)
     self.lateral_jerk = float(s.lateral_jerk)
     self.roll = float(s.roll)
@@ -166,9 +168,8 @@ def compute_adjusted_steer_torque(samples, eps_stats, driver_stats):
   blacklist_neighbor_secs = 0.5
   max_ratio = 30.0
   max_abs_long_accel = 0.8
-  max_lat_jerk = 100.0
   # check_func = lambda s: abs(s.torque_driver) < 0.15 and abs(s.a_ego) < max_abs_long_accel
-  check_func = lambda s: not s.enabled and abs(s.torque_eps) == 0.0 and abs(s.a_ego) < max_abs_long_accel and abs(s.lateral_jerk) < max_lat_jerk
+  check_func = lambda s: not s.enabled and abs(s.torque_eps) == 0.0 and abs(s.a_ego) < max_abs_long_accel
   nlalb = 5
   torque_func = lambda s: s.torque_eps
   recip_eps = 1.0
@@ -176,10 +177,10 @@ def compute_adjusted_steer_torque(samples, eps_stats, driver_stats):
   if len(samples) == 0:
     return [], 0.0
   if samples[0].car_make == 'gm':
-    check_func = lambda s: abs(s.a_ego) < max_abs_long_accel and abs(s.lateral_jerk) < max_lat_jerk and \
+    check_func = lambda s: abs(s.a_ego) < max_abs_long_accel and \
       ((s.enabled and abs(s.torque_driver) < 0.05 and \
-        abs(s.lateral_accel) <= 0.1 or \
-        (s.v_ego > 12.0 or abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 35)) \
+        abs(s.steer_angle) <= 2.0 or \
+        (s.v_ego > 12.0 or abs(s.steer_angle) / max(0.001, abs(s.torque_adjusted)) < 100)) \
        or \
       (not s.enabled and s.torque_eps == 0.0))
     recip_driver = 1.0 / 3.0
@@ -197,7 +198,7 @@ def compute_adjusted_steer_torque(samples, eps_stats, driver_stats):
       recip_driver = 1.0 / 400.0
     recip_eps = 1.0 / 15.0
     if any([k in samples[0].car_fp for k in ["SONATA"]]):
-      check_func = lambda s: (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 15) or (abs(s.lateral_accel) <= 0.5) and abs(s.a_ego) < max_abs_long_accel
+      check_func = lambda s: (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 15) or (abs(s.steer_angle) <= 2.0) and abs(s.a_ego) < max_abs_long_accel
       nlalb = 0
   elif samples[0].car_make == 'chrysler':
     recip_driver = 1.0 / 361.0
@@ -207,11 +208,11 @@ def compute_adjusted_steer_torque(samples, eps_stats, driver_stats):
     # check_func = lambda s: s.enabled and abs(s.a_ego) < 2.0 and (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 25 or (abs(s.lateral_accel) <= 0.3))
     check_func = lambda s: abs(s.a_ego) < max_abs_long_accel and \
       (s.enabled and abs(s.torque_driver) < 0.05 and \
-        abs(s.lateral_accel) <= 0.3 or \
-        (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 25))
+        abs(s.steer_angle) <= 2.0 or \
+        (abs(s.steer_angle) / max(0.001, abs(s.torque_adjusted)) < 100))
     nlalb = 0
     if any([k in samples[0].car_fp for k in ["COROLLA HYBRID"]]):
-      check_func = lambda s: not s.enabled and (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 8) or (abs(s.lateral_accel) <= 0.4) and abs(s.a_ego) < max_abs_long_accel
+      check_func = lambda s: not s.enabled and (abs(s.lateral_accel) / max(0.001, abs(s.torque_adjusted)) < 8) or (abs(s.steer_angle) <= 2.0) and abs(s.a_ego) < max_abs_long_accel
     recip_driver = 1 / 400.0
     recip_eps = 1 / 1500.0
   elif samples[0].car_make == 'honda':
@@ -316,6 +317,8 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
       # 'a_ego',
       'lateral_accel',
       'lateral_jerk',
+      'steer_angle',
+      'steer_rate',
       'roll', # actually lateral gravitational acceleration
       'steer_cmd',
       # "lateral_accel_1",
@@ -337,7 +340,7 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
           samples.append(CleanLatSample(s, pickle_file))
           if print_stats:
             samples[-1].v_ego *= 2.24
-        if i > 50:
+        if i > 200:
           # break
           pass
         i += 1
@@ -346,13 +349,14 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
       return
         
     eps = [s.torque_eps for s in samples]
-    lat_accel = [s.lateral_accel for s in samples]
+    steer_angle = [s.steer_angle for s in samples]
     driver = [s.torque_driver for s in samples]
     
     eps_stats = describe(eps)
     driver_stats = describe(driver)
-    lat_accel_stats = describe(lat_accel)
-        
+    steer_angle_stats = describe(steer_angle)
+      
+    print(f"Length of samples: {len(samples)}")
         
     if print_stats and len(samples) > 0:
       
@@ -369,7 +373,6 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
       mean_eps = eps_stats[2]
       std_eps = np.sqrt(eps_stats[3])
       
-      lat_accel = None
       eps = None
       driver = None
       
@@ -380,7 +383,7 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
       # print(f"{carname} data stats:")
       # print(f"  eps: {eps_stats[2]:.3f} +/- {std_eps:.3f} (max: {eps_stats[1][1]:.3f}) (min: {eps_stats[1][0]:.3f})")
       # print(f"  driver: {driver_stats[2]:.3f} +/- {std_driver:.3f} (max: {driver_stats[1][1]:.3f}) (min: {driver_stats[1][0]:.3f})")
-      # print(f"  lat_accel: mean {lat_accel_stats[2]:.3f} (max: {lat_accel_stats[1][1]:.3f}) (min: {lat_accel_stats[1][0]:.3f})")
+      # print(f"  lat_accel: mean {steer_angle_stats[2]:.3f} (max: {steer_angle_stats[1][1]:.3f}) (min: {steer_angle_stats[1][0]:.3f})")
       # print(f"  v_ego: mean {v_ego_stats[2]:.3f} (max: {v_ego_stats[1][1]:.3f}) (min: {v_ego_stats[1][0]:.3f})")
       
       std_eps = max(std_eps, max_abs_eps * 0.1)
@@ -419,12 +422,13 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
             ax = axs[i][0]
             y = [sample.torque_eps for sample in data]
             max_abs_y = max([abs(y) for y in y] + [1.0])
-            ax.scatter([-sample.lateral_accel for sample in data], y, s=1, alpha=0.1, c=color_vals, cmap='viridis')
+            max_abs_x = max([abs(sample.steer_angle) for sample in data] + [1.0])
+            ax.scatter([sample.steer_angle for sample in data], y, s=1, alpha=0.1, c=color_vals, cmap='viridis')
             ax.set_title(("EPS steer torque @ " if i == 0 else "") + f"{v_ego_min:0.0f}-{v_ego_max:0.0f}mph ({dlen})", fontsize=12)
             if i == 4:
-              ax.set_xlabel("lateral_accel [m/s²]", fontsize=10)
+              ax.set_xlabel("steer angle [deg]", fontsize=10)
             ax.grid(True)
-            ax.set_xlim(-4, 4)
+            ax.set_xlim(-max_abs_x, max_abs_x)
             ax.set_ylim(-max_abs_y, max_abs_y)
           
           # plot the data in the center column with torque_driver as y value
@@ -442,7 +446,8 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
             ax = axs[i][1]
             y = [sample.torque_driver for sample in data]
             max_abs_y = max([abs(y) for y in y] + [1.0])
-            x = [-sample.lateral_accel for sample in data]
+            max_abs_x = max([abs(sample.steer_angle) for sample in data] + [1.0])
+            x = [sample.steer_angle for sample in data]
             
             # dataset = np.column_stack((x, y))
             
@@ -467,9 +472,9 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
             ax.scatter(x, y, s=1, alpha=0.1, c=color_vals, cmap='viridis')
             ax.set_title(("Driver steer torque @ " if i == 0 else "") + f"{v_ego_min:0.0f}-{v_ego_max:0.0f}mph ({dlen})", fontsize=12)
             if i == 4:
-              ax.set_xlabel("lateral_accel [m/s²]", fontsize=10)
+              ax.set_xlabel("steer angle [deg]", fontsize=10)
             ax.grid(True)
-            ax.set_xlim(-4, 4)
+            ax.set_xlim(-max_abs_x, max_abs_x)
             ax.set_ylim(-max_abs_y, max_abs_y)
           
           # plot the data in the right column with adjusted torque value
@@ -483,19 +488,20 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
             ax = axs[i][2]
             y = [s.torque_adjusted for s in data]
             max_abs_y = max([abs(y) for y in y] + [1.0])
+            max_abs_x = max([abs(sample.steer_angle) for sample in data] + [1.0])
             colors = [sample.v_ego for sample in data]
             if i == 4:
-              ax.scatter([-sample.lateral_accel for sample in data], y, s=1, alpha=0.1, c=colors, cmap='viridis', label="vEgo")
+              ax.scatter([sample.steer_angle for sample in data], y, s=1, alpha=0.1, c=colors, cmap='viridis', label="vEgo")
               sm = ScalarMappable(cmap='viridis')
               sm.set_array(colors)
               plt.colorbar(sm)
             else:
-              ax.scatter([-sample.lateral_accel for sample in data], y, s=1, alpha=0.1, c=colors, cmap='viridis')
+              ax.scatter([sample.steer_angle for sample in data], y, s=1, alpha=0.1, c=colors, cmap='viridis')
             ax.set_title((f"Adj. torque ({recip:.2e}) @ " if i == 0 else "") + f"{v_ego_min:0.0f}-{v_ego_max:0.0f}mph ({dlen})", fontsize=12)
             if i == 4:
-              ax.set_xlabel("Lateral Acceleraion [m/s²]", fontsize=10)
+              ax.set_xlabel("steer angle [deg]", fontsize=10)
             ax.grid(True)
-            ax.set_xlim(-4, 4)
+            ax.set_xlim(-max_abs_x, max_abs_x)
             ax.set_ylim(-max_abs_y, max_abs_y)
             # set y gridlines at 0.5 increments, passing through 0.0
             max_abs_y_rounded_ceiling = math.ceil(max_abs_y * 2.0) / 2.0
@@ -510,11 +516,11 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
       # adjust the spacing between subplots
       np.set_printoptions(precision=2)
       approx_logtime = len(pickle_files) / 60.0
-      fig.suptitle(f"{carname} ({approx_logtime:0.0f} hrs of log data) | lat_accel vs. eps/driver torque\nLeft two columns colored by user, right colored by speed (up to {human_readable(batch_size)} pts per plot)\neps: {describe_to_string(eps_stats)}\ndriver: {describe_to_string(driver_stats)}\nlat accel: {describe_to_string(lat_accel_stats)}\nlat jerk {describe_to_string(describe([s.lateral_jerk for s in samples]))}\nv_ego {describe_to_string(v_ego_stats)}", fontsize=9)
+      fig.suptitle(f"{carname} ({approx_logtime:0.0f} hrs of log data) | steer angle vs. eps/driver torque\nLeft two columns colored by user, right colored by speed (up to {human_readable(batch_size)} pts per plot)\neps: {describe_to_string(eps_stats)}\ndriver: {describe_to_string(driver_stats)}\nsteer angle: {describe_to_string(steer_angle_stats)}\nsteer rate {describe_to_string(describe([s.steer_rate for s in samples]))}\nv_ego {describe_to_string(v_ego_stats)}", fontsize=9)
       fig.subplots_adjust(top=0.85)
       plt.tight_layout()
       
-      plt.savefig(os.path.join(input_dir, f"{carname} lat_accel_vs_torque.png"))
+      plt.savefig(os.path.join(input_dir, f"{carname} steer_angle_vs_torque.png"))
       plt.clf()
       plt.close("all")
 
@@ -580,15 +586,14 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
         steer_delay_frames = int(steer_delay * CTRL_RATE)
         record_times_strings = [f"{'m' if i < 0.0 else 'p'}{int(abs(round(i*10))):02d}" for i in record_times]
         record_times = np.array(record_times)
-        columns = ['steer_cmd', 'v_ego', 'lateral_accel', 'lateral_jerk', 'roll'] \
-                + [f"lateral_accel_{i}" for i in record_times_strings] \
+        columns = ['steer_cmd', 'lateral_accel', 'lateral_jerk', 'v_ego', 'steer_angle', 'steer_rate', 'roll'] \
+                + [f"steer_angle_{i}" for i in record_times_strings] \
                 + [f"roll_{i}" for i in record_times_strings]
         max_time = max(record_times) - (min(record_times+[0.0]) - steer_delay) + 0.04
         zero_time_ind = 0 if min(record_times) > 0.0 else int((-min(record_times+[0.0]) + 0.04 + steer_delay) * CTRL_RATE)
         print(f"Record times: {record_times}")
         max_len = int(max_time * CTRL_RATE)
-        lat_accel_deque = deque(maxlen=max_len)
-        lat_jerk_deque = deque(maxlen=max_len)
+        steer_angle_deque = deque(maxlen=max_len)
         roll_deque = deque(maxlen=max_len)
         sample_deque = deque(maxlen=max_len)
         outdata = []
@@ -598,27 +603,24 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
             pbar.update(1)
             sample = data.pop()
             s = vars(sample)
+            s['steer_cmd'] = s['torque_adjusted']
             s['lateral_accel'] *= -1.0
             s['lateral_jerk'] *= -1.0
-            s['steer_cmd'] = s['torque_adjusted']
-            s['roll'] *= -1.0
             if len(sample_deque) > 0 and (s['t'] - sample_deque[-1]['t']) * 1e-9 > dt_max:
-              lat_accel_deque = deque(maxlen=max_len)
-              lat_jerk_deque = deque(maxlen=max_len)
+              steer_angle_deque = deque(maxlen=max_len)
               roll_deque = deque(maxlen=max_len)
               sample_deque = deque(maxlen=max_len)
             else:
               sample_deque.append(s)
-              lat_accel_deque.append(s['lateral_accel'])
-              lat_jerk_deque.append(s['lateral_jerk'])
+              steer_angle_deque.append(s['steer_angle'])
               roll_deque.append(s['roll'])
             
-            if len(lat_accel_deque) == max_len:
+            if len(steer_angle_deque) == max_len:
               sout = sample_deque[zero_time_ind]
               # fix steer delay, fetching the torque from steer_delay seconds ago so it corresponds to the conditions now.
               # sout['steer_cmd'] = sample_deque[zero_time_ind - steer_delay_frames]['steer_cmd']
               Ts = [(s['t'] - sout['t']) * 1e-9 for s in sample_deque]
-              sout = {**sout, **{f"lateral_accel_{ts}": interp(t, Ts, lat_accel_deque) for t,ts in zip(record_times, record_times_strings)}}
+              sout = {**sout, **{f"steer_angle_{ts}": interp(t, Ts, steer_angle_deque) for t,ts in zip(record_times, record_times_strings)}}
               sout = {**sout, **{f"roll_{ts}": interp(t, Ts, roll_deque) for t,ts in zip(record_times, record_times_strings)}}
               sout = {k: sout[k] for k in columns}
               outdata.append(sout)
@@ -660,7 +662,7 @@ def has_upper_word(text):
 
 # iterate over all directories and subdirectories in the specified path
 whitelist = ["toyota", "honda", "hyundai", "chrysler"]
-whitelist = ["ACADIA"]
+whitelist = ["LACROSSE"]
 blacklist = []
 dirlist=[]
 for root, dirs, files in os.walk(input_dir):
@@ -673,7 +675,7 @@ for root, dirs, files in os.walk(input_dir):
             print(f"Processing {d}...")
             # try:
             # dirlist.append(d)
-            model = pickle_files_to_csv(d, check_modified=False, print_stats=True, save_output=False)
+            model = pickle_files_to_csv(d, check_modified=False, print_stats=False, save_output=True)
             blacklist.append(dir_name)
             # except Exception as e:
             #   print(f"Error processing {d}: {e}")

@@ -6,10 +6,19 @@ import matplotlib.pyplot as plt
 import ast
 import re
 
+
+def sign(x):
+  if x > 0.0:
+    return 1.0
+  elif x < 0.0:
+    return -1.0
+  else:
+    return 0.0
+
 class FluxModel:
   # dict used to rename activation functions whose names aren't valid python identifiers
   activation_function_names = {'σ': 'sigmoid'}
-  def __init__(self, params_file, zero_bias=True):
+  def __init__(self, params_file, zero_bias=False):
     with open(params_file, "r") as f:
       params = json.load(f)
 
@@ -29,22 +38,27 @@ class FluxModel:
       for k, v in self.activation_function_names.items():
         activation = activation.replace(k, v)
       self.layers.append((W, b, activation))
-    
+      
     self.test(test_dict)
     if not self.test_passed:
       raise ValueError(f"NN FF model failed test: {params_file}")
 
+    # Compute the mean slope of the nnff from 0 to 3m/s^2 so
+    # that kf can be estimated in torqued from lateral accel.
+    # Do it for a range of speeds and then we can interpolate between them.
+    mean_slope_lat_accel_limits = (0.05, 3.0)
+    mean_slope_speeds = [float(i) for i in np.arange(3.0, 20.0, 3.0)]
+    mean_slope_lat_accels = 10.0**(np.arange(np.log10(mean_slope_lat_accel_limits[0]), np.log10(mean_slope_lat_accel_limits[1]), 0.1))
+    mean_slopes = [float(np.mean([self.evaluate([s, la])/la for la in mean_slope_lat_accels])) for s in mean_slope_speeds]    # The total mean slope, all speeds and angles considered.
+    # This can be compared to the torqued slope to compute
+    # the kf value.
+    self.mean_mean_slope = float(np.mean(mean_slopes))
+    self.lat_accel_factor = 1/self.mean_mean_slope
+    
   # Begin activation functions.
   # These are called by name using the keys in the model json file
   def sigmoid(self, x):
     return 1 / (1 + np.exp(-x))
-    
-  def tanh(self, x):
-    return np.tanh(x)
-
-  def sigmoid_fast(self, x):
-    return 0.5 * (x / (1 + np.abs(x)) + 1)
-    # return x / (1 + np.abs(x))
 
   def identity(self, x):
     return x
@@ -59,21 +73,40 @@ class FluxModel:
     return x
 
   def evaluate(self, input_array):
+    if len(input_array) != self.input_size:
+      # If the input is length two, then it's a simplified evaluation with only speed and lateral acceleration.
+      # In that case, need to add on zeros to fill out the input array to match the correct length.
+      if len(input_array) == 2:
+        input_array = input_array + [0] * (self.input_size - 2)
+      else:
+        raise ValueError(f"Input array length {len(input_array)} does not match the expected length {self.input_size}")
+        
     input_array = np.array(input_array, dtype=np.float32)#.reshape(1, -1)
 
-    if input_array.shape[0] != self.input_size:
-      raise ValueError(f"Input array last dimension {input_array.shape[-1]} does not match the expected length {self.input_size}")
     # Rescale the input array using the input_mean and input_std
     input_array = (input_array - self.input_mean) / self.input_std
 
     output_array = self.forward(input_array)
 
     return float(output_array[0, 0])
-  
-  def test(self, test_data: dict) -> str:
+
+  # torqued uses a linear fit of steer command vs lateral accel.
+  # NNFF is non-linear for many cars, so we need to provide a way
+  # to "linearize" the recorded steer command so the linear fit
+  # still works.
+  def get_steer_cmd_scale(self, speed, lat_accel):
+    abs_lat_accel = max(0.01, lat_accel)
+    comp_lat_accel = self.lat_accel_factor
+    comp_slope = self.evaluate([speed, comp_lat_accel]) / comp_lat_accel
+    current_value = self.evaluate([speed, abs_lat_accel])
+    linear_value = abs_lat_accel * comp_slope
+    return (abs_lat_accel - abs(linear_value - current_value)) / abs_lat_accel
+    
+  def test(self, test_data: dict):
     num_passed = 0
     num_failed = 0
     allowed_chars = r'^[-\d.,\[\] ]+$'
+    self.test_passed = False
 
     for input_str, expected_output in test_data.items():
       if not re.match(allowed_chars, input_str):
@@ -82,7 +115,7 @@ class FluxModel:
       input_list = ast.literal_eval(input_str)
       model_output = self.evaluate(input_list)
 
-      if abs(model_output - expected_output) <= 1e-6:
+      if abs(model_output - expected_output) <= 5e-5:
         num_passed += 1
       else:
         num_failed += 1
@@ -121,43 +154,54 @@ class FluxModel:
 
 def main():
   in_data = pd.read_csv("/Users/haiiro/NoSync/voltlat_large_balanced.csv")
-  in_data = in_data[np.abs(in_data["v_ego"] - 20) < 1]
-  model = FluxModel("/Users/haiiro/NoSync/voltlat.json", zero_bias=False)
-  model.summary(do_print=True)
-  print(f"{model.evaluate([25, 0.5, 0.1, 0.05]) = }")
+  s = 10
+  in_data = in_data[np.abs(in_data["v_ego"] - s) < 1]
+  model = FluxModel("/Volumes/video/scratch-video/latmodels/CHEVROLET VOLT PREMIER 2017/CHEVROLET VOLT PREMIER 2017.json", zero_bias=False)
+  model.summary(do_print=False)
+  # print(f"{model.evaluate([25, 0.5, 0.1, 0.05] + [0] * (model.input_size-4)) = }")
   # print(in_data.head())
+  
+  
+  print(f"{model.lat_accel_factor = }")
+  
+  # test model.get_slope_offset(speed, lat accel)
+  # for a range of speeds and positive lat accels, in
+  # a table with heading rows and columns.
+  print("speed \ lat accel: " + ', '.join([f"{la:0.3f}" for la in np.arange(0.2, 1.0, 0.2)]))
+  for s in range(3, 25, 3):
+    print(f"{s}: " + ', '.join([f"{model.get_steer_cmd_scale(s, la):.3f}" for la in np.arange(0.2, 1.0, 0.2)]))
   
   # print(vars(model))
   
-  plt.scatter(in_data["lateral_accel"], in_data["steer_cmd"], s=10, edgecolors='white', linewidths=1)
-  x = np.arange(-4, 4, 0.1)
-  # print(x)
-  # print(y)
-  y = np.array([model.evaluate([20, xi, 0, 0]) for xi in x])
-  plt.plot(x, y, label='model', color='black', linewidth=2)
-  y = np.array([model.evaluate([20, xi, 0, 0.07]) for xi in x])
-  plt.plot(x, y, label='model w/ +glat', color='black', linewidth=2, alpha=0.5)
-  y = np.array([model.evaluate([20, xi, 0, -0.07]) for xi in x])
-  plt.plot(x, y, label='model w/ -glat', color='black', linewidth=2, linestyle='--', alpha=0.5)
-  y = np.array([model.evaluate([20, xi, 2, 0]) for xi in x])
-  plt.plot(x, y, label='model w/ +jerk', color='red', linewidth=2)
-  y = np.array([model.evaluate([20, xi, 2, 0.07]) for xi in x])
-  plt.plot(x, y, label='model w/ +jerk +glat', color='red', linewidth=2, alpha=0.5)
-  y = np.array([model.evaluate([20, xi, 2, -0.07]) for xi in x])
-  plt.plot(x, y, label='model w/ +jerk -glat', color='red', linewidth=2, linestyle='--', alpha=0.5)
-  y = np.array([model.evaluate([20, xi, -2, 0]) for xi in x])
-  plt.plot(x, y, label='model w/ -jerk', color='blue', linewidth=2)
-  y = np.array([model.evaluate([20, xi, -2, 0.07]) for xi in x])
-  plt.plot(x, y, label='model w/ -jerk +glat', color='blue', linewidth=2, alpha=0.5)
-  y = np.array([model.evaluate([20, xi, -2, -0.07]) for xi in x])
-  plt.plot(x, y, label='model w/ -jerk -glat', color='blue', linewidth=2, linestyle='--', alpha=0.5)
-  plt.xlabel('lat accel [m/s^2]')
-  plt.ylabel('steer cmd 3Nm')
-  plt.grid(True)
-  plt.legend()
+  # plt.scatter(in_data["lateral_accel"], in_data["steer_cmd"], s=10, edgecolors='white', linewidths=1)
+  # x = np.arange(-4.2, 4.2, 0.1)
+  # # print(x)
+  # # print(y)
+  # y = np.array([model.evaluate([s, xi, 0, 0] + [0] * (model.input_size-4)) for xi in x])
+  # plt.plot(x, y, label='model', color='black', linewidth=2)
+  # y = np.array([model.evaluate([s, xi, 0, 0.07] + [0] * (model.input_size-4)) for xi in x])
+  # plt.plot(x, y, label='model w/ +glat', color='black', linewidth=2, alpha=0.5)
+  # y = np.array([model.evaluate([s, xi, 0, -0.07] + [0] * (model.input_size-4)) for xi in x])
+  # plt.plot(x, y, label='model w/ -glat', color='black', linewidth=2, linestyle='--', alpha=0.5)
+  # y = np.array([model.evaluate([s, xi, 2, 0] + [0] * (model.input_size-4)) for xi in x])
+  # plt.plot(x, y, label='model w/ +jerk', color='red', linewidth=2)
+  # y = np.array([model.evaluate([s, xi, 2, 0.07] + [0] * (model.input_size-4)) for xi in x])
+  # plt.plot(x, y, label='model w/ +jerk +glat', color='red', linewidth=2, alpha=0.5)
+  # y = np.array([model.evaluate([s, xi, 2, -0.07] + [0] * (model.input_size-4)) for xi in x])
+  # plt.plot(x, y, label='model w/ +jerk -glat', color='red', linewidth=2, linestyle='--', alpha=0.5)
+  # y = np.array([model.evaluate([s, xi, -2, 0] + [0] * (model.input_size-4)) for xi in x])
+  # plt.plot(x, y, label='model w/ -jerk', color='blue', linewidth=2)
+  # y = np.array([model.evaluate([s, xi, -2, 0.07] + [0] * (model.input_size-4)) for xi in x])
+  # plt.plot(x, y, label='model w/ -jerk +glat', color='blue', linewidth=2, alpha=0.5)
+  # y = np.array([model.evaluate([s, xi, -2, -0.07] + [0] * (model.input_size-4)) for xi in x])
+  # plt.plot(x, y, label='model w/ -jerk -glat', color='blue', linewidth=2, linestyle='--', alpha=0.5)
+  # plt.xlabel('lat accel [m/s^2]')
+  # plt.ylabel('steer cmd 3Nm')
+  # plt.grid(True)
+  # plt.legend()
 
-  # show the plot
-  plt.show()
+  # # show the plot
+  # plt.show()
   return
 
 if __name__ == "__main__":

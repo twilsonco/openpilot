@@ -51,7 +51,7 @@ from selfdrive.config import Conversions as CV
 from tools.lib.logreader import MultiLogIterator
 from tools.lib.route import Route
 
-MULTI_FILE = True
+MULTI_FILE = False
 
 MAX_GAS = 0.0
 MAX_EPS_TORQUE = 0.0
@@ -191,6 +191,7 @@ class Sample():
   lateral_jerk_w_roll_w_roll: float = np.nan
   lateral_jerk: float = np.nan
   roll: float = np.nan
+  pitch: float = np.nan
   curvature_device: float = np.nan
   lateral_accel_device: float = np.nan
   steer_cmd: float = np.nan
@@ -275,6 +276,7 @@ def collect(lr):
         continue
       elif msg.which() == 'liveLocationKalman':
         yaw_rate = msg.liveLocationKalman.angularVelocityCalibrated.value[2]
+        s.pitch = msg.liveLocationKalman.orientationNED.value[1]
       elif msg.which() == 'lateralPlan':
         # logs before 2021-05 don't have this field
         try:
@@ -285,57 +287,47 @@ def collect(lr):
         continue
       elif VM is None and msg.which() == 'carParams':
         CP = msg.carParams
-        VM = VehicleModel(CP)
-      elif msg.which() == 'can':
+        s.car_make = CP.carName
+        s.car_fp = CP.carFingerprint
+        s.long_actuator_delay = (CP.longitudinalActuatorDelayUpperBound + CP.longitudinalActuatorDelayLowerBound) / 2
+      elif msg.which() in ['can']:
+        # print("can")
         # print(msg.can[0])
-        byt = [msg.as_builder().to_bytes()]
-        print(byt)
-        if not can1_updated or not can2_updated:
+        byt = msg.as_builder().to_bytes()
+        cp1.update_strings(byt)
+        cp2.update_strings(byt)
+        s.gas_cmd = cp1.vl["ASCMGasRegenCmd"]["GasRegenCmd"]
+        s.brake_cmd = cp2.vl["EBCMFrictionBrakeCmd"]["FrictionBrakeCmd"]
+        can1_updated = can2_updated = True
+        # print(byt)
+        # if not can1_updated or not can2_updated:
 
-          # print(cp1.update_strings(bytes))
-          for u in cp1.update_strings(byt):
-            print(u)
-            if u == 715:  # ASCMGasRegenCmd
-              can1_updated = True
-              print("gas")
-              break
-          for u in cp2.update_strings(byt):
-            print(u)
-            if u == 789:  # EBCMFrictionBrakeCmd
-              can2_updated = True
-              print("brake")
-              break
+        #   # print(cp1.update_strings(bytes))
+        #   for u in cp1.update_strings(byt):
+        #     print(u)
+        #     if u == 715:  # ASCMGasRegenCmd
+        #       can1_updated = True
+        #       print("gas")
+        #       break
+        #   for u in cp2.update_strings(byt):
+        #     # print(u)
+        #     if u == 789:  # EBCMFrictionBrakeCmd
+        #       can2_updated = True
+        #       print("brake")
+        #       break
       else:
         continue
 
       # assert all messages have been received
       valid = not np.isnan(s.v_ego) and \
-              not np.isnan(s.steer_offset) and \
-              not np.isnan(s.desired_curvature_rate) and \
-              not np.isnan(s.desired_curvature) and \
-              VM is not None and \
-              not np.isnan(yaw_rate) and \
+              not np.isnan(s.a_ego) and \
+              not np.isnan(s.pitch) and \
               can1_updated and \
               can2_updated
       
       if valid:
         can1_updated = can2_updated = False
-        s.car_make = CP.carName
-        s.car_fp = CP.carFingerprint
-        s.long_actuator_delay = (CP.longitudinalActuatorDelayUpperBound + CP.longitudinalActuatorDelayLowerBound) / 2
-        s.gas_cmd = cp1.vl["ASCMGasRegenCmd"]["GasRegenCmd"]
-        s.brake_cmd = cp2.vl["EBCMFrictionBrakeCmd"]["FrictionBrakeCmd"]
-        VM.update_params(max(stiffnessFactor, 0.1), max(steerRatio, 0.1))
-        current_curvature = -VM.calc_curvature(math.radians(s.steer_angle - s.steer_offset), s.v_ego, s.roll)
-        current_curvature_rate = -VM.calc_curvature(math.radians(s.steer_rate), s.v_ego, s.roll)
-        current_curvature_rate_no_roll = -VM.calc_curvature(math.radians(s.steer_rate), s.v_ego, 0.)
-        s.lateral_accel = current_curvature * s.v_ego**2
-        s.lateral_jerk_w_roll_w_roll = current_curvature_rate * s.v_ego**2
-        s.lateral_jerk = current_curvature_rate_no_roll * s.v_ego**2
-        s.curvature_device = (yaw_rate / s.v_ego) if s.v_ego > 0.01 else 0.
-        s.lateral_accel_device = yaw_rate * s.v_ego  - (np.sin(s.roll) * ACCELERATION_DUE_TO_GRAVITY)
-        s.desired_steer_angle = math.degrees(VM.get_steer_from_curvature(-s.desired_curvature, s.v_ego, s.roll))
-        s.desired_steer_rate = math.degrees(VM.get_steer_from_curvature(-s.desired_curvature_rate, s.v_ego, 0))
+        print(s.gas_cmd, " ", s.brake_cmd)
 #         if s.steer_cmd != 0 and s.torque_eps != 0 and s.torque_driver == 0:
 #           print(f"""{s.v_ego = }
 # {s.steer_angle = }
@@ -730,7 +722,7 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
             os.mkdir(outpath)
           rlog_log_path = ""
           if preprocess:
-            rlog_log_path = os.path.join(outpath, "/opfitfiles.txt") # prevents rerunning rlogs
+            rlog_log_path = os.path.join(outpath, "opfitfiles.txt") # prevents rerunning rlogs
             if os.path.exists(rlog_log_path): 
               # read in lat files saved by running `ls -1 /data/media/0/latfiles >> /data/media/0/latfiles.txt`
               with open(rlog_log_path, 'r') as rll:
@@ -854,10 +846,10 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
 if __name__ == '__main__':
   global IS_ANGLE_PLOT
   parser = argparse.ArgumentParser()
-  parser.add_argument('--path', type=str)
-  parser.add_argument('--outpath', type=str)
+  parser.add_argument('--path', type=str, default='/Volumes/video/scratch-video/rlogs/gm/CHEVROLET VOLT PREMIER 2018/c11fcb510a549332')
+  parser.add_argument('--outpath', type=str, default='/Users/haiiro/NoSync/latfiles/testout')
   parser.add_argument('--route', type=str)
-  parser.add_argument('--preprocess', action='store_true')
+  parser.add_argument('--preprocess', action='store_false')
   parser.add_argument('--dongleid', type=str)
   args = parser.parse_args()
   

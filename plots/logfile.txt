@@ -1,0 +1,9 @@
+Loading new data
+Loading many in /Users/haiiro/NoSync/latfiles/gm/CHEVROLET VOLT PREMIER 2018
+max eps torque = 0.0000
+max driver torque = 0.0000
+max speed = 0.0000 mph
+min curvature rate = 0.0000
+max curvature rate = 0.0000
+min steer rate = 0.0000
+max steer rate = 0.0000
