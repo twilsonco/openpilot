@@ -81,8 +81,7 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_bp = [0.0, 30.0]
     self.low_speed_factor_v = [15.0, 5.0]
     
-    self.error_scale_recip = 2.0
-    self.error_scale_factor = FirstOrderFilter(1.0, 0.5, DT_CTRL)
+    self.error_downscale = 3.0
     
     if self.use_nn_ff:
       # NNFF model takes current v_ego, a_ego, lat_accel, lat_jerk, roll, and past/future data
@@ -92,9 +91,9 @@ class LatControlTorque(LatControl):
       # Past value is computed using observed car lat accel, jerk, and roll
       # actual current values are passed as the -0.3s value, the desired values are passed as the actual lat accel etc values, and the future values are interpolated from predicted planner/model data
       self.nnff_time_offset = CP.steerActuatorDelay + 0.2
-      future_times = [0.3, 0.8]
+      future_times = [0.3, 0.6, 1.0, 1.5] # seconds in the future
       self.nnff_future_times = [i + self.nnff_time_offset for i in future_times]
-      history_check_frames = [30] # 0.3 seconds ago
+      history_check_frames = [30, 20, 10] # 0.3, 0.2, 0.1 seconds ago
       self.history_frame_offsets = [history_check_frames[0] - i for i in history_check_frames]
       self.lat_accel_deque = deque(maxlen=history_check_frames[0])
       self.roll_deque = deque(maxlen=history_check_frames[0])
@@ -123,8 +122,7 @@ class LatControlTorque(LatControl):
     if look_ahead != self.low_speed_factor_look_ahead:
       self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.low_speed_factor_look_ahead), None)
     look_ahead = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_v')
-    self.error_scale_recip = self._op_params.get('TUNE_LAT_TRX_error_downscale_in_curves')
-    self.error_scale_factor.update_alpha(self._op_params.get('TUNE_LAT_TRX_error_downscale_smoothing'))
+    self.error_downscale = self._op_params.get('TUNE_LAT_TRX_error_downscale_in_curves')
     
     self.friction_look_ahead_v = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_v')
     self.friction_look_ahead_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_friction_lookahead_bp')]
@@ -161,11 +159,8 @@ class LatControlTorque(LatControl):
       lookahead_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_curvature], key=lambda x: abs(x))
-      error_scale_factor = 1.0 / (1.0 + min(apply_deadzone(abs(lookahead_lateral_jerk), 0.3) * self.error_scale_recip, self.error_scale_recip - 1))
-      if error_scale_factor < self.error_scale_factor.x:
-        self.error_scale_factor.x = error_scale_factor
-      else:
-        self.error_scale_factor.update(error_scale_factor)
+      error_scale_factor = 1.0 / min(0.5 * (0.33*abs(desired_lateral_accel) + 0.5*abs(lookahead_lateral_jerk)) + 1.0, self.error_downscale)
+
       
       if self.use_nn_ff:
         low_speed_factor = interp(CS.vEgo, [0, 10, 20], [13, 5, 0])**2
@@ -175,7 +170,7 @@ class LatControlTorque(LatControl):
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
-      error *= self.error_scale_factor.x
+      error *= error_scale_factor
       setpoint = measurement + error
       pid_log.error = error
 
@@ -204,9 +199,6 @@ class LatControlTorque(LatControl):
       
       if self.use_nn_ff:
         # prepare input data for NNFF model
-        future_speeds = [math.sqrt(interp(t, T_IDXS, model_data.velocity.x)**2 \
-                                            + interp(t, T_IDXS, model_data.velocity.y)**2) \
-                                              for t in self.nnff_future_times]
         future_curvatures = [interp(t, T_IDXS, lat_plan.curvatures) for t in self.nnff_future_times]
         
         roll = params.roll
@@ -215,7 +207,7 @@ class LatControlTorque(LatControl):
         self.roll_deque.append(roll)
         
         past_lateral_accels = [self.lat_accel_deque[min(len(self.lat_accel_deque)-1, i)] for i in self.history_frame_offsets]
-        future_lateral_accels = [k * v**2 for k, v in zip(future_curvatures, future_speeds)]
+        future_lateral_accels = [k * CS.vEgo**2 for k in future_curvatures]
         past_rolls = [self.roll_deque[min(len(self.roll_deque)-1, i)] for i in self.history_frame_offsets]
         future_rolls = [interp(t, T_IDXS, model_data.orientation.x) + roll for t in self.nnff_future_times]
         
@@ -259,7 +251,7 @@ class LatControlTorque(LatControl):
       pid_log.lookaheadCurvatureRate = lookahead_curvature_rate
       pid_log.f2 = ff_nn * self.pid.k_f
       pid_log.maxFutureLatAccel = max_future_lateral_accel
-      pid_log.errorScaleFactor = self.error_scale_factor.x
+      pid_log.errorScaleFactor = error_scale_factor
       if self.use_nn_ff:
         pid_log.nnffInputVector = nnff_input
     pid_log.currentLateralAcceleration = actual_lateral_accel
