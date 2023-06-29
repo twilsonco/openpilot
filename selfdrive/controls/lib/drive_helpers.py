@@ -39,7 +39,7 @@ LIMIT_MAX_MAP_DATA_AGE = 10.  # s Maximum time to hold to map data, then conside
 class MPC_COST_LAT:
   PATH = 1.0
   HEADING = 1.0
-  STEER_RATE = 0.8
+  STEER_RATE = 0.6
 
 
 class MPC_COST_LONG:
