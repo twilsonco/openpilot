@@ -137,10 +137,13 @@ def main(rlog_base_dir, out_dir):
   for op in tqdm(path_dict.keys(), desc="Relocating rlogs"):
     np, route = path_dict[op]
     # print(f"copying {op} to {np}")
-    d = os.path.dirname(np)
-    pathlib.Path(d).mkdir(parents=True, exist_ok=True)
-    shutil.move(op,np)
-    # shutil.copy(op,np)
+    try:
+      d = os.path.dirname(np)
+      pathlib.Path(d).mkdir(parents=True, exist_ok=True)
+      shutil.move(op,np)
+      # shutil.copy(op,np)
+    except Exception as e:
+      print(f"Failed to move file {op}, Error: {e}")
     blacklist.add(route)
     
   # update blacklist
