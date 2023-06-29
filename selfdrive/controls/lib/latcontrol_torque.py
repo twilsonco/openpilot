@@ -163,7 +163,7 @@ class LatControlTorque(LatControl):
 
       
       if self.use_nn_ff:
-        low_speed_factor = interp(CS.vEgo, [0, 10, 20], [13, 5, 0])**2
+        low_speed_factor = interp(CS.vEgo, [0, 10, 20], [15, 5, 0])**2
       else:
         low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
       lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
