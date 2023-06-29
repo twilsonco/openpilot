@@ -153,7 +153,7 @@ def main(rlog_base_dir, out_dir):
     try:
       os.remove(f)
     except Exception as e:
-      print(f"Failed to delete file {f} with error: {e}")
+      pass
   
   print("Done")
   
