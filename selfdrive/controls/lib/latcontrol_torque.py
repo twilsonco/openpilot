@@ -159,7 +159,7 @@ class LatControlTorque(LatControl):
       lookahead_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_curvature], key=lambda x: abs(x))
-      error_scale_factor = 1.0 / min(0.5 * (0.1*abs(desired_lateral_accel) + abs(lookahead_lateral_jerk)) + 1.0, self.error_downscale)
+      error_scale_factor = 1.0 / min(0.1*abs(desired_lateral_accel) + abs(lookahead_lateral_jerk) + 1.0, self.error_downscale)
 
       
       if self.use_nn_ff:
