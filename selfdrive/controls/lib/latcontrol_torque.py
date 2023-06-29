@@ -159,7 +159,7 @@ class LatControlTorque(LatControl):
       lookahead_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_curvature], key=lambda x: abs(x))
-      error_scale_factor = 1.0 / min(0.5 * (0.33*abs(desired_lateral_accel) + 0.5*abs(lookahead_lateral_jerk)) + 1.0, self.error_downscale)
+      error_scale_factor = 1.0 / min(0.5 * (0.1*abs(desired_lateral_accel) + abs(lookahead_lateral_jerk)) + 1.0, self.error_downscale)
 
       
       if self.use_nn_ff:
@@ -189,8 +189,9 @@ class LatControlTorque(LatControl):
       # lateral_jerk_error *= friction_lat_accel_downscale_factor
       
       # error-based friction term
-      error_friction = interp(error, [-ERR_FRICTION_THRESHOLD, ERR_FRICTION_THRESHOLD], [-0.1, 0.1])
-      error_friction *= interp(CS.vEgo, [20.0, 30.0], [1.0, 0.3])
+      friction_v = 0.15
+      error_friction = interp(error, [-ERR_FRICTION_THRESHOLD, ERR_FRICTION_THRESHOLD], [-friction_v, friction_v])
+      error_friction *= error_scale_factor
       
       # lateral acceleration feedforward
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll
