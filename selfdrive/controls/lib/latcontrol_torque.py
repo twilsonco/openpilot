@@ -189,7 +189,7 @@ class LatControlTorque(LatControl):
       # lateral_jerk_error *= friction_lat_accel_downscale_factor
       
       # error-based friction term
-      friction_v = 0.2
+      friction_v = 0.0
       error_friction = interp(error, [-ERR_FRICTION_THRESHOLD, ERR_FRICTION_THRESHOLD], [-friction_v, friction_v])
       error_friction *= error_scale_factor
       
