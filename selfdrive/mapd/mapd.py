@@ -37,7 +37,7 @@ threading.excepthook = excepthook
 
 class WeatherD():
   def __init__(self):
-    self._op_params = opParams(calling_function="mapd.py WeatherD")
+    self._op_params = opParams(calling_function="mapd.py WeatherD", overwrite_params=True)
     self.api_key = self._op_params.get('MISC_open_weather_map_api_key', force_update=True)
     if self.api_key is not None:
       self.api_key = self.api_key.strip()

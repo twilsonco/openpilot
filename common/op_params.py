@@ -296,7 +296,7 @@ def _import_params():
 
 
 class opParams:
-  def __init__(self, calling_function='', check_for_reset=False):
+  def __init__(self, calling_function='', check_for_reset=False, overwrite_params=False):
     """
       To add your own parameter to opParams in your fork, simply add a new entry in self.fork_params, instancing a new Param class with at minimum a default value.
       The allowed_types and description args are not required but highly recommended to help users edit their parameters with opEdit safely.
@@ -799,9 +799,9 @@ class opParams:
       }  # a dict where each key is a date in 'yyyy/mm/dd-hh:mm' (24-hour) format, and the value is a list of names of params OR regular expressions to match params you want reset to their default values if the modification date is before the key date
       # use something that doesn't match the date string format and the associated list of param names or regex's will apply no matter the modified date of the param
     self._calling_function = calling_function
-    self._run_init(calling_function=calling_function, check_for_reset=check_for_reset)  # restores, reads, and updates params
+    self._run_init(calling_function=calling_function, check_for_reset=check_for_reset, overwrite_params=overwrite_params)  # restores, reads, and updates params
 
-  def _run_init(self, calling_function = '', check_for_reset=False):  # does first time initializing of default params
+  def _run_init(self, calling_function = '', check_for_reset=False, overwrite_params=False):  # does first time initializing of default params
     # Two required parameters for opEdit
     self.live_tuning_enabled = Params().get_bool("OPParamsLiveTuneEnabled")
     do_reset = check_for_reset and Params().get_bool("OPParamsReset")
@@ -828,6 +828,8 @@ class opParams:
     # cloudlog.info(f"opParams: {calling_function}:   added default params")
     self._delete_and_reset(full_reset=do_reset)  # removes old params
     # cloudlog.info(f"opParams: {calling_function}:   delete and reset applied")
+    if overwrite_params:
+      self._overwrite_param_params()
     if self.live_tuning_enabled:
       self.put('op_params_live_tune_enabled', True, reason=False)
       
@@ -874,6 +876,15 @@ class opParams:
       print(warning(f'Provided value was clipped to param bounds. {key = }, {value = }'))
     self.params.update({key: value})
     self.fork_params[key].value = value
+    self.put_params(key, value)
+    _write_param(key, value, reason=reason, old_value=old_val, do_log=do_log)
+    if show_alert:
+      _write_param('op_edit_param_changed', True, reason=reason, old_value=old_val, do_log=False)
+      _write_param('op_edit_param_changed_name', key, reason=reason, old_value=old_val, do_log=False)
+      _write_param('op_edit_param_changed_val_old', str(old_val), reason=reason, old_value=old_val, do_log=False)
+      _write_param('op_edit_param_changed_val_new', str(value), reason=reason, old_value=old_val, do_log=False)
+  
+  def put_params(self, key, value):
     if self.fork_params[key].param_param != '':
       if self.fork_params[key].param_param_use_ord and value in self.fork_params[key].allowed_vals:
         ind = self.fork_params[key].allowed_vals.index(value)
@@ -885,13 +896,12 @@ class opParams:
           else str(value)
         cloudlog.info(f"opParams: putting value in linked param {self.fork_params[key].param_param}: {value = }. {key = }")
         self.fork_params[key]._params.put(self.fork_params[key].param_param, put_val)
-    _write_param(key, value, reason=reason, old_value=old_val, do_log=do_log)
-    if show_alert:
-      _write_param('op_edit_param_changed', True, reason=reason, old_value=old_val, do_log=False)
-      _write_param('op_edit_param_changed_name', key, reason=reason, old_value=old_val, do_log=False)
-      _write_param('op_edit_param_changed_val_old', str(old_val), reason=reason, old_value=old_val, do_log=False)
-      _write_param('op_edit_param_changed_val_new', str(value), reason=reason, old_value=old_val, do_log=False)
 
+  def _overwrite_param_params(self):
+    for key, param in self.fork_params.items():
+      self.put_params(key, param.value)
+          
+  
   def _load_params(self, can_import=False):
     if not os.path.exists(PARAMS_DIR):
       os.makedirs(PARAMS_DIR)
