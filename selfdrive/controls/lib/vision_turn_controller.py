@@ -180,15 +180,15 @@ class VisionTurnController():
     self._TURNING_LAT_ACC_TH = 0.8 * lat_accel_factor  # Lat Acc threshold to trigger turning turn state.
     self._LEAVING_LAT_ACC_TH = 0.7 * lat_accel_factor  # Lat Acc threshold to trigger leaving turn state.
     self._FINISH_LAT_ACC_TH = 0.4 * lat_accel_factor  # Lat Acc threshold to trigger end of turn cycle.
-    self._A_LAT_REG_MAX = 2.0 * lat_accel_factor  # Maximum lateral acceleration
+    self._A_LAT_REG_MAX = 1.9 * lat_accel_factor  # Maximum lateral acceleration
     # Lookup table for the minimum smooth deceleration during the ENTERING state
     # depending on the actual maximum absolute lateral acceleration predicted on the turn ahead.
-    self._ENTERING_SMOOTH_DECEL_V = [i * long_accel_factor for i in [0.0, -0.2, -0.7]]  # min decel value allowed on ENTERING state
-    self._ENTERING_SMOOTH_DECEL_BP = [i * lat_accel_factor for i in [1.25, 1.3, 2.4]]  # absolute value of lat acc ahead
+    self._ENTERING_SMOOTH_DECEL_V = [i * long_accel_factor for i in [0.0, -0.2, -0.6]]  # min decel value allowed on ENTERING state
+    self._ENTERING_SMOOTH_DECEL_BP = [i * lat_accel_factor for i in [1.25, 1.2, 2.1]]  # absolute value of lat acc ahead
     # Lookup table for the acceleration for the TURNING state
     # depending on the current lateral acceleration of the vehicle.
-    self._TURNING_ACC_V = [i * long_accel_factor if i < 0.0 else i for i in [0.5, 0.0, -0.7]]  # acc value
-    self._TURNING_ACC_BP = [i * lat_accel_factor for i in [1.4, 1.9, 2.2]]  # absolute value of current lat acc
+    self._TURNING_ACC_V = [i * long_accel_factor if i < 0.0 else i for i in [0.5, 0.0, -0.6]]  # acc value
+    self._TURNING_ACC_BP = [i * lat_accel_factor for i in [1.3, 1.8, 2.0]]  # absolute value of current lat acc
     self._LEAVING_ACC = 0.7 * lat_accel_factor  # Confortable acceleration to regain speed while leaving a turn.
     self._ACCEL_MIN = min(self._ENTERING_SMOOTH_DECEL_V + self._TURNING_ACC_V)
     
