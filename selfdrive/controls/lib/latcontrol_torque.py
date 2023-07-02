@@ -190,8 +190,7 @@ class LatControlTorque(LatControl):
       
       # error-based friction term
       friction_v = 0.05
-      error_friction = interp(error, [-ERR_FRICTION_THRESHOLD, ERR_FRICTION_THRESHOLD], [-friction_v, friction_v])
-      error_friction *= error_scale_factor
+      error_friction = 0.0 if sign(error) != sign(desired_lateral_accel) else interp(error, [-ERR_FRICTION_THRESHOLD, ERR_FRICTION_THRESHOLD], [-friction_v, friction_v])
       
       # lateral acceleration feedforward
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll
