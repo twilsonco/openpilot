@@ -189,7 +189,7 @@ class VisionTurnController():
     # depending on the current lateral acceleration of the vehicle.
     self._TURNING_ACC_V = [i * long_accel_factor if i < 0.0 else i for i in [0.5, 0.0, -0.6]]  # acc value
     self._TURNING_ACC_BP = [i * lat_accel_factor for i in [1.3, 2.2, 3.0]]  # absolute value of current lat acc
-    self._LEAVING_ACC = 0.7 * lat_accel_factor  # Confortable acceleration to regain speed while leaving a turn.
+    self._LEAVING_ACC = 0.5 * lat_accel_factor  # Confortable acceleration to regain speed while leaving a turn.
     self._ACCEL_MIN = min(self._ENTERING_SMOOTH_DECEL_V + self._TURNING_ACC_V)
     
     
