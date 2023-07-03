@@ -358,7 +358,7 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, const vertex_data &v
 static void draw_other_leads(UIState *s, bool lead_drawn) {
   // Draw lead car circle
   if (s->scene.adjacent_lead_info_print_enabled){
-    int r1 = 8, r2 = 75;
+    int r1 = 20, r2 = 75;
     int dr = r2 - r1;
     int i = 0;
     float fill_screen_dist_offset = (s->scene.lead_info_print_enabled ? 50 : 10);
@@ -375,11 +375,11 @@ static void draw_other_leads(UIState *s, bool lead_drawn) {
         float screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - fill_screen_dist_offset, 0.f, fill_screen_dist_max);
         float alpha_factor = 1. - float(screen_dist) / fill_screen_dist_max;
         alpha_fill -= 60. * alpha_factor;
-        alpha_stroke -= 160. * alpha_factor;
+        alpha_stroke -= 100. * alpha_factor;
 
         screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - text_screen_dist_offset, 0.f, text_screen_dist_max);
         alpha_factor = 1. - float(screen_dist) / text_screen_dist_max;
-        alpha_text -= 190. * alpha_factor;
+        alpha_text -= 100. * alpha_factor;
       }
       int r = r2 - int(float(dr) * d / 180.);
       r = (r < r1 ? r1 : r);
@@ -414,11 +414,11 @@ static void draw_other_leads(UIState *s, bool lead_drawn) {
         float screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - fill_screen_dist_offset, 0.f, fill_screen_dist_max);
         float alpha_factor = 1. - float(screen_dist) / fill_screen_dist_max;
         alpha_fill -= 60. * alpha_factor;
-        alpha_stroke -= 160. * alpha_factor;
+        alpha_stroke -= 100. * alpha_factor;
 
         screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - text_screen_dist_offset, 0.f, text_screen_dist_max);
         alpha_factor = 1. - float(screen_dist) / text_screen_dist_max;
-        alpha_text -= 190. * alpha_factor;
+        alpha_text -= 100. * alpha_factor;
       }
       int r = r2 - int(float(dr) * d / 180.);
       r = (r < r1 ? r1 : r);
@@ -453,11 +453,11 @@ static void draw_other_leads(UIState *s, bool lead_drawn) {
         float screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - fill_screen_dist_offset, 0.f, fill_screen_dist_max);
         float alpha_factor = 1. - float(screen_dist) / fill_screen_dist_max;
         alpha_fill -= 60. * alpha_factor;
-        alpha_stroke -= 160. * alpha_factor;
+        alpha_stroke -= 100. * alpha_factor;
 
         screen_dist = std::clamp(std::fabs(x - s->scene.lead_x) - text_screen_dist_offset, 0.f, text_screen_dist_max);
         alpha_factor = 1. - float(screen_dist) / text_screen_dist_max;
-        alpha_text -= 190. * alpha_factor;
+        alpha_text -= 100. * alpha_factor;
       }
       int r = r2 - int(float(dr) * d / 180.);
       r = (r < r1 ? r1 : r);
