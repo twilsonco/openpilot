@@ -112,7 +112,7 @@ class CarInterface(CarInterfaceBase):
       ret.radarUnavailable = RADAR_HEADER_MSG not in fingerprint[CanBus.OBSTACLE] and not docs
       ret.pcmCruise = False  # stock non-adaptive cruise control is kept off
       # supports stop and go, but initial engage must (conservatively) be above 18mph
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.minEnableSpeed = -1 * CV.MPH_TO_MS
       ret.minSteerSpeed = 7 * CV.MPH_TO_MS
 
       # Tuning
