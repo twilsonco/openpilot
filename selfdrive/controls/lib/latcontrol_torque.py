@@ -9,7 +9,7 @@ from common.params import Params
 from common.realtime import DT_MDL, DT_CTRL
 from selfdrive.car.gm.values import CAR
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.drive_helpers import apply_deadzone
+from selfdrive.controls.lib.drive_helpers import apply_deadzone, CONTROL_N
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from selfdrive.modeld.constants import T_IDXS
@@ -199,21 +199,22 @@ class LatControlTorque(LatControl):
       
       if self.use_nn_ff:
         # prepare input data for NNFF model
-        
-        # first adjust future times to account for longitudinal acceleration
-        adjusted_future_times = [t + 0.5*CS.aEgo*(t/max(CS.vEgo, 1.0)) for t in self.nnff_future_times]
-        
-        future_curvatures = [interp(t, T_IDXS, lat_plan.curvatures) for t in adjusted_future_times]
-        
         roll = params.roll
-        
+        # first adjust future times to account for longitudinal acceleration
+        if all([len(i) >= CONTROL_N for i in [lat_plan.curvatures, model_data.orientation.x]]):
+          adjusted_future_times = [t + 0.5*CS.aEgo*(t/max(CS.vEgo, 1.0)) for t in self.nnff_future_times]
+          future_curvatures = [interp(t, T_IDXS[:CONTROL_N], lat_plan.curvatures) for t in adjusted_future_times]
+          future_rolls = [interp(t, T_IDXS, model_data.orientation.x) + roll for t in adjusted_future_times]
+        else:
+          future_curvatures = [desired_curvature for _ in self.nnff_future_times]
+          future_rolls = [roll for _ in self.nnff_future_times]
+          
         self.lat_accel_deque.append(desired_lateral_accel)
         self.roll_deque.append(roll)
         
         past_lateral_accels = [self.lat_accel_deque[min(len(self.lat_accel_deque)-1, i)] for i in self.history_frame_offsets]
         future_lateral_accels = [k * CS.vEgo**2 for k in future_curvatures]
         past_rolls = [self.roll_deque[min(len(self.roll_deque)-1, i)] for i in self.history_frame_offsets]
-        future_rolls = [interp(t, T_IDXS, model_data.orientation.x) + roll for t in adjusted_future_times]
         
         lat_accel_error = setpoint - measurement
         
