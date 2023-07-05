@@ -199,7 +199,11 @@ class LatControlTorque(LatControl):
       
       if self.use_nn_ff:
         # prepare input data for NNFF model
-        future_curvatures = [interp(t, T_IDXS, lat_plan.curvatures) for t in self.nnff_future_times]
+        
+        # first adjust future times to account for longitudinal acceleration
+        future_times = [t + 0.5*CS.aEgo*(t/max(CS.vEgo, 1.0)) for t in future_times]
+        
+        future_curvatures = [interp(t, T_IDXS, lat_plan.curvatures) for t in future_times]
         
         roll = params.roll
         
@@ -209,7 +213,7 @@ class LatControlTorque(LatControl):
         past_lateral_accels = [self.lat_accel_deque[min(len(self.lat_accel_deque)-1, i)] for i in self.history_frame_offsets]
         future_lateral_accels = [k * CS.vEgo**2 for k in future_curvatures]
         past_rolls = [self.roll_deque[min(len(self.roll_deque)-1, i)] for i in self.history_frame_offsets]
-        future_rolls = [interp(t, T_IDXS, model_data.orientation.x) + roll for t in self.nnff_future_times]
+        future_rolls = [interp(t, T_IDXS, model_data.orientation.x) + roll for t in future_times]
         
         lat_accel_error = setpoint - measurement
         
