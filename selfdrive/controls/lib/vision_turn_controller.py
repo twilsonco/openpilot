@@ -73,7 +73,7 @@ class VisionTurnController():
     self._v_cruise_setpoint = 0.
     self._v_ego = 0.
     self._a_ego = 0.
-    self._a_target = FirstOrderFilter(0., self._op_params.get('CB_VTSC_smoothing_factor', force_update=True), DT_MDL)
+    self._a_target = FirstOrderFilter(0., 0.0, DT_MDL, rate_down=self._op_params.get('CB_VTSC_accel_rate_limit', force_update=True) / DT_MDL)
     self._v_overshoot = 0.
     self._state = VisionTurnControllerState.disabled
     self._CS = None
@@ -172,7 +172,7 @@ class VisionTurnController():
     return np.array([curvature(x) for x in x_vals]), max_lat_accel, max_curvature, max_roll_compensation, max_lat_accel_dist
 
   def _update_op_params(self):
-    self._a_target.update_alpha(self._op_params.get('CB_VTSC_smoothing_factor'))
+    self._a_target.update_alpha(self._op_params.get('CB_VTSC_accel_rate_limit'))
     lat_accel_factor = self._op_params.get('CB_VTSC_lat_accel_factor')
     long_accel_factor = self._op_params.get('CB_VTSC_long_accel_factor')
     self._ENTERING_PRED_LAT_ACC_TH = 1.25 * lat_accel_factor  # Predicted Lat Acc threshold to trigger entering turn state.

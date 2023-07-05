@@ -463,7 +463,7 @@ class opParams:
       
       #####
       
-      'CB_VTSC_smoothing_factor': Param(0.3, float, 'The vision turn controller output acceleration is smoothed. Increase/decrease for more/less smoothing.', live=True, min_val=0.01, max_val=3.0),
+      'CB_VTSC_accel_rate_limit': Param(1.0, float, 'The vision turn controller output acceleration is rate-limited so that when you exit a curve, acceleration resumes smoothly. Increase/decrease for faster/slower ramping.', live=True, min_val=0.1, max_val=10.0, unit="m/s²/s"),
       
       'CB_VTSC_lat_accel_factor': Param(1.0, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the lateral acceleration values used in the lookup. A value less/greater than 1.0 will make curve braking less/more sensitive to lateral acceleration and apply braking later/sooner.', live=True, min_val=0.01, max_val=3.0),
       
@@ -479,7 +479,7 @@ class opParams:
       
       #####
       
-      'CB_MTSC_smoothing_factor': Param(0.3, float, 'The map turn controller output acceleration is smoothed. Increase/decrease for more/less smoothing.', live=True, min_val=0.01, max_val=3.0),
+      'CB_MTSC_accel_rate_limit': Param(1.0, float, 'The map turn controller output acceleration is rate-limited so that when you exit a curve, acceleration resumes smoothly. Increase/decrease for faster/slower ramping.', live=True, min_val=0.1, max_val=10.0, unit="m/s²/s"),
       
       'CB_MTSC_speed_scale_interchange': Param(1.4, float, 'This scales the speed limit for a curve on interchanges. By 55mph, no scaling is applied. A value less/greater than 1.0 will decrease/increase the speed at which curves are taken at low speeds.', live=True, min_val=0.01, max_val=2.0),
       
