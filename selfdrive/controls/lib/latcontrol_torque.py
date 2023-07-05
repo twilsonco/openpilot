@@ -201,7 +201,7 @@ class LatControlTorque(LatControl):
         # prepare input data for NNFF model
         
         # first adjust future times to account for longitudinal acceleration
-        future_times = [t + 0.5*CS.aEgo*(t/max(CS.vEgo, 1.0)) for t in future_times]
+        future_times = [t + 0.5*CS.aEgo*(t/max(CS.vEgo, 1.0)) for t in self.nnff_future_times]
         
         future_curvatures = [interp(t, T_IDXS, lat_plan.curvatures) for t in future_times]
         
