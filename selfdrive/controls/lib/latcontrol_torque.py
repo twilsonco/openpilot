@@ -218,7 +218,7 @@ class LatControlTorque(LatControl):
         
         lat_accel_error = setpoint - measurement
         
-        nnff_input = [CS.vEgo, desired_lateral_accel, lat_accel_error + 0.2 * lateral_jerk_error, roll] \
+        nnff_input = [CS.vEgo, desired_lateral_accel, lat_accel_error + 0.1 * lateral_jerk_error, roll] \
                     + past_lateral_accels + future_lateral_accels \
                     + past_rolls + future_rolls
         ff_nn = self.CI.get_ff_nn(nnff_input)
