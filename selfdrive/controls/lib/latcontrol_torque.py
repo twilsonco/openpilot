@@ -194,7 +194,7 @@ class LatControlTorque(LatControl):
       # lateral_jerk_error *= friction_lat_accel_downscale_factor
       
       # error-based friction term
-      error_friction = interp(error, [-ERR_FRICTION_THRESHOLD, ERR_FRICTION_THRESHOLD], [-0.1, 0.1])
+      error_friction = interp(error, [-ERR_FRICTION_THRESHOLD, ERR_FRICTION_THRESHOLD], [-0.05, 0.05])
       error_friction *= interp(CS.vEgo, [20.0, 30.0], [1.0, 0.3])
       
       # lateral acceleration feedforward
@@ -219,7 +219,9 @@ class LatControlTorque(LatControl):
         past_rolls = [self.roll_deque[min(len(self.roll_deque)-1, i)] for i in self.history_frame_offsets]
         future_rolls = [interp(t, T_IDXS, model_data.orientation.x) + roll for t in self.nnff_future_times]
         
-        nnff_input = [CS.vEgo, desired_lateral_accel, lookahead_lateral_jerk, roll] \
+        lat_accel_error = setpoint - measurement
+        
+        nnff_input = [CS.vEgo, desired_lateral_accel, lat_accel_error + 0.1 * lateral_jerk_error, roll] \
                     + past_lateral_accels + future_lateral_accels \
                     + past_rolls + future_rolls
         ff_nn = self.CI.get_ff_nn(nnff_input)
