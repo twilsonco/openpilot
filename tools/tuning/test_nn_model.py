@@ -46,10 +46,10 @@ class FluxModel:
     # Compute the mean slope of the nnff from 0 to 3m/s^2 so
     # that kf can be estimated in torqued from lateral accel.
     # Do it for a range of speeds and then we can interpolate between them.
-    mean_slope_lat_accel_limits = (0.05, 3.0)
-    mean_slope_speeds = [float(i) for i in np.arange(3.0, 20.0, 3.0)]
-    mean_slope_lat_accels = 10.0**(np.arange(np.log10(mean_slope_lat_accel_limits[0]), np.log10(mean_slope_lat_accel_limits[1]), 0.1))
-    mean_slopes = [float(np.mean([self.evaluate([s, la])/la for la in mean_slope_lat_accels])) for s in mean_slope_speeds]    # The total mean slope, all speeds and angles considered.
+    mean_slope_lat_accel_limits = (1.5, 2.5)
+    mean_slope_speeds = [float(i) for i in np.arange(15.0, 25.0, 2.0)]
+    mean_slope_lat_accels = np.arange(mean_slope_lat_accel_limits[0], mean_slope_lat_accel_limits[1], 0.1)
+    mean_slopes = [float(np.mean([self.evaluate([s, la])/la for la in mean_slope_lat_accels])) for s in mean_slope_speeds]
     # This can be compared to the torqued slope to compute
     # the kf value.
     self.mean_mean_slope = float(np.mean(mean_slopes))
@@ -95,12 +95,12 @@ class FluxModel:
   # to "linearize" the recorded steer command so the linear fit
   # still works.
   def get_steer_cmd_scale(self, speed, lat_accel):
-    abs_lat_accel = max(0.01, lat_accel)
+    abs_lat_accel = max(0.05, abs(lat_accel))
     comp_lat_accel = self.lat_accel_factor
     comp_slope = self.evaluate([speed, comp_lat_accel]) / comp_lat_accel
     current_value = self.evaluate([speed, abs_lat_accel])
     linear_value = abs_lat_accel * comp_slope
-    return (abs_lat_accel - abs(linear_value - current_value)) / abs_lat_accel
+    return abs(abs_lat_accel - 1.2 * abs(linear_value - current_value)) / abs_lat_accel
     
   def test(self, test_data: dict):
     num_passed = 0
@@ -167,9 +167,9 @@ def main():
   # test model.get_slope_offset(speed, lat accel)
   # for a range of speeds and positive lat accels, in
   # a table with heading rows and columns.
-  print("speed \ lat accel: " + ', '.join([f"{la:0.3f}" for la in np.arange(0.2, 1.0, 0.2)]))
+  print("speed \ lat accel: " + ', '.join([f"{la:0.3f}" for la in np.arange(-1.0, 1.1, 0.2)]))
   for s in range(3, 25, 3):
-    print(f"{s}: " + ', '.join([f"{model.get_steer_cmd_scale(s, la):.3f}" for la in np.arange(0.2, 1.0, 0.2)]))
+    print(f"{s}: " + ', '.join([f"{model.get_steer_cmd_scale(s, la):.3f}" for la in np.arange(-1.0, 1.1, 0.2)]))
   
   # print(vars(model))
   

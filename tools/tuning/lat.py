@@ -257,7 +257,7 @@ def collect(lr):
         continue
       elif msg.which() == 'carControl':
         s.enabled = msg.carControl.enabled
-        s.steer_cmd = msg.carControl.actuatorsOutput.steer
+        s.steer_cmd = msg.carControl.actuatorsOutput.steer if msg.carControl.actuatorsOutput.steer != 0.0 else msg.carControl.actuators.steer
         continue
       elif msg.which() == 'liveLocationKalman':
         yaw_rate = msg.liveLocationKalman.angularVelocityCalibrated.value[2]
