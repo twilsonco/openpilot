@@ -1,7 +1,13 @@
 #!/bin/sh
 
 # Define preface and postface strings
-preface="# Improving controls with log data\n\nHere's the data I've collected so far from the community. I'll update here periodically so you can see which speeds/angles need to be filled out.\n\nHead to the SunnyPilot Discord server #tuning-nnff channel if you want to contribute or learn more!"
+preface="# Improving controls with log data
+
+Here's plots of the [comma-steering-control](https://github.com/commaai/comma-steering-control) dataset and the data I've collected so far from the community.
+Community log collection is in a limited state; only cars not in the comma-steering-control dataset will be collected for the time being.
+I'll update here periodically so log contributors can see which speeds/angles need to be filled out.
+
+Head to the SunnyPilot Discord server #tuning-nnff channel if you want to contribute or learn more!"
 lat_file_total="(83718 total)"
 lat_file_count="## Current counts of collected logs\n\n
 \`\`\`
@@ -89,7 +95,7 @@ gm                                      27471 (33G)
 postface="Last updated $(date +'%B %d, %Y')"
 
 # Initialize table of contents for all directories
-table_of_contents="## Table of Contents\n- [Vehicle log counts](#current-counts-of-collected-logs) $lat_file_total\n"
+table_of_contents="## Table of Contents\n- [1 Community vehicle log counts](#current-counts-of-collected-logs) $lat_file_total\n"
 
 # Initialize README body
 readme_body=""
@@ -120,7 +126,8 @@ for dir in *; do
     # Encode the filename for use in a URL
     encoded_filename=$(echo "$file" | sed 's/ /%20/g')
     # Append a new cell to the current row with the image and its file name
-    cell="| [$filename](#table-of-contents)  ![$filename](https://github.com/twilsonco/openpilot/blob/log-info/data/$encoded_dirname/$encoded_filename?raw=true)"
+    img_url="https://github.com/twilsonco/openpilot/blob/log-info/data/$encoded_dirname/$encoded_filename?raw=true"
+    cell="| [$filename](#table-of-contents)  ![$filename]($img_url)"
     # Increment row counter
     row_counter=$((row_counter+1))
     # If we've reached the end of a row, add a new line to the table
@@ -129,6 +136,8 @@ for dir in *; do
       row_counter=0
     fi
     table_body="$table_body$cell"
+    # Add entry to section TOC
+    section_table_of_contents+="- [${filename}]($img_url)\n"
   done
   cd ..
 
