@@ -118,6 +118,11 @@ for dir in *; do
   # Initialize table of contents for this directory
   section_table_of_contents="## $dirname\n"
   # Initialize table of images for this directory
+  # Initialize counter
+  count=1
+  row=""
+  # Initialize section table
+  section_table="| Car | Car |\n|-|-|\n"
   table_body="| 🛣️ | 🚗 |\n| --- | --- |\n"
   # Loop through all image files in this directory
   cd "$dir"
@@ -128,7 +133,7 @@ for dir in *; do
     filename=$(basename "$file" .png)
     thumbfilename=$(basename "$thumbfile" .png)
     # Generate thumbnail 
-    ffmpeg -y -i "$file" -filter:v scale=1000:-2 "../../thumbnails/$thumbfile"
+    # ffmpeg -y -i "$file" -filter:v scale=400:-2 "../../thumbnails/$thumbfile"
     # Encode the filename for use in a URL
     encoded_filename=$(echo "$file" | sed 's/ /%20/g')
     encoded_thumbfilename=$(echo "$thumbfile" | sed 's/ /%20/g')
@@ -144,13 +149,24 @@ for dir in *; do
       row_counter=0
     fi
     table_body="$table_body$cell"
-    # Add entry to section TOC
-    section_table_of_contents+="- [${filename}]($img_url)\n"
+    # Add to first or second column
+    if [ $count -eq 1 ]; then
+      row="| [${filename}]($img_url) | "
+    else
+      row="$row [${filename}]($img_url) |\n"
+      count=0
+      # Add row to table
+      section_table+="$row"
+    fi
+
+    # Increment counter
+    count=$((count + 1))
+
   done
   cd ..
 
   # Combine table of contents and table of images into a single table for this directory
-  section_table="\n$section_table_of_contents\n\n$table_body"
+  section_table="\n$section_table_of_contents\n\n$section_table\n\n$table_body"
 
   # Append the table for this directory to the README body
   readme_body="$readme_body$section_table"
