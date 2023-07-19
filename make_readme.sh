@@ -7,7 +7,7 @@ Here's plots of the [comma-steering-control](https://github.com/commaai/comma-st
 Community log collection is in a limited state; only cars not in the comma-steering-control dataset will be collected for the time being.
 I'll update here periodically so log contributors can see which speeds/angles need to be filled out.
 
-Head to the SunnyPilot Discord server #tuning-nnff channel if you want to contribute or learn more!"
+Head to the Comma, Community, or SunnyPilot Discord server #tuning (or tunning-nnff) channels if you want to contribute or learn more!"
 lat_file_total="(83718 total)"
 lat_file_count="## Current counts of collected logs\n\n
 \`\`\`
@@ -100,6 +100,8 @@ table_of_contents="## Table of Contents\n- [1 Community vehicle log counts](#cur
 # Initialize README body
 readme_body=""
 
+mkdir -p "thumbnails"
+rm -rf "thumbnails/*"
 cd "data"
 # Loop through all subdirectories in current directory
 for dir in *; do
@@ -122,12 +124,18 @@ for dir in *; do
   for file in *.png; do
     echo "Processing $file..."
     # Get the file name without the extension
+    thumbfile="${file%%.png}_thumbnail.jpg"
     filename=$(basename "$file" .png)
+    thumbfilename=$(basename "$thumbfile" .png)
+    # Generate thumbnail 
+    ffmpeg -y -i "$file" -filter:v scale=1000:-2 "../../thumbnails/$thumbfile"
     # Encode the filename for use in a URL
     encoded_filename=$(echo "$file" | sed 's/ /%20/g')
+    encoded_thumbfilename=$(echo "$thumbfile" | sed 's/ /%20/g')
     # Append a new cell to the current row with the image and its file name
     img_url="https://github.com/twilsonco/openpilot/blob/log-info/data/$encoded_dirname/$encoded_filename?raw=true"
-    cell="| [$filename](#table-of-contents)  ![$filename]($img_url)"
+    thumb_url="https://github.com/twilsonco/openpilot/blob/log-info/data/thumbnails/$encoded_thumbfilename?raw=true"
+    cell="| [$filename](#table-of-contents) ([raw]($img_url)) ![$filename]($thumb_url)"
     # Increment row counter
     row_counter=$((row_counter+1))
     # If we've reached the end of a row, add a new line to the table
