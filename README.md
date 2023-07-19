@@ -7,14 +7,15 @@ I'll update here periodically so log contributors can see which speeds/angles ne
 Head to the Comma, Community, or SunnyPilot Discord server #tuning (or tunning-nnff) channels if you want to contribute or learn more!
 
 ## Table of Contents
-- [1 Community vehicle log counts](#current-counts-of-collected-logs) (83718 total)
+- [1 Community vehicle log counts](#current-counts-of-collected-logs) (83718 total; 1395.0 hours)
 - [2 Community lateral data](https://github.com/twilsonco/openpilot/blob/log-info/2%20Community%20lateral%20data.md) (      66 cars)
-- [3a Community lateral torque NNFF fits steer command](https://github.com/twilsonco/openpilot/blob/log-info/3a%20Community%20lateral%20torque%20NNFF%20fits%20steer%20command.md) (      82 cars)
-- [3b Community lateral torque NNFF fits LKA EPS torque](https://github.com/twilsonco/openpilot/blob/log-info/3b%20Community%20lateral%20torque%20NNFF%20fits%20LKA%20EPS%20torque.md) (      68 cars)
-- [3c Community lateral torque NNFF fits driver torque](https://github.com/twilsonco/openpilot/blob/log-info/3c%20Community%20lateral%20torque%20NNFF%20fits%20driver%20torque.md) (      68 cars)
-- [3d Community lateral torque NNFF fits driver EPS combined torque](https://github.com/twilsonco/openpilot/blob/log-info/3d%20Community%20lateral%20torque%20NNFF%20fits%20driver%20EPS%20combined%20torque.md) (      62 cars)
+- [3a Community lateral torque NNFF fits steer command](https://github.com/twilsonco/openpilot/blob/log-info/3a%20Community%20lateral%20torque%20NNFF%20fits%20steer%20command.md) (41 cars)
+- [3b Community lateral torque NNFF fits LKA EPS torque](https://github.com/twilsonco/openpilot/blob/log-info/3b%20Community%20lateral%20torque%20NNFF%20fits%20LKA%20EPS%20torque.md) (34 cars)
+- [3c Community lateral torque NNFF fits driver torque](https://github.com/twilsonco/openpilot/blob/log-info/3c%20Community%20lateral%20torque%20NNFF%20fits%20driver%20torque.md) (34 cars)
+- [3d Community lateral torque NNFF fits driver EPS combined torque](https://github.com/twilsonco/openpilot/blob/log-info/3d%20Community%20lateral%20torque%20NNFF%20fits%20driver%20EPS%20combined%20torque.md) (31 cars)
 - [4 Comma lateral data combined firmware](https://github.com/twilsonco/openpilot/blob/log-info/4%20Comma%20lateral%20data%20combined%20firmware.md) (     121 cars)
 - [5 Comma lateral data separate firmwares](https://github.com/twilsonco/openpilot/blob/log-info/5%20Comma%20lateral%20data%20separate%20firmwares.md) (     526 cars)
+- [6 Comma lateral torque NNFF fits](https://github.com/twilsonco/openpilot/blob/log-info/6%20Comma%20lateral%20torque%20NNFF%20fits.md) (106 cars)
 
 
 

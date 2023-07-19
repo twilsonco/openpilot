@@ -7,9 +7,9 @@ Here's plots of the [comma-steering-control](https://github.com/commaai/comma-st
 Community log collection is in a limited state; only cars not in the comma-steering-control dataset will be collected for the time being.
 I'll update here periodically so log contributors can see which speeds/angles need to be filled out.
 
-Head to the Comma, Community, or SunnyPilot Discord server #tuning (or tunning-nnff) channels if you want to contribute or learn more!"
-lat_file_total="(83718 total)"
-lat_file_count="## Current counts of collected logs\n\n
+Head to the Comma, Community, or SunnyPilot Discord server #tuning (or tuning-nnff) channels if you want to contribute or learn more!"
+lat_file_count=83718
+lat_file_list="## Current counts of collected logs\n\n
 \`\`\`
 nissan                                  598 (691M)
   NISSAN LEAF 2018                      598 (691M)
@@ -94,6 +94,12 @@ gm                                      27471 (33G)
 \`\`\`"
 postface="Last updated $(date +'%B %d, %Y')"
 
+# hours of data: 1 minute per lat file
+lat_file_hours=$((lat_file_count/60))
+# round to one decimal place
+lat_file_hours=$(printf "%.1f" $lat_file_hours)
+
+lat_file_total="(83718 total; $lat_file_hours hours)"
 # Initialize table of contents for all directories
 table_of_contents="## Table of Contents\n- [1 Community vehicle log counts](#current-counts-of-collected-logs) $lat_file_total\n"
 
@@ -126,14 +132,19 @@ for dir in *; do
   table_body="| 🛣️ | 🚗 |\n| --- | --- |\n"
   # Loop through all image files in this directory
   cd "$dir"
+  is_ab_dir=false
   for file in *.png; do
     echo "Processing $file..."
+    # If file ends in "-a.png" or "-b.png", set is_ab_dir to true
+    if [[ $file == *"-a.png" || $file == *"-b.png" ]]; then
+      is_ab_dir=true
+    fi
     # Get the file name without the extension
     thumbfile="${file%%.png}_thumbnail.jpg"
     filename=$(basename "$file" .png)
     thumbfilename=$(basename "$thumbfile" .png)
     # Generate thumbnail 
-    # ffmpeg -y -i "$file" -filter:v scale=400:-2 "../../thumbnails/$thumbfile"
+    ffmpeg -y -i "$file" -filter:v scale=400:-2 "../../thumbnails/$thumbfile"
     # Encode the filename for use in a URL
     encoded_filename=$(echo "$file" | sed 's/ /%20/g')
     encoded_thumbfilename=$(echo "$thumbfile" | sed 's/ /%20/g')
@@ -177,7 +188,12 @@ for dir in *; do
   cd "data"
 
   # Add a new entry to the table of contents for all directories
-  table_of_contents="$table_of_contents- [$dirname]($section_url) ($(ls -1q "$dir"/*.png | wc -l) cars)\n"
+  file_count=$(ls -1q "$dir"/*.png | wc -l)
+  # divide by two if is_ab_dir
+  if [ "$is_ab_dir" = true ] ; then
+    file_count=$((file_count/2))
+  fi
+  table_of_contents="$table_of_contents- [$dirname]($section_url) ($file_count cars)\n"
 done
 cd ..
 
@@ -185,4 +201,4 @@ cd ..
 table_of_contents="$table_of_contents\n"
 
 # Combine preface, table of contents, and README body into README.md
-echo "$preface\n\n$table_of_contents\n\n$lat_file_count\n$readme_body\n$postface" > README.md
+echo "$preface\n\n$table_of_contents\n\n$lat_file_list\n$readme_body\n$postface" > README.md
