@@ -613,7 +613,8 @@ class Controls:
       self.desired_curvature = get_lag_adjusted_curvature(self.CP, CS.vEgo, lat_plan.psis, lat_plan.curvatures)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                              self.steer_limited, self.desired_curvature,
-                                                                             self.sm['liveLocationKalman'])
+                                                                             self.sm['liveLocationKalman'],
+                                                                             lat_plan=lat_plan, model_data=self.sm['modelV2'])
       actuators.curvature = self.desired_curvature
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
