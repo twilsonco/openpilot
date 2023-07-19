@@ -135,7 +135,7 @@ for dir in *; do
     # Append a new cell to the current row with the image and its file name
     img_url="https://github.com/twilsonco/openpilot/blob/log-info/data/$encoded_dirname/$encoded_filename?raw=true"
     thumb_url="https://github.com/twilsonco/openpilot/blob/log-info/thumbnails/$encoded_thumbfilename?raw=true"
-    cell="| [$filename](#table-of-contents) ([raw]($img_url)) ![$filename]($thumb_url)"
+    cell="| [$filename](#table-of-contents) ([full image]($img_url)) ![$filename]($thumb_url)"
     # Increment row counter
     row_counter=$((row_counter+1))
     # If we've reached the end of a row, add a new line to the table
