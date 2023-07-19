@@ -133,7 +133,7 @@ for dir in *; do
     filename=$(basename "$file" .png)
     thumbfilename=$(basename "$thumbfile" .png)
     # Generate thumbnail 
-    # ffmpeg -y -i "$file" -filter:v scale=400:-2 "../../thumbnails/$thumbfile"
+    ffmpeg -y -i "$file" -filter:v scale=400:-2 "../../thumbnails/$thumbfile"
     # Encode the filename for use in a URL
     encoded_filename=$(echo "$file" | sed 's/ /%20/g')
     encoded_thumbfilename=$(echo "$thumbfile" | sed 's/ /%20/g')
