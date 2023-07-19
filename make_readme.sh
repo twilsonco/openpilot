@@ -133,7 +133,7 @@ for dir in *; do
     filename=$(basename "$file" .png)
     thumbfilename=$(basename "$thumbfile" .png)
     # Generate thumbnail 
-    ffmpeg -y -i "$file" -filter:v scale=400:-2 "../../thumbnails/$thumbfile"
+    # ffmpeg -y -i "$file" -filter:v scale=400:-2 "../../thumbnails/$thumbfile"
     # Encode the filename for use in a URL
     encoded_filename=$(echo "$file" | sed 's/ /%20/g')
     encoded_thumbfilename=$(echo "$thumbfile" | sed 's/ /%20/g')
@@ -169,10 +169,15 @@ for dir in *; do
   section_table="\n$section_table_of_contents\n\n$section_table\n\n$table_body"
 
   # Append the table for this directory to the README body
-  readme_body="$readme_body$section_table"
+  # readme_body="$readme_body$section_table"
+  cd ..
+  echo "$section_table" > "$dir".md
+  encoded_sectionname=$(echo "$dir".md | sed 's/ /%20/g')
+  section_url="https://github.com/twilsonco/openpilot/blob/log-info/$encoded_sectionname"
+  cd "data"
 
   # Add a new entry to the table of contents for all directories
-  table_of_contents="$table_of_contents- [$dirname](#$dirname_hyphen) ($(ls -1q "$dir"/*.png | wc -l) cars)\n"
+  table_of_contents="$table_of_contents- [$dirname](#$section_url) ($(ls -1q "$dir"/*.png | wc -l) cars)\n"
 done
 cd ..
 
