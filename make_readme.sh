@@ -177,7 +177,7 @@ for dir in *; do
   cd "data"
 
   # Add a new entry to the table of contents for all directories
-  table_of_contents="$table_of_contents- [$dirname](#$section_url) ($(ls -1q "$dir"/*.png | wc -l) cars)\n"
+  table_of_contents="$table_of_contents- [$dirname]($section_url) ($(ls -1q "$dir"/*.png | wc -l) cars)\n"
 done
 cd ..
 
