@@ -2,7 +2,7 @@
 ## 3a Community lateral torque NNFF fits steer command
 
 
-| Car | Car |
+| Lateral accel response | Error/jerk/roll responses |
 |-|-|
 | [AUDI A3 3RD GEN_steer_cmd-a](https://github.com/twilsonco/openpilot/blob/log-info/data/3a%20Community%20lateral%20torque%20NNFF%20fits%20steer%20command/AUDI%20A3%203RD%20GEN_steer_cmd-a.png?raw=true) |  [AUDI A3 3RD GEN_steer_cmd-b](https://github.com/twilsonco/openpilot/blob/log-info/data/3a%20Community%20lateral%20torque%20NNFF%20fits%20steer%20command/AUDI%20A3%203RD%20GEN_steer_cmd-b.png?raw=true) |
 | [BUICK LACROSSE 2017_steer_cmd-a](https://github.com/twilsonco/openpilot/blob/log-info/data/3a%20Community%20lateral%20torque%20NNFF%20fits%20steer%20command/BUICK%20LACROSSE%202017_steer_cmd-a.png?raw=true) |  [BUICK LACROSSE 2017_steer_cmd-b](https://github.com/twilsonco/openpilot/blob/log-info/data/3a%20Community%20lateral%20torque%20NNFF%20fits%20steer%20command/BUICK%20LACROSSE%202017_steer_cmd-b.png?raw=true) |

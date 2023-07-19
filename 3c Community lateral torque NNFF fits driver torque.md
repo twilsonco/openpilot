@@ -2,7 +2,7 @@
 ## 3c Community lateral torque NNFF fits driver torque
 
 
-| Car | Car |
+| Lateral accel response | Error/jerk/roll responses |
 |-|-|
 | [AUDI A3 3RD GEN_torque_adjusted_driver-a](https://github.com/twilsonco/openpilot/blob/log-info/data/3c%20Community%20lateral%20torque%20NNFF%20fits%20driver%20torque/AUDI%20A3%203RD%20GEN_torque_adjusted_driver-a.png?raw=true) |  [AUDI A3 3RD GEN_torque_adjusted_driver-b](https://github.com/twilsonco/openpilot/blob/log-info/data/3c%20Community%20lateral%20torque%20NNFF%20fits%20driver%20torque/AUDI%20A3%203RD%20GEN_torque_adjusted_driver-b.png?raw=true) |
 | [BUICK LACROSSE 2017_torque_adjusted_driver-a](https://github.com/twilsonco/openpilot/blob/log-info/data/3c%20Community%20lateral%20torque%20NNFF%20fits%20driver%20torque/BUICK%20LACROSSE%202017_torque_adjusted_driver-a.png?raw=true) |  [BUICK LACROSSE 2017_torque_adjusted_driver-b](https://github.com/twilsonco/openpilot/blob/log-info/data/3c%20Community%20lateral%20torque%20NNFF%20fits%20driver%20torque/BUICK%20LACROSSE%202017_torque_adjusted_driver-b.png?raw=true) |

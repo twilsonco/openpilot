@@ -2,7 +2,7 @@
 ## 3b Community lateral torque NNFF fits LKA EPS torque
 
 
-| Car | Car |
+| Lateral accel response | Error/jerk/roll responses |
 |-|-|
 | [BUICK LACROSSE 2017_torque_adjusted_eps-a](https://github.com/twilsonco/openpilot/blob/log-info/data/3b%20Community%20lateral%20torque%20NNFF%20fits%20LKA%20EPS%20torque/BUICK%20LACROSSE%202017_torque_adjusted_eps-a.png?raw=true) |  [BUICK LACROSSE 2017_torque_adjusted_eps-b](https://github.com/twilsonco/openpilot/blob/log-info/data/3b%20Community%20lateral%20torque%20NNFF%20fits%20LKA%20EPS%20torque/BUICK%20LACROSSE%202017_torque_adjusted_eps-b.png?raw=true) |
 | [CHEVROLET BOLT EUV 2022_torque_adjusted_eps-a](https://github.com/twilsonco/openpilot/blob/log-info/data/3b%20Community%20lateral%20torque%20NNFF%20fits%20LKA%20EPS%20torque/CHEVROLET%20BOLT%20EUV%202022_torque_adjusted_eps-a.png?raw=true) |  [CHEVROLET BOLT EUV 2022_torque_adjusted_eps-b](https://github.com/twilsonco/openpilot/blob/log-info/data/3b%20Community%20lateral%20torque%20NNFF%20fits%20LKA%20EPS%20torque/CHEVROLET%20BOLT%20EUV%202022_torque_adjusted_eps-b.png?raw=true) |

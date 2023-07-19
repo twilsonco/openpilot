@@ -2,7 +2,7 @@
 ## 6 Comma lateral torque NNFF fits
 
 
-| Car | Car |
+| Lateral accel response | Error/jerk/roll responses |
 |-|-|
 | [ACURA_RDX_2020-a](https://github.com/twilsonco/openpilot/blob/log-info/data/6%20Comma%20lateral%20torque%20NNFF%20fits/ACURA_RDX_2020-a.png?raw=true) |  [ACURA_RDX_2020-b](https://github.com/twilsonco/openpilot/blob/log-info/data/6%20Comma%20lateral%20torque%20NNFF%20fits/ACURA_RDX_2020-b.png?raw=true) |
 | [AUDI_A3_3RD_GEN-a](https://github.com/twilsonco/openpilot/blob/log-info/data/6%20Comma%20lateral%20torque%20NNFF%20fits/AUDI_A3_3RD_GEN-a.png?raw=true) |  [AUDI_A3_3RD_GEN-b](https://github.com/twilsonco/openpilot/blob/log-info/data/6%20Comma%20lateral%20torque%20NNFF%20fits/AUDI_A3_3RD_GEN-b.png?raw=true) |

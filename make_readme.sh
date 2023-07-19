@@ -128,7 +128,7 @@ for dir in *; do
   count=1
   row=""
   # Initialize section table
-  section_table="| Car | Car |\n|-|-|\n"
+  section_table=""
   table_body="| 🛣️ | 🚗 |\n| --- | --- |\n"
   # Loop through all image files in this directory
   cd "$dir"
@@ -175,6 +175,12 @@ for dir in *; do
 
   done
   cd ..
+  
+  if [ "$is_ab_dir" = true ] ; then
+    section_table="| Lateral accel response | Error/jerk/roll responses |\n|-|-|\n$section_table"
+  else
+    section_table="| Car | Car |\n|-|-|\n$section_table"
+  fi
 
   # Combine table of contents and table of images into a single table for this directory
   section_table="\n$section_table_of_contents\n\n$section_table\n\n$table_body"
