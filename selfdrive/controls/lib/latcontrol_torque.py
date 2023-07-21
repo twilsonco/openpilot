@@ -115,6 +115,7 @@ class LatControlTorque(LatControl):
 
   def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk, lat_plan=None, model_data=None):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
+    nn_log = None
 
     if not active:
       output_torque = 0.0
@@ -173,15 +174,15 @@ class LatControlTorque(LatControl):
           lateral_jerk_measurement = 0.0
         
         # compute NNFF error response
-        nnff_setpoint_input = [CS.vEgo, setpoint, lateral_jerk_setpoint, roll] \
+        nn_setpoint_input = [CS.vEgo, setpoint, lateral_jerk_setpoint, roll] \
                               + [setpoint] * self.past_future_len \
                               + past_rolls + future_rolls
         # past lateral accel error shouldn't count, so use past desired like the setpoint input
-        nnff_measurement_input = [CS.vEgo, measurement, lateral_jerk_measurement, roll] \
+        nn_measurement_input = [CS.vEgo, measurement, lateral_jerk_measurement, roll] \
                               + [measurement] * self.past_future_len \
                               + past_rolls + future_rolls
-        torque_from_setpoint = self.torque_from_nn(nnff_setpoint_input)
-        torque_from_measurement = self.torque_from_nn(nnff_measurement_input)
+        torque_from_setpoint = self.torque_from_nn(nn_setpoint_input)
+        torque_from_measurement = self.torque_from_nn(nn_measurement_input)
         pid_log.error = torque_from_setpoint - torque_from_measurement
         
         # compute feedforward (same as nn setpoint output)
@@ -200,6 +201,7 @@ class LatControlTorque(LatControl):
           ff += self.torque_from_lateral_accel(0.0, self.torque_params,
                                             lookahead_lateral_jerk,
                                             lateral_accel_deadzone, friction_compensation=True)
+        nn_log = nn_input + nn_setpoint_input + nn_measurement_input
       else:
         gravity_adjusted_lateral_accel = desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY
         torque_from_setpoint = self.torque_from_lateral_accel(setpoint, self.torque_params, setpoint,
@@ -226,6 +228,8 @@ class LatControlTorque(LatControl):
       pid_log.actualLateralAccel = actual_lateral_accel
       pid_log.desiredLateralAccel = desired_lateral_accel
       pid_log.saturated = self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited)
+      if nn_log is not None:
+        pid_log.nnLog = nn_log
 
     # TODO left is positive in this convention
     return -output_torque, 0.0, pid_log
