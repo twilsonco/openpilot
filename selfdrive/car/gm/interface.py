@@ -18,6 +18,7 @@ NetworkLocation = car.CarParams.NetworkLocation
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 
+PEDAL_MSG = 0x201
 CAM_MSG = 0x320  # AEBCmd
                  # TODO: Is this always linked to camera presence?
 ACCELERATOR_POS_MSG = 0xbe
@@ -76,6 +77,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
+    ret.enableGasInterceptor = PEDAL_MSG in fingerprint[0]
 
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
@@ -121,12 +123,9 @@ class CarInterface(CarInterfaceBase):
       # Tuning
       ret.longitudinalTuning.kpV = [2.4, 1.5]
       ret.longitudinalTuning.kiV = [0.36]
-
-    # These cars have been put into dashcam only due to both a lack of users and test coverage.
-    # These cars likely still work fine. Once a user confirms each car works and a test route is
-    # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX} or \
-                      (ret.networkLocation == NetworkLocation.gateway and ret.radarUnavailable)
+      if ret.enableGasInterceptor:
+        # Need to set ASCM long limits when using pedal interceptor, instead of camera ACC long limits
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_ASCM_LONG
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -222,6 +221,10 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+      if ret.enableGasInterceptor:
+        # ACC Bolts use pedal for full longitudinal control, not just sng
+        ret.flags |= GMFlags.PEDAL_LONG.value
+
     elif candidate == CAR.SILVERADO:
       ret.mass = 2450.
       ret.wheelbase = 3.75
@@ -269,6 +272,24 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+    if ret.enableGasInterceptor:
+      ret.networkLocation = NetworkLocation.fwdCamera
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
+      ret.minEnableSpeed = -1
+      ret.pcmCruise = False
+      ret.openpilotLongitudinalControl = True
+      ret.stoppingControl = True
+      ret.autoResumeSng = True
+
+      if candidate in CC_ONLY_CAR:
+        ret.flags |= GMFlags.PEDAL_LONG.value
+        # Note: Low speed, stop and go not tested. Should be fairly smooth on highway
+        ret.longitudinalTuning.kpBP = [5., 35.]
+        ret.longitudinalTuning.kpV = [0.35, 0.5]
+        ret.longitudinalTuning.kiBP = [0., 35.0]
+        ret.longitudinalTuning.kiV = [0.1, 0.1]
+        ret.longitudinalTuning.kf = 0.15
+        ret.stoppingDecelRate = 0.8
     if candidate in CC_ONLY_CAR:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_NO_ACC
 
@@ -309,6 +330,11 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.resumeRequired)
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(EventName.belowSteerSpeed)
+
+    if (self.CP.flags & GMFlags.PEDAL_LONG.value) and \
+      self.CP.transmissionType == TransmissionType.direct and \
+      not self.CS.single_pedal_mode:
+      events.add(EventName.pedalInterceptorNoBrake)
 
     ret.events = events.to_msg()
 
