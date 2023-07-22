@@ -106,8 +106,8 @@ table_of_contents="## Table of Contents\n- [1 Community vehicle log counts](#cur
 # Initialize README body
 readme_body=""
 
-mkdir -p "thumbnails"
-rm -rf "thumbnails/*"
+# mkdir -p "thumbnails"
+# rm -rf "thumbnails/*"
 cd "data"
 # Loop through all subdirectories in current directory
 for dir in *; do
@@ -133,24 +133,36 @@ for dir in *; do
   # Loop through all image files in this directory
   cd "$dir"
   is_ab_dir=false
-  for file in *.png; do
+  files=(./*.png ./*.gif)
+  for file in "${files[@]}"; do
+    if [[ "$file" == *"*"* ]]; then
+      continue
+    fi
     echo "Processing $file..."
     # If file ends in "-a.png" or "-b.png", set is_ab_dir to true
     if [[ $file == *"-a.png" || $file == *"-b.png" ]]; then
       is_ab_dir=true
     fi
+    if [[ $file == *"png" ]]; then
+      ext=".png"
+    else
+      ext=".gif"
+    fi
     # Get the file name without the extension
     thumbfile="${file%%.png}_thumbnail.jpg"
-    filename=$(basename "$file" .png)
-    thumbfilename=$(basename "$thumbfile" .png)
+    filename=$(basename "$file" $ext)
+    thumbfilename=$(basename "$thumbfile" .jpg)
     # Generate thumbnail 
-    ffmpeg -y -i "$file" -filter:v scale=400:-2 "../../thumbnails/$thumbfile"
+    # ffmpeg -y -i "$file" -filter:v scale=400:-2 "../../thumbnails/$thumbfile"
     # Encode the filename for use in a URL
     encoded_filename=$(echo "$file" | sed 's/ /%20/g')
-    encoded_thumbfilename=$(echo "$thumbfile" | sed 's/ /%20/g')
-    # Append a new cell to the current row with the image and its file name
     img_url="https://github.com/twilsonco/openpilot/blob/log-info/data/$encoded_dirname/$encoded_filename?raw=true"
-    thumb_url="https://github.com/twilsonco/openpilot/blob/log-info/thumbnails/$encoded_thumbfilename?raw=true"
+    thumb_url="$img_url"
+    if [[ "$file" == *"png" ]]; then
+      encoded_thumbfilename=$(echo "$thumbfile" | sed 's/ /%20/g')
+      # Append a new cell to the current row with the image and its file name
+      thumb_url="https://github.com/twilsonco/openpilot/blob/log-info/thumbnails/$encoded_thumbfilename?raw=true"
+    fi
     cell="| [$filename](#table-of-contents) ([full image]($img_url)) ![$filename]($thumb_url)"
     # Increment row counter
     row_counter=$((row_counter+1))
@@ -194,7 +206,7 @@ for dir in *; do
   cd "data"
 
   # Add a new entry to the table of contents for all directories
-  file_count=$(ls -1q "$dir"/*.png | wc -l)
+  file_count=$(ls -1q "$dir"/*$ext | wc -l)
   # divide by two if is_ab_dir
   if [ "$is_ab_dir" = true ] ; then
     file_count=$((file_count/2))
