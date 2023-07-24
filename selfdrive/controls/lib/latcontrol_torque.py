@@ -222,11 +222,11 @@ class LatControlTorque(LatControl):
           future_rolls = [roll] * len(self.nnff_future_times)
           
         # compute NNFF error response
-        nnff_setpoint_input = [CS.vEgo, setpoint, 0.2 * desired_lateral_jerk, roll] \
+        nnff_setpoint_input = [CS.vEgo, setpoint, 0.05 * desired_lateral_jerk, roll] \
                               + [setpoint] * self.past_future_len \
                               + past_rolls + future_rolls
         # past lateral accel error shouldn't count, so use past desired like the setpoint input
-        nnff_measurement_input = [CS.vEgo, measurement, 0.2 * self.actual_lateral_jerk._D.x, roll] \
+        nnff_measurement_input = [CS.vEgo, measurement, 0.05 * self.actual_lateral_jerk._D.x, roll] \
                               + [measurement] * self.past_future_len \
                               + past_rolls + future_rolls
         torque_from_setpoint = self.torque_from_nn(nnff_setpoint_input)
