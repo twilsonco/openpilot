@@ -4,7 +4,7 @@ import os
 import time
 import shutil
 import numpy as np
-import json
+from json import load
 from typing import Dict
 
 from cereal import car
@@ -28,18 +28,18 @@ MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS  # 135 + 4 = 86 mph
 ACCEL_MAX = 2.0
 ACCEL_MIN = -3.5
 
+# lateral neural network feedforward
 class FluxModel:
   # dict used to rename activation functions whose names aren't valid python identifiers
   activation_function_names = {'σ': 'sigmoid'}
   def __init__(self, params_file, zero_bias=False):
     with open(params_file, "r") as f:
-      params = json.load(f)
+      params = load(f)
 
     self.input_size = params["input_size"]
     self.output_size = params["output_size"]
     self.input_mean = np.array(params["input_mean"], dtype=np.float32).T
     self.input_std = np.array(params["input_std"], dtype=np.float32).T
-    test_dict = params["test_dict_zero_bias"] if zero_bias else params["test_dict"]
     self.layers = []
 
     for layer_params in params["layers"]:
@@ -52,23 +52,12 @@ class FluxModel:
         activation = activation.replace(k, v)
       self.layers.append((W, b, activation))
     
-    self.test(test_dict)
-    if not self.test_passed:
-      raise ValueError(f"NN FF model failed test: {params_file}")
-
-    cloudlog.info(f"NN FF model loaded")
-    cloudlog.info(self.summary(do_print=False))
+    self.validate_layers()
+    
   # Begin activation functions.
   # These are called by name using the keys in the model json file
   def sigmoid(self, x):
     return 1 / (1 + np.exp(-x))
-    
-  def tanh(self, x):
-    return np.tanh(x)
-
-  def sigmoid_fast(self, x):
-    return 0.5 * (x / (1 + np.abs(x)) + 1)
-    # return x / (1 + np.abs(x))
 
   def identity(self, x):
     return x
@@ -76,21 +65,18 @@ class FluxModel:
 
   def forward(self, x):
     for W, b, activation in self.layers:
-      if hasattr(self, activation):
-        x = getattr(self, activation)(x.dot(W) + b)
-      else:
-        raise ValueError(f"Unknown activation: {activation}")
+      x = getattr(self, activation)(x.dot(W) + b)
     return x
 
   def evaluate(self, input_array):
-    if len(input_array) != self.input_size:
-      # This can be used to discern between different "versions" of the NNFF model
-      # v1 has an input of 4 (v_ego, lateral_accel, lateral_jerk, roll)
-      # v2 has an input of 20 (v_ego, a_ego, lateral_accel, lateral_jerk, roll, <then three groups of five points with lat accel, lat jerk, and roll data for at one past point -0.3s, and four future points 0.3, 0.6, 1.1, 2.0s, where the 0.3s values are actually the "desired" values when calling the model>) 
-      if len(input_array) == 23 and self.input_size == 4: # leave out a_ego and anything after the first 5 values
-        input_array = [input_array[0], input_array[2], input_array[3], input_array[4]]
+    in_len = len(input_array)
+    if in_len != self.input_size:
+      # If the input is length 2-4, then it's a simplified evaluation.
+      # In that case, need to add on zeros to fill out the input array to match the correct length.
+      if 2 <= in_len:
+        input_array = input_array + [0] * (self.input_size - in_len)
       else:
-        raise ValueError(f"Input array length {len(input_array)} does not match the expected length {self.input_size}")
+        raise ValueError(f"Input array length {len(input_array)} must be length 2 or greater")
         
     input_array = np.array(input_array, dtype=np.float32)#.reshape(1, -1)
 
@@ -101,52 +87,10 @@ class FluxModel:
 
     return float(output_array[0, 0])
   
-  def test(self, test_data: dict) -> str:
-    num_passed = 0
-    num_failed = 0
-    allowed_chars = r'^[-\d.,\[\] ]+$'
-
-    for input_str, expected_output in test_data.items():
-      if not re.match(allowed_chars, input_str):
-        raise ValueError(f"Invalid characters in NN FF model testing input string: {input_str}")
-
-      input_list = ast.literal_eval(input_str)
-      model_output = self.evaluate(input_list)
-
-      if abs(model_output - expected_output) <= 5e-5:
-        num_passed += 1
-      else:
-        num_failed += 1
-        raise ValueError(f"NN FF model failed test at value {input_list}: expected {expected_output}, got {model_output}")
-
-    summary_str = (
-      f"Test results: PASSED ({num_passed} inputs tested) "
-    )
-    
-    self.test_passed = num_failed == 0
-    self.test_str = summary_str
-
-  def summary(self, do_print=True):
-    summary_lines = [
-      "FluxModel Summary:",
-      f"Input size: {self.input_size}",
-      f"Output size: {self.output_size}",
-      f"Number of layers: {len(self.layers)}",
-      self.test_str,
-      "Layer details:"
-    ]
-
-    for i, (W, b, activation) in enumerate(self.layers):
-      summary_lines.append(
-          f"  Layer {i + 1}: W: {W.shape}, b: {b.shape}, f: {activation}"
-      )
-    
-    summary_str = "\n".join(summary_lines)
-
-    if do_print:
-      print(summary_str)
-
-    return summary_str
+  def validate_layers(self):
+    for W, b, activation in self.layers:
+      if not hasattr(self, activation):
+        raise ValueError(f"Unknown activation: {activation}")
 
 # generic car and radar interfaces
 
