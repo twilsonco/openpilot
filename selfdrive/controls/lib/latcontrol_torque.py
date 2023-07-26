@@ -218,7 +218,7 @@ class LatControlTorque(LatControl):
           future_planned_lateral_accels = [interp(t, T_IDXS[:CONTROL_N], lat_plan.curvatures) * CS.vEgo ** 2 for t in adjusted_future_times]
           future_rolls = [interp(t, T_IDXS, model_data.orientation.x) + roll for t in adjusted_future_times]
         else:
-          future_planned_lateral_accels = [desired_lateral_accel] * (len(self.nnff_future_times) + 1)
+          future_planned_lateral_accels = [desired_lateral_accel] * len(self.nnff_future_times)
           future_rolls = [roll] * len(self.nnff_future_times)
           
         # compute NNFF error response
