@@ -4,7 +4,7 @@ import os
 import time
 import shutil
 import numpy as np
-import json
+from json import load
 from typing import Dict
 
 from cereal import car
