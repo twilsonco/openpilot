@@ -1,7 +1,9 @@
 #!/bin/sh
 
 # Define preface and postface strings
-preface="# Improving controls with log data
+preface="![intro_vid](https://github.com/twilsonco/openpilot/blob/log-info/comma-steering-control-vid.gif?raw=true)
+
+# Improving controls with log data
 
 Here's plots of the [comma-steering-control](https://github.com/commaai/comma-steering-control) dataset and the data I've collected so far from the community.
 Community log collection is in a limited state; only cars not in the comma-steering-control dataset will be collected for the time being.

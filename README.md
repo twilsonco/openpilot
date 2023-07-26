@@ -1,3 +1,5 @@
+![intro_vid](https://github.com/twilsonco/openpilot/blob/log-info/comma-steering-control-vid.gif?raw=true)
+
 # Improving controls with log data
 
 Here's plots of the [comma-steering-control](https://github.com/commaai/comma-steering-control) dataset and the data I've collected so far from the community.
@@ -106,4 +108,4 @@ gm                                      27471 (33G)
   CHEVROLET VOLT PREMIER 2017           3028 (3.5G)
 ```
 
-Last updated July 22, 2023
+Last updated July 25, 2023
