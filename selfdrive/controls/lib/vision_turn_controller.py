@@ -73,7 +73,7 @@ class VisionTurnController():
     self._v_cruise_setpoint = 0.
     self._v_ego = 0.
     self._a_ego = 0.
-    self._a_target = FirstOrderFilter(0., self._op_params.get('CB_VTSC_smoothing_factor', force_update=True), DT_MDL)
+    self._a_target = FirstOrderFilter(0., 0.0, DT_MDL, rate_down=self._op_params.get('CB_VTSC_accel_rate_limit', force_update=True) / DT_MDL)
     self._v_overshoot = 0.
     self._state = VisionTurnControllerState.disabled
     self._CS = None
@@ -172,24 +172,24 @@ class VisionTurnController():
     return np.array([curvature(x) for x in x_vals]), max_lat_accel, max_curvature, max_roll_compensation, max_lat_accel_dist
 
   def _update_op_params(self):
-    self._a_target.update_alpha(self._op_params.get('CB_VTSC_smoothing_factor'))
+    self._a_target.update_alpha(self._op_params.get('CB_VTSC_accel_rate_limit'))
     lat_accel_factor = self._op_params.get('CB_VTSC_lat_accel_factor')
     long_accel_factor = self._op_params.get('CB_VTSC_long_accel_factor')
-    self._ENTERING_PRED_LAT_ACC_TH = 1.3 * lat_accel_factor  # Predicted Lat Acc threshold to trigger entering turn state.
-    self._ABORT_ENTERING_PRED_LAT_ACC_TH = 0.9 * lat_accel_factor  # Predicted Lat Acc threshold to abort entering state if speed drops.
-    self._TURNING_LAT_ACC_TH = 0.8 * lat_accel_factor  # Lat Acc threshold to trigger turning turn state.
-    self._LEAVING_LAT_ACC_TH = 0.7 * lat_accel_factor  # Lat Acc threshold to trigger leaving turn state.
-    self._FINISH_LAT_ACC_TH = 0.4 * lat_accel_factor  # Lat Acc threshold to trigger end of turn cycle.
-    self._A_LAT_REG_MAX = 2.0 * lat_accel_factor  # Maximum lateral acceleration
+    self._ENTERING_PRED_LAT_ACC_TH = 1.4 * lat_accel_factor  # Predicted Lat Acc threshold to trigger entering turn state.
+    self._ABORT_ENTERING_PRED_LAT_ACC_TH = 1.1 * lat_accel_factor  # Predicted Lat Acc threshold to abort entering state if speed drops.
+    self._TURNING_LAT_ACC_TH = 1.7 * lat_accel_factor  # Lat Acc threshold to trigger turning turn state.
+    self._LEAVING_LAT_ACC_TH = 1.3 * lat_accel_factor  # Lat Acc threshold to trigger leaving turn state.
+    self._FINISH_LAT_ACC_TH = 1.1 * lat_accel_factor  # Lat Acc threshold to trigger end of turn cycle.
+    self._A_LAT_REG_MAX = 2.2 * lat_accel_factor  # Maximum lateral acceleration
     # Lookup table for the minimum smooth deceleration during the ENTERING state
     # depending on the actual maximum absolute lateral acceleration predicted on the turn ahead.
-    self._ENTERING_SMOOTH_DECEL_V = [i * long_accel_factor for i in [0.0, -0.2, -0.7]]  # min decel value allowed on ENTERING state
-    self._ENTERING_SMOOTH_DECEL_BP = [i * lat_accel_factor for i in [1.25, 1.3, 2.4]]  # absolute value of lat acc ahead
+    self._ENTERING_SMOOTH_DECEL_V = [i * long_accel_factor for i in [-0.2, -1.0]]  # min decel value allowed on ENTERING state
+    self._ENTERING_SMOOTH_DECEL_BP = [i * lat_accel_factor for i in [1.4, 3.3]]  # absolute value of lat acc ahead
     # Lookup table for the acceleration for the TURNING state
     # depending on the current lateral acceleration of the vehicle.
-    self._TURNING_ACC_V = [i * long_accel_factor if i < 0.0 else i for i in [0.5, 0.0, -0.7]]  # acc value
-    self._TURNING_ACC_BP = [i * lat_accel_factor for i in [1.4, 1.9, 2.2]]  # absolute value of current lat acc
-    self._LEAVING_ACC = 0.7 * lat_accel_factor  # Confortable acceleration to regain speed while leaving a turn.
+    self._TURNING_ACC_V = [i * long_accel_factor if i < 0.0 else i for i in [0.5, 0., -0.4]]  # acc value
+    self._TURNING_ACC_BP = [i * lat_accel_factor for i in [1.3, 2.5, 3.3]]  # absolute value of current lat acc
+    self._LEAVING_ACC = 0.5 * lat_accel_factor  # Confortable acceleration to regain speed while leaving a turn.
     self._ACCEL_MIN = min(self._ENTERING_SMOOTH_DECEL_V + self._TURNING_ACC_V)
     
     

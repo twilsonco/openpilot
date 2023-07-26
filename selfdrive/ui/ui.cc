@@ -711,6 +711,8 @@ static void update_state(UIState *s) {
       scene.lead_y_vals.clear();
     }
     if (scene.adjacent_lead_info_print_enabled){
+      scene.adjacent_lead_left_ttp_str = "";
+      scene.adjacent_lead_right_ttp_str = "";
       if (!scene.adjacent_lead_info_print_at_lead){
         // left leads
         {
@@ -724,7 +726,6 @@ static void update_state(UIState *s) {
           scene.adjacent_leads_left_str = "";
           char val[16];
           int cnt = 0;
-          scene.adjacent_lead_left_ttp_str = "";
           for (int i = 0; i < leads_vec.size(); ++i){
             if (i == 0 && leads_vec[i].getVRel() < 0.0 && leads_vec[i].getVLead() > 0.0){
               float const v = leads_vec[i].getVRel();
@@ -758,7 +759,6 @@ static void update_state(UIState *s) {
           scene.adjacent_leads_right_str = "";
           char val[16];
           int cnt = 0;
-          scene.adjacent_lead_right_ttp_str = "";
           for (int i = 0; i < leads_vec.size(); ++i){
             if (i == 0 && leads_vec[i].getVRel() < 0.0 && leads_vec[i].getVLead() > 0.0){
               float const v = leads_vec[i].getVRel();

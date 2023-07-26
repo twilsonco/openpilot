@@ -9,7 +9,7 @@ from common.params import Params
 from common.realtime import DT_MDL, DT_CTRL
 from selfdrive.car.gm.values import CAR
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.drive_helpers import apply_deadzone
+from selfdrive.controls.lib.drive_helpers import apply_deadzone, CONTROL_N
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from selfdrive.modeld.constants import T_IDXS
@@ -81,23 +81,27 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_bp = [0.0, 30.0]
     self.low_speed_factor_v = [15.0, 5.0]
     
-    self.error_scale_recip = 2.0
-    self.error_scale_factor = FirstOrderFilter(1.0, 0.5, DT_CTRL)
+    self.error_downscale = 1.0
     
     if self.use_nn_ff:
-      # NNFF model takes current v_ego, a_ego, lat_accel, lat_jerk, roll, and past/future data
-      # of lat accel, lat jerk, and roll
-      # Past/future data is relative to current values (i.e. 0.5 means current value + 0.5)
-      # Times are relative to current time at (-0.5, -0.3, 0.3, 0.5, 0.9, 1.7) seconds
-      # Past value is computed using observed car lat accel, jerk, and roll
-      # actual current values are passed as the -0.3s value, the desired values are passed as the actual lat accel etc values, and the future values are interpolated from predicted planner/model data
+      # NNFF model takes current v_ego, lateral_accel, lat accel/jerk error, roll, and past/future/planned data
+      # of lat accel and roll
+      # Past value is computed using previous desired lat accel and observed roll
+      self.torque_from_nn = CI.get_ff_nn
+      
+      # setup future time offsets
       self.nnff_time_offset = CP.steerActuatorDelay + 0.2
-      future_times = [0.3, 0.8]
+      future_times = [0.3, 0.6, 1.0, 1.5] # seconds in the future
       self.nnff_future_times = [i + self.nnff_time_offset for i in future_times]
-      history_check_frames = [30] # 0.3 seconds ago
+      
+      # setup past time offsets
+      history_check_frames = [30, 20, 10] # 0.3, 0.2, 0.1 seconds ago
       self.history_frame_offsets = [history_check_frames[0] - i for i in history_check_frames]
-      self.lat_accel_deque = deque(maxlen=history_check_frames[0])
+      self.lateral_accel_desired_deque = deque(maxlen=history_check_frames[0])
       self.roll_deque = deque(maxlen=history_check_frames[0])
+      
+      # For computing past/future values for error response.
+      self.past_future_len = (len(self.nnff_future_times) + len(self.history_frame_offsets))
     
       
     # for actual lateral jerk calculation
@@ -123,8 +127,7 @@ class LatControlTorque(LatControl):
     if look_ahead != self.low_speed_factor_look_ahead:
       self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.low_speed_factor_look_ahead), None)
     look_ahead = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_v')
-    self.error_scale_recip = self._op_params.get('TUNE_LAT_TRX_error_downscale_in_curves')
-    self.error_scale_factor.update_alpha(self._op_params.get('TUNE_LAT_TRX_error_downscale_smoothing'))
+    self.error_downscale = self._op_params.get('TUNE_LAT_TRX_error_downscale_in_curves')
     
     self.friction_look_ahead_v = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_v')
     self.friction_look_ahead_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_friction_lookahead_bp')]
@@ -161,21 +164,18 @@ class LatControlTorque(LatControl):
       lookahead_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_curvature], key=lambda x: abs(x))
-      error_scale_factor = 1.0 / (1.0 + min(apply_deadzone(abs(lookahead_lateral_jerk), 0.3) * self.error_scale_recip, self.error_scale_recip - 1))
-      if error_scale_factor < self.error_scale_factor.x:
-        self.error_scale_factor.x = error_scale_factor
-      else:
-        self.error_scale_factor.update(error_scale_factor)
+      error_scale_factor = 1.0 / min(0.1*abs(desired_lateral_accel) + abs(lookahead_lateral_jerk) + 1.0, self.error_downscale)
+
       
       if self.use_nn_ff:
-        low_speed_factor = interp(CS.vEgo, [0, 10, 20], [13, 5, 0])**2
+        low_speed_factor = interp(CS.vEgo, [0, 10, 20], [15, 5, 0])**2
       else:
         low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
       lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
-      error *= self.error_scale_factor.x
+      error *= error_scale_factor
       setpoint = measurement + error
       pid_log.error = error
 
@@ -194,8 +194,8 @@ class LatControlTorque(LatControl):
       # lateral_jerk_error *= friction_lat_accel_downscale_factor
       
       # error-based friction term
-      error_friction = interp(error, [-ERR_FRICTION_THRESHOLD, ERR_FRICTION_THRESHOLD], [-0.05, 0.05])
-      error_friction *= interp(CS.vEgo, [20.0, 30.0], [1.0, 0.3])
+      friction_v = 0.05
+      error_friction = 0.0 if sign(error) != sign(desired_lateral_accel) and abs(desired_lateral_accel) > 1.5 else interp(error, [-ERR_FRICTION_THRESHOLD, ERR_FRICTION_THRESHOLD], [-friction_v, friction_v])
       
       # lateral acceleration feedforward
       ff = self.get_steer_feedforward(desired_lateral_accel, CS.vEgo) - ff_roll
@@ -204,32 +204,47 @@ class LatControlTorque(LatControl):
       
       if self.use_nn_ff:
         # prepare input data for NNFF model
-        future_speeds = [math.sqrt(interp(t, T_IDXS, model_data.velocity.x)**2 \
-                                            + interp(t, T_IDXS, model_data.velocity.y)**2) \
-                                              for t in self.nnff_future_times]
-        future_curvatures = [interp(t, T_IDXS, lat_plan.curvatures) for t in self.nnff_future_times]
         
+        # prepare past roll and error
         roll = params.roll
-        
-        self.lat_accel_deque.append(desired_lateral_accel)
         self.roll_deque.append(roll)
-        
-        past_lateral_accels = [self.lat_accel_deque[min(len(self.lat_accel_deque)-1, i)] for i in self.history_frame_offsets]
-        future_lateral_accels = [k * v**2 for k, v in zip(future_curvatures, future_speeds)]
         past_rolls = [self.roll_deque[min(len(self.roll_deque)-1, i)] for i in self.history_frame_offsets]
-        future_rolls = [interp(t, T_IDXS, model_data.orientation.x) + roll for t in self.nnff_future_times]
+        self.lateral_accel_desired_deque.append(desired_lateral_accel)
+        past_lateral_accels_desired = [self.lateral_accel_desired_deque[min(len(self.lateral_accel_desired_deque)-1, i)] for i in self.history_frame_offsets]
         
-        lat_accel_error = setpoint - measurement
+        # prepare future roll, lat accel, and lat accel error
+        if None not in [lat_plan, model_data] and all([len(i) >= CONTROL_N for i in [model_data.orientation.x, lat_plan.curvatures]]):
+          adjusted_future_times = [t + 0.5*CS.aEgo*(t/max(CS.vEgo, 1.0)) for t in self.nnff_future_times]
+          future_planned_lateral_accels = [interp(t, T_IDXS[:CONTROL_N], lat_plan.curvatures) * CS.vEgo ** 2 for t in adjusted_future_times]
+          future_rolls = [interp(t, T_IDXS, model_data.orientation.x) + roll for t in adjusted_future_times]
+        else:
+          future_planned_lateral_accels = [desired_lateral_accel] * (len(self.nnff_future_times) + 1)
+          future_rolls = [roll] * len(self.nnff_future_times)
+          
+        # compute NNFF error response
+        nnff_setpoint_input = [CS.vEgo, setpoint, 0.05 * desired_lateral_jerk, roll] \
+                              + [setpoint] * self.past_future_len \
+                              + past_rolls + future_rolls
+        # past lateral accel error shouldn't count, so use past desired like the setpoint input
+        nnff_measurement_input = [CS.vEgo, measurement, 0.05 * self.actual_lateral_jerk._D.x, roll] \
+                              + [measurement] * self.past_future_len \
+                              + past_rolls + future_rolls
+        torque_from_setpoint = self.torque_from_nn(nnff_setpoint_input)
+        torque_from_measurement = self.torque_from_nn(nnff_measurement_input)
+        pid_log.error = torque_from_setpoint - torque_from_measurement
         
-        nnff_input = [CS.vEgo, desired_lateral_accel, lat_accel_error + 0.1 * lateral_jerk_error, roll] \
-                    + past_lateral_accels + future_lateral_accels \
-                    + past_rolls + future_rolls
-        ff_nn = self.CI.get_ff_nn(nnff_input)
-        ff_nn += error_friction
+        # compute feedforward (same as nnff setpoint output)
+        nnff_input = [CS.vEgo, desired_lateral_accel, setpoint - measurement, roll] \
+                              + past_lateral_accels_desired + future_planned_lateral_accels \
+                              + past_rolls + future_rolls
+        ff_nn = self.torque_from_nn(nnff_input)
+        nnff_log = nnff_input + nnff_setpoint_input + nnff_measurement_input
       else:
         ff_nn = 0.0
+        torque_from_setpoint = setpoint
+        torque_from_measurement = measurement
       
-      output_torque = self.pid.update(setpoint, measurement,
+      output_torque = self.pid.update(torque_from_setpoint, torque_from_measurement,
                                       override=CS.steeringPressed, 
                                       feedforward=ff if ff_nn is None or not self.use_nn_ff else ff_nn,
                                       speed=CS.vEgo,
@@ -261,9 +276,9 @@ class LatControlTorque(LatControl):
       pid_log.lookaheadCurvatureRate = lookahead_curvature_rate
       pid_log.f2 = ff_nn * self.pid.k_f
       pid_log.maxFutureLatAccel = max_future_lateral_accel
-      pid_log.errorScaleFactor = self.error_scale_factor.x
+      pid_log.errorScaleFactor = error_scale_factor
       if self.use_nn_ff:
-        pid_log.nnffInputVector = nnff_input
+        pid_log.nnffInputVector = nnff_log
     pid_log.currentLateralAcceleration = actual_lateral_accel
     pid_log.currentLateralJerk = self.actual_lateral_jerk.x
       

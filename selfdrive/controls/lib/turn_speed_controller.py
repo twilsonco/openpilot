@@ -14,7 +14,7 @@ from selfdrive.modeld.constants import T_IDXS
 
 
 _ACTIVE_LIMIT_MIN_ACC = -0.5  # m/s^2 Maximum deceleration allowed while active.
-_ACTIVE_LIMIT_MAX_ACC = 0.5   # m/s^2 Maximum acelration allowed while active.
+_ACTIVE_LIMIT_MAX_ACC = 1.5   # m/s^2 Maximum acelration allowed while active.
 
 _DEBUG = False
 
@@ -57,7 +57,7 @@ class TurnSpeedController():
 
     self._next_speed_limit_prev = 0.
 
-    self._a_target = FirstOrderFilter(0., self._op_params.get('CB_MTSC_smoothing_factor', force_update=True), DT_MDL)
+    self._a_target = FirstOrderFilter(0., 0.0, DT_MDL, rate_down=self._op_params.get('CB_MTSC_accel_rate_limit', force_update=True) / DT_MDL)
 
   def get_speed_scale(self, road_rank):
     if road_rank == 0:
@@ -196,7 +196,7 @@ class TurnSpeedController():
     if time > self._last_params_update + 0.5:
       self._is_enabled = self._params.get_bool("TurnSpeedControl")
       self._last_params_update = time
-      self._a_target.update_alpha(self._op_params.get('CB_MTSC_smoothing_factor'))
+      self._a_target.update_alpha(self._op_params.get('CB_MTSC_accel_rate_limit'))
 
   def _update_calculations(self):
     # Update current velocity offset (error)
