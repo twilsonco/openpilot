@@ -239,6 +239,7 @@ class LatControlTorque(LatControl):
                               + past_rolls + future_rolls
         ff_nn = self.torque_from_nn(nnff_input)
         nnff_log = nnff_input + nnff_setpoint_input + nnff_measurement_input
+        lateral_jerk_error = 0.0
       else:
         ff_nn = 0.0
         torque_from_setpoint = setpoint
