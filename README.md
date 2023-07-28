@@ -1,4 +1,4 @@
-![intro_vid](https://github.com/twilsonco/openpilot/blob/log-info/comma-steering-control-vid.gif?raw=true)
+![intro_vid](https://github.com/twilsonco/openpilot/blob/log-info/img/comma-steering-control-vid.gif?raw=true)
 
 # Improving controls with log data
 
@@ -9,16 +9,19 @@ I'll update here periodically so log contributors can see which speeds/angles ne
 Head to the Comma, Community, or SunnyPilot Discord server #tuning (or tuning-nnff) channels if you want to contribute or learn more!
 
 ## Table of Contents
-- [1 Community vehicle log counts](#current-counts-of-collected-logs) (83718 total; 1395.0 hours)
-- [2 Community lateral data](https://github.com/twilsonco/openpilot/blob/log-info/2%20Community%20lateral%20data.md) (      66 cars)
-- [3a Community lateral torque NNFF fits steer command](https://github.com/twilsonco/openpilot/blob/log-info/3a%20Community%20lateral%20torque%20NNFF%20fits%20steer%20command.md) (42 cars)
-- [3b Community lateral torque NNFF fits LKA EPS torque](https://github.com/twilsonco/openpilot/blob/log-info/3b%20Community%20lateral%20torque%20NNFF%20fits%20LKA%20EPS%20torque.md) (34 cars)
-- [3c Community lateral torque NNFF fits driver torque](https://github.com/twilsonco/openpilot/blob/log-info/3c%20Community%20lateral%20torque%20NNFF%20fits%20driver%20torque.md) (34 cars)
-- [3d Community lateral torque NNFF fits driver EPS combined torque](https://github.com/twilsonco/openpilot/blob/log-info/3d%20Community%20lateral%20torque%20NNFF%20fits%20driver%20EPS%20combined%20torque.md) (32 cars)
-- [4 Comma lateral data combined firmware](https://github.com/twilsonco/openpilot/blob/log-info/4%20Comma%20lateral%20data%20combined%20firmware.md) (     121 cars)
-- [5a Comma lateral data separate firmwares](https://github.com/twilsonco/openpilot/blob/log-info/5a%20Comma%20lateral%20data%20separate%20firmwares.md) (     526 cars)
-- [5b Comma lateral data EPS firmware comparison](https://github.com/twilsonco/openpilot/blob/log-info/5b%20Comma%20lateral%20data%20EPS%20firmware%20comparison.md) (      95 cars)
-- [6 Comma lateral torque NNFF fits](https://github.com/twilsonco/openpilot/blob/log-info/6%20Comma%20lateral%20torque%20NNFF%20fits.md) (106 cars)
+- [1 History and future of data-driven controls improvements](https://github.com/twilsonco/openpilot/blob/log-info/sec/1%20History%20and%20future%20of%20data-driven%20controls%20improvments.md)
+- [2 Understanding the NNFF model and plots](https://github.com/twilsonco/openpilot/blob/log-info/sec/2%20Understanding%20the%20NNFF%20model%20and%20plots.md)
+- [3 Community vehicle log counts](#current-counts-of-collected-logs) (83718 total; 1395.0 hours)
+- [4 Community lateral data](https://github.com/twilsonco/openpilot/blob/log-info/sec/4%20Community%20lateral%20data.md) (      66 cars)
+- [5a Community lateral torque NNFF fits steer command](https://github.com/twilsonco/openpilot/blob/log-info/sec/5a%20Community%20lateral%20torque%20NNFF%20fits%20steer%20command.md) (42 cars)
+- [5b Community lateral torque NNFF fits LKA EPS torque](https://github.com/twilsonco/openpilot/blob/log-info/sec/5b%20Community%20lateral%20torque%20NNFF%20fits%20LKA%20EPS%20torque.md) (34 cars)
+- [5c Community lateral torque NNFF fits driver torque](https://github.com/twilsonco/openpilot/blob/log-info/sec/5c%20Community%20lateral%20torque%20NNFF%20fits%20driver%20torque.md) (34 cars)
+- [5d Community lateral torque NNFF fits driver EPS combined torque](https://github.com/twilsonco/openpilot/blob/log-info/sec/5d%20Community%20lateral%20torque%20NNFF%20fits%20driver%20EPS%20combined%20torque.md) (32 cars)
+- [6a Comma lateral data combined firmware](https://github.com/twilsonco/openpilot/blob/log-info/sec/6a%20Comma%20lateral%20data%20combined%20firmware.md) (     121 cars)
+- [6b Comma lateral data separate firmwares](https://github.com/twilsonco/openpilot/blob/log-info/sec/6b%20Comma%20lateral%20data%20separate%20firmwares.md) (     526 cars)
+- [6c Comma lateral data EPS firmware comparison](https://github.com/twilsonco/openpilot/blob/log-info/sec/6c%20Comma%20lateral%20data%20EPS%20firmware%20comparison.md) (      95 cars)
+- [7 Comma lateral torque NNFF fits](https://github.com/twilsonco/openpilot/blob/log-info/sec/7%20Comma%20lateral%20torque%20NNFF%20fits.md) (106 cars)
+- [8 Manual preliminary data fits](https://github.com/twilsonco/openpilot/blob/log-info/sec/8%20Manual%20preliminary%20data%20fits.md) (      28 cars)
 
 
 
@@ -108,4 +111,4 @@ gm                                      27471 (33G)
   CHEVROLET VOLT PREMIER 2017           3028 (3.5G)
 ```
 
-Last updated July 25, 2023
+Last updated July 28, 2023
