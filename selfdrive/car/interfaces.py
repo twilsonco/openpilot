@@ -57,6 +57,7 @@ class FluxModel:
   # Begin activation functions.
   # These are called by name using the keys in the model json file
   def sigmoid(self, x):
+    x = np.clip(x, -709, 709)
     return 1 / (1 + np.exp(-x))
 
   def identity(self, x):
