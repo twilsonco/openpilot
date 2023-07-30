@@ -28,6 +28,8 @@ ROLL_FF_CARS = [CAR.VOLT, CAR.VOLT18]
 # friction in the steering wheel that needs to be overcome to
 # move it at all, this is compensated for too.
 
+LOW_SPEED_X = [0, 10, 20, 30]
+LOW_SPEED_Y = [15, 13, 10, 5]
 
 FRICTION_THRESHOLD = 2.0
 ERR_FRICTION_THRESHOLD = 0.3
@@ -168,7 +170,7 @@ class LatControlTorque(LatControl):
 
       
       if self.use_nn_ff:
-        low_speed_factor = interp(CS.vEgo, [0, 10, 20], [15, 5, 0])**2
+        low_speed_factor = interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
       else:
         low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
       lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
