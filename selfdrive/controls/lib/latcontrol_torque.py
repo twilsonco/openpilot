@@ -29,7 +29,7 @@ ROLL_FF_CARS = [CAR.VOLT, CAR.VOLT18]
 # move it at all, this is compensated for too.
 
 LOW_SPEED_X = [0, 10, 20, 30]
-LOW_SPEED_Y = [15, 13, 10, 5]
+LOW_SPEED_Y = [12, 10, 7, 3]
 
 FRICTION_THRESHOLD = 2.0
 ERR_FRICTION_THRESHOLD = 0.3
