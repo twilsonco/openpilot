@@ -5,6 +5,8 @@ preface="![intro_vid](https://github.com/twilsonco/openpilot/blob/log-info/comma
 
 # Improving controls with log data
 
+Provide feedback on lateral performance here: https://forms.gle/dtGQrY3TSkyQo6nu7
+
 Here's plots of the [comma-steering-control](https://github.com/commaai/comma-steering-control) dataset and the data I've collected so far from the community.
 Community log collection is in a limited state; only cars not in the comma-steering-control dataset will be collected for the time being.
 I'll update here periodically so log contributors can see which speeds/angles need to be filled out.
