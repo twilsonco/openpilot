@@ -427,3 +427,5 @@ This resulted in [NNFF fits for 106 cars](https://github.com/twilsonco/openpilot
 # Future of data-driven lateral controls improvements
 
 Comma has expressed an interest in moving to neural network controls. Hopefully everything here makes that process a little smoother.
+
+My current task is reimplementing my entire training stack into `tools/` and `torqued` where the same preprocessing and training code used to create fits server-side from large amounts of data with TinyGrad on GPU will be run onroad for live nnff fits.
