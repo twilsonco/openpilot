@@ -113,8 +113,8 @@ table_of_contents="## Table of Contents
 # Initialize README body
 readme_body=""
 
-# mkdir -p "thumbnails"
-# rm -rf "thumbnails/*"
+mkdir -p "../thumbnails"
+rm -rf "../thumbnails/*"
 cd "../data"
 # Loop through all subdirectories in current directory
 for dir in *; do
@@ -160,7 +160,7 @@ for dir in *; do
     filename=$(basename "$file" $ext)
     thumbfilename=$(basename "$thumbfile" .jpg)
     # Generate thumbnail 
-    # ffmpeg -y -i "$file" -filter:v scale=400:-2 "../../thumbnails/$thumbfile"
+    ffmpeg -y -i "$file" -filter:v scale=400:-2 "../../thumbnails/$thumbfile"
     # Encode the filename for use in a URL
     encoded_filename=$(echo "$file" | sed 's/ /%20/g')
     img_url="https://raw.github.com/twilsonco/openpilot/log-info/data/$encoded_dirname/$encoded_filename"

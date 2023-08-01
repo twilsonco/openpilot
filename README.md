@@ -1,4 +1,4 @@
-![intro_vid](https://github.com/twilsonco/openpilot/blob/log-info/img/comma-steering-control-vid.gif?raw=true)
+![intro_vid](https://github.com/twilsonco/openpilot/blob/log-info/comma-steering-control-vid.gif?raw=true)
 
 # Improving controls with log data
 
@@ -23,7 +23,7 @@ Head to the Comma, Community, or SunnyPilot Discord server #tuning (or tuning-nn
 - [6b Comma lateral data separate firmwares](https://github.com/twilsonco/openpilot/blob/log-info/sec/6b%20Comma%20lateral%20data%20separate%20firmwares.md) (     526 cars)
 - [6c Comma lateral data EPS firmware comparison](https://github.com/twilsonco/openpilot/blob/log-info/sec/6c%20Comma%20lateral%20data%20EPS%20firmware%20comparison.md) (      95 cars)
 - [7 Comma lateral torque NNFF fits](https://github.com/twilsonco/openpilot/blob/log-info/sec/7%20Comma%20lateral%20torque%20NNFF%20fits.md) (106 cars)
-- [8 Manual preliminary data fits](https://github.com/twilsonco/openpilot/blob/log-info/sec/8%20Manual%20preliminary%20data%20fits.md) (      28 cars)
+- [8 Manual preliminary data fits](https://github.com/twilsonco/openpilot/blob/log-info/sec/8%20Manual%20preliminary%20data%20fits.md) (      30 cars)
 
 
 
@@ -113,4 +113,4 @@ gm                                      27471 (33G)
   CHEVROLET VOLT PREMIER 2017           3028 (3.5G)
 ```
 
-Last updated July 28, 2023
+Last updated August 01, 2023
