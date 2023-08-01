@@ -1,4 +1,4 @@
-![intro_vid](https://github.com/twilsonco/openpilot/blob/log-info/comma-steering-control-vid.gif?raw=true)
+![intro_vid](https://github.com/twilsonco/openpilot/blob/log-info/img/comma-steering-control-vid.gif?raw=true)
 
 # Improving controls with log data
 
