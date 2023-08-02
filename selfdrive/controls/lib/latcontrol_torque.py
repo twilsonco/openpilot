@@ -297,7 +297,7 @@ class LatControlTorque(LatControl):
       pid_log.maxFutureLatAccel = max_future_lateral_accel
       pid_log.errorScaleFactor = error_scale_factor
       if self.use_nn_ff:
-        pid_log.nnffInputVector = nnff_log
+        pid_log.nnffInputVector = self.nnff_log
     pid_log.currentLateralAcceleration = actual_lateral_accel
     pid_log.currentLateralJerk = self.actual_lateral_jerk.x
       
