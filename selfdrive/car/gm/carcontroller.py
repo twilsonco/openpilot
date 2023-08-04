@@ -100,7 +100,11 @@ class CarController:
           # ASCM sends max regen when not enabled
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
+        elif near_stop and stopping and not CC.cruiseControl.resume:
+          self.apply_gas = self.params.INACTIVE_REGEN
+          self.apply_brake = int(min(-100 * self.CP.stopAccel, self.params.MAX_BRAKE))
         else:
+          # Normal operation
           self.apply_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
           self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
           # Don't allow any gas above inactive regen while stopping
@@ -110,6 +114,10 @@ class CarController:
           if self.CP.carFingerprint in CC_ONLY_CAR:
             # gas interceptor only used for full long control on cars without ACC
             interceptor_gas_cmd = clip((self.apply_gas - self.params.INACTIVE_REGEN) / (self.params.MAX_GAS - self.params.INACTIVE_REGEN), 0., 1.)
+
+        if CC.cruiseControl.resume and actuators.longControlState == LongCtrlState.starting:
+          interceptor_gas_cmd = self.params.SNG_INTERCEPTOR_GAS
+          self.apply_brake = 0
 
         idx = (self.frame // 4) % 4
 
