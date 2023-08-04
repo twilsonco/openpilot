@@ -54,6 +54,7 @@ addr_checks gm_rx_checks = {gm_addr_checks, GM_RX_CHECK_LEN};
 
 const uint16_t GM_PARAM_HW_CAM = 1;
 const uint16_t GM_PARAM_HW_CAM_LONG = 2;
+const uint16_t GM_PARAM_NO_CAMERA = 16;
 
 enum {
   GM_BTN_UNPRESS = 1,
@@ -65,6 +66,7 @@ enum {
 enum {GM_ASCM, GM_CAM} gm_hw = GM_ASCM;
 bool gm_cam_long = false;
 bool gm_pcm_cruise = false;
+bool gm_skip_relay_check = false;
 
 static int gm_rx_hook(CANPacket_t *to_push) {
 
@@ -255,6 +257,7 @@ static const addr_checks* gm_init(uint16_t param) {
   gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG);
 #endif
   gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long;
+  gm_skip_relay_check = GET_FLAG(param, GM_PARAM_NO_CAMERA);
   return &gm_rx_checks;
 }
 
