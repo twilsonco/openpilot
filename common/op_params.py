@@ -29,6 +29,8 @@ PARAMS_DIR = os.path.join(BASEDIR, 'community', 'params')
 IMPORTED_PATH = os.path.join(PARAMS_DIR, '.imported')
 OLD_PARAMS_FILE = os.path.join(BASEDIR, 'op_params.json')
 
+PARAM_PARAMS_DIR = "/data/params/d"
+
 HISTORY_FILE = os.path.join(BASEDIR, 'community', 'op_params_history.csv')
 HISTORY_DATETIME_FORMAT = "%Y/%m/%d %H:%M:%S"
 HISTORY_COLUMN_HEADINGS = [
@@ -38,6 +40,12 @@ HISTORY_COLUMN_HEADINGS = [
   "old value",
   "reason"
 ]
+
+def get_param_param_path(param_name):
+  return os.path.join(PARAM_PARAMS_DIR, param_name)
+
+def get_opparam_param_path(param_name):
+  return os.path.join(PARAMS_DIR, param_name)
 
 # write history. cancel write by setting reason to False
 def write_history(data):
@@ -899,7 +907,16 @@ class opParams:
 
   def _overwrite_param_params(self):
     for key, param in self.fork_params.items():
-      self.put_params(key, param.value)
+      if self.fork_params[key].param_param != '':
+        opparam_path = get_opparam_param_path(key)
+        param_param_path = get_param_param_path(self.fork_params[key].param_param)
+        # compare modified time of both files
+        if os.path.exists(opparam_path) and os.path.exists(param_param_path):
+          opparam_mtime = os.path.getmtime(opparam_path)
+          param_param_mtime = os.path.getmtime(param_param_path)
+          if opparam_mtime > param_param_mtime:
+            cloudlog.warning(f'opParams: {key}: Overwriting param param ({self.fork_params[key].param_param}) with opparam ({key})')
+            self.put_params(key, param.value)
           
   
   def _load_params(self, can_import=False):
@@ -941,10 +958,11 @@ class opParams:
         _write_param(key, self.params[key], reason="adding new param defaults (was corrected due to invalid value)")
 
   def _delete_and_reset(self, full_reset=False):
+    p = get_opparam_param_path(key)
     for key in list(self.params):
       if key in self._to_delete:
         del self.params[key]
-        os.remove(os.path.join(PARAMS_DIR, key))
+        os.remove(p)
     if full_reset:
       cloudlog.warning(warning("opParams: Performing a full reset of all params!"))
       for k,v in self.fork_params.items():
@@ -958,7 +976,6 @@ class opParams:
         except:
           dt = None
         for key in v:
-          p = os.path.join(PARAMS_DIR, key)
           if key in self.fork_params and os.path.exists(p): # key is exact match for param
             dm = datetime.fromtimestamp(os.path.getmtime(p)) # modification date
             if (dt is None or dm < dt) and self.params[key] != self.fork_params[key].default_value: # if param modification date older than cutoff, overwrite
@@ -977,7 +994,6 @@ class opParams:
                 m = r.match(key2)
                 if m is not None:
                   key1 = m.group()
-                  p = os.path.join(PARAMS_DIR, key1)
                   if key1 in self.fork_params and os.path.exists(p):
                     dm = datetime.fromtimestamp(os.path.getmtime(p)) # modification date
                     if (dt is None or dm < dt) and self.params[key1] != self.fork_params[key1].default_value: # if param modification date older than cutoff, overwrite
