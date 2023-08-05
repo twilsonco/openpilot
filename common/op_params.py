@@ -958,8 +958,8 @@ class opParams:
         _write_param(key, self.params[key], reason="adding new param defaults (was corrected due to invalid value)")
 
   def _delete_and_reset(self, full_reset=False):
-    p = get_opparam_param_path(key)
     for key in list(self.params):
+      p = get_opparam_param_path(key)
       if key in self._to_delete:
         del self.params[key]
         os.remove(p)
@@ -976,6 +976,7 @@ class opParams:
         except:
           dt = None
         for key in v:
+          p = get_opparam_param_path(key)
           if key in self.fork_params and os.path.exists(p): # key is exact match for param
             dm = datetime.fromtimestamp(os.path.getmtime(p)) # modification date
             if (dt is None or dm < dt) and self.params[key] != self.fork_params[key].default_value: # if param modification date older than cutoff, overwrite
