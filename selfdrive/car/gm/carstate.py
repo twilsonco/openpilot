@@ -552,12 +552,14 @@ class CarState(CarStateBase):
     
     if self.coasting_allowed and self.gear_shifter in ['drive', 'low'] and self.long_active:
       if self.is_ev and self.coasting_dl_enabled:
-        if not self.coasting_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.DRIVE:
+        if self.gear_shifter_ev == GEAR_SHIFTER2.DRIVE:
+          if not self.coasting_enabled:
+            put_nonblocking("CoastingActive", "1")
           self.coasting_enabled = True
-          put_nonblocking("CoastingActive", "1")
-        elif self.coasting_enabled and self.gear_shifter_ev == GEAR_SHIFTER2.LOW and (self.vEgo <= self.v_cruise_kph * CV.KPH_TO_MS or self.no_friction_braking):
+        elif self.gear_shifter_ev == GEAR_SHIFTER2.LOW and (self.vEgo <= 1.0 + self.v_cruise_kph * CV.KPH_TO_MS or self.no_friction_braking):
+          if self.coasting_enabled:
+            put_nonblocking("CoastingActive", "0")
           self.coasting_enabled = False
-          put_nonblocking("CoastingActive", "0")
       else:
         if self.coasting_enabled != self.coasting_enabled_last:
           if not self.coasting_enabled and self.vEgo > self.v_cruise_kph * CV.KPH_TO_MS and not self.no_friction_braking:
