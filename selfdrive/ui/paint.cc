@@ -617,12 +617,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   // paint lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
     NVGcolor color;
-    if (!scene.lateralPlan.lanelessModeStatus) {
-      color = interp_alert_color(1.f - scene.lane_line_probs[i], 255);
-    }
-    else{
-       color = COLOR_WHITE_ALPHA(int(scene.lane_line_probs[i] * 180.));
-    }
+    color = COLOR_WHITE_ALPHA(int(scene.lane_line_probs[i] * 180.));
     ui_draw_line(s, scene.lane_line_vertices[i], &color, nullptr);
   }
   if (!scene.lateralPlan.lanelessModeStatus) {
