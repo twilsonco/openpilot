@@ -24,7 +24,8 @@ This document describes the chronology of the overall project, as well as descri
       - [Past/future data in training](#pastfuture-data-in-training)
     - [On-road runner](#on-road-runner)
       - [Error "friction" response](#error-friction-response)
-      - [Full NN error response](#full-nn-error-response)
+      - [Full NN error response ("mk II")](#full-nn-error-response-mk-ii)
+      - [NN error response "mk III"](#nn-error-response-mk-iii)
     - [Longitudinal acceleration response](#longitudinal-acceleration-response)
         - [What didn't work](#what-didnt-work)
         - [What did work: Adjust future times](#what-did-work-adjust-future-times)
@@ -368,11 +369,26 @@ This makes the *actual* error response more effective, since the steering wheel 
 It also makes the error response smoother, because the actual correction occurs sooner, preventing a yet higher error response that results in overshoot and further correction.
 Instead the error stays low, and the resulting lower error response yields a smooth correction back to the target.
 
-#### Full NN error response
+#### Full NN error response ("mk II")
 
 Taking inspiration from Harald's current torque controller, I [convert from lateral acceleration error to steer torque error](https://github.com/twilsonco/openpilot/blob/84668d0104998071572ceef5ba89bf81bd5daab5/selfdrive/controls/lib/latcontrol_torque.py#L125) using the feedforward function.
 With the current torque controller, this amounts to a linear scaling of the error, but with NNFF (or any non-linear fits) you get a dynamic error response that's unlike any other type of lateral controller (100% credit to Harald for how this came to be).
 That that means is that [the current NN torque controller](https://github.com/twilsonco/openpilot/commit/a10ed4d637f8b6d48b1bc018688355c3f07a3ac2) error response is dynamic based on lateral acceleration error, lateral jerk error, and varies based on speed and road roll, **just like a human error response**.
+
+#### NN error response "mk III"
+
+Although the concept of the "mk II" error response is great, numerically it doesn't work well when there's a sigmoidal component to the lateral acceleration response, for reasons made obvious in the following image.
+
+| o _ O | ( __ ^ __ ) |
+| --- | --- |
+| ![error mk2](https://raw.github.com/twilsonco/openpilot/log-info/img/error-mk2.jpg) | In tight (high lateral accelration) corners, the difference in steer torque (∆y) for a given error (here, 1m/s²) is less than in slight curves. That is, ∆y1 > ∆y2. |
+
+So, "mk III" instead uses a simultaneously simpler and more complicated approach, where the lateral acceleration error is passed as the lateral acceleration NNFF input, and the lateral jerk error as the lateral jerk input. 
+The past lateral acceleration error is recorded and used, and for computing the future error, I devised a simple function that assumes that future error should tend towards zero, while using a continuous assumption based on previous error. Here's the [relevent code](https://github.com/twilsonco/openpilot/blob/d5d563d736f4ed6afa464c02b33929579fc9bc81/selfdrive/controls/lib/latcontrol_torque.py#L31), and a graphical depiction of what this future predicted error looks like for different types of past error values. 
+
+![predicted error](https://raw.github.com/twilsonco/openpilot/log-info/img/predicted-error.png)
+
+This approach is what I'm currently using, and it is giving the best lateral performance yet for the Volt.
 
 ### Longitudinal acceleration response
 
