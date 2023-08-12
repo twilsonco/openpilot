@@ -383,7 +383,9 @@ Although the concept of the "mk II" error response is great, numerically it does
 | --- | --- |
 | ![error mk2](https://raw.github.com/twilsonco/openpilot/log-info/img/error-mk2.jpg) | In tight (high lateral accelration) corners, the difference in steer torque (∆y) for a given error (here, 1m/s²) is less than in slight curves. That is, ∆y1 > ∆y2. |
 
-So, "mk III" instead uses a simultaneously simpler and more complicated approach, where the lateral acceleration error is passed as the lateral acceleration NNFF input, and the lateral jerk error as the lateral jerk input. 
+So, "mk III" instead uses a simultaneously simpler and more complicated approach, where the lateral acceleration error is passed as the lateral acceleration NNFF input, and the lateral jerk error as the lateral jerk input.
+This guarantees that the error response comes from the steepest (most responsive) part of the NNFF lateral acceleration slope.
+
 The past lateral acceleration error is recorded and used, and for computing the future error, I devised a simple function that assumes that future error should tend towards zero, while using a continuous assumption based on previous error. Here's the [relevent code](https://github.com/twilsonco/openpilot/blob/d5d563d736f4ed6afa464c02b33929579fc9bc81/selfdrive/controls/lib/latcontrol_torque.py#L31), and a graphical depiction of what this future predicted error looks like for different types of past error values. 
 
 ![predicted error](https://raw.github.com/twilsonco/openpilot/log-info/img/predicted-error.png)
