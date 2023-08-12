@@ -390,7 +390,11 @@ The past lateral acceleration error is recorded and used, and for computing the 
 
 ![predicted error](https://raw.github.com/twilsonco/openpilot/log-info/img/predicted-error.png)
 
-This approach is what I'm currently using, and it is giving the best lateral performance yet for the Volt.
+What this means is that when error is increasing, the future predicted error values will be greater, yielding a stronger error correction from the NNFF. 
+Likewise, if the error is quickly returning to zero, the overshoot is predicted and the opposite-sign future error values will cause NNFF to lower the re-centering steer torque earlier, preventing the overshoot.
+Then, all of this being handled by NNFF means it varies with speed/roll/etc.
+
+This approach is what I'm currently using, and it is giving the best lateral performance yet for the Volt that is snappy when it needs to be, and buttery smooth under normal conditions.
 
 ### Longitudinal acceleration response
 
