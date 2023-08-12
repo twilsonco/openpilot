@@ -248,7 +248,7 @@ This time, it works by using only data points with no steer rate (no lateral jer
 The resulting data can be assumed to have no steer torque due to lateral jerk, because we only take points with (sustained) near-zero lateral jerk, and no steer torque due to lateral accel (how hard you're turning) since we subtract off the "known" amount of torque using our existing lateral acceleration feedforward.
 That leaves only the steer torque due to the amount of road roll.
 
-![volt roll fit](https://raw.github.com/twilsonco/openpilot/log-info/data/7%20Manual%20preliminary%20data%20fits/volt%20lateral%20gravitational%20accel.gif)
+![volt roll fit](https://raw.github.com/twilsonco/openpilot/log-info/data/8%20Manual%20preliminary%20data%20fits/volt%20lateral%20gravitational%20accel.gif)
 
 Here we see that, as implied in Comma's torque controller, the roll compensation is linear with respect to the amount of roll. There also seems to be a speed dependence.
 
