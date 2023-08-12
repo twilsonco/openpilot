@@ -195,8 +195,10 @@ With an accurate lateral acceleration-based feedforward in hand, I was was able 
 
 The resulting data, and fit, look like this.
 
-![volt lat jerk fit same sign](https://raw.github.com/twilsonco/openpilot/log-info/data/8%20Manual%20preliminary%20data%20fits/volt%20lateral%20jerk%20same%20sign.gif)
-![volt lat jerk fit opposite sign](https://raw.github.com/twilsonco/openpilot/log-info/data/8%20Manual%20preliminary%20data%20fits/volt%20lateral%20jerk%20opposite%20sign.gif)
+| manual fits | neural network fit |
+| --- | --- |
+| ![volt lat jerk fit same sign](https://raw.github.com/twilsonco/openpilot/log-info/data/8%20Manual%20preliminary%20data%20fits/volt%20lateral%20jerk%20same%20sign.gif) | ![volt lat jerk response nnff](https://raw.github.com/twilsonco/openpilot/log-info/img/volt-lat-jerk-nnff.png) |
+| ![volt lat jerk fit opposite sign](https://raw.github.com/twilsonco/openpilot/log-info/data/8%20Manual%20preliminary%20data%20fits/volt%20lateral%20jerk%20opposite%20sign.gif) | Above is the lateral jerk response learned by the NN. Pretty close to the manual fit! |
 
 First, there are two plots because there are two primary cases to consider, based on whether the signs of lateral acceleration and lateral jerk are the same or opposite.
 If they are the same, then it means you're turning the wheel into the curve, entering the curve.
