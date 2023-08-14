@@ -118,9 +118,6 @@ class LatControlTorque(LatControl):
       self.lateral_accel_desired_deque = deque(maxlen=history_check_frames[0])
       self.roll_deque = deque(maxlen=history_check_frames[0])
       self.error_deque = deque(maxlen=history_check_frames[0])
-      
-      # For computing past/future values for error response.
-      self.past_future_len = (len(self.nnff_future_times) + len(self.history_frame_offsets))
     
       
     # for actual lateral jerk calculation
