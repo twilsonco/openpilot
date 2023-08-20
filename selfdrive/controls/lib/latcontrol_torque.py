@@ -239,7 +239,7 @@ class LatControlTorque(LatControl):
         future_error = predict_error(past_errors + [error], self.past_times + [0.0])
         future_errors = future_error(self.nnff_future_times_np).tolist()
         lat_jerk_error = 0.1 * (desired_lateral_jerk - self.actual_lateral_jerk._D.x)
-        nnff_error_input = [CS.vEgo, error, lat_jerk_error, roll] \
+        nnff_error_input = [CS.vEgo, error, lat_jerk_error, 0.0] \
                               + past_errors + future_errors
         
         torque_from_error = self.torque_from_nn(nnff_error_input)
