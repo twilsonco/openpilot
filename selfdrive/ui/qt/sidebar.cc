@@ -46,6 +46,9 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
   isFrogColors = isFrogTheme && params.getBool("FrogColors");
   const bool isFrogIcons = isFrogTheme && params.getBool("FrogIcons");
 
+  isFahrenheit = params.getBool("Fahrenheit");
+  isNumericalTemp = params.getBool("NumericalTemp");
+
   if (isFrogIcons) {
     flag_img = loadPixmap("../assets/images/frog_button_home.png", home_btn.size());
     home_img = loadPixmap("../assets/images/frog_button_home.png", home_btn.size());
@@ -54,7 +57,12 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
 }
 
 void Sidebar::mousePressEvent(QMouseEvent *event) {
-  if (onroad && home_btn.contains(event->pos())) {
+  QRect tempRect = {30, 338, 240, 126};
+  if (tempRect.contains(event->pos()) && isNumericalTemp) {
+    isFahrenheit = !isFahrenheit;
+    Params().putBool("Fahrenheit", isFahrenheit);
+    update();
+  } else if (onroad && home_btn.contains(event->pos())) {
     flag_pressed = true;
     update();
   } else if (settings_btn.contains(event->pos())) {
@@ -93,6 +101,8 @@ void Sidebar::updateState(const UIState &s) {
   setProperty("netStrength", strength > 0 ? strength + 1 : 0);
 
   // FrogPilot properties
+  int maxTempC = deviceState.getMaxTempC();
+  QString max_temp = isFahrenheit ? QString::number(maxTempC * 9 / 5 + 32) + "°F" : QString::number(maxTempC) + "°C";
 
   ItemStatus connectStatus;
   auto last_ping = deviceState.getLastAthenaPingTime();
@@ -105,12 +115,12 @@ void Sidebar::updateState(const UIState &s) {
   }
   setProperty("connectStatus", QVariant::fromValue(connectStatus));
 
-  ItemStatus tempStatus = {{tr("TEMP"), tr("HIGH")}, danger_color};
+  ItemStatus tempStatus = {{tr("TEMP"), isNumericalTemp ? max_temp : tr("HIGH")}, danger_color};
   auto ts = deviceState.getThermalStatus();
   if (ts == cereal::DeviceState::ThermalStatus::GREEN) {
-    tempStatus = {{tr("TEMP"), tr("GOOD")}, isFrogColors ? frog_color : good_color};
+    tempStatus = {{tr("TEMP"), isNumericalTemp ? max_temp : tr("GOOD")}, isFrogColors ? frog_color : good_color};
   } else if (ts == cereal::DeviceState::ThermalStatus::YELLOW) {
-    tempStatus = {{tr("TEMP"), tr("OK")}, warning_color};
+    tempStatus = {{tr("TEMP"), isNumericalTemp ? max_temp : tr("OK")}, warning_color};
   }
   setProperty("tempStatus", QVariant::fromValue(tempStatus));
 
