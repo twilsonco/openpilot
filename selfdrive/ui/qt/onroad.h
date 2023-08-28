@@ -16,6 +16,7 @@ const int img_size = (btn_size / 4) * 3;
 
 // FrogPilot global variables
 static bool map_open;
+static bool speedHidden;
 
 
 // ***** onroad widgets *****
