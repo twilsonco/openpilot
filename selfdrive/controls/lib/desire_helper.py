@@ -2,6 +2,7 @@ from cereal import log
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
+import numpy as np
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
@@ -43,11 +44,41 @@ class DesireHelper:
 
     # FrogPilot variables
     self.params = Params()
+    self.nudgeless = self.params.get_bool("NudgelessLaneChange")
+    self.lane_change_delay = self.nudgeless and self.params.get_int("LaneChangeTimer")
+    self.lane_detection = self.nudgeless and self.params.get_bool("LaneDetection")
+    self.one_lane_change = self.nudgeless and self.params.get_bool("OneLaneChange")
+    self.lane_available = False
+    self.lane_change_completed = False
+    self.lane_change_wait_timer = 0
 
-  def update(self, carstate, lateral_active, lane_change_prob):
+  # Lane detection
+  def calculate_lane_width(self, lane, current_lane):
+    sorted_indices = np.argsort(lane.x)
+    lane_y = np.interp(current_lane.x, np.array(lane.x)[sorted_indices], np.array(lane.y)[sorted_indices])
+    return np.amax(np.abs(current_lane.y - lane_y))
+
+  def update(self, carstate, lateral_active, lane_change_prob, modeldata, frogpilot_toggles_updated):
     v_ego = carstate.vEgo
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
+
+    # Check the lane change delay just in case the user changed its value mid drive
+    if self.nudgeless and frogpilot_toggles_updated:
+      self.lane_change_delay = self.params.get_int("LaneChangeTimer")
+
+    # Calculate the desired lane width for nudgeless lane change with lane detection
+    if not (self.lane_detection and one_blinker) or below_lane_change_speed or not lateral_active:
+      self.lane_available = True
+    else:
+      # Set the minimum lane threshold to 2.8 meters
+      min_lane_threshold = 2.8
+      # Set the blinker index based on which signal is on
+      blinker_index = 0 if carstate.leftBlinker else 1
+      current_lane = modeldata.laneLines[blinker_index + 1]
+      desired_lane = modeldata.laneLines[blinker_index if carstate.leftBlinker else blinker_index + 2]
+      # Check if the lane width exceeds the threshold
+      self.lane_available = self.calculate_lane_width(desired_lane, current_lane) >= min_lane_threshold
 
     if not lateral_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
@@ -57,6 +88,7 @@ class DesireHelper:
       if self.lane_change_state == LaneChangeState.off and one_blinker and not self.prev_one_blinker and not below_lane_change_speed:
         self.lane_change_state = LaneChangeState.preLaneChange
         self.lane_change_ll_prob = 1.0
+        self.lane_change_wait_timer = 0
 
       # LaneChangeState.preLaneChange
       elif self.lane_change_state == LaneChangeState.preLaneChange:
@@ -71,10 +103,18 @@ class DesireHelper:
         blindspot_detected = ((carstate.leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
                               (carstate.rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
 
+        # Conduct a nudgeless lane change if all the conditions are in place
+        self.lane_change_wait_timer += DT_MDL
+        if self.nudgeless and self.lane_available and not self.lane_change_completed and self.lane_change_wait_timer >= self.lane_change_delay:
+          torque_applied = True
+          self.lane_change_wait_timer = 0
+
         if not one_blinker or below_lane_change_speed:
           self.lane_change_state = LaneChangeState.off
           self.lane_change_direction = LaneChangeDirection.none
         elif torque_applied and not blindspot_detected:
+          # Set the "lane_change_completed" flag to prevent any more lane changes if the toggle is on
+          self.lane_change_completed = self.one_lane_change
           self.lane_change_state = LaneChangeState.laneChangeStarting
 
       # LaneChangeState.laneChangeStarting
@@ -97,6 +137,8 @@ class DesireHelper:
             self.lane_change_state = LaneChangeState.preLaneChange
           else:
             self.lane_change_state = LaneChangeState.off
+            # Reset the "lane_change_completed" flag
+            self.lane_change_completed = False
 
     if self.lane_change_state in (LaneChangeState.off, LaneChangeState.preLaneChange):
       self.lane_change_timer = 0.0
