@@ -78,8 +78,13 @@ def get_T_FOLLOW(personality=log.LongitudinalPersonality.standard):
   else:
     raise NotImplementedError("Longitudinal personality not supported")
 
-def get_stopped_equivalence_factor(v_lead):
-  return (v_lead**2) / (2 * COMFORT_BRAKE)
+def get_stopped_equivalence_factor(v_ego, v_lead, increased_stopping_distance):
+  distance_offset = 0
+  speed_difference = v_ego - v_lead
+  if np.all(increased_stopping_distance >= v_lead):
+    # Increase the stopping distance for a more comfortable stop
+    distance_offset -= np.maximum(0, increased_stopping_distance - speed_difference)
+  return (v_lead**2) / (2 * COMFORT_BRAKE) + distance_offset
 
 def get_safe_obstacle_distance(v_ego, t_follow):
   return (v_ego**2) / (2 * COMFORT_BRAKE) + t_follow * v_ego + STOP_DISTANCE
@@ -337,7 +342,7 @@ class LongitudinalMpc:
     self.cruise_min_a = min_a
     self.max_a = max_a
 
-  def update(self, radarstate, v_cruise, x, v, a, j, personality=log.LongitudinalPersonality.standard):
+  def update(self, radarstate, v_cruise, x, v, a, j, increased_stopping_distance, personality=log.LongitudinalPersonality.standard):
     t_follow = get_T_FOLLOW(personality)
     v_ego = self.x0[1]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
@@ -354,8 +359,8 @@ class LongitudinalMpc:
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
-    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
-    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
+    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(self.x_sol[:,1], lead_xv_0[:,1], increased_stopping_distance)
+    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(self.x_sol[:,1], lead_xv_1[:,1], increased_stopping_distance)
 
     self.params[:,0] = ACCEL_MIN
     self.params[:,1] = self.max_a

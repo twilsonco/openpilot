@@ -147,6 +147,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"HasAcceptedTerms", PERSISTENT},
     {"HideSpeed", PERSISTENT},
     {"IMEI", PERSISTENT},
+    {"IncreasedStoppingDistance", PERSISTENT},
     {"InstallDate", PERSISTENT},
     {"IsDriverViewEnabled", CLEAR_ON_MANAGER_START},
     {"IsEngaged", PERSISTENT},

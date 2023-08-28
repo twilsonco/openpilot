@@ -49,7 +49,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0):
     self.CP = CP
-    self.mpc = LongitudinalMpc()
+    self.mpc = LongitudinalMpc(self.CP)
     self.fcw = False
 
     self.a_desired = init_a
@@ -66,12 +66,15 @@ class LongitudinalPlanner:
     self.personality = log.LongitudinalPersonality.standard
 
     # FrogPilot variables
+    self.increased_stopping_distance = self.params.get_int("IncreasedStoppingDistance") if self.CP.longitudinalTune else 0
     self.frogpilot_toggles_updated = False
     self.params_memory = Params("/dev/shm/params")
     self.read_param()
 
   def read_param(self):
     if self.frogpilot_toggles_updated:
+      if self.CP.longitudinalTune:
+        self.increased_stopping_distance = self.params.get_int("IncreasedStoppingDistance")
     try:
       self.personality = int(self.params.get('LongitudinalPersonality'))
     except (ValueError, TypeError):
@@ -140,7 +143,7 @@ class LongitudinalPlanner:
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
-    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, personality=self.personality)
+    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, self.increased_stopping_distance, personality=self.personality)
 
     self.x_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.x_solution)
     self.v_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.v_solution)
