@@ -504,6 +504,7 @@ struct CarParams {
   wheelSpeedFactor @63 :Float32; # Multiplier on wheels speeds to computer actual speeds
 
   # FrogPilot CarParams
+  accelerationProfile @73 :UInt8;
   lateralTune @78 :Bool;
   longitudinalTune @79 :Bool;
   pfeiferjDesiredCurvatures @80 :Bool;
