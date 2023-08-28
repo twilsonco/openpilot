@@ -417,6 +417,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {tr("Visuals"), new FrogPilotVisualsPanel(this)},
   };
 
+  if (Params().getInt("PrimeType") == 0) {
+    panels.append({tr("Navigation"), new FrogPilotNavigationPanel(this)});
+  }
+
   nav_btns = new QButtonGroup(this);
   for (auto &[name, panel] : panels) {
     QPushButton *btn = new QPushButton(name);

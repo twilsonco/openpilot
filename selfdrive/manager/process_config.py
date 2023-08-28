@@ -92,6 +92,9 @@ procs = [
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
+
+  # FrogPilot procs
+  PythonProcess("otisserv", "selfdrive.navd.otisserv", always_run),
 ]
 
 managed_processes = {p.name: p for p in procs}

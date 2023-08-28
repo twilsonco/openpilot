@@ -5,9 +5,11 @@
 #include <QApplication>
 #include <QDebug>
 
+#include "common/params.h"
 #include "common/util.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
+#include "selfdrive/ui/qt/network/wifi_manager.h"
 
 static void swap(QJsonValueRef v1, QJsonValueRef v2) { std::swap(v1, v2); }
 
@@ -62,7 +64,14 @@ MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
       title->setStyleSheet("color: #FFFFFF; font-size: 54px; font-weight: 600;");
       heading->addWidget(title);
 
-      auto *subtitle = new QLabel(tr("Manage at connect.comma.ai"), this);
+      QLabel *subtitle;
+      if (Params().getInt("PrimeType") == 0) {
+        WifiManager* wifi = new WifiManager(this);
+        QString ipAddress = QString("%1:8082").arg(wifi->getIp4Address());
+        subtitle = new QLabel(tr("Manage at %1").arg(ipAddress), this);
+      } else {
+        subtitle = new QLabel(tr("Manage at connect.comma.ai"), this);
+      }
       subtitle->setStyleSheet("color: #A0A0A0; font-size: 40px; font-weight: 300;");
       heading->addWidget(subtitle);
     }

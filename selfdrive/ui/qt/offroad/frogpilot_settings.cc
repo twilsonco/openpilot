@@ -151,6 +151,63 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
   setInitialToggleStates();
 }
 
+FrogPilotNavigationPanel::FrogPilotNavigationPanel(QWidget *parent) : FrogPilotPanel(parent), instructionsStep(new QLabel(this)), updateTimer(new QTimer(this)), wifiManager(new WifiManager(this)) {
+  auto mainLayout = new QVBoxLayout(this);
+
+  mainLayout->addWidget(instructionsStep, 0, Qt::AlignCenter);
+
+  mapboxSettingsLabel = new QLabel("", this);
+  mainLayout->addWidget(mapboxSettingsLabel, 0, Qt::AlignBottom | Qt::AlignCenter);
+
+  connect(updateTimer, &QTimer::timeout, this, &FrogPilotNavigationPanel::retrieveAndUpdateStatus);
+  updateTimer->start(100);
+
+  setupCompleted = !params.get("MapboxPublicKey").empty() && !params.get("MapboxSecretKey").empty();
+
+  retrieveAndUpdateStatus();
+}
+
+void FrogPilotNavigationPanel::retrieveAndUpdateStatus() {
+  const bool deviceOnline = int((*uiState()->sm)["deviceState"].getDeviceState().getNetworkStrength()) != 0;
+  const bool mapboxPublicKeySet = !params.get("MapboxPublicKey").empty();
+  const bool mapboxSecretKeySet = !params.get("MapboxSecretKey").empty();
+
+  if (deviceOnline) {
+    updateIpAddressLabel();
+  }
+  if (deviceOnline != prevDeviceOnline || mapboxPublicKeySet != prevMapboxPublicKeySet || mapboxSecretKeySet != prevMapboxSecretKeySet) {
+    updateUI(deviceOnline, mapboxPublicKeySet, mapboxSecretKeySet);
+    prevDeviceOnline = deviceOnline;
+    prevMapboxPublicKeySet = mapboxPublicKeySet;
+    prevMapboxSecretKeySet = mapboxSecretKeySet;
+  }
+}
+
+void FrogPilotNavigationPanel::updateIpAddress(const QString& newIpAddress) {
+  mapboxSettingsLabel->setText(QString(IP_FORMAT).arg(newIpAddress));
+}
+
+void FrogPilotNavigationPanel::updateIpAddressLabel() {
+  mapboxSettingsLabel->setText(QString(IP_FORMAT).arg(wifiManager->getIp4Address()));
+}
+
+void FrogPilotNavigationPanel::showEvent(QShowEvent *event) {
+  retrieveAndUpdateStatus();
+  QWidget::showEvent(event);
+}
+
+void FrogPilotNavigationPanel::updateUI(const bool deviceOnline, const bool mapboxPublicKeySet, const bool mapboxSecretKeySet) {
+  static QString imageName = "offline.png";
+  if (deviceOnline) {
+    if (!setupCompleted) {
+      imageName = !mapboxPublicKeySet ? "no_keys_set.png" : (!mapboxSecretKeySet ? "public_key_set.png" : "both_keys_set.png");
+    } else if (setupCompleted) {
+      imageName = "setup_completed.png";
+    }
+  }
+  instructionsStep->setPixmap(QPixmap(IMAGE_PATH + imageName));
+}
+
 ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QString &label, const QString &desc, const QString &icon, QWidget *parent) {
   ParamControl *control = new ParamControl(key, label, desc, icon);
   connect(control, &ParamControl::toggleFlipped, [=](bool state) {
