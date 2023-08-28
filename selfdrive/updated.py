@@ -195,6 +195,7 @@ def finalize_update() -> None:
   params = Params()
   params.put("Updated", datetime.datetime.now().astimezone(ZoneInfo('America/Phoenix')).strftime("%B %d, %Y - %I:%M%p"));
   params.put_bool("DefaultParamsSet", False);       # Check the params again upon boot just in case of new toggles
+  params.put_bool("DisableInternetCheck", False);   # Reset the param since the user has internet connection again
   if os.path.exists("/data/openpilot/prebuilt"):
     os.remove("/data/openpilot/prebuilt")           # Remove the prebuilt file when installing updates
 
@@ -229,6 +230,7 @@ class Updater:
     self._has_internet: bool = False
 
     # FrogPilot variables
+    self.disable_internet_check = self.params.get_bool("DisableInternetCheck")
 
   @property
   def has_internet(self) -> bool:
@@ -320,6 +322,8 @@ class Updater:
       set_offroad_alert(alert, False)
 
     now = datetime.datetime.utcnow()
+    if self.disable_internet_check:
+      last_update = now
     dt = now - last_update
     if failed_count > 15 and exception is not None and self.has_internet:
       if is_tested_branch():
