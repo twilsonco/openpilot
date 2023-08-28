@@ -166,6 +166,7 @@ typedef struct UIScene {
   bool wide_camera_disabled;
   int screen_brightness;
   int steering_angle_deg;
+  int steering_wheel;
 
 } UIScene;
 

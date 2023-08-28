@@ -251,6 +251,16 @@ ExperimentalButton::ExperimentalButton(QWidget *parent) : experimental_mode(fals
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
   QObject::connect(this, &QPushButton::clicked, this, &ExperimentalButton::changeMode);
+
+  // Custom steering wheel images
+  wheel_images = {
+    {0, loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size})},
+    {1, loadPixmap("../assets/lexus.png", {img_size, img_size})},
+    {2, loadPixmap("../assets/toyota.png", {img_size, img_size})},
+    {3, loadPixmap("../assets/frog.png", {img_size, img_size})},
+    {4, loadPixmap("../assets/rocket.png", {img_size, img_size})},
+    {5, loadPixmap("../assets/hyundai.png", {img_size, img_size})}
+  };
 }
 
 void ExperimentalButton::changeMode() {
@@ -273,14 +283,18 @@ void ExperimentalButton::updateState(const UIState &s) {
   }
 
   // FrogPilot properties
+  setProperty("steeringWheel", s.scene.steering_wheel);
 }
 
 void ExperimentalButton::paintEvent(QPaintEvent *event) {
   const auto &scene = uiState()->scene;
   if (!scene.rotating_wheel) {
     QPainter p(this);
-    QPixmap img = experimental_mode ? experimental_img : engage_img;
-    drawIcon(p, QPoint(btn_size / 2, btn_size / 2), img, QColor(0, 0, 0, 166), (isDown() || !engageable) ? 0.6 : 1.0);
+    // Custom steering wheel icon
+    engage_img = wheel_images[steeringWheel];
+    QPixmap img = steeringWheel ? engage_img : (experimental_mode ? experimental_img : engage_img);
+    QColor background_color = steeringWheel && (!isDown() && engageable) ? (experimental_mode ? QColor(218, 111, 37, 241) : scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166)) : QColor(0, 0, 0, 166);
+    drawIcon(p, QPoint(btn_size / 2, btn_size / 2), img, background_color, (isDown() || !engageable) ? 0.6 : 1.0);
   }
 }
 
@@ -323,6 +337,16 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   // FrogPilot images
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
+
+  // Custom steering wheel images
+  wheel_images = {
+    {0, loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size})},
+    {1, loadPixmap("../assets/lexus.png", {img_size, img_size})},
+    {2, loadPixmap("../assets/toyota.png", {img_size, img_size})},
+    {3, loadPixmap("../assets/frog.png", {img_size, img_size})},
+    {4, loadPixmap("../assets/rocket.png", {img_size, img_size})},
+    {5, loadPixmap("../assets/hyundai.png", {img_size, img_size})}
+  };
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
@@ -382,6 +406,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("muteDM", s.scene.mute_dm);
   setProperty("rotatingWheel", s.scene.rotating_wheel);
   setProperty("steeringAngleDeg", s.scene.steering_angle_deg);
+  setProperty("steeringWheel", s.scene.steering_wheel);
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
@@ -484,8 +509,10 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   // Rotating steering wheel
   if (rotatingWheel) {
     const auto &scene = uiState()->scene;
-    QPixmap img = experimentalMode ? experimental_img : engage_img;
-    QColor background_color = QColor(0, 0, 0, 166);
+    // Custom steering wheel icon
+    engage_img = wheel_images[steeringWheel];
+    QPixmap img = steeringWheel ? engage_img : (experimentalMode ? experimental_img : engage_img);
+    QColor background_color = steeringWheel && (status != STATUS_DISENGAGED) ? (experimentalMode ? QColor(218, 111, 37, 241) : scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166)) : QColor(0, 0, 0, 166);
     drawIconRotate(p, QPoint(rect().right() - btn_size / 2 - UI_BORDER_SIZE * 2 + 25, btn_size / 2 + int(UI_BORDER_SIZE * 1.5)), img, background_color, status != STATUS_DISENGAGED ? 1.0 : 0.6, steeringAngleDeg);
   }
 
