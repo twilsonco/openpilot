@@ -234,6 +234,9 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("gpsLocationExternal")) {
     const auto gpsLocationExternal = sm["gpsLocationExternal"].getGpsLocationExternal();
+    if (scene.compass) {
+      scene.bearing_deg = gpsLocationExternal.getBearingDeg();
+    }
   }
   if (sm.updated("lateralPlan")) {
     const auto lateralPlan = sm["lateralPlan"].getLateralPlan();
@@ -265,6 +268,7 @@ void ui_update_params(UIState *s) {
     scene.default_params_set = params.getBool("DefaultParamsSet");
   }
   if (!toggles_checked && scene.default_params_set) {
+    scene.compass = params.getBool("Compass");
     scene.custom_road_ui = params.getBool("CustomRoadUI");
     scene.blind_spot_path = scene.custom_road_ui && params.getBool("BlindSpotPath");
     scene.frog_theme = params.getBool("FrogTheme");
