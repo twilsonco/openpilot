@@ -401,6 +401,8 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   }
 
   // FrogPilot properties
+  setProperty("blindSpotLeft", s.scene.blind_spot_left);
+  setProperty("blindSpotRight", s.scene.blind_spot_right);
   setProperty("experimentalMode", s.scene.experimental_mode);
   setProperty("frogColors", s.scene.frog_colors);
   setProperty("muteDM", s.scene.mute_dm);
@@ -633,6 +635,54 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices);
+
+  // create new path with track vertices and track edge vertices
+  QPainterPath path;
+  path.addPolygon(scene.track_vertices);
+  path.addPolygon(scene.track_edge_vertices);
+
+  // paint path edges
+  QLinearGradient pe(0, height(), 0, 0);
+  if (experimentalMode) {
+    pe.setColorAt(0.0, QColor::fromHslF(25 / 360., 0.71, 0.50, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(25 / 360., 0.71, 0.50, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(25 / 360., 0.71, 0.50, 0.1));
+  } else if (scene.navigate_on_openpilot) {
+    pe.setColorAt(0.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.1));
+  } else if (frogColors) {
+    pe.setColorAt(0.0, QColor::fromHslF(150 / 360., 0.75, 0.25, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(150 / 360., 0.75, 0.25, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(150 / 360., 0.75, 0.25, 0.1));
+  } else {
+    pe.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.00, 0.68, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(112 / 360., 1.00, 0.68, 0.1));
+  }
+
+  painter.setBrush(pe);
+  painter.drawPath(path);
+
+  // paint adjacent lane paths
+  const bool speedCheck = speed >= (is_metric ? 32 : 20);
+  const bool isNotTurning = abs(steeringAngleDeg) <= 60;
+
+  // paint blindspot path
+  QLinearGradient bs(0, height(), 0, 0);
+  if ((blindSpotLeft || blindSpotRight) && speedCheck && isNotTurning && is_cruise_set) {
+    bs.setColorAt(0.0, QColor::fromHslF(0 / 360., 0.75, 0.50, 0.6));
+    bs.setColorAt(0.5, QColor::fromHslF(0 / 360., 0.75, 0.50, 0.4));
+    bs.setColorAt(1.0, QColor::fromHslF(0 / 360., 0.75, 0.50, 0.2));
+  }
+
+  painter.setBrush(bs);
+  if (blindSpotLeft) {
+    painter.drawPolygon(scene.track_left_adjacent_lane_vertices);
+  }
+  if (blindSpotRight) {
+    painter.drawPolygon(scene.track_right_adjacent_lane_vertices);
+  }
 
   painter.restore();
 }

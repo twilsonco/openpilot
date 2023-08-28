@@ -151,5 +151,7 @@ class LateralPlanner:
     lateralPlan.laneChangeDirection = self.DH.lane_change_direction
 
     # FrogPilot lateral variables
+    lateralPlan.laneWidthLeft = float(self.DH.lane_width_left)
+    lateralPlan.laneWidthRight = float(self.DH.lane_width_right)
 
     pm.send('lateralPlan', plan_send)

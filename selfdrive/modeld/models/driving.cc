@@ -233,6 +233,11 @@ void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<floa
   std::array<float, TRAJECTORY_SIZE> left_near_y, left_near_z;
   std::array<float, TRAJECTORY_SIZE> right_near_y, right_near_z;
   std::array<float, TRAJECTORY_SIZE> right_far_y, right_far_z;
+
+  // Blindspot path
+  std::array<float, TRAJECTORY_SIZE> left_bs_y, left_bs_z;
+  std::array<float, TRAJECTORY_SIZE> right_bs_y, right_bs_z;
+
   for (int j=0; j<TRAJECTORY_SIZE; j++) {
     left_far_y[j] = lanes.mean.left_far[j].y;
     left_far_z[j] = lanes.mean.left_far[j].z;
@@ -242,13 +247,21 @@ void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<floa
     right_near_z[j] = lanes.mean.right_near[j].z;
     right_far_y[j] = lanes.mean.right_far[j].y;
     right_far_z[j] = lanes.mean.right_far[j].z;
+
+    // Blindspot path
+    left_bs_y[j] = (left_far_y[j] + left_near_y[j]) / 2;
+    left_bs_z[j] = (left_far_z[j] + left_near_z[j]) / 2;
+    right_bs_y[j] = (right_far_y[j] + right_near_y[j]) / 2;
+    right_bs_z[j] = (right_far_z[j] + right_near_z[j]) / 2;
   }
 
-  auto lane_lines = framed.initLaneLines(4);
+  auto lane_lines = framed.initLaneLines(6);
   fill_xyzt(lane_lines[0], plan_t, X_IDXS_FLOAT, left_far_y, left_far_z);
   fill_xyzt(lane_lines[1], plan_t, X_IDXS_FLOAT, left_near_y, left_near_z);
   fill_xyzt(lane_lines[2], plan_t, X_IDXS_FLOAT, right_near_y, right_near_z);
   fill_xyzt(lane_lines[3], plan_t, X_IDXS_FLOAT, right_far_y, right_far_z);
+  fill_xyzt(lane_lines[4], plan_t, X_IDXS_FLOAT, left_bs_y, left_bs_z);   // Left blindspot path
+  fill_xyzt(lane_lines[5], plan_t, X_IDXS_FLOAT, right_bs_y, right_bs_z); // Right blindspot path
 
   framed.setLaneLineStds({
     exp(lanes.std.left_far[0].y),

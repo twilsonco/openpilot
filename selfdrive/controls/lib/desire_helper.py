@@ -44,6 +44,7 @@ class DesireHelper:
 
     # FrogPilot variables
     self.params = Params()
+    self.blindspot_path = self.params.get_bool("CustomRoadUI") and self.params.get_bool("BlindSpotPath")
     self.nudgeless = self.params.get_bool("NudgelessLaneChange")
     self.lane_change_delay = self.nudgeless and self.params.get_int("LaneChangeTimer")
     self.lane_detection = self.nudgeless and self.params.get_bool("LaneDetection")
@@ -51,6 +52,8 @@ class DesireHelper:
     self.lane_available = False
     self.lane_change_completed = False
     self.lane_change_wait_timer = 0
+    self.lane_width_left = 0
+    self.lane_width_right = 0
 
   # Lane detection
   def calculate_lane_width(self, lane, current_lane):
@@ -66,6 +69,12 @@ class DesireHelper:
     # Check the lane change delay just in case the user changed its value mid drive
     if self.nudgeless and frogpilot_toggles_updated:
       self.lane_change_delay = self.params.get_int("LaneChangeTimer")
+
+    # Calculate left and right lane widths for the blindspot path
+    if self.blindspot_path and not below_lane_change_speed and lateral_active:
+      # Calculate left and right lane widths
+      self.lane_width_left = self.calculate_lane_width(modeldata.laneLines[0], modeldata.laneLines[1])
+      self.lane_width_right = self.calculate_lane_width(modeldata.laneLines[3], modeldata.laneLines[2])
 
     # Calculate the desired lane width for nudgeless lane change with lane detection
     if not (self.lane_detection and one_blinker) or below_lane_change_speed or not lateral_active:

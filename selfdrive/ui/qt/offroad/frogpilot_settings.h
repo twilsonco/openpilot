@@ -176,6 +176,26 @@ ParamControllerInt(LaneChangeTimer, "LaneChangeTimer", "   Lane Change Timer", "
   return std::clamp(v, 0, 10);
 )
 
+ParamControllerInt(LaneLinesWidth, "LaneLinesWidth", "Lanes", "Customize the lane line width.\n\nDefault matches the MUTCD average of 4 inches.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("LaneLinesWidth")) + " in";,
+  return std::clamp(v, 0, 24);
+)
+
+ParamControllerInt(PathEdgeWidth, "PathEdgeWidth", "Path Edges", "Customize the path edge width that displays current driving statuses.\n\nDefault is 20% of the total path.\n\nBlue = Navigation\nLight Blue = Always On Lateral\nGreen = Default with 'FrogPilot Colors'\nLight Green = Default with stock colors\nOrange = Experimental Mode Active\nYellow = Conditional Overriden", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("PathEdgeWidth")) + "%";,
+  return std::clamp(v, 0, 100);
+)
+
+ParamControllerInt(PathWidth, "PathWidth", "Path", "Customize the path width.\n\nDefault matches the width of a 2019 Lexus ES 350.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("PathWidth") / 10.0) + " ft";,
+  return std::clamp(v, 0, 100);
+)
+
+ParamControllerInt(RoadEdgesWidth, "RoadEdgesWidth", "Road Edges", "Customize the road edges width.\n\nDefault is 1/2 of the MUTCD average lane line width of 4 inches.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("RoadEdgesWidth")) + " in";,
+  return std::clamp(v, 0, 24);
+)
+
 ParamControllerInt(ScreenBrightness, "ScreenBrightness", "Screen Brightness", "Set a custom screen brightness level or use the default 'Auto' brightness setting.", "../assets/offroad/icon_light.png",
   int brightness = params.getInt("ScreenBrightness");
   return brightness == 101 ? "Auto" : brightness == 0 ? "Off" : QString::number(brightness) + "%";,
