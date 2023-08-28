@@ -95,12 +95,18 @@ class AnnotatedCameraWidget : public CameraWidget {
   Q_PROPERTY(bool toyotaCar MEMBER toyotaCar);
   Q_PROPERTY(bool turnSignalLeft MEMBER turnSignalLeft);
   Q_PROPERTY(bool turnSignalRight MEMBER turnSignalRight);
+  Q_PROPERTY(float laneWidthLeft MEMBER laneWidthLeft);
+  Q_PROPERTY(float laneWidthRight MEMBER laneWidthRight);
   Q_PROPERTY(int bearingDeg MEMBER bearingDeg);
   Q_PROPERTY(int conditionalSpeed MEMBER conditionalSpeed);
   Q_PROPERTY(int conditionalSpeedLead MEMBER conditionalSpeedLead);
   Q_PROPERTY(int conditionalStatus MEMBER conditionalStatus);
+  Q_PROPERTY(int desiredFollow MEMBER desiredFollow);
+  Q_PROPERTY(int developerUI MEMBER developerUI);
+  Q_PROPERTY(int obstacleDistance MEMBER obstacleDistance);
   Q_PROPERTY(int steeringAngleDeg MEMBER steeringAngleDeg);
   Q_PROPERTY(int steeringWheel MEMBER steeringWheel);
+  Q_PROPERTY(int stoppedEquivalence MEMBER stoppedEquivalence);
 
 public:
   explicit AnnotatedCameraWidget(VisionStreamType type, QWidget* parent = 0);
@@ -113,6 +119,7 @@ private:
 
   // FrogPilot widgets
   void drawCompass(QPainter &p);
+  void drawDeveloperUI(QPainter &p);
   void drawDrivingPersonalities(QPainter &p);
   void drawFrogSignals(QPainter &p);
   void drawStatusBar(QPainter &p);
@@ -154,13 +161,20 @@ private:
   bool toyotaCar;
   bool turnSignalLeft;
   bool turnSignalRight;
+  double maxAcceleration = std::numeric_limits<double>::lowest();
+  float laneWidthLeft;
+  float laneWidthRight;
   int animationFrameIndex;
   int bearingDeg;
   int conditionalSpeed;
   int conditionalSpeedLead;
   int conditionalStatus;
+  int desiredFollow;
+  int developerUI;
+  int obstacleDistance;
   int steeringAngleDeg;
   int steeringWheel;
+  int stoppedEquivalence;
   QPixmap compass_inner_img;
   QPixmap engage_img;
   QPixmap experimental_img;

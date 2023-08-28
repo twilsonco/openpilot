@@ -144,7 +144,7 @@ class className : public ParamValueControl { \
   Q_OBJECT \
 public: \
   className() : ParamValueControl(labelText, descText, iconPath) { \
-    if (std::string(#className) == "DeviceShutdownTimer" || std::string(#className) == "IncreasedStoppingDistance" || std::string(#className) == "SteeringWheel") { \
+    if (std::string(#className) == "DeveloperUI" || std::string(#className) == "DeviceShutdownTimer" || std::string(#className) == "IncreasedStoppingDistance" || std::string(#className) == "SteeringWheel") { \
       label.setFixedWidth(225); \
     } \
     refresh(); \
@@ -190,6 +190,12 @@ ParamControllerInt(ConditionalExperimentalModeSpeedLead, "ConditionalExperimenta
   int value = params.getInt("ConditionalExperimentalModeSpeedLead");
   return value == 0 ? "Off" : QString::number(value) + "mph";,
   return std::clamp(v, 0, 99);
+)
+
+ParamControllerInt(DeveloperUI, "DeveloperUI", "Developer UI", "Displays various information about openpilot and the device itself.", "../assets/offroad/icon_developer.png",
+  int value = params.getInt("DeveloperUI");
+  return value == 0 ? "Off" : value == 1 ? "'merican" : value == 2 ? "Metric" : "SI";,
+  return v >= 0 ? v % 4 : 3;
 )
 
 ParamControllerInt(DeviceShutdownTimer, "DeviceShutdownTimer", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../assets/offroad/icon_time.png",

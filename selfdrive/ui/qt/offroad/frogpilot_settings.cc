@@ -104,6 +104,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
     {"FrogTheme", "FrogPilot Theme", "Enable the beloved FrogPilot Theme! Disable toggle to revert back to the stock openpilot theme.", "../assets/images/frog_button_home.png"},
     {"Compass", "Compass", "Add a compass to the onroad UI that indicates your current driving direction.", "../assets/offroad/icon_compass.png"},
     {"CustomRoadUI", "Custom Road UI", "Customize the road UI to your liking.", "../assets/offroad/icon_road.png"},
+    {"DeveloperUI", "Developer UI", "Display various information about openpilot and the device itself.", "../assets/offroad/icon_developer.png"},
     {"NumericalTemp", "Numerical Temperature Gauge", "Replace openpilot's 'GOOD', 'OK', and 'HIGH' temperature statuses with numerical values.\n\nTap the gauge to switch between Celsius and Fahrenheit.", "../assets/offroad/icon_temp.png"},
     {"RotatingWheel", "Rotating Steering Wheel", "The steering wheel in top right corner of the onroad UI rotates alongside your physical steering wheel.", "../assets/offroad/icon_rotate.png"},
     {"ScreenBrightness", "Screen Brightness", "Choose a custom screen brightness level or use the default 'Auto' brightness setting.", "../assets/offroad/icon_light.png"},
@@ -133,6 +134,9 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
         {"BlindSpotPath", "Blind Spot Path"},
         {"UnlimitedLength", "'Unlimited' Road UI Length"},
       }, mainLayout);
+    } else if (key == "DeveloperUI") {
+      mainLayout->addWidget(new DeveloperUI());
+      mainLayout->addWidget(horizontal_line());
     } else if (key == "ScreenBrightness") {
       mainLayout->addWidget(new ScreenBrightness());
       mainLayout->addWidget(horizontal_line());

@@ -42,6 +42,8 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
 
   // FrogPilot variables
   static auto params = Params();
+  isDeveloperUI = params.getInt("DeveloperUI");
+
   const bool isFrogTheme = params.getBool("FrogTheme");
   isFrogColors = isFrogTheme && params.getBool("FrogColors");
   const bool isFrogIcons = isFrogTheme && params.getBool("FrogIcons");
@@ -101,8 +103,31 @@ void Sidebar::updateState(const UIState &s) {
   setProperty("netStrength", strength > 0 ? strength + 1 : 0);
 
   // FrogPilot properties
+  auto cpu_loads = deviceState.getCpuUsagePercent();
+  int cpu_usage = std::accumulate(cpu_loads.begin(), cpu_loads.end(), 0) / cpu_loads.size();
   int maxTempC = deviceState.getMaxTempC();
-  QString max_temp = isFahrenheit ? QString::number(maxTempC * 9 / 5 + 32) + "°F" : QString::number(maxTempC) + "°C";
+  int memory_usage = deviceState.getMemoryUsagePercent();
+  QString cpu = QString::number(cpu_usage) + "%";
+  QString max_temp = isFahrenheit || (isDeveloperUI == 1 && isFahrenheit) ? QString::number(maxTempC * 9 / 5 + 32) + "°F" : QString::number(maxTempC) + "°C";
+  QString memory = QString::number(memory_usage) + "%";
+
+  // Developer UI
+  if (isDeveloperUI) {
+    ItemStatus cpuStatus = {{tr("CPU"), cpu}, isFrogColors ? frog_color : good_color};
+    if (cpu_usage >= 85) {
+      cpuStatus = {{tr("CPU"), cpu}, danger_color};
+    } else if (cpu_usage >= 70) {
+      cpuStatus = {{tr("CPU"), cpu}, warning_color};
+    }
+    ItemStatus memoryStatus = {{tr("MEMORY"), memory}, isFrogColors ? frog_color : good_color};
+    if (memory_usage >= 85) {
+      memoryStatus = {{tr("MEMORY"), memory}, danger_color};
+    } else if (memory_usage >= 70) {
+      memoryStatus = {{tr("MEMORY"), memory}, warning_color};
+    }
+    setProperty("cpuStatus", QVariant::fromValue(cpuStatus));
+    setProperty("memoryStatus", QVariant::fromValue(memoryStatus));
+  }
 
   ItemStatus connectStatus;
   auto last_ping = deviceState.getLastAthenaPingTime();
@@ -162,7 +187,13 @@ void Sidebar::paintEvent(QPaintEvent *event) {
   p.drawText(r, Qt::AlignCenter, net_type);
 
   // metrics
-  drawMetric(p, temp_status.first, temp_status.second, 338);
-  drawMetric(p, panda_status.first, panda_status.second, 496);
-  drawMetric(p, connect_status.first, connect_status.second, 654);
+  if (isDeveloperUI) {
+    drawMetric(p, temp_status.first, temp_status.second, 338);
+    drawMetric(p, cpu_status.first, cpu_status.second, 496);
+    drawMetric(p, memory_status.first, memory_status.second, 654);
+  } else {
+    drawMetric(p, temp_status.first, temp_status.second, 338);
+    drawMetric(p, panda_status.first, panda_status.second, 496);
+    drawMetric(p, connect_status.first, connect_status.second, 654);
+  }
 }

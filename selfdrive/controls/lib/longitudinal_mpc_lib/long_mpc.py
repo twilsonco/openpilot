@@ -261,6 +261,10 @@ class LongitudinalMpc:
     self.aggressive_acceleration = longitudinal_tuning and params.get_bool("AggressiveAcceleration")
     self.smoother_braking = longitudinal_tuning and params.get_bool("SmootherBraking")
 
+    # Declare variables for onroad driving insights
+    self.safe_obstacle_distance = 0
+    self.stopped_equivalence_factor = 0
+
   def reset(self):
     # self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.solver.reset()
@@ -379,6 +383,10 @@ class LongitudinalMpc:
       speed_factor = np.maximum(1, lead_xv_0[:,1] - v_ego)
       t_follow_offset = np.clip(5 - v_ego, 1, speed_factor)
       t_follow = t_follow / t_follow_offset
+
+    # LongitudinalPlan variables for onroad driving insights
+    self.safe_obstacle_distance = int(np.max(get_safe_obstacle_distance(self.x_sol[:,1], t_follow)))
+    self.stopped_equivalence_factor = int(np.max(get_stopped_equivalence_factor(self.x_sol[:,1], lead_xv_0[:,1], lead_xv_0[:,0], t_follow, increased_stopping_distance, self.smoother_braking)))
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
