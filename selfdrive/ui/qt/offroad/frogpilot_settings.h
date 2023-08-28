@@ -158,3 +158,9 @@ private: \
   QString getValueStr() { getValueStrFunc } \
   int newValue(int v) { newValueFunc } \
 };
+
+ParamControllerInt(ScreenBrightness, "ScreenBrightness", "Screen Brightness", "Set a custom screen brightness level or use the default 'Auto' brightness setting.", "../assets/offroad/icon_light.png",
+  int brightness = params.getInt("ScreenBrightness");
+  return brightness == 101 ? "Auto" : brightness == 0 ? "Off" : QString::number(brightness) + "%";,
+  return std::clamp(v, 0, 101);
+)

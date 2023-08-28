@@ -247,6 +247,7 @@ void ui_update_params(UIState *s) {
   if (!toggles_checked && scene.default_params_set) {
     scene.frog_theme = params.getBool("FrogTheme");
     scene.frog_colors = scene.frog_theme && params.getBool("FrogColors");
+    scene.screen_brightness = params.getInt("ScreenBrightness");
     toggles_checked = true;
   }
 
@@ -254,6 +255,7 @@ void ui_update_params(UIState *s) {
   static Params params_memory = Params("/dev/shm/params");
   static bool live_toggles_checked = false;
   if (params_memory.getBool("FrogPilotTogglesUpdated")) {
+    scene.screen_brightness = params.getInt("ScreenBrightness");
     if (live_toggles_checked && scene.enabled) {
       params_memory.putBool("FrogPilotTogglesUpdated", false);
     }
@@ -381,6 +383,12 @@ void Device::updateBrightness(const UIState &s) {
   int brightness = brightness_filter.update(clipped_brightness);
   if (!awake) {
     brightness = 0;
+  } else if (s.scene.screen_brightness <= 100 && s.scene.default_params_set) {
+    brightness = s.scene.screen_brightness;
+    if (awake) {
+      // Bring the screen brightness up to 5% upon screen tap
+      brightness = fmax(5, s.scene.screen_brightness);
+    }
   }
 
   if (brightness != last_brightness) {
@@ -401,7 +409,11 @@ void Device::updateWakefulness(const UIState &s) {
     emit interactiveTimeout();
   }
 
-  setAwake(s.scene.ignition || interactive_timeout > 0);
+  if (s.scene.screen_brightness != 0) {
+    setAwake(s.scene.ignition || interactive_timeout > 0);
+  } else {
+    setAwake(interactive_timeout > 0);
+  }
 }
 
 UIState *uiState() {
