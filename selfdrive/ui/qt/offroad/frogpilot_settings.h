@@ -170,6 +170,16 @@ ParamControllerInt(AccelerationProfile, "AccelerationProfile", "   Acceleration 
   return std::clamp(v, 1, 3);
 )
 
+ParamControllerInt(AggressiveJerkValue, "AggressiveJerkValue", "Jerk Value", "Set the jerk value for the 'Aggressive Personality'.\n\nValue represents the responsiveness of the brake/gas pedals.\n\nHigher value = Less responsive/more 'relaxed'\n\nStock has a value of 0.5.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("AggressiveJerkValue") / 10.0);,
+  return std::clamp(v, 1, 50);
+)
+
+ParamControllerInt(AggressivePersonalityValue, "AggressivePersonalityValue", "Time", "Set the following distance for the 'Aggressive Personality'.\n\nValue represents the time (in seconds) to follow the lead vehicle.\n\nStock has a value of 1.25.", "../assets/aggressive.png",
+  return QString::number(params.getInt("AggressivePersonalityValue") / 10.0) + " sec";,
+  return std::clamp(v, 10, 50);
+)
+
 ParamControllerInt(DeviceShutdownTimer, "DeviceShutdownTimer", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../assets/offroad/icon_time.png",
   int value = params.getInt("DeviceShutdownTimer");
   return value == 0 ? "Instant" : (value > 0 && value <= 3) ? QString::number(value * 15) + " mins" : QString::number(value - 3) + (value == 4 ? " hour" : " hours");,
@@ -203,6 +213,16 @@ ParamControllerInt(PathWidth, "PathWidth", "Path", "Customize the path width.\n\
   return std::clamp(v, 0, 100);
 )
 
+ParamControllerInt(RelaxedJerkValue, "RelaxedJerkValue", "Jerk Value", "Set the jerk value for the 'Relaxed Personality'.\n\nValue represents the responsiveness of the brake/gas pedals.\n\nHigher value = Less responsive/more 'relaxed'\n\nStock has a value of 1.0.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("RelaxedJerkValue") / 10.0);,
+  return std::clamp(v, 1, 50);
+)
+
+ParamControllerInt(RelaxedPersonalityValue, "RelaxedPersonalityValue", "Time", "Set the following distance for the 'Relaxed Personality'.\n\nValue represents the time (in seconds) to follow the lead vehicle.\n\nStock has a value of 1.75.", "../assets/relaxed.png",
+  return QString::number(params.getInt("RelaxedPersonalityValue") / 10.0) + " sec";,
+  return std::clamp(v, 10, 50);
+)
+
 ParamControllerInt(RoadEdgesWidth, "RoadEdgesWidth", "Road Edges", "Customize the road edges width.\n\nDefault is 1/2 of the MUTCD average lane line width of 4 inches.", "../assets/offroad/icon_blank.png",
   return QString::number(params.getInt("RoadEdgesWidth")) + " in";,
   return std::clamp(v, 0, 24);
@@ -212,6 +232,16 @@ ParamControllerInt(ScreenBrightness, "ScreenBrightness", "Screen Brightness", "S
   int brightness = params.getInt("ScreenBrightness");
   return brightness == 101 ? "Auto" : brightness == 0 ? "Off" : QString::number(brightness) + "%";,
   return std::clamp(v, 0, 101);
+)
+
+ParamControllerInt(StandardJerkValue, "StandardJerkValue", "Jerk Value", "Set the jerk value for the 'Standard Personality'.\n\nValue represents the responsiveness of the brake/gas pedals.\n\nHigher value = Less responsive/more 'relaxed'\n\nStock has a value of 1.0.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("StandardJerkValue") / 10.0);,
+  return std::clamp(v, 1, 50);
+)
+
+ParamControllerInt(StandardPersonalityValue, "StandardPersonalityValue", "Time", "Set the following distance for the 'Standard Personality'.\n\nValue represents the time (in seconds) to follow the lead vehicle.\n\nStock has a value of 1.45.", "../assets/standard.png",
+  return QString::number(params.getInt("StandardPersonalityValue") / 10.0) + " sec";,
+  return std::clamp(v, 10, 50);
 )
 
 ParamControllerInt(SteeringWheel, "SteeringWheel", "Steering Wheel Icon", "Replace the stock openpilot steering wheel icon with a custom icon.\n\nWant to submit your own steering wheel? Post it in the 'feature-request' channel on the FrogPilot Discord!", "../assets/offroad/icon_openpilot.png",
