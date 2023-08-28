@@ -1,0 +1,102 @@
+import os
+
+Import('env', 'envCython', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'transformations')
+lenv = env.Clone()
+lenvCython = envCython.Clone()
+
+libs = [cereal, messaging, common, visionipc, gpucommon,
+        'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv']
+
+common_src = [
+  "models/commonmodel.cc",
+  "runners/snpemodel.cc",
+  "transforms/loadyuv.cc",
+  "transforms/transform.cc"
+]
+
+thneed_src_common = [
+  "thneed/thneed_common.cc",
+  "thneed/serialize.cc",
+]
+
+thneed_src_qcom = thneed_src_common + ["thneed/thneed_qcom2.cc"]
+thneed_src_pc = thneed_src_common + ["thneed/thneed_pc.cc"]
+thneed_src = thneed_src_qcom if arch == "larch64" else thneed_src_pc
+
+if arch == "larch64":
+  libs += ['gsl', 'CB', 'pthread', 'dl']
+else:
+  libs += ['pthread']
+
+  if not GetOption('snpe'):
+    # for onnx support
+    common_src += ['runners/onnxmodel.cc']
+
+    # tell runners to use onnx
+    lenv['CFLAGS'].append("-DUSE_ONNX_MODEL")
+    lenv['CXXFLAGS'].append("-DUSE_ONNX_MODEL")
+
+  if arch == "Darwin":
+    # fix OpenCL
+    del libs[libs.index('OpenCL')]
+    lenv['FRAMEWORKS'] = ['OpenCL']
+
+  if arch == "Darwin" or arch == "aarch64":
+    # no SNPE on Mac and ARM Linux
+    del libs[libs.index('SNPE')]
+    del common_src[common_src.index('runners/snpemodel.cc')]
+
+for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transforms/loadyuv.cl', 'ONNXRUNNER': 'runners/onnx_runner.py'}.items():
+  for xenv in (lenv, lenvCython):
+    xenv['CXXFLAGS'].append(f'-D{pathdef}_PATH=\\"{File(fn).abspath}\\"')
+
+if arch == "larch64" or GetOption('pc_thneed'):
+  lenvCython['CFLAGS'].append("-DUSE_THNEED")
+  lenvCython['CXXFLAGS'].append("-DUSE_THNEED")
+
+common_frameworks = []
+common_libs = envCython["LIBS"] + [gpucommon, common, 'zmq']
+if arch == "Darwin":
+  common_frameworks.append('OpenCL')
+else:
+  common_libs.append('OpenCL')
+
+onnxmodel_lib = lenv.Library('onnxmodel', ['runners/onnxmodel.cc'])
+snpemodel_lib = lenv.Library('snpemodel', ['runners/snpemodel.cc'])
+commonmodel_lib = lenv.Library('commonmodel', common_src)
+driving_lib = lenv.Library('driving', ['models/driving.cc'])
+
+lenvCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=common_libs, FRAMEWORKS=common_frameworks)
+lenvCython.Program('runners/onnxmodel_pyx.so', 'runners/onnxmodel_pyx.pyx', LIBS=[onnxmodel_lib, *common_libs], FRAMEWORKS=common_frameworks)
+lenvCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=[snpemodel_lib, *common_libs], FRAMEWORKS=common_frameworks)
+lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *common_libs], FRAMEWORKS=common_frameworks)
+lenvCython.Program('models/driving_pyx.so', 'models/driving_pyx.pyx', LIBS=[driving_lib, commonmodel_lib, cereal, messaging, *common_libs, 'capnp', 'kj'] + transformations, FRAMEWORKS=common_frameworks)
+
+common_model = lenv.Object(common_src)
+
+lenv.Program('_dmonitoringmodeld', [
+    "dmonitoringmodeld.cc",
+    "models/dmonitoring.cc",
+  ]+common_model, LIBS=libs)
+
+lenv.Program('_navmodeld', [
+    "navmodeld.cc",
+    "models/nav.cc",
+  ]+common_model, LIBS=libs)
+
+# build thneed model
+if arch == "larch64" or GetOption('pc_thneed'):
+  fn = File("models/supercombo").abspath
+
+  tinygrad_opts = ["NATIVE_EXPLOG=1", "VALIDHACKS=1", "OPTLOCAL=1", "IMAGE=2", "GPU=1", "ENABLE_METHOD_CACHE=1"]
+  if not GetOption('pc_thneed'):
+    # use FLOAT16 on device for speed + don't cache the CL kernels for space
+    tinygrad_opts += ["FLOAT16=1", "PYOPENCL_NO_CACHE=1"]
+  cmd = f"cd {Dir('#').abspath}/tinygrad_repo && " + ' '.join(tinygrad_opts) + f" python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
+
+  tinygrad_files = sum([lenv.Glob("#"+x) for x in open(File("#release/files_common").abspath).read().split("\n") if x.startswith("tinygrad_repo/")], [])
+  lenv.Command(fn + ".thneed", [fn + ".onnx"] + tinygrad_files, cmd)
+
+  thneed_lib = env.SharedLibrary('thneed', thneed_src, LIBS=[gpucommon, common, 'zmq', 'OpenCL', 'dl'])
+  thneedmodel_lib = env.Library('thneedmodel', ['runners/thneedmodel.cc'])
+  lenvCython.Program('runners/thneedmodel_pyx.so', 'runners/thneedmodel_pyx.pyx', LIBS=envCython["LIBS"]+[thneedmodel_lib, thneed_lib, gpucommon, common, 'dl', 'zmq', 'OpenCL'])
