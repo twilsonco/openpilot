@@ -212,6 +212,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"RecordFront", PERSISTENT},
     {"RecordFrontLock", PERSISTENT},  // for the internal fleet
     {"ReplayControlsState", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
+    {"ReverseCruiseIncrease", PERSISTENT},
     {"RoadEdgesWidth", PERSISTENT},
     {"RotatingWheel", PERSISTENT},
     {"ScreenBrightness", PERSISTENT},

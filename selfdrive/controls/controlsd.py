@@ -123,6 +123,7 @@ class Controls:
     # FrogPilot variables
     frog_theme = self.params.get_bool("FrogTheme")
     self.frog_sounds = frog_theme and self.params.get_bool("FrogSounds")
+    self.reverse_cruise_increase = self.params.get_bool("ReverseCruiseIncrease")
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
@@ -591,6 +592,11 @@ class Controls:
 
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
+
+    # Check the value of "reverse_cruise_increase" just in case the user changed its value mid drive
+    if long_plan.frogpilotTogglesUpdated:
+      self.reverse_cruise_increase = self.params.get_bool("ReverseCruiseIncrease")
+    CC.reverseCruise = self.reverse_cruise_increase
 
     # Check which actuators can be enabled
     standstill = CS.vEgo <= max(self.CP.minSteerSpeed, MIN_LATERAL_CONTROL_SPEED) or CS.standstill

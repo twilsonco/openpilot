@@ -117,19 +117,30 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   const int x_offset = 250;
   bool rightHandDM = sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD();
 
+  // Change cruise control increments button
+  const QRect maxSpeedRect(0, 0, 350, 350);
+  const bool isMaxSpeedClicked = maxSpeedRect.contains(e->pos()) && isToyotaCar;
+
   // Hide speed button
   const QRect speedRect(rect().center().x() - 175, 50, 350, 350);
   const bool isSpeedClicked = speedRect.contains(e->pos());
 
+  // Check if the click was within the max speed area
+  if (isMaxSpeedClicked) {
+    const bool currentReverseCruiseIncrease = params.getBool("ReverseCruiseIncrease");
+    reverseCruiseIncrease = !currentReverseCruiseIncrease;
+    params.putBool("ReverseCruiseIncrease", reverseCruiseIncrease);
+    params_memory.putBool("FrogPilotTogglesUpdated", true);
+    propagateEvent = false;
   // Check if the click was within the speed text area
-  if (isSpeedClicked) {
+  } else if (isSpeedClicked) {
     const bool currentVisibility = params.getBool("HideSpeed");
     speedHidden = !currentVisibility;
     params.putBool("HideSpeed", speedHidden);
     propagateEvent = false;
   }
 
-  const bool clickedOnWidget = isSpeedClicked;
+  const bool clickedOnWidget = isMaxSpeedClicked || isSpeedClicked;
 
 #ifdef ENABLE_MAPS
   if (map != nullptr) {
@@ -348,6 +359,9 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   if (params.getBool("HideSpeed")) {
     speedHidden = true;
   }
+  if (params.getBool("ReverseCruiseIncrease")) {
+    reverseCruiseIncrease = true;
+  }
 
   // FrogPilot images
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
@@ -456,7 +470,11 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   int bottom_radius = has_eu_speed_limit ? 100 : 32;
 
   QRect set_speed_rect(QPoint(60 + (default_size.width() - set_speed_size.width()) / 2, 45), set_speed_size);
-  p.setPen(QPen(whiteColor(75), 6));
+  if (reverseCruiseIncrease) {
+    p.setPen(QPen(QColor(0, 150, 255), 6));
+  } else {
+    p.setPen(QPen(whiteColor(75), 6));
+  }
   p.setBrush(blackColor(166));
   drawRoundedRect(p, set_speed_rect, top_radius, top_radius, bottom_radius, bottom_radius);
 
