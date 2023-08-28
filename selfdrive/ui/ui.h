@@ -161,9 +161,11 @@ typedef struct UIScene {
   bool frog_theme;
   bool frogpilot_toggles_updated;
   bool mute_dm;
+  bool rotating_wheel;
   bool toyota_car = true;
   bool wide_camera_disabled;
   int screen_brightness;
+  int steering_angle_deg;
 
 } UIScene;
 

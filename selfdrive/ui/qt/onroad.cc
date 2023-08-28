@@ -26,6 +26,21 @@ static void drawIcon(QPainter &p, const QPoint &center, const QPixmap &img, cons
   p.setOpacity(1.0);
 }
 
+static void drawIconRotate(QPainter &p, const QPoint &center, const QPixmap &img, const QBrush &bg, float opacity, const int angle) {
+  p.setRenderHint(QPainter::Antialiasing);
+  p.setOpacity(1.0);  // bg dictates opacity of ellipse
+  p.setPen(Qt::NoPen);
+  p.setBrush(bg);
+  p.drawEllipse(center, btn_size / 2, btn_size / 2);
+  p.save();
+  p.translate(center);
+  p.rotate(-angle);
+  p.setOpacity(opacity);
+  p.drawPixmap(-QPoint(img.width() / 2, img.height() / 2), img); 
+  p.setOpacity(1.0);
+  p.restore();
+}
+
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
   main_layout->setMargin(UI_BORDER_SIZE);
@@ -261,9 +276,12 @@ void ExperimentalButton::updateState(const UIState &s) {
 }
 
 void ExperimentalButton::paintEvent(QPaintEvent *event) {
-  QPainter p(this);
-  QPixmap img = experimental_mode ? experimental_img : engage_img;
-  drawIcon(p, QPoint(btn_size / 2, btn_size / 2), img, QColor(0, 0, 0, 166), (isDown() || !engageable) ? 0.6 : 1.0);
+  const auto &scene = uiState()->scene;
+  if (!scene.rotating_wheel) {
+    QPainter p(this);
+    QPixmap img = experimental_mode ? experimental_img : engage_img;
+    drawIcon(p, QPoint(btn_size / 2, btn_size / 2), img, QColor(0, 0, 0, 166), (isDown() || !engageable) ? 0.6 : 1.0);
+  }
 }
 
 
@@ -303,6 +321,8 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   static auto params = Params();
 
   // FrogPilot images
+  engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
+  experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
@@ -360,6 +380,8 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("experimentalMode", s.scene.experimental_mode);
   setProperty("frogColors", s.scene.frog_colors);
   setProperty("muteDM", s.scene.mute_dm);
+  setProperty("rotatingWheel", s.scene.rotating_wheel);
+  setProperty("steeringAngleDeg", s.scene.steering_angle_deg);
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
@@ -458,6 +480,14 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
   p.restore();
+
+  // Rotating steering wheel
+  if (rotatingWheel) {
+    const auto &scene = uiState()->scene;
+    QPixmap img = experimentalMode ? experimental_img : engage_img;
+    QColor background_color = QColor(0, 0, 0, 166);
+    drawIconRotate(p, QPoint(rect().right() - btn_size / 2 - UI_BORDER_SIZE * 2 + 25, btn_size / 2 + int(UI_BORDER_SIZE * 1.5)), img, background_color, status != STATUS_DISENGAGED ? 1.0 : 0.6, steeringAngleDeg);
+  }
 
   // FrogPilot status bar
   if (true) {
