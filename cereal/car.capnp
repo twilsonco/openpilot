@@ -508,6 +508,7 @@ struct CarParams {
   lateralTune @78 :Bool;
   longitudinalTune @79 :Bool;
   pfeiferjDesiredCurvatures @80 :Bool;
+  tss2Tune @81 :Bool;
   twilsoncoNNFF @82 :Bool;
 
   struct SafetyConfig {

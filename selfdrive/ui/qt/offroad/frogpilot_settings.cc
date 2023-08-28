@@ -51,7 +51,8 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
         new IncreasedStoppingDistance(),
       }, {
         {"AggressiveAcceleration", "Aggressive Acceleration With Lead", "Accelerate more aggressively behind a lead when starting from a stop."},
-        {"SmootherBraking", "Smoother Braking Behind Lead", "More natural braking behavior when coming up to a slower vehicle."}
+        {"SmootherBraking", "Smoother Braking Behind Lead", "More natural braking behavior when coming up to a slower vehicle."},
+        {"TSS2Tune", "TSS2 Tune", "Tuning profile for TSS2 vehicles. Based on the tuning profile from DragonPilot."}
       });
     } else if (key == "NudgelessLaneChange") {
       createSubControl(key, label, desc, icon, {
@@ -139,6 +140,7 @@ ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QStri
     static const QMap<QString, QString> parameterWarnings = {
       {"AggressiveAcceleration", "This will make openpilot driving more aggressively!"},
       {"SmootherBraking", "This will modify openpilot's braking behavior!"},
+      {"TSS2Tune", "This will modify openpilot's acceleration and braking behavior!"}
     };
     if (parameterWarnings.contains(key) && params.getBool(key.toStdString())) {
       ConfirmationDialog::toggleAlert("WARNING: " + parameterWarnings[key], "I understand the risks.", parent);
