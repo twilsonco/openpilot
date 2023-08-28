@@ -160,6 +160,7 @@ typedef struct UIScene {
   bool compass;
   bool custom_road_ui;
   bool default_params_set;
+  bool driving_personalities_ui_wheel;
   bool enabled;
   bool experimental_mode;
   bool frog_colors;

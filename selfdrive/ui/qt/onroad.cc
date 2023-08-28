@@ -6,6 +6,7 @@
 #include <memory>
 
 #include <QDebug>
+#include <QElapsedTimer>
 #include <QMouseEvent>
 #include <QTimer>
 
@@ -118,6 +119,12 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   const int x_offset = 250;
   bool rightHandDM = sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD();
 
+  // Driving personalities button
+  int x = rightHandDM ? rect().right() - (btn_size - 24) / 2 - (UI_BORDER_SIZE * 2) - x_offset : (btn_size - 24) / 2 + (UI_BORDER_SIZE * 2) + x_offset;
+  const int y = rect().bottom() - 140;
+  // Give the button a 25% offset so it doesn't need to be clicked on perfectly
+  const bool isDrivingPersonalitiesClicked = (e->pos() - QPoint(x, y)).manhattanLength() <= btn_size * 1.25 && !isToyotaCar;
+
   // Change cruise control increments button
   const QRect maxSpeedRect(0, 0, 350, 350);
   const bool isMaxSpeedClicked = maxSpeedRect.contains(e->pos()) && isToyotaCar;
@@ -126,8 +133,14 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   const QRect speedRect(rect().center().x() - 175, 50, 350, 350);
   const bool isSpeedClicked = speedRect.contains(e->pos());
 
+  // Check if the driving personality button was clicked
+  if (isDrivingPersonalitiesClicked) {
+    personalityProfile = (params.getInt("LongitudinalPersonality") + 2) % 3;
+    params.putInt("LongitudinalPersonality", personalityProfile);
+    params_memory.putBool("FrogPilotTogglesUpdated", true);
+    propagateEvent = false;
   // Check if the click was within the max speed area
-  if (isMaxSpeedClicked) {
+  } else if (isMaxSpeedClicked) {
     const bool currentReverseCruiseIncrease = params.getBool("ReverseCruiseIncrease");
     reverseCruiseIncrease = !currentReverseCruiseIncrease;
     params.putBool("ReverseCruiseIncrease", reverseCruiseIncrease);
@@ -141,7 +154,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
     propagateEvent = false;
   }
 
-  const bool clickedOnWidget = isMaxSpeedClicked || isSpeedClicked;
+  const bool clickedOnWidget = isDrivingPersonalitiesClicked || isMaxSpeedClicked || isSpeedClicked;
 
 #ifdef ENABLE_MAPS
   if (map != nullptr) {
@@ -353,18 +366,22 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   map_settings_btn = new MapSettingsButton(this);
   const bool flip_side = rightHandDM || compass;
   const bool move_up = false;
-  const bool move_up_top = compass && (!muteDM);
+  const bool move_up_top = compass && (onroadAdjustableProfiles || !muteDM);
   main_layout->addWidget(map_settings_btn, 0, (flip_side ? Qt::AlignLeft : Qt::AlignRight) | (move_up ? Qt::AlignCenter : move_up_top ? Qt::AlignTop : Qt::AlignBottom));
 
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
 
   // FrogPilot variable checks
+  const auto &scene = uiState()->scene;
   static auto params = Params();
   if (params.getBool("HideSpeed")) {
     speedHidden = true;
   }
   if (params.getBool("ReverseCruiseIncrease")) {
     reverseCruiseIncrease = true;
+  }
+  if (scene.driving_personalities_ui_wheel && !scene.toyota_car) {
+    personalityProfile = params.getInt("LongitudinalPersonality");
   }
 
   // FrogPilot images
@@ -380,6 +397,13 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
     {3, loadPixmap("../assets/frog.png", {img_size, img_size})},
     {4, loadPixmap("../assets/rocket.png", {img_size, img_size})},
     {5, loadPixmap("../assets/hyundai.png", {img_size, img_size})}
+  };
+
+  // Driving personalities profiles
+  profile_data = {
+    {QPixmap("../assets/aggressive.png"), "Aggressive"},
+    {QPixmap("../assets/standard.png"), "Standard"},
+    {QPixmap("../assets/relaxed.png"), "Relaxed"}
   };
 
   // Turn signal images
@@ -457,7 +481,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
     map_settings_btn->setVisible(!hideBottomIcons);
     const bool flip_side = rightHandDM || compass;
     const bool move_up = false;
-    const bool move_up_top = compass && (!muteDM);
+    const bool move_up_top = compass && (onroadAdjustableProfiles || !muteDM);
     main_layout->setAlignment(map_settings_btn, (flip_side ? Qt::AlignLeft : Qt::AlignRight) | (move_up ? Qt::AlignCenter : move_up_top ? Qt::AlignTop : Qt::AlignBottom));
   }
 
@@ -470,6 +494,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("frogColors", s.scene.frog_colors);
   setProperty("frogSignals", s.scene.frog_signals);
   setProperty("muteDM", s.scene.mute_dm);
+  setProperty("onroadAdjustableProfiles", s.scene.driving_personalities_ui_wheel && !s.scene.toyota_car);
   setProperty("rotatingWheel", s.scene.rotating_wheel);
   setProperty("steeringAngleDeg", s.scene.steering_angle_deg);
   setProperty("steeringWheel", s.scene.steering_wheel);
@@ -579,6 +604,11 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   }
 
   p.restore();
+
+  // Driving personalities button
+  if (onroadAdjustableProfiles && !hideBottomIcons) {
+    drawDrivingPersonalities(p);
+  }
 
   // Compass
   if (compass && !hideBottomIcons) {
@@ -1037,6 +1067,63 @@ void AnnotatedCameraWidget::drawCompass(QPainter &p) {
 
   for (int i = 0; i < 360; i += 15) {
     drawCompassElements(i);
+  }
+
+  p.restore();
+}
+
+void AnnotatedCameraWidget::drawDrivingPersonalities(QPainter &p) {
+  p.save();
+
+  // Declare the variables
+  static QElapsedTimer timer;
+  static bool displayText = false;
+  static int lastProfile = -1;
+  constexpr int fadeDuration = 1000; // 1 second
+  constexpr int textDuration = 3000; // 3 seconds
+  int x = rightHandDM ? rect().right() - (btn_size - 24) / 2 - (UI_BORDER_SIZE * 2) - (muteDM ? 50 : 250) : (btn_size - 24) / 2 + (UI_BORDER_SIZE * 2) + (muteDM ? 50 : 250);
+  const int y = rect().bottom() - 100;
+
+  // Enable Antialiasing
+  p.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
+
+  // Select the appropriate profile image/text
+  int index = qBound(0, personalityProfile, 2);
+  QPixmap &profile_image = profile_data[index].first;
+  QString profile_text = profile_data[index].second;
+
+  // Display the profile text when the user changes profiles
+  if (lastProfile != personalityProfile) {
+    displayText = true;
+    lastProfile = personalityProfile;
+    timer.restart();
+  }
+
+  // Set the text display
+  displayText = !timer.hasExpired(textDuration);
+
+  // Set the elapsed time since the profile switch
+  int elapsed = timer.elapsed();
+
+  // Calculate the opacity for the text and image based on the elapsed time
+  qreal textOpacity = qBound(0.0, (1.0 - static_cast<qreal>(elapsed - textDuration) / fadeDuration), 1.0);
+  qreal imageOpacity = qBound(0.0, (static_cast<qreal>(elapsed - textDuration) / fadeDuration), 1.0);
+
+  // Draw the profile text with the calculated opacity
+  if (textOpacity > 0.0) {
+    p.setFont(InterFont(50, QFont::Bold));
+    p.setPen(QColor(255, 255, 255));
+    // Calculate the center position for text
+    QFontMetrics fontMetrics(p.font());
+    int textWidth = fontMetrics.horizontalAdvance(profile_text);
+    // Apply opacity to the text
+    p.setOpacity(textOpacity);
+    p.drawText(x - textWidth / 2, y + fontMetrics.height() / 2, profile_text);
+  }
+
+  // Draw the profile image with the calculated opacity
+  if (imageOpacity > 0.0) {
+    drawIcon(p, QPoint(x, y), profile_image, blackColor(0), imageOpacity);
   }
 
   p.restore();
