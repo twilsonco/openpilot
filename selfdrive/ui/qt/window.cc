@@ -67,6 +67,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
   // FrogPilot variables
   static auto params = Params();
+  displaySidebar = params.getBool("Sidebar");
 }
 
 void MainWindow::openSettings(int index, const QString &param) {
@@ -78,7 +79,7 @@ void MainWindow::closeSettings() {
   main_layout->setCurrentWidget(homeWindow);
 
   if (uiState()->scene.started) {
-    homeWindow->showSidebar(false);
+    homeWindow->showSidebar(displaySidebar);
     // Map is always shown when using navigate on openpilot
     if (uiState()->scene.navigate_on_openpilot) {
       homeWindow->showMapPanel(true);
