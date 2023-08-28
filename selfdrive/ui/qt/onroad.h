@@ -85,8 +85,11 @@ class AnnotatedCameraWidget : public CameraWidget {
   Q_PROPERTY(bool compass MEMBER compass);
   Q_PROPERTY(bool experimentalMode MEMBER experimentalMode);
   Q_PROPERTY(bool frogColors MEMBER frogColors);
+  Q_PROPERTY(bool frogSignals MEMBER frogSignals);
   Q_PROPERTY(bool muteDM MEMBER muteDM);
   Q_PROPERTY(bool rotatingWheel MEMBER rotatingWheel);
+  Q_PROPERTY(bool turnSignalLeft MEMBER turnSignalLeft);
+  Q_PROPERTY(bool turnSignalRight MEMBER turnSignalRight);
   Q_PROPERTY(int bearingDeg MEMBER bearingDeg);
   Q_PROPERTY(int steeringAngleDeg MEMBER steeringAngleDeg);
   Q_PROPERTY(int steeringWheel MEMBER steeringWheel);
@@ -102,6 +105,7 @@ private:
 
   // FrogPilot widgets
   void drawCompass(QPainter &p);
+  void drawFrogSignals(QPainter &p);
   void drawStatusBar(QPainter &p);
 
   QVBoxLayout *main_layout;
@@ -132,15 +136,21 @@ private:
   bool compass;
   bool experimentalMode;
   bool frogColors;
+  bool frogSignals;
   bool muteDM;
   bool rotatingWheel;
+  bool turnSignalLeft;
+  bool turnSignalRight;
+  int animationFrameIndex;
   int bearingDeg;
   int steeringAngleDeg;
   int steeringWheel;
   QPixmap compass_inner_img;
   QPixmap engage_img;
   QPixmap experimental_img;
+  static constexpr int totalFrames = 8;
   std::map<int, QPixmap> wheel_images;
+  std::vector<QPixmap> signalImgVector;
 
 protected:
   void paintGL() override;

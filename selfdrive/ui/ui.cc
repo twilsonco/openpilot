@@ -216,9 +216,13 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("carState")) {
     const auto carState = sm["carState"].getCarState();
-    if (scene.blind_spot_path) {
+    if (scene.blind_spot_path || scene.frog_signals) {
       scene.blind_spot_left = carState.getLeftBlindspot();
       scene.blind_spot_right = carState.getRightBlindspot();
+    }
+    if (scene.frog_signals) {
+      scene.turn_signal_left = carState.getLeftBlinker();
+      scene.turn_signal_right = carState.getRightBlinker();
     }
     if (scene.blind_spot_path || scene.rotating_wheel) {
       scene.steering_angle_deg = carState.getSteeringAngleDeg();
@@ -273,6 +277,7 @@ void ui_update_params(UIState *s) {
     scene.blind_spot_path = scene.custom_road_ui && params.getBool("BlindSpotPath");
     scene.frog_theme = params.getBool("FrogTheme");
     scene.frog_colors = scene.frog_theme && params.getBool("FrogColors");
+    scene.frog_signals = scene.frog_theme && params.getBool("FrogSignals");
     scene.lane_line_width = params.getInt("LaneLinesWidth") / 12.0 * 0.1524; // Convert from inches to meters
     scene.mute_dm = params.getBool("FireTheBabysitter") && params.getBool("MuteDM");
     scene.path_edge_width = params.getInt("PathEdgeWidth");
