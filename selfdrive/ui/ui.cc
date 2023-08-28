@@ -248,6 +248,7 @@ void ui_update_params(UIState *s) {
     scene.frog_theme = params.getBool("FrogTheme");
     scene.frog_colors = scene.frog_theme && params.getBool("FrogColors");
     scene.screen_brightness = params.getInt("ScreenBrightness");
+    scene.wide_camera_disabled = params.getBool("WideCameraDisable");
     toggles_checked = true;
   }
 
