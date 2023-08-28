@@ -124,6 +124,13 @@ static int volkswagen_pq_rx_hook(CANPacket_t *to_push) {
       update_sample(&torque_driver, torque_driver_new);
     }
 
+    if (addr == MSG_MOTOR_5) {
+      acc_main_on = GET_BIT(to_push, 50U);
+      if (!acc_main_on) {
+        lateral_controls_allowed = false;
+      }
+    }
+
     if (volkswagen_longitudinal) {
       if (addr == MSG_MOTOR_5) {
         // ACC main switch on is a prerequisite to enter controls, exit controls immediately on main switch off

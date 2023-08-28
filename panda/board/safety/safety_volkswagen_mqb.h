@@ -158,6 +158,7 @@ static int volkswagen_mqb_rx_hook(CANPacket_t *to_push) {
 
       if (!acc_main_on) {
         controls_allowed = false;
+        lateral_controls_allowed = false;
       }
     }
 

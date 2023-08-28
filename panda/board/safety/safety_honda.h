@@ -143,6 +143,7 @@ static int honda_rx_hook(CANPacket_t *to_push) {
       acc_main_on = GET_BIT(to_push, ((addr == 0x326) ? 28U : 47U));
       if (!acc_main_on) {
         controls_allowed = false;
+        lateral_controls_allowed = false;
       }
     }
 

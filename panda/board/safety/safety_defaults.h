@@ -49,6 +49,7 @@ bool alloutput_passthrough = false;
 
 static const addr_checks* alloutput_init(uint16_t param) {
   controls_allowed = true;
+  lateral_controls_allowed = true;
   alloutput_passthrough = GET_FLAG(param, ALLOUTPUT_PARAM_PASSTHROUGH);
   return &default_rx_checks;
 }

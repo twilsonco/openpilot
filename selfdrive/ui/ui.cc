@@ -209,9 +209,13 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("carControl")) {
     const auto carControl = sm["carControl"].getCarControl();
+    if (scene.always_on_lateral) {
+      scene.always_on_lateral_active = !scene.enabled && carControl.getAlwaysOnLateral();
+    }
   }
   if (sm.updated("carParams")) {
     const auto carParams = sm["carParams"].getCarParams();
+    scene.always_on_lateral = carParams.getAlwaysOnLateral();
     scene.longitudinal_control = carParams.getOpenpilotLongitudinalControl();
     if (scene.longitudinal_control) {
       scene.conditional_experimental = carParams.getConditionalExperimentalMode();
@@ -330,6 +334,8 @@ void UIState::updateStatus() {
     auto state = controls_state.getState();
     if (state == cereal::ControlsState::OpenpilotState::PRE_ENABLED || state == cereal::ControlsState::OpenpilotState::OVERRIDING) {
       status = STATUS_OVERRIDE;
+    } else if (scene.always_on_lateral_active) {
+      status = STATUS_LATERAL_ACTIVE;
     } else {
       status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }

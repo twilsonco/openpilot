@@ -114,6 +114,15 @@ class Controls:
     if not self.disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
+    # Set "Always On Lateral" conditions
+    self.always_on_lateral = self.CP.alwaysOnLateral
+    self.cruiseState_previously_enabled = False
+    if self.always_on_lateral:
+      self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.ALWAYS_ON_LATERAL
+      if self.disengage_on_accelerator:
+        self.disengage_on_accelerator = False
+        self.params.put_bool("DisengageOnAccelerator", False)
+
     # read params
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
@@ -615,9 +624,17 @@ class Controls:
       self.reverse_cruise_increase = self.params.get_bool("ReverseCruiseIncrease")
     CC.reverseCruise = self.reverse_cruise_increase
 
+    # Always on lateral
+    if self.always_on_lateral:
+      self.cruiseState_previously_enabled &= CS.cruiseState.available
+      self.cruiseState_previously_enabled |= CS.cruiseState.enabled
+      gear = car.CarState.GearShifter
+      gear_check = not (CS.gearShifter == gear.neutral or CS.gearShifter == gear.park or CS.gearShifter == gear.reverse or CS.gearShifter == gear.unknown)
+      CC.alwaysOnLateral = self.cruiseState_previously_enabled and gear_check
+
     # Check which actuators can be enabled
     standstill = CS.vEgo <= max(self.CP.minSteerSpeed, MIN_LATERAL_CONTROL_SPEED) or CS.standstill
-    CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
+    CC.latActive = (self.active or CC.alwaysOnLateral) and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
                    (not standstill or self.joystick_mode)
     CC.longActive = self.enabled and not self.events.contains(ET.OVERRIDE_LONGITUDINAL) and self.CP.openpilotLongitudinalControl
 
