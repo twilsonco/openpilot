@@ -2,6 +2,7 @@
 
 #include <QMouseEvent>
 
+#include "common/params.h"
 #include "selfdrive/ui/qt/util.h"
 
 void Sidebar::drawMetric(QPainter &p, const QPair<QString, QString> &label, QColor c, int y) {
@@ -38,6 +39,9 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Sidebar::updateState);
 
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"userFlag"});
+
+  // FrogPilot variables
+  static auto params = Params();
 }
 
 void Sidebar::mousePressEvent(QMouseEvent *event) {
@@ -78,6 +82,8 @@ void Sidebar::updateState(const UIState &s) {
   setProperty("netType", network_type[deviceState.getNetworkType()]);
   int strength = (int)deviceState.getNetworkStrength();
   setProperty("netStrength", strength > 0 ? strength + 1 : 0);
+
+  // FrogPilot properties
 
   ItemStatus connectStatus;
   auto last_ping = deviceState.getLastAthenaPingTime();

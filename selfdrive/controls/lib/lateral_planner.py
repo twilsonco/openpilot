@@ -51,6 +51,8 @@ class LateralPlanner:
     self.lat_mpc = LateralMpc()
     self.reset_mpc(np.zeros(4))
 
+    # FrogPilot variables
+
   def reset_mpc(self, x0=None):
     if x0 is None:
       x0 = np.zeros(4)
@@ -147,5 +149,7 @@ class LateralPlanner:
     lateralPlan.useLaneLines = False
     lateralPlan.laneChangeState = self.DH.lane_change_state
     lateralPlan.laneChangeDirection = self.DH.lane_change_direction
+
+    # FrogPilot lateral variables
 
     pm.send('lateralPlan', plan_send)

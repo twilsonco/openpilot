@@ -79,6 +79,8 @@ class Controls:
     self.log_sock = messaging.sub_sock('androidLog')
 
     self.params = Params()
+    # FrogPilot variables
+
     self.sm = sm
     if self.sm is None:
       ignore = ['testJoystick']
@@ -113,6 +115,8 @@ class Controls:
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
     openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
     passive = self.params.get_bool("Passive") or not openpilot_enabled_toggle
+
+    # FrogPilot variables
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()

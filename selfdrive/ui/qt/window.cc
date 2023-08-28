@@ -2,6 +2,7 @@
 
 #include <QFontDatabase>
 
+#include "common/params.h"
 #include "system/hardware/hw.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
@@ -63,6 +64,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     }
   )");
   setAttribute(Qt::WA_NoSystemBackground);
+
+  // FrogPilot variables
+  static auto params = Params();
 }
 
 void MainWindow::openSettings(int index, const QString &param) {

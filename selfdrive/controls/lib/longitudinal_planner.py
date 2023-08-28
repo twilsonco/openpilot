@@ -2,7 +2,7 @@
 import math
 import numpy as np
 from openpilot.common.numpy_fast import clip, interp
-from openpilot.common.params import Params
+from openpilot.common.params import Params, put_bool_nonblocking
 from cereal import log
 
 import cereal.messaging as messaging
@@ -62,10 +62,15 @@ class LongitudinalPlanner:
     self.solverExecutionTime = 0.0
     self.params = Params()
     self.param_read_counter = 0
-    self.read_param()
     self.personality = log.LongitudinalPersonality.standard
 
+    # FrogPilot variables
+    self.frogpilot_toggles_updated = False
+    self.params_memory = Params("/dev/shm/params")
+    self.read_param()
+
   def read_param(self):
+    if self.frogpilot_toggles_updated:
     try:
       self.personality = int(self.params.get('LongitudinalPersonality'))
     except (ValueError, TypeError):
@@ -88,7 +93,8 @@ class LongitudinalPlanner:
     return x, v, a, j
 
   def update(self, sm):
-    if self.param_read_counter % 50 == 0:
+    self.frogpilot_toggles_updated = self.params_memory.get_bool("FrogPilotTogglesUpdated")
+    if self.param_read_counter % 50 == 0 or self.frogpilot_toggles_updated:
       self.read_param()
     self.param_read_counter += 1
     self.mpc.mode = 'blended' if sm['controlsState'].experimentalMode else 'acc'
@@ -170,5 +176,8 @@ class LongitudinalPlanner:
 
     longitudinalPlan.solverExecutionTime = self.mpc.solve_time
     longitudinalPlan.personality = self.personality
+
+    # FrogPilot longitudinalPlan variables
+    longitudinalPlan.frogpilotTogglesUpdated = self.frogpilot_toggles_updated
 
     pm.send('longitudinalPlan', plan_send)

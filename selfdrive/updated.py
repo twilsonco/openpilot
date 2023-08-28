@@ -194,6 +194,7 @@ def finalize_update() -> None:
   # FrogPilot update functions
   params = Params()
   params.put("Updated", datetime.datetime.now().astimezone(ZoneInfo('America/Phoenix')).strftime("%B %d, %Y - %I:%M%p"));
+  params.put_bool("DefaultParamsSet", False);       # Check the params again upon boot just in case of new toggles
   if os.path.exists("/data/openpilot/prebuilt"):
     os.remove("/data/openpilot/prebuilt")           # Remove the prebuilt file when installing updates
 
@@ -226,6 +227,8 @@ class Updater:
     self.params = Params()
     self.branches = defaultdict(lambda: '')
     self._has_internet: bool = False
+
+    # FrogPilot variables
 
   @property
   def has_internet(self) -> bool:
