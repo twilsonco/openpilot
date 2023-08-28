@@ -194,6 +194,8 @@ def finalize_update() -> None:
   # FrogPilot update functions
   params = Params()
   params.put("Updated", datetime.datetime.now().astimezone(ZoneInfo('America/Phoenix')).strftime("%B %d, %Y - %I:%M%p"));
+  if os.path.exists("/data/openpilot/prebuilt"):
+    os.remove("/data/openpilot/prebuilt")           # Remove the prebuilt file when installing updates
 
 def handle_agnos_update() -> None:
   from openpilot.system.hardware.tici.agnos import flash_agnos_update, get_target_slot_number

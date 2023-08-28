@@ -47,6 +47,5 @@ if __name__ == "__main__":
   import time
   with Spinner() as s:
     s.update("Spinner text")
-    time.sleep(5.0)
   print("gone")
   time.sleep(5.0)
