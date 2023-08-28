@@ -311,6 +311,7 @@ def thermald_thread(end_event, hw_queue) -> None:
     onroad_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
     extra_text = f"{offroad_comp_temp:.1f}C"
     show_alert = (not onroad_conditions["device_temp_good"] or not startup_conditions["device_temp_engageable"]) and onroad_conditions["ignition"]
+    show_alert = show_alert and not (params.get_bool("FireTheBabysitter") and params.get_bool("MuteSystemOverheat"))
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", show_alert, extra_text=extra_text)
 
     # TODO: this should move to TICI.initialize_hardware, but we currently can't import params there

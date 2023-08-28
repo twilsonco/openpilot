@@ -359,6 +359,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   // FrogPilot properties
   setProperty("experimentalMode", s.scene.experimental_mode);
   setProperty("frogColors", s.scene.frog_colors);
+  setProperty("muteDM", s.scene.mute_dm);
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
@@ -733,7 +734,7 @@ void AnnotatedCameraWidget::paintGL() {
   }
 
   // DMoji
-  if (!hideBottomIcons && (sm.rcv_frame("driverStateV2") > s->scene.started_frame)) {
+  if (!hideBottomIcons && (sm.rcv_frame("driverStateV2") > s->scene.started_frame) && !muteDM) {
     update_dmonitoring(s, sm["driverStateV2"].getDriverStateV2(), dm_fade_state, rightHandDM);
     drawDriverState(painter, s);
   }

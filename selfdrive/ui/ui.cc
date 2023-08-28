@@ -247,6 +247,7 @@ void ui_update_params(UIState *s) {
   if (!toggles_checked && scene.default_params_set) {
     scene.frog_theme = params.getBool("FrogTheme");
     scene.frog_colors = scene.frog_theme && params.getBool("FrogColors");
+    scene.mute_dm = params.getBool("FireTheBabysitter") && params.getBool("MuteDM");
     scene.screen_brightness = params.getInt("ScreenBrightness");
     scene.wide_camera_disabled = params.getBool("WideCameraDisable");
     toggles_checked = true;
