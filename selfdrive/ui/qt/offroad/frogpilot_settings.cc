@@ -19,6 +19,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
   static const std::vector<std::tuple<QString, QString, QString, QString>> toggles = {
     {"DeviceShutdownTimer", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../assets/offroad/icon_time.png"},
     {"FireTheBabysitter", "Fire the Babysitter", "Disable some of openpilot's 'Babysitter Protocols'.", "../assets/offroad/icon_babysitter.png"},
+    {"LateralTuning", "Lateral Tuning", "Change the way openpilot steers.", "../assets/offroad/icon_lateral_tune.png"},
     {"NudgelessLaneChange", "Nudgeless Lane Change", "Switch lanes without having to nudge the steering wheel.", "../assets/offroad/icon_lane.png"}
   };
 
@@ -37,6 +38,10 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
         {"MuteSeatbelt", "Mute Seatbelt"},
         {"MuteSystemOverheat", "Mute Overheat"}
       }, mainLayout);
+    } else if (key == "LateralTuning") {
+      createSubControl(key, label, desc, icon, {}, {
+        {"AverageDesiredCurvature", "Average Desired Curvature", "Use Pfeiferj's distance based curvature adjustment for smoother handling of curves."}
+      });
     } else if (key == "NudgelessLaneChange") {
       createSubControl(key, label, desc, icon, {
         new LaneChangeTimer(),
