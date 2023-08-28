@@ -17,11 +17,14 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
   mainLayout->addWidget(white_horizontal_line());
 
   static const std::vector<std::tuple<QString, QString, QString, QString>> toggles = {
+    {"DeviceShutdownTimer", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../assets/offroad/icon_time.png"}
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
     ParamControl *control = createParamControl(key, label, desc, icon, this);
-    if (key == "") {
+    if (key == "DeviceShutdownTimer") {
+      mainLayout->addWidget(new DeviceShutdownTimer());
+      mainLayout->addWidget(horizontal_line());
     } else {
       mainLayout->addWidget(control);
       if (key != std::get<0>(toggles.back())) mainLayout->addWidget(horizontal_line());

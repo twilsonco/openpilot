@@ -143,7 +143,12 @@ public:
 class className : public ParamValueControl { \
   Q_OBJECT \
 public: \
-  className() : ParamValueControl(labelText, descText, iconPath) { refresh(); } \
+  className() : ParamValueControl(labelText, descText, iconPath) { \
+    if (std::string(#className) == "DeviceShutdownTimer") { \
+      label.setFixedWidth(225); \
+    } \
+    refresh(); \
+  } \
 private: \
   void refresh() override { \
     label.setText(getValueStr()); \
@@ -158,6 +163,12 @@ private: \
   QString getValueStr() { getValueStrFunc } \
   int newValue(int v) { newValueFunc } \
 };
+
+ParamControllerInt(DeviceShutdownTimer, "DeviceShutdownTimer", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../assets/offroad/icon_time.png",
+  int value = params.getInt("DeviceShutdownTimer");
+  return value == 0 ? "Instant" : (value > 0 && value <= 3) ? QString::number(value * 15) + " mins" : QString::number(value - 3) + (value == 4 ? " hour" : " hours");,
+  return std::clamp(v, 0, 33);
+)
 
 ParamControllerInt(ScreenBrightness, "ScreenBrightness", "Screen Brightness", "Set a custom screen brightness level or use the default 'Auto' brightness setting.", "../assets/offroad/icon_light.png",
   int brightness = params.getInt("ScreenBrightness");
