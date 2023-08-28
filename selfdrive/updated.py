@@ -13,6 +13,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import List, Union, Optional
 from markdown_it import MarkdownIt
+from zoneinfo import ZoneInfo
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
@@ -190,6 +191,9 @@ def finalize_update() -> None:
   set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
 
+  # FrogPilot update functions
+  params = Params()
+  params.put("Updated", datetime.datetime.now().astimezone(ZoneInfo('America/Phoenix')).strftime("%B %d, %Y - %I:%M%p"));
 
 def handle_agnos_update() -> None:
   from openpilot.system.hardware.tici.agnos import flash_agnos_update, get_target_slot_number
@@ -414,9 +418,16 @@ def main() -> None:
   if Path(os.path.join(STAGING_ROOT, "old_openpilot")).is_dir():
     cloudlog.event("update installed")
 
-  if not params.get("InstallDate"):
-    t = datetime.datetime.utcnow().isoformat()
-    params.put("InstallDate", t.encode('utf8'))
+  date_format = "%B %d, %Y - %I:%M%p"
+  install_date = params.get("InstallDate")
+  if install_date is None:
+    install_date = datetime.datetime.now().astimezone(ZoneInfo('America/Phoenix')).strftime(date_format)
+  if isinstance(install_date, bytes):
+    install_date = install_date.decode('utf-8')
+  try:
+    datetime.datetime.strptime(install_date, date_format)
+  except ValueError:
+    params.put("InstallDate", datetime.datetime.now().astimezone(ZoneInfo('America/Phoenix')).strftime(date_format))
 
   updater = Updater()
   update_failed_count = 0 # TODO: Load from param?
