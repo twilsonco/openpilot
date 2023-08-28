@@ -1003,7 +1003,9 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   personality @36 :LongitudinalPersonality;
 
   # FrogPilot LongitudinalPlans
+  conditionalExperimentalMode @38 :Bool;
   frogpilotTogglesUpdated @40 :Bool;
+  statusValue @43 :Int8;
 
   enum LongitudinalPlanSource {
     cruise @0;

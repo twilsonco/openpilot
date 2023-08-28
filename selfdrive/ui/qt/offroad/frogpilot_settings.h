@@ -180,6 +180,18 @@ ParamControllerInt(AggressivePersonalityValue, "AggressivePersonalityValue", "Ti
   return std::clamp(v, 10, 50);
 )
 
+ParamControllerInt(ConditionalExperimentalModeSpeed, "ConditionalExperimentalModeSpeed", "Below", "Switch to 'Experimental Mode' below this speed when there is no lead vehicle.", "../assets/offroad/icon_blank.png",
+  int value = params.getInt("ConditionalExperimentalModeSpeed");
+  return value == 0 ? "Off" : QString::number(value) + "mph";,
+  return std::clamp(v, 0, 99);
+)
+
+ParamControllerInt(ConditionalExperimentalModeSpeedLead, "ConditionalExperimentalModeSpeedLead", "With Lead", "Switch to 'Experimental Mode' below this speed when there is a lead vehicle.", "../assets/offroad/icon_blank.png",
+  int value = params.getInt("ConditionalExperimentalModeSpeedLead");
+  return value == 0 ? "Off" : QString::number(value) + "mph";,
+  return std::clamp(v, 0, 99);
+)
+
 ParamControllerInt(DeviceShutdownTimer, "DeviceShutdownTimer", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../assets/offroad/icon_time.png",
   int value = params.getInt("DeviceShutdownTimer");
   return value == 0 ? "Instant" : (value > 0 && value <= 3) ? QString::number(value * 15) + " mins" : QString::number(value - 3) + (value == 4 ? " hour" : " hours");,

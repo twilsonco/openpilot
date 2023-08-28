@@ -280,6 +280,7 @@ class CarInterfaceBase(ABC):
 
     # FrogPilot variables
     params = Params()
+    ret.conditionalExperimentalMode = params.get_bool("ConditionalExperimentalMode")
     ret.drivingPersonalitiesUIWheel = params.get_bool("DrivingPersonalitiesUIWheel")
     ret.experimentalModeViaWheel = params.get_bool("ExperimentalModeViaWheel")
     ret.lateralTune = params.get_bool("LateralTuning")
