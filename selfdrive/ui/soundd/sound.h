@@ -37,5 +37,5 @@ protected:
   int current_volume = -1;
 
   // FrogPilot variables
-
+  bool isSilentMode;
 };

@@ -20,6 +20,7 @@ Sound::Sound(QObject *parent) : sm({"controlsState", "microphone"}) {
   static auto params = Params();
   const bool isFrogTheme = params.getBool("FrogTheme");
   const bool isFrogSounds = isFrogTheme && params.getBool("FrogSounds");
+  isSilentMode = params.getBool("SilentMode");
 
   for (auto &[alert, fn, loops] : sound_list) {
     QSoundEffect *s = new QSoundEffect(this);
@@ -37,6 +38,12 @@ Sound::Sound(QObject *parent) : sm({"controlsState", "microphone"}) {
 
 void Sound::update() {
   sm.update(0);
+
+  // no sounds if "Silent Mode" is toggled on
+  if (isSilentMode) {
+    setAlert({});
+    return;
+  }
 
   // scale volume using ambient noise level
   if (sm.updated("microphone")) {
