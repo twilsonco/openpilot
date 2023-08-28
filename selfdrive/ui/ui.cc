@@ -214,6 +214,7 @@ static void update_state(UIState *s) {
     const auto carParams = sm["carParams"].getCarParams();
     scene.longitudinal_control = carParams.getOpenpilotLongitudinalControl();
     if (scene.longitudinal_control) {
+      scene.experimental_mode_via_wheel = carParams.getExperimentalModeViaWheel();
       scene.driving_personalities_ui_wheel = carParams.getDrivingPersonalitiesUIWheel();
     }
   }

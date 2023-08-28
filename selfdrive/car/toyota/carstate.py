@@ -49,6 +49,9 @@ class CarState(CarStateBase):
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
     self.driving_personalities_via_wheel = self.CP.drivingPersonalitiesUIWheel
+    self.experimental_mode_via_wheel = self.CP.experimentalModeViaWheel
+    self.lkas_pressed = False
+    self.lkas_previously_pressed = False
     self.profile_restored = False
     self.distance_button = 0
     self.distance_lines = 0
@@ -204,6 +207,16 @@ class CarState(CarStateBase):
           put_int_nonblocking("LongitudinalPersonality", self.distance_lines)
           self.params_memory.put_bool("FrogPilotTogglesUpdated", True)
           self.previous_distance_lines = self.distance_lines
+
+    # Toggle Experimental Mode from steering wheel function
+    if self.experimental_mode_via_wheel:
+      message_keys = ["LDA_ON_MESSAGE", "SET_ME_X02"]
+      self.lkas_pressed = any(cp_cam.vl["LKAS_HUD"].get(key) == 1 for key in message_keys)
+      if self.lkas_pressed and not self.lkas_previously_pressed and ret.cruiseState.available:
+        experimental_mode = self.params.get_bool("ExperimentalMode")
+        # Invert the value of "ExperimentalMode"
+        put_bool_nonblocking("ExperimentalMode", not experimental_mode)
+      self.lkas_previously_pressed = self.lkas_pressed
 
     # For configuring onroad statuses
     ret.toyotaCar = True

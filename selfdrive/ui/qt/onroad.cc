@@ -113,6 +113,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   const SubMaster &sm = *uiState()->sm;
   static Params params;
   static Params params_memory = Params("/dev/shm/params");
+  static bool previouslyEnabled = false;
   static bool propagateEvent = false;
   static bool recentlyTapped = false;
   const bool isToyotaCar = scene.toyota_car;
@@ -152,6 +153,16 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
     speedHidden = !currentVisibility;
     params.putBool("HideSpeed", speedHidden);
     propagateEvent = false;
+  // If the click wasn't for anything specific, change the value of "ExperimentalMode"
+  } else if (recentlyTapped && scene.experimental_mode_via_wheel && (scene.enabled || previouslyEnabled) && !scene.navigate_on_openpilot) {
+    previouslyEnabled = true;
+    const bool experimentalMode = params.getBool("ExperimentalMode");
+    params.putBool("ExperimentalMode", !experimentalMode);
+    recentlyTapped = false;
+    propagateEvent = true;
+  } else {
+    recentlyTapped = true;
+    propagateEvent = true;
   }
 
   const bool clickedOnWidget = isDrivingPersonalitiesClicked || isMaxSpeedClicked || isSpeedClicked;
