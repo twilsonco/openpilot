@@ -358,6 +358,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
 
   // FrogPilot properties
   setProperty("experimentalMode", s.scene.experimental_mode);
+  setProperty("frogColors", s.scene.frog_colors);
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
@@ -508,23 +509,37 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
   // lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
-    painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, std::clamp<float>(scene.lane_line_probs[i], 0.0, 0.7)));
+    if (frogColors) {
+      painter.setBrush(QColor(23, 134, 68, 242));
+    } else {
+      painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, std::clamp<float>(scene.lane_line_probs[i], 0.0, 0.7)));
+    }
     painter.drawPolygon(scene.lane_line_vertices[i]);
   }
 
   // road edges
   for (int i = 0; i < std::size(scene.road_edge_vertices); ++i) {
-    painter.setBrush(QColor::fromRgbF(1.0, 0, 0, std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0)));
+    if (frogColors) {
+      painter.setBrush(QColor(23, 134, 68, 242));
+    } else {
+      painter.setBrush(QColor::fromRgbF(1.0, 0, 0, std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0)));
+    }
     painter.drawPolygon(scene.road_edge_vertices[i]);
   }
 
   // paint path
   QLinearGradient bg(0, height(), 0, 0);
-  if (sm["controlsState"].getControlsState().getExperimentalMode()) {
+  if (sm["controlsState"].getControlsState().getExperimentalMode() || frogColors) {
     // The first half of track_vertices are the points for the right side of the path
     // and the indices match the positions of accel from uiPlan
-    const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
-    const int max_len = std::min<int>(scene.track_vertices.length() / 2, acceleration.size());
+    const auto &acceleration_const = sm["uiPlan"].getUiPlan().getAccel();
+    const int max_len = std::min<int>(scene.track_vertices.length() / 2, acceleration_const.size());
+
+    // Copy of the acceleration vector for the "frogColors" path
+    std::vector<float> acceleration;
+    for (int i = 0; i < acceleration_const.size(); i++) {
+      acceleration.push_back(acceleration_const[i]);
+    }
 
     for (int i = 0; i < max_len; ++i) {
       // Some points are out of frame
@@ -532,6 +547,11 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
       // Flip so 0 is bottom of frame
       float lin_grad_point = (height() - scene.track_vertices[i].y()) / height();
+
+      // If acceleration is between -0.25 and 0.25 and frogColors is True, set acceleration to 2 to give it a consistent green color
+      if (frogColors && acceleration[i] > -0.25 && acceleration[i] < 0.25) {
+        acceleration[i] = 2;
+      }
 
       // speed up: 120, slow down: 0
       float path_hue = fmax(fmin(60 + acceleration[i] * 35, 120), 0);
@@ -603,8 +623,8 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
 void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd) {
   painter.save();
 
-  const float speedBuff = 10.;
-  const float leadBuff = 40.;
+  const float speedBuff = frogColors ? 25. : 10.; // The center of the chevron appears sooner when frogColors is "true"
+  const float leadBuff = frogColors ? 100. : 40.; // The center of the chevron appears sooner when frogColors is "true"
   const float d_rel = lead_data.getDRel();
   const float v_rel = lead_data.getVRel();
 
@@ -630,7 +650,7 @@ void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::RadarState
 
   // chevron
   QPointF chevron[] = {{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz}};
-  painter.setBrush(redColor(fillAlpha));
+  painter.setBrush(frogColors ? frogColor(fillAlpha) : redColor(fillAlpha));
   painter.drawPolygon(chevron, std::size(chevron));
 
   painter.restore();

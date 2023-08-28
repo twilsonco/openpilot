@@ -117,6 +117,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     vehicleSensorsInvalid @116;
 
     # FrogPilot Events
+    frogSteerSaturated @118;
 
     radarCanErrorDEPRECATED @15;
     communityFeatureDisallowedDEPRECATED @62;

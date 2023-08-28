@@ -157,6 +157,8 @@ typedef struct UIScene {
   bool default_params_set;
   bool enabled;
   bool experimental_mode;
+  bool frog_colors;
+  bool frog_theme;
   bool frogpilot_toggles_updated;
   bool toyota_car = true;
 

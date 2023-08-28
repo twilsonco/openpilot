@@ -39,11 +39,19 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
   mainLayout->addWidget(white_horizontal_line());
 
   static const std::vector<std::tuple<QString, QString, QString, QString>> toggles = {
+    {"FrogTheme", "FrogPilot Theme", "Enable the beloved FrogPilot Theme! Disable toggle to revert back to the stock openpilot theme.", "../assets/images/frog_button_home.png"}
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
     ParamControl *control = createParamControl(key, label, desc, icon, this);
-    if (key == "") {
+    if (key == "FrogTheme") {
+      mainLayout->addWidget(control);
+      mainLayout->addWidget(horizontal_line());
+      createSubButtonControl(key, {
+        {"FrogColors", "Colors"},
+        {"FrogIcons", "Icons"},
+        {"FrogSounds", "Sounds"},
+      }, mainLayout);
     } else {
       mainLayout->addWidget(control);
       if (key != std::get<0>(toggles.back())) mainLayout->addWidget(horizontal_line());

@@ -245,6 +245,8 @@ void ui_update_params(UIState *s) {
     scene.default_params_set = params.getBool("DefaultParamsSet");
   }
   if (!toggles_checked && scene.default_params_set) {
+    scene.frog_theme = params.getBool("FrogTheme");
+    scene.frog_colors = scene.frog_theme && params.getBool("FrogColors");
     toggles_checked = true;
   }
 

@@ -42,6 +42,15 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
 
   // FrogPilot variables
   static auto params = Params();
+  const bool isFrogTheme = params.getBool("FrogTheme");
+  isFrogColors = isFrogTheme && params.getBool("FrogColors");
+  const bool isFrogIcons = isFrogTheme && params.getBool("FrogIcons");
+
+  if (isFrogIcons) {
+    flag_img = loadPixmap("../assets/images/frog_button_home.png", home_btn.size());
+    home_img = loadPixmap("../assets/images/frog_button_home.png", home_btn.size());
+    settings_img = loadPixmap("../assets/images/frog_button_settings.png", settings_btn.size(), Qt::IgnoreAspectRatio);
+  }
 }
 
 void Sidebar::mousePressEvent(QMouseEvent *event) {
@@ -91,7 +100,7 @@ void Sidebar::updateState(const UIState &s) {
     connectStatus = ItemStatus{{tr("CONNECT"), tr("OFFLINE")}, warning_color};
   } else {
     connectStatus = nanos_since_boot() - last_ping < 80e9
-                        ? ItemStatus{{tr("CONNECT"), tr("ONLINE")}, good_color}
+                        ? ItemStatus{{tr("CONNECT"), tr("ONLINE")}, isFrogColors ? frog_color : good_color}
                         : ItemStatus{{tr("CONNECT"), tr("ERROR")}, danger_color};
   }
   setProperty("connectStatus", QVariant::fromValue(connectStatus));
@@ -99,13 +108,13 @@ void Sidebar::updateState(const UIState &s) {
   ItemStatus tempStatus = {{tr("TEMP"), tr("HIGH")}, danger_color};
   auto ts = deviceState.getThermalStatus();
   if (ts == cereal::DeviceState::ThermalStatus::GREEN) {
-    tempStatus = {{tr("TEMP"), tr("GOOD")}, good_color};
+    tempStatus = {{tr("TEMP"), tr("GOOD")}, isFrogColors ? frog_color : good_color};
   } else if (ts == cereal::DeviceState::ThermalStatus::YELLOW) {
     tempStatus = {{tr("TEMP"), tr("OK")}, warning_color};
   }
   setProperty("tempStatus", QVariant::fromValue(tempStatus));
 
-  ItemStatus pandaStatus = {{tr("VEHICLE"), tr("ONLINE")}, good_color};
+  ItemStatus pandaStatus = {{tr("VEHICLE"), tr("ONLINE")}, isFrogColors ? frog_color : good_color};
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
     pandaStatus = {{tr("NO"), tr("PANDA")}, danger_color};
   } else if (s.scene.started && !sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK()) {

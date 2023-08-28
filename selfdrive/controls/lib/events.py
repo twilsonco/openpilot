@@ -552,6 +552,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.promptRepeat, 2.),
   },
 
+  EventName.frogSteerSaturated: {
+    ET.WARNING: Alert(
+      "Turn Exceeds Steering Limit",
+      "JESUS TAKE THE WHEEL!!",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.warningSoft, 1.),
+  },
+
   # Thrown when the fan is driven at >50% but is not rotating
   EventName.fanMalfunction: {
     ET.PERMANENT: NormalPermanentAlert("Fan Malfunction", "Likely Hardware Issue"),
