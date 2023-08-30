@@ -9,7 +9,7 @@ The following is from an explanation I gave in the SunnyPilot discord server `#t
 That's steer torque vs lat accel. There's many columns because comma provided 2 steer torque versions and 3 lat accel versions = 6 combinations I checked
 The slope of the point clouds shows the amount of torque necessary to hit different lateral accelerations at different speeds.
 
-![nnff-a plot](https://raw.githubusercontent.com/twilsonco/openpilot/log-info/data/7%20Comma%20lateral%20torque%20NNFF%20fits/TOYOTA_RAV4_HYBRID_2019-a.png)
+![nnff-a plot](https://raw.github.com/twilsonco/openpilot/log-info/data/7a%20Comma%20lateral%20torque%20NNFF%20fits%20-%20combined%20firmwares/TOYOTA_RAV4_HYBRID_2019-a.png?raw=true)
 
 Then here's the NN fit
 Where the different lines show how the value of torque changes, for a given lateral accel and speed, if you also change some other parameter. First column shows the torque going up/down due to error response (similar to "friction" in the torque controller)
@@ -17,7 +17,7 @@ second column shows how the torque changes up or down in response to lateral jer
 right column is the road roll response
 Then here's the cool part
 
-![nnff-b plot](https://raw.githubusercontent.com/twilsonco/openpilot/log-info/data/7%20Comma%20lateral%20torque%20NNFF%20fits/TOYOTA_RAV4_HYBRID_2019-b.png)
+![nnff-b plot](https://raw.github.com/twilsonco/openpilot/log-info/data/7a%20Comma%20lateral%20torque%20NNFF%20fits%20-%20combined%20firmwares/TOYOTA_RAV4_HYBRID_2019-b.png?raw=true)
 
 Plot it this way and you can see the model's error response specifically (left column), and now the different lines are showing how the torque at different lateral accels would change as the error that needs to be corrected changes
 

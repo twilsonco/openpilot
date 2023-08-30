@@ -348,7 +348,7 @@ With this—and lots of trial & error & iterations—you get the current generat
 
 | lateral acceleration response | error, lateral jerk, and roll responses |
 | --- | --- |
-| ![nnff-a](https://raw.github.com/twilsonco/openpilot/log-info/data/7%20Comma%20lateral%20torque%20NNFF%20fits/CHEVROLET_VOLT_PREMIER_2017-a.png) | ![nnff-b](https://raw.github.com/twilsonco/openpilot/log-info/data/7%20Comma%20lateral%20torque%20NNFF%20fits/CHEVROLET_VOLT_PREMIER_2017-b.png) |
+| ![nnff-a](https://raw.github.com/twilsonco/openpilot/log-info/data/7a%20Comma%20lateral%20torque%20NNFF%20fits%20-%20combined%20firmwares/CHEVROLET_VOLT_PREMIER_2017-a.png?raw=true) | ![nnff-b](https://raw.github.com/twilsonco/openpilot/log-info/data/7a%20Comma%20lateral%20torque%20NNFF%20fits%20-%20combined%20firmwares/CHEVROLET_VOLT_PREMIER_2017-b.png?raw=true) |
 
 See here to [understand the NNFF model plots](https://github.com/twilsonco/openpilot/blob/log-info/sec/2%20Understanding%20the%20NNFF%20model%20and%20plots.md)
 
