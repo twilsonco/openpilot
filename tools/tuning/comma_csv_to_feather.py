@@ -3,7 +3,6 @@ import gc
 import os
 import re
 import bisect
-import pickle
 import datetime
 import pandas as pd
 import copy
@@ -26,6 +25,8 @@ import selfdrive.car.toyota.values as toyota
 from matplotlib import pyplot as plt
 from matplotlib.cm import ScalarMappable
 from typing import List
+import tempfile
+import zipfile
 
 DEBUG=0 # number of segments to load. 0 for no debugging
 
@@ -184,25 +185,24 @@ def insert_and_merge(intervals, new_interval):
         intervals.pop(index + 1)
 
     
-def csv_files_to_feather(input_dir, check_modified=True, print_stats=False, save_output=True):
-    # List all pickle files in the input directory
+def csv_files_to_feather(input_dir, check_modified=True, print_stats=False, save_output=True, out_path_base=""):
+    # List all csv files in the input directory
     carname = os.path.basename(input_dir)
     csv_files = sorted([f for f in os.listdir(input_dir) if f.endswith('.csv')])
     
     data = []
     
     make = ""
-    model = ""
     
     for csv_file in csv_files:
       with open(os.path.join(input_dir, csv_file), 'rb') as f:
         csv_reader = csv.reader(csv_file)
         
-    # Iterate through the pickle files and load the data
+    # Iterate through the csv files and load the data
     i=0
     tot_num_points = 0
     # random.shuffle(csv_files)
-    print("Loading pickle files...")
+    print("Loading csv files...")
     columns = [
       'v_ego',
       # 'a_ego',
@@ -219,7 +219,7 @@ def csv_files_to_feather(input_dir, check_modified=True, print_stats=False, save
     
     steer_pressed_buffer = 20 # data is at 10Hz, so this is 1 second
     middle_point = steer_pressed_buffer // 2
-    
+    tot_num_points_by_eps_firmware = defaultdict(int)
     if DEBUG:
       random.shuffle(csv_files)
     for csv_file in (pbar := tqdm(csv_files)):
@@ -232,6 +232,7 @@ def csv_files_to_feather(input_dir, check_modified=True, print_stats=False, save
           # continue
           try:
             in_deque.append(CleanLatSample(s))
+            tot_num_points_by_eps_firmware[in_deque[-1].eps_firmware] += 1
             tot_num_points += 1
             if len(in_deque) == steer_pressed_buffer \
                                 and not any([s.steer_pressed or not s.lat_active for s in in_deque]) \
@@ -250,7 +251,7 @@ def csv_files_to_feather(input_dir, check_modified=True, print_stats=False, save
     print(f"{len(samples) = }")
     
     if len(samples) == 0:
-      return
+      return False
         
     steer_cmd_stats = describe([s.steer_cmd for s in samples])
     steer_cmd_filtered_stats = describe([s.steer_cmd_filtered for s in samples])
@@ -266,10 +267,20 @@ def csv_files_to_feather(input_dir, check_modified=True, print_stats=False, save
     eps_firmwares = list(set([s.eps_firmware for s in samples if s.eps_firmware != '']))
     if len(eps_firmwares) == 0:
       eps_firmwares = ['']
-    print('\n'.join(eps_firmwares))
+    else:
+      eps_firmwares.sort()
+      eps_firmwares.append('combined')
+    print(f"EPS firmwares and number of points of each ({tot_num_points} total):")
+    tot_num_points_full = copy.deepcopy(tot_num_points)
+    print('\n'.join([f"{k}: {v}" for k,v in tot_num_points_by_eps_firmware.items()]))
     full_samples = samples
     for eps_firmware in eps_firmwares:
-      samples = [s for s in full_samples if s.eps_firmware == eps_firmware]
+      if eps_firmware != '':
+        print(f"Processing firmware: {eps_firmware}")
+      else:
+        eps_firmware = 'combined'
+      samples = [s for s in full_samples if eps_firmware == 'combined' or s.eps_firmware == eps_firmware]
+      tot_num_points = tot_num_points_by_eps_firmware[eps_firmware] if eps_firmware != 'combined' else tot_num_points_full
       if print_stats and len(samples) > 0:
         
         print("Preparing plots")
@@ -400,17 +411,22 @@ def csv_files_to_feather(input_dir, check_modified=True, print_stats=False, save
         # samples are at 10Hz, so 1 minute of data is 600 samples
         approx_logtime = len(samples) / 600.0 / 60.0
         eps_firmware_str = "" if len(eps_firmwares) <= 1 else f" | eps_firmware: {eps_firmware}"
-        suptitle=f"{carname} ({approx_logtime:0.0f} hrs of log data; {len(samples)} of {tot_num_points} samples retained){eps_firmware_str} | lat_accels vs. steer cmds \nColored by  speed (up to {human_readable(batch_size)} pts per plot) | steer cmd: {describe_to_string(steer_cmd_stats)}\nsteer cmd filtered: {describe_to_string(steer_cmd_filtered_stats)} | lat accel (steer angle): {describe_to_string(lat_accel_steer_angle_stats)}\nlat accel (localizer): {describe_to_string(lat_accel_localizer_stats)} | lat accel (desired) {describe_to_string(lat_accel_desired_stats)}\nv_ego {describe_to_string(v_ego_stats)} | a_ego {describe_to_string(long_accel_stats)}\nroll {describe_to_string(roll_stats)} | steer angle (deg) {describe_to_string(steering_angle_deg_stats)}"
+        suptitle=f"{carname} ({approx_logtime:0.0f} hrs of log data; {human_readable(len(samples))} or {len(samples)/max(1,tot_num_points)*100:.2f}% of {human_readable(tot_num_points)} samples retained){eps_firmware_str} | lat_accels vs. steer cmds \nColored by  speed (up to {human_readable(batch_size)} pts per plot) | steer cmd: {describe_to_string(steer_cmd_stats)}\nsteer cmd filtered: {describe_to_string(steer_cmd_filtered_stats)} | lat accel (steer angle): {describe_to_string(lat_accel_steer_angle_stats)}\nlat accel (localizer): {describe_to_string(lat_accel_localizer_stats)} | lat accel (desired) {describe_to_string(lat_accel_desired_stats)}\nv_ego {describe_to_string(v_ego_stats)} | a_ego {describe_to_string(long_accel_stats)}\nroll {describe_to_string(roll_stats)} | steer angle (deg) {describe_to_string(steering_angle_deg_stats)}"
         if DEBUG:
           suptitle = f"<---DEBUG-{DEBUG}--->\n{suptitle}\n<---DEBUG-{DEBUG}--->"
         fig.suptitle(suptitle, fontsize=9)
         fig.subplots_adjust(top=0.85)
         plt.tight_layout()
         
-        path_base = os.path.join(os.path.dirname(input_dir),"lat_plots")
+        if out_path_base == "":
+          path_base = os.path.join(os.path.dirname(os.path.dirname(input_dir)),"lat_plots")
+        else:
+          path_base = os.path.join(out_path_base, "lat_plots")
         print(f"Saving to {path_base}...")
         os.makedirs(path_base, exist_ok=True)
-        plt.savefig(os.path.join(path_base, f"{carname}_lat.png"))
+        
+        eps_firmware_str = "" if len(eps_firmwares) <= 1 else f"_{sanitize(eps_firmware)}"
+        plt.savefig(os.path.join(path_base, f"{carname}{eps_firmware_str}_lat.png"))
         plt.clf()
         plt.close("all")
         
@@ -484,13 +500,13 @@ def csv_files_to_feather(input_dir, check_modified=True, print_stats=False, save
           # torque_sources = ['steer_cmd', 'steer_cmd_filtered']
           # lat_accel_sources = ['lateral_accel_steer_angle', 'lateral_accel_localizer', 'lateral_accel_desired']
           torque_sources = ['steer_cmd_filtered']
-          lat_accel_sources = ['lateral_accel_steer_angle']
+          # lat_accel_sources = ['lateral_accel_steer_angle']
+          lat_accel_sources = ['steer_angle_deg']
           eps_firmware_str = "" if len(eps_firmwares) <= 1 else f"_{sanitize(eps_firmware)}"
           for torque_source in torque_sources:
             for lat_accel_source in lat_accel_sources:
               print(f"  Processing {torque_source} vs {lat_accel_source}...")
               lat_accel_deque = deque(maxlen=max_len)
-              lat_jerk_deque = deque(maxlen=max_len)
               roll_deque = deque(maxlen=max_len)
               sample_deque = deque(maxlen=max_len)
               outdata = []
@@ -529,8 +545,8 @@ def csv_files_to_feather(input_dir, check_modified=True, print_stats=False, save
                 continue
                 
               
-              # pickle.dump(data, open(output_csv.replace(".csv", ".pkl"), "wb"))
-              # pickle.dump(data, lzma.open(output_csv.replace(".csv", ".pkl.xz"), "wb"))
+              # csv.dump(data, open(output_csv.replace(".csv", ".pkl"), "wb"))
+              # csv.dump(data, lzma.open(output_csv.replace(".csv", ".pkl.xz"), "wb"))
               print("creating dataframe")
               df = pd.DataFrame(outdata)
               
@@ -538,34 +554,42 @@ def csv_files_to_feather(input_dir, check_modified=True, print_stats=False, save
               print(df.sample(10))
               
               # Write the DataFrame to a CSV file
-              path_base = os.path.join(os.path.dirname(input_dir),"sample_csv_files")
+              if out_path_base == "":
+                path_base = os.path.join(os.path.dirname(os.path.dirname(input_dir.replace("_"," "))),"sample_csv_files")
+              else:
+                path_base = os.path.join(out_path_base, "sample_csv_files")
               print(f"writing file to directory {path_base}")
               os.makedirs(path_base, exist_ok=True)
-              df.sample(100).copy().to_csv(os.path.join(path_base,f"{carname}{eps_firmware_str}_{torque_source}_{torque_source}-vs-{lat_accel_source}_sample.csv"), index=False)#, float_format='%.8g')
+              # df.sample(100).copy().to_csv(os.path.join(path_base,f"{carname}{eps_firmware_str}_{torque_source}-vs-{lat_accel_source}_sample.csv"), index=False)#, float_format='%.8g')
+              df.sample(100).copy().to_csv(os.path.join(path_base,f"{carname}{eps_firmware_str}_sample.csv"), index=False)#, float_format='%.8g')
               # df.to_csv(os.path.join(input_dir,f"{model}.csv"), index=False)#, float_format='%.8g')
               # feather.write_dataframe(df, os.path.join(input_dir,f"{model}.feather"))
               # df.to_feather(os.path.join(input_dir,f"{model}.feather"))
-              path_base = os.path.join(os.path.dirname(input_dir),"feather_files")
+              if out_path_base == "":
+                path_base = os.path.join(os.path.dirname(os.path.dirname(input_dir.replace("_"," "))),"feather_files")
+              else:
+                path_base = os.path.join(out_path_base, "feather_files")
               os.makedirs(path_base, exist_ok=True)
-              feather.write_feather(df, os.path.join(path_base,f"{carname}{eps_firmware_str}_{torque_source}-vs-{lat_accel_source}.feather"), version=1)
+              feather.write_feather(df, os.path.join(path_base,f"{carname}{eps_firmware_str}.feather"), version=1)
 
-    return model
+    return True
 
-# Example usage:
-input_dir = '/Users/haiiro/NoSync/comma-steer-data/csv_files'
-# compile a regex pattern to match valid subdirectory names
-pattern = re.compile(r'^[\-A-Z0-9a-z() ]+$')
+# point this to the folder containing all the zip files
+input_dir = '/Users/haiiro/NoSync/comma-steer-data/zip_files'
+# input_dir = '/Volumes/video/scratch-video/comma-data/commaSteeringControl/data'
 def has_upper_word(text):
-    words = text.split()
+    words = text.split(' ')
     for word in words:
         if word.isupper():
             return True
     return False
 
 # iterate over all directories and subdirectories in the specified path
+whitelist = ["RAV4", "IMPREZA", "FORESTER", "ASCENT", "JEEP", "PACIFICA", "ACADIA", "VOLT", "NISSAN", "HONDA"]
 whitelist = ["VOLT"]
 blacklist = []
 dirlist=[]
+out_path_base = os.path.dirname(input_dir)
 for root, dirs, files in os.walk(input_dir):
     for dir_name in dirs:
         # check if the directory name matches the regex pattern
@@ -576,11 +600,34 @@ for root, dirs, files in os.walk(input_dir):
             print(f"Processing {d}...")
             # try:
             # dirlist.append(d)
-            model = csv_files_to_feather(d, check_modified=False, print_stats=False, save_output=True)
-            blacklist.append(dir_name)
+            if csv_files_to_feather(d, check_modified=False, print_stats=True, save_output=True, out_path_base=out_path_base.replace("_"," ")):
+              blacklist.append(dir_name)
             # except Exception as e:
             #   print(f"Error processing {d}: {e}")
             #   continue
+    for file in files:
+      if (len(whitelist) > 0 and not any([w in file for w in whitelist])) or (any([b in file for b in blacklist])):
+        continue
+      if file.endswith(".zip"):
+        # unzip to a temporary directory and save the directory name to a variable
+        with tempfile.TemporaryDirectory() as tmpdirname:
+          print(f"Extracting {file} to temp folder: {tmpdirname}...")
+          with zipfile.ZipFile(os.path.join(root, file), 'r') as zip_ref:
+            zip_ref.extractall(tmpdirname)
+          # process the directory
+          for root1, dirs1, files1 in os.walk(tmpdirname):
+            for dir_name in dirs1:
+                # check if the directory name matches the regex pattern
+                if has_upper_word(dir_name):
+                    d = os.path.join(root1, dir_name)
+                    if (len(whitelist) > 0 and not any([w in d for w in whitelist])) or (any([b in d for b in blacklist])):
+                      continue
+                    print(f"Processing {d}...")
+                    # try:
+                    # dirlist.append(d)
+                    
+                    if csv_files_to_feather(d, check_modified=False, print_stats=False, save_output=True, out_path_base=out_path_base):
+                      blacklist.append(dir_name)
 
 # def process_dir(d):
 #   csv_files_to_feather(d, check_modified=False, print_stats=True)

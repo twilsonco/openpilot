@@ -1031,7 +1031,7 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
     return model
 
 # Example usage:
-input_dir = '/Users/haiiro/NoSync/latfiles'
+input_dir = '/Volumes/video/scratch-video/latfiles'
 # compile a regex pattern to match valid subdirectory names
 pattern = re.compile(r'^[\-A-Z0-9a-z() ]+$')
 def has_upper_word(text):
@@ -1043,7 +1043,7 @@ def has_upper_word(text):
 
 # iterate over all directories and subdirectories in the specified path
 whitelist = ["toyota", "honda", "hyundai", "chrysler"]
-whitelist = ["VOLT PREMIER"]
+whitelist = []
 blacklist = []
 dirlist=[]
 for root, dirs, files in os.walk(input_dir):
