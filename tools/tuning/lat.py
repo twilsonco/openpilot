@@ -169,24 +169,32 @@ class Sample():
   desired_curvature: float = np.nan
   desired_curvature_rate: float = np.nan
   lateral_accel: float = np.nan
-  lateral_accel_rate_w_roll: float = np.nan
   lateral_jerk: float = np.nan
   roll: float = np.nan
+  pitch: float = np.nan
   curvature_device: float = np.nan
   lateral_accel_device: float = np.nan
   steer_cmd: float = np.nan
+  steer_cmd_out: float = np.nan
   desired_steer_angle: float = np.nan
   desired_steer_rate: float = np.nan
+  desired_accel: float = np.nan
   gas_cmd: float = np.nan
+  gas_cmd_out: float = np.nan
   gas: float = np.nan
   gas_pressed: bool = False
   brake_cmd: float = np.nan
+  brake_cmd_out: float = np.nan
   brake: float = np.nan
   brake_pressed: bool = False
   car_make: str = ''
   car_fp: str = ''
   long_actuator_delay: float = np.nan
-  t: float = np.nan
+  t_cs: float = np.nan
+  t_cc: float = np.nan
+  t_llk: float = np.nan
+  t_lp: float = np.nan
+  t_lat_p: float = np.nan
   
 
 class CleanSample(NamedTuple):
@@ -223,8 +231,8 @@ def collect(lr):
     # print(f'{msg.which() = }')
     try:
       # type_set.add(msg.which())
-      s.t = msg.logMonoTime
       if msg.which() == 'carState':
+        s.t_cs = msg.logMonoTime
         s.v_ego  = msg.carState.vEgo
         s.a_ego  = msg.carState.aEgo
         s.steer_angle = msg.carState.steeringAngleDeg
@@ -236,6 +244,7 @@ def collect(lr):
         s.brake = msg.carState.brake
         s.brake_pressed = msg.carState.brakePressed
       elif msg.which() == 'liveParameters':
+        s.t_lp= msg.logMonoTime
         s.steer_offset = msg.liveParameters.angleOffsetDeg
         s.steer_offset_average = msg.liveParameters.angleOffsetAverageDeg  
         stiffnessFactor = msg.liveParameters.stiffnessFactor
@@ -243,19 +252,23 @@ def collect(lr):
         s.roll = msg.liveParameters.roll
         continue
       elif msg.which() == 'carControl':
+        s.t_cc = msg.logMonoTime
         s.enabled = msg.carControl.enabled
         if hasattr(msg.carControl, "actuatorsOutput"):
-          s.steer_cmd = msg.carControl.actuatorsOutput.steer
-          s.gas_cmd = msg.carControl.actuatorsOutput.gas
-          s.brake_cmd = msg.carControl.actuatorsOutput.brake
-        else:
-          s.steer_cmd = msg.carControl.actuators.steer
-          s.gas_cmd = msg.carControl.actuators.gas
-          s.brake_cmd = msg.carControl.actuators.brake
+          s.steer_cmd_out = msg.carControl.actuatorsOutput.steer
+          s.gas_cmd_out = msg.carControl.actuatorsOutput.gas
+          s.brake_cmd_out = msg.carControl.actuatorsOutput.brake
+        s.steer_cmd = msg.carControl.actuators.steer
+        s.gas_cmd = msg.carControl.actuators.gas
+        s.brake_cmd = msg.carControl.actuators.brake
+        s.desired_accel = msg.carControl.actuators.accel
         continue
       elif msg.which() == 'liveLocationKalman':
+        s.t_llk = msg.logMonoTime
         yaw_rate = msg.liveLocationKalman.angularVelocityCalibrated.value[2]
+        s.pitch = msg.liveLocationKalman.orientationNED.value[1]
       elif msg.which() == 'lateralPlan':
+        s.t_lat_p = msg.logMonoTime
         # logs before 2021-05 don't have this field
         try:
           s.desired_curvature_rate = msg.lateralPlan.curvatureRates[0]
@@ -283,11 +296,9 @@ def collect(lr):
         s.long_actuator_delay = (CP.longitudinalActuatorDelayUpperBound + CP.longitudinalActuatorDelayLowerBound) / 2
         VM.update_params(max(stiffnessFactor, 0.1), max(steerRatio, 0.1))
         current_curvature = -VM.calc_curvature(math.radians(s.steer_angle - s.steer_offset), s.v_ego, s.roll)
-        current_curvature_rate = -VM.calc_curvature(math.radians(s.steer_rate), s.v_ego, s.roll)
-        current_curvature_rate_no_roll = -VM.calc_curvature(math.radians(s.steer_rate), s.v_ego, 0.)
+        current_curvature_rate = -VM.calc_curvature(math.radians(s.steer_rate), s.v_ego, 0.)
         s.lateral_accel = current_curvature * s.v_ego**2
-        s.lateral_accel_rate_w_roll = current_curvature_rate * s.v_ego**2
-        s.lateral_jerk = current_curvature_rate_no_roll * s.v_ego**2
+        s.lateral_jerk = current_curvature_rate * s.v_ego**2
         s.curvature_device = (yaw_rate / s.v_ego) if s.v_ego > 0.01 else 0.
         s.lateral_accel_device = yaw_rate * s.v_ego  - (np.sin(s.roll) * ACCELERATION_DUE_TO_GRAVITY)
         s.desired_steer_angle = math.degrees(VM.get_steer_from_curvature(-s.desired_curvature, s.v_ego, s.roll))
