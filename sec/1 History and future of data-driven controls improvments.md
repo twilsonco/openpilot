@@ -184,7 +184,7 @@ Squaring it makes the function more sensitive to changes in the parameter, but I
 
 During this stage of the project I reached out to drivers of other makes to collect rlogs and ended up doing torque FF fits for a [number of cars](link to manual fits):
 
-* All of the above plus: VW Golf 7th gen, VW Passat NMS, Hyundai Palisade, Dodge Ram 1500, Chrylser Palisade
+* All of the above plus: VW Golf 7th gen, VW Passat NMS, Hyundai Palisade, Dodge Ram 1500, Chrysler Pacifica
 
 ### Lateral jerk fits
 
