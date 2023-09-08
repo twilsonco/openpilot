@@ -435,13 +435,13 @@ This allows NNFF to respond to the changing plan, and allows us to incorporate a
 
 #### Community log collection ramps up
 
-As NNFF was being worked on, I expanded my [log collection](https://github.com/twilsonco/openpilot/tree/log-info) efforts. Eventually I was collecting logs from 51 users, and [adequate logs were collected](https://github.com/twilsonco/openpilot/blob/log-info/2 Community lateral data.md) to generate NNFF fits [for 42 cars](https://github.com/twilsonco/openpilot/blob/log-info/3a Community lateral torque NNFF fits steer command.md) using steer command as torque input source. 
+As NNFF was being worked on, I expanded my [log collection](https://github.com/twilsonco/openpilot/tree/log-info) efforts. Eventually I was collecting logs from 51 users, and [adequate logs were collected](https://github.com/twilsonco/openpilot/blob/log-info/2) Community lateral data.md) to generate NNFF fits [for 42 cars](https://github.com/twilsonco/openpilot/blob/log-info/3a) Community lateral torque NNFF fits steer command.md) using steer command as torque input source. 
 Other fits were made using different torque sources.
 
 #### commaSteeringControl
 
 After being visited by a ghost, Comma felt compelled to graciously release steering data for over 100 different models in the [commaSteeringControl](https://github.com/commaai/comma-steering-control) dataset.
-This resulted in [NNFF fits for 106 cars](https://github.com/twilsonco/openpilot/blob/log-info/6 Comma lateral torque NNFF fits.md).
+This resulted in [NNFF fits for 106 cars](https://github.com/twilsonco/openpilot/blob/log-info/6) Comma lateral torque NNFF fits.md).
 
 ## Where to try?
 
