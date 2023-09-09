@@ -20,29 +20,33 @@ def lr_to_df(route_name: str, lr):
   try:
     for msg in lr:
       t = msg.logMonoTime
-      if msg.which() == 'carControl':
-        m = msg.carControl
-        data['enabled'].append((t, m.enabled))
+      try:
+        if msg.which() == 'carControl':
+          m = msg.carControl
+          data['enabled'].append((t, m.enabled))
 
-        data['gas_out'].append((t, m.actuatorsOutput.gas))
-        data['user_gas'].append((t, user_gas))
+          data['gas_out'].append((t, m.actuatorsOutput.gas))
+          data['user_gas'].append((t, user_gas))
 
-        data['brake_out'].append((t, m.actuatorsOutput.brake))
-        data['user_brake'].append((t, user_brake))
+          data['brake_out'].append((t, m.actuatorsOutput.brake))
+          data['user_brake'].append((t, user_brake))
 
-        data['accel'].append((t, m.actuators.accel))
-        data['pitch'].append((t, pitch))
-        data['v_ego'].append((t, vEgo))
-        data['a_ego'].append((t, aEgo))
-      elif msg.which() == 'liveLocationKalman':
-        m = msg.liveLocationKalman
-        pitch = m.orientationNED.value[1]
-      elif msg.which() == 'carState':
-        m = msg.carState
-        vEgo = m.vEgo
-        aEgo = m.aEgo
-        user_gas = m.gas
-        user_brake = m.brake
+          data['accel'].append((t, m.actuators.accel))
+          data['pitch'].append((t, pitch))
+          data['v_ego'].append((t, vEgo))
+          data['a_ego'].append((t, aEgo))
+        elif msg.which() == 'liveLocationKalman':
+          m = msg.liveLocationKalman
+          pitch = m.orientationNED.value[1]
+        elif msg.which() == 'carState':
+          m = msg.carState
+          vEgo = m.vEgo
+          aEgo = m.aEgo
+          user_gas = m.gas
+          user_brake = m.brake
+      except Exception as e:
+        print(e)
+        pass
   except IndexError:
     pass
 
