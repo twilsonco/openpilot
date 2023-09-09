@@ -76,7 +76,7 @@ def process_all_files(base_path='/data/media/0/realdata', outfile=None):
 
   with tqdm(total=sum(len(v) for v in routes.values()), desc=f'Converting {base_path}') as pbar:
     for route, files in routes.items():
-      rlogs = [os.path.join(base_path, f, 'rlog') for f in files]
+      rlogs = [os.path.join(base_path, f) for f in files]
 
       batch_size = 5
       for i in range(0, len(rlogs), batch_size):
