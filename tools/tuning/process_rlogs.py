@@ -8,7 +8,7 @@ from tqdm import tqdm
 from tools.lib.logreader import LogReader, MultiLogIterator
 
 
-def lr_to_df(route_name: str, lr: LogReader | MultiLogIterator):
+def lr_to_df(route_name: str, lr):
   data = defaultdict(list)
   
   pitch = 0.
