@@ -74,7 +74,7 @@ def process_all_files(base_path='/data/media/0/realdata', outfile=None):
     processed_routes = []
   routes = {k: v for k, v in routes.items() if k not in processed_routes}
 
-  with tqdm(total=sum(len(v) for v in routes.values()), desc='Converting rlogs to parquet') as pbar:
+  with tqdm(total=sum(len(v) for v in routes.values()), desc=f'Converting {base_path}') as pbar:
     for route, files in routes.items():
       rlogs = [os.path.join(base_path, f, 'rlog') for f in files]
 
