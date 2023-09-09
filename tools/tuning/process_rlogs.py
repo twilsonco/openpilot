@@ -19,22 +19,21 @@ def lr_to_df(route_name: str, lr):
 
   try:
     for msg in lr:
-      t = msg.logMonoTime
       try:
         if msg.which() == 'carControl':
           m = msg.carControl
-          data['enabled'].append((t, m.enabled))
+          data['enabled'].append(m.enabled)
 
-          data['gas_out'].append((t, m.actuatorsOutput.gas))
-          data['user_gas'].append((t, user_gas))
+          data['gas_out'].append(m.actuatorsOutput.gas)
+          data['user_gas'].append(user_gas)
 
-          data['brake_out'].append((t, m.actuatorsOutput.brake))
-          data['user_brake'].append((t, user_brake))
+          data['brake_out'].append(m.actuatorsOutput.brake)
+          data['user_brake'].append(user_brake)
 
-          data['accel'].append((t, m.actuators.accel))
-          data['pitch'].append((t, pitch))
-          data['v_ego'].append((t, vEgo))
-          data['a_ego'].append((t, aEgo))
+          data['accel'].append(m.actuators.accel)
+          data['pitch'].append(pitch)
+          data['v_ego'].append(vEgo)
+          data['a_ego'].append(aEgo)
         elif msg.which() == 'liveLocationKalman':
           m = msg.liveLocationKalman
           pitch = m.orientationNED.value[1]
