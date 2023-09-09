@@ -55,7 +55,7 @@ def lr_to_df(route_name: str, lr):
 
 def get_routes(base_path='/data/media/0/realdata'):
   all_files = os.listdir(base_path)
-  routes = [s[:-3] for s in all_files if s.endswith('--0')]
+  routes = [s[:-3] for s in all_files if s.endswith('--0--rlog.bz2')]
   return {r: [f for f in all_files if f.startswith(r)] for r in routes}
 
 
