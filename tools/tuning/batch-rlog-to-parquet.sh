@@ -23,7 +23,7 @@ for make in *; do
       if [ ! -d "$curdir/$dongle" ]; then
         continue
       fi
-      python3 /home/haiiro/openpilot-batch/openpilot/tools/tuning/process_rlogs.py "$curdir/$dongle" "$outdir/$car.parquet"
+      python3 /home/haiiro/openpilot-batch/openpilot/tools/tuning/process_rlogs.py "$curdir/$dongle" "$latdir/$car.parquet"
     done
   done
 done
