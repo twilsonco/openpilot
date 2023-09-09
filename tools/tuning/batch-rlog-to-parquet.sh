@@ -18,7 +18,7 @@ for make in *; do
     fi
     cd "$curdir"
     outdir="$latdir/$make/$car"
-    mkdir -p "$outdir"
+    # mkdir -p "$outdir"
     for dongle in *; do
       if [ ! -d "$curdir/$dongle" ]; then
         continue
