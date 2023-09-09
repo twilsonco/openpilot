@@ -45,7 +45,7 @@ def lr_to_df(route_name: str, lr):
           user_gas = m.gas
           user_brake = m.brake
       except Exception as e:
-        print(e)
+        # print(e)
         pass
   except IndexError:
     pass
