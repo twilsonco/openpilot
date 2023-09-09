@@ -1,4 +1,5 @@
 import os
+import sys
 from collections import defaultdict
 
 import pandas as pd
@@ -87,4 +88,9 @@ def process_all_files(base_path='/data/media/0/realdata', outfile=None):
 
 
 if __name__ == '__main__':
-  process_all_files()
+  if len(sys.argv) > 1:
+    base_path = sys.argv[1]
+    outfile = sys.argv[2] if len(sys.argv) > 2 else None
+    process_all_files(base_path, outfile)
+  else:
+    process_all_files()
