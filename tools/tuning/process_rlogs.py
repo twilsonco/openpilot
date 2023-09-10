@@ -83,11 +83,14 @@ def process_all_files(base_path='/data/media/0/realdata', outfile=None):
 
       batch_size = 5
       for i in range(0, len(rlogs), batch_size):
-        logs = rlogs[i:i+batch_size]
-        lr = MultiLogIterator(logs, sort_by_time=True)
-        df = lr_to_df(route, lr)
-        df.to_parquet(outfile, append=os.path.isfile(outfile))
-        pbar.update(len(logs))
+        try:
+          logs = rlogs[i:i+batch_size]
+          lr = MultiLogIterator(logs, sort_by_time=True)
+          df = lr_to_df(route, lr)
+          df.to_parquet(outfile, append=os.path.isfile(outfile))
+          pbar.update(len(logs))
+        except Exception as e:
+          pass
 
 
 if __name__ == '__main__':
