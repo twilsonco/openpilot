@@ -797,7 +797,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // paint path edges
   QLinearGradient pe(0, height(), 0, 0);
   if (alwaysOnLateral) {
-    pe.setColorAt(0.0, QColor::fromHslF(28 / 360., 1.0, 0.0, 1.0));
+    pe.setColorAt(0.0, QColor::fromHslF(28 / 360., 1.0, 0.50, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(0 / 360., 1.0, 0.0, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(28 / 360., 1.0, 0.50, 0.1));
   } else if (conditionalStatus == 1) {
