@@ -862,10 +862,10 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
         hue = 0;
       } else if (laneWidth >= maxLaneWidth) {
         // Make the path green for larger paths
-        hue = 120;
+        hue = 28;
       } else {
         // Transition the path from red to green based on lane width
-        hue = (120 * (laneWidth - minLaneWidth)) / (maxLaneWidth - minLaneWidth);
+        hue = (28 * (laneWidth - minLaneWidth)) / (maxLaneWidth - minLaneWidth);
       }
       gradient.setColorAt(0.0, QColor::fromHslF(hue / 360., 0.75, 0.50, 0.6));
       gradient.setColorAt(0.5, QColor::fromHslF(hue / 360., 0.75, 0.50, 0.4));
