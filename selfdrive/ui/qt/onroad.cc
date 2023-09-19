@@ -767,14 +767,14 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       }
 
       // speed up: 120, slow down: 0
-      float path_hue = fmax(fmin(60 + acceleration[i] * 35, 120), 0);
-      // FIXME: painter.drawPolygon can be slow if hue is not rounded
-      path_hue = int(path_hue * 100 + 0.5) / 100;
+        float path_hue = fmax(fmin(270 + acceleration[i] * 0, 0), 28); // orange and black fade
+        // FIXME: painter.drawPolygon can be slow if hue is not rounded
+        path_hue = int(path_hue * 100 + 0.5) / 100;
 
-      float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
-      float lightness = util::map_val(saturation, 0.0f, 1.0f, 0.95f, 0.62f);  // lighter when grey
-      float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.4f, 0.0f);  // matches previous alpha fade
-      bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
+        float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
+        float lightness = util::map_val(saturation, 1.0f, 0.0f, 0.5f, 0.0f); // lighter when grey
+        float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.4f, 1.0f); // matches previous alpha fade
+        bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
 
       // Skip a point, unless next is last
       i += (i + 2) < max_len ? 1 : 0;
@@ -797,29 +797,29 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // paint path edges
   QLinearGradient pe(0, height(), 0, 0);
   if (alwaysOnLateral) {
-    pe.setColorAt(0.0, QColor::fromHslF(178 / 360., 0.90, 0.38, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(178 / 360., 0.90, 0.38, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(178 / 360., 0.90, 0.38, 0.1));
+    pe.setColorAt(0.0, QColor::fromHslF(28 / 360., 1.0, 0.50, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(0 / 360., 1.0, 0.0, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(0 / 360., 1.0, 0.0, 1.0));
   } else if (conditionalStatus == 1) {
-    pe.setColorAt(0.0, QColor::fromHslF(58 / 360., 1.00, 0.50, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(58 / 360., 1.00, 0.50, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(58 / 360., 1.00, 0.50, 0.1));
+    pe.setColorAt(0.0, QColor::fromHslF(188 / 360., 0.79, 0.58, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(188 / 360., 0.79, 0.58, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(188 / 360., 0.79, 0.58, 0.1));
   } else if (experimentalMode) {
-    pe.setColorAt(0.0, QColor::fromHslF(25 / 360., 0.71, 0.50, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(25 / 360., 0.71, 0.50, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(25 / 360., 0.71, 0.50, 0.1));
+    pe.setColorAt(0.0, QColor::fromHslF(360 / 360., 1.0, 0.50, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(360 / 360., 1.0, 0.50, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(360 / 360., 1.0, 0.50, 0.1));
   } else if (scene.navigate_on_openpilot) {
     pe.setColorAt(0.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.1));
   } else if (frogColors) {
-    pe.setColorAt(0.0, QColor::fromHslF(150 / 360., 0.75, 0.25, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(150 / 360., 0.75, 0.25, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(150 / 360., 0.75, 0.25, 0.1));
+    pe.setColorAt(0.0, QColor::fromHslF(30 / 360., 1.0, 0.50, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(0 / 360., 1.0, 0.50, 1.0));
+    pe.setColorAt(1.0, QColor::fromHslF(73 / 360., 1.0, 0.0, 1.0));
   } else {
-    pe.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.00, 0.68, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(112 / 360., 1.00, 0.68, 0.1));
+    pe.setColorAt(0.0, QColor::fromHslF(260 / 360., 0.94, 0.18, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(260 / 360., 1.0, 0.18, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(260 / 360., 1.0, 0.18, 0.1));
   }
 
   painter.setBrush(pe);
