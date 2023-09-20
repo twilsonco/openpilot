@@ -798,8 +798,8 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   QLinearGradient pe(0, height(), 0, 0);
   if (alwaysOnLateral) { // Pink & white
     pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 1.0, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(0 / 360., 1.0, 0.0, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 0.6, 0.1));
+    pe.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 0.3, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 0.0, 0.1));
   } else if (conditionalStatus == 1) {
     pe.setColorAt(0.0, QColor::fromHslF(188 / 360., 0.79, 0.58, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(188 / 360., 0.79, 0.58, 0.5));
@@ -813,9 +813,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.1));
   } else if (frogColors) {
-    pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 0.75, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(0 / 360., 1.0, 0.0, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 0.4, 0.1));
+    pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 1.0, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 0.4, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 0.0, 0.1));
   } else {
     pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 0.4, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 1.0, 0.5));
