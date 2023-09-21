@@ -782,8 +782,8 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
   } else {
     bg.setColorAt(0.0, QColor::fromHslF(0 / 360., 0.0, 1.0, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 0.8, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 0.8, 0.0));
+    bg.setColorAt(0.5, QColor::fromHslF(280 / 360., 1.0, 0.8, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(280 / 360., 1.0, 0.8, 0.0));
   }
 
   painter.setBrush(bg);
@@ -797,7 +797,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // paint path edges
   QLinearGradient pe(0, height(), 0, 0);
   if (alwaysOnLateral) { // Pink & white
-    pe.setColorAt(0.0, QColor::fromHslF(324 / 360.0, 1.0, 0.5, 1.0));   // Start with pink
+    pe.setColorAt(0.0, QColor::fromHslF(280 / 360.0, 0.98, 0.5, 0.98));   // Start with pink
 pe.setColorAt(0.5, QColor::fromHslF(0.0, 1.0, 1.0, 1.0));           // Transition to white (full saturation and lightness)
 pe.setColorAt(1.0, QColor::fromHslF(0.0, 1.0, 1.0, 1.0));           // Stay at white
   } else if (conditionalStatus == 1) {
@@ -813,8 +813,8 @@ pe.setColorAt(1.0, QColor::fromHslF(0.0, 1.0, 1.0, 1.0));           // Stay at w
     pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.1));
   } else if (frogColors) {
-    pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 0.5, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(0, 1.0, 1.0, 1.0));
+    pe.setColorAt(0.0, QColor::fromHslF(324 / 360., 1.0, 0.5, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(280, 1.0, 0.5, 1.0));
     pe.setColorAt(1.0, QColor::fromHslF(0, 1.0, 1.0, 1.0));
   } else {
     pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 0.5, 1.0));
