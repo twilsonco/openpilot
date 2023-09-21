@@ -797,7 +797,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // paint path edges
   QLinearGradient pe(0, height(), 0, 0);
   if (alwaysOnLateral) { // Pink & white
-    pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 1.0, 1.0));
+    pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 0.5, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 1.0, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 0.5, 0.1));
   } else if (conditionalStatus == 1) {
@@ -818,7 +818,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     pe.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 1.0, 0.1));
   } else {
     pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 0.5, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 1.0, 0.5));
+    pe.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 0.5, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 1.0, 0.1));
   }
 
