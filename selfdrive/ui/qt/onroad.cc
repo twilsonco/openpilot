@@ -767,12 +767,12 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       }
 
       // speed up: 120, slow down: 0
-        float path_hue = fmax(fmin(330 + acceleration[i] * 0, 0), 300); // Pink and black fade
+        float path_hue = fmax(fmin(300 + acceleration[i] * 0, 0), 333); // Pink and black fade
         // FIXME: painter.drawPolygon can be slow if hue is not rounded
         path_hue = int(path_hue * 100 + 0.5) / 100;
 
-        float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
-        float lightness = util::map_val(saturation, 1.0f, 0.5f, 1.0f, 0.5f); // lighter when grey
+        float saturation = fmin(fabs(acceleration[i] * 1.5), 0.33);
+        float lightness = util::map_val(saturation, 0.96f, 0.5f, 0.96f, 0.5f); // lighter when grey
         float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.4f, 1.0f); // matches previous alpha fade
         bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
 
@@ -813,9 +813,9 @@ pe.setColorAt(1.0, QColor::fromHslF(0.0, 1.0, 1.0, 1.0));           // Stay at w
     pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.1));
   } else if (frogColors) {
-    pe.setColorAt(0.0, QColor::fromHslF(0, 0, 1.0, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(0, 0, 1.0, 1.0));
-    pe.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 0.5, 1.0));
+    pe.setColorAt(0.0, QColor::fromHslF(0, 1.0, 1.0, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(0, 1.0, 1.0, 1.0));
+    pe.setColorAt(1.0, QColor::fromHslF(324 / 360., 1.0, 0.5, 1.0));
   } else {
     pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 0.5, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 0.5, 0.5));
