@@ -767,7 +767,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       }
 
       // speed up: 120, slow down: 0
-        float path_hue = fmax(fmin(150 + acceleration[i] * 0, 0), 300); // Pink and black fade
+        float path_hue = fmax(fmin(3 + acceleration[i] * 0, 0), 300); // Pink and black fade
         // FIXME: painter.drawPolygon can be slow if hue is not rounded
         path_hue = int(path_hue * 100 + 0.5) / 100;
 
@@ -781,9 +781,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     }
 
   } else {
-    bg.setColorAt(0.0, QColor::fromHslF(300 / 360., 0.94, 0.51, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 0.68, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 0.68, 0.0));
+    bg.setColorAt(0.0, QColor::fromHslF(300 / 360., 0.94, 0.51, 1.0));
+    bg.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 0.68, 0.5));
+    bg.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 0.68, 0.1));
   }
 
   painter.setBrush(bg);
@@ -798,8 +798,8 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   QLinearGradient pe(0, height(), 0, 0);
   if (alwaysOnLateral) { // Pink & white
     pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 1.0, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 0.3, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 0.0, 0.1));
+    pe.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 1.0, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 0.5, 0.1));
   } else if (conditionalStatus == 1) {
     pe.setColorAt(0.0, QColor::fromHslF(188 / 360., 0.79, 0.58, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(188 / 360., 0.79, 0.58, 0.5));
@@ -813,13 +813,13 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.1));
   } else if (frogColors) {
-    pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 1.0, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 0.4, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 0.0, 0.1));
-  } else {
-    pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 0.4, 1.0));
+    pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 0.5, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 1.0, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 0.75, 0.1));
+    pe.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 1.0, 0.1));
+  } else {
+    pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 0.5, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 1.0, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 1.0, 0.1));
   }
 
   painter.setBrush(pe);
