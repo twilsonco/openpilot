@@ -723,7 +723,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
     if (frogColors) {
-      painter.setBrush(QColor(23, 134, 68, 242));
+      painter.setBrush(QColor(255, 255, 255, 255));
     } else {
       painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, std::clamp<float>(scene.lane_line_probs[i], 0.0, 0.7)));
     }
@@ -733,7 +733,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // road edges
   for (int i = 0; i < std::size(scene.road_edge_vertices); ++i) {
     if (frogColors) {
-      painter.setBrush(QColor(23, 134, 68, 242));
+      painter.setBrush(QColor(255, 182, 193, 242));
     } else {
       painter.setBrush(QColor::fromRgbF(1.0, 0, 0, std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0)));
     }
