@@ -741,7 +741,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   // paint path
-  QLinearGradient bg(0, 0, height(), 0);
+  QLinearGradient bg(0, height(), 0, 0);
   if (sm["controlsState"].getControlsState().getExperimentalMode() || frogColors) {
     // The first half of track_vertices are the points for the right side of the path
     // and the indices match the positions of accel from uiPlan
@@ -767,7 +767,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       }
 
       // speed up: 120, slow down: 0
-        float path_hue = fmax(fmin(300 + acceleration[i] * 0, 0), 333); // Pink and black fade
+        float path_hue = fmax(fmin(280 + acceleration[i] * 0, 0), 280); // Pink and black fade
         // FIXME: painter.drawPolygon can be slow if hue is not rounded
         path_hue = int(path_hue * 100 + 0.5) / 100;
 
