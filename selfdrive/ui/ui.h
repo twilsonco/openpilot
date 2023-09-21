@@ -114,14 +114,14 @@ const QColor bg_colors [] = {
   [STATUS_ENGAGED] = QColor(0x17, 0x86, 0x44, 0xf1),
 
   // FrogPilot colors
-  [STATUS_LATERAL_ACTIVE] = QColor(0x0a, 0xba, 0xb5, 0xf1),
+  [STATUS_LATERAL_ACTIVE] = QColor(0xFF, 0x86, 0x00, 0xf1),
 };
 
 static std::map<cereal::ControlsState::AlertStatus, QColor> alert_colors = {
   {cereal::ControlsState::AlertStatus::NORMAL, QColor(0x15, 0x15, 0x15, 0xf1)},
-  {cereal::ControlsState::AlertStatus::USER_PROMPT, QColor(0xDA, 0x6F, 0x25, 0xf1)},
-  {cereal::ControlsState::AlertStatus::CRITICAL, QColor(0xC9, 0x22, 0x31, 0xf1)},
-  {cereal::ControlsState::AlertStatus::FROGPILOT, QColor(0x17, 0x86, 0x44, 0xf1)},
+  {cereal::ControlsState::AlertStatus::USER_PROMPT, QColor(0xAB, 0x5B, 0xCC, 0xf1)},
+  {cereal::ControlsState::AlertStatus::CRITICAL, QColor(0xFF, 0xB0, 0xC1, 0xf1)},
+  {cereal::ControlsState::AlertStatus::FROGPILOT, QColor(0xFF, 0x86, 0x00, 0xf1)},
 };
 
 typedef struct UIScene {
