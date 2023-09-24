@@ -81,16 +81,24 @@ Spinner::Spinner(QWidget *parent) : QWidget(parent) {
       background-color: transparent;
     }
     QProgressBar {
-      background-color: #373737;
-      width: 1000px;
-      border solid white;
-      border-radius: 10px;
-    }
-    QProgressBar::chunk {
-      border-radius: 10px;
-      background-color: rgba(23, 134, 68, 255);
-    }
-  )");
+    background-color: #373737;
+    width: 1000px;
+    border: 1px solid white;
+    border-radius: 10px;
+}
+
+QProgressBar::chunk {
+    border-radius: 10px;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop: 0.0 rgba(255, 0, 0, 255),    /* Red */
+        stop: 0.17 rgba(255, 165, 0, 255), /* Orange */
+        stop: 0.33 rgba(255, 255, 0, 255), /* Yellow */
+        stop: 0.5 rgba(0, 128, 0, 255),    /* Green */
+        stop: 0.67 rgba(0, 0, 255, 255),   /* Blue */
+        stop: 0.83 rgba(75, 0, 130, 255),  /* Indigo */
+        stop: 1.0 rgba(128, 0, 128, 255),   /* Violet */
+    );
+}
 
   notifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read);
   QObject::connect(notifier, &QSocketNotifier::activated, this, &Spinner::update);
