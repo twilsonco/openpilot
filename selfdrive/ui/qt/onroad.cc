@@ -792,7 +792,7 @@ if (colorIndex < 0) {
 QColor selectedColor = colors[colorIndex];
 
 // Rest of your code remains unchanged
-bg.setColorAt(lin_grad_point, selectedColor);
+bg.setColorAt(lin_grad_point, selectedColor, saturation, lightness, alpha);
 
 
       // Skip a point, unless next is last
