@@ -766,17 +766,27 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
         acceleration[i] = 2;
       }
 
-      // speed up: 120, slow down: 0
-        float path_hue = fmax(fmin(320 + acceleration[i] * 0, 0), 320); // Pink and black fade
-        // FIXME: painter.drawPolygon can be slow if hue is not rounded
-        path_hue = int(path_hue * 100 + 0.5) / 100;
+      // Define a variable to control the hue
+float hue = 0.0; // Initialize hue to red (0 degrees)
 
-        float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
-        float lightness = util::map_val(saturation, 1.0f, 0.75f, 1.0f, 0.75f); // lighter when grey
-        float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.4f, 1.0f); // matches previous alpha fade
-        bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
+// speed up: 120, slow down: 0
+float path_hue = fmax(fmin(0 + acceleration[i] * 0, 0), 0); // red and black fade
+// FIXME: painter.drawPolygon can be slow if hue is not rounded
+path_hue = int(path_hue * 100 + 0.5) / 100;
 
-      // Skip a point, unless next is last
+// Calculate the hue based on acceleration
+// You can adjust the scaling factor (e.g., 60) to control the speed of the hue change
+hue += acceleration[i] * 60;
+if (hue > 360) {
+    hue -= 360; // Wrap around if the hue exceeds 360 degrees
+}
+
+float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
+float lightness = util::map_val(saturation, 1.0f, 0.5f, 1.0f, 0.5f); // lighter when grey
+float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.4f, 1.0f); // matches previous alpha fade
+bg.setColorAt(lin_grad_point, QColor::fromHslF(hue / 360.0, saturation, lightness, alpha));
+
+// Skip a point, unless next is last
       i += (i + 2) < max_len ? 1 : 0;
     }
 
