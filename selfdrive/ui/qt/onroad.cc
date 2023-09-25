@@ -742,17 +742,11 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
   // paint path
   QLinearGradient bg(0, height(), 0, 0);
-  if (sm["controlsState"].getControlsState().getExperimentalMode() || frogColors) {
+  if (sm["controlsState"].getControlsState().getExperimentalMode()) {
     // The first half of track_vertices are the points for the right side of the path
     // and the indices match the positions of accel from uiPlan
-    const auto &acceleration_const = sm["uiPlan"].getUiPlan().getAccel();
-    const int max_len = std::min<int>(scene.track_vertices.length() / 2, acceleration_const.size());
-
-    // Copy of the acceleration vector for the "frogColors" path
-    std::vector<float> acceleration;
-    for (int i = 0; i < acceleration_const.size(); i++) {
-      acceleration.push_back(acceleration_const[i]);
-    }
+    const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
+    const int max_len = std::min<int>(scene.track_vertices.length() / 2, acceleration.size());
 
     for (int i = 0; i < max_len; ++i) {
       // Some points are out of frame
@@ -760,8 +754,6 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
       // Flip so 0 is bottom of frame
       float lin_grad_point = (height() - scene.track_vertices[i].y()) / height();
-
-      }
 
       // Define a variable to control the hue
 float hue = 0.0; // Initialize hue to red (0 degrees)
@@ -775,14 +767,39 @@ while (hue >= 360) {
     hue -= 360;
 }
 
+// Define color stops for the rainbow
+QColor colors[] = {
+    QColor(255, 0, 0, 255),     // Red
+    QColor(255, 165, 0, 255), // Orange
+    QColor(255, 255, 0, 255), // Yellow
+    QColor(0, 128, 0, 255),   // Green
+    QColor(0, 0, 255, 255),   // Blue
+    QColor(75, 0, 130, 255),  // Indigo
+    QColor(128, 0, 128, 255)  // Violet
+};
+
+// Calculate the color index based on the lin_grad_point
+int colorIndex = static_cast<int>(lin_grad_point * 6.0);
+
+// Ensure the colorIndex is within bounds
+if (colorIndex < 0) {
+    colorIndex = 0;
+} else if (colorIndex > 6) {
+    colorIndex = 6;
+}
+
+// Get the color at the specified index
+QColor selectedColor = colors[colorIndex];
+
 // Rest of your code remains unchanged
 float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
 float lightness = util::map_val(saturation, 1.0f, 0.5f, 1.0f, 0.5f); // lighter when grey
 float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.4f, 1.0f); // matches previous alpha fade
-bg.setColorAt(lin_grad_point, QColor::fromHslF(hue / 360.0, saturation, lightness, alpha));
+bg.setColorAt(lin_grad_point, selectedColor);
 
-// Skip a point, unless next is last
-i += (i + 2) < max_len ? 1 : 0;
+
+      // Skip a point, unless next is last
+      i += (i + 2) < max_len ? 1 : 0;
 
     }
 
