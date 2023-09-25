@@ -792,7 +792,6 @@ if (colorIndex < 0) {
 QColor selectedColor = colors[colorIndex];
 
 // Rest of your code remains unchanged
-float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
 bg.setColorAt(lin_grad_point, selectedColor);
 
 
