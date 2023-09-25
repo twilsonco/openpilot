@@ -769,11 +769,13 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       // Define a variable to control the hue
 float hue = 0.0; // Initialize hue to red (0 degrees)
 
-// speed up: 120, slow down: 0
-hue += acceleration[i] * 60; // Calculate the hue based on acceleration
+// Calculate the hue based on acceleration
+// You can adjust the scaling factor (e.g., 60) to control the speed of the hue change
+hue += acceleration[i] * 60;
 
-if (hue > 360) {
-    hue -= 360; // Wrap around if the hue exceeds 360 degrees
+// Wrap the hue around if it exceeds 360 degrees
+while (hue >= 360) {
+    hue -= 360;
 }
 
 // Rest of your code remains unchanged
@@ -784,6 +786,7 @@ bg.setColorAt(lin_grad_point, QColor::fromHslF(hue / 360.0, saturation, lightnes
 
 // Skip a point, unless next is last
 i += (i + 2) < max_len ? 1 : 0;
+
     }
 
   } else {
