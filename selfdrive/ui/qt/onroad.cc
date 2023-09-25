@@ -770,9 +770,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 float hue = 0.0; // Initialize hue to red (0 degrees)
 
 // speed up: 120, slow down: 0
-float path_hue = fmax(fmin(0 + acceleration[i] * 0, 0), 0); // red and black fade
-// FIXME: painter.drawPolygon can be slow if hue is not rounded
-path_hue = int(path_hue * 100 + 0.5) / 100;
+float path_hue = hue; // Use the hue value directly
 
 // Calculate the hue based on acceleration
 // You can adjust the scaling factor (e.g., 60) to control the speed of the hue change
