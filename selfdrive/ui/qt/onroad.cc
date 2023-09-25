@@ -793,8 +793,6 @@ QColor selectedColor = colors[colorIndex];
 
 // Rest of your code remains unchanged
 float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
-float lightness = util::map_val(saturation, 1.0f, 0.5f, 1.0f, 0.5f); // lighter when grey
-float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.4f, 1.0f); // matches previous alpha fade
 bg.setColorAt(lin_grad_point, selectedColor);
 
 
