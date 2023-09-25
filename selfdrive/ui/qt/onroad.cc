@@ -740,56 +740,44 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     painter.drawPolygon(scene.road_edge_vertices[i]);
   }
 
-  // paint path
-QLinearGradient bg(0, height(), 0, 0);
-if (sm["controlsState"].getControlsState().getExperimentalMode()) {
+   // paint path
+  QLinearGradient bg(0, height(), 0, 0);
+  if (sm["controlsState"].getControlsState().getExperimentalMode() || frogColors) {
     // The first half of track_vertices are the points for the right side of the path
     // and the indices match the positions of accel from uiPlan
-    const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
-    const int max_len = std::min<int>(scene.track_vertices.length() / 2, acceleration.size());
+    const auto &acceleration_const = sm["uiPlan"].getUiPlan().getAccel();
+    const int max_len = std::min<int>(scene.track_vertices.length() / 2, acceleration_const.size());
+
+    // Copy of the acceleration vector for the "frogColors" path
+    std::vector<float> acceleration;
+    for (int i = 0; i < acceleration_const.size(); i++) {
+      acceleration.push_back(acceleration_const[i]);
+    }
 
     for (int i = 0; i < max_len; ++i) {
-        // Some points are out of frame
-        if (scene.track_vertices[i].y() < 0 || scene.track_vertices[i].y() > height()) continue;
+      // Some points are out of frame
+      if (scene.track_vertices[i].y() < 0 || scene.track_vertices[i].y() > height()) continue;
 
-        // Flip so 0 is the bottom of the frame
-        float lin_grad_point = (height() - scene.track_vertices[i].y()) / height();
+      // Flip so 0 is bottom of frame
+      float lin_grad_point = (height() - scene.track_vertices[i].y()) / height();
 
-        // Calculate the hue based on acceleration
-        // You can adjust the scaling factor (e.g., 60) to control the speed of the hue change
-        float hue = (acceleration[i] * 60 + 360) % 360;
+      // If acceleration is between -0.25 and 0.25 and frogColors is True, set acceleration to 2 to give it a consistent green color
+      if (frogColors && acceleration[i] > -0.25 && acceleration[i] < 0.25) {
+        acceleration[i] = 2;
+      }
 
-        // Define color stops for the rainbow
-        QColor colors[] = {
-            QColor::fromHslF(0.0, 1.0, 0.5),      // Red
-            QColor::fromHslF(30.0 / 360.0, 1.0, 0.5),  // Orange
-            QColor::fromHslF(60.0 / 360.0, 1.0, 0.5),  // Yellow
-            QColor::fromHslF(120.0 / 360.0, 1.0, 0.5), // Green
-            QColor::fromHslF(240.0 / 360.0, 1.0, 0.5), // Blue
-            QColor::fromHslF(270.0 / 360.0, 1.0, 0.5), // Indigo
-            QColor::fromHslF(300.0 / 360.0, 1.0, 0.5)  // Violet
-        };
+      // speed up: 120, slow down: 0
+        float path_hue = fmax(fmin(320 + acceleration[i] * 0, 0), 320); // Pink and black fade
+        // FIXME: painter.drawPolygon can be slow if hue is not rounded
+        path_hue = int(path_hue * 100 + 0.5) / 100;
 
-        // Calculate the color index based on the hue
-        int colorIndex = static_cast<int>((hue / 360.0) * 6.0);
-
-        // Ensure the colorIndex is within bounds
-        if (colorIndex < 0) {
-            colorIndex = 0;
-        } else if (colorIndex > 6) {
-            colorIndex = 6;
-        }
-
-        // Get the color at the specified index
-        QColor selectedColor = colors[colorIndex];
-
-        // Calculate saturation, lightness, and alpha values
         float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
-        float lightness = util::map_val(saturation, 1.0f, 0.5f, 1.0f, 0.5f); // lighter when grey
+        float lightness = util::map_val(saturation, 1.0f, 0.75f, 1.0f, 0.75f); // lighter when grey
         float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.4f, 1.0f); // matches previous alpha fade
+        bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
 
-        // Create a gradient stop and add it to the gradient
-        bg.setColorAt(lin_grad_point, QGradientStop(selectedColor, lin_grad_point));
+      // Skip a point, unless next is last
+      i += (i + 2) < max_len ? 1 : 0;
     }
 
   } else {
@@ -810,8 +798,8 @@ if (sm["controlsState"].getControlsState().getExperimentalMode()) {
   QLinearGradient pe(0, height(), 0, 0);
   if (alwaysOnLateral) { // Pink & white
     pe.setColorAt(0.0, QColor::fromHslF(320 / 360.0, 1.0, 0.75, 1.0));   // Start with pink
-pe.setColorAt(0.5, QColor::fromHslF(0.0, 1.0, 1.0, 1.0));           // Transition to white (full saturation and lightness)
-pe.setColorAt(1.0, QColor::fromHslF(0.0, 1.0, 1.0, 1.0));           // Stay at white
+    pe.setColorAt(0.5, QColor::fromHslF(0.0, 1.0, 1.0, 1.0));           // Transition to white (full saturation and lightness)
+    pe.setColorAt(1.0, QColor::fromHslF(0.0, 1.0, 1.0, 1.0));           // Stay at white
   } else if (conditionalStatus == 1) {
     pe.setColorAt(0.0, QColor::fromHslF(188 / 360., 0.79, 0.58, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(188 / 360., 0.79, 0.58, 0.5));
