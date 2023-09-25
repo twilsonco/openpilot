@@ -741,63 +741,55 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   // paint path
-  QLinearGradient bg(0, height(), 0, 0);
-  if (sm["controlsState"].getControlsState().getExperimentalMode()) {
+QLinearGradient bg(0, height(), 0, 0);
+if (sm["controlsState"].getControlsState().getExperimentalMode()) {
     // The first half of track_vertices are the points for the right side of the path
     // and the indices match the positions of accel from uiPlan
     const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
     const int max_len = std::min<int>(scene.track_vertices.length() / 2, acceleration.size());
 
     for (int i = 0; i < max_len; ++i) {
-      // Some points are out of frame
-      if (scene.track_vertices[i].y() < 0 || scene.track_vertices[i].y() > height()) continue;
+        // Some points are out of frame
+        if (scene.track_vertices[i].y() < 0 || scene.track_vertices[i].y() > height()) continue;
 
-      // Flip so 0 is bottom of frame
-      float lin_grad_point = (height() - scene.track_vertices[i].y()) / height();
+        // Flip so 0 is the bottom of the frame
+        float lin_grad_point = (height() - scene.track_vertices[i].y()) / height();
 
-      // Define a variable to control the hue
-float hue = 0.0; // Initialize hue to red (0 degrees)
+        // Calculate the hue based on acceleration
+        // You can adjust the scaling factor (e.g., 60) to control the speed of the hue change
+        float hue = (acceleration[i] * 60 + 360) % 360;
 
-// Calculate the hue based on acceleration
-// You can adjust the scaling factor (e.g., 60) to control the speed of the hue change
-hue += acceleration[i] * 60;
+        // Define color stops for the rainbow
+        QColor colors[] = {
+            QColor::fromHslF(0.0, 1.0, 0.5),      // Red
+            QColor::fromHslF(30.0 / 360.0, 1.0, 0.5),  // Orange
+            QColor::fromHslF(60.0 / 360.0, 1.0, 0.5),  // Yellow
+            QColor::fromHslF(120.0 / 360.0, 1.0, 0.5), // Green
+            QColor::fromHslF(240.0 / 360.0, 1.0, 0.5), // Blue
+            QColor::fromHslF(270.0 / 360.0, 1.0, 0.5), // Indigo
+            QColor::fromHslF(300.0 / 360.0, 1.0, 0.5)  // Violet
+        };
 
-// Wrap the hue around if it exceeds 360 degrees
-while (hue >= 360) {
-    hue -= 360;
-}
+        // Calculate the color index based on the hue
+        int colorIndex = static_cast<int>((hue / 360.0) * 6.0);
 
-// Define color stops for the rainbow
-QColor colors[] = {
-    QColor(255, 0, 0, 255),     // Red
-    QColor(255, 165, 0, 255), // Orange
-    QColor(255, 255, 0, 255), // Yellow
-    QColor(0, 128, 0, 255),   // Green
-    QColor(0, 0, 255, 255),   // Blue
-    QColor(75, 0, 130, 255),  // Indigo
-    QColor(128, 0, 128, 255)  // Violet
-};
+        // Ensure the colorIndex is within bounds
+        if (colorIndex < 0) {
+            colorIndex = 0;
+        } else if (colorIndex > 6) {
+            colorIndex = 6;
+        }
 
-// Calculate the color index based on the lin_grad_point
-int colorIndex = static_cast<int>(lin_grad_point * 6.0);
+        // Get the color at the specified index
+        QColor selectedColor = colors[colorIndex];
 
-// Ensure the colorIndex is within bounds
-if (colorIndex < 0) {
-    colorIndex = 0;
-} else if (colorIndex > 6) {
-    colorIndex = 6;
-}
+        // Calculate saturation, lightness, and alpha values
+        float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
+        float lightness = util::map_val(saturation, 1.0f, 0.5f, 1.0f, 0.5f); // lighter when grey
+        float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.4f, 1.0f); // matches previous alpha fade
 
-// Get the color at the specified index
-QColor selectedColor = colors[colorIndex];
-
-// Rest of your code remains unchanged
-bg.setColorAt(lin_grad_point, selectedColor, saturation, lightness, alpha);
-
-
-      // Skip a point, unless next is last
-      i += (i + 2) < max_len ? 1 : 0;
-
+        // Create a gradient stop and add it to the gradient
+        bg.setColorAt(lin_grad_point, QGradientStop(selectedColor, lin_grad_point));
     }
 
   } else {
