@@ -832,9 +832,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // paint blindspot path
   QLinearGradient bs(0, height(), 0, 0);
   if ((blindSpotLeft || blindSpotRight) && speedCheck && isNotTurning && is_cruise_set) {
-    bs.setColorAt(0.0, QColor::fromHslF(326 / 360., 1.0, 0.50, 0.6));
-    bs.setColorAt(0.5, QColor::fromHslF(326 / 360., 1.0, 0.50, 0.4));
-    bs.setColorAt(1.0, QColor::fromHslF(326 / 360., 1.0, 0.50, 0.2));
+    bs.setColorAt(0.0, QColor::fromHslF(326 / 360., 1.0, 0.50, 1.0));
+    bs.setColorAt(0.5, QColor::fromHslF(326 / 360., 1.0, 0.50, 0.8));
+    bs.setColorAt(1.0, QColor::fromHslF(326 / 360., 1.0, 0.50, 0.6));
   }
 
   painter.setBrush(bs);
@@ -867,9 +867,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
         // Transition the path from red to green based on lane width
         hue = (320 * (laneWidth - minLaneWidth)) / (maxLaneWidth - minLaneWidth);
       }
-      gradient.setColorAt(0.0, QColor::fromHslF(hue / 360., 1.0, 0.75, 0.6));
-      gradient.setColorAt(0.5, QColor::fromHslF(hue / 360., 1.0, 0.75, 0.4));
-      gradient.setColorAt(1.0, QColor::fromHslF(hue / 360., 1.0, 0.75, 0.2));
+      gradient.setColorAt(0.0, QColor::fromHslF(hue / 360., 1.0, 0.75, 1.0));
+      gradient.setColorAt(0.5, QColor::fromHslF(hue / 360., 1.0, 0.75, 0.8));
+      gradient.setColorAt(1.0, QColor::fromHslF(hue / 360., 1.0, 0.75, 0.6));
     };
 
     const auto paintLane = [&](QPainter& painter, const QPolygonF& lane, const float laneWidth, const bool blindspot) {
