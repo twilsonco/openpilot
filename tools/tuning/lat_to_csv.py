@@ -1043,7 +1043,7 @@ def has_upper_word(text):
 
 # iterate over all directories and subdirectories in the specified path
 whitelist = ["toyota", "honda", "hyundai", "chrysler"]
-whitelist = []
+whitelist = ["VOLT PREMIER"]
 blacklist = []
 dirlist=[]
 for root, dirs, files in os.walk(input_dir):
