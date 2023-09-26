@@ -869,7 +869,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       }
       gradient.setColorAt(0.0, QColor::fromHslF(hue / 360., 1.0, 0.75, 1.0));
       gradient.setColorAt(0.5, QColor::fromHslF(hue / 360., 1.0, 0.75, 0.8));
-      gradient.setColorAt(1.0, QColor::fromHslF(hue / 360., 1.0, 0.75, 0.6));
+      gradient.setColorAt(1.0, QColor::fromHslF(0.0, 1.0, 1.0, 1.0));
     };
 
     const auto paintLane = [&](QPainter& painter, const QPolygonF& lane, const float laneWidth, const bool blindspot) {
