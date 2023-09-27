@@ -859,7 +859,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       static double hue;
       if ((laneWidth < minLaneWidth) || blindspot) {
         // Make the path red for smaller paths or if there's a car in the blindspot
-        hue = 320;
+        hue = 170;
       } else if (laneWidth >= maxLaneWidth) {
         // Make the path green for larger paths
         hue = 320;
@@ -961,7 +961,7 @@ void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::RadarState
   float g_yo = sz / 10;
 
   QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_yo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo}};
-  painter.setBrush(QColor(255, 0, 255, 1));
+  painter.setBrush(QColor(0, 255, 213, 1));
   painter.drawPolygon(glow, std::size(glow));
 
   // chevron
