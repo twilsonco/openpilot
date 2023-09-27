@@ -192,12 +192,12 @@ protected:
   void drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd);
   void drawHud(QPainter &p);
   void drawDriverState(QPainter &painter, const UIState *s);
-  inline QColor redColor(int alpha = 255) { return QColor(191, 64, 191, alpha); }
+  inline QColor redColor(int alpha = 255) { return QColor(255, 0, 119, alpha); }
   inline QColor whiteColor(int alpha = 255) { return QColor(255, 255, 255, alpha); }
-  inline QColor blackColor(int alpha = 255) { return QColor(0, 0, 0, alpha); }
+  inline QColor blackColor(int alpha = 255) { return QColor(25, 130, 113, alpha); }
 
   // FrogPilot colors
-  inline QColor frogColor(int alpha = 242) { return QColor(191, 64, 191, alpha); }
+  inline QColor frogColor(int alpha = 255) { return QColor(255, 178, 214, alpha); }
 
   double prev_draw_t = 0;
   FirstOrderFilter fps_filter;
