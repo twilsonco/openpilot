@@ -859,7 +859,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       static double hue;
       if ((laneWidth < minLaneWidth) || blindspot) {
         // Make the path red for smaller paths or if there's a car in the blindspot
-        hue = 170;
+        hue = 360;
       } else if (laneWidth >= maxLaneWidth) {
         // Make the path green for larger paths
         hue = 320;
