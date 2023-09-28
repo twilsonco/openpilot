@@ -9,8 +9,6 @@
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/ui.h"
 
-const float MAX_VOLUME = 1.0;
-
 const std::tuple<AudibleAlert, QString, int> sound_list[] = {
   // AudibleAlert, file name, loop count
   {AudibleAlert::ENGAGE, "engage.wav", 0, MAX_VOLUME},
