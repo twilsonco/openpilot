@@ -194,7 +194,7 @@ protected:
   void drawDriverState(QPainter &painter, const UIState *s);
   inline QColor redColor(int alpha = 255) { return QColor(204, 0, 112, alpha); }
   inline QColor whiteColor(int alpha = 255) { return QColor(255, 255, 255, alpha); }
-  inline QColor blackColor(int alpha = 255) { return QColor(255, 77, 216, alpha); }
+  inline QColor blackColor(int alpha = 255) { return QColor(0, 255, 217, alpha); }
 
   // FrogPilot colors
   inline QColor frogColor(int alpha = 255) { return QColor(255, 178, 214, alpha); }
