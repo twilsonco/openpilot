@@ -773,7 +773,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
         float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
         float lightness = util::map_val(saturation, 1.0f, 0.75f, 1.0f, 0.75f); // lighter when grey
-        float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.4f, 1.0f); // matches previous alpha fade
+        float alpha = util::map_val(lin_grad_point, 0.85f / 2.f, 0.85f, 0.75f, 1.0f); // matches previous alpha fade
         bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
 
       // Skip a point, unless next is last
@@ -782,8 +782,8 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
   } else {
     bg.setColorAt(0.0, QColor::fromHslF(0 / 360., 0.0, 1.0, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(320 / 360., 1.0, 0.75, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(320 / 360., 1.0, 0.75, 0.1));
+    bg.setColorAt(0.5, QColor::fromHslF(320 / 360., 1.0, 0.85, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(320 / 360., 1.0, 0.85, 0.1));
   }
 
   painter.setBrush(bg);
@@ -805,9 +805,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     pe.setColorAt(0.5, QColor::fromHslF(188 / 360., 0.79, 0.58, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(188 / 360., 0.79, 0.58, 0.1));
   } else if (experimentalMode) {
-    pe.setColorAt(0.0, QColor::fromHslF(360 / 360., 1.0, 0.50, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(360 / 360., 1.0, 0.50, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(360 / 360., 1.0, 0.50, 0.1));
+    pe.setColorAt(0.0, QColor::fromHslF(360 / 360., 1.0, 0.0, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(360 / 360., 0.0, 0.0, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(360 / 360., 0.0, 0.0, 0.1));
   } else if (scene.navigate_on_openpilot) {
     pe.setColorAt(0.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
