@@ -77,7 +77,7 @@ class VCruiseHelper:
     long_press = False
     button_type = None
 
-    v_cruise_delta = 1. if is_metric else IMPERIAL_INCREMENT
+    v_cruise_delta = 5. if is_metric else IMPERIAL_INCREMENT
 
     for b in CS.buttonEvents:
       if b.type.raw in self.button_timers and not b.pressed:
@@ -104,7 +104,7 @@ class VCruiseHelper:
     if not self.button_change_states[button_type]["enabled"]:
       return
 
-    v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
+    v_cruise_delta = v_cruise_delta * (1 if long_press else 5)
     if long_press and self.v_cruise_kph % v_cruise_delta != 0:  # partial interval
       self.v_cruise_kph = CRUISE_NEAREST_FUNC[button_type](self.v_cruise_kph / v_cruise_delta) * v_cruise_delta
     else:
