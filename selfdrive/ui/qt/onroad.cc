@@ -723,7 +723,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
     if (frogColors) {
-      painter.setBrush(QColor(255, 255, 255, 255));
+      painter.setBrush(QColor(204, 0, 0, 255));
     } else {
       painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, std::clamp<float>(scene.lane_line_probs[i], 0.0, 0.7)));
     }
@@ -767,13 +767,13 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       }
 
       // speed up: 120, slow down: 0
-        float path_hue = fmax(fmin(320 + acceleration[i] * 0, 0), 320); // Pink and black fade
+        float path_hue = fmax(fmin(0 + acceleration[i] * 0, 0), 0); // Pink and black fade
         // FIXME: painter.drawPolygon can be slow if hue is not rounded
         path_hue = int(path_hue * 100 + 0.5) / 100;
 
         float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
-        float lightness = util::map_val(saturation, 1.0f, 0.75f, 1.0f, 0.75f); // lighter when grey
-        float alpha = util::map_val(lin_grad_point, 0.85f / 2.f, 0.85f, 0.75f, 1.0f); // matches previous alpha fade
+        float lightness = util::map_val(saturation, 0.0f, 0.75f, 0.0f, 0.75f); // lighter when grey
+        float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.65f, 1.0f); // matches previous alpha fade
         bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
 
       // Skip a point, unless next is last
@@ -782,8 +782,8 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
   } else {
     bg.setColorAt(0.0, QColor::fromHslF(0 / 360., 0.0, 1.0, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(320 / 360., 1.0, 0.85, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(320 / 360., 1.0, 0.85, 0.1));
+    bg.setColorAt(0.5, QColor::fromHslF(0 / 360., 1.0, 0.85, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(0 / 360., 1.0, 0.85, 0.1));
   }
 
   painter.setBrush(bg);
@@ -796,10 +796,17 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
   // paint path edges
   QLinearGradient pe(0, height(), 0, 0);
-  if (alwaysOnLateral) { // Pink & white
-    pe.setColorAt(0.0, QColor::fromHslF(320 / 360.0, 1.0, 0.75, 1.0));   // Start with pink
-    pe.setColorAt(0.5, QColor::fromHslF(0.0, 1.0, 1.0, 1.0));           // Transition to white (full saturation and lightness)
-    pe.setColorAt(1.0, QColor::fromHslF(0.0, 1.0, 1.0, 1.0));           // Stay at white
+  if (alwaysOnLateral) { // red and black
+    // Define the colors for the glow effect
+  QColor whiteCenterColor = QColor(Qt::white);  // White color for the center
+  QColor glowColor = QColor::fromHslF(360 / 360., 1.0, 0.5, 1.0);  // Your desired glow color
+
+// Calculate the positions for the gradient stops
+  QLinearGradient pe(0, height(), 0, 0);
+    pe.setColorAt(0.0, glowColor);                // Start with the glow color
+    pe.setColorAt(0.5, whiteCenterColor);         // Center should be white
+    pe.setColorAt(1.0, glowColor);                // End with the glow color
+
   } else if (conditionalStatus == 1) {
     pe.setColorAt(0.0, QColor::fromHslF(188 / 360., 0.79, 0.58, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(188 / 360., 0.79, 0.58, 0.5));
@@ -813,13 +820,13 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.1));
   } else if (frogColors) {
-    pe.setColorAt(0.0, QColor::fromHslF(320 / 360., 1.0, 0.5, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(320, 1.0, 0.75, 1.0));
+    pe.setColorAt(0.0, QColor::fromHslF(360 / 360., 1.0, 0.4, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(360, 1.0, 0.75, 1.0));
     pe.setColorAt(1.0, QColor::fromHslF(0, 1.0, 1.0, 1.0));
   } else {
-    pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 0.5, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 0.5, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(300 / 360., 1.0, 1.0, 0.1));
+    pe.setColorAt(0.0, QColor::fromHslF(360 / 360., 1.0, 0.5, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(360 / 360., 1.0, 0.5, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(360 / 360., 1.0, 1.0, 0.1));
   }
 
   painter.setBrush(pe);
@@ -832,9 +839,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // paint blindspot path
   QLinearGradient bs(0, height(), 0, 0);
   if ((blindSpotLeft || blindSpotRight) && speedCheck && isNotTurning && is_cruise_set) {
-    bs.setColorAt(0.0, QColor::fromHslF(326 / 360., 1.0, 0.50, 1.0));
-    bs.setColorAt(0.5, QColor::fromHslF(326 / 360., 1.0, 0.50, 0.8));
-    bs.setColorAt(1.0, QColor::fromHslF(326 / 360., 1.0, 0.50, 0.6));
+    bs.setColorAt(0.0, QColor::fromHslF(360 / 360., 0.0, 0.25, 1.0));
+    bs.setColorAt(0.5, QColor::fromHslF(360 / 360., 0.0, 0.10, 0.8));
+    bs.setColorAt(1.0, QColor::fromHslF(360 / 360., 0.0, 0.10, 0.6));
   }
 
   painter.setBrush(bs);
@@ -867,7 +874,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
         // Transition the path from red to green based on lane width
         hue = (320 * (laneWidth - minLaneWidth)) / (maxLaneWidth - minLaneWidth);
       }
-      gradient.setColorAt(0.0, QColor::fromHslF(hue / 360., 1.0, 0.75, 0.8));
+      gradient.setColorAt(0.0, QColor::fromHslF(hue / 360., 0.0, 0.0, 0.8));
       gradient.setColorAt(0.5, QColor::fromHslF(0.0, 1.0, 1.0, 0.6));
       gradient.setColorAt(1.0, QColor::fromHslF(0.0, 1.0, 1.0, 0.4));
     };
