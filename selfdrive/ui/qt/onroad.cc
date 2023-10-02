@@ -794,12 +794,6 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   path.addPolygon(scene.track_vertices);
   path.addPolygon(scene.track_edge_vertices);
 
-  // paint path edges
-  QLinearGradient pe(0, height(), 0, 0);
-  if (alwaysOnLateral) { // red and black
-    // Define the colors for the glow effect
-  QColor whiteCenterColor = QColor(Qt::white);  // White color for the center
-  QColor glowColor = QColor::fromHslF(360 / 360., 1.0, 0.5, 1.0);  // Your desired glow color
 
 // paint path edges
   QLinearGradient pe(0, height(), 0, 0);
