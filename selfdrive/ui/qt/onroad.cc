@@ -801,12 +801,12 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   QColor whiteCenterColor = QColor(Qt::white);  // White color for the center
   QColor glowColor = QColor::fromHslF(360 / 360., 1.0, 0.5, 1.0);  // Your desired glow color
 
-// Calculate the positions for the gradient stops
+// paint path edges
   QLinearGradient pe(0, height(), 0, 0);
-    pe.setColorAt(0.0, glowColor);                // Start with the glow color
-    pe.setColorAt(0.5, whiteCenterColor);         // Center should be white
-    pe.setColorAt(1.0, glowColor);                // End with the glow color
-
+  if (alwaysOnLateral) { // Pink & white
+    pe.setColorAt(0.0, QColor::fromHslF(320 / 360.0, 1.0, 0.75, 1.0));   // Start with pink
+    pe.setColorAt(0.5, QColor::fromHslF(0.0, 1.0, 1.0, 1.0));           // Transition to white (full saturation and lightness)
+    pe.setColorAt(1.0, QColor::fromHslF(0.0, 1.0, 1.0, 1.0));
   } else if (conditionalStatus == 1) {
     pe.setColorAt(0.0, QColor::fromHslF(188 / 360., 0.79, 0.58, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(188 / 360., 0.79, 0.58, 0.5));
