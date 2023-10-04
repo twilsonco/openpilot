@@ -868,9 +868,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
         // Transition the path from red to green based on lane width
         hue = (269 * (laneWidth - minLaneWidth)) / (maxLaneWidth - minLaneWidth);
       }
-      gradient.setColorAt(0.0, QColor::fromHslF(hue / 360., 0.5, 0.7, 0.8));
-      gradient.setColorAt(0.5, QColor::fromHslF(325 / 360., 1.0, 0.5, 0.6));
-      gradient.setColorAt(1.0, QColor::fromHslF(325 / 360., 1.0, 0.5, 0.4));
+      gradient.setColorAt(0.0, QColor::fromHslF(hue / 360., 1.0, 0.75, 0.8));
+      gradient.setColorAt(0.5, QColor::fromHslF(320 / 360., 1.0, 0.75, 0.6));
+      gradient.setColorAt(1.0, QColor::fromHslF(320 / 360., 1.0, 0.75, 0.4));
     };
 
     const auto paintLane = [&](QPainter& painter, const QPolygonF& lane, const float laneWidth, const bool blindspot) {
