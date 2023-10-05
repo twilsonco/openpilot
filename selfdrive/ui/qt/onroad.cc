@@ -667,7 +667,7 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
     // Custom steering wheel icon
     engage_img = wheel_images[steeringWheel];
     QPixmap img = steeringWheel ? engage_img : (experimentalMode ? experimental_img : engage_img);
-    QColor background_color = steeringWheel && (status != STATUS_DISENGAGED) ? (scene.always_on_lateral_active ? QColor(10, 186, 181, 255) : scene.conditional_status == 1 ? QColor(255, 246, 0, 255) : experimentalMode ? QColor(218, 111, 37, 241) : scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166)) : QColor(0, 0, 0, 166);
+    QColor background_color = steeringWheel && (status != STATUS_DISENGAGED) ? (scene.always_on_lateral_active ? QColor(255, 128, 212, 255) : scene.conditional_status == 1 ? QColor(255, 246, 0, 255) : experimentalMode ? QColor(102, 0, 68, 241) : scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166)) : QColor(0, 0, 0, 166);
     drawIconRotate(p, QPoint(rect().right() - btn_size / 2 - UI_BORDER_SIZE * 2 + 25, btn_size / 2 + int(UI_BORDER_SIZE * 1.5)), img, background_color, status != STATUS_DISENGAGED ? 1.0 : 0.6, steeringAngleDeg);
   }
 
@@ -773,7 +773,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
         float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
         float lightness = util::map_val(saturation, 1.0f, 0.75f, 1.0f, 0.75f); // lighter when grey
-        float alpha = util::map_val(lin_grad_point, 0.85f / 2.f, 0.85f, 0.75f, 1.0f); // matches previous alpha fade
+        float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.65f, 1.0f); // matches previous alpha fade
         bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
 
       // Skip a point, unless next is last
@@ -814,13 +814,13 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.1));
   } else if (frogColors) {
-    pe.setColorAt(0.0, QColor::fromHslF(360 / 360., 1.0, 0.4, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(360, 1.0, 0.75, 1.0));
+    pe.setColorAt(0.0, QColor::fromHslF(320 / 360., 1.0, 0.4, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(320, 1.0, 0.55, 1.0));
     pe.setColorAt(1.0, QColor::fromHslF(0, 1.0, 1.0, 1.0));
   } else {
-    pe.setColorAt(0.0, QColor::fromHslF(360 / 360., 1.0, 0.5, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(360 / 360., 1.0, 0.5, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(360 / 360., 1.0, 1.0, 0.1));
+    pe.setColorAt(0.0, QColor::fromHslF(320 / 360., 1.0, 0.5, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(320 / 360., 1.0, 0.5, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(320 / 360., 1.0, 1.0, 0.1));
   }
 
   painter.setBrush(pe);
