@@ -197,7 +197,7 @@ protected:
   inline QColor blackColor(int alpha = 255) { return QColor(255, 163, 224, alpha); }
 
   // FrogPilot colors
-  inline QColor frogColor(int alpha = 255) { return QColor(255, 163, 224, alpha); }
+  inline QColor frogColor(int alpha = 255) { return QColor(227, 156, 222, alpha); }
 
   double prev_draw_t = 0;
   FirstOrderFilter fps_filter;
