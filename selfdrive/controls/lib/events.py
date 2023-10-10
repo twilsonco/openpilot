@@ -995,6 +995,16 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   EventName.torqueNNLoad: {
     ET.PERMANENT: torque_nn_load_alert,
+    ET.NO_ENTRY: torque_nn_load_alert
+  },
+  
+  # FrogPilot Events
+  EventName.frogSteerSaturated: {
+    ET.WARNING: Alert(
+      "Turn Exceeds Steering Limit",
+      "JESUS TAKE THE WHEEL!!",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.warningSoft, 2.),
   },
 
   EventName.pedalInterceptorNoBrake: {

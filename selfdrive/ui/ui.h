@@ -166,6 +166,7 @@ typedef struct UIScene {
   bool custom_road_ui;
   bool default_params_set;
   bool driving_personalities_ui_wheel;
+  bool custom_theme;
   bool enabled;
   bool experimental_mode;
   bool experimental_mode_via_wheel;
@@ -180,6 +181,11 @@ typedef struct UIScene {
   bool turn_signal_right;
   bool unlimited_road_ui_length;
   bool wide_camera_disabled;
+  int conditional_speed;
+  int conditional_speed_lead;
+  int conditional_status;
+  int custom_colors;
+  int custom_signals;
   float lane_line_width;
   float lane_width_left;
   float lane_width_right;
@@ -187,9 +193,6 @@ typedef struct UIScene {
   float path_width;
   float road_edge_width;
   int bearing_deg;
-  int conditional_speed;
-  int conditional_speed_lead;
-  int conditional_status;
   int desired_follow;
   int developer_ui;
   int obstacle_distance;

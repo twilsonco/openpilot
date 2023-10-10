@@ -225,11 +225,11 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("carState")) {
     const auto carState = sm["carState"].getCarState();
-    if (scene.blind_spot_path || scene.frog_signals) {
+    if (scene.blind_spot_path || scene.custom_signals) {
       scene.blind_spot_left = carState.getLeftBlindspot();
       scene.blind_spot_right = carState.getRightBlindspot();
     }
-    if (scene.developer_ui || scene.frog_signals) {
+    if (scene.custom_signals) {
       scene.turn_signal_left = carState.getLeftBlinker();
       scene.turn_signal_right = carState.getRightBlinker();
     }
@@ -304,6 +304,11 @@ void ui_update_params(UIState *s) {
     scene.path_width = params.getInt("PathWidth") / 10.0 * 0.1524;           // Convert from feet to meters
     scene.road_edge_width = params.getInt("RoadEdgesWidth") / 12.0 * 0.1524; // Convert from inches to meters
     scene.rotating_wheel = params.getBool("RotatingWheel");
+
+    scene.custom_theme = params.getBool("CustomTheme");
+    scene.custom_colors = scene.custom_theme ? params.getInt("CustomColors") : 0;
+    scene.custom_signals = scene.custom_theme ? params.getInt("CustomSignals") : 0;
+
     scene.screen_brightness = params.getInt("ScreenBrightness");
     scene.steering_wheel = params.getInt("SteeringWheel");
     scene.unlimited_road_ui_length = scene.custom_road_ui && params.getBool("UnlimitedLength");
@@ -326,6 +331,10 @@ void ui_update_params(UIState *s) {
       scene.road_edge_width = params.getInt("RoadEdgesWidth") / 12.0 * 0.1524; // Convert from inches to meters
     }
     scene.developer_ui = params.getInt("DeveloperUI");
+    if (scene.custom_theme) {
+      scene.custom_colors = params.getInt("CustomColors");
+      scene.custom_signals = params.getInt("CustomSignals");
+    }
     scene.screen_brightness = params.getInt("ScreenBrightness");
     scene.steering_wheel = params.getInt("SteeringWheel");
     if (live_toggles_checked && scene.enabled) {

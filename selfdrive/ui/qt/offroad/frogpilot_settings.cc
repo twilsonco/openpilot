@@ -101,8 +101,8 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
   mainLayout->addWidget(white_horizontal_line());
 
   static const std::vector<std::tuple<QString, QString, QString, QString>> toggles = {
-    {"FrogTheme", "FrogPilot Theme", "Enable the beloved FrogPilot Theme! Disable toggle to revert back to the stock openpilot theme.", "../assets/images/frog_button_home.png"},
     {"Compass", "Compass", "Add a compass to the onroad UI that indicates your current driving direction.", "../assets/offroad/icon_compass.png"},
+    {"CustomTheme", "Custom Theme", "Enable the ability to use custom themes.", "../assets/frog.png"},
     {"CustomRoadUI", "Custom Road UI", "Customize the road UI to your liking.", "../assets/offroad/icon_road.png"},
     {"DeveloperUI", "Developer UI", "Display various information about openpilot and the device itself.", "../assets/offroad/icon_developer.png"},
     {"NumericalTemp", "Numerical Temperature Gauge", "Replace openpilot's 'GOOD', 'OK', and 'HIGH' temperature statuses with numerical values.\n\nTap the gauge to switch between Celsius and Fahrenheit.", "../assets/offroad/icon_temp.png"},
@@ -137,6 +137,11 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
     } else if (key == "DeveloperUI") {
       mainLayout->addWidget(new DeveloperUI());
       mainLayout->addWidget(horizontal_line());
+    } else if (key == "CustomTheme") {
+      createSubControl(key, label, desc, icon, {
+        createDualParamControl(new CustomColors(), new CustomIcons()),
+        createDualParamControl(new CustomSignals(), new CustomSounds()),
+      });
     } else if (key == "ScreenBrightness") {
       mainLayout->addWidget(new ScreenBrightness());
       mainLayout->addWidget(horizontal_line());

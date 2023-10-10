@@ -37,5 +37,8 @@ protected:
   int current_volume = -1;
 
   // FrogPilot variables
-  bool isSilentMode;
+  Params params;
+  bool isCustomTheme;
+  int customSounds;
+  std::unordered_map<int, QString> soundPaths;
 };

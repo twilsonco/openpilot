@@ -71,8 +71,13 @@ private:
   std::unique_ptr<PubMaster> pm;
 
   // FrogPilot variables
-  bool isFahrenheit;
-  bool isFrogColors;
-  bool isNumericalTemp;
-  int isDeveloperUI;
+  bool isCustomTheme;
+  int customColors;
+  int customIcons;
+  Params params;
+  std::unordered_map<int, std::pair<QString, std::vector<QColor>>> themeConfiguration;
+  std::unordered_map<int, QPixmap> flag_imgs;
+  std::unordered_map<int, QPixmap> home_imgs;
+  std::unordered_map<int, QPixmap> settings_imgs;
+  std::vector<QColor> currentColors;
 };
