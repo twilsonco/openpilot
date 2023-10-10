@@ -92,6 +92,67 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
   setInitialToggleStates();
 }
 
+FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(QWidget *parent) : FrogPilotPanel(parent) {
+  mainLayout = new QVBoxLayout(this);
+
+  QHBoxLayout *gmLayout = new QHBoxLayout();
+  gmLayout->setSpacing(25);
+  gmLayout->setContentsMargins(0, 0, 0, 0);
+
+  QLabel *gmIconLabel = new QLabel(this);
+  gmIconLabel->setPixmap(QPixmap("../assets/offroad/icon_gm.png").scaledToWidth(80, Qt::SmoothTransformation));
+
+  QLabel *gmTextLabel = new QLabel("GM", this);
+
+  gmLayout->addWidget(gmIconLabel);
+  gmLayout->addWidget(gmTextLabel);
+  gmLayout->addStretch(1);
+  mainLayout->addLayout(gmLayout);
+  mainLayout->addWidget(whiteHorizontalLine());
+
+  static const std::vector<std::tuple<QString, QString, QString, QString>> gmToggles = {
+    {"EVTable", "EV Lookup Tables", "Smoothens out the gas and brake controls for EV vehicles.", "../assets/offroad/icon_blank.png"},
+    {"LowerVolt", "Lower Volt Enable Speed", "Lowers the Volt's minimum enable speed in order to enable openpilot at any speed.", "../assets/offroad/icon_blank.png"}
+  };
+
+  for (const auto &[key, label, desc, icon] : gmToggles) {
+    ParamControl *control = createParamControl(key, label, desc, icon, this);
+    mainLayout->addWidget(control);
+    if (key != std::get<0>(gmToggles.back())) mainLayout->addWidget(horizontalLine());
+  }
+
+  mainLayout->addWidget(whiteHorizontalLine());
+  mainLayout->setSpacing(25);
+  QHBoxLayout *toyotaLayout = new QHBoxLayout();
+  toyotaLayout->addWidget(whiteHorizontalLine());
+  toyotaLayout->setSpacing(25);
+  toyotaLayout->setContentsMargins(0, 0, 0, 0);
+
+  QLabel *toyotaIconLabel = new QLabel(this);
+  toyotaIconLabel->setPixmap(QPixmap("../assets/offroad/icon_toyota.png").scaledToWidth(80, Qt::SmoothTransformation));
+
+  QLabel *toyotaTextLabel = new QLabel("Toyota", this);
+
+  toyotaLayout->addWidget(toyotaIconLabel);
+  toyotaLayout->addWidget(toyotaTextLabel);
+  toyotaLayout->addStretch(1);
+  mainLayout->addLayout(toyotaLayout);
+  mainLayout->addWidget(whiteHorizontalLine());
+
+  static const std::vector<std::tuple<QString, QString, QString, QString>> toyotaToggles = {
+    {"SNGHack", "SNG Hack", "Enable the SNG Hack for vehicles without stock stop and go.", "../assets/offroad/icon_blank.png"},
+    {"TSS2Tune", "TSS2 Tune", "Tuning profile for TSS2 vehicles. Based on the tuning profile from DragonPilot.", "../assets/offroad/icon_blank.png"}
+  };
+
+  for (const auto &[key, label, desc, icon] : toyotaToggles) {
+    ParamControl *control = createParamControl(key, label, desc, icon, this);
+    mainLayout->addWidget(control);
+    if (key != std::get<0>(toyotaToggles.back())) mainLayout->addWidget(horizontalLine());
+  }
+
+  setInitialToggleStates();
+}
+
 FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(parent) {
   mainLayout = new QVBoxLayout(this);
 

@@ -148,6 +148,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ExperimentalMode", PERSISTENT},
     {"ExperimentalModeConfirmed", PERSISTENT},
     {"ExperimentalModeViaWheel", PERSISTENT},
+    {"EVTable", PERSISTENT},
     {"Fahrenheit", PERSISTENT},
     {"FireTheBabysitter", PERSISTENT},
     {"FirmwareQueryDone", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
