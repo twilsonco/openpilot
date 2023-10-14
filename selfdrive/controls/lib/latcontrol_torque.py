@@ -238,7 +238,7 @@ class LatControlTorque(LatControl):
         past_errors = [self.error_deque[min(len(self.error_deque)-1, i)] for i in self.history_frame_offsets]
         future_error = predict_error(past_errors + [error], self.past_times + [0.0])
         future_errors = future_error(self.nnff_future_times_np).tolist()
-        lat_jerk_error = error + 0.05 * (lookahead_lateral_jerk - self.actual_lateral_jerk._D.x)
+        lat_jerk_error = error + 0.05 * apply_deadzone(lookahead_lateral_jerk - self.actual_lateral_jerk._D.x, 0.1)
         nnff_error_input = [CS.vEgo, error, lat_jerk_error, 0.0] \
                               + past_errors + future_errors
         
@@ -246,7 +246,7 @@ class LatControlTorque(LatControl):
         pid_log.error = torque_from_error
         
         # compute feedforward (same as nnff setpoint output)
-        nnff_input = [CS.vEgo, desired_lateral_accel, lookahead_lateral_jerk, roll] \
+        nnff_input = [CS.vEgo, desired_lateral_accel, apply_deadzone(lookahead_lateral_jerk, 0.1), roll] \
                               + past_lateral_accels_desired + future_planned_lateral_accels \
                               + past_rolls + future_rolls
         ff_nn = self.torque_from_nn(nnff_input)
