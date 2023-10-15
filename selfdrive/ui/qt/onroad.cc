@@ -814,8 +814,8 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.1));
   } else if (frogColors) {
-    pe.setColorAt(0.0, QColor::fromHslF(320 / 360., 1.0, 0.4, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(320, 1.0, 0.55, 1.0));
+    pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 0.5, 0.5, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(300, 0.5, 0.5, 1.0));
     pe.setColorAt(1.0, QColor::fromHslF(0, 1.0, 1.0, 1.0));
   } else {
     pe.setColorAt(0.0, QColor::fromHslF(320 / 360., 1.0, 0.5, 1.0));
