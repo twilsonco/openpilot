@@ -781,7 +781,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     }
 
   } else {
-    bg.setColorAt(0.0, QColor::fromHslF(0 / 360., 0.0, 1.0, 0.4));
+    bg.setColorAt(0.0, QColor::fromHslF(32 / 360., 0.0, 1.0, 0.4));
     bg.setColorAt(0.5, QColor::fromHslF(320 / 360., 1.0, 0.85, 0.35));
     bg.setColorAt(1.0, QColor::fromHslF(320 / 360., 1.0, 0.85, 0.1));
   }
