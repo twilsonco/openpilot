@@ -723,7 +723,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
     if (frogColors) {
-      painter.setBrush(QColor(255, 255, 255, 255));
+      painter.setBrush(QColor(51, 0, 153, 255));
     } else {
       painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, std::clamp<float>(scene.lane_line_probs[i], 0.0, 0.7)));
     }
@@ -733,7 +733,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // road edges
   for (int i = 0; i < std::size(scene.road_edge_vertices); ++i) {
     if (frogColors) {
-      painter.setBrush(QColor(255, 182, 193, 242));
+      painter.setBrush(QColor(51, 0, 153, 255));
     } else {
       painter.setBrush(QColor::fromRgbF(1.0, 0, 0, std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0)));
     }
@@ -761,7 +761,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       // Flip so 0 is bottom of frame
       float lin_grad_point = (height() - scene.track_vertices[i].y()) / height();
 
-      // If acceleration is between -0.25 and 0.25 and frogColors is True, set acceleration to 2 to give it a consistent green color
+      // If acceleration is between -0.2 and 0.2 and frogColors is True, set acceleration to 2 to give it a consistent green color
       if (frogColors && acceleration[i] > -0.2 && acceleration[i] < 0.2) {
         acceleration[i] = 2;
       }
@@ -772,7 +772,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
         path_hue = int(path_hue * 100 + 0.5) / 100;
 
         float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
-        float lightness = util::map_val(saturation, 0.65f, 0.9f, 0.65f, 0.9f); // lighter when grey
+        float lightness = util::map_val(saturation, 0.65f, 0.8f, 0.65f, 0.8f); // lighter when grey
         float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.65f, 1.0f); // matches previous alpha fade
         bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
 
@@ -781,9 +781,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     }
 
   } else {
-    bg.setColorAt(0.0, QColor::fromHslF(32 / 360., 0.0, 1.0, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(320 / 360., 1.0, 0.85, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(320 / 360., 1.0, 0.85, 0.1));
+    pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 0.15, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 0.8, 1.0));
+    pe.setColorAt(1.0, QColor::fromHslF(188 / 360., 1.0, 0.6, 1.0));
   }
 
   painter.setBrush(bg);
@@ -814,9 +814,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.1));
   } else if (frogColors) {
-    pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 0.5, 0.5, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(300, 0.5, 0.5, 1.0));
-    pe.setColorAt(1.0, QColor::fromHslF(0, 1.0, 1.0, 1.0));
+    pe.setColorAt(0.0, QColor::fromHslF(300 / 360., 1.0, 0.15, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(300 / 360., 1.0, 0.8, 1.0));
+    pe.setColorAt(1.0, QColor::fromHslF(188 / 360., 1.0, 0.6, 1.0));
   } else {
     pe.setColorAt(0.0, QColor::fromHslF(320 / 360., 1.0, 0.5, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(320 / 360., 1.0, 0.5, 0.5));
