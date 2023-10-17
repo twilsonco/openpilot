@@ -238,7 +238,8 @@ class LatControlTorque(LatControl):
         past_errors = [self.error_deque[min(len(self.error_deque)-1, i)] for i in self.history_frame_offsets]
         future_error = predict_error(past_errors + [error], self.past_times + [0.0])
         future_errors = future_error(self.nnff_future_times_np).tolist()
-        nnff_error_input = [CS.vEgo, error, error, 0.0] \
+        lateral_jerk_error = 0.0 if abs(lookahead_lateral_jerk) <= 0.1 else (0.1 * (lookahead_lateral_jerk - self.actual_lateral_jerk.x))
+        nnff_error_input = [CS.vEgo, error, error + lateral_jerk_error, 0.0] \
                               + past_errors + future_errors
         
         torque_from_error = self.torque_from_nn(nnff_error_input)
@@ -259,7 +260,7 @@ class LatControlTorque(LatControl):
                                       feedforward=ff if ff_nn is None or not self.use_nn_ff else ff_nn,
                                       speed=CS.vEgo,
                                       freeze_integrator=CS.steeringRateLimited or abs(CS.steeringTorque) > 0.3 or CS.vEgo < 5,
-                                      D=lateral_jerk_error,
+                                      D=0.0 if self.use_nn_ff else lateral_jerk_error,
                                       error=error)
 
       # record steering angle error to the unused pid_log.error_rate
