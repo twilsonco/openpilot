@@ -239,7 +239,7 @@ class LatControlTorque(LatControl):
         future_error = predict_error(past_errors + [error], self.past_times + [0.0])
         future_errors = future_error(self.nnff_future_times_np).tolist()
         lat_jerk_deadzone = 0.35
-        lateral_jerk_error = 0.0 if abs(lookahead_lateral_jerk) <= lat_jerk_deadzone else (0.1 * (lookahead_lateral_jerk - self.actual_lateral_jerk.x))
+        lateral_jerk_error = 0.0 if abs(lookahead_lateral_jerk) <= lat_jerk_deadzone else (0.1 * apply_deadzone(lookahead_lateral_jerk - self.actual_lateral_jerk.x, lat_jerk_deadzone))
         nnff_error_input = [CS.vEgo, error, error + lateral_jerk_error, 0.0] \
                               + past_errors + future_errors
         
