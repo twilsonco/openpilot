@@ -228,6 +228,12 @@ ParamController(CustomSounds, "CustomSounds", "Sounds", "Replace the stock openp
   return v >= 0 ? v % 4 : 3;
 )
 
+ParamController(DeviceShutdownTimer, "DeviceShutdownTimer", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../assets/offroad/icon_time.png",
+  const int time = params.getInt("DeviceShutdownTimer");
+  return time == 0 ? "Instant" : (time > 0 && time <= 3) ? QString::number(time * 15) + " mins" : QString::number(time - 3) + (time == 4 ? " hour" : " hours");,
+  return std::clamp(v, 0, 33);
+)
+
 ParamController(LaneLinesWidth, "LaneLinesWidth", "Lanes", "Customize the lane line width.\n\nDefault matches the MUTCD average of 4 inches.", "../assets/offroad/icon_blank.png",
   return QString::number(params.getInt("LaneLinesWidth")) + (isMetric ? " cm" : " in");,
   return std::clamp(v, 0, isMetric ? 60 : 24);

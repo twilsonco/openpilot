@@ -237,6 +237,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CustomSignals", PERSISTENT},
     {"CustomSounds", PERSISTENT},
     {"CustomTheme", PERSISTENT},
+    {"DeviceShutdownTimer", PERSISTENT},
     {"DisableInternetCheck", PERSISTENT},
     {"DisplayCPU", PERSISTENT},
     {"DisplayFPS", PERSISTENT},
