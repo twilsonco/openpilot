@@ -1,15 +1,16 @@
-![openpilot on the comma 3X](https://github.com/commaai/openpilot/assets/4038174/f1081737-8718-4241-a22a-3ceba526361a)
+![openpilot on the comma 3X](https://i.imgur.com/jJi1R88.jpg)
 
 Table of Contents
 =======================
 
 * [What is openpilot?](#what-is-openpilot)
-* [Running in a car](#running-on-a-dedicated-device-in-a-car)
-* [Running on PC](#running-on-pc)
-* [Community and Contributing](#community-and-contributing)
-* [User Data and comma Account](#user-data-and-comma-account)
-* [Safety and Testing](#safety-and-testing)
-* [Directory Structure](#directory-structure)
+* [What is FrogPilot?](#what-is-frogpilot)
+* [Features](#features)
+* [How to Install](#how-to-install)
+* [Bug reports / Feature Requests](#bug-reports--feature-requests)
+* [Discord](#discord)
+* [Donations](#donations)
+* [Credits](#credits)
 * [Licensing](#licensing)
 
 ---
@@ -35,101 +36,185 @@ What is openpilot?
 </table>
 
 
-Running on a dedicated device in a car
+What is FrogPilot? 🐸
 ------
 
-To use openpilot in a car, you need four things
-1. **Supported Device:** A comma 3/3X. You can purchase these devices from (https://comma.ai/shop/comma-3x)
-  
-2. **Software:** The setup procedure for the comma 3/3X allows users to enter a URL for custom software.
-  To install the release version of openpilot, use the URL `openpilot.comma.ai`.
-  To install openpilot master (for more advanced users), use the URL `installer.comma.ai/commaai/master`. You can replace "commaai" with another GitHub username to install a fork.
+FrogPilot is my custom "Frog Themed" fork of openpilot that has been tailored to improve the driving experience for my 2019 Lexus ES 350. I resync with the latest version of master quite frequently, so this fork is always up to date. I also strive to make every commit I make easy to read and easily cherry-pickable, so feel free to use any of my features in your own personal forks in any way that you see fit!
 
-3. **Supported Car:** Ensure that you have one of [the 250+ supported cars](docs/CARS.md). openpilot supports a wide range of car makes including Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, Ford, and many more.
-  If your car is not officially listed as supported but has adaptive cruise control and lane-keeping assist, it's likely capable of running openpilot.
-  
-4. **Car Harness:** You will also need a [car harness](https://comma.ai/shop/car-harness) to connect your comma 3/3X to your car.
-  We have detailed instructions for [how to install the harness and device in a car](https://comma.ai/setup).
-
-Running on PC
 ------
 
-All openpilot services can run as usual on a PC without requiring special hardware or a car. You can also run openpilot on recorded or simulated data to develop or experiment with openpilot.
+FrogPilot was last updated on:
 
-With openpilot's tools, you can plot logs, replay drives, and watch the full-res camera streams. See [the tools README](tools/README.md) for more information.
+**November 3rd, 2023**
 
-You can also run openpilot in simulation [with the CARLA simulator](tools/sim/README.md). This allows openpilot to drive around a virtual car on your Ubuntu machine. The whole setup should only take a few minutes but does require a decent GPU.
-
-A PC running openpilot can also control your vehicle if it is connected to a [webcam](https://github.com/commaai/openpilot/tree/master/tools/webcam), a [black panda](https://comma.ai/shop/products/panda), and a [harness](https://comma.ai/shop/products/car-harness).
-
-Community and Contributing
+Features
 ------
 
-openpilot is developed by [comma](https://comma.ai/) and by users like you. We welcome both pull requests and issues on [GitHub](http://github.com/commaai/openpilot). Bug fixes and new car ports are encouraged. Check out [the contributing docs](docs/CONTRIBUTING.md).
+FrogPilot offers a wide range of customizable features that can be easily toggled on or off to suit your preferences. Whether you want a completely stock openpilot experience or want to add some fun and personal touches, FrogPilot has you covered! Some of the features include:
 
-Documentation related to openpilot development can be found on [docs.comma.ai](https://docs.comma.ai). Information about running openpilot (e.g. FAQ, fingerprinting, troubleshooting, custom forks, community hardware) should go on the [wiki](https://github.com/commaai/openpilot/wiki).
+------
+🎨 **Custom Themes:**
 
-You can add support for your car by following guides we have written for [Brand](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/) and [Model](https://blog.comma.ai/openpilot-port-guide-for-toyota-models/) ports. Generally, a car with adaptive cruise control and lane keep assist is a good candidate. [Join our Discord](https://discord.comma.ai) to discuss car ports: most car makes have a dedicated channel.
+  - Themes included:
+    - 🐸 Frog theme (with a bonus 🐐 sound effect)
+    - <img src="https://images.emojiterra.com/google/noto-emoji/unicode-15/color/512px/1f1f7-1f1fa.png" width="20" height="18"> Russia / Joseph Stalin theme
+    - 🔌 Tesla theme
 
-Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs#open-positions).
+  - 📢 Want to add a theme? Request one in the "feature-request" channel in the FrogPilot Discord!
+------
+🚀 **Conditional Experimental Mode:**
 
-And [follow us on Twitter](https://twitter.com/comma_ai).
+  - Auto-activates Experimental Mode under several conditions, including:
+    - Approaching slower vehicles
+    - Curve and stop light/stop sign detection
+    - Driving below a set speed
+    - Turn signal activation below 55mph for turn assistance
+------
+🎮 **Custom UI:**
 
-User Data and comma Account
+  - Road UI Customizations:
+    - Blind spot path to indicate a vehicle is in your blind spot within that respective lane
+    - Compass that rotates according to the direction you're driving (Doesn't work on C3X)
+    - Increase or decrease the lane line, path, and road edge widths
+    - Path edge colors based on specific driving statuses
+      - 🔵 Blue - Navigation active
+      - 🟦 Light Blue - "Always On Lateral" active
+      - 🟩 Light Green - Default
+      - 🟠 Orange - Experimental Mode active
+      - 🟡 Yellow - Conditional Experimental overridden
+    - Steering wheel icons
+      📢 Request your own in the "feature-request" channel!
+    - Steering wheel in the onroad UI rotates alongside your physical steering wheel
+    - "Unlimited" road UI that extends out as far as the model can see
+------
+📊 **Developer UI:**
+
+  - Display various driving logics and device state metrics
+  - Lane detection measuring the width of the adjacent lanes
+  - Tap the "CPU"/"GPU" gauge to toggle between CPU and GPU monitoring
+  - Tap the "MEMORY" gauge to toggle between RAM and storage monitoring
+------
+🛠 **Device Behaviors:**
+
+  - Adjustable screen brightness
+  - Device can operate offline indefinitely
+  - Easy Panda firmware flashing via a "Flash Panda" button in the "Device" menu
+  - Faster boot with prebuilt functionality
+  - Set when the device will auto-shutdown to prevent battery drain
+------
+🚘 **Driving Behaviors:**
+
+  - Adjust the set speed in increments of 5 by taping on "MAX" in the onroad UI
+  - Lateral Adjustments:
+    - Activate lateral control by simply pressing the "Cruise Control" button
+    - Lateral control won't disengage on gas or brake
+    - Nudgeless lane changes with lane detection to prevent driving into curbs or going offroad
+    - [Pfeiferj's curvature adjustment](https://github.com/commaai/openpilot/pull/28118) for smoother curve handling
+    - Precise turns by using turn desires when below the minimum lane change speed
+    - [Twilsonco's NNFF](https://github.com/twilsonco/openpilot) for improved steering controls
+  - Longitudinal Adjustments:
+    - Aggressive acceleration following a lead vehicle from a stop
+    - Enhanced stopping distances and braking behaviors
+    - Speed Limit Controller to adjust your speed to the posted speed limit
+      - With additional toggles to set offsets for the ranges of "0-34 mph", "35-54 mph", "55-64 mph", and "65-99 mph"
+    - Sport and Eco acceleration modes
+    - Vision Turn Speed Controller for smoother handling of curves
+      - With additional toggles to fine tune it with your desired speed and curve detection sensitivity
+  - Toggle Experimental Mode via the "Lane Departure Alert" button or by double tapping the screen
+------
+🚗 **Driving Personality Profiles:**
+
+  - Ability to completely customize the following distance and jerk values for each profile
+  - Adjustable via the "Distance" button on the steering wheel
+    - Unsupported vehicle makes can use an Onroad UI button to switch between profiles with ease
+------
+⚡ **Model Switching:**
+
+  - Select between various openpilot models to use your favorite model
+------
+🗺️ **Navigation:**
+
+  - 3D buildings in the map panel
+  - Navigate on openpilot without a comma prime subscription
+  - Open Street Maps integration for speed limit control and road name view
+------
+🚙 **Vehicle Specific Additions:**
+
+  - GM Volt support
+  - Honda Clarity support
+  - Lock doors automatically when in the drive gear for Toyota/Lexus
+  - openpilot longitudinal control for GM vehicles without ACC
+  - Pedal interceptor support for GM vehicles
+  - SNG hack for Toyota's without stop and go functionality
+  - Toyota/TSS2 tuning for smooth driving
+  - ZSS support for the Toyota Prius
+------
+🚦 **Other Quality of Life Features:**
+
+  - Disable the wide camera while in Experimental Mode (cosmetic only)
+  - Green light alert
+  - Hide the speed indicator by simply tapping on it
+  - Numerical temperature gauge with the ability to use Fahrenheit by simply tapping on the gauge
+  - Pause lateral control when turn signals are active
+  - Sidebar displays by default for easy device monitoring
+  - Silent Mode for a completely silent driving experience
+
+How to Install
 ------
 
-By default, openpilot uploads the driving data to our servers. You can also access your data through [comma connect](https://connect.comma.ai/). We use your data to train better models and improve openpilot for everyone.
+Easiest way to install FrogPilot is via this URL at the installation screen:
 
-openpilot is open source software: the user is free to disable data collection if they wish to do so.
+```
+https://installer.comma.ai/FrogAi/FrogPilot
+```
+Be sure to capitalize the "F" and "P" in "FrogPilot" otherwise the installation will fail.
 
-openpilot logs the road-facing cameras, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
-The driver-facing camera is only logged if you explicitly opt-in in settings. The microphone is not recorded.
+DO NOT install the "FrogPilot-Development" branch. I'm constantly breaking things on there so unless you don't want to use openpilot, NEVER install it!
 
-By using openpilot, you agree to [our Privacy Policy](https://comma.ai/privacy). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma for the use of this data.
+![](https://i.imgur.com/wxKp3JI.png)
 
-Safety and Testing
-----
-
-* openpilot observes ISO26262 guidelines, see [SAFETY.md](docs/SAFETY.md) for more details.
-* openpilot has software-in-the-loop [tests](.github/workflows/selfdrive_tests.yaml) that run on every commit.
-* The code enforcing the safety model lives in panda and is written in C, see [code rigor](https://github.com/commaai/panda#code-rigor) for more details.
-* panda has software-in-the-loop [safety tests](https://github.com/commaai/panda/tree/master/tests/safety).
-* Internally, we have a hardware-in-the-loop Jenkins test suite that builds and unit tests the various processes.
-* panda has additional hardware-in-the-loop [tests](https://github.com/commaai/panda/blob/master/Jenkinsfile).
-* We run the latest openpilot in a testing closet containing 10 comma devices continuously replaying routes.
-
-Directory Structure
+Bug reports / Feature Requests
 ------
-    .
-    ├── cereal              # The messaging spec and libs used for all logs
-    ├── common              # Library like functionality we've developed here
-    ├── docs                # Documentation
-    ├── opendbc             # Files showing how to interpret data from cars
-    ├── panda               # Code used to communicate on CAN
-    ├── third_party         # External libraries
-    └── system              # Generic services
-        ├── camerad         # Driver to capture images from the camera sensors
-        ├── clocksd         # Broadcasts current time
-        ├── hardware        # Hardware abstraction classes
-        ├── logcatd         # systemd journal as a service
-        ├── loggerd         # Logger and uploader of car data
-        ├── proclogd        # Logs information from /proc
-        ├── sensord         # IMU interface code
-        └── ubloxd          # u-blox GNSS module interface code
-    └── selfdrive           # Code needed to drive the car
-        ├── assets          # Fonts, images, and sounds for UI
-        ├── athena          # Allows communication with the app
-        ├── boardd          # Daemon to talk to the board
-        ├── car             # Car specific code to read states and control actuators
-        ├── controls        # Planning and controls
-        ├── debug           # Tools to help you debug and do car ports
-        ├── locationd       # Precise localization and vehicle parameter estimation
-        ├── manager         # Daemon that starts/stops all other daemons as needed
-        ├── modeld          # Driving and monitoring model runners
-        ├── monitoring      # Daemon to determine driver attention
-        ├── navd            # Turn-by-turn navigation
-        ├── test            # Unit tests, system tests, and a car simulator
-        └── ui              # The UI
+
+If you encounter any issues or bugs while using FrogPilot, or if you have any suggestions for new features or improvements, please don't hesitate to reach out to me. I'm always looking for ways to improve the fork and provide a better experience for everyone!
+
+To report a bug or request a new feature, feel free to make a post in the respective channel on the FrogPilot Discord. Provide as much detail as possible about the issue you're experiencing or the feature you'd like to see added. Photos, videos, log files, or other relevant information are very helpful!
+
+I will do my best to respond to bug reports and feature requests in a timely manner, but please understand that I may not be able to address every request immediately. Your feedback and suggestions are valuable, and I appreciate your help in making FrogPilot the best it can be!
+
+As for feature requests, these are my guidelines:
+
+- Can I test it on my 2019 Lexus ES or are you up for testing it?
+- How maintainable is it? Or will it frequently break with future openpilot updates?
+- Is it not currently being developed by comma themselves? (i.e. Navigation)
+- Will I personally use it or is it very niche?
+
+Discord
+------
+
+[Join the FrogPilot Community Discord for easy access to updates, bug reporting, feature requests, future planned updates, and other FrogPilot related discussions!](https://l.linklyhq.com/l/1t3Il)
+
+Donations
+------
+
+I DO NOT accept donations! So if anyone is claiming to be me or to be a part of FrogPilot and is asking for any type of financial compensation, IT IS A SCAM!
+
+I work on FrogPilot on my own and is purely a passion project to refine my skills and to help improve openpilot for the community. I do not and will not ever expect any type of financial exchange for my work. The only thing I’ll ever ask for in return is constructive feedback!
+
+Credits
+------
+
+* [AlexandreSato](https://github.com/AlexandreSato/openpilot)
+* [Aragon7777](https://github.com/Aragon7777/openpilot)
+* [Crwusiz](https://github.com/crwusiz/openpilot)
+* [DragonPilot](https://github.com/dragonpilot-community/dragonpilot)
+* [ErichMoraga](https://github.com/ErichMoraga/openpilot)
+* [KRKeegan](https://github.com/krkeegan/openpilot)
+* [Move-Fast](https://github.com/move-fast/openpilot)
+* [OPGM](https://github.com/opgm/openpilot)
+* [Pfeiferj](https://github.com/pfeiferj/openpilot)
+* [Sunnyhaibin](https://github.com/sunnyhaibin/sunnypilot)
+* [Twilsonco](https://github.com/twilsonco/openpilot)
 
 Licensing
 ------
