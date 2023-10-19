@@ -182,6 +182,16 @@ ParamController(AccelerationProfile, "AccelerationProfile", "   Acceleration Pro
   return std::clamp(v, 1, 3);
 )
 
+ParamController(AggressiveJerk, "AggressiveJerk", "Jerk Value", "Set the jerk value for the 'Aggressive Personality'.\n\nValue represents the responsiveness of the brake/gas pedals.\n\nHigher value = Less responsive/more 'relaxed'\n\nStock has a value of 0.5.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("AggressiveJerk") / 10.0);,
+  return std::clamp(v, 1, 50);
+)
+
+ParamController(AggressivePersonality, "AggressivePersonality", "Time", "Set the following distance for the 'Aggressive Personality'.\n\nValue represents the time (in seconds) to follow the lead vehicle.\n\nStock has a value of 1.25.", "../assets/aggressive.png",
+  return QString::number(params.getInt("AggressivePersonality") / 10.0) + " sec";,
+  return std::clamp(v, 10, 50);
+)
+
 ParamController(ConditionalSpeed, "ConditionalSpeed", "Below", "Switch to 'Experimental Mode' below this speed when there is no lead vehicle.", "../assets/offroad/icon_blank.png",
   const int speed = params.getInt("ConditionalSpeed");
   return speed == 0 ? "Off" : QString::number(speed) + (isMetric ? " kph" : " mph");,
@@ -192,4 +202,24 @@ ParamController(ConditionalSpeedLead, "ConditionalSpeedLead", "With Lead", "Swit
   const int speedLead = params.getInt("ConditionalSpeedLead");
   return speedLead == 0 ? "Off" : QString::number(speedLead) + (isMetric ? " kph" : " mph");,
   return std::clamp(v, 0, isMetric ? 150 : 99);
+)
+
+ParamController(RelaxedJerk, "RelaxedJerk", "Jerk Value", "Set the jerk value for the 'Relaxed Personality'.\n\nValue represents the responsiveness of the brake/gas pedals.\n\nHigher value = Less responsive/more 'relaxed'\n\nStock has a value of 1.0.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("RelaxedJerk") / 10.0);,
+  return std::clamp(v, 1, 50);
+)
+
+ParamController(RelaxedPersonality, "RelaxedPersonality", "Time", "Set the following distance for the 'Relaxed Personality'.\n\nValue represents the time (in seconds) to follow the lead vehicle.\n\nStock has a value of 1.75.", "../assets/relaxed.png",
+  return QString::number(params.getInt("RelaxedPersonality") / 10.0) + " sec";,
+  return std::clamp(v, 10, 50);
+)
+
+ParamController(StandardJerk, "StandardJerk", "Jerk Value", "Set the jerk value for the 'Standard Personality'.\n\nValue represents the responsiveness of the brake/gas pedals.\n\nHigher value = Less responsive/more 'relaxed'\n\nStock has a value of 1.0.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("StandardJerk") / 10.0);,
+  return std::clamp(v, 1, 50);
+)
+
+ParamController(StandardPersonality, "StandardPersonality", "Time", "Set the following distance for the 'Standard Personality'.\n\nValue represents the time (in seconds) to follow the lead vehicle.\n\nStock has a value of 1.45.", "../assets/standard.png",
+  return QString::number(params.getInt("StandardPersonality") / 10.0) + " sec";,
+  return std::clamp(v, 10, 50);
 )

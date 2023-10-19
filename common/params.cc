@@ -211,6 +211,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     // FrogPilot parameters
     {"AccelerationProfile", PERSISTENT},
     {"AggressiveAcceleration", PERSISTENT},
+    {"AggressiveJerk", PERSISTENT},
+    {"AggressivePersonality", PERSISTENT},
     {"AlwaysOnLateral", PERSISTENT},
     {"AlwaysOnLateralMain", PERSISTENT},
     {"AverageDesiredCurvature", PERSISTENT},
@@ -224,6 +226,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ConditionalSpeedLead", PERSISTENT},
     {"ConditionalStatus", PERSISTENT},
     {"ConditionalStopLights", PERSISTENT},
+    {"CustomPersonalities", PERSISTENT},
     {"DisableInternetCheck", PERSISTENT},
     {"EnableCruise", PERSISTENT},
     {"FrogPilotTogglesUpdated", PERSISTENT},
@@ -231,7 +234,11 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LongitudinalTuning", PERSISTENT},
     {"NavigationInstruction", PERSISTENT},
     {"OSM", PERSISTENT},
+    {"RelaxedJerk", PERSISTENT},
+    {"RelaxedPersonality", PERSISTENT},
     {"RoadName", PERSISTENT},
+    {"StandardJerk", PERSISTENT},
+    {"StandardPersonality", PERSISTENT},
     {"Updated", PERSISTENT},
 };
 

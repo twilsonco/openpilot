@@ -15,6 +15,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
   static const std::vector<std::tuple<QString, QString, QString, QString>> toggles = {
     {"AlwaysOnLateral", "Always on Lateral / No disengage on Brake Pedal", "Keep openpilot lateral control when using either the brake or gas pedals. openpilot is only disengaged by deactivating the 'Cruise Control' button.", "../assets/offroad/icon_always_on_lateral.png"},
     {"ConditionalExperimental", "Conditional Experimental Mode", "Automatically activate 'Experimental Mode' based on specified conditions.", "../assets/offroad/icon_conditional.png"},
+    {"CustomPersonalities", "Custom Driving Personalities", "Customize the driving personality profiles to your liking.", "../assets/offroad/icon_custom.png"},
     {"LateralTuning", "Lateral Tuning", "Change the way openpilot steers.", "../assets/offroad/icon_lateral_tune.png"},
     {"LongitudinalTuning", "Longitudinal Tuning", "Change the way openpilot accelerates and brakes.", "../assets/offroad/icon_longitudinal_tune.png"},
   };
@@ -39,6 +40,12 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
         {"ConditionalStopLights", "Stop Lights and Stop Signs"},
         {"ConditionalSignal", "Turn Signal < 55mph"}
       }, mainLayout);
+    } else if (key == "CustomPersonalities") {
+      createSubControl(key, label, desc, icon, {
+        createDualParamControl(new AggressivePersonality(), new AggressiveJerk()),
+        createDualParamControl(new StandardPersonality(), new StandardJerk()),
+        createDualParamControl(new RelaxedPersonality(), new RelaxedJerk()),
+      });
     } else if (key == "LateralTuning") {
       createSubControl(key, label, desc, icon, {}, {
         {"AverageDesiredCurvature", "Average Desired Curvature", "Use Pfeiferj's distance based curvature adjustment for smoother handling of curves."},
