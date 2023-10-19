@@ -331,6 +331,13 @@ class Controls:
                                                     LaneChangeState.laneChangeFinishing):
       self.events.add(EventName.laneChange)
 
+    # Handle turning
+    if not CS.standstill:
+      if self.sm['lateralPlan'].desire == Desire.turnLeft:
+        self.events.add(EventName.turningLeft)
+      elif self.sm['lateralPlan'].desire == Desire.turnRight:
+        self.events.add(EventName.turningRight)
+
     for i, pandaState in enumerate(self.sm['pandaStates']):
       # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
       if i < len(self.CP.safetyConfigs):

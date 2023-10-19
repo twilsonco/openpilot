@@ -6,6 +6,7 @@ import numpy as np
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
+TurnDirection = log.LateralPlan.Desire
 
 LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
@@ -31,6 +32,12 @@ DESIRES = {
   },
 }
 
+TURN_DESIRES = {
+  TurnDirection.none: log.LateralPlan.Desire.none,
+  TurnDirection.turnLeft: log.LateralPlan.Desire.turnLeft,
+  TurnDirection.turnRight: log.LateralPlan.Desire.turnRight,
+}
+
 
 class DesireHelper:
   def __init__(self):
@@ -44,6 +51,7 @@ class DesireHelper:
 
     # FrogPilot variables
     self.params = Params()
+    self.turn_direction = TurnDirection.none
     self.lane_change_completed = False
     self.lane_change_wait_timer = 0
 
@@ -97,7 +105,12 @@ class DesireHelper:
     if not lateral_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
       self.lane_change_direction = LaneChangeDirection.none
+    elif one_blinker and below_lane_change_speed and self.turn_desires:
+      self.turn_direction = TurnDirection.turnLeft if carstate.leftBlinker else TurnDirection.turnRight
     else:
+      # TurnDirection.none
+      self.turn_direction = TurnDirection.none
+
       # LaneChangeState.off
       if self.lane_change_state == LaneChangeState.off and one_blinker and not self.prev_one_blinker and not below_lane_change_speed:
         self.lane_change_state = LaneChangeState.preLaneChange
@@ -161,7 +174,10 @@ class DesireHelper:
 
     self.prev_one_blinker = one_blinker
 
-    self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
+    if self.turn_direction != TurnDirection.none:
+      self.desire = TURN_DESIRES[self.turn_direction]
+    else:
+      self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
 
     # Send keep pulse once per second during LaneChangeStart.preLaneChange
     if self.lane_change_state in (LaneChangeState.off, LaneChangeState.laneChangeStarting):
@@ -180,3 +196,5 @@ class DesireHelper:
     self.lane_change_delay = self.params.get_int("LaneChangeTimer") if self.nudgeless else 0
     self.lane_detection = self.params.get_bool("LaneDetection") if self.nudgeless else False
     self.one_lane_change = self.params.get_bool("OneLaneChange") if self.nudgeless else False
+
+    self.turn_desires = self.params.get_bool("TurnDesires")
