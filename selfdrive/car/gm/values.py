@@ -231,6 +231,7 @@ FINGERPRINTS = {
 GM_RX_OFFSET = 0x400
 
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
+DBC[CAR.VOLT] = dbc_dict('gm_global_a_powertrain_volt', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis')
 
 CC_ONLY_CAR = {CAR.CTS_CC}
 
