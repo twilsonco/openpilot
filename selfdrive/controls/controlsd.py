@@ -18,6 +18,7 @@ from openpilot.system.version import is_release_branch, get_short_branch
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from openpilot.selfdrive.controls.lib.lateral_planner import CAMERA_OFFSET
+from openpilot.selfdrive.controls.lib.desire_helper import LANE_CHANGE_SPEED_MIN
 from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, get_lag_adjusted_curvature
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl, MIN_LATERAL_CONTROL_SPEED
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
@@ -614,18 +615,20 @@ class Controls:
     gear = car.CarState.GearShifter
     CC.drivingGear = CS.gearShifter not in (gear.neutral, gear.park, gear.reverse, gear.unknown)
 
+    signal_check = not ((CS.leftBlinker or CS.rightBlinker) and self.pause_lateral_on_signal and CS.vEgo < LANE_CHANGE_SPEED_MIN)
+
     # Always on lateral
     if self.always_on_lateral:
       self.lateral_allowed &= CS.cruiseState.available
       self.lateral_allowed |= CS.cruiseState.enabled or (CS.cruiseState.available and self.always_on_lateral_main)
 
-      CC.alwaysOnLateral = self.lateral_allowed and CC.drivingGear
+      CC.alwaysOnLateral = self.lateral_allowed and CC.drivingGear and signal_check
       if CC.alwaysOnLateral:
         self.current_alert_types.append(ET.WARNING)
 
     # Check which actuators can be enabled
     standstill = CS.vEgo <= max(self.CP.minSteerSpeed, MIN_LATERAL_CONTROL_SPEED) or CS.standstill
-    CC.latActive = (self.active or CC.alwaysOnLateral) and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
+    CC.latActive = (self.active or CC.alwaysOnLateral) and signal_check and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
                    (not standstill or self.joystick_mode)
     CC.longActive = self.enabled and not self.events.contains(ET.OVERRIDE_LONGITUDINAL) and self.CP.openpilotLongitudinalControl
 
@@ -940,6 +943,7 @@ class Controls:
     self.custom_sounds = self.params.get_int("CustomSounds") if self.custom_theme else 0
     self.frog_sounds = self.custom_sounds == 1
 
+    self.pause_lateral_on_signal = self.params.get_bool("PauseLateralOnSignal")
     self.reverse_cruise_increase = self.params.get_bool("ReverseCruiseIncrease")
 
 def main():
