@@ -167,6 +167,7 @@ private:
   float laneWidthRight;
   float slcSpeedLimit;
   float slcSpeedLimitOffset;
+  float vtscOffset;
   int bearingDeg;
   int conditionalSpeed;
   int conditionalSpeedLead;

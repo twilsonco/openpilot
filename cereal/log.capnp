@@ -1030,6 +1030,7 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   slcSpeedLimit @44 :Float32;
   slcSpeedLimitOffset @45 :Float32;
   stoppedEquivalenceFactorStock @46 :Int64;
+  vtscOffset @47 :Float32;
 
   enum LongitudinalPlanSource {
     cruise @0;
