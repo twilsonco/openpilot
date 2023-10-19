@@ -9,15 +9,19 @@ from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
+from openpilot.common.realtime import DT_MDL
+from openpilot.common.numpy_fast import interp
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
+from openpilot.selfdrive.modeld.constants import T_IDXS
+from openpilot.selfdrive.controls.lib.lateral_planner import TRAJECTORY_SIZE
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 from openpilot.selfdrive.modeld.models.driving_pyx import (
   PublishState, create_model_msg, create_pose_msg,
   FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN,
-  OUTPUT_SIZE, NET_OUTPUT_SIZE, MODEL_FREQ)
+  LAT_PLANNER_STATE_LEN, OUTPUT_SIZE, NET_OUTPUT_SIZE, MODEL_FREQ)
 
 MODEL_PATHS = {
   ModelRunner.THNEED: Path(__file__).parent / 'models/supercombo.thneed',
@@ -41,6 +45,9 @@ class ModelState:
   model: ModelRunner
 
   def __init__(self, context: CLContext):
+    # FrogPilot variables
+    self.NLP_model = Params().get_int("Model") == 3
+
     self.frame = ModelFrame(context)
     self.wide_frame = ModelFrame(context)
     self.prev_desire = np.zeros(DESIRE_LEN, dtype=np.float32)
@@ -48,6 +55,7 @@ class ModelState:
     self.inputs = {
       'desire': np.zeros(DESIRE_LEN * (HISTORY_BUFFER_LEN+1), dtype=np.float32),
       'traffic_convention': np.zeros(TRAFFIC_CONVENTION_LEN, dtype=np.float32),
+      **({'lat_planner_state': np.zeros(LAT_PLANNER_STATE_LEN, dtype=np.float32)} if self.NLP_model else {}),
       'nav_features': np.zeros(NAV_FEATURE_LEN, dtype=np.float32),
       'nav_instructions': np.zeros(NAV_INSTRUCTION_LEN, dtype=np.float32),
       'features_buffer': np.zeros(HISTORY_BUFFER_LEN * FEATURE_LEN, dtype=np.float32),
@@ -82,7 +90,13 @@ class ModelState:
 
     self.model.execute()
     self.inputs['features_buffer'][:-FEATURE_LEN] = self.inputs['features_buffer'][FEATURE_LEN:]
+    # TODO: self.output should be cast to the modeld output struct then these 2 tricky slicings can be removed
     self.inputs['features_buffer'][-FEATURE_LEN:] = self.output[OUTPUT_SIZE:OUTPUT_SIZE+FEATURE_LEN]
+    if self.NLP_model:
+      lat_planning_output = self.output[OUTPUT_SIZE-2*LAT_PLANNER_STATE_LEN*TRAJECTORY_SIZE:OUTPUT_SIZE-LAT_PLANNER_STATE_LEN*TRAJECTORY_SIZE]
+      lat_planning_output = lat_planning_output.reshape((TRAJECTORY_SIZE, LAT_PLANNER_STATE_LEN))
+      self.inputs['lat_planner_state'][2] = interp(DT_MDL, T_IDXS, lat_planning_output[:, 2])
+      self.inputs['lat_planner_state'][3] = interp(DT_MDL, T_IDXS, lat_planning_output[:, 3])
     return self.output
 
 
