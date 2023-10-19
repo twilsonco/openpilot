@@ -177,6 +177,7 @@ typedef struct UIScene {
   int desired_follow;
   int obstacle_distance;
   int obstacle_distance_stock;
+  int screen_brightness;
   int stopped_equivalence;
   int stopped_equivalence_stock;
   float lane_line_width;
