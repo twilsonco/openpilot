@@ -318,6 +318,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"StandardJerk", PERSISTENT},
     {"StandardPersonality", PERSISTENT},
     {"SteeringWheel", PERSISTENT},
+    {"TSS2Tune", PERSISTENT},
     {"TwilsoncoSSH", PERSISTENT},
     {"UnlimitedLength", PERSISTENT},
     {"Updated", PERSISTENT},

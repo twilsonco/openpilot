@@ -164,6 +164,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(QWidget *parent) : FrogPilotPanel
   static const std::vector<std::tuple<QString, QString, QString, QString>> toyotaToggles = {
     {"LockDoors", "Lock Doors In Drive", "Automatically locks the doors when in drive and unlocks when in park.", "../assets/offroad/icon_blank.png"},
     {"SNGHack", "SNG Hack", "Enable the SNG Hack for vehicles without stock stop and go.", "../assets/offroad/icon_blank.png"},
+    {"TSS2Tune", "TSS2 Tune", "Tuning profile for TSS2 vehicles. Based on the tuning profile from DragonPilot.", "../assets/offroad/icon_blank.png"}
   };
 
   for (const auto &[key, label, desc, icon] : toyotaToggles) {
@@ -308,12 +309,13 @@ ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QStri
       {"AggressiveAcceleration", "This will make openpilot driving more aggressively behind lead vehicles!"},
       {"AlwaysOnLateralMain", "This is very experimental and isn't guaranteed to work. If you run into any issues please report it in the FrogPilot Discord!"},
       {"SmootherBraking", "This will modify openpilot's braking behavior!"},
+      {"TSS2Tune", "This will modify openpilot's acceleration and braking behavior!"}
     };
     if (parameterWarnings.contains(key) && params.getBool(key.toStdString())) {
       ConfirmationDialog::toggleAlert("WARNING: " + parameterWarnings[key], "I understand the risks.", parent);
     }
     static const QSet<QString> parameterReboots = {
-      "AlwaysOnLateral", "AlwaysOnLateralMain", "DisableAllLogging", "FireTheBabysitter", "MuteDM", "NNFF", "SNGHack"
+      "AlwaysOnLateral", "AlwaysOnLateralMain", "DisableAllLogging", "FireTheBabysitter", "MuteDM", "NNFF", "SNGHack", "TSS2Tune"
     };
     if (parameterReboots.contains(key)) {
       if (ConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", parent)) {
