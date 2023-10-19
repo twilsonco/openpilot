@@ -176,6 +176,7 @@ typedef struct UIScene {
   bool map_open;
   bool mute_dm;
   bool road_name_ui;
+  bool rotating_wheel;
   bool show_driver_camera;
   bool turn_signal_left;
   bool turn_signal_right;
@@ -189,6 +190,7 @@ typedef struct UIScene {
   int obstacle_distance;
   int obstacle_distance_stock;
   int screen_brightness;
+  int steering_angle_deg;
   int steering_wheel;
   int stopped_equivalence;
   int stopped_equivalence_stock;
