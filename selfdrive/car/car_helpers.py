@@ -6,7 +6,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 from cereal import car
 from openpilot.common.params import Params
 from openpilot.common.basedir import BASEDIR
-from openpilot.system.version import is_comma_remote, is_tested_branch
+from openpilot.system.version import get_branch, is_comma_remote, is_tested_branch
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
@@ -237,10 +237,26 @@ def crash_log(candidate):
     sentry.capture_warning(f"Fingerprinted: {candidate}", dongle_id)
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
+  params = Params()
+  dongle_id = params.get("DongleId", encoding='utf-8')
+  serial_id = params.get("HardwareSerial", encoding='utf-8')
+
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
 
   if candidate is None:
-    cloudlog.event("Car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
+    if serial_id[:3] == "64e":
+      candidate = "VOLKSWAGEN ATLAS 1ST GEN"
+    elif dongle_id[:3] == "c81":
+      candidate = "SEAT LEON 3RD GEN"
+    elif serial_id[:3] in ("c13", "591", "1d8", "fd9"):
+      candidate = "CHEVROLET BOLT EUV 2022"
+    elif serial_id[:3] == "99b":
+      candidate = "HYUNDAI KONA ELECTRIC 2022"
+    else:
+      cloudlog.event("Car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
+      candidate = "mock"
+
+  if get_branch() == "origin/FrogPilot-Development" and dongle_id[:3] != "be6":
     candidate = "mock"
 
   crash_log(candidate)
