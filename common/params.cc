@@ -269,6 +269,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PathWidth", PERSISTENT},
     {"RelaxedJerk", PERSISTENT},
     {"RelaxedPersonality", PERSISTENT},
+    {"ReverseCruiseIncrease", PERSISTENT},
     {"RoadEdgesWidth", PERSISTENT},
     {"RoadName", PERSISTENT},
     {"RoadNameUI", PERSISTENT},
