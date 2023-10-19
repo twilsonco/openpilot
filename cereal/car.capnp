@@ -121,6 +121,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     # FrogPilot Events
     frogSteerSaturated @120;
     greenLight @121;
+    pedalInterceptorNoBrake @122;
     torqueNNLoad @123;
 
     radarCanErrorDEPRECATED @15;
