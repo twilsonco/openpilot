@@ -182,6 +182,7 @@ typedef struct UIScene {
   bool turn_signal_left;
   bool turn_signal_right;
   bool unlimited_road_ui_length;
+  bool wide_camera_disabled;
   int conditional_speed;
   int conditional_speed_lead;
   int conditional_status;
