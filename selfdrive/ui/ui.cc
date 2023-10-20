@@ -226,6 +226,9 @@ static void update_state(UIState *s) {
       scene.turn_signal_left = carState.getLeftBlinker();
       scene.turn_signal_right = carState.getRightBlinker();
     }
+    if (scene.driver_camera) {
+      scene.show_driver_camera = carState.getGearShifter() == cereal::CarState::GearShifter::REVERSE;
+    }
   }
   if (sm.updated("controlsState")) {
     const auto controlsState = sm["controlsState"].getControlsState();
@@ -291,6 +294,7 @@ void ui_update_params(UIState *s) {
   scene.custom_colors = scene.custom_theme ? params.getInt("CustomColors") : 0;
   scene.custom_signals = scene.custom_theme ? params.getInt("CustomSignals") : 0;
 
+  scene.driver_camera = params.getBool("DriverCamera");
   scene.screen_brightness = params.getInt("ScreenBrightness");
   scene.steering_wheel = params.getInt("SteeringWheel");
 }
