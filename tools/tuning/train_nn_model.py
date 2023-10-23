@@ -51,9 +51,9 @@ TORQUE_NN_LAYERS = [
   [25, 1, "sigmoid"]
 ]
 
-TORQUE_NN_START_W = [[[0.0191, 0.156, 0.111, 0.155], [-0.0135, -0.183, 0.151, 0.0767], [-0.0438, 0.0165, -0.0431, -0.0377], [0.0134, -0.323, -0.204, -0.0513], [-0.102, -0.0199, -0.095, -0.134], [0.133, -0.35, -0.0226, -0.116], [-0.0544, 0.00969, -0.117, 0.0383], [-0.0268, -0.265, -0.109, 0.235], [-0.00554, -0.113, 0.0816, -0.121], [0.0379, -0.463, -0.195, 0.034], [0.0775, 0.02, -0.014, -0.0333], [-0.183, -0.29, -0.0847, 0.0961], [0.0396, -0.391, 0.0544, -0.0763], [-0.0581, 0.491, 0.128, -0.08], [-0.0942, -0.251, 0.0252, 0.121], [-0.046, 0.0141, -0.107, -0.126], [0.123, 0.571, 0.046, -0.0201], [0.0776, -0.288, 0.00125, 0.23], [-0.021, 0.428, -0.203, -0.0202], [0.0155, 0.0588, 0.0156, -0.214], [-0.0425, 0.358, 0.228, -0.177], [-0.0892, -0.223, 0.0973, 0.0257], [-0.00718, -0.248, -0.0352, 0.0656], [-0.0699, 0.00276, -0.0377, -0.15], [0.0127, 0.178, 0.021, -0.0773]], [[0.259, -0.195, -0.0245, -0.271, -0.031, -0.417, -0.0134, -0.375, -0.0604, -0.681, 0.155, -0.35, -0.434, 0.744, -0.331, 0.0311, 0.642, -0.355, 0.391, 0.107, 0.5, -0.237, -0.419, 0.0491, 0.262]]]
-TORQUE_NN_START_B = [[-0.0934, -0.00341, -0.0508, 0.00394, -0.0199, 0.203, 0.188, 0.186, 0.0254, 0.506, -0.19, 0.15, 0.24, 0.606, 0.163, 0.0306, 0.297, 0.0559, 0.201, 0.0852, 0.251, -0.00324, 0.356, -0.14, 0.188], [0.06]]
-TORQUE_NN_ACTIVATION_FUNCTIONS = ["relu", "sigmoid"]
+TORQUE_NN_START_W = []#[[[0.0191, 0.156, 0.111, 0.155], [-0.0135, -0.183, 0.151, 0.0767], [-0.0438, 0.0165, -0.0431, -0.0377], [0.0134, -0.323, -0.204, -0.0513], [-0.102, -0.0199, -0.095, -0.134], [0.133, -0.35, -0.0226, -0.116], [-0.0544, 0.00969, -0.117, 0.0383], [-0.0268, -0.265, -0.109, 0.235], [-0.00554, -0.113, 0.0816, -0.121], [0.0379, -0.463, -0.195, 0.034], [0.0775, 0.02, -0.014, -0.0333], [-0.183, -0.29, -0.0847, 0.0961], [0.0396, -0.391, 0.0544, -0.0763], [-0.0581, 0.491, 0.128, -0.08], [-0.0942, -0.251, 0.0252, 0.121], [-0.046, 0.0141, -0.107, -0.126], [0.123, 0.571, 0.046, -0.0201], [0.0776, -0.288, 0.00125, 0.23], [-0.021, 0.428, -0.203, -0.0202], [0.0155, 0.0588, 0.0156, -0.214], [-0.0425, 0.358, 0.228, -0.177], [-0.0892, -0.223, 0.0973, 0.0257], [-0.00718, -0.248, -0.0352, 0.0656], [-0.0699, 0.00276, -0.0377, -0.15], [0.0127, 0.178, 0.021, -0.0773]], [[0.259, -0.195, -0.0245, -0.271, -0.031, -0.417, -0.0134, -0.375, -0.0604, -0.681, 0.155, -0.35, -0.434, 0.744, -0.331, 0.0311, 0.642, -0.355, 0.391, 0.107, 0.5, -0.237, -0.419, 0.0491, 0.262]]]
+TORQUE_NN_START_B = []#[[-0.0934, -0.00341, -0.0508, 0.00394, -0.0199, 0.203, 0.188, 0.186, 0.0254, 0.506, -0.19, 0.15, 0.24, 0.606, 0.163, 0.0306, 0.297, 0.0559, 0.201, 0.0852, 0.251, -0.00324, 0.356, -0.14, 0.188], [0.06]]
+TORQUE_NN_ACTIVATION_FUNCTIONS = []#["relu", "sigmoid"]
 
 class NumPyNeuralNetwork:
   def __init__(self, 
@@ -75,6 +75,7 @@ class NumPyNeuralNetwork:
     self.activation_function_names = activation_functions
     self.input_mean = np.array(input_mean, dtype=np.float64)
     self.input_std = np.array(input_std, dtype=np.float64)
+    self.output_scale = 1.0
     if len(input_mean) != self.input_size:
       self.input_mean = np.zeros(self.input_size, dtype=np.float64)
       self.input_std = np.zeros(self.input_size, dtype=np.float64)
@@ -134,7 +135,7 @@ class NumPyNeuralNetwork:
       x = W.dot(x) + b
       self.training_cache[f"Z{i+1}"] = x
       x = activation(x)
-    return x
+    return x * self.output_scale
   
   def backward(self, Y_hat, Y, eps = 0.000000000001):
     m = Y.shape[1]
@@ -170,13 +171,13 @@ class NumPyNeuralNetwork:
     self.input_std = np.std(X, axis=1, keepdims=True)
     # normalize X
     X_normalized = (X - self.input_mean) / self.input_std
-    # rescale Y to be between 0 and 1
-    Y_rescaled = (Y + 1) / 2
+    # get scaling factor to downscale Y to be between -1 and 1, and so that I can rescale later
+    self.output_scale = np.max(np.abs(Y))
     for i in range(epochs):
       Y_hat = self.forward_w_cache(X_normalized)
-      cost = self.get_cost_value(Y_hat, Y_rescaled)
+      cost = self.get_cost_value(Y_hat, Y)
       cost_history.append(cost)
-      self.backward(Y_hat, Y_rescaled)
+      self.backward(Y_hat, Y)
       self.update_params()
       if(i % 50 == 0):
         if(verbose):
@@ -209,7 +210,7 @@ def clamp(x, lo, hi):
   return max(lo, min(hi, x))
 
 # generates theoretical training data in order to calculate a good starting set of parameters
-def generate_trial_lateral_training_data(kf=0.33, friction_factor=0.15, friction_threshold=0.3, roll_kf = 0.1):
+def generate_trial_lateral_training_data(kf=0.33, friction_factor=0.15, steer_threshold=1.2, friction_threshold=0.3, roll_kf = 0.1):
   fbp = [-friction_threshold, friction_threshold]
   fv = [-friction_factor, friction_factor]
   X = []
@@ -221,7 +222,7 @@ def generate_trial_lateral_training_data(kf=0.33, friction_factor=0.15, friction
           steer = kf * la
           steer += get_friction(lj, fbp, fv)
           steer -= np.sin(roll) * 9.81 * roll_kf
-          steer = clamp(steer, -1.0, 1.0)
+          steer = clamp(steer, -steer_threshold, steer_threshold)
           X.append([v_ego, la, lj, roll])
           y.append(steer)
   return np.array(X).T, np.array(y).reshape((1, -1))
@@ -235,7 +236,7 @@ def main():
   print(X.shape)
   print(y.shape)
   
-  # X, y = generate_trial_lateral_training_data()
+  X, y = generate_trial_lateral_training_data()#kf=0.5, friction_factor=0.25)
   
   model = NumPyNeuralNetwork(training=True, learning_rate=1e5)
   
@@ -302,7 +303,7 @@ def main():
   
   cost_history = model.train(X, y, 5000, True, callback_numpy_plot)
   
-  if False:
+  if True:
     # # pretty print W using 0.2g format, and as a valid python list
     W_str = "W = ["
     for layer in model.W:

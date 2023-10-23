@@ -965,8 +965,8 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
         max_len = int(max_time * CTRL_RATE)
         torque_sources = ['torque_adjusted', 'torque_adjusted_driver', 'torque_adjusted_eps', 'steer_cmd']
         check_sources = ['combined_torque_good', 'driver_torque_good', 'eps_torque_good', 'steer_cmd_good']
-        torque_sources = ['torque_adjusted_eps', 'steer_cmd']
-        check_sources = ['eps_torque_good', 'steer_cmd_good']
+        torque_sources = ['torque_adjusted_eps']
+        check_sources = ['eps_torque_good']
         for torque_source, check_source in zip(torque_sources, check_sources):
           print(f"  Processing {torque_source}...")
           lat_accel_deque = deque(maxlen=max_len)
@@ -1043,7 +1043,7 @@ def has_upper_word(text):
 
 # iterate over all directories and subdirectories in the specified path
 whitelist = ["toyota", "honda", "hyundai", "chrysler"]
-whitelist = ["VOLT PREMIER"]
+whitelist = ["TRAILBLAZER"]
 blacklist = []
 dirlist=[]
 for root, dirs, files in os.walk(input_dir):
