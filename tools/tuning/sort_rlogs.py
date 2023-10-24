@@ -54,7 +54,7 @@ def get_rlog_data_from_list(fnames):
       if rlog_info is not None and None not in rlog_info.values():
         return rlog_info
     except Exception as e:
-      print(f"Failed to get rlog data for {fname}")
+      print(f"Failed to get rlog data for {fname}: {e}")
       del_files.append(fname)
       continue
   return None
