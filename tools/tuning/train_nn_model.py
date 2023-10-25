@@ -1,10 +1,34 @@
-#!/Users/haiiro/.pyenv/shims/python3
-##!/usr/bin/env python3
+#!/usr/bin/env python3
 import numpy as np
-import feather
+# import feather
 import matplotlib.pyplot as plt
 
 from common.numpy_fast import interp
+
+def create_buckets():
+  min_accel = 0.16 
+  max_accel = 3
+  min_vel = 1
+  max_vel = 40
+  mid_vel = 20
+  num_la_buckets = 12
+  num_vel_buckets = 14
+  la_min_points = 6
+  vel_min_points = 10
+
+  la_buckets = np.geomspace(min_accel, max_accel, num_la_buckets//2-1)
+  la_buckets = np.concatenate((-la_buckets[::-1], [0.0], la_buckets))
+  vel_buckets = np.linspace(min_vel, max_vel, num_vel_buckets)
+
+  la_num_points = lambda la1,la2: (la_min_points - 8*abs(min([la1,la2],key=abs)))
+  vel_num_points = lambda vel1: vel_min_points - abs(vel1 - mid_vel)
+  combined_num_points = lambda la1, la2, vel1: int(round(max(0,la_num_points(la1, la2) + vel_num_points(vel1))**1.5))
+
+  BUCKETS = {((la1,la2),(vel1,vel2)): combined_num_points(la1,la2,vel1) for la1,la2 in zip(la_buckets[:-1],la_buckets[1:]) for vel1,vel2 in zip(vel_buckets[:-1], vel_buckets[1:])}
+  # for la1,la2 in zip(la_buckets[:-1],la_buckets[1:]):
+  #     for vel1,vel2 in zip(vel_buckets[:-1], vel_buckets[1:]):
+  #         print(f"(({la1:.2g},{la2:.2g}),({vel1:.2g},{vel2:.2g}))",": ", BUCKETS[((la1,la2),(vel1,vel2))])
+  return BUCKETS
 
 def identity(Z):
     # actually a leaky identity
@@ -142,16 +166,16 @@ class NumPyNeuralNetwork:
     Y = Y.reshape(Y_hat.shape)
     dA_prev = -2 * (Y - Y_hat) / m # derivative of MSE cost function
     for layer_idx_prev, layer in reversed(list(enumerate(zip(self.W, self.activation_functions_grad)))):
-        layer_idx_curr = layer_idx_prev + 1
-        dA_curr = dA_prev
-        A_prev = self.training_cache[f"A{layer_idx_prev}"]
-        Z_curr = self.training_cache[f"Z{layer_idx_curr}"]
-        dZ_curr = layer[1](dA_curr, Z_curr)
-        dW_curr = np.dot(dZ_curr, A_prev.T) / m
-        db_curr = np.sum(dZ_curr, axis=1, keepdims=True) / m
-        dA_prev = np.dot(layer[0].T, dZ_curr)
-        self.training_cache[f"dW{layer_idx_curr}"] = dW_curr
-        self.training_cache[f"db{layer_idx_curr}"] = db_curr
+      layer_idx_curr = layer_idx_prev + 1
+      dA_curr = dA_prev
+      A_prev = self.training_cache[f"A{layer_idx_prev}"]
+      Z_curr = self.training_cache[f"Z{layer_idx_curr}"]
+      dZ_curr = layer[1](dA_curr, Z_curr)
+      dW_curr = np.dot(dZ_curr, A_prev.T) / m
+      db_curr = np.sum(dZ_curr, axis=1, keepdims=True) / m
+      dA_prev = np.dot(layer[0].T, dZ_curr)
+      self.training_cache[f"dW{layer_idx_curr}"] = dW_curr
+      self.training_cache[f"db{layer_idx_curr}"] = db_curr
         
   def get_cost_value(self, Y_hat, Y):
     cost = np.mean((Y_hat - Y) ** 2)
@@ -227,14 +251,44 @@ def generate_trial_lateral_training_data(kf=0.33, friction_factor=0.15, steer_th
           y.append(steer)
   return np.array(X).T, np.array(y).reshape((1, -1))
 
+
+
+def create_buckets():
+  min_accel = 0.16 
+  max_accel = 3
+  min_vel = 1
+  max_vel = 40
+  mid_vel = 20
+  num_la_buckets = 12
+  num_vel_buckets = 14
+  la_min_points = 6
+  vel_min_points = 10
+
+  la_buckets = np.geomspace(min_accel, max_accel, num_la_buckets//2-1)
+  la_buckets = np.concatenate((-la_buckets[::-1], [0.0], la_buckets))
+  vel_buckets = np.linspace(min_vel, max_vel, num_vel_buckets)
+
+  la_num_points = lambda la1,la2: (la_min_points - 8*abs(min([la1,la2],key=abs)))
+  vel_num_points = lambda vel1: vel_min_points - abs(vel1 - mid_vel)
+  combined_num_points = lambda la1, la2, vel1: int(round(max(0,la_num_points(la1, la2) + vel_num_points(vel1))**1.5))
+
+  BUCKETS = {((la1,la2),(vel1,vel2)): combined_num_points(la1,la2,vel1) for la1,la2 in zip(la_buckets[:-1],la_buckets[1:]) for vel1,vel2 in zip(vel_buckets[:-1], vel_buckets[1:])}
+  # for la1,la2 in zip(la_buckets[:-1],la_buckets[1:]):
+  #     for vel1,vel2 in zip(vel_buckets[:-1], vel_buckets[1:]):
+  #         print(f"(({la1:.2g},{la2:.2g}),({vel1:.2g},{vel2:.2g}))",": ", BUCKETS[((la1,la2),(vel1,vel2))])
+  return BUCKETS
+
+
+
+
 def main():
   # import data as feather file
   columns = ['steer_cmd', 'v_ego', 'lateral_accel', 'lateral_jerk', 'roll']
-  data = feather.read_dataframe("/Users/haiiro/NoSync/CHEVROLET_VOLT_PREMIER_2017_balanced.feather", columns=columns)
-  X = data[columns[1:]].to_numpy().T
-  y = data[columns[0]].to_numpy().reshape((1, -1))
-  print(X.shape)
-  print(y.shape)
+  # data = feather.read_dataframe("/Users/haiiro/NoSync/CHEVROLET_VOLT_PREMIER_2017_balanced.feather", columns=columns)
+  # X = data[columns[1:]].to_numpy().T
+  # y = data[columns[0]].to_numpy().reshape((1, -1))
+  # print(X.shape)
+  # print(y.shape)
   
   X, y = generate_trial_lateral_training_data()#kf=0.5, friction_factor=0.25)
   
@@ -330,4 +384,5 @@ def main():
     
     print(model.activation_function_names)
     
-main()
+# main()
+print(create_buckets())
