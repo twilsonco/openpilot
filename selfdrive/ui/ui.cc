@@ -369,6 +369,7 @@ void UIState::update() {
   if (scene.conditional_experimental) {
     scene.conditional_status = paramsMemory.getInt("ConditionalStatus");
   }
+  scene.map_open = paramsMemory.getBool("MapOpen");
 }
 
 void UIState::setPrimeType(PrimeType type) {
