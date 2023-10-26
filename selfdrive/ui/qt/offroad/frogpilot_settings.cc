@@ -22,6 +22,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     {"LateralTuning", "Lateral Tuning", "Change the way openpilot steers.", "../assets/offroad/icon_lateral_tune.png"},
     {"LongitudinalTuning", "Longitudinal Tuning", "Change the way openpilot accelerates and brakes.", "../assets/offroad/icon_longitudinal_tune.png"},
     {"Model", "Model Selector (Requires Reboot)", "Select your preferred openpilot model.\n\nNS = Night-Strike(Default)\nB4+B0 = B4+B0 Vision\nFV = Farmville\nNLP = New Lemon Pie\nNI = Non-Inflatable\nOP = Optimus Prime", "../assets/offroad/icon_calibration.png"},
+    {"NudgelessLaneChange", "Nudgeless Lane Change", "Switch lanes without having to nudge the steering wheel.", "../assets/offroad/icon_lane.png"},
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
@@ -78,6 +79,14 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     } else if (key == "Model") {
       mainLayout->addWidget(new Model());
       mainLayout->addWidget(horizontalLine());
+    } else if (key == "NudgelessLaneChange") {
+      createSubControl(key, label, desc, icon, {
+        new LaneChangeTimer(),
+      });
+      createSubButtonControl(key, {
+        {"LaneDetection", "Lane Detection"},
+        {"OneLaneChange", "One Lane Change Per Signal"},
+      }, mainLayout);
     } else {
       mainLayout->addWidget(control);
       if (key != std::get<0>(toggles.back())) mainLayout->addWidget(horizontalLine());
