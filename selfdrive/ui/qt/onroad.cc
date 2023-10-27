@@ -285,6 +285,17 @@ ExperimentalButton::ExperimentalButton(QWidget *parent) : experimental_mode(fals
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
   QObject::connect(this, &QPushButton::clicked, this, &ExperimentalButton::changeMode);
+
+  // Custom steering wheel images
+  wheelImages = {
+    {0, loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size})},
+    {1, loadPixmap("../assets/lexus.png", {img_size, img_size})},
+    {2, loadPixmap("../assets/toyota.png", {img_size, img_size})},
+    {3, loadPixmap("../assets/frog.png", {img_size, img_size})},
+    {4, loadPixmap("../assets/rocket.png", {img_size, img_size})},
+    {5, loadPixmap("../assets/hyundai.png", {img_size, img_size})},
+    {6, loadPixmap("../assets/stalin.png", {img_size, img_size})}
+  };
 }
 
 void ExperimentalButton::changeMode() {
@@ -306,12 +317,22 @@ void ExperimentalButton::updateState(const UIState &s) {
 
   // FrogPilot variables
   leadInfo = scene.lead_info;
+  steeringWheel = scene.steering_wheel;
 }
 
 void ExperimentalButton::paintEvent(QPaintEvent *event) {
   QPainter p(this);
-  QPixmap img = experimental_mode ? experimental_img : engage_img;
-  drawIcon(p, QPoint(btn_size / 2, btn_size / 2 + (leadInfo ? 10 : 0)), img, QColor(0, 0, 0, 166), (isDown() || !engageable) ? 0.6 : 1.0);
+  // Custom steering wheel icon
+  engage_img = wheelImages[steeringWheel];
+  QPixmap img = steeringWheel ? engage_img : (experimental_mode ? experimental_img : engage_img);
+
+  const QColor background_color = steeringWheel && !isDown() && engageable ?
+      (scene.always_on_lateral_active ? QColor(10, 186, 181, 255) :
+      (scene.conditional_status == 1 ? QColor(255, 246, 0, 255) :
+      (experimental_mode ? QColor(218, 111, 37, 241) :
+      (scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166))))) : QColor(0, 0, 0, 166);
+
+  drawIcon(p, QPoint(btn_size / 2, btn_size / 2 + (leadInfo ? 10 : 0)), img, background_color, (isDown() || !engageable) ? 0.6 : 1.0);
 }
 
 

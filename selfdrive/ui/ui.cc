@@ -284,6 +284,7 @@ void ui_update_params(UIState *s) {
   scene.unlimited_road_ui_length = scene.custom_road_ui && params.getBool("UnlimitedLength");
 
   scene.screen_brightness = params.getInt("ScreenBrightness");
+  scene.steering_wheel = params.getInt("SteeringWheel");
 }
 
 void UIState::updateStatus() {

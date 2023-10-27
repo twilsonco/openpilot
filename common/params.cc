@@ -257,6 +257,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ScreenBrightness", PERSISTENT},
     {"StandardJerk", PERSISTENT},
     {"StandardPersonality", PERSISTENT},
+    {"SteeringWheel", PERSISTENT},
     {"UnlimitedLength", PERSISTENT},
     {"Updated", PERSISTENT},
     {"WideCamera", PERSISTENT},
