@@ -251,9 +251,9 @@ class CarInterfaceBase(ABC):
                            enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):
     events = Events()
 
-    if cs_out.doorOpen:
+    if cs_out.doorOpen and not self.mute_door:
       events.add(EventName.doorOpen)
-    if cs_out.seatbeltUnlatched:
+    if cs_out.seatbeltUnlatched and not self.mute_seatbelt:
       events.add(EventName.seatbeltNotLatched)
     if cs_out.gearShifter != GearShifter.drive and (extra_gears is None or
        cs_out.gearShifter not in extra_gears):
@@ -321,6 +321,9 @@ class CarInterfaceBase(ABC):
     return events
 
   def update_frogpilot_params(self):
+    self.fire_the_babysitter = self.params.get_bool("FireTheBabysitter")
+    self.mute_door = self.fire_the_babysitter and self.params.get_bool("MuteDoor")
+    self.mute_seatbelt = self.fire_the_babysitter and self.params.get_bool("MuteSeatbelt")
 
 class RadarInterfaceBase(ABC):
   def __init__(self, CP):

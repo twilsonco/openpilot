@@ -296,6 +296,7 @@ void ui_update_params(UIState *s) {
 
   scene.driver_camera = params.getBool("DriverCamera");
   scene.experimental_mode_via_wheel = params.getBool("ExperimentalModeViaPress");
+  scene.mute_dm = params.getBool("FireTheBabysitter") && params.getBool("MuteDM");
   scene.screen_brightness = params.getInt("ScreenBrightness");
   scene.steering_wheel = params.getInt("SteeringWheel");
 }
