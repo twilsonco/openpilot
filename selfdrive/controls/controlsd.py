@@ -640,7 +640,9 @@ class Controls:
       self.desired_curvature, self.desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                                        lat_plan.psis,
                                                                                        lat_plan.curvatures,
-                                                                                       lat_plan.curvatureRates)
+                                                                                       lat_plan.curvatureRates,
+                                                                                       long_plan.distances,
+                                                                                       self.average_desired_curvature)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                              self.last_actuators, self.steer_limited, self.desired_curvature,
                                                                              self.desired_curvature_rate, self.sm['liveLocationKalman'])
@@ -908,6 +910,8 @@ class Controls:
   def update_frogpilot_params(self):
     self.CI.update_frogpilot_params()
     self.CS.update_frogpilot_params()
+
+    self.average_desired_curvature = self.params.get_bool("AverageDesiredCurvature")
 
 def main():
   controls = Controls()

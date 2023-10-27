@@ -54,6 +54,7 @@ class LateralPlanner:
 
     # FrogPilot variables
     self.params = Params()
+    self.average_desired_curvature = self.params.get_bool("AverageDesiredCurvature")
 
   def reset_mpc(self, x0=None):
     if x0 is None:
@@ -63,6 +64,7 @@ class LateralPlanner:
 
   def update(self, sm, frogpilot_toggles_updated):
     if frogpilot_toggles_updated:
+      self.average_desired_curvature = self.params.get_bool("AverageDesiredCurvature")
 
     # clip speed , lateral planning is not possible at 0 speed
     measured_curvature = sm['controlsState'].curvature
@@ -76,7 +78,10 @@ class LateralPlanner:
       self.plan_yaw = np.array(md.orientation.z)
       self.plan_yaw_rate = np.array(md.orientationRate.z)
       self.velocity_xyz = np.column_stack([md.velocity.x, md.velocity.y, md.velocity.z])
-      car_speed = np.linalg.norm(self.velocity_xyz, axis=1) - get_speed_error(md, v_ego_car)
+      if self.average_desired_curvature:
+        car_speed = np.array(md.velocity.x) - get_speed_error(md, v_ego_car)
+      else:
+        car_speed = np.linalg.norm(self.velocity_xyz, axis=1) - get_speed_error(md, v_ego_car)
       self.v_plan = np.clip(car_speed, MIN_SPEED, np.inf)
       self.v_ego = self.v_plan[0]
 
