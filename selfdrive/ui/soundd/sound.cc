@@ -16,6 +16,8 @@ Sound::Sound(QObject *parent) : sm({"controlsState", "microphone"}) {
   qInfo() << "default audio device: " << QAudioDeviceInfo::defaultOutputDevice().deviceName();
 
   // FrogPilot variables
+  isSilentMode = params.getBool("SilentMode");
+
   isCustomTheme = params.getBool("CustomTheme");
   customSounds = isCustomTheme ? params.getInt("CustomSounds") : 0;
 
@@ -37,7 +39,7 @@ Sound::Sound(QObject *parent) : sm({"controlsState", "microphone"}) {
       assert(s->status() != QSoundEffect::Error);
     });
     s->setSource(QUrl::fromLocalFile(soundPaths[customSounds] + "/" + fn));
-    s->setVolume(volume);
+    s->setVolume(isSilentMode ? 0 : volume);
     sounds[alert] = {s, loops};
   }
 
@@ -50,11 +52,12 @@ Sound::Sound(QObject *parent) : sm({"controlsState", "microphone"}) {
 void Sound::updateFrogPilotParams(const UIState &s) {
   // Update FrogPilot parameters upon toggle change
   customSounds = isCustomTheme ? params.getInt("CustomSounds") : 0;
+  isSilentMode = params.getBool("SilentMode");
 
   for (auto &[alert, fn, loops, volume] : sound_list) {
     auto &[s, _] = sounds[alert];
     s->setSource(QUrl::fromLocalFile(soundPaths[customSounds] + "/" + fn));
-    s->setVolume(volume);
+    s->setVolume(isSilentMode ? 0 : volume);
   }
 }
 
