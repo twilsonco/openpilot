@@ -112,6 +112,11 @@ static int gm_rx_hook(CANPacket_t *to_push) {
       brake_pressed = GET_BYTE(to_push, 1) >= 8U;
     }
 
+    if (addr == 0xC9) {
+      bool cruise_available = GET_BIT(to_push, 29U) != 0U;
+      lateral_controls_allowed = cruise_available;
+    }
+
     if ((addr == 0xC9) && (gm_hw == GM_CAM)) {
       brake_pressed = GET_BIT(to_push, 40U) != 0U;
     }

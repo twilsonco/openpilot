@@ -108,6 +108,7 @@ private:
   bool wide_cam_requested = false;
 
   // FrogPilot variables
+  bool alwaysOnLateral;
   bool experimentalMode;
 
 protected:

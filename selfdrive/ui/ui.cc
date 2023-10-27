@@ -203,6 +203,9 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("carControl")) {
     const auto carControl = sm["carControl"].getCarControl();
+    if (scene.always_on_lateral) {
+      scene.always_on_lateral_active = !scene.enabled && carControl.getAlwaysOnLateral();
+    }
   }
   if (sm.updated("carState")) {
     const auto carState = sm["carState"].getCarState();
@@ -236,6 +239,7 @@ void ui_update_params(UIState *s) {
 
   // FrogPilot variables
   static UIScene &scene = s->scene;
+  scene.always_on_lateral = params.getBool("AlwaysOnLateral");
 }
 
 void UIState::updateStatus() {
@@ -244,6 +248,8 @@ void UIState::updateStatus() {
     auto state = controls_state.getState();
     if (state == cereal::ControlsState::OpenpilotState::PRE_ENABLED || state == cereal::ControlsState::OpenpilotState::OVERRIDING) {
       status = STATUS_OVERRIDE;
+    } else if (scene.always_on_lateral_active) {
+      status = STATUS_LATERAL_ACTIVE;
     } else {
       status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }

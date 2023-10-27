@@ -141,9 +141,7 @@ static int honda_rx_hook(CANPacket_t *to_push) {
     // 0x326 for all Bosch and some Nidec, 0x1A6 for some Nidec
     if ((addr == 0x326) || (addr == 0x1A6)) {
       acc_main_on = GET_BIT(to_push, ((addr == 0x326) ? 28U : 47U));
-      if (!acc_main_on) {
-        controls_allowed = false;
-      }
+      lateral_controls_allowed = acc_main_on;
     }
 
     // enter controls when PCM enters cruise state
@@ -334,7 +332,7 @@ static int honda_tx_hook(CANPacket_t *to_send) {
 
   // STEER: safety check
   if ((addr == 0xE4) || (addr == 0x194)) {
-    if (!controls_allowed) {
+    if (!lateral_controls_allowed) {
       bool steer_applied = GET_BYTE(to_send, 0) | GET_BYTE(to_send, 1);
       if (steer_applied) {
         tx = 0;

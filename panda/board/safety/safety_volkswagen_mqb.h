@@ -151,6 +151,7 @@ static int volkswagen_mqb_rx_hook(CANPacket_t *to_push) {
       int acc_status = (GET_BYTE(to_push, 3) & 0x7U);
       bool cruise_engaged = (acc_status == 3) || (acc_status == 4) || (acc_status == 5);
       acc_main_on = cruise_engaged || (acc_status == 2);
+      lateral_controls_allowed = acc_main_on;
 
       if (!volkswagen_longitudinal) {
         pcm_cruise_check(cruise_engaged);

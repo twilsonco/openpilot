@@ -331,6 +331,7 @@ struct CarControl {
   rightBlinker @16: Bool;
 
   # FrogPilot CarControls
+  alwaysOnLateral @17: Bool;
   drivingGear @18: Bool;
 
   # Any car specific rate limits or quirks applied by

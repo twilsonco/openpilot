@@ -178,11 +178,13 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
   int margin = 40;
   int radius = 30;
+  int offset = (scene.always_on_lateral) ? 25 : 0;
   if (alert.size == cereal::ControlsState::AlertSize::FULL) {
     margin = 0;
     radius = 0;
+    offset = 0;
   }
-  QRect r = QRect(0 + margin, height() - h + margin, width() - margin*2, h - margin*2);
+  QRect r = QRect(0 + margin, height() - h + margin - offset, width() - margin*2, h - margin*2);
 
   QPainter p(this);
 
@@ -350,6 +352,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   }
 
   // FrogPilot variables
+  alwaysOnLateral = s.scene.always_on_lateral_active;
   experimentalMode = s.scene.experimental_mode;
 }
 
@@ -451,7 +454,7 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   p.restore();
 
   // FrogPilot status bar
-  if () {
+  if (alwaysOnLateral) {
     drawStatusBar(p);
   }
 }
@@ -560,7 +563,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
   // base icon
   int offset = UI_BORDER_SIZE + btn_size / 2;
   int x = rightHandDM ? width() - offset : offset;
-  int y = height() - offset;
+  int y = height() - offset - (alwaysOnLateral ? 25 : 0);
   float opacity = dmActive ? 0.65 : 0.2;
   drawIcon(painter, QPoint(x, y), dm_img, blackColor(70), opacity);
 
@@ -750,6 +753,9 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
 
   // Display the appropriate status
   QString newStatus;
+  if (alwaysOnLateral) {
+    newStatus = QString("Always On Lateral active") + (". Press the \"Cruise Control\" button to disable");
+  }
 
   // Check if status has changed
   if (newStatus != lastShownStatus) {

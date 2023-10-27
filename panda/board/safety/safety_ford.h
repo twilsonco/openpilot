@@ -264,6 +264,8 @@ static int ford_rx_hook(CANPacket_t *to_push) {
 
       // Signal: CcStat_D_Actl
       unsigned int cruise_state = GET_BYTE(to_push, 1) & 0x07U;
+      bool cruise_available = (cruise_state == 3U) ||(cruise_state == 4U) || (cruise_state == 5U);
+      lateral_controls_allowed = cruise_available;
       bool cruise_engaged = (cruise_state == 4U) || (cruise_state == 5U);
       pcm_cruise_check(cruise_engaged);
     }

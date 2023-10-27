@@ -96,6 +96,7 @@ typedef enum UIStatus {
   STATUS_ENGAGED,
 
   // FrogPilot statuses
+  STATUS_LATERAL_ACTIVE,
 } UIStatus;
 
 enum PrimeType {
@@ -113,6 +114,7 @@ const QColor bg_colors [] = {
   [STATUS_ENGAGED] = QColor(0x17, 0x86, 0x44, 0xf1),
 
   // FrogPilot colors
+  [STATUS_LATERAL_ACTIVE] = QColor(0x0a, 0xba, 0xb5, 0xf1),
 };
 
 static std::map<cereal::ControlsState::AlertStatus, QColor> alert_colors = {
@@ -154,6 +156,8 @@ typedef struct UIScene {
   uint64_t started_frame;
 
   // FrogPilot variables
+  bool always_on_lateral;
+  bool always_on_lateral_active;
   bool enabled;
   bool experimental_mode;
 
