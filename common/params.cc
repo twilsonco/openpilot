@@ -239,6 +239,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CustomTheme", PERSISTENT},
     {"DeviceShutdownTimer", PERSISTENT},
     {"DisableInternetCheck", PERSISTENT},
+    {"DisableOnroadUploads", PERSISTENT},
     {"DisplayCPU", PERSISTENT},
     {"DisplayFPS", PERSISTENT},
     {"DisplayGPU", PERSISTENT},

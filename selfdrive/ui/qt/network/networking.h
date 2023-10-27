@@ -66,6 +66,9 @@ private:
   WifiManager* wifi = nullptr;
   Params params;
 
+  // FrogPilot variables
+  ToggleControl* disableOnroadUploadsToggle;
+
 signals:
   void backPress();
 
