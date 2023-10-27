@@ -19,6 +19,7 @@ private:
   void closeSettings();
 
   // FrogPilot functions
+  void updateFrogPilotParams();
 
   QStackedLayout *main_layout;
   HomeWindow *homeWindow;
@@ -27,4 +28,5 @@ private:
 
   // FrogPilot variables
   Params params = Params();
+  bool displaySidebar;
 };

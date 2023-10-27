@@ -297,6 +297,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"RoadNameUI", PERSISTENT},
     {"RotatingWheel", PERSISTENT},
     {"ScreenBrightness", PERSISTENT},
+    {"Sidebar", PERSISTENT},
     {"SilentMode", PERSISTENT},
     {"StandardJerk", PERSISTENT},
     {"StandardPersonality", PERSISTENT},

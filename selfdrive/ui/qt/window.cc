@@ -34,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   }
 
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
+    updateFrogPilotParams();
     if (!offroad) {
       closeSettings();
     }
@@ -65,7 +66,12 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_NoSystemBackground);
 
   // FrogPilot variables
-  static Params params = Params();
+  displaySidebar = params.getBool("Sidebar");
+}
+
+void MainWindow::updateFrogPilotParams() {
+  // Update FrogPilot parameters upon onroad transition
+  displaySidebar = params.getBool("Sidebar");
 }
 
 void MainWindow::openSettings(int index, const QString &param) {
@@ -77,7 +83,7 @@ void MainWindow::closeSettings() {
   main_layout->setCurrentWidget(homeWindow);
 
   if (uiState()->scene.started) {
-    homeWindow->showSidebar(false);
+    homeWindow->showSidebar(displaySidebar);
     // Map is always shown when using navigate on openpilot
     if (uiState()->scene.navigate_on_openpilot) {
       homeWindow->showMapPanel(true);
