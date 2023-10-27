@@ -66,6 +66,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     } else if (key == "LateralTuning") {
       createSubControl(key, label, desc, icon, {}, {
         {"AverageDesiredCurvature", "Average Desired Curvature", "Use Pfeiferj's distance based curvature adjustment for smoother handling of curves."},
+        {"NNFF", "NNFF - Neural Network Feedforward", "Use Twilsonco's Neural Network Feedforward torque system for more precise lateral control."}
       });
     } else if (key == "LongitudinalTuning") {
       createSubControl(key, label, desc, icon, {
@@ -261,6 +262,15 @@ ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QStri
   ParamControl *control = new ParamControl(key, label, desc, icon);
   connect(control, &ParamControl::toggleFlipped, [=](bool state) {
     paramsMemory.putBoolNonBlocking("FrogPilotTogglesUpdated", true);
+    if (key == "NNFF") {
+      if (params.getBool("NNFF")) {
+        const bool addSSH = ConfirmationDialog::yesorno("Would you like to grant 'twilsonco' SSH access to improve NNFF? This won't affect any added SSH keys.", parent);
+        params.putBoolNonBlocking("TwilsoncoSSH", addSSH);
+        if (addSSH) {
+          ConfirmationDialog::toggleAlert("Message 'twilsonco' on Discord to get your device properly configured.", "Acknowledge", parent);
+        }
+      }
+    }
     static const QMap<QString, QString> parameterWarnings = {
       {"AggressiveAcceleration", "This will make openpilot driving more aggressively behind lead vehicles!"},
       {"AlwaysOnLateralMain", "This is very experimental and isn't guaranteed to work. If you run into any issues please report it in the FrogPilot Discord!"},
@@ -269,7 +279,7 @@ ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QStri
       ConfirmationDialog::toggleAlert("WARNING: " + parameterWarnings[key], "I understand the risks.", parent);
     }
     static const QSet<QString> parameterReboots = {
-      "AlwaysOnLateral", "AlwaysOnLateralMain", "DisableAllLogging", "FireTheBabysitter", "MuteDM",
+      "AlwaysOnLateral", "AlwaysOnLateralMain", "DisableAllLogging", "FireTheBabysitter", "MuteDM", "NNFF"
     };
     if (parameterReboots.contains(key)) {
       if (ConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", parent)) {
