@@ -440,6 +440,9 @@ class Controls:
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
 
+    if self.sm['longitudinalPlan'].greenLight:
+      self.events.add(EventName.greenLight)
+
   def data_sample(self):
     """Receive data from sockets and update carState"""
 

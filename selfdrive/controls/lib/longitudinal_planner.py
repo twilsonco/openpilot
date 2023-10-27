@@ -3,7 +3,7 @@ import math
 import numpy as np
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.params import Params, put_bool_nonblocking
-from cereal import log
+from cereal import car, log
 
 import cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
@@ -94,6 +94,10 @@ class LongitudinalPlanner:
     # FrogPilot variables
     if self.params.get_bool("ConditionalExperimental"):
       put_bool_nonblocking("ExperimentalMode", True)
+
+    self.green_light = False
+    self.previously_driving = False
+    self.stopped_for_light_previously = False
 
     self.update_frogpilot_params()
 
@@ -200,6 +204,20 @@ class LongitudinalPlanner:
     if self.conditional_experimental_mode and sm['controlsState'].enabled:
       ConditionalExperimentalMode.update(sm, v_ego, v_lead, frogpilot_toggles_updated)
 
+    # Green light alert
+    if self.green_light_alert:
+      carstate, modeldata, radarstate = sm['carState'], sm['modelV2'], sm['radarState']
+
+      lead = ConditionalExperimentalMode.detect_lead(radarstate)
+      standstill = carstate.standstill
+
+      self.previously_driving |= not standstill
+      self.previously_driving &= sm['carControl'].drivingGear
+
+      stopped_for_light = ConditionalExperimentalMode.stop_sign_and_light(carstate, lead, radarstate.leadOne.dRel, sm['modelV2'], v_ego, v_lead) and standstill and self.previously_driving
+      self.green_light = not stopped_for_light and self.stopped_for_light_previously and not lead
+      self.stopped_for_light_previously = stopped_for_light
+
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
 
@@ -223,6 +241,7 @@ class LongitudinalPlanner:
 
     # FrogPilot longitudinalPlan variables
     longitudinalPlan.conditionalExperimental = ConditionalExperimentalMode.experimental_mode
+    longitudinalPlan.greenLight = self.green_light
     # LongitudinalPlan variables for onroad driving insights
     have_lead = ConditionalExperimentalMode.detect_lead(sm['radarState'])
     longitudinalPlan.safeObstacleDistance = self.mpc.safe_obstacle_distance if have_lead else 0
@@ -248,3 +267,5 @@ class LongitudinalPlanner:
       self.aggressive_jerk = self.params.get_int("AggressiveJerk") / 10
       self.standard_jerk = self.params.get_int("StandardJerk") / 10
       self.relaxed_jerk = self.params.get_int("RelaxedJerk") / 10
+
+    self.green_light_alert = self.params.get_bool("GreenLightAlert")

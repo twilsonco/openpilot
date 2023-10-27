@@ -252,6 +252,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ExperimentalModeViaPress", PERSISTENT},
     {"FireTheBabysitter", PERSISTENT},
     {"FrogPilotTogglesUpdated", PERSISTENT},
+    {"GreenLightAlert", PERSISTENT},
     {"LaneLinesWidth", PERSISTENT},
     {"LateralTuning", PERSISTENT},
     {"LeadInfo", PERSISTENT},
