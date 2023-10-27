@@ -222,6 +222,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"AverageDesiredCurvature", PERSISTENT},
     {"BlindSpotPath", PERSISTENT},
     {"CameraFPS", PERSISTENT},
+    {"Compass", PERSISTENT},
     {"ConditionalCurves", PERSISTENT},
     {"ConditionalCurvesLead", PERSISTENT},
     {"ConditionalExperimental", PERSISTENT},

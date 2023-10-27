@@ -434,6 +434,7 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   }
 
   // Load miscellaneous images
+  compass_inner_img = loadPixmap("../assets/images/compass_inner.png", {img_size, img_size});
 
   // Custom themes configuration
   themeConfiguration = {
@@ -526,15 +527,20 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   // hide map settings button for alerts and flip for right hand DM
   if (map_settings_btn->isEnabled()) {
     map_settings_btn->setVisible(!hideBottomIcons);
-    main_layout->setAlignment(map_settings_btn, (rightHandDM ? Qt::AlignLeft : Qt::AlignRight) | Qt::AlignBottom);
+    const bool flip_side = rightHandDM || compass;
+    const bool move_up = alwaysOnLateral || conditionalExperimental || roadNameUI;
+    const bool move_up_top = flip_side && (!muteDM);
+    main_layout->setAlignment(map_settings_btn, (flip_side ? Qt::AlignLeft : Qt::AlignRight) | (move_up ? Qt::AlignCenter : move_up_top ? Qt::AlignTop : Qt::AlignBottom));
   }
 
   // FrogPilot variables
   accelerationPath = s.scene.acceleration_path;
   adjacentPath = s.scene.adjacent_path;
   alwaysOnLateral = s.scene.always_on_lateral_active;
+  bearingDeg = s.scene.bearing_deg;
   blindSpotLeft = s.scene.blind_spot_left;
   blindSpotRight = s.scene.blind_spot_right;
+  compass = s.scene.compass;
   conditionalExperimental = s.scene.conditional_experimental;
   conditionalSpeed = s.scene.conditional_speed;
   conditionalSpeedLead = s.scene.conditional_speed_lead;
@@ -684,6 +690,11 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   }
 
   p.restore();
+
+  // Compass
+  if (compass && !hideBottomIcons) {
+    drawCompass(p);
+  }
 
   // Lead following logics
   if (leadInfo) {
@@ -1169,6 +1180,100 @@ void AnnotatedCameraWidget::showEvent(QShowEvent *event) {
 }
 
 // FrogPilot widgets
+
+void AnnotatedCameraWidget::drawCompass(QPainter &p) {
+  p.save();
+
+  // Variable declarations
+  constexpr int circle_size = 250;
+  constexpr int circle_offset = circle_size / 2;
+  constexpr int degreeLabelOffset = circle_offset + 25;
+  constexpr int inner_compass = btn_size / 2;
+  const int x = !rightHandDM ? rect().right() - btn_size / 2 - (UI_BORDER_SIZE * 2) - 10 : btn_size / 2 + (UI_BORDER_SIZE * 2) + 10;
+  const int y = rect().bottom() - 20 - (alwaysOnLateral || conditionalExperimental || roadNameUI ? 50 : 0) - 140;
+
+  // Enable Antialiasing
+  p.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
+
+  // Configure the circles
+  const QPen whitePen(Qt::white, 2);
+  p.setPen(whitePen);
+
+  const auto drawCircle = [&](const int offset, const QBrush &brush = Qt::NoBrush) {
+    p.setOpacity(1.0);
+    p.setBrush(brush);
+    p.drawEllipse(x - offset, y - offset, offset * 2, offset * 2);
+  };
+
+  // Draw the circle background and white inner circle
+  drawCircle(circle_offset, blackColor(100));
+
+  // Rotate and draw the compass_inner_img image
+  p.translate(x, y);
+  p.rotate(bearingDeg);
+  p.drawPixmap(-compass_inner_img.width() / 2, -compass_inner_img.height() / 2, compass_inner_img);
+
+  // Reset transformation for subsequent drawing
+  p.rotate(-bearingDeg);
+  p.translate(-x, -y);
+
+  // Draw the cardinal directions
+  p.setFont(InterFont(25, QFont::Bold));
+
+  const auto drawDirection = [&](const QString &text, const int from, const int to, const int align) {
+    // Move the "E" and "W" directions a bit closer to the middle so they're more uniform
+    const int offset = (text == "E") ? -5 : ((text == "W") ? 5 : 0);
+    // Set the opacity based on whether the direction label is currently being pointed at
+    p.setOpacity((bearingDeg >= from && bearingDeg < to) ? 1.0 : 0.2);
+    p.drawText(QRect(x - inner_compass + offset, y - inner_compass, btn_size, btn_size), align, text);
+  };
+
+  drawDirection("N", 0, 68, Qt::AlignTop | Qt::AlignHCenter);
+  drawDirection("E", 23, 158, Qt::AlignRight | Qt::AlignVCenter);
+  drawDirection("S", 113, 248, Qt::AlignBottom | Qt::AlignHCenter);
+  drawDirection("W", 203, 338, Qt::AlignLeft | Qt::AlignVCenter);
+  drawDirection("N", 293, 360, Qt::AlignTop | Qt::AlignHCenter);
+
+  // Draw the white circle outlining the cardinal directions
+  drawCircle(inner_compass + 5);
+
+  // Draw the white circle outlining the bearing degrees
+  drawCircle(degreeLabelOffset);
+
+  // Draw the black background for the bearing degrees
+  QPainterPath outerCircle, innerCircle;
+  outerCircle.addEllipse(x - degreeLabelOffset, y - degreeLabelOffset, degreeLabelOffset * 2, degreeLabelOffset * 2);
+  innerCircle.addEllipse(x - circle_offset, y - circle_offset, circle_size, circle_size);
+  p.setOpacity(1.0);
+  p.fillPath(outerCircle.subtracted(innerCircle), Qt::black);
+
+  // Draw the degree lines and bearing degrees
+  const auto drawCompassElements = [&](const int angle) {
+    const bool isCardinalDirection = angle % 90 == 0;
+    const int lineLength = isCardinalDirection ? 15 : 10;
+    const bool isBold = abs(angle - static_cast<int>(bearingDeg)) <= 7;
+
+    // Set the current bearing degree value to bold
+    p.setFont(InterFont(8, isBold ? QFont::Bold : QFont::Normal));
+    p.setPen(QPen(Qt::white, isCardinalDirection ? 3 : 1));
+
+    // Place the elements in their respective spots around their circles
+    p.save();
+    p.translate(x, y);
+    p.rotate(angle);
+    p.drawLine(0, -(circle_size / 2 - lineLength), 0, -(circle_size / 2));
+    p.translate(0, -(circle_size / 2 + 12));
+    p.rotate(-angle);
+    p.drawText(QRect(-20, -10, 40, 20), Qt::AlignCenter, QString::number(angle));
+    p.restore();
+  };
+
+  for (int i = 0; i < 360; i += 15) {
+    drawCompassElements(i);
+  }
+
+  p.restore();
+}
 
 void AnnotatedCameraWidget::drawLeadInfo(QPainter &p) {
   const SubMaster &sm = *uiState()->sm;
