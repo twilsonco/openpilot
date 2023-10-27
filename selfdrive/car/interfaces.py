@@ -182,6 +182,7 @@ class CarInterfaceBase(ABC):
 
     # FrogPilot variables
     params = Params()
+    ret.accelerationProfile = params.get_int("AccelerationProfile") if params.get_bool("LongitudinalTuning") else 2
 
     return ret
 

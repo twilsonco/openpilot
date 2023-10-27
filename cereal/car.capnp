@@ -501,6 +501,7 @@ struct CarParams {
   wheelSpeedFactor @63 :Float32; # Multiplier on wheels speeds to computer actual speeds
 
   # FrogPilot CarParams
+  accelerationProfile @73 :UInt8;
 
   struct SafetyConfig {
     safetyModel @0 :SafetyModel;
