@@ -169,7 +169,7 @@ class LongitudinalPlanner:
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
-    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, personality=self.personality)
+    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, self.aggressive_acceleration, personality=self.personality)
 
     self.v_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.a_solution)
@@ -212,3 +212,4 @@ class LongitudinalPlanner:
   def update_frogpilot_params(self):
     self.longitudinal_tuning = self.params.get_bool("LongitudinalTuning")
     self.acceleration_profile = self.params.get_int("AccelerationProfile") if self.longitudinal_tuning else 2
+    self.aggressive_acceleration = self.params.get_bool("AggressiveAcceleration") and self.longitudinal_tuning
