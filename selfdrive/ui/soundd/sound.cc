@@ -16,13 +16,27 @@ Sound::Sound(QObject *parent) : sm({"controlsState", "microphone"}) {
   qInfo() << "default audio device: " << QAudioDeviceInfo::defaultOutputDevice().deviceName();
 
   // FrogPilot variables
+  isCustomTheme = params.getBool("CustomTheme");
+  customSounds = isCustomTheme ? params.getInt("CustomSounds") : 0;
+
+  const std::unordered_map<int, QString> themeConfiguration = {
+    {0, "stock"},
+    {1, "frog_theme"},
+    {2, "tesla_theme"},
+    {3, "stalin_theme"}
+  };
+
+  for (const auto &[key, themeName] : themeConfiguration) {
+    QString base = themeName == "stock" ? "../../assets/sounds" : QString("../../assets/custom_themes/%1/sounds").arg(themeName);
+    soundPaths[key] = base;
+  }
 
   for (auto &[alert, fn, loops, volume] : sound_list) {
     QSoundEffect *s = new QSoundEffect(this);
     QObject::connect(s, &QSoundEffect::statusChanged, [=]() {
       assert(s->status() != QSoundEffect::Error);
     });
-    s->setSource(QUrl::fromLocalFile("../../assets/sounds/" + fn));
+    s->setSource(QUrl::fromLocalFile(soundPaths[customSounds] + "/" + fn));
     s->setVolume(volume);
     sounds[alert] = {s, loops};
   }
@@ -35,6 +49,13 @@ Sound::Sound(QObject *parent) : sm({"controlsState", "microphone"}) {
 
 void Sound::updateFrogPilotParams(const UIState &s) {
   // Update FrogPilot parameters upon toggle change
+  customSounds = isCustomTheme ? params.getInt("CustomSounds") : 0;
+
+  for (auto &[alert, fn, loops, volume] : sound_list) {
+    auto &[s, _] = sounds[alert];
+    s->setSource(QUrl::fromLocalFile(soundPaths[customSounds] + "/" + fn));
+    s->setVolume(volume);
+  }
 }
 
 void Sound::update() {

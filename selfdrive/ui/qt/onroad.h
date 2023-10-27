@@ -90,6 +90,7 @@ private:
   // FrogPilot widgets
   void drawLeadInfo(QPainter &p);
   void drawStatusBar(QPainter &p);
+  void drawTurnSignals(QPainter &p);
 
   QVBoxLayout *main_layout;
   ExperimentalButton *experimental_btn;
@@ -124,17 +125,26 @@ private:
   bool experimentalMode;
   bool leadInfo;
   bool roadNameUI;
+  bool turnSignalLeft;
+  bool turnSignalRight;
   double maxAcceleration;
   float laneWidthLeft;
   float laneWidthRight;
   int conditionalSpeed;
   int conditionalSpeedLead;
   int conditionalStatus;
+  int customColors;
+  int customSignals;
   int desiredFollow;
   int obstacleDistance;
   int obstacleDistanceStock;
   int stoppedEquivalence;
   int stoppedEquivalenceStock;
+  int totalFrames = 8;
+  QString theme_path;
+  size_t animationFrameIndex;
+  std::unordered_map<int, std::pair<QString, std::pair<QColor, std::map<double, QBrush>>>> themeConfiguration;
+  std::vector<QPixmap> signalImgVector;
 
 protected:
   void paintGL() override;
