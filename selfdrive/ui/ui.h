@@ -152,7 +152,7 @@ typedef struct UIScene {
   bool navigate_on_openpilot = false;
 
   float light_sensor;
-  bool started, ignition, is_metric, map_on_left, longitudinal_control;
+  bool started, ignition, is_metric, map_on_left, longitudinal_control = true;
   uint64_t started_frame;
 
   // FrogPilot variables
@@ -175,6 +175,7 @@ typedef struct UIScene {
   bool lead_info;
   bool map_open;
   bool mute_dm;
+  bool personalities_via_screen;
   bool road_name_ui;
   bool rotating_wheel;
   bool show_driver_camera;

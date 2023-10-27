@@ -458,6 +458,8 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
 
   // FrogPilot buttons
+  personality_btn = new PersonalityButton(this);
+  main_layout->addWidget(personality_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
 
   // FrogPilot variable checks
   static Params params = Params();
@@ -573,6 +575,9 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
     main_layout->setAlignment(map_settings_btn, (flip_side ? Qt::AlignLeft : Qt::AlignRight) | (move_up ? Qt::AlignCenter : move_up_top ? Qt::AlignTop : Qt::AlignBottom));
   }
 
+  main_layout->setAlignment(personality_btn, (rightHandDM ? Qt::AlignRight : Qt::AlignLeft) | Qt::AlignBottom);
+  personality_btn->setVisible(onroadAdjustableProfiles && !hideBottomIcons && !s.scene.show_driver_camera);
+
   // FrogPilot variables
   accelerationPath = s.scene.acceleration_path;
   adjacentPath = s.scene.adjacent_path;
@@ -596,6 +601,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   muteDM = s.scene.mute_dm;
   obstacleDistance = s.scene.obstacle_distance;
   obstacleDistanceStock = s.scene.obstacle_distance_stock;
+  onroadAdjustableProfiles = s.scene.personalities_via_screen;
   roadNameUI = s.scene.road_name_ui;
   slcSpeedLimit = s.scene.speed_limit;
   slcSpeedLimitOffset = s.scene.speed_limit_offset * (is_metric ? MS_TO_KPH : MS_TO_MPH);
@@ -1005,7 +1011,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
 
   // base icon
   int offset = UI_BORDER_SIZE + btn_size / 2;
-  int x = rightHandDM ? width() - offset : offset;
+  int x = rightHandDM ? width() - offset - (onroadAdjustableProfiles ? 275 : 0) : offset + (onroadAdjustableProfiles ? 275 : 0);
   int y = height() - offset - ((alwaysOnLateral || conditionalExperimental || roadNameUI) ? 25 : 0);
   float opacity = dmActive ? 0.65 : 0.2;
   drawIcon(painter, QPoint(x, y), dm_img, blackColor(70), opacity);
@@ -1427,6 +1433,85 @@ void AnnotatedCameraWidget::drawLeadInfo(QPainter &p) {
   drawText(followText, Qt::white);
 
   p.restore();
+}
+
+PersonalityButton::PersonalityButton(QWidget *parent) : QPushButton(parent), scene(uiState()->scene) {
+  // Configure the Y-offset
+  yOffset = (scene.always_on_lateral || scene.conditional_experimental) ? 25 : 0;
+  setFixedSize(btn_size * 1.25, btn_size + yOffset);
+
+  // Configure the profile vector
+  personalityProfile = params.getInt("LongitudinalPersonality");
+  profile_data = {
+    {QPixmap("../assets/aggressive.png"), "Aggressive"},
+    {QPixmap("../assets/standard.png"), "Standard"},
+    {QPixmap("../assets/relaxed.png"), "Relaxed"}
+  };
+
+  // Initialize the update timer
+  updateTimer.setInterval(50);
+  connect(&updateTimer, &QTimer::timeout, this, &PersonalityButton::checkUpdate);
+
+  // Start the timer as soon as the button is created
+  transitionTimer.start();
+  updateTimer.start();
+
+  // Initialize the click event
+  connect(this, &QPushButton::clicked, this, &PersonalityButton::handleClick);
+
+  setVisible(scene.personalities_via_screen);
+}
+
+void PersonalityButton::checkUpdate() {
+  // Sync with the steering wheel button
+  if (params.getInt("LongitudinalPersonality") != personalityProfile) {
+    personalityProfile = params.getInt("LongitudinalPersonality");
+    updateState();
+  }
+}
+
+void PersonalityButton::handleClick() {
+  static const int mapping[] = {2, 0, 1};
+  personalityProfile = mapping[personalityProfile];
+  params.putInt("LongitudinalPersonality", personalityProfile);
+  paramsMemory.putBool("PersonalityChangedViaUI", true);
+  updateState();
+}
+
+void PersonalityButton::updateState() {
+  // Start the transition
+  transitionTimer.restart();
+}
+
+void PersonalityButton::paintEvent(QPaintEvent *) {
+  // Declare the constants
+  constexpr qreal fadeDuration = 1000.0;  // 1 second
+  constexpr qreal textDuration = 3000.0;  // 3 seconds
+
+  QPainter p(this);
+  int elapsed = transitionTimer.elapsed();
+  qreal textOpacity = qBound(0.0, 1.0 - ((elapsed - textDuration) / fadeDuration), 1.0);
+  qreal imageOpacity = qBound(0.0, (elapsed - textDuration) / fadeDuration, 1.0);
+
+  // Enable Antialiasing
+  p.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
+
+  // Configure the button
+  const auto &[profile_image, profile_text] = profile_data[personalityProfile];
+  QRect rect(0, 0, width(), height());
+
+  // Draw the profile text with the calculated opacity
+  if (textOpacity > 0.0) {
+    p.setOpacity(textOpacity);
+    p.setFont(InterFont(40, QFont::Bold));
+    p.setPen(Qt::white);
+    p.drawText(rect, Qt::AlignCenter, profile_text);
+  }
+
+  // Draw the profile image with the calculated opacity
+  if (imageOpacity > 0.0) {
+    drawIcon(p, QPoint((btn_size / 2) * 1.25, btn_size / 2 + yOffset), profile_image, Qt::transparent, imageOpacity);
+  }
 }
 
 void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {

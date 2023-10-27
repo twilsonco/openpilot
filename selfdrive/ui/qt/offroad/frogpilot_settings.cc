@@ -24,6 +24,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     {"Model", "Model Selector (Requires Reboot)", "Select your preferred openpilot model.\n\nNS = Night-Strike(Default)\nB4+B0 = B4+B0 Vision\nFV = Farmville\nNLP = New Lemon Pie\nNI = Non-Inflatable\nOP = Optimus Prime", "../assets/offroad/icon_calibration.png"},
     {"NudgelessLaneChange", "Nudgeless Lane Change", "Switch lanes without having to nudge the steering wheel.", "../assets/offroad/icon_lane.png"},
     {"PauseLateralOnSignal", "Pause Lateral On Turn Signal", "Pauses lateral control when a turn signal is active.", "../assets/offroad/icon_pause_lane.png"},
+    {"PersonalitiesViaWheel", "Personalities Control", "Switch personalities using the 'Distance' button on the steering wheel (GM/Lexus/Toyota Only) or via the onroad UI for other makes.\n\n1 bar = Aggressive\n2 bars = Standard\n3 bars = Relaxed", "../assets/offroad/icon_distance.png"},
     {"SpeedLimitController", "Speed Limit Controller", "Use Open Street Maps, Navigate On openpilot, and your car's dashboard (Toyota only) to set the vehicle's speed to the current speed limit.", "../assets/offroad/icon_speed_limit.png"},
   };
 
@@ -90,6 +91,9 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
         {"LaneDetection", "Lane Detection"},
         {"OneLaneChange", "One Lane Change Per Signal"},
       }, mainLayout);
+    } else if (key == "PersonalitiesViaWheel") {
+      mainLayout->addWidget(new PersonalitiesViaWheel());
+      mainLayout->addWidget(horizontalLine());
     } else if (key == "SpeedLimitController") {
       std::vector<QWidget*> widgets;
       widgets.push_back(new SLCFallback());

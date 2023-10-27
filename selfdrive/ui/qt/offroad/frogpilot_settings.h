@@ -186,6 +186,9 @@ public: \
     if (std::string(#className) == "SLCFallback" || std::string(#className) == "SLCPriority") { \
       label.setFixedWidth(750); \
     } \
+    if (std::string(#className) == "PersonalitiesViaWheel") { \
+      label.setFixedWidth(300); \
+    } \
     if (std::string(#className) == "DeviceShutdownTimer" || std::string(#className) == "IncreasedStoppingDistance" || std::string(#className) == "SteeringWheel") { \
       label.setFixedWidth(225); \
     } \
@@ -342,6 +345,12 @@ ParamController(PathEdgeWidth, "PathEdgeWidth", "Path Edges", "Customize the pat
 ParamController(PathWidth, "PathWidth", "Path ", "Customize the path width.\n\nDefault matches the width of a 2019 Lexus ES 350.", "../assets/offroad/icon_blank.png",
   return QString::number(params.getInt("PathWidth") / 10.0) + (isMetric ? " m" : " ft");,
   return std::clamp(v, 0, isMetric ? 30 : 100);
+)
+
+ParamController(PersonalitiesViaWheel, "PersonalitiesViaWheel", "Personalities Control", "Switch personalities using the 'Distance' button on the steering wheel (GM/Lexus/Toyota Only) or via the onroad UI for other makes.\n\n1 bar = Aggressive\n2 bars = Standard\n3 bars = Relaxed", "../assets/offroad/icon_distance.png",
+  const int selection = params.getInt("PersonalitiesViaWheel");
+  return selection == 0 ? "None" : selection == 1 ? "Wheel" : selection == 2 ? "UI" : "Wheel + UI";,
+  return v >= 0 ? v % 4 : 3;
 )
 
 ParamController(RelaxedJerk, "RelaxedJerk", "Jerk Value", "Set the jerk value for the 'Relaxed Personality'.\n\nValue represents the responsiveness of the brake/gas pedals.\n\nHigher value = Less responsive/more 'relaxed'\n\nStock has a value of 1.0.", "../assets/offroad/icon_blank.png",
