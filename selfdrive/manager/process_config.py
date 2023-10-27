@@ -15,6 +15,8 @@ fire_the_babysitter = params.get_bool("FireTheBabysitter")
 disable_logging = fire_the_babysitter and params.get_bool("DisableAllLogging")
 mute_dm = fire_the_babysitter and params.get_bool("MuteDM")
 
+not_prime = params.get_int("PrimeType") == 0
+
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
 def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
@@ -100,6 +102,7 @@ procs = [
 
   # FrogPilot procs
   PythonProcess("mapd", "selfdrive.mapd", always_run, enabled=osm),
+  PythonProcess("otisserv", "selfdrive.navd.otisserv", always_run, enabled=not_prime),
 ]
 
 managed_processes = {p.name: p for p in procs}

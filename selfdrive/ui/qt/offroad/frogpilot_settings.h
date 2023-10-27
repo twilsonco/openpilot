@@ -148,6 +148,36 @@ public:
   explicit FrogPilotVisualsPanel(QWidget *parent = nullptr);
 };
 
+class FrogPilotNavigationPanel : public FrogPilotPanel {
+  Q_OBJECT
+
+public:
+  explicit FrogPilotNavigationPanel(QWidget *parent = nullptr);
+
+protected:
+  void showEvent(QShowEvent *event) override;
+
+private:
+  bool prevDeviceOnline = false;
+  bool prevMapboxPublicKeySet = false;
+  bool prevMapboxSecretKeySet = false;
+  bool setupCompleted;
+  QLabel *instructionsStep;
+  QLabel *mapboxSettingsLabel;
+  QTimer *updateTimer;
+  WifiManager* wifiManager;
+
+  static constexpr const char* imagePath = "../assets/images/";
+  static constexpr const char* ipFormat = "Manage your mapbox settings at %1:8082";
+
+  void retrieveAndUpdateStatus();
+  void updateIpAddressLabel();
+  void updateUI(bool deviceOnline, bool mapboxPublicKeySet, bool mapboxSecretKeySet);
+
+private slots:
+  void updateIpAddress(const QString& newIpAddress);
+};
+
 #define ParamController(className, paramName, labelText, descText, iconPath, getValueStrFunc, newValueFunc) \
 class className : public ParamValueControl { \
   Q_OBJECT \
