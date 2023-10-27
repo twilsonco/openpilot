@@ -5,6 +5,11 @@ from openpilot.common.params import Params
 from openpilot.system.hardware import PC, TICI
 from openpilot.selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
 
+# FrogPilot variables
+params = Params()
+
+osm = params.get_bool("OSM")
+
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
 def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
@@ -87,6 +92,9 @@ procs = [
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
+
+  # FrogPilot procs
+  PythonProcess("mapd", "selfdrive.mapd", always_run, enabled=osm),
 ]
 
 managed_processes = {p.name: p for p in procs}

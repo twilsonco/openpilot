@@ -2,7 +2,7 @@
 import math
 import numpy as np
 from openpilot.common.numpy_fast import clip, interp
-from openpilot.common.params import Params
+from openpilot.common.params import Params, put_bool_nonblocking
 from cereal import log
 
 import cereal.messaging as messaging
@@ -64,6 +64,10 @@ class LongitudinalPlanner:
     self.param_read_counter = 0
     self.read_param()
     self.personality = log.LongitudinalPersonality.standard
+    self.is_metric = self.params.get_bool("IsMetric")
+
+    # FrogPilot variables
+    self.update_frogpilot_params()
 
   def read_param(self):
     try:
@@ -87,7 +91,11 @@ class LongitudinalPlanner:
       j = np.zeros(len(T_IDXS_MPC))
     return x, v, a, j
 
-  def update(self, sm):
+  def update(self, sm, frogpilot_toggles_updated):
+    # Update FrogPilot variables when they are changed
+    if frogpilot_toggles_updated:
+      self.update_frogpilot_params()
+
     if self.param_read_counter % 50 == 0:
       self.read_param()
     self.param_read_counter += 1
@@ -172,3 +180,6 @@ class LongitudinalPlanner:
     longitudinalPlan.personality = self.personality
 
     pm.send('longitudinalPlan', plan_send)
+    
+  def update_frogpilot_params(self):
+    self.longitudinal_tuning = self.params.get_bool("LongitudinalTuning")

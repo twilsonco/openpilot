@@ -39,6 +39,8 @@ private:
   OffroadAlert* alerts_widget;
   QPushButton* alert_notif;
   QPushButton* update_notif;
+
+  // FrogPilot variables
 };
 
 class HomeWindow : public QWidget {

@@ -28,6 +28,7 @@ class RouteEngine:
     self.pm = pm
 
     self.params = Params()
+    self.params_memory = Params("/dev/shm/params")
 
     # Get last gps position from params
     self.last_position = coordinate_from_param("LastGPSPosition", self.params)
@@ -60,6 +61,8 @@ class RouteEngine:
       self.mapbox_host = "https://maps.comma.ai"
 
   def update(self):
+    if self.params_memory.get_bool("FrogPilotTogglesUpdated"):
+
     self.sm.update(0)
 
     if self.sm.updated["managerState"]:

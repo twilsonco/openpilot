@@ -94,6 +94,8 @@ typedef enum UIStatus {
   STATUS_DISENGAGED,
   STATUS_OVERRIDE,
   STATUS_ENGAGED,
+
+  // FrogPilot statuses
 } UIStatus;
 
 enum PrimeType {
@@ -109,12 +111,15 @@ const QColor bg_colors [] = {
   [STATUS_DISENGAGED] = QColor(0x17, 0x33, 0x49, 0xc8),
   [STATUS_OVERRIDE] = QColor(0x91, 0x9b, 0x95, 0xf1),
   [STATUS_ENGAGED] = QColor(0x17, 0x86, 0x44, 0xf1),
+
+  // FrogPilot colors
 };
 
 static std::map<cereal::ControlsState::AlertStatus, QColor> alert_colors = {
   {cereal::ControlsState::AlertStatus::NORMAL, QColor(0x15, 0x15, 0x15, 0xf1)},
   {cereal::ControlsState::AlertStatus::USER_PROMPT, QColor(0xDA, 0x6F, 0x25, 0xf1)},
   {cereal::ControlsState::AlertStatus::CRITICAL, QColor(0xC9, 0x22, 0x31, 0xf1)},
+  {cereal::ControlsState::AlertStatus::FROGPILOT, QColor(0x17, 0x86, 0x44, 0xf1)},
 };
 
 typedef struct UIScene {
@@ -147,6 +152,11 @@ typedef struct UIScene {
   float light_sensor;
   bool started, ignition, is_metric, map_on_left, longitudinal_control;
   uint64_t started_frame;
+
+  // FrogPilot variables
+  bool enabled;
+  bool experimental_mode;
+
 } UIScene;
 
 class UIState : public QObject {
@@ -183,6 +193,9 @@ signals:
   void primeChanged(bool prime);
   void primeTypeChanged(PrimeType prime_type);
 
+  // FrogPilot signals
+  void uiUpdateFrogPilotParams(const UIState &s);
+
 private slots:
   void update();
 
@@ -190,6 +203,10 @@ private:
   QTimer *timer;
   bool started_prev = false;
   PrimeType prime_type = PrimeType::UNKNOWN;
+  
+  // FrogPilot variables
+  Params params;
+  Params paramsMemory{"/dev/shm/params"};
 };
 
 UIState *uiState();

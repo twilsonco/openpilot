@@ -89,11 +89,20 @@ void OnroadWindow::updateState(const UIState &s) {
     bg = bgColor;
     update();
   }
+
+  // FrogPilot variables
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
+  // FrogPilot clickable widgets
+  const UIScene &scene = uiState()->scene;
+  static Params params;
+  static Params paramsMemory{"/dev/shm/params"};
+
+  bool widgetClicked = false;
+
 #ifdef ENABLE_MAPS
-  if (map != nullptr) {
+  if (map != nullptr && !widgetClicked) {
     // Switch between map and sidebar when using navigate on openpilot
     bool sidebarVisible = geometry().x() > 0;
     bool show_map = uiState()->scene.navigate_on_openpilot ? sidebarVisible : !sidebarVisible;
@@ -101,7 +110,9 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   }
 #endif
   // propagation event to parent(HomeWindow)
-  QWidget::mousePressEvent(e);
+  if (!widgetClicked) {
+    QWidget::mousePressEvent(e);
+  }
 }
 
 void OnroadWindow::offroadTransition(bool offroad) {
@@ -154,6 +165,7 @@ void OnroadAlerts::updateAlert(const Alert &a) {
 }
 
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
+  const UIScene &scene = uiState()->scene;
   if (alert.size == cereal::ControlsState::AlertSize::NONE) {
     return;
   }
@@ -211,7 +223,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 }
 
 // ExperimentalButton
-ExperimentalButton::ExperimentalButton(QWidget *parent) : experimental_mode(false), engageable(false), QPushButton(parent) {
+ExperimentalButton::ExperimentalButton(QWidget *parent) : experimental_mode(false), engageable(false), QPushButton(parent), scene(uiState()->scene) {
   setFixedSize(btn_size, btn_size);
 
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
@@ -235,6 +247,8 @@ void ExperimentalButton::updateState(const UIState &s) {
     experimental_mode = cs.getExperimentalMode();
     update();
   }
+
+  // FrogPilot variables
 }
 
 void ExperimentalButton::paintEvent(QPaintEvent *event) {
@@ -275,6 +289,13 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   main_layout->addWidget(map_settings_btn, 0, Qt::AlignBottom | Qt::AlignRight);
 
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
+
+  // FrogPilot buttons
+
+  // FrogPilot variable checks
+  static Params params = Params();
+
+  // Load miscellaneous images
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
@@ -327,6 +348,9 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
     map_settings_btn->setVisible(!hideBottomIcons);
     main_layout->setAlignment(map_settings_btn, (rightHandDM ? Qt::AlignLeft : Qt::AlignRight) | Qt::AlignBottom);
   }
+
+  // FrogPilot variables
+  experimentalMode = s.scene.experimental_mode;
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
@@ -425,6 +449,11 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
   p.restore();
+
+  // FrogPilot status bar
+  if () {
+    drawStatusBar(p);
+  }
 }
 
 void AnnotatedCameraWidget::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
@@ -704,4 +733,57 @@ void AnnotatedCameraWidget::showEvent(QShowEvent *event) {
 
   ui_update_params(uiState());
   prev_draw_t = millis_since_boot();
+}
+
+// FrogPilot widgets
+
+void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
+  p.save();
+
+  // Variable declarations
+  static QElapsedTimer timer;
+  static QString lastShownStatus;
+  static bool displayStatusText = false;
+
+  constexpr qreal fadeDuration = 1500.0;  // 1.5 seconds
+  constexpr qreal textDuration = 5000.0;  // 5 seconds
+
+  // Display the appropriate status
+  QString newStatus;
+
+  // Check if status has changed
+  if (newStatus != lastShownStatus) {
+    displayStatusText = true;
+    lastShownStatus = newStatus;
+    timer.restart();
+  } else if (displayStatusText && timer.hasExpired(textDuration + fadeDuration)) {
+    displayStatusText = false;
+  }
+
+  // Calculate opacities
+  qreal statusTextOpacity;
+  const int elapsed = timer.elapsed();
+  if (displayStatusText) {
+    statusTextOpacity = qBound(0.0, 1.0 - (elapsed - textDuration) / fadeDuration, 1.0);
+  }
+
+  // Draw status bar
+  const QRect currentRect = rect();
+  const QRect statusBarRect(currentRect.left() - 1, currentRect.bottom() - 50, currentRect.width() + 2, 100);
+  p.setBrush(QColor(0, 0, 0, 150));
+  p.setOpacity(1.0);
+  p.drawRoundedRect(statusBarRect, 30, 30);
+
+  // Configure the text
+  p.setFont(InterFont(40, QFont::Bold));
+  p.setPen(Qt::white);
+  p.setRenderHint(QPainter::TextAntialiasing);
+
+  // Draw the status text with the calculated opacity
+  p.setOpacity(statusTextOpacity);
+  QRect textRect = p.fontMetrics().boundingRect(statusBarRect, Qt::AlignCenter | Qt::TextWordWrap, newStatus);
+  textRect.moveBottom(statusBarRect.bottom() - 50);
+  p.drawText(textRect, Qt::AlignCenter | Qt::TextWordWrap, newStatus);
+
+  p.restore();
 }

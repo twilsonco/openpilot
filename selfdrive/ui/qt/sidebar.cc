@@ -36,11 +36,15 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
   setFixedWidth(300);
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Sidebar::updateState);
+  QObject::connect(uiState(), &UIState::uiUpdateFrogPilotParams, this, &Sidebar::updateFrogPilotParams);
 
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"userFlag"});
+
+  // FrogPilot variables
 }
 
 void Sidebar::mousePressEvent(QMouseEvent *event) {
+  // Declare the click boxes
   if (onroad && home_btn.contains(event->pos())) {
     flag_pressed = true;
     update();
@@ -69,6 +73,10 @@ void Sidebar::offroadTransition(bool offroad) {
   update();
 }
 
+void Sidebar::updateFrogPilotParams(const UIState &s) {
+  // Update FrogPilot parameters upon toggle change
+}
+
 void Sidebar::updateState(const UIState &s) {
   if (!isVisible()) return;
 
@@ -78,6 +86,8 @@ void Sidebar::updateState(const UIState &s) {
   setProperty("netType", network_type[deviceState.getNetworkType()]);
   int strength = (int)deviceState.getNetworkStrength();
   setProperty("netStrength", strength > 0 ? strength + 1 : 0);
+
+  // FrogPilot properties
 
   ItemStatus connectStatus;
   auto last_ping = deviceState.getLastAthenaPingTime();

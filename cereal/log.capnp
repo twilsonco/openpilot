@@ -705,6 +705,7 @@ struct ControlsState @0x97ff69c53601abf1 {
     normal @0;       # low priority alert for user's convenience
     userPrompt @1;   # mid priority alert that might require user intervention
     critical @2;     # high priority alert that needs immediate user intervention
+    frogpilot @3;    # green startup alert
   }
 
   enum AlertSize {
@@ -1000,6 +1001,8 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
 
   solverExecutionTime @35 :Float32;
   personality @36 :LongitudinalPersonality;
+
+  # FrogPilot LongitudinalPlans
 
   enum LongitudinalPlanSource {
     cruise @0;

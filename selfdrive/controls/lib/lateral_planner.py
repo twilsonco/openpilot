@@ -1,5 +1,6 @@
 import time
 import numpy as np
+from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.numpy_fast import interp
 from openpilot.system.swaglog import cloudlog
@@ -51,13 +52,18 @@ class LateralPlanner:
     self.lat_mpc = LateralMpc()
     self.reset_mpc(np.zeros(4))
 
+    # FrogPilot variables
+    self.params = Params()
+
   def reset_mpc(self, x0=None):
     if x0 is None:
       x0 = np.zeros(4)
     self.x0 = x0
     self.lat_mpc.reset(x0=self.x0)
 
-  def update(self, sm):
+  def update(self, sm, frogpilot_toggles_updated):
+    if frogpilot_toggles_updated:
+
     # clip speed , lateral planning is not possible at 0 speed
     measured_curvature = sm['controlsState'].curvature
     v_ego_car = sm['carState'].vEgo
@@ -80,7 +86,7 @@ class LateralPlanner:
       self.l_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeLeft]
       self.r_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeRight]
     lane_change_prob = self.l_lane_change_prob + self.r_lane_change_prob
-    self.DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob)
+    self.DH.update(sm['carState'], md, sm['carControl'].latActive, lane_change_prob, frogpilot_toggles_updated)
 
     self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
                              LATERAL_ACCEL_COST, LATERAL_JERK_COST,
@@ -147,5 +153,7 @@ class LateralPlanner:
     lateralPlan.useLaneLines = False
     lateralPlan.laneChangeState = self.DH.lane_change_state
     lateralPlan.laneChangeDirection = self.DH.lane_change_direction
+
+    # FrogPilot lateral variables
 
     pm.send('lateralPlan', plan_send)

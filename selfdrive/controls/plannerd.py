@@ -32,6 +32,7 @@ def plannerd_thread():
 
   cloudlog.info("plannerd is waiting for CarParams")
   params = Params()
+  params_memory = Params("/dev/shm/params")
   with car.CarParams.from_bytes(params.get("CarParams", block=True)) as msg:
     CP = msg
   cloudlog.info("plannerd got CarParams: %s", CP.carName)
@@ -48,10 +49,12 @@ def plannerd_thread():
   while True:
     sm.update()
 
+    frogpilot_toggles_updated = params_memory.get_bool("FrogPilotTogglesUpdated")
+
     if sm.updated['modelV2']:
-      lateral_planner.update(sm)
+      lateral_planner.update(sm, frogpilot_toggles_updated)
       lateral_planner.publish(sm, pm)
-      longitudinal_planner.update(sm)
+      longitudinal_planner.update(sm, frogpilot_toggles_updated)
       longitudinal_planner.publish(sm, pm)
       publish_ui_plan(sm, pm, lateral_planner, longitudinal_planner)
 

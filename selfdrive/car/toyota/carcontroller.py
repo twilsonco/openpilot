@@ -1,5 +1,6 @@
 from cereal import car
 from openpilot.common.numpy_fast import clip, interp
+from openpilot.common.params import Params
 from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, \
                           create_gas_interceptor_command, make_can_msg
 from openpilot.selfdrive.car.toyota import toyotacan
@@ -40,6 +41,9 @@ class CarController:
     self.packer = CANPacker(dbc_name)
     self.gas = 0
     self.accel = 0
+
+    # FrogPilot variables
+    self.param = Params()
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators

@@ -243,6 +243,24 @@ bool ConfirmationDialog::rich(const QString &prompt_text, QWidget *parent) {
   return d.exec();
 }
 
+// Reboot dialog box for FrogPilot panel
+bool ConfirmationDialog::toggle(const QString &prompt_text, const QString &confirm_text, QWidget *parent) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, confirm_text, tr("Reboot Later"), false, parent);
+  return d.exec();
+}
+
+// Warning dialog box for FrogPilot panel
+bool ConfirmationDialog::toggleAlert(const QString &prompt_text, const QString &button_text, QWidget *parent) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, button_text, "", false, parent);
+  return d.exec();
+}
+
+// Yes or no dialog box for FrogPilot panel
+bool ConfirmationDialog::yesorno(const QString &prompt_text, QWidget *parent) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, tr("Yes"), tr("No"), false, parent);
+  return d.exec();
+}
+
 // MultiOptionDialog
 
 MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, const QStringList &l, const QString &current, QWidget *parent) : DialogBase(parent) {

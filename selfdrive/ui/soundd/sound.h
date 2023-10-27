@@ -30,6 +30,10 @@ class Sound : public QObject {
 public:
   explicit Sound(QObject *parent = 0);
 
+public slots:
+  // FrogPilot slots
+  void updateFrogPilotParams(const UIState &s);
+
 protected:
   void update();
   void setAlert(const Alert &alert);
@@ -38,4 +42,7 @@ protected:
   Alert current_alert = {};
   QMap<AudibleAlert, QPair<QSoundEffect *, int>> sounds;
   int current_volume = -1;
+
+  // FrogPilot variables
+  Params params;
 };

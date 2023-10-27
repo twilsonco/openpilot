@@ -63,6 +63,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     }
   )");
   setAttribute(Qt::WA_NoSystemBackground);
+
+  // FrogPilot variables
+  static Params params = Params();
 }
 
 void MainWindow::openSettings(int index, const QString &param) {

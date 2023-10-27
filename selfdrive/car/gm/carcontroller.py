@@ -1,6 +1,7 @@
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import interp
+from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_driver_steer_torque_limits
@@ -37,6 +38,9 @@ class CarController:
     self.packer_pt = CANPacker(DBC[self.CP.carFingerprint]['pt'])
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[self.CP.carFingerprint]['chassis'])
+
+    # FrogPilot variables
+    self.param = Params()
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators

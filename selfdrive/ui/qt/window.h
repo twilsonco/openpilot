@@ -18,8 +18,13 @@ private:
   void openSettings(int index = 0, const QString &param = "");
   void closeSettings();
 
+  // FrogPilot functions
+
   QStackedLayout *main_layout;
   HomeWindow *homeWindow;
   SettingsWindow *settingsWindow;
   OnboardingWindow *onboardingWindow;
+
+  // FrogPilot variables
+  Params params = Params();
 };

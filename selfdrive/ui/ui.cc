@@ -201,6 +201,26 @@ static void update_state(UIState *s) {
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
+  if (sm.updated("carControl")) {
+    const auto carControl = sm["carControl"].getCarControl();
+  }
+  if (sm.updated("carState")) {
+    const auto carState = sm["carState"].getCarState();
+  }
+  if (sm.updated("controlsState")) {
+    const auto controlsState = sm["controlsState"].getControlsState();
+    scene.enabled = controlsState.getEnabled();
+    scene.experimental_mode = controlsState.getExperimentalMode();
+  }
+  if (sm.updated("gpsLocationExternal")) {
+    const auto gpsLocationExternal = sm["gpsLocationExternal"].getGpsLocationExternal();
+  }
+  if (sm.updated("lateralPlan")) {
+    const auto lateralPlan = sm["lateralPlan"].getLateralPlan();
+  }
+  if (sm.updated("longitudinalPlan")) {
+    const auto longitudinalPlan = sm["longitudinalPlan"].getLongitudinalPlan();
+  }
   if (sm.updated("wideRoadCameraState")) {
     auto cam_state = sm["wideRoadCameraState"].getWideRoadCameraState();
     float scale = (cam_state.getSensor() == cereal::FrameData::ImageSensor::AR0231) ? 6.0f : 1.0f;
@@ -213,6 +233,9 @@ void ui_update_params(UIState *s) {
   auto params = Params();
   s->scene.is_metric = params.getBool("IsMetric");
   s->scene.map_on_left = params.getBool("NavSettingLeftSide");
+
+  // FrogPilot variables
+  static UIScene &scene = s->scene;
 }
 
 void UIState::updateStatus() {
@@ -241,10 +264,10 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "carState", "liveLocationKalman", "driverStateV2",
-    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "uiPlan",
+    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "uiPlan", "carControl",
+    "gpsLocationExternal", "lateralPlan", "longitudinalPlan"
   });
 
-  Params params;
   language = QString::fromStdString(params.get("LanguageSetting"));
   auto prime_value = params.get("PrimeType");
   if (!prime_value.empty()) {
@@ -255,6 +278,8 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
   timer->start(1000 / UI_FREQ);
+
+  ui_update_params(this);
 }
 
 void UIState::update() {
@@ -266,6 +291,21 @@ void UIState::update() {
     watchdog_kick(nanos_since_boot());
   }
   emit uiUpdate(*this);
+
+  // Update FrogPilot variables when they are changed
+  static bool toggles_checked = false;
+  if (paramsMemory.getBool("FrogPilotTogglesUpdated")) {
+    emit uiUpdateFrogPilotParams(*this);
+    // Loop through twice so other parts of the code update first
+    if (toggles_checked) {
+      paramsMemory.putBoolNonBlocking("FrogPilotTogglesUpdated", false);
+    }
+    toggles_checked = !toggles_checked;
+
+    // FrogPilot variables that need to be checked on toggle change
+  }
+
+  // FrogPilot live variables that need to be constantly checked
 }
 
 void UIState::setPrimeType(PrimeType type) {
