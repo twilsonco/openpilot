@@ -200,6 +200,8 @@ typedef struct UIScene {
   float path_edge_width;
   float path_width;
   float road_edge_width;
+  float speed_limit;
+  float speed_limit_offset;
   int bearing_deg;
   QPolygonF track_edge_vertices;
   QPolygonF track_left_adjacent_lane_vertices;

@@ -162,16 +162,23 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   const QRect speedRect(rect().center().x() - 175, 50, 350, 350);
   const bool isSpeedClicked = speedRect.contains(e->pos());
 
-  if (isMaxSpeedClicked || isSpeedClicked) {
+  // Speed limit offset button
+  const QRect speedLimitRect(7, 250, 225, 225);
+  const bool isSpeedLimitClicked = speedLimitRect.contains(e->pos());
+
+  if (isMaxSpeedClicked || isSpeedClicked || isSpeedLimitClicked) {
     // Check if the click was within the max speed area
     if (isMaxSpeedClicked) {
       reverseCruiseIncrease = !params.getBool("ReverseCruiseIncrease");
       params.putBoolNonBlocking("ReverseCruiseIncrease", reverseCruiseIncrease);
       paramsMemory.putBoolNonBlocking("FrogPilotTogglesUpdated", true);
     // Check if the click was within the speed text area
-    } else {
+    } else if (isSpeedClicked) {
       speedHidden = !params.getBool("HideSpeed");
       params.putBoolNonBlocking("HideSpeed", speedHidden);
+    } else {
+      displaySLCOffset = !params.getBool("DisplaySLCOffset");
+      params.putBoolNonBlocking("DisplaySLCOffset", displaySLCOffset);
     }
     widgetClicked = true;
   // If the click wasn't for anything specific, change the value of "ExperimentalMode"
@@ -460,6 +467,9 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   if (params.getBool("ReverseCruiseIncrease")) {
     reverseCruiseIncrease = true;
   }
+  if (params.getBool("DisplaySLCOffset")) {
+    displaySLCOffset = true;
+  }
 
   // Load miscellaneous images
   compass_inner_img = loadPixmap("../assets/images/compass_inner.png", {img_size, img_size});
@@ -532,10 +542,12 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   speed *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
 
   auto speed_limit_sign = nav_instruction.getSpeedLimitSign();
-  speedLimit = nav_alive ? nav_instruction.getSpeedLimit() : 0.0;
+  speedLimit = nav_alive ? nav_instruction.getSpeedLimit() : slcSpeedLimit ? slcSpeedLimit : 0.0;
   speedLimit *= (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
-
-  has_us_speed_limit = (nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::MUTCD);
+  if (slcSpeedLimit) {
+    speedLimit = std::round(speedLimit - (displaySLCOffset ? slcSpeedLimitOffset : 0));
+  }
+  has_us_speed_limit = (nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::MUTCD) || slcSpeedLimit;
   has_eu_speed_limit = (nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::VIENNA);
   is_metric = s.scene.is_metric;
   speedUnit =  s.scene.is_metric ? tr("km/h") : tr("mph");
@@ -585,6 +597,8 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   obstacleDistance = s.scene.obstacle_distance;
   obstacleDistanceStock = s.scene.obstacle_distance_stock;
   roadNameUI = s.scene.road_name_ui;
+  slcSpeedLimit = s.scene.speed_limit;
+  slcSpeedLimitOffset = s.scene.speed_limit_offset * (is_metric ? MS_TO_KPH : MS_TO_MPH);
   stoppedEquivalence = s.scene.stopped_equivalence;
   stoppedEquivalenceStock = s.scene.stopped_equivalence_stock;
   turnSignalLeft = s.scene.turn_signal_left;
@@ -626,6 +640,7 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   p.fillRect(0, 0, width(), UI_HEADER_HEIGHT, bg);
 
   QString speedLimitStr = (speedLimit > 1) ? QString::number(std::nearbyint(speedLimit)) : "–";
+  QString speedLimitOffsetStr = (slcSpeedLimitOffset > 1) ? "+" + QString::number(std::nearbyint(slcSpeedLimitOffset)) : "–";
   QString speedStr = QString::number(std::nearbyint(speed));
   QString setSpeedStr = is_cruise_set ? QString::number(std::nearbyint(setSpeed)) : "–";
 
@@ -689,11 +704,20 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
     p.setPen(QPen(blackColor(), 6));
     p.drawRoundedRect(sign_rect.adjusted(9, 9, -9, -9), 16, 16);
 
-    p.setFont(InterFont(28, QFont::DemiBold));
-    p.drawText(sign_rect.adjusted(0, 22, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("SPEED"));
-    p.drawText(sign_rect.adjusted(0, 51, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("LIMIT"));
-    p.setFont(InterFont(70, QFont::Bold));
-    p.drawText(sign_rect.adjusted(0, 85, 0, 0), Qt::AlignTop | Qt::AlignHCenter, speedLimitStr);
+    if (displaySLCOffset) {
+      p.setFont(InterFont(28, QFont::DemiBold));
+      p.drawText(sign_rect.adjusted(0, 22, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("LIMIT"));
+      p.setFont(InterFont(70, QFont::Bold));
+      p.drawText(sign_rect.adjusted(0, 51, 0, 0), Qt::AlignTop | Qt::AlignHCenter, speedLimitStr);
+      p.setFont(InterFont(50, QFont::DemiBold));
+      p.drawText(sign_rect.adjusted(0, 120, 0, 0), Qt::AlignTop | Qt::AlignHCenter, speedLimitOffsetStr);
+    } else {
+      p.setFont(InterFont(28, QFont::DemiBold));
+      p.drawText(sign_rect.adjusted(0, 22, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("SPEED"));
+      p.drawText(sign_rect.adjusted(0, 51, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("LIMIT"));
+      p.setFont(InterFont(70, QFont::Bold));
+      p.drawText(sign_rect.adjusted(0, 85, 0, 0), Qt::AlignTop | Qt::AlignHCenter, speedLimitStr);
+    }
   }
 
   // EU (Vienna style) sign

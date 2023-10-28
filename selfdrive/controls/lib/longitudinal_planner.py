@@ -12,6 +12,7 @@ from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import T_IDXS
 from openpilot.selfdrive.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.selfdrive.controls.conditional_experimental_mode import ConditionalExperimentalMode
+from openpilot.selfdrive.controls.speed_limit_controller import slc
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
@@ -175,6 +176,12 @@ class LongitudinalPlanner:
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
+    # Pfeiferj's Speed Limit Controller
+    if self.speed_limit_controller:
+      slc.update_current_max_velocity(sm['carState'].cruiseState.speedLimit, v_cruise, frogpilot_toggles_updated)
+      if 0 < slc.desired_speed_limit < v_cruise:
+        v_cruise = round(slc.desired_speed_limit)
+
     self.mpc.set_weights(prev_accel_constraint, self.custom_personalities, self.aggressive_jerk, self.standard_jerk, self.relaxed_jerk, personality=self.personality)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
@@ -242,6 +249,8 @@ class LongitudinalPlanner:
     # FrogPilot longitudinalPlan variables
     longitudinalPlan.conditionalExperimental = ConditionalExperimentalMode.experimental_mode
     longitudinalPlan.greenLight = self.green_light
+    longitudinalPlan.slcSpeedLimit = slc.desired_speed_limit
+    longitudinalPlan.slcSpeedLimitOffset = slc.offset
     # LongitudinalPlan variables for onroad driving insights
     have_lead = ConditionalExperimentalMode.detect_lead(sm['radarState'])
     longitudinalPlan.safeObstacleDistance = self.mpc.safe_obstacle_distance if have_lead else 0
@@ -271,3 +280,4 @@ class LongitudinalPlanner:
       self.relaxed_jerk = self.params.get_int("RelaxedJerk") / 10
 
     self.green_light_alert = self.params.get_bool("GreenLightAlert")
+    self.speed_limit_controller = self.params.get_bool("SpeedLimitController")

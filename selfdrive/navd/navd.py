@@ -12,6 +12,7 @@ from openpilot.common.api import Api
 from openpilot.common.numpy_fast import interp
 from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper
+from openpilot.selfdrive.controls.speed_limit_controller import slc
 from openpilot.selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
                                     distance_along_geometry, maxspeed_to_ms,
                                     minimum_distance,
@@ -99,6 +100,7 @@ class RouteEngine:
     if self.localizer_valid:
       self.last_bearing = math.degrees(location.calibratedOrientationNED.value[2])
       self.last_position = Coordinate(location.positionGeodetic.value[0], location.positionGeodetic.value[1])
+      self.params_memory.put("LastGPSPosition", json.dumps({ "latitude": self.last_position.latitude, "longitude": self.last_position.longitude }))
 
   def recompute_route(self):
     if self.last_position is None:
@@ -225,6 +227,12 @@ class RouteEngine:
 
     if self.step_idx is None:
       msg.valid = False
+      slc.load_state()
+      slc.nav_speed_limit = 0
+      slc.write_nav_state()
+
+      if slc.desired_speed_limit != 0:
+        msg.navInstruction.speedLimit = slc.desired_speed_limit
       self.pm.send('navInstruction', msg)
       return
 
@@ -296,6 +304,16 @@ class RouteEngine:
 
     if ('maxspeed' in closest.annotations) and self.localizer_valid:
       msg.navInstruction.speedLimit = closest.annotations['maxspeed']
+      slc.load_state()
+      slc.nav_speed_limit = closest.annotations['maxspeed']
+      slc.write_nav_state()
+    if not self.localizer_valid or ('maxspeed' not in closest.annotations):
+      slc.load_state()
+      slc.nav_speed_limit = 0
+      slc.write_nav_state()
+
+    if slc.desired_speed_limit != 0:
+      msg.navInstruction.speedLimit = slc.desired_speed_limit
 
     # 5-10 Seconds to stop condition based on v_ego or minimum of 25 meters
     v_ego = self.sm['carState'].vEgo

@@ -24,6 +24,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     {"Model", "Model Selector (Requires Reboot)", "Select your preferred openpilot model.\n\nNS = Night-Strike(Default)\nB4+B0 = B4+B0 Vision\nFV = Farmville\nNLP = New Lemon Pie\nNI = Non-Inflatable\nOP = Optimus Prime", "../assets/offroad/icon_calibration.png"},
     {"NudgelessLaneChange", "Nudgeless Lane Change", "Switch lanes without having to nudge the steering wheel.", "../assets/offroad/icon_lane.png"},
     {"PauseLateralOnSignal", "Pause Lateral On Turn Signal", "Pauses lateral control when a turn signal is active.", "../assets/offroad/icon_pause_lane.png"},
+    {"SpeedLimitController", "Speed Limit Controller", "Use Open Street Maps, Navigate On openpilot, and your car's dashboard (Toyota only) to set the vehicle's speed to the current speed limit.", "../assets/offroad/icon_speed_limit.png"},
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
@@ -89,6 +90,19 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
         {"LaneDetection", "Lane Detection"},
         {"OneLaneChange", "One Lane Change Per Signal"},
       }, mainLayout);
+    } else if (key == "SpeedLimitController") {
+      std::vector<QWidget*> widgets;
+      widgets.push_back(new SLCFallback());
+      widgets.push_back(new SLCPriority());
+
+      if (isMetric) {
+        widgets.push_back(createDualParamControl(new Offset1Metric(), new Offset2Metric()));
+        widgets.push_back(createDualParamControl(new Offset3Metric(), new Offset4Metric()));
+      } else {
+        widgets.push_back(createDualParamControl(new Offset1(), new Offset2()));
+        widgets.push_back(createDualParamControl(new Offset3(), new Offset4()));
+      }
+      createSubControl(key, label, desc, icon, widgets);
     } else {
       mainLayout->addWidget(control);
       if (key != std::get<0>(toggles.back())) mainLayout->addWidget(horizontalLine());
@@ -303,7 +317,7 @@ ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QStri
       }
     }
     static const QSet<QString> osmToggles = {
-      "RoadNameUI"
+      "RoadNameUI", "SpeedLimitController"
     };
     static QSet<QString> osmToggleStates;
     if (osmToggles.contains(key)) {

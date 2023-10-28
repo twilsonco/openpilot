@@ -260,6 +260,8 @@ static void update_state(UIState *s) {
       scene.stopped_equivalence = longitudinalPlan.getStoppedEquivalenceFactor();
       scene.stopped_equivalence_stock = longitudinalPlan.getStoppedEquivalenceFactorStock();
     }
+    scene.speed_limit = longitudinalPlan.getSlcSpeedLimit();
+    scene.speed_limit_offset = longitudinalPlan.getSlcSpeedLimitOffset();
   }
   if (sm.updated("wideRoadCameraState")) {
     auto cam_state = sm["wideRoadCameraState"].getWideRoadCameraState();

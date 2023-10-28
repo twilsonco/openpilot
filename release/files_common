@@ -179,6 +179,7 @@ selfdrive/controls/__init__.py
 selfdrive/controls/controlsd.py
 selfdrive/controls/plannerd.py
 selfdrive/controls/radard.py
+selfdrive/controls/speed_limit_controller.py
 selfdrive/controls/lib/__init__.py
 selfdrive/controls/lib/alertmanager.py
 selfdrive/controls/lib/alerts_offroad.json

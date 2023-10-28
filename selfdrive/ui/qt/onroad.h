@@ -16,6 +16,7 @@ const int btn_size = 192;
 const int img_size = (btn_size / 4) * 3;
 
 // FrogPilot global variables
+static bool displaySLCOffset;
 static bool reverseCruiseIncrease;
 static bool speedHidden;
 static double fps;
@@ -138,6 +139,8 @@ private:
   double maxAcceleration;
   float laneWidthLeft;
   float laneWidthRight;
+  float slcSpeedLimit;
+  float slcSpeedLimitOffset;
   int bearingDeg;
   int conditionalSpeed;
   int conditionalSpeedLead;
