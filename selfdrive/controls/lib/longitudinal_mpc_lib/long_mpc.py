@@ -365,6 +365,12 @@ class LongitudinalMpc:
       t_follow_offset = np.clip(10 - v_ego, 1, speed_factor)
       t_follow = t_follow / t_follow_offset
 
+    # LongitudinalPlan variables for onroad driving insights
+    self.safe_obstacle_distance = int(np.max(get_safe_obstacle_distance(self.x_sol[:,1], t_follow)))
+    self.stopped_equivalence_factor = int(np.max(get_stopped_equivalence_factor(lead_xv_0[:,1])))
+    self.safe_obstacle_distance_stock = int(np.max(get_safe_obstacle_distance(self.x_sol[:,1], get_T_FOLLOW(custom_personalities, aggressive_follow, standard_follow, relaxed_follow, personality))))
+    self.stopped_equivalence_factor_stock = int(np.max(get_stopped_equivalence_factor(lead_xv_0[:,1])))
+
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
