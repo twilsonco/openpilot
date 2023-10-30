@@ -72,10 +72,12 @@ class MapSettingsButton : public QPushButton {
 
 public:
   explicit MapSettingsButton(QWidget *parent = 0);
+  void updateState(const UIState &s);
 
 private:
   void paintEvent(QPaintEvent *event) override;
 
+  const UIScene &scene;
   QPixmap settings_img;
 };
 

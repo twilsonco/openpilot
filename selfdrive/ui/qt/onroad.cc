@@ -426,8 +426,8 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
 
 
 // MapSettingsButton
-MapSettingsButton::MapSettingsButton(QWidget *parent) : QPushButton(parent) {
-  setFixedSize(btn_size, btn_size);
+MapSettingsButton::MapSettingsButton(QWidget *parent) : QPushButton(parent), scene(uiState()->scene) {
+  setFixedSize(btn_size + 25, btn_size + 25);
   settings_img = loadPixmap("../assets/navigation/icon_directions_outlined.svg", {img_size, img_size});
 
   // hidden by default, made visible if map is created (has prime or mapbox token)
@@ -435,9 +435,14 @@ MapSettingsButton::MapSettingsButton(QWidget *parent) : QPushButton(parent) {
   setEnabled(false);
 }
 
+void MapSettingsButton::updateState(const UIState &s) {
+  update();
+}
+
 void MapSettingsButton::paintEvent(QPaintEvent *event) {
+  const bool moveRight = scene.compass && scene.personalities_via_screen;
   QPainter p(this);
-  drawIcon(p, QPoint(btn_size / 2, btn_size / 2), settings_img, QColor(0, 0, 0, 166), isDown() ? 0.6 : 1.0);
+  drawIcon(p, QPoint(btn_size / 2 + (moveRight ? 25 : 0), btn_size / 2), settings_img, QColor(0, 0, 0, 166), isDown() ? 0.6 : 1.0);
 }
 
 
@@ -568,11 +573,11 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
 
   // hide map settings button for alerts and flip for right hand DM
   if (map_settings_btn->isEnabled()) {
+    if (compass || (alwaysOnLateral || conditionalExperimental || roadNameUI)) {
+      map_settings_btn->updateState(s);
+    }
     map_settings_btn->setVisible(!hideBottomIcons);
-    const bool flip_side = rightHandDM || compass;
-    const bool move_up = alwaysOnLateral || conditionalExperimental || roadNameUI;
-    const bool move_up_top = flip_side && (!muteDM);
-    main_layout->setAlignment(map_settings_btn, (flip_side ? Qt::AlignLeft : Qt::AlignRight) | (move_up ? Qt::AlignCenter : move_up_top ? Qt::AlignTop : Qt::AlignBottom));
+    main_layout->setAlignment(map_settings_btn, (rightHandDM || compass ? Qt::AlignLeft : Qt::AlignRight) | Qt::AlignBottom);
   }
 
   main_layout->setAlignment(personality_btn, (rightHandDM ? Qt::AlignRight : Qt::AlignLeft) | Qt::AlignBottom);
@@ -1021,7 +1026,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
 
   // base icon
   int offset = UI_BORDER_SIZE + btn_size / 2;
-  int x = rightHandDM ? width() - offset - (onroadAdjustableProfiles ? 275 : 0) : offset + (onroadAdjustableProfiles ? 275 : 0);
+  int x = rightHandDM ? width() - offset - (onroadAdjustableProfiles || (compass && map_settings_btn->isEnabled()) ? 275 : 0) : offset + (onroadAdjustableProfiles || (compass && map_settings_btn->isEnabled()) ? 275 : 0);
   int y = height() - offset - ((alwaysOnLateral || conditionalExperimental || roadNameUI) ? 25 : 0);
   float opacity = dmActive ? 0.65 : 0.2;
   drawIcon(painter, QPoint(x, y), dm_img, blackColor(70), opacity);
