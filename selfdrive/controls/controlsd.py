@@ -563,7 +563,7 @@ class Controls:
           else:
             self.state = State.enabled
           self.current_alert_types.append(ET.ENABLE)
-          self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
+          self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode, self.conditional_experimental_mode)
 
     # Check if openpilot is engaged and actuators are enabled
     self.enabled = self.state in ENABLED_STATES
@@ -871,7 +871,11 @@ class Controls:
     self.prof.checkpoint("Ratekeeper", ignore=True)
 
     self.is_metric = self.params.get_bool("IsMetric")
-    self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+    if self.CP.openpilotLongitudinalControl:
+      if self.conditional_experimental_mode:
+        self.experimental_mode = self.sm['longitudinalPlan'].conditionalExperimental
+      else:
+        self.experimental_mode = self.params.get_bool("ExperimentalMode")
 
     # Sample data from sockets and get a carState
     CS = self.data_sample()
@@ -912,6 +916,7 @@ class Controls:
     self.CS.update_frogpilot_params()
 
     self.average_desired_curvature = self.params.get_bool("AverageDesiredCurvature")
+    self.conditional_experimental_mode = self.params.get_bool("ConditionalExperimental")
 
 def main():
   controls = Controls()

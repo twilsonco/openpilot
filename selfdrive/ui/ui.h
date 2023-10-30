@@ -158,8 +158,12 @@ typedef struct UIScene {
   // FrogPilot variables
   bool always_on_lateral;
   bool always_on_lateral_active;
+  bool conditional_experimental;
   bool enabled;
   bool experimental_mode;
+  int conditional_speed;
+  int conditional_speed_lead;
+  int conditional_status;
 
 } UIScene;
 

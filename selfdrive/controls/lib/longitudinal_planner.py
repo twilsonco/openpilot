@@ -11,6 +11,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import T_IDXS
 from openpilot.selfdrive.car.interfaces import ACCEL_MIN, ACCEL_MAX
+from openpilot.selfdrive.controls.conditional_experimental_mode import ConditionalExperimentalMode
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
@@ -91,6 +92,9 @@ class LongitudinalPlanner:
     self.is_metric = self.params.get_bool("IsMetric")
 
     # FrogPilot variables
+    if self.params.get_bool("ConditionalExperimental"):
+      put_bool_nonblocking("ExperimentalMode", True)
+
     self.update_frogpilot_params()
 
   def read_param(self):
@@ -126,6 +130,7 @@ class LongitudinalPlanner:
     self.mpc.mode = 'blended' if sm['controlsState'].experimentalMode else 'acc'
 
     v_ego = sm['carState'].vEgo
+    v_lead = sm['radarState'].leadOne.vLead
     v_cruise_kph = min(sm['controlsState'].vCruise, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
 
@@ -190,6 +195,10 @@ class LongitudinalPlanner:
     self.a_desired = float(interp(DT_MDL, T_IDXS[:CONTROL_N], self.a_desired_trajectory))
     self.v_desired_filter.x = self.v_desired_filter.x + DT_MDL * (self.a_desired + a_prev) / 2.0
 
+    # Conditional Experimental Mode
+    if self.conditional_experimental_mode and sm['controlsState'].enabled:
+      ConditionalExperimentalMode.update(sm, v_ego, v_lead, frogpilot_toggles_updated)
+
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
 
@@ -211,9 +220,14 @@ class LongitudinalPlanner:
     longitudinalPlan.solverExecutionTime = self.mpc.solve_time
     longitudinalPlan.personality = self.personality
 
+    # FrogPilot longitudinalPlan variables
+    longitudinalPlan.conditionalExperimental = ConditionalExperimentalMode.experimental_mode
+
     pm.send('longitudinalPlan', plan_send)
     
   def update_frogpilot_params(self):
     self.longitudinal_tuning = self.params.get_bool("LongitudinalTuning")
     self.acceleration_profile = self.params.get_int("AccelerationProfile") if self.longitudinal_tuning else 2
     self.aggressive_acceleration = self.params.get_bool("AggressiveAcceleration") and self.longitudinal_tuning
+
+    self.conditional_experimental_mode = self.params.get_bool("ConditionalExperimental")

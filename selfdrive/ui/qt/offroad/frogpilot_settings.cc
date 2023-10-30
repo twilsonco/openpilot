@@ -14,6 +14,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
 
   static const std::vector<std::tuple<QString, QString, QString, QString>> toggles = {
     {"AlwaysOnLateral", "Always on Lateral / No disengage on Brake Pedal", "Keep openpilot lateral control when using either the brake or gas pedals. openpilot is only disengaged by deactivating the 'Cruise Control' button.", "../assets/offroad/icon_always_on_lateral.png"},
+    {"ConditionalExperimental", "Conditional Experimental Mode", "Automatically activate 'Experimental Mode' based on specified conditions.", "../assets/offroad/icon_conditional.png"},
     {"LateralTuning", "Lateral Tuning", "Change the way openpilot steers.", "../assets/offroad/icon_lateral_tune.png"},
     {"LongitudinalTuning", "Longitudinal Tuning", "Change the way openpilot accelerates and brakes.", "../assets/offroad/icon_longitudinal_tune.png"},
   };
@@ -24,6 +25,20 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
       createSubControl(key, label, desc, icon, {}, {
         {"AlwaysOnLateralMain", "Enable AOL On Cruise Main", "Enables Always On Lateral by simply turning on cruise control as opposed to requiring openpilot to be enabled first."}
       });
+    } else if (key == "ConditionalExperimental") {
+      createSubControl(key, label, desc, icon, {
+        createDualParamControl(new ConditionalSpeed(), new ConditionalSpeedLead()),
+      });
+      createSubButtonControl(key, {
+        {"ConditionalCurves", "Curves"},
+        {"ConditionalCurvesLead", "Curves With Lead"},
+        {"ConditionalNavigation", "Navigation Based"}
+      }, mainLayout);
+      createSubButtonControl(key, {
+        {"ConditionalSlowerLead", "Slower Lead Ahead"},
+        {"ConditionalStopLights", "Stop Lights and Stop Signs"},
+        {"ConditionalSignal", "Turn Signal < 55mph"}
+      }, mainLayout);
     } else if (key == "LateralTuning") {
       createSubControl(key, label, desc, icon, {}, {
         {"AverageDesiredCurvature", "Average Desired Curvature", "Use Pfeiferj's distance based curvature adjustment for smoother handling of curves."},

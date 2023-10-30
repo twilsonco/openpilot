@@ -128,12 +128,12 @@ class VCruiseHelper:
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
         self.button_change_states[b.type.raw] = {"standstill": CS.cruiseState.standstill, "enabled": enabled}
 
-  def initialize_v_cruise(self, CS, experimental_mode: bool) -> None:
+  def initialize_v_cruise(self, CS, experimental_mode: bool, conditional_experimental_mode) -> None:
     # initializing is handled by the PCM
     if self.CP.pcmCruise:
       return
 
-    initial = V_CRUISE_INITIAL_EXPERIMENTAL_MODE if experimental_mode else V_CRUISE_INITIAL
+    initial = V_CRUISE_INITIAL_EXPERIMENTAL_MODE if experimental_mode and not conditional_experimental_mode else V_CRUISE_INITIAL
 
     # 250kph or above probably means we never had a set speed
     if any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in CS.buttonEvents) and self.v_cruise_kph_last < 250:

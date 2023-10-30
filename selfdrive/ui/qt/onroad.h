@@ -109,7 +109,11 @@ private:
 
   // FrogPilot variables
   bool alwaysOnLateral;
+  bool conditionalExperimental;
   bool experimentalMode;
+  int conditionalSpeed;
+  int conditionalSpeedLead;
+  int conditionalStatus;
 
 protected:
   void paintGL() override;

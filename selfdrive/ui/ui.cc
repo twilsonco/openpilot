@@ -240,6 +240,10 @@ void ui_update_params(UIState *s) {
   // FrogPilot variables
   static UIScene &scene = s->scene;
   scene.always_on_lateral = params.getBool("AlwaysOnLateral");
+
+  scene.conditional_experimental = params.getBool("ConditionalExperimental");
+  scene.conditional_speed = params.getInt("ConditionalSpeed");
+  scene.conditional_speed_lead = params.getInt("ConditionalSpeedLead");
 }
 
 void UIState::updateStatus() {
@@ -312,6 +316,9 @@ void UIState::update() {
   }
 
   // FrogPilot live variables that need to be constantly checked
+  if (scene.conditional_experimental) {
+    scene.conditional_status = paramsMemory.getInt("ConditionalStatus");
+  }
 }
 
 void UIState::setPrimeType(PrimeType type) {

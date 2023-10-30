@@ -181,3 +181,15 @@ ParamController(AccelerationProfile, "AccelerationProfile", "   Acceleration Pro
   return profile == 1 ? "Eco" : profile == 2 ? "Normal" : "Sport";,
   return std::clamp(v, 1, 3);
 )
+
+ParamController(ConditionalSpeed, "ConditionalSpeed", "Below", "Switch to 'Experimental Mode' below this speed when there is no lead vehicle.", "../assets/offroad/icon_blank.png",
+  const int speed = params.getInt("ConditionalSpeed");
+  return speed == 0 ? "Off" : QString::number(speed) + (isMetric ? " kph" : " mph");,
+  return std::clamp(v, 0, isMetric ? 150 : 99);
+)
+
+ParamController(ConditionalSpeedLead, "ConditionalSpeedLead", "With Lead", "Switch to 'Experimental Mode' below this speed when there is a lead vehicle.", "../assets/offroad/icon_blank.png",
+  const int speedLead = params.getInt("ConditionalSpeedLead");
+  return speedLead == 0 ? "Off" : QString::number(speedLead) + (isMetric ? " kph" : " mph");,
+  return std::clamp(v, 0, isMetric ? 150 : 99);
+)
