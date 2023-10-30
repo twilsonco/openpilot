@@ -40,6 +40,7 @@ class ConditionalExperimentalMode:
   def update_frogpilot_params(self):
     self.curves = self.params.get_bool("ConditionalCurves")
     self.curves_lead = self.params.get_bool("ConditionalCurvesLead")
+    self.experimental_mode_via_wheel = self.params.get_bool("ExperimentalModeViaPress")
     self.limit = self.params.get_int("ConditionalSpeed") * (CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS)
     self.limit_lead = self.params.get_int("ConditionalSpeedLead") * (CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS)
     self.signal = self.params.get_bool("ConditionalSignal")
@@ -57,15 +58,21 @@ class ConditionalExperimentalMode:
     speed_difference = radarstate.leadOne.vRel * 3.6
     standstill = carstate.standstill
 
+    # Set the value of "overridden"
+    if self.experimental_mode_via_wheel:
+      overridden = self.params_memory.get_int("ConditionalStatus")
+    else:
+      overridden = 0
+
     # Update Experimental Mode based on the current driving conditions
     condition_met = self.check_conditions(sm, carstate, lead, lead_distance, modeldata, speed_difference, standstill, v_ego, v_lead)
-    if (not self.experimental_mode and condition_met):
+    if (not self.experimental_mode and condition_met and overridden not in (1, 3)) or overridden in (2, 4):
       self.experimental_mode = True
-    elif (self.experimental_mode and not condition_met):
+    elif (self.experimental_mode and not condition_met and overridden not in (2, 4)) or overridden in (1, 3):
       self.experimental_mode = False
 
     # Set parameter for on-road status bar
-    status_bar = (self.status_value if self.status_value >= 5 and self.experimental_mode else 0)
+    status_bar = overridden if overridden in (1, 2, 3, 4) else (self.status_value if self.status_value >= 5 and self.experimental_mode else 0)
     if status_bar != self.previous_status_bar:
       self.previous_status_bar = status_bar
       self.params_memory.put_int("ConditionalStatus", status_bar)

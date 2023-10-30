@@ -164,6 +164,22 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint != CAR.PRIUS_V:
       self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
 
+    # Toggle Experimental Mode from steering wheel function
+    if self.experimental_mode_via_wheel and ret.cruiseState.available:
+      message_keys = ["LDA_ON_MESSAGE", "SET_ME_X02"]
+      lkas_pressed = any(cp_cam.vl["LKAS_HUD"].get(key) == 1 for key in message_keys)
+      if lkas_pressed and not self.lkas_previously_pressed:
+        if self.conditional_experimental_mode:
+          # Set "ConditionalStatus" to work with "Conditional Experimental Mode"
+          conditional_status = self.params_memory.get_int("ConditionalStatus")
+          override_value = 0 if conditional_status in (1, 2, 3, 4) else 1 if conditional_status >= 5 else 2
+          self.params_memory.put_int("ConditionalStatus", override_value)
+        else:
+          experimental_mode = self.params.get_bool("ExperimentalMode")
+          # Invert the value of "ExperimentalMode"
+          put_bool_nonblocking("ExperimentalMode", not experimental_mode)
+      self.lkas_previously_pressed = lkas_pressed
+
     return ret
 
   @staticmethod

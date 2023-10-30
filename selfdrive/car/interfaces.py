@@ -365,6 +365,7 @@ class CarStateBase(ABC):
     self.params_memory = Params("/dev/shm/params")
 
     self.enable_cruise = self.params_memory.get_bool("EnableCruise", False)
+    self.lkas_previously_pressed = False
 
   def update_speed_kf(self, v_ego_raw):
     if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed
@@ -455,6 +456,8 @@ class CarStateBase(ABC):
     return None
 
   def update_frogpilot_params(self):
+    self.conditional_experimental_mode = self.params.get_bool("ConditionalExperimental")
+    self.experimental_mode_via_wheel = self.params.get_bool("ExperimentalModeViaPress")
 
 # interface-specific helpers
 

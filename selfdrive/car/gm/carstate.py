@@ -124,6 +124,21 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"] * CV.KPH_TO_MS
       ret.cruiseState.enabled = pt_cp.vl["ECMCruiseControl"]["CruiseActive"] != 0
 
+    # Toggle Experimental Mode from steering wheel function
+    if self.experimental_mode_via_wheel and ret.cruiseState.available:
+      lkas_pressed = pt_cp.vl["ASCMSteeringButton"]["LKAButton"]
+      if lkas_pressed and not self.lkas_previously_pressed:
+        if self.conditional_experimental_mode:
+          # Set "ConditionalStatus" to work with "Conditional Experimental Mode"
+          conditional_status = self.params_memory.get_int("ConditionalStatus")
+          override_value = 0 if conditional_status in (1, 2, 3, 4) else 1 if conditional_status >= 5 else 2
+          self.params_memory.put_int("ConditionalStatus", override_value)
+        else:
+          experimental_mode = self.params.get_bool("ExperimentalMode")
+          # Invert the value of "ExperimentalMode"
+          put_bool_nonblocking("ExperimentalMode", not experimental_mode)
+      self.lkas_previously_pressed = lkas_pressed
+
     return ret
 
   @staticmethod
