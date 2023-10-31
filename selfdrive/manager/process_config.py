@@ -9,7 +9,7 @@ from openpilot.selfdrive.manager.process import PythonProcess, NativeProcess, Da
 params = Params()
 
 disable_onroad_uploads = params.get_bool("DisableOnroadUploads")
-osm = params.get_bool("OSM")
+osm = True
 
 fire_the_babysitter = params.get_bool("FireTheBabysitter")
 disable_logging = fire_the_babysitter and params.get_bool("DisableAllLogging")
