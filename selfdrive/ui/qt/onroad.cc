@@ -1552,12 +1552,13 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
     {3, "Conditional Experimental overridden"},
     {4, "Experimental Mode manually activated"},
     {5, "Experimental Mode activated for navigation" + (mapOpen ? "" : QString(" instructions input"))},
-    {6, "Experimental Mode activated due to" + (mapOpen ? " speed" : " speed being less than " + QString::number(conditionalSpeedLead) + (is_metric ? " kph" : " mph"))},
-    {7, "Experimental Mode activated due to" + (mapOpen ? " speed" : " speed being less than " + QString::number(conditionalSpeed) + (is_metric ? " kph" : " mph"))},
-    {8, "Experimental Mode activated for slower lead"},
-    {9, "Experimental Mode activated for turn" + (mapOpen ? "" : QString(" / lane change"))},
-    {10, "Experimental Mode activated for stop" + (mapOpen ? "" : QString(" sign / stop light"))},
-    {11, "Experimental Mode activated for curve"}
+    {6, "Experimental Mode activated due to" + (mapOpen ? " speed limit" : QString(" no speed limit in use"))},
+    {7, "Experimental Mode activated due to" + (mapOpen ? " speed" : " speed being less than " + QString::number(conditionalSpeedLead) + (is_metric ? " kph" : " mph"))},
+    {8, "Experimental Mode activated due to" + (mapOpen ? " speed" : " speed being less than " + QString::number(conditionalSpeed) + (is_metric ? " kph" : " mph"))},
+    {9, "Experimental Mode activated for slower lead"},
+    {10, "Experimental Mode activated for turn" + (mapOpen ? "" : QString(" / lane change"))},
+    {11, "Experimental Mode activated for stop" + (mapOpen ? "" : QString(" sign / stop light"))},
+    {12, "Experimental Mode activated for curve"}
   };
 
   // Display the appropriate status

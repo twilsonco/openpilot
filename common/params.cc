@@ -312,6 +312,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ScreenBrightness", PERSISTENT},
     {"Sidebar", PERSISTENT},
     {"SilentMode", PERSISTENT},
+    {"SLCExperimentalMode", PERSISTENT},
     {"SLCFallback", PERSISTENT},
     {"SLCPriority", PERSISTENT},
     {"SmootherBraking", PERSISTENT},

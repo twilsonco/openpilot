@@ -88,29 +88,34 @@ class ConditionalExperimentalMode:
       self.status_value = 5
       return True
 
+    # Speed Limit Controller check
+    if self.params_memory.get_bool("SLCExperimentalMode"):
+      self.status_value = 6
+      return True
+
     # Speed check
     if not standstill and (not lead and v_ego < self.limit or lead and v_ego < self.limit_lead):
-      self.status_value = 6 if lead else 7
+      self.status_value = 7 if lead else 8
       return True
 
     # Slower lead check
     if self.slower_lead and lead and speed_difference < interp(lead_distance, LEAD_DISTANCE, LEAD_SPEED_DIFF):
-      self.status_value = 8
+      self.status_value = 9
       return True
 
     # Turn signal check
     if self.signal and v_ego < SPEED_LIMIT and (carstate.leftBlinker or carstate.rightBlinker):
-      self.status_value = 9
+      self.status_value = 10
       return True
 
     # Stop sign and light check
     if self.stop_lights and self.stop_sign_and_light(carstate, lead, lead_distance, modeldata, v_ego, v_lead):
-      self.status_value = 10
+      self.status_value = 11
       return True
 
     # Road curvature check
     if self.curves and self.road_curvature(modeldata, v_ego) and (self.curves_lead or not lead) and v_offset == 0:
-      self.status_value = 11
+      self.status_value = 12
       return True
 
     return False

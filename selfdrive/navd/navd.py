@@ -339,7 +339,7 @@ class RouteEngine:
     else:
       self.noo_condition = False  # Not approaching any NoO maneuver
 
-    self.params_memory.put_int("ConditionalStatus", 5 if (self.nav_condition or self.noo_condition) and self.conditional_navigation else 0)
+    self.params_memory.put_bool("NavigationInstruction", (self.nav_condition or self.noo_condition) and self.conditional_navigation)
 
     # Speed limit sign type
     if 'speedLimitSign' in step:
