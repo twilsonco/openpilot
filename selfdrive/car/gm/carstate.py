@@ -165,11 +165,11 @@ class CarState(CarStateBase):
       if lkas_pressed and not self.lkas_previously_pressed:
         if self.conditional_experimental_mode:
           # Set "ConditionalStatus" to work with "Conditional Experimental Mode"
-          conditional_status = self.params_memory.get_int("ConditionalStatus")
+          conditional_status = self.param_memory.get_int("ConditionalStatus")
           override_value = 0 if conditional_status in (1, 2, 3, 4) else 1 if conditional_status >= 5 else 2
-          self.params_memory.put_int("ConditionalStatus", override_value)
+          self.param_memory.put_int("ConditionalStatus", override_value)
         else:
-          experimental_mode = self.params.get_bool("ExperimentalMode")
+          experimental_mode = self.param.get_bool("ExperimentalMode")
           # Invert the value of "ExperimentalMode"
           put_bool_nonblocking("ExperimentalMode", not experimental_mode)
       self.lkas_previously_pressed = lkas_pressed

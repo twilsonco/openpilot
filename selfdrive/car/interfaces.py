@@ -484,19 +484,19 @@ class CarStateBase(ABC):
     self.v_ego_kf = KF1D(x0=x0, A=A, C=C[0], K=K)
 
     # FrogPilot variables
-    self.params = Params()
-    self.params_memory = Params("/dev/shm/params")
+    self.param = Params()
+    self.param_memory = Params("/dev/shm/params")
 
     self.display_menu = False
     self.distance_previously_pressed = False
-    self.enable_cruise = self.params_memory.get_bool("EnableCruise", False)
+    self.enable_cruise = self.param_memory.get_bool("EnableCruise", False)
     self.lkas_previously_pressed = False
     self.profile_restored = False
 
     self.display_timer = 0
     self.distance_button = 0
-    self.personality_profile = self.params.get_int("LongitudinalPersonality")
-    self.previous_personality_profile = self.params.get_int("LongitudinalPersonality")
+    self.personality_profile = self.param.get_int("LongitudinalPersonality")
+    self.previous_personality_profile = self.param.get_int("LongitudinalPersonality")
 
   def update_speed_kf(self, v_ego_raw):
     if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed
@@ -587,9 +587,9 @@ class CarStateBase(ABC):
     return None
 
   def update_frogpilot_params(self):
-    self.conditional_experimental_mode = self.params.get_bool("ConditionalExperimental")
-    self.experimental_mode_via_wheel = self.params.get_bool("ExperimentalModeViaPress")
-    self.personalities_via_wheel = self.params.get_int("PersonalitiesViaWheel") in {1, 3}
+    self.conditional_experimental_mode = self.param.get_bool("ConditionalExperimental")
+    self.experimental_mode_via_wheel = self.param.get_bool("ExperimentalModeViaPress")
+    self.personalities_via_wheel = self.param.get_int("PersonalitiesViaWheel") in {1, 3}
 
 # interface-specific helpers
 

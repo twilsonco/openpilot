@@ -190,10 +190,10 @@ class CarState(CarStateBase):
       self.personality_profile = cp.vl["PCM_CRUISE_SM"]["DISTANCE_LINES"] - 1
 
       # Sync with the onroad UI button
-      if self.params_memory.get_bool("PersonalityChangedViaUI"):
+      if self.param_memory.get_bool("PersonalityChangedViaUI"):
         self.profile_restored = False
-        self.params_memory.put_bool("PersonalityChangedViaUI", False)
-        self.previous_personality_profile = self.params.get_int("LongitudinalPersonality")
+        self.param_memory.put_bool("PersonalityChangedViaUI", False)
+        self.previous_personality_profile = self.param.get_int("LongitudinalPersonality")
 
       # Set personality to the previous drive's personality or when the user changes it via the UI
       if self.personality_profile == self.previous_personality_profile:
@@ -215,7 +215,7 @@ class CarState(CarStateBase):
           self.distance_button = cp.vl["SDSU"]["FD_BUTTON"]
 
         if self.personality_profile != self.previous_personality_profile and self.personality_profile >= 0:
-          self.params.put_int("LongitudinalPersonality", self.personality_profile)
+          self.param.put_int("LongitudinalPersonality", self.personality_profile)
           self.previous_personality_profile = self.personality_profile
 
     # Toggle Experimental Mode from steering wheel function
@@ -225,11 +225,11 @@ class CarState(CarStateBase):
       if lkas_pressed and not self.lkas_previously_pressed:
         if self.conditional_experimental_mode:
           # Set "ConditionalStatus" to work with "Conditional Experimental Mode"
-          conditional_status = self.params_memory.get_int("ConditionalStatus")
+          conditional_status = self.param_memory.get_int("ConditionalStatus")
           override_value = 0 if conditional_status in (1, 2, 3, 4) else 1 if conditional_status >= 5 else 2
-          self.params_memory.put_int("ConditionalStatus", override_value)
+          self.param_memory.put_int("ConditionalStatus", override_value)
         else:
-          experimental_mode = self.params.get_bool("ExperimentalMode")
+          experimental_mode = self.param.get_bool("ExperimentalMode")
           # Invert the value of "ExperimentalMode"
           put_bool_nonblocking("ExperimentalMode", not experimental_mode)
       self.lkas_previously_pressed = lkas_pressed
