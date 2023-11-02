@@ -162,6 +162,7 @@ private:
   bool muteDM;
   bool onroadAdjustableProfiles;
   bool roadNameUI;
+  bool slcOverridden;
   bool turnSignalLeft;
   bool turnSignalRight;
   double maxAcceleration;

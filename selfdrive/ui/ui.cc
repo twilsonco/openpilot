@@ -260,6 +260,7 @@ static void update_state(UIState *s) {
       scene.stopped_equivalence = longitudinalPlan.getStoppedEquivalenceFactor();
       scene.stopped_equivalence_stock = longitudinalPlan.getStoppedEquivalenceFactorStock();
     }
+    scene.slc_overridden = longitudinalPlan.getSlcOverridden();
     scene.speed_limit = longitudinalPlan.getSlcSpeedLimit();
     scene.speed_limit_offset = longitudinalPlan.getSlcSpeedLimitOffset();
     scene.vtsc_offset = longitudinalPlan.getVtscOffset();

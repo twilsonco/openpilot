@@ -179,6 +179,7 @@ typedef struct UIScene {
   bool road_name_ui;
   bool rotating_wheel;
   bool show_driver_camera;
+  bool slc_overridden;
   bool turn_signal_left;
   bool turn_signal_right;
   bool unlimited_road_ui_length;

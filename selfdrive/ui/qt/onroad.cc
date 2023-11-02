@@ -608,6 +608,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   obstacleDistanceStock = s.scene.obstacle_distance_stock;
   onroadAdjustableProfiles = s.scene.personalities_via_screen;
   roadNameUI = s.scene.road_name_ui;
+  slcOverridden = s.scene.slc_overridden;
   slcSpeedLimit = s.scene.speed_limit;
   slcSpeedLimitOffset = s.scene.speed_limit_offset * (is_metric ? MS_TO_KPH : MS_TO_MPH);
   stoppedEquivalence = s.scene.stopped_equivalence;
@@ -725,6 +726,8 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
     p.setPen(QPen(blackColor(), 6));
     p.drawRoundedRect(sign_rect.adjusted(9, 9, -9, -9), 16, 16);
 
+    p.save();
+    p.setOpacity(slcOverridden ? 0.25 : 1.0);
     if (displaySLCOffset) {
       p.setFont(InterFont(28, QFont::DemiBold));
       p.drawText(sign_rect.adjusted(0, 22, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("LIMIT"));
@@ -739,6 +742,7 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
       p.setFont(InterFont(70, QFont::Bold));
       p.drawText(sign_rect.adjusted(0, 85, 0, 0), Qt::AlignTop | Qt::AlignHCenter, speedLimitStr);
     }
+    p.restore();
   }
 
   // EU (Vienna style) sign
