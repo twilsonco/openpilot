@@ -306,13 +306,12 @@ class LongitudinalPlanner:
     self.conditional_experimental_mode = self.params.get_bool("ConditionalExperimental")
 
     self.custom_personalities = self.params.get_bool("CustomPersonalities")
-    if self.custom_personalities:
-      self.aggressive_follow = self.params.get_int("AggressivePersonality") / 10
-      self.standard_follow = self.params.get_int("StandardPersonality") / 10
-      self.relaxed_follow = self.params.get_int("RelaxedPersonality") / 10
-      self.aggressive_jerk = self.params.get_int("AggressiveJerk") / 10
-      self.standard_jerk = self.params.get_int("StandardJerk") / 10
-      self.relaxed_jerk = self.params.get_int("RelaxedJerk") / 10
+    self.aggressive_follow = self.params.get_int("AggressivePersonality") / 10
+    self.standard_follow = self.params.get_int("StandardPersonality") / 10
+    self.relaxed_follow = self.params.get_int("RelaxedPersonality") / 10
+    self.aggressive_jerk = self.params.get_int("AggressiveJerk") / 10
+    self.standard_jerk = self.params.get_int("StandardJerk") / 10
+    self.relaxed_jerk = self.params.get_int("RelaxedJerk") / 10
 
     self.green_light_alert = self.params.get_bool("GreenLightAlert")
     self.speed_limit_controller = self.params.get_bool("SpeedLimitController")
