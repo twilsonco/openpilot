@@ -36,7 +36,13 @@ class SpeedLimitController:
 
   @property
   def speed_limit(self) -> float:
-    speed_limit: float = 0
+    limits = [self.car_speed_limit, self.map_speed_limit, self.nav_speed_limit]
+    filtered_limits = [limit for limit in limits if limit > 0]
+
+    if self.highest and filtered_limits:
+      return max(filtered_limits)
+    if self.lowest and filtered_limits:
+      return min(filtered_limits)
 
     priority_orders = [
       ["nav", "car", "map"],
@@ -56,23 +62,14 @@ class SpeedLimitController:
       ["car"]
     ]
 
-    if self.highest:
-      speed_limit = max(filter(lambda x: x > 0, [self.car_speed_limit, self.map_speed_limit, self.nav_speed_limit]))
-    elif self.lowest:
-      nonzero_limits = list(filter(lambda x: x > 0, [self.car_speed_limit, self.map_speed_limit, self.nav_speed_limit]))
-      speed_limit = min(nonzero_limits) if nonzero_limits else 0
-    elif self.speed_limit_priority < len(priority_orders):
+    if self.speed_limit_priority < len(priority_orders):
       for source in priority_orders[self.speed_limit_priority]:
-        speed_limit = getattr(self, f"{source}_speed_limit", None)
-        if speed_limit:
-          self.prv_speed_limit = speed_limit
-          speed_limit = speed_limit
-          break
+        limit = getattr(self, f"{source}_speed_limit", 0)
+        if limit > 0:
+          self.prv_speed_limit = limit
+          return limit
 
-    if speed_limit:
-      params_memory.put_bool("SLCExperimentalMode", False)
-      return speed_limit
-    elif self.use_experimental_mode:
+    if self.use_experimental_mode:
       params_memory.put_bool("SLCExperimentalMode", True)
       return 0
     elif self.use_previous_limit:
