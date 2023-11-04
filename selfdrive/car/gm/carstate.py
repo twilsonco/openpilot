@@ -91,9 +91,6 @@ class CarState(CarStateBase):
     self.is_ev = (self.car_fingerprint in [CAR.VOLT, CAR.VOLT18])
     self.do_sng = (self.car_fingerprint in [CAR.VOLT])
     
-    self.parked_timer = 0
-    self.parked_timer_min_time = 120
-    
     self.sessionInitTime = sec_since_boot()
     self.prev_distance_button = 0
     self.prev_lka_button = 0
