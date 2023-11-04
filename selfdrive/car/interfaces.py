@@ -343,6 +343,8 @@ class CarStateBase:
     self.low_visibility_active = False
     self.low_visibility_activated_t = 0
     
+    self.altitude = 0.
+    
     self.speed_limit_active = False
     self.speed_limit = 0.
 
