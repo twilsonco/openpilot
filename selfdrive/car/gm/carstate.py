@@ -289,6 +289,7 @@ class CarState(CarStateBase):
       set_v_cruise_offset(self._op_params.get('MISC_set_speed_offset_mph') if self.cruise_offset_enabled else 0)
       self.coasting_allowed = self._params.get_bool("Coasting")
       self.coasting_enabled = self.coasting_allowed and self._params.get_bool("CoastingActive")
+      # TODO: make accel_mode general for all cars
       accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco
       if accel_mode != self.accel_mode:
         self.accel_mode_change_last_t = t

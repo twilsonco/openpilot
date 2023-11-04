@@ -344,6 +344,7 @@ class CarStateBase:
     self.low_visibility_activated_t = 0
     
     self.accel_mode = 0
+    self.lkaEnabled = True
     
     self.altitude = 0.
     
