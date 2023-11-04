@@ -345,6 +345,7 @@ class CarStateBase:
     
     self.accel_mode = 0
     self.lkaEnabled = True
+    self.cruiseMain = True
     
     self.altitude = 0.
     

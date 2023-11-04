@@ -761,14 +761,15 @@ class Controls:
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
     
-    if self.sm.updated['liveParameters'] and len(self.sm['modelV2'].orientation.y) == TRAJECTORY_SIZE:
-      future_pitch_diff = clip(interp(self.CI.CS.pitch_future_time, T_IDXS, self.sm['modelV2'].orientation.y), -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
-      self.CI.CS.pitch_raw = self.sm['liveParameters'].pitch + future_pitch_diff
-    
-    self.CI.CS.coasting_long_plan = long_plan.longitudinalPlanSource
-    self.CI.CS.coasting_lead_d = long_plan.leadDist
-    self.CI.CS.coasting_lead_v = long_plan.leadV
-    self.CI.CS.tr = long_plan.desiredFollowDistance
+    if self.CP.carName == "gm":
+      if self.sm.updated['liveParameters'] and len(self.sm['modelV2'].orientation.y) == TRAJECTORY_SIZE:
+        future_pitch_diff = clip(interp(self.CI.CS.pitch_future_time, T_IDXS, self.sm['modelV2'].orientation.y), -MAX_ABS_PRED_PITCH_DELTA, MAX_ABS_PRED_PITCH_DELTA)
+        self.CI.CS.pitch_raw = self.sm['liveParameters'].pitch + future_pitch_diff
+      
+      self.CI.CS.coasting_long_plan = long_plan.longitudinalPlanSource
+      self.CI.CS.coasting_lead_d = long_plan.leadDist
+      self.CI.CS.coasting_lead_v = long_plan.leadV
+      self.CI.CS.tr = long_plan.desiredFollowDistance
 
     actuators = car.CarControl.Actuators.new_message()
     actuators.longControlState = self.LoC.long_control_state
@@ -918,13 +919,13 @@ class Controls:
       can_sends = self.CI.apply(CC)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
     
-    
-    CC.onePedalAccelOutput = float(self.CI.CC.one_pedal_decel)
-    CC.onePedalAccelInput = float(self.CI.CC.one_pedal_decel_in)
-    CC.onePedalP = float(self.CI.CC.one_pedal_pid.p)
-    CC.onePedalI = float(self.CI.CC.one_pedal_pid.i)
-    CC.onePedalD = float(self.CI.CC.one_pedal_pid.d)
-    CC.onePedalF = float(self.CI.CC.one_pedal_pid.f)
+    if self.CP.carName == "gm":
+      CC.onePedalAccelOutput = float(self.CI.CC.one_pedal_decel)
+      CC.onePedalAccelInput = float(self.CI.CC.one_pedal_decel_in)
+      CC.onePedalP = float(self.CI.CC.one_pedal_pid.p)
+      CC.onePedalI = float(self.CI.CC.one_pedal_pid.i)
+      CC.onePedalD = float(self.CI.CC.one_pedal_pid.d)
+      CC.onePedalF = float(self.CI.CC.one_pedal_pid.f)
 
     force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
                   (self.state == State.softDisabling)
@@ -973,12 +974,13 @@ class Controls:
     controlsState.distractionTimer = int(self.distraction_timer)
     controlsState.parkedTimer = int(self.parked_timer)
     
-    controlsState.applyGas = int(self.CI.CC.apply_gas)
-    controlsState.applyBrakeOut = int(-self.CI.CC.apply_brake_out)
-    controlsState.applyBrakeIn = int(-self.CI.CC.apply_brake_in)
-    controlsState.applySteer = int(self.CI.CC.apply_steer)
-    controlsState.brakesAllowed = bool(self.CI.CC.brakes_allowed)
-    controlsState.gasBrakeThresholdAccel = float(self.CI.CC.threshold_accel)
+    if self.CP.carName == "gm":
+      controlsState.applyGas = int(self.CI.CC.apply_gas)
+      controlsState.applyBrakeOut = int(-self.CI.CC.apply_brake_out)
+      controlsState.applyBrakeIn = int(-self.CI.CC.apply_brake_in)
+      controlsState.applySteer = int(self.CI.CC.apply_steer)
+      controlsState.brakesAllowed = bool(self.CI.CC.brakes_allowed)
+      controlsState.gasBrakeThresholdAccel = float(self.CI.CC.threshold_accel)
     
     controlsState.distanceTraveledSession = float(self.distance_traveled)
     controlsState.distanceTraveledTotal = float(self.distance_traveled_total)
