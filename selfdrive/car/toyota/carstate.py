@@ -54,7 +54,7 @@ class CarState(CarStateBase):
     ret.wheelSpeeds.rr = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RR"] * CV.KPH_TO_MS
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.clusterSpeed = int(round(ret.vEgo)) # TODO: set for other makes
+    ret.clusterSpeed = int(round(ret.vEgo * (CV.MS_TO_KPH if self.is_metric else CV.MS_TO_MPH))) # TODO: set for other makes
 
     ret.standstill = ret.vEgoRaw < 0.001
 

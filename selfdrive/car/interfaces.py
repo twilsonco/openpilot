@@ -347,6 +347,8 @@ class CarStateBase:
     self.lkaEnabled = True
     self.cruiseMain = True
     
+    self.is_metric = Params().get_bool("IsMetric")
+    
     self.altitude = 0.
     
     self.speed_limit_active = False
