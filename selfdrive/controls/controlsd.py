@@ -589,6 +589,9 @@ class Controls:
     cur_time = sec_since_boot()
     
     self.use_sensors = cur_time > self._op_params.get("TUNE_sensor_lockout_time_s")
+    
+    vEgo = getattr(CS, "vEgo", 0.0)
+    vEgo = int(round((float(vEgo) * 3.6 if self.is_metric else int(round((float(vEgo) * 3.6 * 0.6233 + 0.0995)))))) if vEgo else v_cruise
 
     # if stock cruise is completely disabled, then we can use our own set speed logic
     if not self.CP.pcmCruise:
@@ -607,8 +610,6 @@ class Controls:
             self.decel_pressed = False
             
       v_cruise = self.v_cruise_kph if self.is_metric else int(round((float(self.v_cruise_kph) * 0.6233 + 0.0995)))
-      vEgo = getattr(CS, "vEgo", None)
-      vEgo = int(round((float(vEgo) * 3.6 if self.is_metric else int(round((float(vEgo) * 3.6 * 0.6233 + 0.0995)))))) if vEgo else v_cruise
       
       if self.weather_safety_enabled and self.sm.updated['liveWeatherData']:
         if self.sm['liveWeatherData'].valid:
