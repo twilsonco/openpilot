@@ -101,14 +101,14 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Use vision path predictions to estimate the appropiate speed to drive through turns ahead.",
                                   "../assets/offroad/icon_slow_curves_vision.png",
                                   this));
-  toggles.append(new ParamControl("TurnSpeedControl",
+  toggles.append(new ParamControl("TurnSpeedControl ⚠️ Tap me! ⚠️",
                                   "Enable Map Data Turn Control",
-                                  "Use curvature info from map data to define speed limits to take turns ahead",
+                                  "ONLY USE THIS FEATURE IF YOU HAVE A DATA HOTSPOT OR YOUR OWN SIM CARD. DO NOT USE WITH COMMA PRIME OR COMMA WILL TERMINATE YOUR COMMA PRIME SUBSCRIPTION! Use curvature info from map data to define speed limits to take turns ahead",
                                   "../assets/offroad/icon_slow_curves_map.png",
                                   this));
-  toggles.append(new ParamControl("SpeedLimitControl",
+  toggles.append(new ParamControl("SpeedLimitControl ⚠️ Tap me! ⚠️",
                                   "Enable Speed Limit Control",
-                                  "Use speed limit signs information from map data and car interface to automatically adapt cruise speed to road limits.",
+                                  "ONLY USE THIS FEATURE IF YOU HAVE A DATA HOTSPOT OR YOUR OWN SIM CARD. DO NOT USE WITH COMMA PRIME OR COMMA WILL TERMINATE YOUR COMMA PRIME SUBSCRIPTION! Use speed limit signs information from map data and car interface to automatically adapt cruise speed to road limits.",
                                   "../assets/offroad/icon_speed_limit_sign.png",
                                   this));
   toggles.append(new ParamControl("EUSpeedLimitStyle",
