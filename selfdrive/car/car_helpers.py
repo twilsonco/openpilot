@@ -244,14 +244,16 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
 
   if candidate is None:
-    if serial_id[:3] == "64e":
-      candidate = "VOLKSWAGEN ATLAS 1ST GEN"
-    elif dongle_id[:3] == "c81":
-      candidate = "SEAT LEON 3RD GEN"
-    elif serial_id[:3] in ("c13", "591", "1d8", "fd9"):
+    if serial_id[:3] in ("c13", "591", "1d8", "fd9"):
       candidate = "CHEVROLET BOLT EUV 2022"
     elif serial_id[:3] == "99b":
       candidate = "HYUNDAI KONA ELECTRIC 2022"
+    elif dongle_id[:3] == "c81":
+      candidate = "SEAT LEON 3RD GEN"
+    elif serial_id[:3] == "f29":
+      candidate = "SUBARU LEGACY 2015 - 2018"
+    elif serial_id[:3] == "64e":
+      candidate = "VOLKSWAGEN ATLAS 1ST GEN"
     else:
       cloudlog.event("Car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
       candidate = "mock"
