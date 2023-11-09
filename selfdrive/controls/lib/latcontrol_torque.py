@@ -24,7 +24,7 @@ from openpilot.selfdrive.modeld.constants import ModelConstants
 
 LOW_SPEED_X = [0, 10, 20, 30]
 LOW_SPEED_Y = [15, 13, 10, 5]
-LOW_SPEED_Y_NN = [8, 3, 1, 0]
+LOW_SPEED_Y_NN = [12, 3, 1, 0]
 
 def sign(x):
   return 1.0 if x > 0.0 else (-1.0 if x < 0.0 else 0.0)
