@@ -41,7 +41,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
       });
     } else if (key == "ConditionalExperimental") {
       createSubControl(key, label, desc, icon, {
-        createDualParamControl(new ConditionalSpeed(), new ConditionalSpeedLead()),
+        createDualParamControl(new CESpeed(), new CESpeedLead()),
       });
       createSubButtonControl(key, {
         {"CECurves", "Curves"},
