@@ -1,4 +1,5 @@
 import copy
+from time import time
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import mean
@@ -34,6 +35,12 @@ class CarState(CarStateBase):
     self.display_menu = False
 
     self.display_timer = 0
+    
+    self.autoHold = True # set based on autohold toggle in GM options
+    self.autoHoldActive = False
+    self.autoHoldActivated = False
+    self.lastAutoHoldTime = 0.0
+    self.sessionInitTime = time()
 
   def update(self, pt_cp, cam_cp, loopback_cp, conditional_experimental_mode, frogpilot_variables):
     ret = car.CarState.new_message()
@@ -91,6 +98,8 @@ class CarState(CarStateBase):
     if self.CP.transmissionType == TransmissionType.direct:
       ret.regenBraking = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
       self.single_pedal_mode = ret.gearShifter == GearShifter.low or pt_cp.vl["EVDriveMode"]["SinglePedalModeActive"] == 1
+      
+    ret.brakePressed |= ret.regenBraking
 
     if self.CP.enableGasInterceptor:
       ret.gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
