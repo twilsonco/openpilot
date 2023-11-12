@@ -226,6 +226,8 @@ class CarState(CarStateBase):
         self.fpf.lkas_button_function(conditional_experimental_mode)
       self.lkas_previously_pressed = lkas_pressed
 
+    ret.autoHoldActivated = self.autoHoldActivated
+
     return ret
 
   @staticmethod

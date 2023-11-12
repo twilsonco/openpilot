@@ -133,6 +133,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     turningRight @132;
     vCruise69 @133;
 
+    autoHoldActivated @134;
+
     radarCanErrorDEPRECATED @15;
     communityFeatureDisallowedDEPRECATED @62;
     radarCommIssueDEPRECATED @67;
@@ -193,6 +195,7 @@ struct CarState {
   regenBraking @45 :Bool; # this is user pedal only
   parkingBrake @39 :Bool;
   brakeHoldActive @38 :Bool;
+  autoHoldActivated @48 :Bool;
 
   # steering wheel
   steeringAngleDeg @7 :Float32;
