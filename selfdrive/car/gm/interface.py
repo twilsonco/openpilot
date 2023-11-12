@@ -391,6 +391,12 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowSteerSpeed)
       self.belowSteerSpeed_shown = True
 
+    if self.CS.autoHoldActivated:
+      self.CS.lastAutoHoldNanos = self.CS.nowNanos
+    if EventName.accFaulted in events.events and \
+        self.CS.nowNanos - self.CS.lastAutoHoldNanos < 1e9:
+      events.events.remove(EventName.accFaulted)
+
     # Disable the "belowSteerSpeed" event after it's been shown once to not annoy the driver
     if self.belowSteerSpeed_shown and ret.vEgo > self.CP.minSteerSpeed:
       self.disable_belowSteerSpeed = True

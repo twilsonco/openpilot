@@ -30,6 +30,11 @@ class CarState(CarStateBase):
 
     self.single_pedal_mode = False
 
+    self.autoHold = True # set based on autohold toggle in GM options
+    self.autoHoldActivated = False
+    self.nowNanos = 0
+    self.lastAutoHoldNanos = 0
+
   def update(self, pt_cp, cam_cp, loopback_cp):
     ret = car.CarState.new_message()
 
@@ -85,6 +90,8 @@ class CarState(CarStateBase):
     if self.CP.transmissionType == TransmissionType.direct:
       ret.regenBraking = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
       self.single_pedal_mode = ret.gearShifter == GearShifter.low or pt_cp.vl["EVDriveMode"]["SinglePedalModeActive"] == 1
+      
+    ret.brakePressed |= ret.regenBraking
 
     if self.CP.enableGasInterceptor:
       ret.gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
