@@ -189,6 +189,8 @@ class CarState(CarStateBase):
     self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
 
     fp_ret.sportGear = pt_cp.vl["SportMode"]["SportMode"] == 1
+    
+    ret.autoHoldActivated = self.autoHoldActivated
 
     return ret, fp_ret
 

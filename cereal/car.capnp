@@ -149,6 +149,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     yourFrogTriedToKillMe @149;
     youveGotMail @150;
 
+    autoHoldActivated @151;
+
     radarCanErrorDEPRECATED @15;
     communityFeatureDisallowedDEPRECATED @62;
     radarCommIssueDEPRECATED @67;
@@ -211,6 +213,7 @@ struct CarState {
   regenBraking @45 :Bool; # this is user pedal only
   parkingBrake @39 :Bool;
   brakeHoldActive @38 :Bool;
+  autoHoldActivated @51 :Bool;
 
   # steering wheel
   steeringAngleDeg @7 :Float32;
