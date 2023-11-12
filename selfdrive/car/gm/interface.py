@@ -383,6 +383,9 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.resumeRequired)
       self.resumeRequired_shown = True
 
+    if self.CS.autoHoldActivated:
+      events.add(EventName.autoHoldActivated)
+
     # Disable the "resumeRequired" event after it's been shown once to not annoy the driver
     if self.resumeRequired_shown and not ret.cruiseState.standstill:
       self.disable_resumeRequired = True
