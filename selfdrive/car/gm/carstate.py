@@ -1,5 +1,6 @@
 import copy
 from cereal import car, custom
+from time import time
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
@@ -34,6 +35,13 @@ class CarState(CarStateBase):
     self.pedal_steady = 0.
 
   def update(self, pt_cp, cam_cp, loopback_cp, frogpilot_toggles):
+    
+    self.autoHold = True # set based on autohold toggle in GM options
+    self.autoHoldActive = False
+    self.autoHoldActivated = False
+    self.lastAutoHoldTime = 0.0
+    self.sessionInitTime = time()
+    
     ret = car.CarState.new_message()
     fp_ret = custom.FrogPilotCarState.new_message()
 
@@ -92,7 +100,9 @@ class CarState(CarStateBase):
     # Regen braking is braking
     if self.CP.transmissionType == TransmissionType.direct:
       ret.regenBraking = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
-      self.single_pedal_mode = ret.gearShifter == GearShifter.low or pt_cp.vl["EVDriveMode"]["SinglePedalModeActive"] == 1 or (ret.regenBraking and GearShifter.manumatic)
+      self.single_pedal_mode = ret.gearShifter == GearShifter.low or pt_cp.vl["EVDriveMode"]["SinglePedalModeActive"] == 1
+      
+    ret.brakePressed |= ret.regenBraking
 
     if self.CP.enableGasInterceptor:
       ret.gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.

@@ -3,6 +3,7 @@ import os
 from cereal import car, custom
 from math import fabs, exp
 from panda import Panda
+from time import time
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.conversions import Conversions as CV
@@ -321,6 +322,7 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def _update(self, c, frogpilot_toggles):
     ret, fp_ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback, frogpilot_toggles)
+    t = time()
 
     # Don't add event if transitioning from INIT, unless it's to an actual button
     if self.CS.cruise_buttons != CruiseButtons.UNPRESS or self.CS.prev_cruise_buttons != CruiseButtons.INIT:
@@ -359,6 +361,13 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowSteerSpeed)
       self.belowSteerSpeed_shown = True
 
+    if self.CS.autoHoldActivated:
+      self.CS.lastAutoHoldTime = t
+    if EventName.accFaulted in events.events and \
+        (t - self.CS.sessionInitTime < 10.0 or
+        t - self.CS.lastAutoHoldTime < 1.0):
+      events.events.remove(EventName.accFaulted)      
+
     # Disable the "belowSteerSpeed" event after it's been shown once to not annoy the driver
     if self.belowSteerSpeed_shown and ret.vEgo >= self.CP.minSteerSpeed:
       self.disable_belowSteerSpeed = True
@@ -375,3 +384,17 @@ class CarInterface(CarInterfaceBase):
     ret.events = events.to_msg()
 
     return ret, fp_ret
+
+  def apply(self, c: car.CarControl, now_nanos: int, frogpilot_toggles) -> tuple[car.CarControl.Actuators, list[tuple[int, int, bytes, int]]]:
+    can_sends = self.CC.update(c, self.CS, now_nanos, frogpilot_toggles)
+    # Release Auto Hold and creep smoothly when regenpaddle pressed
+    if self.CS.out.regenBraking and self.CS.autoHold:
+      self.CS.autoHoldActive = False
+
+    if self.CS.autoHold and not self.CS.autoHoldActive and not self.CS.out.regenBraking:
+      if self.CS.out.vEgo > 0.03:
+        self.CS.autoHoldActive = True
+      elif self.CS.out.vEgo < 0.02 and self.CS.out.brakePressed:
+        self.CS.autoHoldActive = True
+        
+    return can_sends

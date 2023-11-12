@@ -177,16 +177,35 @@ class CarController(CarControllerBase):
         if self.CP.enableGasInterceptor:
           can_sends.append(create_gas_interceptor_command(self.packer_pt, interceptor_gas_cmd, idx))
         if self.CP.carFingerprint not in CC_ONLY_CAR:
-          friction_brake_bus = CanBus.CHASSIS
-          # GM Camera exceptions
-          # TODO: can we always check the longControlState?
-          if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.carFingerprint not in CC_ONLY_CAR:
+          if CS.out.cruiseState.available and not CC.longActive and CS.autoHold and CS.autoHoldActive and not CS.out.gasPressed and CS.out.gearShifter in ['drive','low'] and CS.out.vEgo < 0.02 and not CS.out.regenBraking:
+            # Auto Hold State
+            car_stopping = self.apply_gas < self.params.ZERO_GAS
             at_full_stop = at_full_stop and stopping
-            friction_brake_bus = CanBus.POWERTRAIN
+            friction_brake_bus = CanBus.CHASSIS
+            # GM Camera exceptions
+            # TODO: can we always check the longControlState?
+            if self.CP.networkLocation == NetworkLocation.fwdCamera:
+              friction_brake_bus = CanBus.POWERTRAIN
+            near_stop = (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE) and car_stopping
+            can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake, idx, CC.enabled, near_stop, at_full_stop, self.CP))
+            CS.autoHoldActivated = True
+          else:
+            if CS.out.gasPressed:
+              at_full_stop = False
+              near_stop = False
+              car_stopping = False
+            else:
+              at_full_stop = at_full_stop and stopping
+            friction_brake_bus = CanBus.CHASSIS
+            # GM Camera exceptions
+            # TODO: can we always check the longControlState?
+            if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.carFingerprint not in CC_ONLY_CAR:
+              at_full_stop = at_full_stop and actuators.longControlState == LongCtrlState.stopping
+              friction_brake_bus = CanBus.POWERTRAIN
 
-          if self.CP.autoResumeSng:
-            resume = actuators.longControlState != LongCtrlState.starting or CC.cruiseControl.resume
-            at_full_stop = at_full_stop and not resume
+            if self.CP.autoResumeSng:
+              resume = actuators.longControlState != LongCtrlState.starting or CC.cruiseControl.resume
+              at_full_stop = at_full_stop and not resume
 
           if CC.cruiseControl.resume and CS.pcm_acc_status == AccState.STANDSTILL and frogpilot_toggles.volt_sng:
             acc_engaged = False
@@ -196,7 +215,9 @@ class CarController(CarControllerBase):
           # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
           can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, acc_engaged, at_full_stop))
           can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake,
-                                                             idx, CC.enabled, near_stop, at_full_stop, self.CP))
+                                                              idx, CC.enabled, near_stop, at_full_stop, self.CP))
+          
+          CS.autoHoldActivated = False
 
           # Send dashboard UI commands (ACC status)
           send_fcw = hud_alert == VisualAlert.fcw
