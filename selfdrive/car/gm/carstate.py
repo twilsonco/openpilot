@@ -193,6 +193,8 @@ class CarState(CarStateBase):
           put_bool_nonblocking("ExperimentalMode", not experimental_mode)
       self.lkas_previously_pressed = lkas_pressed
 
+    ret.autoHoldActivated = self.autoHoldActivated
+
     return ret
 
   @staticmethod
