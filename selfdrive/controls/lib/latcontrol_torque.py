@@ -264,8 +264,8 @@ class LatControlTorque(LatControl):
         nnff_measurement_input = [CS.vEgo, measurement, lateral_jerk_measurement, roll] \
                               + [measurement] * self.past_future_len \
                               + past_rolls + future_rolls
-        setpoint = self.torque_from_nn(nnff_setpoint_input)
-        measurement = self.torque_from_nn(nnff_measurement_input)
+        torque_from_setpoint = self.torque_from_nn(nnff_setpoint_input)
+        torque_from_measurement = self.torque_from_nn(nnff_measurement_input)
         
         # compute feedforward (same as nnff setpoint output)
         error = setpoint - measurement
@@ -274,6 +274,9 @@ class LatControlTorque(LatControl):
                               + past_lateral_accels_desired + future_planned_lateral_accels \
                               + past_rolls + future_rolls
         ff_nn = self.torque_from_nn(nnff_input)
+        error = None
+        setpoint = torque_from_setpoint
+        measurement = torque_from_measurement
         nnff_log = nnff_input + nnff_setpoint_input + nnff_measurement_input
       else:
         ff_nn = ff
