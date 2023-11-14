@@ -326,6 +326,8 @@ class CarController():
 
         at_full_stop = standstill
         near_stop = (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
+        if at_full_stop and near_stop:
+          self.apply_brake_out = P.MAX_BRAKE
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake_out, idx, near_stop, at_full_stop))
         CS.autoHoldActivated = True
 
@@ -342,7 +344,8 @@ class CarController():
             self.apply_gas = P.MAX_ACC_REGEN
           at_full_stop = (enabled or (CS.out.onePedalModeActive or CS.MADS_lead_braking_enabled)) and standstill and car_stopping
           near_stop = (enabled or (CS.out.onePedalModeActive or CS.MADS_lead_braking_enabled)) and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
-
+          if at_full_stop and near_stop:
+            self.apply_brake_out = P.MAX_BRAKE
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake_out, idx, near_stop, at_full_stop))
         CS.autoHoldActivated = False
 
