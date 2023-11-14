@@ -167,6 +167,7 @@ class LatControlTorque(LatControl):
   def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate, llk = None, use_roll=True, lat_plan=None, model_data=None):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     self.v_ego = CS.vEgo
+    nnff_log = None
 
     if self.use_steering_angle:
       actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll if use_roll else 0.0)
@@ -273,7 +274,7 @@ class LatControlTorque(LatControl):
                               + past_lateral_accels_desired + future_planned_lateral_accels \
                               + past_rolls + future_rolls
         ff_nn = self.torque_from_nn(nnff_input)
-        self.nnff_log = nnff_input + nnff_setpoint_input + nnff_measurement_input
+        nnff_log = nnff_input + nnff_setpoint_input + nnff_measurement_input
       else:
         ff_nn = ff
       
@@ -310,8 +311,8 @@ class LatControlTorque(LatControl):
       pid_log.f2 = ff_nn * self.pid.k_f
       pid_log.maxFutureLatAccel = max_future_lateral_accel
       pid_log.errorScaleFactor = error_scale_factor
-      if self.use_nn_ff:
-        pid_log.nnffInputVector = self.nnff_log
+      if nnff_log is not None:
+        pid_log.nnffInputVector = nnff_log
     pid_log.currentLateralAcceleration = actual_lateral_accel
     pid_log.currentLateralJerk = self.actual_lateral_jerk.x
       
