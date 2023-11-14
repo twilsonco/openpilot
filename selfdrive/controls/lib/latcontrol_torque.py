@@ -122,7 +122,7 @@ class LatControlTorque(LatControl):
       self.lat_jerk_deadzone = 0.0 # m/s^3 in [0, ∞] in 0.05 increments
       # Finally, lateral jerk error is downscaled so it doesn't dominate the friction error
       # term.
-      self.lat_jerk_friction_factor = 1.0 # in [0, 1] in 0.01 increments
+      self.lat_jerk_friction_factor = 0.2 # in [0, 1] in 0.01 increments
 
       # Scaling the lateral acceleration "friction response" could be helpful for some.
       # Increase for a stronger response, decrease for a weaker response.
