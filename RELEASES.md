@@ -1,3 +1,11 @@
+Version tw-0.8.13 (2023-11-15)
+========================
+ * ATTENTION!!! OpenStreetMap-based features must not be used unless you have an external hotspot or your own sim card for data.
+   * After this update, you need to DISABLE TURN SPEED CONTROLLER AND SPEED LIMIT CONTROL AND THEN RESTART YOUR DEVICE!!!
+   * Comma's data plan for Comma Prime is no longer unlimited, therefore all non-Comma-service-related data use is strictly prohibited
+   * YOUR COMMA PRIME SUBSCRIPTION WILL BE TERMINATED IF YOU VIOLATE THIS RULE
+   * If you enable the turn speed controller or automatic speed limits, then OSM data will be fetched, so keep both of those features disabled unless you have your own source for cellular data
+
 Version tw-0.8.12 (2023-05-24)
 ========================
   * TOO MANY CHANGES!! HAVE FUN SCROLLING AND READING.
