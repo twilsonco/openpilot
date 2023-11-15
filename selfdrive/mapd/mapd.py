@@ -5,6 +5,7 @@ import numpy as np
 from time import strftime, gmtime
 import cereal.messaging as messaging
 from common.realtime import Ratekeeper
+from common.params import Params
 from selfdrive.mapd.lib.osm import OSM
 from selfdrive.mapd.lib.geo import distance_to_points
 from selfdrive.mapd.lib.WayCollection import WayCollection
@@ -233,13 +234,21 @@ def mapd_thread(sm=None, pm=None):
     sm = messaging.SubMaster(['gpsLocationExternal', 'controlsState'])
   if pm is None:
     pm = messaging.PubMaster(['liveMapData'])
+    
+  # see if mapd features are enabled
+  params = Params()
+
+  slc = params.get_bool("SpeedLimitControl")
+  tsc = params.get_bool("TurnSpeedControl")
+  enable_mapd = slc or tsc
 
   while True:
     sm.update()
     mapd.udpate_state(sm)
     mapd.update_gps(sm)
-    mapd.updated_osm_data()
-    mapd.update_route()
+    if enable_mapd:
+      mapd.updated_osm_data()
+      mapd.update_route()
     mapd.publish(pm, sm)
     rk.keep_time()
 
