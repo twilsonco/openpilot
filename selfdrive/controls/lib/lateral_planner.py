@@ -100,6 +100,7 @@ class LateralPlanner():
     
     self.path_cost = 1.0
     self.heading_cost = 1.0
+    self.steer_rate_cost_original = CP.steerRateCost
     self.steer_rate_cost = CP.steerRateCost
 
   def setup_mpc(self):
@@ -127,7 +128,7 @@ class LateralPlanner():
     if self._op_params.get('TUNE_LAT_do_override'):
       self.path_cost = self._op_params.get('TUNE_LAT_mpc_path_cost')
       self.heading_cost = self._op_params.get('TUNE_LAT_mpc_heading_cost')
-      self.steer_rate_cost = self._op_params.get('TUNE_LAT_mpc_steer_rate_cost')
+      self.steer_rate_cost = self.steer_rate_cost_original * self._op_params.get('TUNE_LAT_mpc_steer_rate_cost')
 
   def update(self, sm, CP):
     self.second += DT_MDL

@@ -5,6 +5,7 @@ import numpy as np
 from time import strftime, gmtime
 import cereal.messaging as messaging
 from collections import defaultdict
+from common.params import Params
 from common.op_params import opParams
 from common.realtime import Ratekeeper
 import requests
@@ -346,6 +347,13 @@ def mapd_thread(sm=None, pm=None):
     sm = messaging.SubMaster(['gpsLocationExternal', 'controlsState'])
   if pm is None:
     pm = messaging.PubMaster(['liveMapData', 'liveWeatherData'])
+    
+  # see if mapd features are enabled
+  params = Params()
+
+  slc = params.get_bool("SpeedLimitControl")
+  tsc = params.get_bool("TurnSpeedControl")
+  enable_mapd = slc or tsc
 
   weather_iter = 0
   weather_freq = 10
@@ -354,8 +362,9 @@ def mapd_thread(sm=None, pm=None):
     sm.update()
     mapd.udpate_state(sm)
     mapd.update_gps(sm)
-    mapd.updated_osm_data()
-    mapd.update_route()
+    if enable_mapd:
+      mapd.updated_osm_data()
+      mapd.update_route()
     mapd.publish(pm, sm)
     if weather_iter % weather_freq == 0: # check weather every 3 minutes
       if mapd.location_deg is not None \

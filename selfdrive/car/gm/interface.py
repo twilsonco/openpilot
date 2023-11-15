@@ -362,9 +362,10 @@ class CarInterface(CarInterfaceBase):
       if (Params().get_bool("EnableTorqueControl")):
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 0.48
+        nnff = Params().get_bool("EnableNNFF")
+        ret.lateralTuning.torque.kp = 1.0 if nnff else 0.48
         ret.lateralTuning.torque.ki = 0.15
-        ret.lateralTuning.torque.kd = 0.04
+        ret.lateralTuning.torque.kd = 0.0 if nnff else 0.04
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
         ret.lateralTuning.torque.friction = 1.0 # for custom lateral jerk ff
       else:
@@ -379,7 +380,7 @@ class CarInterface(CarInterfaceBase):
 
       # Only tuned to reduce oscillations. TODO.
       ret.longitudinalTuning.kpBP = [5., 15., 35.]
-      ret.longitudinalTuning.kpV = [0.8, .9, 0.8]
+      ret.longitudinalTuning.kpV = [0.75, .9, 0.8]
       ret.longitudinalTuning.kiBP = [5., 15., 35.]
       ret.longitudinalTuning.kiV = [0.08, 0.13, 0.13]
       ret.longitudinalTuning.kdBP = [5., 25.]
