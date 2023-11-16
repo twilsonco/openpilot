@@ -586,7 +586,14 @@ class opParams:
       'TUNE_LAT_TRX_low_speed_factor_bp': Param([0.0, 67.0], [list, float], 'The torque controller corrects based on desired vs. actual lateral acceleration (curvature ⨉ speed²), so at low speeds both become very small, making for insufficient error correction. The "low speed factor" increases the perceived error in proportion to the curvature of the current curve. It should be higher at "low" speeds and then get lower at "high" speeds where lateral acceleration is sufficient. This parameter defines "low" and "high" speed.', live=True, min_val=0.0, max_val=90.0, unit='mph', show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_low_speed_factor_lookahead_s': Param(0.3, float, "Because high instantaneous curvature can make the error values very high and cause uncomfortable corrections, the curvature used to determine the lowspeed factor is checked against future planned curvature to ensure that sharp, brief curvature does not cause too harsh of steering. Here you set the amount of time in the future to consider planned curvature for this process. You are deciding how long high curvature should be sustained in order to affect the lateral controller error response.", live=True, min_val=0.3, max_val=2.2, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit='seconds'),
-      
+
+      'TUNE_LAT_TRX_NNFF_lat_jerk_deadzone': Param(0.0, float, "Apply a deadzone to all use of desired lateral jerk in NNFF. If it's too jerky, raise the value. If you want a more early/assertive response, decrease.", live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit='m/s³'),
+
+      'TUNE_LAT_TRX_NNFF_lat_jerk_friction_factor': Param(0.5, float, "Scales the lateral jerk input for calculating the 'friction' response. If it's too jerky, lower the value. If you want a more assertive error correction response, increase.", live=True, min_val=0.0, max_val=3.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit='seconds'),
+
+      'TUNE_LAT_TRX_NNFF_lat_accel_friction_factor': Param(1.0, float, "Scales the lateral acceleration input for calculating the 'friction' response. If it's too jerky, lower the value. If you want a more assertive error correction response, increase.", live=True, min_val=0.0, max_val=3.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+
+
       #####
       
       'TUNE_LAT_PID_link_ls_hs': Param(False, bool, 'Set to true to make changes to a low-speed (ls) parameter also apply to its high-speed (hs) counterpart. With PID it seems the k values need to be higher at high speed, but in INDI other (Hyundai) car tunes only use one value, so the ls and hs values are the same. When linked, redundant params are not shown.', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid', fake_live=True),

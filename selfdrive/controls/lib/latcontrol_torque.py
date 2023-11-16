@@ -94,7 +94,7 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_v = [15.0, 5.0]
     
     self.error_downscale = 1.0
-    self.error_downscale_current = FirstOrderFilter(0.0, 1.0, DT_CTRL)
+    self.error_downscale_current = FirstOrderFilter(0.0, 0.5, DT_CTRL)
     
     if self.use_nn_ff:
       # NNFF model takes current v_ego, lateral_accel, lat accel/jerk error, roll, and past/future/planned data
@@ -154,11 +154,17 @@ class LatControlTorque(LatControl):
       self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.low_speed_factor_look_ahead), None)
     look_ahead = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_v')
     self.error_downscale = self._op_params.get('TUNE_LAT_TRX_error_downscale_in_curves')
+    self.error_downscale_current.update_alpha(self._op_params.get('TUNE_LAT_TRX_error_downscale_smoothing'))
     
     self.friction_look_ahead_v = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_v')
     self.friction_look_ahead_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_friction_lookahead_bp')]
     self.friction_curve_exit_ramp_bp = self._op_params.get('TUNE_LAT_TRX_friction_curve_exit_ramp_bp')
     self.friction_curve_exit_ramp_v = [1.0, self._op_params.get('TUNE_LAT_TRX_friction_curve_exit_ramp_v')]
+    
+    self.lat_jerk_deadzone = self._op_params.get('TUNE_LAT_TRX_NNFF_lat_jerk_deadzone')
+    self.lat_jerk_friction_factor = self._op_params.get('TUNE_LAT_TRX_NNFF_lat_jerk_friction_factor')
+    self.lat_accel_friction_factor = self._op_params.get('TUNE_LAT_TRX_NNFF_lat_accel_friction_factor')
+    
   
   def reset(self):
     super().reset()
