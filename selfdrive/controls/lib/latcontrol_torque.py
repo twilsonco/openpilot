@@ -94,6 +94,7 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_v = [15.0, 5.0]
     
     self.error_downscale = 1.0
+    self.error_downscale_current = FirstOrderFilter(0.0, 1.0, DT_CTRL)
     
     if self.use_nn_ff:
       # NNFF model takes current v_ego, lateral_accel, lat accel/jerk error, roll, and past/future/planned data
@@ -191,6 +192,10 @@ class LatControlTorque(LatControl):
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_curvature], key=lambda x: abs(x))
       error_scale_factor = 1.0 / min(0.1*abs(desired_lateral_accel) + abs(lookahead_lateral_jerk) + 1.0, self.error_downscale)
+      if error_scale_factor < self.error_downscale_current.x:
+        self.error_downscale_current.x = error_scale_factor
+      else:
+        self.error_downscale_current.update(error_scale_factor)
 
       
       if self.use_nn_ff:
@@ -201,7 +206,7 @@ class LatControlTorque(LatControl):
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
-      error *= error_scale_factor
+      error *= self.error_downscale_current.x
       setpoint = measurement + error
       pid_log.error = error
 
@@ -274,9 +279,7 @@ class LatControlTorque(LatControl):
                               + past_lateral_accels_desired + future_planned_lateral_accels \
                               + past_rolls + future_rolls
         ff_nn = self.torque_from_nn(nnff_input)
-        error = None
-        setpoint = torque_from_setpoint
-        measurement = torque_from_measurement
+        error *= self.error_downscale_current.x
         nnff_log = nnff_input + nnff_setpoint_input + nnff_measurement_input
       else:
         ff_nn = ff
