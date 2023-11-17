@@ -323,7 +323,7 @@ class LatControlTorque(LatControl):
       pid_log.lookaheadCurvatureRate = lookahead_curvature_rate
       pid_log.f2 = ff_nn * self.pid.k_f
       pid_log.maxFutureLatAccel = max_future_lateral_accel
-      pid_log.errorScaleFactor = error_scale_factor
+      pid_log.errorScaleFactor = self.error_downscale_current.x
       if nnff_log is not None:
         pid_log.nnffInputVector = nnff_log
     pid_log.currentLateralAcceleration = actual_lateral_accel
