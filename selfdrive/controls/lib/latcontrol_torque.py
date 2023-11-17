@@ -95,6 +95,7 @@ class LatControlTorque(LatControl):
     
     self.error_downscale = 1.0
     self.error_downscale_current = FirstOrderFilter(0.0, 0.5, DT_CTRL)
+    self.error_downscale_bp = [0.0, 15.0] # m/s
     
     if self.use_nn_ff:
       # NNFF model takes current v_ego, lateral_accel, lat accel/jerk error, roll, and past/future/planned data
@@ -198,6 +199,7 @@ class LatControlTorque(LatControl):
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_curvature], key=lambda x: abs(x))
       error_scale_factor = 1.0 / min(0.5*abs(desired_lateral_accel) + 0.2*abs(lookahead_lateral_jerk) + 1.0, self.error_downscale)
+      error_scale_factor = interp(CS.vEgo, self.error_downscale_bp, [error_scale_factor, 1.0])
       if error_scale_factor < self.error_downscale_current.x:
         self.error_downscale_current.x = error_scale_factor
       else:
