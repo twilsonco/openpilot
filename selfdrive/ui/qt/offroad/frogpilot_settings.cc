@@ -177,6 +177,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(QWidget *parent) : FrogPilotPanel
 
   static const std::vector<std::tuple<QString, QString, QString, QString>> toyotaToggles = {
     {"LockDoors", "Lock Doors In Drive", "Automatically locks the doors when in drive and unlocks when in park.", "../assets/offroad/icon_blank.png"},
+    {"SNGHack", "SNG Hack", "Enable the SNG Hack for vehicles without stock stop and go.", "../assets/offroad/icon_blank.png"},
   };
 
   for (const auto &[key, label, desc, icon] : toyotaToggles) {
