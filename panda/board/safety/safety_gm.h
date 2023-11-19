@@ -61,6 +61,7 @@ const uint16_t GM_PARAM_HW_CAM = 1;
 const uint16_t GM_PARAM_HW_CAM_LONG = 2;
 const uint16_t GM_PARAM_CC_LONG = 4;
 const uint16_t GM_PARAM_HW_ASCM_LONG = 8;
+const uint16_t GM_PARAM_NO_CAMERA = 16;
 const uint16_t GM_PARAM_NO_ACC = 32;
 
 enum {
@@ -76,6 +77,7 @@ bool gm_cc_long = false;
 bool gm_has_acc = true;
 bool gm_force_ascm = false;
 bool gm_pcm_cruise = false;
+bool gm_skip_relay_check = false;
 
 static int gm_rx_hook(CANPacket_t *to_push) {
 
