@@ -887,6 +887,7 @@ static void update_state(UIState *s) {
   if (sm.updated("liveLocationKalman")) {
     scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();
     scene.device_roll = sm["liveLocationKalman"].getLiveLocationKalman().getCalibratedOrientationNED().getValue()[0];
+    scene.lat_accel = 0.9 * scene.lat_accel + 0.1 * sm["liveLocationKalman"].getLiveLocationKalman().getAccelerationCalibrated().getValue()[1];
   }
   if (sm.updated("lateralPlan")) {
     scene.lateral_plan = sm["lateralPlan"].getLateralPlan();

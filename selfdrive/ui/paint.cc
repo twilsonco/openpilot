@@ -1563,7 +1563,7 @@ static void ui_draw_measures(UIState *s){
           case UIMeasure::LAT_ACCEL:
             {
             snprintf(name, sizeof(name), "LAT ACC");
-            snprintf(val, sizeof(val), "%.1f", sm["liveLocationKalman"].getLiveLocationKalman().getAccelerationCalibrated().getValue()[1]);
+            snprintf(val, sizeof(val), "%.1f", scene.lat_accel);
             snprintf(unit, sizeof(unit), "m/s²");
             break;}
 
