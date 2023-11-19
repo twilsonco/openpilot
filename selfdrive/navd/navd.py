@@ -12,6 +12,7 @@ from openpilot.common.api import Api
 from openpilot.common.numpy_fast import interp
 from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper
+from openpilot.selfdrive.controls.speed_limit_controller import SpeedLimitController
 from openpilot.selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
                                     distance_along_geometry, maxspeed_to_ms,
                                     minimum_distance,
@@ -228,6 +229,12 @@ class RouteEngine:
 
     if self.step_idx is None:
       msg.valid = False
+      SpeedLimitController.load_state()
+      SpeedLimitController.nav_speed_limit = 0
+      SpeedLimitController.write_nav_state()
+
+      if SpeedLimitController.desired_speed_limit != 0:
+        msg.navInstruction.speedLimit = SpeedLimitController.desired_speed_limit
       self.pm.send('navInstruction', msg)
       return
 
@@ -299,6 +306,16 @@ class RouteEngine:
 
     if ('maxspeed' in closest.annotations) and self.localizer_valid:
       msg.navInstruction.speedLimit = closest.annotations['maxspeed']
+      SpeedLimitController.load_state()
+      SpeedLimitController.nav_speed_limit = closest.annotations['maxspeed']
+      SpeedLimitController.write_nav_state()
+    if not self.localizer_valid or ('maxspeed' not in closest.annotations):
+      SpeedLimitController.load_state()
+      SpeedLimitController.nav_speed_limit = 0
+      SpeedLimitController.write_nav_state()
+
+    if SpeedLimitController.desired_speed_limit != 0:
+      msg.navInstruction.speedLimit = SpeedLimitController.desired_speed_limit
 
     # 5-10 Seconds to stop condition based on v_ego or minimum of 25 meters
     if self.conditional_navigation:

@@ -7,6 +7,7 @@ from openpilot.common.realtime import Priority, config_realtime_process
 from openpilot.system.swaglog import cloudlog
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.conditional_experimental_mode import ConditionalExperimentalMode
+from openpilot.selfdrive.controls.speed_limit_controller import SpeedLimitController
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 from openpilot.selfdrive.controls.lib.lateral_planner import LateralPlanner
 import cereal.messaging as messaging
@@ -64,6 +65,7 @@ def plannerd_thread():
       ConditionalExperimentalMode.update_frogpilot_params()
       lateral_planner.update_frogpilot_params(params)
       longitudinal_planner.update_frogpilot_params()
+      SpeedLimitController.update_frogpilot_params()
 
 def main():
   plannerd_thread()

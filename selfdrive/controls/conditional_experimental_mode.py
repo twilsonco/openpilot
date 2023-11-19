@@ -78,6 +78,11 @@ class ConditionalExperimentalMode:
       self.status_value = 5
       return True
 
+    # Speed Limit Controller check
+    if self.params_memory.get_bool("SLCExperimentalMode"):
+      self.status_value = 6
+      return True
+
     # Speed check
     if not standstill and (not lead and v_ego < self.limit or lead and v_ego < self.limit_lead):
       self.status_value = 7 if lead else 8
