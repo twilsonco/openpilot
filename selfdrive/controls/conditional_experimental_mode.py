@@ -38,7 +38,7 @@ class ConditionalExperimentalMode:
 
     self.update_frogpilot_params()
 
-  def update(self, carstate, modeldata, radarstate, v_ego, v_lead):
+  def update(self, carstate, modeldata, radarstate, v_ego, v_lead, v_offset):
     # Set the current driving states
     lead = self.detect_lead(radarstate)
     lead_distance = radarstate.leadOne.dRel
@@ -52,7 +52,7 @@ class ConditionalExperimentalMode:
       overridden = 0
 
     # Update Experimental Mode based on the current driving conditions
-    condition_met = self.check_conditions(carstate, lead, lead_distance, modeldata, speed_difference, standstill, v_ego, v_lead)
+    condition_met = self.check_conditions(carstate, lead, lead_distance, modeldata, speed_difference, standstill, v_ego, v_lead, v_offset)
     if (not self.experimental_mode and condition_met and overridden not in (1, 3)) or overridden in (2, 4):
       self.experimental_mode = True
     elif (self.experimental_mode and not condition_met and overridden not in (2, 4)) or overridden in (1, 3):
@@ -67,7 +67,7 @@ class ConditionalExperimentalMode:
     self.previous_ego_speed = v_ego
 
   # Check conditions for the appropriate state of Experimental Mode
-  def check_conditions(self, carstate, lead, lead_distance, modeldata, speed_difference, standstill, v_ego, v_lead):
+  def check_conditions(self, carstate, lead, lead_distance, modeldata, speed_difference, standstill, v_ego, v_lead, v_offset):
     # Prevent Experimental Mode from deactivating at a standstill/slowing down so we don't accidentally run red lights/stop signs
     stopping_for_light = v_ego <= self.previous_ego_speed and self.status_value == 11
     if (standstill or stopping_for_light) and self.experimental_mode:
@@ -104,7 +104,7 @@ class ConditionalExperimentalMode:
       return True
 
     # Road curvature check
-    if self.curves and self.road_curvature(modeldata, v_ego) and (self.curves_lead or not lead):
+    if self.curves and self.road_curvature(modeldata, v_ego) and (self.curves_lead or not lead) and v_offset == 0:
       self.status_value = 12
       return True
 

@@ -263,6 +263,7 @@ static void update_state(UIState *s) {
     scene.speed_limit = longitudinalPlan.getSlcSpeedLimit();
     scene.speed_limit_offset = longitudinalPlan.getSlcSpeedLimitOffset();
     scene.speed_limit_overridden = longitudinalPlan.getSlcOverridden();
+    scene.vtsc_offset = longitudinalPlan.getVtscOffset();
   }
   if (sm.updated("wideRoadCameraState")) {
     auto cam_state = sm["wideRoadCameraState"].getWideRoadCameraState();
