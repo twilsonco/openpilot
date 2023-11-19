@@ -439,11 +439,11 @@ class opParams:
       
       'MADS_steer_allow_nudgeless_lane_change': Param(False, bool, 'If true, nudgeless lane changes will apply when in MADS mode'),
       
-      'MADS_OP_decel_ms2': Param([-1.0, -1.1], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is not pressed.', min_val=-2.5, max_val=0.0, unit='m/s²'),
+      'MADS_OP_decel_ms2': Param([-1.0, -0.9], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is not pressed.', min_val=-2.5, max_val=0.0, unit='m/s²'),
       
       'MADS_OP_regen_paddle_decel_factor': Param(1.3, float, 'When the regen paddle is pressed, the deceleration values defined above are scaled according to this value.', min_val=1.0, max_val=3.0),
       
-      'MADS_OP_one_time_stop_decel_factor': Param(0.8, float, 'One pedal driving "one time stop" is when one pedal driving mode is temporarily enabled, to bring you to a stop one time, activated by holding the regen paddle as you come to a stop, and indicated by a "warning"-color behind the MADS/one-pedal icon. The one-pedal mode deceleration values defined above are scaled according to this value.', min_val=0.1, max_val=3.0),
+      'MADS_OP_one_time_stop_decel_factor': Param(0.7, float, 'One pedal driving "one time stop" is when one pedal driving mode is temporarily enabled, to bring you to a stop one time, activated by holding the regen paddle as you come to a stop, and indicated by a "warning"-color behind the MADS/one-pedal icon. The one-pedal mode deceleration values defined above are scaled according to this value.', min_val=0.1, max_val=3.0),
       
       'MADS_OP_rate_ramp_up': Param(0.8, float, 'The rate at which one-pedal brake force increases (applying)', min_val=0.1, max_val=3.0, unit='m/s³'),
       
@@ -473,9 +473,9 @@ class opParams:
       
       'CB_VTSC_accel_rate_limit': Param(1.0, float, 'The vision turn controller output acceleration is rate-limited so that when you exit a curve, acceleration resumes smoothly. Increase/decrease for faster/slower ramping.', live=True, min_val=0.1, max_val=10.0, unit="m/s²/s"),
       
-      'CB_VTSC_lat_accel_factor': Param(1.0, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the lateral acceleration values used in the lookup. A value less/greater than 1.0 will make curve braking less/more sensitive to lateral acceleration and apply braking later/sooner.', live=True, min_val=0.01, max_val=3.0),
+      'CB_VTSC_lat_accel_factor': Param(0.85, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the lateral acceleration values used in the lookup. A value less/greater than 1.0 will make curve braking less/more sensitive to lateral acceleration and apply braking later/sooner.', live=True, min_val=0.01, max_val=3.0),
       
-      'CB_VTSC_long_accel_factor': Param(1.0, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the output values of longitudinal acceleration. A value less/greater than 1.0 will decrease/increase the brake intensity for a given curve.', live=True, min_val=0.01, max_val=3.0),
+      'CB_VTSC_long_accel_factor': Param(0.9, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the output values of longitudinal acceleration. A value less/greater than 1.0 will decrease/increase the brake intensity for a given curve.', live=True, min_val=0.01, max_val=3.0),
       
       'CB_VTSC_low_speed_scale_interchange': Param(0.83, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds on freeway/highway interchanges. By 55mph, no scaling is applied. A value less/greater than 1.0 will increase/decrease the speed at which curves are taken at low speeds.', live=True, min_val=0.01, max_val=2.0),
       
@@ -533,13 +533,13 @@ class opParams:
       
       'TUNE_LAT_do_override': Param(False, bool, 'If true, the other params here will override the hardcoded lateral tune settings for any gm car. Changes to this opParam will also apply to the "Custom lateral override" toggle in OpenPilot settings.', param_param='OPParamsLateralOverride', fake_live=True, param_param_read_on_startup=True),
       
-      'TUNE_LAT_min_steer_speed_mph': Param(6.7, float, 'Lateral (steering) cannot engage below this speed.', min_val=0.0, max_val=60.0, unit='mph', fake_live=True),
+      'TUNE_LAT_min_steer_speed_mph': Param(6.8, float, 'Lateral (steering) cannot engage below this speed.', min_val=0.0, max_val=60.0, unit='mph', fake_live=True),
       
-      'TUNE_LAT_mpc_path_cost': Param(1.1, float, 'This value represents the weight given to the path tracking error, i.e., the deviation of the vehicle from the desired path. Increasing this value will prioritize staying close to the desired path, while decreasing it may result in larger deviations from the path.', min_val=0.0, max_val=1000.0, live=True),
+      'TUNE_LAT_mpc_path_cost': Param(1.0, float, 'This value represents the weight given to the path tracking error, i.e., the deviation of the vehicle from the desired path. Increasing this value will prioritize staying close to the desired path, while decreasing it may result in larger deviations from the path.', min_val=0.0, max_val=1000.0, live=True),
       
-      'TUNE_LAT_mpc_heading_cost': Param(1.1, float, 'This value is the weight given to the lateral motion of the vehicle, specifically the heading error. Increasing this value will prioritize minimizing the heading error and aligning the vehicle with the desired path. Decreasing it may result in larger heading errors.', min_val=0.0, max_val=1000.0, live=True),
+      'TUNE_LAT_mpc_heading_cost': Param(1.0, float, 'This value is the weight given to the lateral motion of the vehicle, specifically the heading error. Increasing this value will prioritize minimizing the heading error and aligning the vehicle with the desired path. Decreasing it may result in larger heading errors.', min_val=0.0, max_val=1000.0, live=True),
       
-      'TUNE_LAT_mpc_steer_rate_cost': Param(0.8, float, 'This value represents the weight given to the rate of change of the steering angle. Increasing this value will prioritize minimizing the rate of steering angle changes, resulting in smoother steering movements. Decreasing it may lead to more abrupt steering movements.', min_val=0.0, max_val=1000.0, live=True),
+      'TUNE_LAT_mpc_steer_rate_cost': Param(1.0, float, 'This value represents the weight given to the rate of change of the steering angle. Increasing this value will prioritize minimizing the rate of steering angle changes, resulting in smoother steering movements. Decreasing it may lead to more abrupt steering movements.', min_val=0.0, max_val=1000.0, live=True),
       
       'TUNE_LAT_type': Param('torque', [str, int], 'Type of lateral controller that will be used with the corresponding parameters. The default torque and pid tunes are for Volt, the indi tune is from Hyundai Genesis, and the lqr is from Toyota Rav4. Consult selfdrive/car/gm/interface.py to see the default values for your car for the "pid" (and possibly also the "torque") controllers.  torque: lateral acceleration-based pid controller.  pid: steering angle-based pid controller.  indi: incremental non-linear dynamic inversion controller.  lqr: linear quadratic regulator.  There are also "torque" versions of indi and lqr to experiment with. The torque INDI needs tuning, but the torque LQR needs it more. Let me know if you get those working well! The provided torque and pid tunes for Volt are the same very good tunes as hardcoded in the this fork of OpenPilot', live=True, fake_live=True, allowed_vals=['torque','pid','indi','lqr','torqueindi','torquelqr']),
       
@@ -561,7 +561,7 @@ class opParams:
       
       'TUNE_LAT_TRX_friction': Param(1.0, float, '(For custom friction FF, this scales the response. For regular friction, this is the max value of torque that friction will send.) The torque controller has two components to the feedforward, one based solely on desired lateral acceleration and is scaled by kf. The other is based on desired lateral jerk (rate of desired lateral acceleration) and is also called "friction" to depict the idea of overcoming the friction in the steering assembly. The concept it simple: the faster the desired lateral acceleration changes (i.e. high rate of change), the greater the friction response. This provides much smoother steering, especially when the steering angle is decreasing (returning to center).', live=True, min_val=0.0, max_val=1.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_friction_lookahead_v': Param([0.3, 1.2], [list, float], "The instantaneous desired lateral jerk is too erratic, so it is checked against future planned lateral jerk so that short-lived jerk does not produce a feedforward response. This is done by taking the future lateral jerk value of minimum absolute value. If the sign of this minimized lateral jerk value is opposite that of the current desired jerk, then it is set to zero. So it can only limit the value of friction, never increase it. Here you are deciding how long a planned lateral jerk must persist before the lateral jerk feedforward acts on it. Change this in multiples of 0.2s, since lesser changes will likely have no effect do to the discretization of future lateral jerk values.", live=True, min_val=0.3, max_val=2.2, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit='seconds'),
+      'TUNE_LAT_TRX_friction_lookahead_v': Param([0.8, 1.8], [list, float], "The instantaneous desired lateral jerk is too erratic, so it is checked against future planned lateral jerk so that short-lived jerk does not produce a feedforward response. This is done by taking the future lateral jerk value of minimum absolute value. If the sign of this minimized lateral jerk value is opposite that of the current desired jerk, then it is set to zero. So it can only limit the value of friction, never increase it. Here you are deciding how long a planned lateral jerk must persist before the lateral jerk feedforward acts on it. Change this in multiples of 0.2s, since lesser changes will likely have no effect do to the discretization of future lateral jerk values.", live=True, min_val=0.3, max_val=2.2, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit='seconds'),
       
       'TUNE_LAT_TRX_friction_lookahead_bp': Param([20.0, 65.0], [list, float], "The instantaneous desired lateral jerk is too erratic, so it is checked against future planned lateral jerk so that short-lived jerk does not produce a feedforward response. This is done by taking the future lateral jerk value of minimum absolute value. If the sign of this minimized lateral jerk value is opposite that of the current desired jerk, then it is set to zero. So it can only limit the value of friction, never increase it. Here you are deciding how long a planned lateral jerk must persist before the lateral jerk feedforward acts on it. Change this in multiples of 0.2s, since lesser changes will likely have no effect do to the discretization of future lateral jerk values.", live=True, min_val=0.0, max_val=90.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit='mph'),
       
@@ -589,9 +589,9 @@ class opParams:
 
       'TUNE_LAT_TRX_NNFF_lat_jerk_deadzone': Param(0.0, float, "Apply a deadzone to all use of desired lateral jerk in NNFF. If it's too jerky, raise the value. If you want a more early/assertive response, decrease.", live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit='m/s³'),
 
-      'TUNE_LAT_TRX_NNFF_lat_jerk_friction_factor': Param(0.5, float, "Scales the lateral jerk input for calculating the 'friction' response. If it's too jerky, lower the value. If you want a more assertive error correction response, increase.", live=True, min_val=0.0, max_val=3.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit='seconds'),
+      'TUNE_LAT_TRX_NNFF_lat_jerk_friction_factor': Param(0.4, float, "Scales the lateral jerk input for calculating the 'friction' response. If it's too jerky, lower the value. If you want a more assertive error correction response, increase.", live=True, min_val=0.0, max_val=3.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', unit='seconds'),
 
-      'TUNE_LAT_TRX_NNFF_lat_accel_friction_factor': Param(1.0, float, "Scales the lateral acceleration input for calculating the 'friction' response. If it's too jerky, lower the value. If you want a more assertive error correction response, increase.", live=True, min_val=0.0, max_val=3.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_NNFF_lat_accel_friction_factor': Param(0.7, float, "Scales the lateral acceleration input for calculating the 'friction' response. If it's too jerky, lower the value. If you want a more assertive error correction response, increase.", live=True, min_val=0.0, max_val=3.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
 
 
       #####
@@ -706,7 +706,7 @@ class opParams:
       
       'TUNE_LONG_speed_mph': Param([12.0, 35.0, 80.0], [list, float], 'Lookup speeds used for corresponding values of kp, ki, and kd, such that the first value of kp,ki,kd is used when driving at the first speed here.', live=True, min_val=0.0, max_val=100.0, unit="mph"),
       
-      'TUNE_LONG_kp': Param([0.8, .9, 0.8], [list, float], 'Values of kp used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.', live=True, min_val=0.0, max_val=5.0),
+      'TUNE_LONG_kp': Param([0.75, .9, 0.8], [list, float], 'Values of kp used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.', live=True, min_val=0.0, max_val=5.0),
       
       'TUNE_LONG_ki': Param([0.08, 0.13, 0.13], [list, float], 'Values of ki used at the corresponding speeds in TUNE_LONG_mph. For longitudinal (gas/brake) control, too high of kp and/or ki results in overshooting and oscillations, which feel like OpenPilot is pumping the brakes. Lowering both in 5-10% increments will reduce oscillations. If kp,ki are too low, the braking response will be insufficient and OpenPilot will fail to stop. Kd at low speeds helps to reduce oscillations, allowing for higher values of kp and ki.', live=True, min_val=0.0, max_val=5.0),
       
@@ -811,6 +811,16 @@ class opParams:
                            r'.*low_speed_factor_.*'],
       '2023/04/27-09:00': [r'TUNE_LAT_TRX_.*'],
       '2023/04/28-2:40:00': [r'TUNE_LAT_mpc_.*'],
+      '2023/11/18-18:00:00': ['MADS_OP_decel_ms2', 
+                             'MADS_OP_one_time_stop_decel_factor', 
+                             'CB_VTSC_lat_accel_factor', 
+                             'CB_VTSC_long_accel_factor', 
+                             'TUNE_LAT_TRX_NNFF_lat_jerk_friction_factor',
+                             'TUNE_LAT_TRX_NNFF_lat_accel_friction_factor',
+                             'TUNE_LONG_kp',
+                             'TUNE_LAT_TRX_friction_lookahead_v',
+                             r'TUNE_LAT_mpc_.*',
+                             'TUNE_LAT_min_steer_speed_mph'],
       }  # a dict where each key is a date in 'yyyy/mm/dd-hh:mm' (24-hour) format, and the value is a list of names of params OR regular expressions to match params you want reset to their default values if the modification date is before the key date
       # use something that doesn't match the date string format and the associated list of param names or regex's will apply no matter the modified date of the param
     self._calling_function = calling_function
