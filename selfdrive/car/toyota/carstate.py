@@ -165,6 +165,41 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint != CAR.PRIUS_V:
       self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
 
+    # Driving personalities function
+    if self.personalities_via_wheel and ret.cruiseState.available:
+      # Need to subtract by 1 to comply with the personality profiles of "0", "1", and "2"
+      self.personality_profile = cp.vl["PCM_CRUISE_SM"]["DISTANCE_LINES"] - 1
+
+      # Sync with the onroad UI button
+      if self.params_memory.get_bool("PersonalityChangedViaUI"):
+        self.profile_restored = False
+        self.previous_personality_profile = self.params.get_int("LongitudinalPersonality")
+        self.params_memory.put_bool("PersonalityChangedViaUI", False)
+
+      # Set personality to the previous drive's personality or when the user changes it via the UI
+      if self.personality_profile == self.previous_personality_profile:
+        self.profile_restored = True
+      if not self.profile_restored:
+        self.distance_previously_pressed = not self.distance_previously_pressed
+        self.distance_button = not self.distance_previously_pressed
+
+      if self.profile_restored:
+        if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
+          # KRKeegan - Add support for toyota distance button
+          self.distance_button = cp_cam.vl["ACC_CONTROL"]["DISTANCE"]
+
+        elif self.CP.carFingerprint in RADAR_ACC_CAR:
+          # These cars have the acc_control on car can
+          self.distance_button = cp.vl["ACC_CONTROL"]["DISTANCE"]
+
+        elif self.CP.flags & ToyotaFlags.SMART_DSU:
+          self.distance_button = cp.vl["SDSU"]["FD_BUTTON"]
+
+        if self.personality_profile != self.previous_personality_profile and self.personality_profile >= 0:
+          self.params.put_int("LongitudinalPersonality", self.personality_profile)
+          self.params_memory.put_bool("PersonalityChangedViaWheel", True)
+          self.previous_personality_profile = self.personality_profile
+
     # Toggle Experimental Mode from steering wheel function
     if self.experimental_mode_via_press and ret.cruiseState.available:
       message_keys = ["LDA_ON_MESSAGE", "SET_ME_X02"]
@@ -249,6 +284,9 @@ class CarState(CarStateBase):
       messages += [
         ("PRE_COLLISION", 33),
       ]
+
+    if CP.flags & ToyotaFlags.SMART_DSU:
+      messages.append(("SDSU", 33))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
