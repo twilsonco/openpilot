@@ -1,6 +1,6 @@
 ### Which fork do you want?
 * C2 users: you might be stuck on the `tw-c2` branch if this branch (`tw-main`) doesn't work.
-* C3 users: depending on how new your C3 is, support might have been lost with my "tw" branches, so you'll want to use my SunnyPilot fork `sunnu-dev` (will update as this changes).
+* C3 users: depending on how new your C3 is, support might have been lost with my "tw" branches, so you'll want to use SunnyPilot or FrogPilot, both of which have the NNFF lateral controls code as an optional feature.
 * C3X users: **Do not install my fork, it will brick your device!**
 * `tw-main` is a stable branch based on a 1-ish year old build
 * `tw-staging` receives more updates and newer features
