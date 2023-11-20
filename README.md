@@ -1,16 +1,13 @@
 ### Which fork do you want?
 * C2 users: you might be stuck on the `tw-c2` branch if this branch (`tw-main`) doesn't work.
 * C3 users: depending on how new your C3 is, support might have been lost with my "tw" branches, so you'll want to use my SunnyPilot fork `sunnu-dev` (will update as this changes).
+* C3X users: **Do not install my fork, it will brick your device!**
 * `tw-main` is a stable branch based on a 1-ish year old build
 * `tw-staging` receives more updates and newer features
 * `tw-dev` is modified often and is for breaking; use at your own risk
 * I'll list relevent branches here as they're made.
-* What's the difference?
-    * "My fork" is based on OpenPilot v0.8.9 from Winter 2021
-        * Uses the last of the "medium models" for planning the driving path, which is rock solid dependable, unlike the newer models that cut curners bad
-    * `sunny-dev` is based on SunnyPilot, a popular fork with some great features, and it stays up to date with upstream OpenPilot software.
-        * It provides support for newer C3s
-        * *Please (at least partially) direct your support for the SunnyPilot fork to SunnyPilot directly.*
+* What's the difference from stock OpenPilot?
+    * "My fork" is based on OpenPilot v0.8.9 from Winter 2021, and uses the last of the "medium models" for planning the driving path, which is rock solid dependable, unlike the newer models that cut curners bad
 
 ### Join us on Discord!
 * Find us in the "[twilsonco Volt GM fork](https://discord.com/channels/469524606043160576/884811574773157949)" thread in the [GM channel](https://discord.com/channels/469524606043160576/524611823090008065) of the [Comma.ai Discord server](https://discord.comma.ai).
