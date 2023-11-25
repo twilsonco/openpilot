@@ -140,40 +140,6 @@ public:
   explicit FrogPilotControlsPanel(QWidget *parent = nullptr);
 };
 
-class FrogPilotNavigationPanel : public FrogPilotPanel {
-  Q_OBJECT
-
-public:
-  explicit FrogPilotNavigationPanel(QWidget *parent = nullptr);
-
-protected:
-  void hideEvent(QHideEvent *event) override;
-  void showEvent(QShowEvent *event) override;
-
-private:
-  void createMapboxKeyControl(ButtonControl *&control, const QString &label, const std::string &paramKey, const QString &prefix);
-  void displaySetup();
-  void refresh(ButtonControl *control, const std::string &paramKey);
-
-  QVBoxLayout *mainLayout = new QVBoxLayout(this);
-  QVBoxLayout *primelessLayout = new QVBoxLayout();
-  ButtonControl *publicMapboxKeyControl = nullptr;
-  ButtonControl *secretMapboxKeyControl = nullptr;
-  QLabel *imageLabel = new QLabel(this);
-  QLabel *setupStep = new QLabel(this);
-  QLabel *mapboxSettingsLabel = new QLabel("Device Offline. Connect to the internet to use Navigation.", this);
-  QTimer *updateTimer = new QTimer(this);
-  WifiManager *wifi = new WifiManager(this);
-
-  static constexpr const char *imagePath = "../assets/images/";
-  static constexpr const char *ipFormat = "Manage your mapbox settings at %1:8082";
-
-  bool mapboxPublicKeySet = false;
-  bool mapboxSecretKeySet = false;
-  bool setupCompleted = false;
-  QString currentStep = "no_keys_set.png";
-};
-
 class FrogPilotVehiclesPanel : public FrogPilotPanel {
   Q_OBJECT
 
@@ -199,7 +165,7 @@ public: \
     if (std::string(#className) == "AdjustablePersonalities") { \
       label.setFixedWidth(300); \
     } \
-    if (std::string(#className) == "CameraView" || std::string(#className) == "DeviceShutdown" || std::string(#className) == "RouteInput" || std::string(#className) == "StoppingDistance" || std::string(#className) == "WheelIcon") { \
+    if (std::string(#className) == "CameraView" || std::string(#className) == "DeviceShutdown" || std::string(#className) == "StoppingDistance" || std::string(#className) == "WheelIcon") { \
       label.setFixedWidth(225); \
     } \
     if (std::string(#className) == "CESpeed" || std::string(#className) == "CESpeedLead" || std::string(#className) == "Offset1" || std::string(#className) == "Offset2" || std::string(#className) == "Offset3" || std::string(#className) == "Offset4") { \
@@ -381,12 +347,6 @@ ParamController(RelaxedFollow, "RelaxedFollow", "Time", "Set the following dista
 ParamController(RoadEdgesWidth, "RoadEdgesWidth", "Road Edges", "Customize the road edges width.\n\nDefault is 1/2 of the MUTCD average lane line width of 4 inches.", "../assets/offroad/icon_blank.png",
   return QString::number(params.getInt("RoadEdgesWidth")) + (isMetric ? " cm" : " in");,
   return std::clamp(v, 0, isMetric ? 60 : 24);
-)
-
-ParamController(RouteInput, "RouteInput", "Route Input", "Choose between either MapBox (recommended), Apple, or Google for input destinations when using Navigate On Openpilot.", "",
-  const int api = params.getInt("RouteInput");
-  return api == 0 ? "MapBox" : api == 1 ? "Apple" : "Google";,
-  return v >= 0 ? v % 3 : 2;
 )
 
 ParamController(ScreenBrightness, "ScreenBrightness", "Screen Brightness", "Set a custom screen brightness level or use the default 'Auto' brightness setting.", "../assets/offroad/icon_light.png",

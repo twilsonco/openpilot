@@ -14,6 +14,7 @@
 #include "common/watchdog.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
+#include "selfdrive/ui/qt/frogpilot/frogpilot_navigation_settings.h"
 #include "selfdrive/ui/qt/offroad/frogpilot_settings.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/input.h"

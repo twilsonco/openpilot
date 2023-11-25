@@ -5,7 +5,7 @@ import urllib.request
 from openpilot.common.realtime import Ratekeeper
 import stat
 
-VERSION = 'v1.6'
+VERSION = 'v1.7.2'
 URL = f"https://github.com/pfeiferj/openpilot-mapd/releases/download/{VERSION}/mapd"
 MAPD_PATH = '/data/media/0/osm/mapd'
 VERSION_PATH = '/data/media/0/osm/mapd_version'
