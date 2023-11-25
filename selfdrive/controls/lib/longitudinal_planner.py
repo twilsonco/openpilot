@@ -224,13 +224,14 @@ class LongitudinalPlanner:
 
       # Use the speed limit if its not being overridden
       if not self.override_slc:
-        if 0 < desired_speed_limit < v_cruise:
+        if v_cruise > desired_speed_limit > 0:
           self.slc_target = round(desired_speed_limit)
+          v_cruise = self.slc_target
       else:
         self.slc_target = self.overridden_speed
 
     # Pfeiferj's Vision Turn Controller
-    if self.vision_turn_controller and prev_accel_constraint and v_ego > 5:
+    if self.vision_turn_controller and prev_accel_constraint:
       # Set the curve sensitivity
       orientation_rate = np.array(np.abs(modeldata.orientationRate.z)) * self.curve_sensitivity
       velocity = np.array(modeldata.velocity.x)
@@ -250,10 +251,11 @@ class LongitudinalPlanner:
 
       # Configure the offset value for the UI
       self.v_offset = max(0, int(v_cruise - self.v_target))
+
+      if v_cruise > self.v_target:
+        v_cruise = max(5, self.v_target)
     else:
       self.v_offset = 0
-
-    v_cruise = min(v_cruise, self.slc_target, self.v_target)
 
     self.mpc.set_weights(prev_accel_constraint, self.custom_personalities, self.aggressive_jerk, self.standard_jerk, self.relaxed_jerk, personality=self.personality)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
