@@ -59,7 +59,6 @@ private:
   bool engageable;
 
   // FrogPilot variables
-  bool leadInfo;
   bool rotatingWheel;
   int steeringAngleDeg;
   int wheelIcon;
@@ -73,36 +72,56 @@ class MapSettingsButton : public QPushButton {
 
 public:
   explicit MapSettingsButton(QWidget *parent = 0);
-  void updateState(const UIState &s);
 
 private:
   void paintEvent(QPaintEvent *event) override;
 
-  const UIScene &scene;
   QPixmap settings_img;
 };
 
-// FrogPilot buttons
+// FrogPilot widgets
 class PersonalityButton : public QPushButton {
 public:
   explicit PersonalityButton(QWidget *parent = 0);
 
   void checkUpdate();
-  void handleClick();
-  void updateState();
 
 private:
+  void handleClick();
   void paintEvent(QPaintEvent *event) override;
+  void updateState();
 
   Params params;
   Params paramsMemory{"/dev/shm/params"};
   const UIScene &scene;
 
-  int personalityProfile = 0;
+  int personalityProfile;
+  qreal fadeDuration;
+  qreal textDuration;
 
   QElapsedTimer transitionTimer;
 
   QVector<std::pair<QPixmap, QString>> profile_data;
+};
+
+class Compass : public QWidget {
+public:
+  explicit Compass(QWidget *parent = nullptr);
+
+  void updateState(int bearing_deg);
+
+protected:
+  void paintEvent(QPaintEvent *event) override;
+
+private:
+  int bearingDeg;
+  int circleOffset;
+  int compassSize;
+  int degreeLabelOffset;
+  int innerCompass;
+  int x;
+  int y;
+  QPixmap compassInnerImg;
 };
 
 // container window for the NVG UI
@@ -147,6 +166,7 @@ private:
   bool wide_cam_requested = false;
 
   // FrogPilot variables
+  QHBoxLayout *bottom_layout;
   Params params;
   Params paramsMemory{"/dev/shm/params"};
   const UIScene &scene;
@@ -186,9 +206,9 @@ private:
   int customColors;
   int customSignals;
   int totalFrames = 8;
+  Compass *compass_img;
   PersonalityButton *personality_btn;
   ScreenRecorder *recorder_btn;
-  QPixmap compass_inner_img;
   size_t animationFrameIndex;
   std::unordered_map<int, std::pair<QString, std::pair<QColor, std::map<double, QBrush>>>> themeConfiguration;
   std::vector<QPixmap> signalImgVector;
