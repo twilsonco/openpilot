@@ -1259,87 +1259,92 @@ void Compass::updateState(int bearing_deg) {
   update();
 }
 
-void Compass::paintEvent(QPaintEvent *event) {
-  QPainter p(this);
+void Compass::initializeStaticElements() {
+  staticElements = QPixmap(size());
+  staticElements.fill(Qt::transparent);
+  QPainter p(&staticElements);
 
-  // Enable Antialiasing
   p.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
 
   // Configure the circles
-  const QPen whitePen(Qt::white, 2);
+  QPen whitePen(Qt::white, 2);
   p.setPen(whitePen);
 
-  const auto drawCircle = [&](const int offset, const QBrush &brush = Qt::NoBrush) {
-    p.setOpacity(1.0);
-    p.setBrush(brush);
-    p.drawEllipse(x - offset, y - offset, offset * 2, offset * 2);
-  };
-
   // Draw the circle background and white inner circle
-  drawCircle(circleOffset, QColor(0, 0, 0, 100));
+  p.setOpacity(1.0);
+  p.setBrush(QColor(0, 0, 0, 100));
+  p.drawEllipse(x - circleOffset, y - circleOffset, circleOffset * 2, circleOffset * 2);
 
-  // Rotate and draw the compassInnerImg image
-  p.translate(x, y);
-  p.rotate(bearingDeg);
-  p.drawPixmap(-compassInnerImg.width() / 2, -compassInnerImg.height() / 2, compassInnerImg);
-
-  // Reset transformation for subsequent drawing
-  p.rotate(-bearingDeg);
-  p.translate(-x, -y);
-
-  // Draw the cardinal directions
-  p.setFont(InterFont(20, QFont::Bold));
-
-  const auto drawDirection = [&](const QString &text, const int from, const int to, const int align) {
-    // Move the "E" and "W" directions a bit closer to the middle so they're more uniform
-    const int offset = (text == "E") ? -4 : ((text == "W") ? 4 : 0);
-    // Set the opacity based on whether the direction label is currently being pointed at
-    p.setOpacity((bearingDeg >= from && bearingDeg < to) ? 1.0 : 0.2);
-    p.drawText(QRect(x - innerCompass + offset, y - innerCompass, innerCompass * 2, innerCompass * 2), align, text);
-  };
-
-  drawDirection("N", 0, 68, Qt::AlignTop | Qt::AlignHCenter);
-  drawDirection("E", 23, 158, Qt::AlignRight | Qt::AlignVCenter);
-  drawDirection("S", 113, 248, Qt::AlignBottom | Qt::AlignHCenter);
-  drawDirection("W", 203, 338, Qt::AlignLeft | Qt::AlignVCenter);
-  drawDirection("N", 293, 360, Qt::AlignTop | Qt::AlignHCenter);
-
-  // Draw the white circle outlining the cardinal directions
-  drawCircle(innerCompass + 5);
-
-  // Draw the white circle outlining the bearing degrees
-  drawCircle(degreeLabelOffset);
+  // Draw the white circles
+  p.setBrush(Qt::NoBrush);
+  p.drawEllipse(x - (innerCompass + 5), y - (innerCompass + 5), (innerCompass + 5) * 2, (innerCompass + 5) * 2);
+  p.drawEllipse(x - degreeLabelOffset, y - degreeLabelOffset, degreeLabelOffset * 2, degreeLabelOffset * 2);
 
   // Draw the black background for the bearing degrees
   QPainterPath outerCircle, innerCircle;
   outerCircle.addEllipse(x - degreeLabelOffset, y - degreeLabelOffset, degreeLabelOffset * 2, degreeLabelOffset * 2);
   innerCircle.addEllipse(x - circleOffset, y - circleOffset, compassSize, compassSize);
-  p.setOpacity(1.0);
   p.fillPath(outerCircle.subtracted(innerCircle), Qt::black);
 
-  // Draw the degree lines and bearing degrees
-  const auto drawCompassElements = [&](const int angle) {
-    const bool isCardinalDirection = angle % 90 == 0;
+  // Draw the static degree lines
+  for (int i = 0; i < 360; i += 15) {
+    const bool isCardinalDirection = i % 90 == 0;
     const int lineLength = isCardinalDirection ? 12 : 8;
-    const bool isBold = abs(angle - static_cast<int>(bearingDeg)) <= 7;
-
-    // Set the current bearing degree value to bold
-    p.setFont(InterFont(6, isBold ? QFont::Bold : QFont::Normal));
     p.setPen(QPen(Qt::white, isCardinalDirection ? 2 : 1));
-
-    // Place the elements in their respective spots around their circles
     p.save();
     p.translate(x, y);
-    p.rotate(angle);
+    p.rotate(i);
     p.drawLine(0, -(compassSize / 2 - lineLength), 0, -(compassSize / 2));
-    p.translate(0, -(compassSize / 2 + 12));
-    p.rotate(-angle);
-    p.drawText(QRect(-20, -10, 40, 20), Qt::AlignCenter, QString::number(angle));
     p.restore();
-  };
+  }
+}
 
+void Compass::paintEvent(QPaintEvent *event) {
+  QPainter p(this);
+  p.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
+
+  if (!staticElementsInitialized) {
+    initializeStaticElements();
+    staticElementsInitialized = true;
+  }
+
+  // Draw static elements
+  p.drawPixmap(0, 0, staticElements);
+
+  // Rotate and draw the compassInnerImg image
+  p.translate(x, y);
+  p.rotate(bearingDeg);
+  p.drawPixmap(-compassInnerImg.width() / 2, -compassInnerImg.height() / 2, compassInnerImg);
+  p.rotate(-bearingDeg);
+  p.translate(-x, -y);
+
+  // Draw the dynamic bearing degree numbers and lines
+  QFont font = InterFont(6, QFont::Normal);
   for (int i = 0; i < 360; i += 15) {
-    drawCompassElements(i);
+    const bool isBold = abs(i - static_cast<int>(bearingDeg)) <= 7;
+    font.setWeight(isBold ? QFont::Bold : QFont::Normal);
+    p.setFont(font);
+    p.setPen(QPen(Qt::white, i % 90 == 0 ? 2 : 1));
+
+    p.save();
+    p.translate(x, y);
+    p.rotate(i);
+    p.drawLine(0, -(compassSize / 2 - (i % 90 == 0 ? 12 : 8)), 0, -(compassSize / 2));
+    p.translate(0, -(compassSize / 2 + 12));
+    p.rotate(-i);
+    p.drawText(QRect(-20, -10, 40, 20), Qt::AlignCenter, QString::number(i));
+    p.restore();
+  }
+
+  // Draw cardinal directions
+  p.setFont(InterFont(20, QFont::Bold));
+  const QString directions[] = {"N", "E", "S", "W"};
+  const int angles[] = {0, 90, 180, 270};
+  const int alignmentFlags[] = {Qt::AlignTop | Qt::AlignHCenter, Qt::AlignRight | Qt::AlignVCenter, Qt::AlignBottom | Qt::AlignHCenter, Qt::AlignLeft | Qt::AlignVCenter};
+  for (int i = 0; i < 4; ++i) {
+    const int offset = (directions[i] == "E") ? -4 : (directions[i] == "W" ? 4 : 0);
+    p.setOpacity((bearingDeg >= angles[i] - 22 && bearingDeg < angles[i] + 23) ? 1.0 : 0.2);
+    p.drawText(QRect(x - innerCompass + offset, y - innerCompass, innerCompass * 2, innerCompass * 2), alignmentFlags[i], directions[i]);
   }
 }
 

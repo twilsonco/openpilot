@@ -108,12 +108,14 @@ class Compass : public QWidget {
 public:
   explicit Compass(QWidget *parent = nullptr);
 
+  void initializeStaticElements();
   void updateState(int bearing_deg);
 
 protected:
   void paintEvent(QPaintEvent *event) override;
 
 private:
+  bool staticElementsInitialized;
   int bearingDeg;
   int circleOffset;
   int compassSize;
@@ -122,6 +124,7 @@ private:
   int x;
   int y;
   QPixmap compassInnerImg;
+  QPixmap staticElements;
 };
 
 // container window for the NVG UI
