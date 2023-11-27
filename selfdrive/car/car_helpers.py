@@ -49,6 +49,8 @@ def load_interfaces(brand_names):
       CarState = __import__(path + '.carstate', fromlist=['CarState']).CarState
     else:
       CarState = None
+    
+    CarInterface.CS = CarState
 
     if os.path.exists(BASEDIR + '/' + path.replace('.', '/') + '/carcontroller.py'):
       CarController = __import__(path + '.carcontroller', fromlist=['CarController']).CarController
