@@ -98,7 +98,7 @@ class LatControlTorque(LatControl):
     self.error_downscale_LJ_factor = 0.0
     self.error_downscale_LJ_deadzone = 0.0
     self.error_downscale_current = FirstOrderFilter(0.0, 0.5, DT_CTRL)
-    self.error_downscale_bp = [0.0, 15.0] # m/s
+    self.error_downscale_bp = [7.0, 15.0] # m/s
     
     if self.use_nn_ff:
       # NNFF model takes current v_ego, lateral_accel, lat accel/jerk error, roll, and past/future/planned data
