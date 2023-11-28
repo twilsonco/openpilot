@@ -94,6 +94,9 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_v = [15.0, 5.0]
     
     self.error_downscale = 1.0
+    self.error_downscale_LA_factor = 0.0
+    self.error_downscale_LJ_factor = 0.0
+    self.error_downscale_LJ_deadzone = 0.0
     self.error_downscale_current = FirstOrderFilter(0.0, 0.5, DT_CTRL)
     self.error_downscale_bp = [0.0, 15.0] # m/s
     
@@ -155,6 +158,9 @@ class LatControlTorque(LatControl):
       self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.low_speed_factor_look_ahead), None)
     look_ahead = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_v')
     self.error_downscale = self._op_params.get('TUNE_LAT_TRX_error_downscale_in_curves')
+    self.error_downscale_LA_factor = self._op_params.get('TUNE_LAT_TRX_error_downscale_LA_factor')
+    self.error_downscale_LJ_factor = self._op_params.get('TUNE_LAT_TRX_error_downscale_LJ_factor')
+    self.error_downscale_LJ_deadzone = self._op_params.get('TUNE_LAT_TRX_error_downscale_LJ_deadzone')
     self.error_downscale_current.update_alpha(self._op_params.get('TUNE_LAT_TRX_error_downscale_smoothing'))
     
     self.friction_look_ahead_v = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_v')
@@ -198,14 +204,18 @@ class LatControlTorque(LatControl):
       lookahead_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_curvature], key=lambda x: abs(x))
-      error_scale_factor = 1.0 / min(0.5*abs(desired_lateral_accel) + 0.2*abs(lookahead_lateral_jerk) + 1.0, self.error_downscale)
+
+      # error downscaling
+      error_downscale_LA_component = self.error_downscale_LA_factor*abs(desired_lateral_accel)
+      error_downscale_LJ_component = self.error_downscale_LJ_factor*abs(apply_deadzone(desired_lateral_jerk, self.error_downscale_LJ_deadzone))
+      error_downscale_denom = min(error_downscale_LA_component + error_downscale_LJ_component + 1.0, self.error_downscale)
+      error_scale_factor = 1.0 / error_downscale_denom
       error_scale_factor = interp(CS.vEgo, self.error_downscale_bp, [error_scale_factor, 1.0])
       if error_scale_factor < self.error_downscale_current.x:
         self.error_downscale_current.x = error_scale_factor
       else:
         self.error_downscale_current.update(error_scale_factor)
 
-      
       if self.use_nn_ff:
         low_speed_factor = interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
       else:
@@ -220,7 +230,7 @@ class LatControlTorque(LatControl):
 
       lateral_accel_g = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
       ff_roll = self.get_roll_ff(lateral_accel_g, self.v_ego) * (self.roll_k if use_roll else 0.0)
-      
+
       # lateral jerk feedforward
       friction_compensation = self.get_friction(lookahead_lateral_jerk, self.v_ego, desired_lateral_accel, self.friction, FRICTION_THRESHOLD, ff_roll)
       friction_lat_accel_downscale_factor = interp(max_future_lateral_accel, [0.0, 1.5], [0.5, 1.0])
