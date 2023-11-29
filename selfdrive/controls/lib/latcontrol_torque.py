@@ -97,8 +97,9 @@ class LatControlTorque(LatControl):
     self.error_downscale_LA_factor = 0.0
     self.error_downscale_LJ_factor = 0.0
     self.error_downscale_LJ_deadzone = 0.0
-    self.error_downscale_current = FirstOrderFilter(0.0, 0.5, DT_CTRL)
+    self.error_downscale_denom = FirstOrderFilter(0.0, 0.5, DT_CTRL)
     self.error_downscale_bp = [7.0, 15.0] # m/s
+    self.error_filtered = FirstOrderFilter(0.0, 1.0, DT_CTRL)
     
     if self.use_nn_ff:
       # NNFF model takes current v_ego, lateral_accel, lat accel/jerk error, roll, and past/future/planned data
@@ -161,7 +162,9 @@ class LatControlTorque(LatControl):
     self.error_downscale_LA_factor = self._op_params.get('TUNE_LAT_TRX_error_downscale_LA_factor')
     self.error_downscale_LJ_factor = self._op_params.get('TUNE_LAT_TRX_error_downscale_LJ_factor')
     self.error_downscale_LJ_deadzone = self._op_params.get('TUNE_LAT_TRX_error_downscale_LJ_deadzone')
-    self.error_downscale_current.update_alpha(self._op_params.get('TUNE_LAT_TRX_error_downscale_smoothing'))
+    self.error_downscale_denom.update_alpha(self._op_params.get('TUNE_LAT_TRX_error_downscale_smoothing'))
+    self.error_filtered.update_alpha(self._op_params.get('TUNE_LAT_TRX_error_downscale_error_smoothing'))
+    self.error_downscale_error_factor = self._op_params.get('TUNE_LAT_TRX_error_downscale_error_factor')
     
     self.friction_look_ahead_v = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_v')
     self.friction_look_ahead_bp = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LAT_TRX_friction_lookahead_bp')]
@@ -206,15 +209,17 @@ class LatControlTorque(LatControl):
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_curvature], key=lambda x: abs(x))
 
       # error downscaling
+      error = setpoint - measurement
+      self.error_filtered.update_alpha(interp(CS.vEgo, self.error_downscale_bp, [self.error_filtered.alpha, 0.2]))
       error_downscale_LA_component = self.error_downscale_LA_factor*abs(desired_lateral_accel)
       error_downscale_LJ_component = self.error_downscale_LJ_factor*abs(apply_deadzone(desired_lateral_jerk, self.error_downscale_LJ_deadzone))
       error_downscale_denom = min(error_downscale_LA_component + error_downscale_LJ_component + 1.0, self.error_downscale)
-      error_scale_factor = 1.0 / error_downscale_denom
-      error_scale_factor = interp(CS.vEgo, self.error_downscale_bp, [error_scale_factor, 1.0])
-      if error_scale_factor < self.error_downscale_current.x:
-        self.error_downscale_current.x = error_scale_factor
+      if error_downscale_denom > self.error_downscale_denom.x:
+        self.error_downscale_denom.x = error_downscale_denom
       else:
-        self.error_downscale_current.update(error_scale_factor)
+        self.error_downscale_denom.update(error_downscale_denom)
+      self.error_downscale_denom.x = max(1.0, self.error_downscale_denom.x - self.error_downscale_error_factor * abs(self.error_filtered.update(error)))
+      error_scale_factor = 1.0 / self.error_downscale_denom.x
 
       if self.use_nn_ff:
         low_speed_factor = interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
@@ -223,8 +228,7 @@ class LatControlTorque(LatControl):
       lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
-      error = setpoint - measurement
-      error *= self.error_downscale_current.x
+      error *= error_scale_factor
       setpoint = measurement + error
       pid_log.error = error
 
@@ -335,7 +339,7 @@ class LatControlTorque(LatControl):
       pid_log.lookaheadCurvatureRate = lookahead_curvature_rate
       pid_log.f2 = ff_nn * self.pid.k_f
       pid_log.maxFutureLatAccel = max_future_lateral_accel
-      pid_log.errorScaleFactor = self.error_downscale_current.x
+      pid_log.errorScaleFactor = error_scale_factor
       if nnff_log is not None:
         pid_log.nnffInputVector = nnff_log
     pid_log.currentLateralAcceleration = actual_lateral_accel
