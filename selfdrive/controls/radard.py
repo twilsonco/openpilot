@@ -404,7 +404,7 @@ class RadarD():
     self.lead_two_lr = LongRangeLead(radar_ts)
     self.lead_one_plus_lr = LongRangeLead(radar_ts)
     
-    self._op_params = opParams("gm CarState")
+    self._op_params = opParams("radard")
     self._op_param_last_update = False
 
     self.ready = False
