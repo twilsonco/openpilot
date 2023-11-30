@@ -208,8 +208,15 @@ class LatControlTorque(LatControl):
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_curvature], key=lambda x: abs(x))
 
-      # error downscaling
+      if self.use_nn_ff:
+        low_speed_factor = interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
+      else:
+        low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
+      setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
+      measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
+      
+      # error downscaling
       self.error_filtered.update_alpha(interp(CS.vEgo, self.error_downscale_bp, [self.error_filtered.alpha, 0.2]))
       error_downscale_LA_component = self.error_downscale_LA_factor*abs(desired_lateral_accel)
       error_downscale_LJ_component = self.error_downscale_LJ_factor*abs(apply_deadzone(desired_lateral_jerk, self.error_downscale_LJ_deadzone))
@@ -221,13 +228,7 @@ class LatControlTorque(LatControl):
       self.error_downscale_denom.x = max(1.0, self.error_downscale_denom.x - self.error_downscale_error_factor * abs(self.error_filtered.update(error)))
       error_scale_factor = 1.0 / self.error_downscale_denom.x
 
-      if self.use_nn_ff:
-        low_speed_factor = interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
-      else:
-        low_speed_factor = interp(CS.vEgo, self.low_speed_factor_bp, self.low_speed_factor_v)**2
       lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
-      setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
-      measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error *= error_scale_factor
       setpoint = measurement + error
       pid_log.error = error
