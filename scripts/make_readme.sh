@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Define preface and postface strings
-preface="![intro_vid](https://github.com/twilsonco/openpilot/blob/log-info/img/comma-steering-control-vid.gif?raw=true)
+preface="[![intro_vid](https://github.com/twilsonco/openpilot/blob/log-info/img/comma-steering-control-vid.gif?raw=true)](https://youtu.be/G_SNRJCGKHs?si=4lMWhB3kcHj6Fu9E)
 
 # Improving controls with log data
 
