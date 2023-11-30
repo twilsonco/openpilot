@@ -554,18 +554,16 @@ class opParams:
       'TUNE_LAT_TRX_use_NN_FF': Param(False, bool, 'Use the experimental neural network feedforward for the torque controller.', live=True, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque', param_param='EnableNNFF', param_param_read_on_startup=True, fake_live=True),
       
       'TUNE_LAT_TRX_error_downscale_in_curves': Param(1.0, float, 'Downscale error when under high lateral acceleration, thereby allowing feedforward to control everything. The error is downscaled to a little as the reciprocal of this value, so if it\'s set to 5, then the error will scale down to 1/5th in sharp corners.', live=True, min_val=1.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+            
+      'TUNE_LAT_TRX_error_downscale_LJ_factor': Param(0.6, float, 'Error downscaling can be based on desired lateral acceleration and/or desired lateral jerk, and the more you downscale based on one, the less you downscale based on the other. Here you adjust the lateral jerk component of error downscaling from 0 to 1. When lateral jerk is used to control error downscaling, that means that error will be downscaled as you\'re entering/exiting curves, but in a constant curve (or on straights) the downscaling will go away and you\'ll have a full error response. When this  (lateral jerk) factor is lower, then lateral acceleration will be used to downscale error while you are in a curve.', live=True, min_val=0.0, max_val=1.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_error_downscale_LA_factor': Param(0.5, float, 'Error downscaling can be based on desired lateral acceleration and/or desired lateral jerk, depending on the values of these corresponding factors. Here you adjust the lateral acceleration component of error downscaling. When lateral acceleration is used to control error downscaling, that means that error will continue to be downscaled so long as you\'re in a curve (where lateral acceleration becomes high).', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_error_downscale_LJ_deadzone': Param(0.3, float, 'Desired lateral jerk can be a noisy signal. Here you can set a deadzone to avoid downscaling error unnecessarily. As a greater deadzone is used, be sure to increase the LJ factor above to avoid nullifying the LJ response.', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
-      'TUNE_LAT_TRX_error_downscale_LJ_factor': Param(1.5, float, 'Error downscaling can be based on desired lateral acceleration and/or desired lateral jerk, depending on the values of these corresponding factors. Here you adjust the lateral jerk component of error downscaling. When lateral jerk is used to control error downscaling, that means that error will be downscaled as you\'re entering/exiting curves, but in a constant curve (or on straights) the downscaling will go away and you\'ll have a full error response.', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
-      
-      'TUNE_LAT_TRX_error_downscale_LJ_deadzone': Param(0.5, float, 'Desired lateral jerk can be a noisy signal. Here you can set a deadzone to avoid downscaling error unnecessarily. As a greater deadzone is used, be sure to increase the LJ factor above to avoid nullifying the LJ response.', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
-      
-      'TUNE_LAT_TRX_error_downscale_smoothing': Param(0.5, float, 'The error scaling factor is filtered so that error stays downscaled for a bit after you\'ve finished a curve. A higher value here is more smoothing (and more lag). This factor also controls the use of instantaneous vs "lookahead" lateral jerk for calculating friction or NNFF, such that when error is downscaled, more instantaneous lateral jerk is used in order to let feedforward be as responsive as possible.', live=True, min_val=0.0, max_val=100.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_error_downscale_smoothing': Param(0.7, float, 'The error scaling factor is filtered so that error stays downscaled for a bit after you\'ve finished a curve. A higher value here is more smoothing (and more lag). This factor also controls the use of instantaneous vs "lookahead" lateral jerk for calculating friction or NNFF, such that when error is downscaled, more instantaneous lateral jerk is used in order to let feedforward be as responsive as possible.', live=True, min_val=0.0, max_val=100.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
 
       'TUNE_LAT_TRX_error_downscale_error_smoothing': Param(0.5, float, 'If error is persistent, then we want to allow the controller to correct it, so we use the filtered error magnitude to turn off error downscaling. Here you set the smoothing factor for the filtered error.', live=True, min_val=0.0, max_val=100.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
 
-      'TUNE_LAT_TRX_error_downscale_error_factor': Param(1.5, float, 'Here you control how much the error downscaling should be reduced by the filtered error. This is multiplied by the filtered error magnitude and then subtracted off the max error downscale value set above.', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      'TUNE_LAT_TRX_error_downscale_error_factor': Param(0.35, float, 'Here you control how much the error downscaling should be reduced by the filtered error, as a fraction of the car\'s known max lateral acceleration. If set to 0.5, then when the filtered error grows to half the value of the max lateral accel, there will be no error downscaling.', live=True, min_val=0.0, max_val=1.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_kf': Param(1.0, float, kf_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
@@ -779,48 +777,6 @@ class opParams:
 
     self._to_delete = []  # a list of unused params you want to delete from users' params file
     self._to_reset = {
-      '2023/01/26-09:30': [r'MISC_cluster_speed_.*',
-                           'AP_positive_accel_post_resume_smoothing_max_speed_mph',
-                           'AP_positive_accel_post_lead_smoothing_factor',
-                           'AP_positive_accel_smoothing_factor',
-                           'TUNE_LAT_TRX_roll_compensation',
-                           'TUNE_LAT_TRX_ki',
-                           'TUNE_LAT_TRX_low_speed_factor_v',
-                           'TUNE_LAT_TRX_low_speed_factor_bp',
-                           'TUNE_LAT_TRXINDI_roll_compensation',
-                           'TUNE_LAT_TRXINDI_kf',
-                           'TUNE_LAT_TRXINDI_friction',
-                           'TUNE_LAT_TRXLQR_roll_compensation',
-                           'MET_power_meter_smoothing_factor'],
-      '2023/02/26-22:00': [r'MISC_cluster_speed_.*',
-                           'AP_positive_accel_post_resume_smoothing_max_speed_mph',
-                           'AP_positive_accel_post_lead_smoothing_factor',
-                           'AP_positive_accel_smoothing_factor',
-                           'LC_nudgeless_minimum_speed_mph',
-                           'MADS_OP_rate_low_speed_factor',
-                           'MADS_OP_rate_low_speed_factor',
-                           'TUNE_LAT_min_steer_speed_mph',
-                           'TUNE_LAT_TRX_roll_compensation',
-                           'TUNE_LAT_TRX_friction',
-                           'TUNE_LAT_TRX_kp',
-                           'TUNE_LAT_TRX_kp_e',
-                           'TUNE_LAT_TRX_ki_e',
-                           'TUNE_LAT_TRX_kd_e',
-                           'TUNE_LAT_PID_kp',
-                           'TUNE_LONG_kp',
-                           'MET_power_meter_smoothing_factor'],
-      '2023/03/13-20:00': [r'.*_kd_period_s',
-                           'TUNE_LAT_TRX_ki',
-                           r'TUNE_LAT_TRX_k._e',
-                           'TUNE_LAT_TRX_roll_compensation',
-                           'MET_power_meter_smoothing_factor',
-                           r'CB_.*_speed_scale.*',
-                           'XR_v_lat_derivative_period_s'],
-      '2023/03/16-21:00': [r'TUNE_LAT_TRX_.*'],
-      '2023/03/19-02:00': ['TUNE_LAT_TRX_friction',
-                           r'.*low_speed_factor_.*'],
-      '2023/04/27-09:00': [r'TUNE_LAT_TRX_.*'],
-      '2023/04/28-2:40:00': [r'TUNE_LAT_mpc_.*'],
       '2023/11/18-18:00:00': ['MADS_OP_decel_ms2', 
                              'MADS_OP_one_time_stop_decel_factor', 
                              'CB_VTSC_lat_accel_factor', 
@@ -831,6 +787,7 @@ class opParams:
                              'TUNE_LAT_TRX_friction_lookahead_v',
                              r'TUNE_LAT_mpc_.*',
                              'TUNE_LAT_min_steer_speed_mph'],
+      '2023/11/30-11:00:00': [r'TUNE_LAT_TRX_error_downscale_.*'],
       }  # a dict where each key is a date in 'yyyy/mm/dd-hh:mm' (24-hour) format, and the value is a list of names of params OR regular expressions to match params you want reset to their default values if the modification date is before the key date
       # use something that doesn't match the date string format and the associated list of param names or regex's will apply no matter the modified date of the param
     self._calling_function = calling_function

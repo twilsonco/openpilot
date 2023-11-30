@@ -93,9 +93,10 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_bp = [0.0, 30.0]
     self.low_speed_factor_v = [15.0, 5.0]
     
+    self.max_lat_accel = 3.5 # m/s^2
     self.error_downscale = 1.0
-    self.error_downscale_LA_factor = 0.0
-    self.error_downscale_LJ_factor = 0.0
+    self.error_downscale_LJ_factor = 0.7
+    self.error_downscale_LA_factor = 1.0 - self.error_downscale_LJ_factor
     self.error_downscale_LJ_deadzone = 0.0
     self.error_downscale_denom = FirstOrderFilter(0.0, 0.5, DT_CTRL)
     self.error_downscale_bp = [7.0, 15.0] # m/s
@@ -128,11 +129,11 @@ class LatControlTorque(LatControl):
       self.lat_jerk_deadzone = 0.0 # m/s^3 in [0, ∞] in 0.05 increments
       # Finally, lateral jerk error is downscaled so it doesn't dominate the friction error
       # term.
-      self.lat_jerk_friction_factor = 0.5 # in [0, 1] in 0.01 increments
+      self.lat_jerk_friction_factor = 0.4 # in [0, 1] in 0.01 increments
 
       # Scaling the lateral acceleration "friction response" could be helpful for some.
       # Increase for a stronger response, decrease for a weaker response.
-      self.lat_accel_friction_factor = 1.0 # in [0, 5], in 0.05 increments. 5 is arbitrary safety limit
+      self.lat_accel_friction_factor = 0.7 # in [0, 5], in 0.05 increments. 5 is arbitrary safety limit
     
       
     # for actual lateral jerk calculation
@@ -159,8 +160,8 @@ class LatControlTorque(LatControl):
       self.low_speed_factor_upper_idx = next((i for i, val in enumerate(T_IDXS) if val > self.low_speed_factor_look_ahead), None)
     look_ahead = self._op_params.get('TUNE_LAT_TRX_friction_lookahead_v')
     self.error_downscale = self._op_params.get('TUNE_LAT_TRX_error_downscale_in_curves')
-    self.error_downscale_LA_factor = self._op_params.get('TUNE_LAT_TRX_error_downscale_LA_factor')
     self.error_downscale_LJ_factor = self._op_params.get('TUNE_LAT_TRX_error_downscale_LJ_factor')
+    self.error_downscale_LA_factor = 1.0 - self.error_downscale_LJ_factor
     self.error_downscale_LJ_deadzone = self._op_params.get('TUNE_LAT_TRX_error_downscale_LJ_deadzone')
     self.error_downscale_denom.update_alpha(self._op_params.get('TUNE_LAT_TRX_error_downscale_smoothing'))
     self.error_filtered.update_alpha(self._op_params.get('TUNE_LAT_TRX_error_downscale_error_smoothing'))
@@ -217,15 +218,16 @@ class LatControlTorque(LatControl):
       error = setpoint - measurement
       
       # error downscaling
-      self.error_filtered.update_alpha(interp(CS.vEgo, self.error_downscale_bp, [self.error_filtered.alpha, 0.2]))
-      error_downscale_LA_component = self.error_downscale_LA_factor*abs(desired_lateral_accel)
-      error_downscale_LJ_component = self.error_downscale_LJ_factor*abs(apply_deadzone(desired_lateral_jerk, self.error_downscale_LJ_deadzone))
-      error_downscale_denom = min(error_downscale_LA_component + error_downscale_LJ_component + 1.0, self.error_downscale)
+      self.error_filtered.update_alpha(interp(CS.vEgo, self.error_downscale_bp, [self.error_filtered.alpha, 0.1]))
+      error_downscale_LA_component = self.error_downscale_LA_factor * abs(desired_lateral_accel)
+      error_downscale_LJ_component = self.error_downscale_LJ_factor * abs(apply_deadzone(desired_lateral_jerk, self.error_downscale_LJ_deadzone))
+      error_downscale_denom = interp(error_downscale_LA_component + error_downscale_LJ_component, [0.0, self.max_lat_accel], [1.0, self.error_downscale])
+      # error_downscale_denom = interp(CS.vEgo, self.error_downscale_bp, [error_downscale_denom, 1.0])
       if error_downscale_denom > self.error_downscale_denom.x:
         self.error_downscale_denom.x = error_downscale_denom
       else:
         self.error_downscale_denom.update(error_downscale_denom)
-      self.error_downscale_denom.x = max(1.0, self.error_downscale_denom.x - self.error_downscale_error_factor * abs(self.error_filtered.update(error)))
+      self.error_downscale_denom.x = interp(abs(self.error_filtered.update(error)), [0.0, self.error_downscale_error_factor * self.max_lat_accel], [self.error_downscale_denom.x, 1.0])
       error_scale_factor = 1.0 / self.error_downscale_denom.x
 
       lookahead_desired_curvature = get_lookahead_value(list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:self.low_speed_factor_upper_idx], desired_curvature)
