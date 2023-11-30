@@ -303,7 +303,7 @@ class LatControlTorque(LatControl):
                               + past_rolls + future_rolls
         ff_nn = self.torque_from_nn(nnff_input)
         error = torque_from_setpoint - torque_from_measurement
-        error *= self.error_downscale_current.x
+        error *= error_scale_factor
         nnff_log = nnff_input + nnff_setpoint_input + nnff_measurement_input
       else:
         ff_nn = ff
