@@ -26,6 +26,7 @@ from matplotlib.cm import ScalarMappable
 from typing import List
 
 DEBUG=0 # number of segments to load. 0 for no debugging
+MAX_LAT_FILES = 50
 
 DONGLE_ID_BLACKLIST = {}
 
@@ -555,6 +556,9 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
     # List all pickle files in the input directory
     carname = os.path.basename(input_dir)
     pickle_files = sorted([f for f in os.listdir(input_dir) if f.endswith('.lat')])
+    if len(pickle_files) > MAX_LAT_FILES:
+      # sort by file modified time and take the most recent MAX_LAT_FILES
+      pickle_files = sorted(pickle_files, key=lambda f: os.path.getmtime(os.path.join(input_dir, f)), reverse=True)[:MAX_LAT_FILES]
     
     data = []
     
@@ -637,6 +641,8 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
       
       data1, scale_factor, slopes = compute_adjusted_steer_torque(samples, inplace=False)
       
+      
+      
       # convert to mph
       for s in samples:
         s.v_ego *= 2.24
@@ -657,6 +663,8 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
       lat_accel = None
       eps = None
       driver = None
+      
+      gc.collect()
       
       max_abs_driver = max([abs(v) for v in driver_stats[1]])
       mean_driver = driver_stats[2]
@@ -873,6 +881,10 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
         except Exception as e:
           print(f"  {e}")
           continue
+        
+      data = None
+      data1 = None
+      gc.collect()
 
       # adjust the spacing between subplots
       np.set_printoptions(precision=2)
@@ -887,6 +899,12 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
       plt.savefig(os.path.join(input_dir, f"{carname} lat_accel_vs_torque.png"))
       plt.clf()
       plt.close("all")
+      
+      fig = None
+      ax = None
+      axs = None
+      gc.collect()
+      
       
       # return to m/s
       for s in samples:
@@ -919,7 +937,23 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
       # On the road, the FF model will have access to up to 2.0s (2.5s minus a max assumed steer actuator delay of 0.5s) into the future of lateral accel and jerk, and
       # this comes over 10 or so data points. We'll sample at 0.25s for 7 points to get to 2.0s.
       # This also requires checking the times of each point.
-          
+      
+      no_eps_torque_data = True
+      for s in samples:
+        if abs(s.torque_eps) > 0.5:
+          print("  eps torque > 0.5 detected, can use eps torque data")
+          no_eps_torque_data = False
+          break
+      
+      approx_lat_jerk = True
+      for s in samples:
+        if abs(s.lateral_jerk) > 0.5:
+          print("  lateral jerk > 0.5 detected, not approximating lateral jerk")
+          approx_lat_jerk = False
+          break
+      
+      print(f"{no_eps_torque_data=}, {approx_lat_jerk=}")
+      
       data = samples
       print(f"  {len(data)} samples")
       data, scale_factor, slopes = compute_adjusted_steer_torque(data, inplace=True)
@@ -967,19 +1001,27 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
         check_sources = ['combined_torque_good', 'driver_torque_good', 'eps_torque_good', 'steer_cmd_good']
         torque_sources = ['torque_adjusted_eps']
         check_sources = ['eps_torque_good']
+        if no_eps_torque_data:
+          torque_sources = ['steer_cmd']
+          check_sources = ['steer_cmd_good']
         for torque_source, check_source in zip(torque_sources, check_sources):
           print(f"  Processing {torque_source}...")
           lat_accel_deque = deque(maxlen=max_len)
-          lat_jerk_deque = deque(maxlen=max_len)
           roll_deque = deque(maxlen=max_len)
           sample_deque = deque(maxlen=max_len)
           outdata = []
           dt_max = min([j-i for i, j in zip(record_times[:-1], record_times[1:])])
+          iter = 0
+          data.reverse()
           with tqdm(total=len(data)) as pbar:
-            # while len(data) > 0:
-            for sample in data:
+            while len(data) > 0:
+            # for sample in data:
+              iter += 1
               pbar.update(1)
-              # sample = data.pop()
+              sample = data.pop()
+              if iter > 10000000:
+                gc.collect()
+                iter = 0
               s = copy.deepcopy(vars(sample))
               if not s[check_source]:
                 continue
@@ -989,13 +1031,11 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
               s['roll'] *= -1.0
               if len(sample_deque) > 0 and (s['t'] - sample_deque[-1]['t']) * 1e-9 > dt_max:
                 lat_accel_deque = deque(maxlen=max_len)
-                lat_jerk_deque = deque(maxlen=max_len)
                 roll_deque = deque(maxlen=max_len)
                 sample_deque = deque(maxlen=max_len)
               else:
                 sample_deque.append(s)
                 lat_accel_deque.append(s['lateral_accel'])
-                lat_jerk_deque.append(s['lateral_jerk'])
                 roll_deque.append(s['roll'])
               
               if len(lat_accel_deque) == max_len:
@@ -1003,6 +1043,8 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
                 # fix steer delay, fetching the torque (steer_cmd) from steer_delay seconds ago so it corresponds to the conditions now.
                 # sout['steer_cmd'] = sample_deque[zero_time_ind - steer_delay_ind]['steer_cmd']
                 Ts = [(s['t'] - sout['t']) * 1e-9 for s in sample_deque]
+                if approx_lat_jerk:
+                  sout['lateral_jerk'] = (interp(0.15, Ts, lat_accel_deque) - interp(-0.15, Ts, lat_accel_deque)) / 0.3
                 sout = {**sout, **{f"lateral_accel_{ts}": interp(t, Ts, lat_accel_deque) for t,ts in zip(record_times, record_times_strings)}}
                 sout = {**sout, **{f"roll_{ts}": interp(t, Ts, roll_deque) for t,ts in zip(record_times, record_times_strings)}}
                 sout = {k: sout[k] for k in columns}
@@ -1010,12 +1052,18 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
           
           if len(outdata) < 100:
             continue
-            
+          
+          samples = None
+          data = None
+          gc.collect()
           
           # pickle.dump(data, open(output_csv.replace(".csv", ".pkl"), "wb"))
           # pickle.dump(data, lzma.open(output_csv.replace(".csv", ".pkl.xz"), "wb"))
           print("creating dataframe")
           df = pd.DataFrame(outdata)
+          
+          outdata = None
+          gc.collect()
           
           # print 5 random rows
           print(df.sample(10))
@@ -1042,9 +1090,9 @@ def has_upper_word(text):
     return False
 
 # iterate over all directories and subdirectories in the specified path
-whitelist = ["toyota", "honda", "hyundai", "chrysler"]
-whitelist = ["TRAILBLAZER"]
-blacklist = []
+whitelist = []
+whitelist = []
+blacklist = ["nissan", "ford", "mock"]
 dirlist=[]
 for root, dirs, files in os.walk(input_dir):
     for dir_name in dirs:
@@ -1056,7 +1104,7 @@ for root, dirs, files in os.walk(input_dir):
             print(f"Processing {d}...")
             # try:
             # dirlist.append(d)
-            model = pickle_files_to_csv(d, check_modified=False, print_stats=True, save_output=True)
+            model = pickle_files_to_csv(d, check_modified=False, print_stats=False, save_output=True)
             blacklist.append(dir_name)
             # except Exception as e:
             #   print(f"Error processing {d}: {e}")
