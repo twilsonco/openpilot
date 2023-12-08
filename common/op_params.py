@@ -385,6 +385,8 @@ class opParams:
       
       #####
       
+      'FP_stop_distance_offset_m': Param(0.0, float, 'Adjusts the stopping distances for all follow profiles. Increase to increase distance between you and stopped lead car.', live=True, min_val=-0.5, max_val=5.0, unit='meters'),
+      
       'FP_close_gas_factor': Param(1.0, float, 'Controls how proactively OpenPilot will adjust in response to a change in the lead car velocity when using the close follow profile. Increase to make close follow more responsive.', live=True, min_val=0.1, max_val=2.0),
       
       'FP_close_distance_offset_s': Param(0.0, float, 'Add or subtract follow distance from the close follow profile', live=True, min_val=-0.5, max_val=3.0, unit='seconds follow distance'),
