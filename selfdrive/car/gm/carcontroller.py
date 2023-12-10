@@ -154,25 +154,13 @@ class CarController:
         if self.CP.enableGasInterceptor:
           can_sends.append(create_gas_interceptor_command(self.packer_pt, interceptor_gas_cmd, idx))
         if self.CP.carFingerprint not in CC_ONLY_CAR:
-          # Check for auto hold conditions
-          # Release Auto Hold and creep smoothly when regenpaddle pressed
-          if CS.out.regenBraking and CS.autoHold:
-            CS.autoHoldActive = False
-          if CS.autoHold and not CS.autoHoldActive and not CS.out.regenBraking:
-            if CS.out.vEgo > 0.03:
-              CS.autoHoldActive = True
-            elif CS.out.vEgo < 0.02 and CS.out.brakePressed:
-              CS.autoHoldActive = True
-          if CS.out.cruiseState.available and not CC.longActive and CS.autoHold and CS.autoHoldActive and not CS.out.gasPressed and CS.out.gearShifter in ['drive','low'] and CS.out.vEgo < 0.02 and not CS.out.regenBraking:
+          if CS.out.cruiseState.available and not CC.longActive and \
+              CS.autoHold and CS.autoHoldActive and not CS.out.gasPressed and \
+              CS.out.gearShifter in ['drive','low'] and CS.out.vEgo < 0.02 and \
+              not CS.out.regenBraking:
             # Auto Hold State
-            car_stopping = self.apply_gas < self.params.ZERO_GAS
-            at_full_stop = at_full_stop and stopping
+            at_full_stop = near_stop = True
             friction_brake_bus = CanBus.CHASSIS
-            # GM Camera exceptions
-            # TODO: can we always check the longControlState?
-            if self.CP.networkLocation == NetworkLocation.fwdCamera:
-              friction_brake_bus = CanBus.POWERTRAIN
-            near_stop = (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE) and car_stopping
             can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake, idx, CC.enabled, near_stop, at_full_stop, self.CP))
             CS.autoHoldActivated = True
           else:
@@ -264,6 +252,17 @@ class CarController:
     new_actuators.gas = self.apply_gas
     new_actuators.brake = self.apply_brake
     new_actuators.speed = self.apply_speed
+    
+    
+    # Check for auto hold conditions
+    # Release Auto Hold and creep smoothly when regenpaddle pressed
+    if CS.out.regenBraking and CS.autoHold:
+      CS.autoHoldActive = False
+    if CS.autoHold and not CS.autoHoldActive and not CS.out.regenBraking:
+      if CS.out.vEgo > 0.03:
+        CS.autoHoldActive = True
+      elif CS.out.vEgo < 0.02 and CS.out.brakePressed:
+        CS.autoHoldActive = True
 
     self.frame += 1
     return new_actuators, can_sends
