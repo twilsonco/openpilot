@@ -157,13 +157,13 @@ class CarController:
           # Check for auto hold conditions
           # Release Auto Hold and creep smoothly when regenpaddle pressed
           if CS.out.regenBraking and CS.autoHold:
-            autoHoldActive = False
-          if CS.autoHold and not autoHoldActive and not CS.out.regenBraking:
+            CS.autoHoldActive = False
+          if CS.autoHold and not CS.autoHoldActive and not CS.out.regenBraking:
             if CS.out.vEgo > 0.03:
-              autoHoldActive = True
+              CS.autoHoldActive = True
             elif CS.out.vEgo < 0.02 and CS.out.brakePressed:
-              autoHoldActive = True
-          if CS.out.cruiseState.available and not CC.longActive and CS.autoHold and autoHoldActive and not CS.out.gasPressed and CS.out.gearShifter in ['drive','low'] and CS.out.vEgo < 0.02 and not CS.out.regenBraking:
+              CS.autoHoldActive = True
+          if CS.out.cruiseState.available and not CC.longActive and CS.autoHold and CS.autoHoldActive and not CS.out.gasPressed and CS.out.gearShifter in ['drive','low'] and CS.out.vEgo < 0.02 and not CS.out.regenBraking:
             # Auto Hold State
             car_stopping = self.apply_gas < self.params.ZERO_GAS
             at_full_stop = at_full_stop and stopping

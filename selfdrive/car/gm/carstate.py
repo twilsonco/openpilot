@@ -31,6 +31,7 @@ class CarState(CarStateBase):
     self.single_pedal_mode = False
 
     self.autoHold = True # set based on autohold toggle in GM options
+    self.autoHoldActive = False
     self.autoHoldActivated = False
     self.nowNanos = 0
     self.lastAutoHoldNanos = 0
