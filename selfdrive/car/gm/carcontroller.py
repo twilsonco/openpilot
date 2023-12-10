@@ -167,7 +167,6 @@ class CarController:
             if CS.out.gasPressed:
               at_full_stop = False
               near_stop = False
-              car_stopping = False
             else:
               at_full_stop = at_full_stop and stopping
             friction_brake_bus = CanBus.CHASSIS

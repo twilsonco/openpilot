@@ -30,8 +30,8 @@ class CarState(CarStateBase):
 
     self.single_pedal_mode = False
     
-    # set autohold based on toggle in GM options; disabled for camera cars
-    self.autoHold = True and CP.networkLocation != NetworkLocation.fwdCamera 
+    # set autohold based on toggle in GM options; disabled for camera and CC cars
+    self.autoHold = True and CP.networkLocation != NetworkLocation.fwdCamera and self.CP.carFingerprint not in CC_ONLY_CAR
     self.autoHoldActive = False
     self.autoHoldActivated = False
     self.nowNanos = 0
