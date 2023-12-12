@@ -26,7 +26,7 @@ from matplotlib.cm import ScalarMappable
 from typing import List
 
 DEBUG=0 # number of segments to load. 0 for no debugging
-MAX_LAT_FILES = 50
+MAX_LAT_FILES = 8000
 
 DONGLE_ID_BLACKLIST = {}
 
