@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+
 # f(angle, velocity) = steer command
 # Only use units of steer: [-1,1], m/s, and degrees
 
@@ -21,6 +22,8 @@ from p_tqdm import p_map
 import re
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from pathlib import Path
+from collections import deque
+from common.numpy_fast import interp
 
 from tools.tuning.lat_settings import *
 if not PREPROCESS_ONLY:
@@ -195,6 +198,10 @@ class Sample():
   t_llk: float = np.nan
   t_lp: float = np.nan
   t_lat_p: float = np.nan
+  t: float = np.nan
+  yaw_rate: float = np.nan
+  stiffnessFactor: float = np.nan
+  steerRatio: float = np.nan
   
 
 class CleanSample(NamedTuple):
@@ -205,6 +212,10 @@ class CleanSample(NamedTuple):
 
 def collect(lr):
   s = Sample()
+  sample_deque = deque(maxlen=16)
+  deque_mid_idx = 8
+  t_interp_field = "t_llk"
+  max_t_delta = 0.1
   samples: list[Sample] = []
   section: list[Sample] = []
 
@@ -247,8 +258,8 @@ def collect(lr):
         s.t_lp= msg.logMonoTime
         s.steer_offset = msg.liveParameters.angleOffsetDeg
         s.steer_offset_average = msg.liveParameters.angleOffsetAverageDeg  
-        stiffnessFactor = msg.liveParameters.stiffnessFactor
-        steerRatio = msg.liveParameters.steerRatio
+        s.stiffnessFactor = msg.liveParameters.stiffnessFactor
+        s.steerRatio = msg.liveParameters.steerRatio
         s.roll = msg.liveParameters.roll
         continue
       elif msg.which() == 'carControl':
@@ -265,7 +276,7 @@ def collect(lr):
         continue
       elif msg.which() == 'liveLocationKalman':
         s.t_llk = msg.logMonoTime
-        yaw_rate = msg.liveLocationKalman.angularVelocityCalibrated.value[2]
+        s.yaw_rate = msg.liveLocationKalman.angularVelocityCalibrated.value[2]
         s.pitch = msg.liveLocationKalman.orientationNED.value[1]
       elif msg.which() == 'lateralPlan':
         s.t_lat_p = msg.logMonoTime
@@ -275,6 +286,7 @@ def collect(lr):
           s.desired_curvature = msg.lateralPlan.curvatures[0]
         except:
           s.desired_curvature_rate = 0
+          s.desired_curvature = 0
         continue
       elif VM is None and msg.which() == 'carParams':
         CP = msg.carParams
@@ -284,66 +296,76 @@ def collect(lr):
 
       # assert all messages have been received
       valid = not np.isnan(s.v_ego) and \
-              not np.isnan(s.steer_offset) and \
-              not np.isnan(s.desired_curvature_rate) and \
-              not np.isnan(s.desired_curvature) and \
+              not np.isnan(s.t_llk) and \
+              not np.isnan(s.t_lat_p) and \
+              not np.isnan(s.t_cc) and \
               VM is not None and \
-              not np.isnan(yaw_rate)
+              not np.isnan(s.t_lp)
       
-      if valid:
-        s.car_make = CP.carName
-        s.car_fp = CP.carFingerprint
-        s.long_actuator_delay = (CP.longitudinalActuatorDelayUpperBound + CP.longitudinalActuatorDelayLowerBound) / 2
-        VM.update_params(max(stiffnessFactor, 0.1), max(steerRatio, 0.1))
-        current_curvature = -VM.calc_curvature(math.radians(s.steer_angle - s.steer_offset), s.v_ego, s.roll)
-        current_curvature_rate = -VM.calc_curvature(math.radians(s.steer_rate), s.v_ego, 0.)
-        s.lateral_accel = current_curvature * s.v_ego**2
-        s.lateral_jerk = current_curvature_rate * s.v_ego**2
-        s.curvature_device = (yaw_rate / s.v_ego) if s.v_ego > 0.01 else 0.
-        s.lateral_accel_device = yaw_rate * s.v_ego  - (np.sin(s.roll) * ACCELERATION_DUE_TO_GRAVITY)
-        s.desired_steer_angle = math.degrees(VM.get_steer_from_curvature(-s.desired_curvature, s.v_ego, s.roll))
-        s.desired_steer_rate = math.degrees(VM.get_steer_from_curvature(-s.desired_curvature_rate, s.v_ego, 0))
-#         if s.steer_cmd != 0 and s.torque_eps != 0 and s.torque_driver == 0:
-#           print(f"""{s.v_ego = }
-# {s.steer_angle = }
-# {s.steer_rate = }
-# {s.torque_eps = }
-# {s.torque_driver = }
-# {s.steer_cmd =}
-# {s.steer_offset = }
-# {s.steer_offset_average = }
-# {s.roll = }
-# {s.enabled = }
-# {s.desired_curvature_rate = }
-# {s.lateral_accel = }
-# {s.lateral_accel_device = }
-# """)
-      
-      # if valid:
-      #   print(f"{s.v_ego = :0.3f}\t{s.steer_angle = :0.3f}\t{s.steer_rate = :0.3f}\t{s.torque_driver = :0.3f}\t{s.torque_eps = :0.3f}")
-      # else:
-      #   print("invalid")
-      #   pass
-
-      # assert continuous section
-      # if last_msg_time:
-      #   valid = valid and 0.1 > abs(msg.logMonoTime - last_msg_time) * 1e-9
-      # last_msg_time = msg.logMonoTime
-
-      if valid:
-        samples.append(deepcopy(s))
+      if valid:        
+        # Check that the current sample time is not too far from the previous sample time.
+        # If it is, reset the deque.
+        if len(sample_deque) > 0:
+          t_sample = getattr(s, t_interp_field)
+          t_last = getattr(sample_deque[-1], t_interp_field)
+          if (t_sample - t_last) * 1e-9 > max_t_delta:
+            # print(f"Resetting deque at {t_sample} because t_sample - t_last = {(t_sample - t_last) * 1e-9} > {max_t_delta}")
+            sample_deque.clear()
+          else:
+            # print(f"deque length = {len(sample_deque)}")
+            sample_deque.append(s)
+        else:
+          # print(f"deque length = {len(sample_deque)}")
+          sample_deque.append(s)
+        
+        # now interpolate a sample from the deque
+        if len(sample_deque) == sample_deque.maxlen:
+          # print(f"deque length = {len(sample_deque)}")
+          cur_sample = sample_deque[deque_mid_idx]
+          t_sample = getattr(cur_sample, t_interp_field)
+          cur_sample.t = t_sample
+          # need to do one interpolation for each field, using the field's
+          # corresponsing time value.
+          # This works by making a list of time values and then, for each field that shares the same
+          # time value, interpolating the field value at that time.
+          
+          # we'll use a dict to organize this, where each key is the name of a time field, and the value
+          # is a list of the fields that correspond to that time field.
+          t_field_dict = {
+            "t_cs": ["v_ego", "a_ego", "steer_angle", "steer_rate", "torque_eps", "torque_driver", "gas", "gas_pressed", "brake", "brake_pressed"],
+            "t_lp": ["steer_offset", "steer_offset_average", "roll", "stiffnessFactor", "steerRatio"],
+            "t_cc": ["enabled", "steer_cmd_out", "gas_cmd_out", "brake_cmd_out", "steer_cmd", "gas_cmd", "brake_cmd", "desired_accel"],
+            "t_lat_p": ["desired_curvature_rate", "desired_curvature"],
+            }
+          for t_field, field_list in t_field_dict.items():
+            t_field_list = [getattr(s, t_field) for s in sample_deque]
+            for field in field_list:
+              field_list = [getattr(s, field) for s in sample_deque]
+              setattr(cur_sample, field, interp(t_sample, t_field_list, field_list))
+          
+          # now compute derived values
+          cur_sample.car_make = CP.carName
+          cur_sample.car_fp = CP.carFingerprint
+          cur_sample.long_actuator_delay = (CP.longitudinalActuatorDelayUpperBound + CP.longitudinalActuatorDelayLowerBound) / 2
+          VM.update_params(max(cur_sample.stiffnessFactor, 0.1), max(cur_sample.steerRatio, 0.1))
+          current_curvature = -VM.calc_curvature(math.radians(s.steer_angle - s.steer_offset), s.v_ego, s.roll)
+          current_curvature_rate = -VM.calc_curvature(math.radians(s.steer_rate), s.v_ego, 0.)
+          cur_sample.lateral_accel = current_curvature * s.v_ego**2
+          cur_sample.lateral_jerk = current_curvature_rate * s.v_ego**2
+          cur_sample.curvature_device = (cur_sample.yaw_rate / s.v_ego) if s.v_ego > 0.01 else 0.
+          cur_sample.lateral_accel_device = cur_sample.yaw_rate * s.v_ego  - (np.sin(s.roll) * ACCELERATION_DUE_TO_GRAVITY)
+          cur_sample.desired_steer_angle = math.degrees(VM.get_steer_from_curvature(-s.desired_curvature, s.v_ego, s.roll))
+          cur_sample.desired_steer_rate = math.degrees(VM.get_steer_from_curvature(-s.desired_curvature_rate, s.v_ego, 0))
+            
+          # then append the interpolated sample to the list of samples
+          samples.append(deepcopy(cur_sample))
+          
+          # print out the interpolated sample as python dict
+          # print(f"{cur_sample.__dict__}")
+          
         s.v_ego = np.nan
-    #     section.append(deepcopy(s))
-    #     section_end = msg.logMonoTime
-    #     if not section_start:
-    #       section_start = msg.logMonoTime
-    #   elif section_start:
-    #     # end of valid section
-    #     if (section_end - section_start) * 1e-9 >= MIN_SECTION_SECONDS:
-    #       samples.extend(section)  
-    #       lat_angular_velocity = np.nan
-    #     section = []
-    #     section_start = section_end = 0
+          
+          
     except:
       continue
   
@@ -353,8 +375,9 @@ def collect(lr):
   # if (section_end - section_start) * 1e-9 > MIN_SECTION_SECONDS:
   #   samples.extend(section)
 
-
-  if len(samples) == 0 or not any([s.v_ego > 0.5 for s in samples]):
+  min_speed_reached = any([s.v_ego > 0.5 for s in samples])
+  if len(samples) == 0 or not min_speed_reached:
+    print(f'{len(samples)} samples found, {min_speed_reached = }')
     return np.array([])
 
   return np.array(samples)
@@ -686,6 +709,7 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
                     r = Route(route, data_dir=d)
                     lr = MultiLogIterator(r.log_paths(), sort_by_time=True)
                     data1 = collect(lr)
+                    # print(f"{len(data1)} points in {filename}")
                     if len(data1):
                       with open(latfile, 'wb') as f:
                         pickle.dump(data1, f)
@@ -790,6 +814,10 @@ if __name__ == '__main__':
   parser.add_argument('--route', type=str)
   parser.add_argument('--preprocess', action='store_true')
   parser.add_argument('--dongleid', type=str)
+  
+  # define debug args using '      python3 /home/haiiro/openpilot-batch/openpilot/tools/tuning/lat.py --preprocess --path "$curdir/$dongle" --outpath "$outdir"'
+  # debug_args = ['--preprocess', '--path', '/Volumes/video/scratch-video/rlogs/gm/CHEVROLET VOLT PREMIER 2017/2e983c9898739c34', ]
+  
   args = parser.parse_args()
   
 
@@ -822,5 +850,7 @@ if __name__ == '__main__':
     with open(regfile, 'wb') as f:
       pickle.dump([speed, angle, steer], f)
 
+  if args.preprocess:
+    exit(0)
   fit(speed, angle, steer, IS_ANGLE_PLOT)
   plot(speed, angle, steer)
