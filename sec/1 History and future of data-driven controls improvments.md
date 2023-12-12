@@ -22,10 +22,13 @@ This document describes the chronology of the overall project, as well as descri
     - [Neural network to do the three-part composite feedforward all at once](#neural-network-to-do-the-three-part-composite-feedforward-all-at-once)
     - [Past/future context into the model](#pastfuture-context-into-the-model)
       - [Past/future data in training](#pastfuture-data-in-training)
+      - [Processing community log data](#processing-community-log-data)
+      - [Processing Comma's published steering data](#processing-commas-published-steering-data)
+      - [The resulting training data look like this:](#the-resulting-training-data-look-like-this)
     - [On-road runner](#on-road-runner)
       - [Error "friction" response](#error-friction-response)
-      - [Full NN error response ("mk II")](#full-nn-error-response-mk-ii)
-      - [NN error response "mk III"](#nn-error-response-mk-iii)
+      - [Full NN lateral controller ("mk II")](#full-nn-lateral-controller-mk-ii)
+      - [Lookahead lateral jerk in NN lateral controller](#lookahead-lateral-jerk-in-nn-lateral-controller)
     - [Longitudinal acceleration response](#longitudinal-acceleration-response)
         - [What didn't work](#what-didnt-work)
         - [What did work: Adjust future times](#what-did-work-adjust-future-times)
@@ -323,9 +326,96 @@ This allows the model to figure out from the training data what constitutes "del
 #### Past/future data in training
 
 The anonymized lateral data files (both mine and Comma's) are in order, so if you go from point to point, you're seeing someone's actual drive, moment by moment.
-To include past/future lateral acceleration and road roll in the model training data, you must derive it from the continuous time data, which amounts to interpolating through lists (or queues) of the most recent 3s of values (see [here](https://github.com/twilsonco/openpilot/blob/08ddaf2d304d5bff9650009c22683362481b57d2/tools/tuning/lat_to_csv.py#L1006) where I do this for community data, or [here](https://github.com/twilsonco/openpilot/blob/08ddaf2d304d5bff9650009c22683362481b57d2/tools/tuning/comma_csv_to_feather.py#L523) for commaSteeringControl data).
+To include past/future lateral acceleration and road roll in the model training data, you must derive it from the continuous time data, which amounts to interpolating through lists (or queues) of the most recent 3s of values.
 
-The resulting training data look like this:
+There are two type of pre-processing that is used to generate the data eventually used for model training. 
+One for rlogs donated by community members, and one for data from [Comma's published steering data](https://huggingface.co/datasets/commaai/commaSteeringControl).
+
+#### Processing community log data
+
+The code for this isn't very clean, as it was directly developed from code used previously for the original custom fit feedforward functions, which was itself adapted from @hewers' code, which was itself adapted from (like all things good) Shanes code (unless I'm mistaken). 
+There are two steps to the processing:
+
+1. Converting rlogs into smaller, anonymous files using [this script](https://github.com/twilsonco/openpilot/blob/806bb1ba797bd479055de073f527b18d63aca022/tools/tuning/lat.py) that produces binary files in `pickle` format containing the following fields (everything useful for lateral *and longitudinal* analysis) at each time step. Values from different sources (e.g. `carState`, `lateralPlan`, etc.) [are time-aligned](https://github.com/twilsonco/openpilot/blob/806bb1ba797bd479055de073f527b18d63aca022/tools/tuning/lat.py#L321) to compensate for them publishing data at different times.
+
+```python
+class Sample():
+  enabled: bool
+  v_ego: float
+  a_ego: float
+  steer_angle: float
+  steer_rate: float
+  steer_offset: float
+  steer_offset_average: float
+  torque_eps: float # -1,1
+  torque_driver: float # -1,1
+  desired_curvature: float
+  desired_curvature_rate: float
+  lateral_accel: float
+  lateral_jerk: float
+  roll: float
+  pitch: float
+  curvature_device: float
+  lateral_accel_device: float
+  steer_cmd: float
+  steer_cmd_out: float
+  desired_steer_angle: float
+  desired_steer_rate: float
+  desired_accel: float
+  gas_cmd: float
+  gas_cmd_out: float
+  gas: float
+  gas_pressed: bool
+  brake_cmd: float
+  brake_cmd_out: float
+  brake: float
+  brake_pressed: bool
+  car_make: str = ''
+  car_fp: str = ''
+  long_actuator_delay: float
+  t_cs: float
+  t_cc: float
+  t_llk: float
+  t_lp: float
+  t_lat_p: float
+  t: float
+  yaw_rate: float
+  stiffnessFactor: float
+  steerRatio: float
+```
+
+1. Generate training data from the anonymized files [using this script](https://github.com/twilsonco/openpilot/blob/7612593a6e4d804d5818317b4cc0322b13216192/tools/tuning/lat_to_csv.py) to produce training data for NNFF training in `feather` format.
+   1. The script also automatically computes scaling factors necessary for converting each car's raw steer commands so that they line up with OpenPilot's steer command (which is in [-1,1]), allowing the NNFF models to be trained based on the car's commands rather than OpenPilot's, which appears to result in better performing models.
+   2. The script also produces plots so that the collected log data can be assessed to determine if the input space has been sufficiently sampled, and if it hasn't, to identify the speeds/angles that require more data in order to produce a NNFF model that can be predictive for the full range of expected conditions.
+
+The resulting plots look like this. The right three columns show the rescaled data so that everything lines up within [-1,1] to best match the steer command (which is shown in the left column).
+![sample of plotted community steer data](../data/4%20Community%20lateral%20data/CHEVROLET%20BOLT%20EUV%202022.png)
+
+#### Processing Comma's published steering data
+
+Comma's published data is analogous to but contains less information than the anonymous files created from community log data in step (2) above:
+
+```python
+class CleanLatSample():
+  def __init__(self, s):
+    self.v_ego = float(s['vEgo'])
+    self.a_ego = float(s['aEgo'])
+    self.steer_cmd = float(s['steer'])
+    self.steer_cmd_filtered = float(s['steerFiltered'])
+    self.lateral_accel_steer_angle = float(s['latAccelSteeringAngle'])
+    self.lateral_accel_desired = float(s['latAccelDesired'])
+    self.lateral_accel_localizer = float(s['latAccelLocalizer'])
+    self.steer_angle_deg = float(s['steeringAngleDeg'])
+    self.eps_firmware: str = s['epsFwVersion']
+    self.roll = float(s['roll'])
+    self.t = float(s['t'])
+    self.lat_active: bool = s['latActive'] == 'True'
+    self.steer_pressed: bool = s['steeringPressed'] == 'True'
+```
+
+Since there's no instantaneous lateral jerk data, [the script that processes this data](https://github.com/twilsonco/openpilot/blob/7612593a6e4d804d5818317b4cc0322b13216192/tools/tuning/comma_csv_to_feather.py) into `feather` format for NNFF training [approximates it using a centered finite difference](https://github.com/twilsonco/openpilot/blob/7612593a6e4d804d5818317b4cc0322b13216192/tools/tuning/comma_csv_to_feather.py#L538) over 0.3s, between the lateral acceleration 0.15s in the future vs the lateral acceleration from 0.15s in the past relative to each time point.
+
+#### The resulting training data look like this:
 | steer_cmd | v_ego   | lateral_accel | lateral_jerk | roll    | lateral_accel_m03 | lateral_accel_m02 | lateral_accel_m01 | lateral_accel_p03 | lateral_accel_p06 | lateral_accel_p10 | lateral_accel_p15 | roll_m03 | roll_m02 | roll_m01 | roll_p03 | roll_p06 | roll_p10 | roll_p15 |
 |-----------|---------|---------------|--------------|---------|-------------------|-------------------|-------------------|-------------------|-------------------|-------------------|-------------------|----------|----------|----------|----------|----------|----------|----------|
 | 0.2166    | 26.5287 | -0.0191       | -0.0037      | -0.0278 | -0.0120           | -0.0152           | -0.0178           | -0.0035           | 0.0024            | -0.0055           | 0.0193            | -0.0253  | -0.0263  | -0.0273  | -0.0277  | -0.0268  | -0.0280  | -0.0237  |
@@ -352,10 +442,9 @@ With this—and lots of trial & error & iterations—you get the current generat
 
 See here to [understand the NNFF model plots](https://github.com/twilsonco/openpilot/blob/log-info/sec/2%20Understanding%20the%20NNFF%20model%20and%20plots.md)
 
-
 ### On-road runner
 
-To run such a NNFF on-road, you [interpolate through future planned lateral acceleration and model-predicted road roll](https://github.com/twilsonco/openpilot/blob/84668d0104998071572ceef5ba89bf81bd5daab5/selfdrive/controls/lib/latcontrol_torque.py#L111), and [maintain past data in queues](https://github.com/twilsonco/openpilot/blob/84668d0104998071572ceef5ba89bf81bd5daab5/selfdrive/controls/lib/latcontrol_torque.py#L104).
+To run such a NNFF on-road, you [interpolate through future planned lateral acceleration and model-predicted road roll](https://github.com/twilsonco/openpilot/blob/9df3078230127c49719d1ed0637b47a10f557426/selfdrive/controls/lib/latcontrol_torque.py#L167C9-L167C9), and [maintain past data in queues](https://github.com/twilsonco/openpilot/blob/9df3078230127c49719d1ed0637b47a10f557426/selfdrive/controls/lib/latcontrol_torque.py#L152C9-L152C9).
 With this you can fill the entire length-18 input vector.
 
 #### Error "friction" response
@@ -369,32 +458,18 @@ This makes the *actual* error response more effective, since the steering wheel 
 It also makes the error response smoother, because the actual correction occurs sooner, preventing a yet higher error response that results in overshoot and further correction.
 Instead the error stays low, and the resulting lower error response yields a smooth correction back to the target.
 
-#### Full NN error response ("mk II")
+#### Full NN lateral controller ("mk II")
 
 Taking inspiration from Harald's current torque controller, I [convert from lateral acceleration error to steer torque error](https://github.com/twilsonco/openpilot/blob/84668d0104998071572ceef5ba89bf81bd5daab5/selfdrive/controls/lib/latcontrol_torque.py#L125) using the feedforward function.
 With the current torque controller, this amounts to a linear scaling of the error, but with NNFF (or any non-linear fits) you get a dynamic error response that's unlike any other type of lateral controller (100% credit to Harald for how this came to be).
 That that means is that [the current NN torque controller](https://github.com/twilsonco/openpilot/commit/a10ed4d637f8b6d48b1bc018688355c3f07a3ac2) error response is dynamic based on lateral acceleration error, lateral jerk error, and varies based on speed and road roll, **just like a human error response**.
 
-#### NN error response "mk III"
+At this point, "NNFF" is now a misnomer, since the entire steer response is determined using the NN, instead of just feedforward (FF).
 
-Although the concept of the "mk II" error response is great, numerically it doesn't work well when there's a sigmoidal component to the lateral acceleration response, for reasons made obvious in the following image.
+#### Lookahead lateral jerk in NN lateral controller
 
-| o _ O | ( __ ^ __ ) |
-| --- | --- |
-| ![error mk2](https://raw.github.com/twilsonco/openpilot/log-info/img/error-mk2.jpg) | In tight (high lateral accelration) corners, the difference in steer torque (∆y) for a given error (here, 1m/s²) is less than in slight curves. That is, ∆y1 > ∆y2. |
-
-So, "mk III" instead uses a simultaneously simpler and more complicated approach, where the lateral acceleration error is passed as the lateral acceleration NNFF input, and the lateral jerk error as the lateral jerk input.
-This guarantees that the error response comes from the steepest (most responsive) part of the NNFF lateral acceleration slope.
-
-The past lateral acceleration error is recorded and used, and for computing the future error, I devised a simple function that assumes that future error should tend towards zero, while using a continuous assumption based on previous error. Here's the [relevent code](https://github.com/twilsonco/openpilot/blob/d5d563d736f4ed6afa464c02b33929579fc9bc81/selfdrive/controls/lib/latcontrol_torque.py#L31), and a graphical depiction of what this future predicted error looks like for different types of past error values. 
-
-![predicted error](https://raw.github.com/twilsonco/openpilot/log-info/img/predicted-error.png)
-
-What this means is that when error is increasing, the future predicted error values will be greater, yielding a stronger error correction from the NNFF. 
-Likewise, if the error is quickly returning to zero, the overshoot is predicted and the opposite-sign future error values will cause NNFF to lower the re-centering steer torque earlier, preventing the overshoot.
-Then, all of this being handled by NNFF means it varies with speed/roll/etc.
-
-This approach is what I'm currently using, and it is giving the best lateral performance yet for the Volt that is snappy when it needs to be, and buttery smooth under normal conditions.
+The method described above for [only commanding "delibrate" lateral jerk](#only-commanding-deliberate-lateral-jerk) is still in use [in NNFF](https://github.com/twilsonco/openpilot/blob/9df3078230127c49719d1ed0637b47a10f557426/selfdrive/controls/lib/latcontrol_torque.py#L33).
+It was removed for some time, but it remains an effective method at getting the immediate reponse from desired lateral jerk, while avoiding spurious, short-lived lateral jerk responses.
 
 ### Longitudinal acceleration response
 
