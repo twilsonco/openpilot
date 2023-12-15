@@ -311,7 +311,6 @@ class LeadMpc():
     self.dist_cost_last = MPC_COST_LONG.DISTANCE
     self.accel_cost_last = MPC_COST_LONG.ACCELERATION
     self.stopping_distance = 0.
-    self.stopping_distance_offset = 0.
 
     self.tr_override = False
     
@@ -330,6 +329,7 @@ class LeadMpc():
     self.params_check_freq = 0.5 # check params at 2Hz
     self._params = Params()
     self._op_params = opParams(calling_function="lead mpc LeadMpc")
+    self.stopping_distance_offset = self._op_params.get('FP_stop_distance_offset_m', force_update=True)
     
     self._follow_profiles = FOLLOW_PROFILES[:]
     self.update_op_params()
@@ -360,6 +360,7 @@ class LeadMpc():
     close_follow_away_delta = CLOSE_AWAY_RANGE * self._close_gas_factor
     new_close_follow_away = CLOSE_FOLLOW_EQUIL_FOLLOW_DISTANCE + close_follow_away_delta
     self._follow_profiles[0][1] = [new_close_follow_towards, new_close_follow_away]
+    self.stopping_distance_offset = self._op_params.get('FP_stop_distance_offset_m')
 
   def update(self, CS, radarstate, v_cruise, a_target, active):
     v_ego = CS.vEgo
