@@ -148,10 +148,10 @@ def get_nn_model_path(car, eps_firmware) -> Tuple[Union[str, None, float]]:
   else:
     check_model = car
   model_path, max_similarity = check_nn_path(check_model)
-  if 0.0 <= max_similarity < 0.9:
+  if car not in model_path or 0.0 <= max_similarity < 0.9:
     check_model = car
     model_path, max_similarity = check_nn_path(check_model)
-    if 0.0 <= max_similarity < 0.9:
+    if car not in model_path or 0.0 <= max_similarity < 0.9:
       model_path = None
   return model_path, max_similarity
   
