@@ -192,6 +192,7 @@ class Sample():
   brake_pressed: bool = False
   car_make: str = ''
   car_fp: str = ''
+  car_eps_fp: str = ''
   long_actuator_delay: float = np.nan
   t_cs: float = np.nan
   t_cc: float = np.nan
@@ -346,6 +347,7 @@ def collect(lr):
           # now compute derived values
           cur_sample.car_make = CP.carName
           cur_sample.car_fp = CP.carFingerprint
+          cur_sample.car_eps_fp = str(next((fw.fwVersion for fw in CP.carFw if fw.ecu == "eps"), ""))
           cur_sample.long_actuator_delay = (CP.longitudinalActuatorDelayUpperBound + CP.longitudinalActuatorDelayLowerBound) / 2
           VM.update_params(max(cur_sample.stiffnessFactor, 0.1), max(cur_sample.steerRatio, 0.1))
           current_curvature = -VM.calc_curvature(math.radians(s.steer_angle - s.steer_offset), s.v_ego, s.roll)
