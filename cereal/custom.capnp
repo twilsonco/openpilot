@@ -21,6 +21,7 @@ struct FrogPilotDeviceState @0xaedffd8f31e7b55d {
 enum FrogPilotEvents @0xf35cc4560bbf6ec2 {
   frogSteerSaturated @0;
   greenLight @1;
+  pedalInterceptorNoBrake @2;
   torqueNNLoad @3;
 }
 
