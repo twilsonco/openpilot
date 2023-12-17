@@ -127,6 +127,10 @@ static void gm_rx_hook(CANPacket_t *to_push) {
       brake_pressed = GET_BIT(to_push, 40U) != 0U;
     }
 
+    if (addr == 0xC9) {
+      acc_main_on = GET_BIT(to_push, 29U) != 0U;
+    }
+
     if (addr == 0x1C4) {
       gas_pressed = GET_BYTE(to_push, 5) != 0U;
 
