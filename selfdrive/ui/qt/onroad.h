@@ -129,6 +129,7 @@ private:
   bool conditionalExperimental;
   bool experimentalMode;
   bool leadInfo;
+  bool mapOpen;
   bool turnSignalLeft;
   bool turnSignalRight;
   double maxAcceleration;
