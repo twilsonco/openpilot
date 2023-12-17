@@ -104,6 +104,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : ListWid
   addItem(noToggles);
 
   std::vector<std::tuple<QString, QString, QString, QString>> vehicle_toggles {
+    {"EVTable", "EV Lookup Tables", "Smoothens out the gas and brake controls for EV vehicles.", ""},
     {"LongPitch", "Long Pitch Compensation", "Reduces speed and acceleration error for greater passenger comfort and improved vehicle efficiency.", ""},
     {"LowerVolt", "Lower Volt Enable Speed", "Lowers the Volt's minimum enable speed in order to enable openpilot at any speed.", ""},
 
@@ -141,6 +142,9 @@ void FrogPilotVehiclesPanel::setModels() {
 void FrogPilotVehiclesPanel::setToggles() {
   const bool gm = brandSelection == "Buick" || brandSelection == "Cadillac" || brandSelection == "Chevrolet" || brandSelection == "GM" || brandSelection == "GMC";
   const bool toyota = brandSelection == "Lexus" || brandSelection == "Toyota";
+
+  auto evtable = toggles["EVTable"];
+  evtable->setVisible(gm);
 
   auto longPitch = toggles["LongPitch"];
   longPitch->setVisible(gm);
