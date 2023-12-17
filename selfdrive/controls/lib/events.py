@@ -976,6 +976,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.warningSoft, 2.),
   },
 
+  FrogPilotEventName.greenLight: {
+    ET.PERMANENT: Alert(
+      "Light turned green",
+      "",
+      AlertStatus.frogpilot, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 3.),
+  },
+
 }
 
 
