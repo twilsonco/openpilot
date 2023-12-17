@@ -105,6 +105,8 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : ListWid
 
   std::vector<std::tuple<QString, QString, QString, QString>> vehicle_toggles {
     {"LongPitch", "Long Pitch Compensation", "Reduces speed and acceleration error for greater passenger comfort and improved vehicle efficiency.", ""},
+
+    {"LockDoors", "Lock Doors In Drive", "Automatically locks the doors when in drive and unlocks when in park.", ""},
   };
 
   for (auto &[param, title, desc, icon] : vehicle_toggles) {
@@ -129,11 +131,15 @@ void FrogPilotVehiclesPanel::setModels() {
 
 void FrogPilotVehiclesPanel::setToggles() {
   const bool gm = brandSelection == "Buick" || brandSelection == "Cadillac" || brandSelection == "Chevrolet" || brandSelection == "GM" || brandSelection == "GMC";
+  const bool toyota = brandSelection == "Lexus" || brandSelection == "Toyota";
 
   auto longPitch = toggles["LongPitch"];
   longPitch->setVisible(gm);
 
-  noToggles->setVisible(!(gm));
+  auto lockDoors = toggles["LockDoors"];
+  lockDoors->setVisible(toyota);
+
+  noToggles->setVisible(!(gm || toyota));
 
   this->update();
 }
