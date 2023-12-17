@@ -221,6 +221,9 @@ static void update_state(UIState *s) {
       scene.turn_signal_left = carState.getLeftBlinker();
       scene.turn_signal_right = carState.getRightBlinker();
     }
+    if (scene.rotating_wheel) {
+      scene.steering_angle_deg = carState.getSteeringAngleDeg();
+    }
     if (scene.driver_camera) {
       scene.show_driver_camera = carState.getGearShifter() == cereal::CarState::GearShifter::REVERSE;
     }
@@ -310,6 +313,7 @@ void ui_update_params(UIState *s) {
   scene.driver_camera = params.getBool("DriverCamera");
   scene.experimental_mode_via_press = params.getBool("ExperimentalModeViaPress");
   scene.mute_dm = params.getBool("FireTheBabysitter") && params.getBool("MuteDM");
+  scene.rotating_wheel = params.getBool("RotatingWheel");
   scene.wheel_icon = params.getInt("WheelIcon");
 }
 

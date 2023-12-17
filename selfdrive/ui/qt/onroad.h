@@ -79,6 +79,8 @@ private:
   bool engageable;
 
   // FrogPilot variables
+  bool rotatingWheel;
+  int steeringAngleDeg;
   int wheelIcon;
   int y_offset;
 
