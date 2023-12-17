@@ -199,11 +199,12 @@ private:
   QHBoxLayout* split;
 
   // FrogPilot variables
+  QPoint timeoutPoint = QPoint(420, 69);
+  QTimer clickTimer;
+
   Params params;
   Params paramsMemory{"/dev/shm/params"};
   const UIScene &scene;
-  QPoint timeoutPoint = QPoint(420, 69);
-  QTimer clickTimer;
 
 private slots:
   void offroadTransition(bool offroad);

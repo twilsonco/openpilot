@@ -303,6 +303,7 @@ void ui_update_params(UIState *s) {
   scene.custom_signals = scene.custom_theme ? params.getInt("CustomSignals") : 0;
 
   scene.driver_camera = params.getBool("DriverCamera");
+  scene.experimental_mode_via_press = params.getBool("ExperimentalModeViaPress");
   scene.wheel_icon = params.getInt("WheelIcon");
 }
 
