@@ -966,7 +966,7 @@ void AnnotatedCameraWidget::paintGL() {
   }
 
   // DMoji
-  if (!hideBottomIcons && (sm.rcv_frame("driverStateV2") > s->scene.started_frame)) {
+  if (!hideBottomIcons && (sm.rcv_frame("driverStateV2") > s->scene.started_frame) && !muteDM) {
     update_dmonitoring(s, sm["driverStateV2"].getDriverStateV2(), dm_fade_state, rightHandDM);
     drawDriverState(painter, s);
   }
@@ -1048,6 +1048,7 @@ void AnnotatedCameraWidget::updateFrogPilotWidgets(QPainter &p) {
   laneWidthRight = scene.lane_width_right;
   leadInfo = scene.lead_info;
   mapOpen = scene.map_open;
+  muteDM = scene.mute_dm;
   obstacleDistance = scene.obstacle_distance;
   obstacleDistanceStock = scene.obstacle_distance_stock;
   showDriverCamera = scene.show_driver_camera;
