@@ -80,9 +80,15 @@ class Controls:
     self.params_memory = Params("/dev/shm/params")
     self.FPCC = custom.FrogPilotCarControl.new_message()
 
+    fire_the_babysitter = self.params.get_bool("FireTheBabysitter")
+    mute_dm = fire_the_babysitter and self.params.get_bool("MuteDM")
+
     ignore = self.sensor_packets + ['testJoystick']
     if SIMULATION:
       ignore += ['driverCameraState', 'managerState']
+    if mute_dm:
+      ignore += ['driverMonitoringState']
+      self.params.put_bool("DmModelInitialized", True)
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                    'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',

@@ -18,6 +18,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     {"CustomPersonalities", "Custom Driving Personalities", "Customize the driving personality profiles to your liking.", "../frogpilot/assets/toggle_icons/icon_custom.png"},
     {"DeviceShutdown", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../frogpilot/assets/toggle_icons/icon_time.png"},
     {"ExperimentalModeViaPress", "Experimental Mode Via Steering Wheel / Screen", "Enable or disable Experimental Mode by double-clicking the 'Lane Departure'/LKAS button on the steering wheel (Toyota/Lexus Only) or double tapping the screen for other makes.\n\nOverrides 'Conditional Experimental Mode'. ", "../assets/img_experimental_white.svg"},
+    {"FireTheBabysitter", "Fire the Babysitter", "Disable some of openpilot's 'Babysitter Protocols'.", "../frogpilot/assets/toggle_icons/icon_babysitter.png"},
     {"LateralTune", "Lateral Tuning", "Change the way openpilot steers.", "../frogpilot/assets/toggle_icons/icon_lateral_tune.png"},
     {"LongitudinalTune", "Longitudinal Tuning", "Change the way openpilot accelerates and brakes.", "../frogpilot/assets/toggle_icons/icon_longitudinal_tune.png"},
   };
@@ -51,6 +52,16 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     } else if (key == "DeviceShutdown") {
       mainLayout->addWidget(new DeviceShutdown());
       mainLayout->addWidget(horizontalLine());
+    } else if (key == "FireTheBabysitter") {
+      createSubControl(key, label, desc, icon, {}, {
+        {"NoLogging", "Disable Logging", "Prevent all data tracking by comma to go completely incognitio or to even just reduce thermals.\n\nWARNING: This will prevent any drives from being recorded and they WILL NOT be recoverable!"}
+      });
+      createSubButtonControl(key, {
+        {"MuteDM", "Mute DM"},
+        {"MuteDoor", "Mute Door Open"},
+        {"MuteOverheated", "Mute Overheat"},
+        {"MuteSeatbelt", "Mute Seatbelt"}
+      }, mainLayout);
     } else if (key == "LateralTune") {
       createSubControl(key, label, desc, icon, {}, {
         {"AverageCurvature", "Average Desired Curvature", "Use Pfeiferj's distance based curvature adjustment for smoother handling of curves."},
@@ -141,7 +152,7 @@ ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QStri
     }
 
     static const QSet<QString> parameterReboots = {
-      "AlwaysOnLateral", "AlwaysOnLateralMain",
+      "AlwaysOnLateral", "AlwaysOnLateralMain", "FireTheBabysitter", "NoLogging",
     };
     if (parameterReboots.contains(key)) {
       if (ConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", parent)) {
@@ -273,6 +284,12 @@ void FrogPilotPanel::setInitialToggleStates() {
 void FrogPilotPanel::setParams() {
   if (params.getBool("DisableOnroadUploads")) {
     paramsMemory.putBool("DisableOnroadUploads", true);
+  }
+  if (params.getBool("FireTheBabysitter") and params.getBool("MuteDM")) {
+    paramsMemory.putBool("MuteDM", true);
+  }
+  if (params.getBool("FireTheBabysitter") and params.getBool("NoLogging")) {
+    paramsMemory.putBool("NoLogging", true);
   }
 
   const bool FrogsGoMoo = params.get("DongleId").substr(0, 3) == "be6";

@@ -298,6 +298,10 @@ def thermald_thread(end_event, hw_queue) -> None:
       elif current_band.max_temp is not None and all_comp_temp > current_band.max_temp:
         thermal_status = list(THERMAL_BANDS.keys())[band_idx + 1]
 
+    if params.get_bool("FireTheBabysitter"):
+      if params.get_bool("MuteOverheated"):
+        thermal_status = ThermalStatus.green
+
     # **** starting logic ****
 
     # Ensure date/time are valid
