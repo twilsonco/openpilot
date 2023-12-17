@@ -195,6 +195,10 @@ def main() -> None:
 
   manager_init()
 
+  # Remove the prebuilt file to prevent boot failures
+  if os.path.exists("/data/openpilot/prebuilt"):
+    os.remove("/data/openpilot/prebuilt")
+
   # Start UI early so prepare can happen in the background
   if not prepare_only:
     managed_processes['ui'].start()
