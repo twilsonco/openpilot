@@ -58,7 +58,7 @@ class ConditionalExperimentalMode:
 
     self.update_frogpilot_params()
 
-  def update(self, carState, frogpilotNavigation, modelData, radarState, v_ego, v_lead):
+  def update(self, carState, frogpilotNavigation, modelData, radarState, v_ego, v_lead, v_offset):
     # Set the current driving states
     lead = radarState.leadOne.status
     lead_distance = radarState.leadOne.dRel
@@ -72,7 +72,7 @@ class ConditionalExperimentalMode:
       overridden = 0
 
     # Update Experimental Mode based on the current driving conditions
-    condition_met = self.check_conditions(carState, frogpilotNavigation, lead, lead_distance, modelData, speed_difference, standstill, v_ego, v_lead)
+    condition_met = self.check_conditions(carState, frogpilotNavigation, lead, lead_distance, modelData, speed_difference, standstill, v_ego, v_lead, v_offset)
     if (not self.experimental_mode and condition_met and overridden not in (1, 3)) or overridden in (2, 4):
       self.experimental_mode = True
     elif (self.experimental_mode and not condition_met and overridden not in (2, 4)) or overridden in (1, 3):
@@ -88,7 +88,7 @@ class ConditionalExperimentalMode:
     self.previous_lead_speed = v_lead
 
   # Check conditions for the appropriate state of Experimental Mode
-  def check_conditions(self, carState, frogpilotNavigation, lead, lead_distance, modelData, speed_difference, standstill, v_ego, v_lead):
+  def check_conditions(self, carState, frogpilotNavigation, lead, lead_distance, modelData, speed_difference, standstill, v_ego, v_lead, v_offset):
     if standstill:
       return self.experimental_mode
 
@@ -123,7 +123,7 @@ class ConditionalExperimentalMode:
       return True
 
     # Road curvature check
-    if self.curves and self.road_curvature(modelData, v_ego) and (self.curves_lead or not lead):
+    if self.curves and self.road_curvature(modelData, v_ego) and (self.curves_lead or not lead) and v_offset == 0:
       self.status_value = 11
       return True
 

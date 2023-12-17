@@ -260,6 +260,7 @@ static void update_state(UIState *s) {
       scene.speed_limit_offset = frogpilotLongitudinalPlan.getSlcSpeedLimitOffset();
       scene.speed_limit_overridden = frogpilotLongitudinalPlan.getSlcOverridden();
     }
+    scene.vtsc_offset = frogpilotLongitudinalPlan.getVtscOffset();
   }
   if (sm.updated("gpsLocationExternal")) {
     const auto gpsLocationExternal = sm["gpsLocationExternal"].getGpsLocationExternal();

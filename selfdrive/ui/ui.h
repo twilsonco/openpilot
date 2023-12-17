@@ -222,6 +222,7 @@ typedef struct UIScene {
   float speed_limit_offset;
   float stopped_equivalence;
   float stopped_equivalence_stock;
+  float vtsc_offset;
   QPolygonF track_edge_vertices;
   QPolygonF track_left_adjacent_lane_vertices;
   QPolygonF track_right_adjacent_lane_vertices;
