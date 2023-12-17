@@ -224,6 +224,11 @@ ParamController(CESpeedLead, "CESpeedLead", "With Lead", "Switch to 'Experimenta
   return std::clamp(v, 0, isMetric ? 150 : 99);
 )
 
+ParamController(CurveSensitivity, "CurveSensitivity", "   Curve Detection Sensitivity", "Changes how sensitive the car is to curves in the road. Higher values make the car react to curves earlier, while lower values might result in smoother but later reactions.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("CurveSensitivity")) + "%";,
+  return std::clamp(v, 1, 200);
+)
+
 ParamController(CustomColors, "CustomColors", "Colors ", "Replace the stock openpilot colors with a custom color scheme.\n\nWant to submit your own color scheme? Post it in the 'feature-request' channel on the FrogPilot Discord!", "../assets/offroad/icon_blank.png",
   const int colors = params.getInt("CustomColors");
   return colors == 0 ? "Stock" : colors == 1 ? "Frog" : colors == 2 ? "Tesla" : "Stalin";,
@@ -392,3 +397,9 @@ ParamController(WheelIcon, "WheelIcon", "Steering Wheel Icon", "Replace the stoc
   return wheel == 0 ? "Stock" : wheel == 1 ? "Lexus" : wheel == 2 ? "Toyota" : wheel == 3 ? "Frog" : wheel == 4 ? "Rocket" : wheel == 5 ? "Hyundai" : "Stalin";,
   return v >= 0 ? v % 7 : 6;
 )
+
+ParamController(TurnAggressiveness, "TurnAggressiveness", "   Turn Speed Aggressiveness", "Adjusts how quickly the car takes turns. Higher values mean faster turns, while lower values make turns more gentle.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("TurnAggressiveness")) + "%";,
+  return std::clamp(v, 1, 200);
+)
+
