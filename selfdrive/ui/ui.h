@@ -176,6 +176,7 @@ typedef struct UIScene {
   bool blind_spot_left;
   bool blind_spot_path;
   bool blind_spot_right;
+  bool compass;
   bool conditional_experimental;
   bool custom_road_ui;
   bool custom_theme;
@@ -191,6 +192,7 @@ typedef struct UIScene {
   bool turn_signal_left;
   bool turn_signal_right;
   bool unlimited_road_ui_length;
+  int bearing_deg;
   int camera_view;
   int conditional_speed;
   int conditional_speed_lead;
