@@ -77,6 +77,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
         new StoppingDistance(),
       }, {
         {"AggressiveAcceleration", "Aggressive Acceleration With Lead", "Accelerate more aggressively behind a lead when starting from a stop."},
+        {"SmoothBraking", "Smoother Braking Behind Lead", "More natural braking behavior when coming up to a slower vehicle."}
       });
     } else if (key == "Model") {
       mainLayout->addWidget(new Model());
@@ -178,6 +179,7 @@ ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QStri
     static const QMap<QString, QString> parameterWarnings = {
       {"AggressiveAcceleration", "This will make openpilot driving more aggressively behind lead vehicles!"},
       {"AlwaysOnLateralMain", "This is very experimental and isn't guaranteed to work. If you run into any issues please report it in the FrogPilot Discord!"},
+      {"SmoothBraking", "This will modify openpilot's braking behavior!"},
     };
     if (parameterWarnings.contains(key) && params.getBool(key.toStdString())) {
       ConfirmationDialog::toggleAlert("WARNING: " + parameterWarnings[key], "I understand the risks.", parent);
