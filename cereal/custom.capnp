@@ -20,6 +20,7 @@ struct FrogPilotDeviceState @0xaedffd8f31e7b55d {
 
 enum FrogPilotEvents @0xf35cc4560bbf6ec2 {
   frogSteerSaturated @0;
+  greenLight @1;
 }
 
 struct FrogPilotLateralPlan @0xda96579883444c35 {
@@ -31,6 +32,7 @@ struct FrogPilotLongitudinalPlan @0x80ae746ee2596b11 {
   conditionalExperimental @0 :Bool;
   desiredFollowDistance @1 :Float32;
   distances @2 :List(Float32);
+  greenLight @3 :Bool;
   safeObstacleDistance @4 :Float32;
   safeObstacleDistanceStock @5 :Float32;
   stoppedEquivalenceFactor @9 :Float32;
