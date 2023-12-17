@@ -92,4 +92,12 @@ private:
 
   Params params;
   ParamWatcher *fs_watch;
+
+  // FrogPilot variables
+  void automaticUpdate();
+
+  int schedule;
+  int time;
+
+  ButtonControl *updateTime;
 };
