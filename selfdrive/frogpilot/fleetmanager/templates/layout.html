@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" id="htmlElement">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="initial-scale=1, width=device-width">
@@ -17,6 +17,29 @@
       height: 80px;
     }
   </style>
+    <!-- UIkit CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.9.2/dist/css/uikit.min.css" />
+
+    <!-- UIkit JS -->
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.9.2/dist/js/uikit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.9.2/dist/js/uikit-icons.min.js"></script>
+
+  <style>
+  /* Dark mode styles */
+  #htmlElement.dark-mode,
+  #htmlElement.dark-mode input,
+  #htmlElement.dark-mode select,
+  #htmlElement.dark-mode body,
+  #htmlElement.dark-mode h1 {
+    background-color: #121212; /* Dark background color */
+    color: #ffffff; /* Light text color */
+  }
+  .nav-link {
+    display: inline-block;
+    padding: 0 15px;
+    text-align: center;
+  }
+</style>
   <title>FrogPilot: {% block title %}{% endblock %}</title>
 </head>
 <body>
@@ -30,16 +53,16 @@
       <div class="collapse navbar-collapse ml-auto" id="navbarNav">
         <ul class="navbar-nav">
           <li class="nav-item active">
-            <a href="/footage" class="nav-link">&nbsp &nbsp &nbsp &nbsp Dashcam Routes</a>
+            <a href="/footage" class="nav-link">Dashcam Routes</a>
           </li>
           <li class="nav-item active">
-            <a href="/screenrecords" class="nav-link">&nbsp &nbsp &nbsp &nbsp Screen Recordings</a>
+            <a href="/screenrecords" class="nav-link">Screen Recordings</a>
           </li>
           <li class="nav-item active">
-            <a href="/error_logs" class="nav-link">&nbsp &nbsp &nbsp &nbsp Error Logs</a>
+            <a href="/error_logs" class="nav-link">Error Logs</a>
           </li>
           <li class="nav-item active">
-            <a href="/about" class="nav-link">&nbsp &nbsp &nbsp &nbsp About</a>
+            <a href="/addr_input" class="nav-link">Navigation</a>
           </li>
         </ul>
       </div>
@@ -47,5 +70,31 @@
   </nav>
   <main class="container-fluid p-7 text-center"> {% block main %}{% endblock %} </main>
   {% block unformated %}{% endblock %}
+  
+  <button class="uk-button uk-button-default uk-margin-small-right" onclick="toggleDarkMode()">Toggle Dark Mode</button>
+
+  <script>
+    function setCookie(name, value, days) {
+      const date = new Date();
+      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+      document.cookie = `${name}=${value};expires=${date.toUTCString()};path=/`;
+    }
+    function getCookie(name) {
+      return document.cookie.split('; ')
+        .find(row => row.startsWith(name))
+        ?.split('=')[1] || null;
+    }
+    function toggleDarkMode() {
+      console.log('Toggle Dark Mode function called');
+      const htmlElement = document.documentElement;
+      htmlElement.classList.toggle('dark-mode');
+      setCookie('darkMode', htmlElement.classList.contains('dark-mode'), 365);
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      const htmlElement = document.documentElement;
+      htmlElement.classList.toggle('dark-mode', getCookie('darkMode') === 'true');
+    });
+  </script>
+  
 </body>
 </html>
