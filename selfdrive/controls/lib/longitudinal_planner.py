@@ -19,6 +19,7 @@ from openpilot.common.swaglog import cloudlog
 
 from openpilot.selfdrive.frogpilot.functions.conditional_experimental_mode import ConditionalExperimentalMode
 from openpilot.selfdrive.frogpilot.functions.map_turn_speed_controller import MapTurnSpeedController
+from openpilot.selfdrive.frogpilot.functions.speed_limit_controller import SpeedLimitController
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 A_CRUISE_MIN = -1.2
@@ -98,10 +99,13 @@ class LongitudinalPlanner:
     self.is_metric = self.params.get_bool("IsMetric")
 
     self.green_light = False
+    self.override_slc = False
     self.previously_driving = False
     self.stopped_for_light_previously = False
 
     self.m_offset = 0
+    self.overridden_speed = 0
+    self.slc_target = 0
 
   def read_param(self):
     try:
@@ -203,6 +207,29 @@ class LongitudinalPlanner:
     else:
       self.m_offset = 0
 
+    # Pfeiferj's Speed Limit Controller
+    if self.speed_limit_controller:
+      SpeedLimitController.update_current_max_velocity(v_cruise)
+      desired_speed_limit = SpeedLimitController.desired_speed_limit
+
+      # Override SLC upon gas pedal press and reset upon brake/cancel button
+      self.override_slc |= carState.gasPressed
+      self.override_slc &= enabled
+      self.override_slc &= v_ego > desired_speed_limit > 0
+
+      # Set the max speed to the manual set speed
+      if carState.gasPressed:
+        self.overridden_speed = np.clip(v_ego, desired_speed_limit, v_cruise)
+      self.overridden_speed *= enabled
+
+      # Use the speed limit if its not being overridden
+      if not self.override_slc:
+        if v_cruise > desired_speed_limit > 0:
+          self.slc_target = desired_speed_limit
+          v_cruise = self.slc_target
+      else:
+        self.slc_target = self.overridden_speed
+
     self.mpc.set_weights(prev_accel_constraint, self.custom_personalities, self.aggressive_jerk, self.standard_jerk, self.relaxed_jerk, personality=self.personality)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
@@ -259,6 +286,10 @@ class LongitudinalPlanner:
     frogpilotLongitudinalPlan.distances = self.x_desired_trajectory.tolist()
     frogpilotLongitudinalPlan.greenLight = bool(self.green_light)
 
+    frogpilotLongitudinalPlan.slcOverridden = self.override_slc
+    frogpilotLongitudinalPlan.slcSpeedLimit = SpeedLimitController.desired_speed_limit
+    frogpilotLongitudinalPlan.slcSpeedLimitOffset = SpeedLimitController.offset
+
     frogpilotLongitudinalPlan.safeObstacleDistance = self.mpc.safe_obstacle_distance
     frogpilotLongitudinalPlan.stoppedEquivalenceFactor = self.mpc.stopped_equivalence_factor
     frogpilotLongitudinalPlan.desiredFollowDistance = self.mpc.safe_obstacle_distance - self.mpc.stopped_equivalence_factor
@@ -291,3 +322,7 @@ class LongitudinalPlanner:
     self.relaxed_jerk = self.params.get_int("RelaxedJerk") / 10
 
     self.green_light_alert = self.params.get_bool("GreenLightAlert")
+
+    self.speed_limit_controller = self.params.get_bool("SpeedLimitController")
+    if self.speed_limit_controller:
+      SpeedLimitController.update_frogpilot_params()

@@ -151,10 +151,13 @@ class className : public ParamValueControl { \
   Q_OBJECT \
 public: \
   className() : ParamValueControl(labelText, descText, iconPath) { \
+    if (std::string(#className) == "SLCFallback" || std::string(#className) == "SLCPriority") { \
+      label.setFixedWidth(750); \
+    } \
     if (std::string(#className) == "CameraView" || std::string(#className) == "DeviceShutdown" || std::string(#className) == "RouteInput" || std::string(#className) == "StoppingDistance" || std::string(#className) == "WheelIcon") { \
       label.setFixedWidth(225); \
     } \
-    if (std::string(#className) == "CESpeed" || std::string(#className) == "CESpeedLead") { \
+    if (std::string(#className) == "CESpeed" || std::string(#className) == "CESpeedLead" || std::string(#className) == "Offset1" || std::string(#className) == "Offset2" || std::string(#className) == "Offset3" || std::string(#className) == "Offset4") { \
       label.setFixedWidth(180); \
     } \
     refresh(); \
@@ -259,6 +262,46 @@ ParamController(Model, "Model", "Model Selector (Requires Reboot)", "Select your
   return v >= 0 ? v % 4 : 3;
 )
 
+ParamController(Offset1, "Offset1", "0-34", "Set the speed limit offset when the speed limit is between 0 and 34 mph.", "../assets/icon_blank.png",
+  return QString::number(params.getInt("Offset1")) + " mph";,
+  return std::clamp(v, 0, 99);
+)
+
+ParamController(Offset1Metric, "Offset1", "0-54", "Set the speed limit offset when the speed limit is between 0 and 34 mph.", "../assets/icon_blank.png",
+  return QString::number(params.getInt("Offset1")) + " kph";,
+  return std::clamp(v, 0, 99);
+)
+
+ParamController(Offset2, "Offset2", "35-54", "Set the speed limit offset when the speed limit is between 35 and 54 mph.", "../assets/icon_blank.png",
+  return QString::number(params.getInt("Offset2")) + " mph";,
+  return std::clamp(v, 0, 99);
+)
+
+ParamController(Offset2Metric, "Offset2", "55-89", "Set the speed limit offset when the speed limit is between 35 and 54 mph.", "../assets/icon_blank.png",
+  return QString::number(params.getInt("Offset2")) + " kph";,
+  return std::clamp(v, 0, 99);
+)
+
+ParamController(Offset3, "Offset3", "55-64", "Set the speed limit offset when the speed limit is between 55 and 64 mph.", "../assets/icon_blank.png",
+  return QString::number(params.getInt("Offset3")) + " mph";,
+  return std::clamp(v, 0, 99);
+)
+
+ParamController(Offset3Metric, "Offset3", "90-104", "Set the speed limit offset when the speed limit is between 55 and 64 mph.", "../assets/icon_blank.png",
+  return QString::number(params.getInt("Offset3")) + " kph";,
+  return std::clamp(v, 0, 99);
+)
+
+ParamController(Offset4, "Offset4", "65-99", "Set the speed limit offset when the speed limit is between 65 and 99 mph.", "../assets/icon_blank.png",
+  return QString::number(params.getInt("Offset4")) + " mph";,
+  return std::clamp(v, 0, 99);
+)
+
+ParamController(Offset4Metric, "Offset4", "105-159", "Set the speed limit offset when the speed limit is between 65 and 99 mph.", "../assets/icon_blank.png",
+  return QString::number(params.getInt("Offset4")) + " kph";,
+  return std::clamp(v, 0, 99);
+)
+
 ParamController(PathEdgeWidth, "PathEdgeWidth", "Path Edges", "Customize the path edge width that displays current driving statuses.\n\nDefault is 20% of the total path.\n\nBlue = Navigation\nLight Blue = Always On Lateral\nGreen = Default with 'FrogPilot Colors'\nLight Green = Default with stock colors\nOrange = Experimental Mode Active\nYellow = Conditional Overriden", "../assets/offroad/icon_blank.png",
   return QString::number(params.getInt("PathEdgeWidth")) + "%";,
   return std::clamp(v, 0, 100);
@@ -289,6 +332,34 @@ ParamController(ScreenBrightness, "ScreenBrightness", "Screen Brightness", "Set 
   uiState()->scene.screen_brightness = brightness;
   return brightness == 101 ? "Auto" : brightness == 0 ? "Off" : QString::number(brightness) + "%";,
   return std::clamp(v, 0, 101);
+)
+
+ParamController(SLCFallback, "SLCFallback", "SLC Fallback", "Set your preferred fallback method for when there's no speed limit found in either Navigation, OSM, or the car's dashboard.", "../assets/offroad/icon_blank.png",
+  const int fallback = params.getInt("SLCFallback");
+  return fallback == 0 ? "None" : fallback == 1 ? "Experimental Mode" : "Previous Speed Limit";,
+  return v >= 0 ? v % 3 : 2;
+)
+
+ParamController(SLCPriority, "SLCPriority", "SLC Priority", "Set your preferred priority order when deciding what speed limit to use for Speed Limit Controller.", "../assets/offroad/icon_blank.png",
+  const int priority = params.getInt("SLCPriority");
+  return priority == 0 ? "Navigation, Dash, OSM" : 
+         priority == 1 ? "Navigation, OSM, Dash" : 
+         priority == 2 ? "Navigation, OSM" : 
+         priority == 3 ? "Navigation, Dash" : 
+         priority == 4 ? "Navigation" : 
+         priority == 5 ? "OSM, Dash, Navigation" : 
+         priority == 6 ? "OSM, Navigation, Dash" : 
+         priority == 7 ? "OSM, Navigation" : 
+         priority == 8 ? "OSM, Dash" : 
+         priority == 9 ? "OSM" : 
+         priority == 10 ? "Dash, Navigation, OSM" : 
+         priority == 11 ? "Dash, OSM, Navigation" : 
+         priority == 12 ? "Dash, OSM" : 
+         priority == 13 ? "Dash, Navigation" : 
+         priority == 14 ? "Dash" : 
+         priority == 15 ? "Highest" : 
+         "Lowest";,
+  return v >= 0 ? v % 17 : 16;
 )
 
 ParamController(StandardJerk, "StandardJerk", "Jerk Value", "Set the jerk value for the 'Standard Personality'.\n\nValue represents the responsiveness of the brake/gas pedals.\n\nHigher value = Less responsive/more 'relaxed'\n\nStock has a value of 1.0.", "../assets/offroad/icon_blank.png",
