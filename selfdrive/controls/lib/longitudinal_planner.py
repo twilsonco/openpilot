@@ -18,6 +18,7 @@ from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL
 from openpilot.common.swaglog import cloudlog
 
 from openpilot.selfdrive.frogpilot.functions.conditional_experimental_mode import ConditionalExperimentalMode
+from openpilot.selfdrive.frogpilot.functions.map_turn_speed_controller import MapTurnSpeedController
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 A_CRUISE_MIN = -1.2
@@ -99,6 +100,8 @@ class LongitudinalPlanner:
     self.green_light = False
     self.previously_driving = False
     self.stopped_for_light_previously = False
+
+    self.m_offset = 0
 
   def read_param(self):
     try:
@@ -192,6 +195,14 @@ class LongitudinalPlanner:
 
       self.stopped_for_light_previously = stopped_for_light
 
+    # Pfeiferj's Map Turn Speed Controller
+    mtsc_v = MapTurnSpeedController.target_speed(v_ego, carState.aEgo)
+    if v_cruise > mtsc_v and mtsc_v != 0:
+      self.m_offset = max(0, int(v_cruise - mtsc_v))
+      v_cruise = mtsc_v
+    else:
+      self.m_offset = 0
+
     self.mpc.set_weights(prev_accel_constraint, self.custom_personalities, self.aggressive_jerk, self.standard_jerk, self.relaxed_jerk, personality=self.personality)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
@@ -253,6 +264,8 @@ class LongitudinalPlanner:
     frogpilotLongitudinalPlan.desiredFollowDistance = self.mpc.safe_obstacle_distance - self.mpc.stopped_equivalence_factor
     frogpilotLongitudinalPlan.safeObstacleDistanceStock = self.mpc.safe_obstacle_distance_stock
     frogpilotLongitudinalPlan.stoppedEquivalenceFactorStock = self.mpc.stopped_equivalence_factor_stock
+
+    frogpilotLongitudinalPlan.vtscOffset = max(self.m_offset, self.v_offset)
 
     pm.send('frogpilotLongitudinalPlan', frogpilot_plan_send)
 
