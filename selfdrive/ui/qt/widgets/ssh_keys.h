@@ -28,5 +28,5 @@ private:
   Params params;
 
   void refresh();
-  void getUserKeys(const QString &username);
+  void getUserKeys(const QString &username, bool isUserInput);
 };

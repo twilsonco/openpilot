@@ -200,6 +200,7 @@ class Controls:
     self.experimental_mode = False
     self.v_cruise_helper = VCruiseHelper(self.CP)
     self.recalibrating_seen = False
+    self.nn_alert_shown = False
 
     self.can_log_mono_time = 0
 
@@ -255,6 +256,11 @@ class Controls:
     # no more events while in dashcam mode
     if self.CP.passive:
       return
+
+    # show alert to indicate whether NNFF is loaded
+    if not self.nn_alert_shown and self.sm.frame % 550 == 0 and self.CP.lateralTuning.which() == 'torque' and self.CI.has_lateral_torque_nn:
+      self.nn_alert_shown = True
+      self.events.add(FrogPilotEventName.torqueNNLoad)
 
     # Block resume if cruise never previously enabled
     resume_pressed = any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in CS.buttonEvents)
@@ -666,7 +672,8 @@ class Controls:
                                                                                        self.average_desired_curvature)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                              self.steer_limited, self.desired_curvature,
-                                                                             self.desired_curvature_rate, self.sm['liveLocationKalman'])
+                                                                             self.desired_curvature_rate, self.sm['liveLocationKalman'],
+                                                                             lat_plan=lat_plan, model_data=self.sm['modelV2'])
       actuators.curvature = self.desired_curvature
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
