@@ -260,7 +260,19 @@ class CarInterface(CarInterfaceBase):
     tune = ret.longitudinalTuning
     tune.deadzoneBP = [0., 9.]
     tune.deadzoneV = [.0, .15]
-    if candidate in TSS2_CAR or ret.enableGasInterceptor:
+    if (candidate in TSS2_CAR or ret.enableGasInterceptor) and Params().get_bool("TSS2Tune"):
+      # TSS2 tune - Credit goes to the DragonPilot team!
+      tune.kpBP = [0., 5., 20.]
+      tune.kpV = [1.3, 1.0, 0.8]
+      # In MPH  = [ 0., 2.24, 4.47, 6.71, 8.94, 11.2, 17.9, 26.8, 44.7, 60.3, 89.5]
+      tune.kiBP = [ 0.,   1.,   2.,   3.,   4.,   5.,   8.,  12.,  20.,  27.,  40.]
+      tune.kiV =  [.35, .331, .308, .285,  .26, .227,  .21,  .19,  .17,  .10, .001]
+      if candidate in TSS2_CAR:
+        ret.vEgoStopping = 0.1         # car is near 0.1 to 0.2 when car starts requesting stopping accel
+        ret.vEgoStarting = 0.1         # needs to be > or == vEgoStopping
+        ret.stopAccel = -0.40          # Toyota requests -0.4 when stopped
+        ret.stoppingDecelRate = 0.4    # reach stopping target smoothly
+    elif candidate in TSS2_CAR or ret.enableGasInterceptor:
       tune.kpBP = [0., 5., 20.]
       tune.kpV = [1.3, 1.0, 0.7]
       tune.kiBP = [0., 5., 12., 20., 27.]
