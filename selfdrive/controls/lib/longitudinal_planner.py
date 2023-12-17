@@ -17,6 +17,8 @@ from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDX
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N, get_speed_error
 from openpilot.common.swaglog import cloudlog
 
+from openpilot.selfdrive.frogpilot.functions.conditional_experimental_mode import ConditionalExperimentalMode
+
 LON_MPC_STEP = 0.2  # first step is 0.2s
 A_CRUISE_MIN = -1.2
 A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
@@ -170,6 +172,10 @@ class LongitudinalPlanner:
     enabled = controlsState.enabled
     v_lead = radarState.leadOne.vLead
 
+    # Conditional Experimental Mode
+    if self.conditional_experimental_mode and enabled:
+      ConditionalExperimentalMode.update(carState, frogpilotNavigation, modelData, radarState, v_ego, v_lead)
+
     self.mpc.set_weights(prev_accel_constraint, personality=self.personality)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
@@ -221,6 +227,7 @@ class LongitudinalPlanner:
     frogpilot_plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
     frogpilotLongitudinalPlan = frogpilot_plan_send.frogpilotLongitudinalPlan
 
+    frogpilotLongitudinalPlan.conditionalExperimental = ConditionalExperimentalMode.experimental_mode
     frogpilotLongitudinalPlan.distances = self.x_desired_trajectory.tolist()
 
     pm.send('frogpilotLongitudinalPlan', frogpilot_plan_send)
@@ -229,3 +236,9 @@ class LongitudinalPlanner:
     self.longitudinal_tune = self.params.get_bool("LongitudinalTune")
     self.acceleration_profile = self.params.get_int("AccelerationProfile") if self.longitudinal_tune else 2
     self.aggressive_acceleration = self.params.get_bool("AggressiveAcceleration") and self.longitudinal_tune
+
+    self.conditional_experimental_mode = self.params.get_bool("ConditionalExperimental")
+    if self.conditional_experimental_mode:
+      ConditionalExperimentalMode.update_frogpilot_params()
+      if not self.params.get_bool("ExperimentalMode"):
+        self.params.put_bool("ExperimentalMode", True)

@@ -14,6 +14,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
 
   static const std::vector<std::tuple<QString, QString, QString, QString>> toggles = {
     {"AlwaysOnLateral", "Always on Lateral / No disengage on Brake Pedal", "Keep openpilot lateral control when using either the brake or gas pedals. openpilot is only disengaged by deactivating the 'Cruise Control' button.", "../frogpilot/assets/toggle_icons/icon_always_on_lateral.png"},
+    {"ConditionalExperimental", "Conditional Experimental Mode", "Automatically activate 'Experimental Mode' based on specified conditions.", "../frogpilot/assets/toggle_icons/icon_conditional.png"},
     {"LateralTune", "Lateral Tuning", "Change the way openpilot steers.", "../frogpilot/assets/toggle_icons/icon_lateral_tune.png"},
     {"LongitudinalTune", "Longitudinal Tuning", "Change the way openpilot accelerates and brakes.", "../frogpilot/assets/toggle_icons/icon_longitudinal_tune.png"},
   };
@@ -24,6 +25,20 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
       createSubControl(key, label, desc, icon, {}, {
         {"AlwaysOnLateralMain", "Enable AOL On Cruise Main", "Enables Always On Lateral by simply turning on cruise control as opposed to requiring openpilot to be enabled first."}
       });
+    } else if (key == "ConditionalExperimental") {
+      createSubControl(key, label, desc, icon, {
+        createDualParamControl(new CESpeed(), new CESpeedLead()),
+      });
+      createSubButtonControl(key, {
+        {"CECurves", "Curves"},
+        {"CECurvesLead", "Curves With Lead"},
+        {"CENavigation", "Navigation Based"}
+      }, mainLayout);
+      createSubButtonControl(key, {
+        {"CESlowerLead", "Slower Lead Ahead"},
+        {"CEStopLights", "Stop Lights and Stop Signs"},
+        {"CESignal", "Turn Signal < " + QString(isMetric ? "90kph" : "55mph")}
+      }, mainLayout);
     } else if (key == "LateralTune") {
       createSubControl(key, label, desc, icon, {}, {
         {"AverageCurvature", "Average Desired Curvature", "Use Pfeiferj's distance based curvature adjustment for smoother handling of curves."},
@@ -94,6 +109,10 @@ ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QStri
       for (QWidget *widget : it->second) {
         widget->setVisible(state);
       }
+    }
+
+    if (key == "ConditionalExperimental") {
+      params.putBoolNonBlocking("ExperimentalMode", state);
     }
   });
   return control;

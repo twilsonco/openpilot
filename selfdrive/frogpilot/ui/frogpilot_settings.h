@@ -154,6 +154,9 @@ public: \
     if (std::string(#className) == "CameraView") { \
       label.setFixedWidth(225); \
     } \
+    if (std::string(#className) == "CESpeed" || std::string(#className) == "CESpeedLead") { \
+      label.setFixedWidth(180); \
+    } \
     refresh(); \
   } \
 private: \
@@ -181,4 +184,16 @@ ParamController(CameraView, "CameraView", "Camera View (Cosmetic Only)", "Set yo
   const int camera = params.getInt("CameraView");
   return camera == 0 ? "Auto" : camera == 1 ? "Standard" : camera == 2 ? "Wide" : "Driver";,
   return v >= 0 ? v % 4 : 3;
+)
+
+ParamController(CESpeed, "CESpeed", "Below", "Switch to 'Experimental Mode' below this speed when there is no lead vehicle.", "../assets/offroad/icon_blank.png",
+  const int speed = params.getInt("CESpeed");
+  return speed == 0 ? "Off" : QString::number(speed) + (isMetric ? " kph" : " mph");,
+  return std::clamp(v, 0, isMetric ? 150 : 99);
+)
+
+ParamController(CESpeedLead, "CESpeedLead", "With Lead", "Switch to 'Experimental Mode' below this speed when there is a lead vehicle.", "../assets/offroad/icon_blank.png",
+  const int speedLead = params.getInt("CESpeedLead");
+  return speedLead == 0 ? "Off" : QString::number(speedLead) + (isMetric ? " kph" : " mph");,
+  return std::clamp(v, 0, isMetric ? 150 : 99);
 )

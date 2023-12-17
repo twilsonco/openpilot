@@ -113,8 +113,12 @@ private:
 
   // FrogPilot variables
   bool alwaysOnLateral;
+  bool conditionalExperimental;
   bool experimentalMode;
   int cameraView;
+  int conditionalSpeed;
+  int conditionalSpeedLead;
+  int conditionalStatus;
 
   QHBoxLayout *bottom_layout;
 

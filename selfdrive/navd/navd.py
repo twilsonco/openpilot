@@ -9,6 +9,7 @@ import requests
 import cereal.messaging as messaging
 from cereal import log
 from openpilot.common.api import Api
+from openpilot.common.numpy_fast import interp
 from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper
 from openpilot.selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
@@ -61,6 +62,11 @@ class RouteEngine:
       self.mapbox_host = "https://maps.comma.ai"
 
     # FrogPilot variables
+    self.stop_coord = []
+    self.stop_signal = []
+    self.nav_condition = False
+    self.noo_condition = False
+
     self.update_frogpilot_params()
 
   def update(self):
@@ -165,6 +171,16 @@ class RouteEngine:
       if len(r['routes']):
         self.route = r['routes'][0]['legs'][0]['steps']
         self.route_geometry = []
+
+        # Iterate through the steps in self.route to find "stop_sign" and "traffic_light"
+        if self.conditional_navigation:
+          self.stop_signal = []
+          self.stop_coord = []
+          for step in self.route:
+            for intersection in step["intersections"]:
+              if "stop_sign" in intersection or "traffic_signal" in intersection:
+                self.stop_signal.append(intersection["geometry_index"])
+                self.stop_coord.append(Coordinate.from_mapbox_tuple(intersection["location"]))
 
         maxspeed_idx = 0
         maxspeeds = r['routes'][0]['legs'][0]['annotation']['maxspeed']
@@ -303,6 +319,31 @@ class RouteEngine:
           self.params.remove("NavDestination")
           self.clear_route()
 
+    # 5-10 Seconds to stop condition based on v_ego or minimum of 25 meters
+    if self.conditional_navigation:
+      v_ego = self.sm['carState'].vEgo
+      seconds_to_stop = interp(v_ego, [0, 22.3, 44.7], [5, 10, 10])
+      # Determine the location of the closest upcoming stopSign or trafficLight
+      closest_condition_indices = [idx for idx in self.stop_signal if idx >= closest_idx]
+      if closest_condition_indices:
+        closest_condition_index = min(closest_condition_indices, key=lambda idx: abs(closest_idx - idx))
+        index = self.stop_signal.index(closest_condition_index)
+
+        # Calculate the distance to the stopSign or trafficLight
+        distance_to_condition = self.last_position.distance_to(self.stop_coord[index])
+        if distance_to_condition < max((seconds_to_stop * v_ego), 25): 
+          self.nav_condition = True
+        else:
+          self.nav_condition = False  # Not approaching any stopSign or trafficLight
+      else:
+        self.nav_condition = False  # No more stopSign or trafficLight in array
+
+      # Determine if NoO distance to maneuver is upcoming
+      if distance_to_maneuver_along_geometry < max((seconds_to_stop * v_ego), 25): 
+        self.noo_condition = True
+      else:
+        self.noo_condition = False  # Not approaching any NoO maneuver
+
     self.send_frogpilot_navigation()
 
   def send_route(self):
@@ -357,13 +398,16 @@ class RouteEngine:
     frogpilot_plan_send = messaging.new_message('frogpilotNavigation')
     frogpilotNavigation = frogpilot_plan_send.frogpilotNavigation
 
+    frogpilotNavigation.navigationConditionMet = self.conditional_navigation and (self.nav_condition or self.noo_condition)
+
     self.pm.send('frogpilotNavigation', frogpilot_plan_send)
 
   def update_frogpilot_params(self):
+    self.conditional_navigation = self.params.get_bool("CENavigation")
 
 def main():
   pm = messaging.PubMaster(['navInstruction', 'navRoute', 'frogpilotNavigation'])
-  sm = messaging.SubMaster(['liveLocationKalman', 'managerState'])
+  sm = messaging.SubMaster(['carState', 'liveLocationKalman', 'managerState'])
 
   rk = Ratekeeper(1.0)
   route_engine = RouteEngine(sm, pm)
