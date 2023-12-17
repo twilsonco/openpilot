@@ -167,3 +167,9 @@ private: \
   QString getValueStr() { getValueStrFunc; } \
   int newValue(int v) { newValueFunc; } \
 };
+
+ParamController(AccelerationProfile, "AccelerationProfile", "   Acceleration Profile", "Change the rate at which openpilot accelerates with either a sporty or more eco friendly profile.", "../assets/offroad/icon_blank.png",
+  const int profile = params.getInt("AccelerationProfile");
+  return profile == 1 ? "Eco" : profile == 2 ? "Normal" : "Sport";,
+  return std::clamp(v, 1, 3);
+)

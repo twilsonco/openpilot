@@ -22,6 +22,9 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     if (key == "") {
     } else if (key == "LateralTune") {
     } else if (key == "LongitudinalTune") {
+      createSubControl(key, label, desc, icon, {
+        new AccelerationProfile(),
+      });
     } else {
       mainLayout->addWidget(control);
       if (key != std::get<0>(toggles.back())) mainLayout->addWidget(horizontalLine());
