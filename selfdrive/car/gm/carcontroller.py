@@ -10,6 +10,8 @@ from openpilot.selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 NetworkLocation = car.CarParams.NetworkLocation
 LongCtrlState = car.CarControl.Actuators.LongControlState
+GearShifter = car.CarState.GearShifter
+TransmissionType = car.CarParams.TransmissionType
 
 # Camera cancels up to 0.1s after brake is pressed, ECM allows 0.5s
 CAMERA_CANCEL_DELAY_FRAMES = 10
@@ -24,10 +26,12 @@ class CarController:
     self.apply_steer_last = 0
     self.apply_gas = 0
     self.apply_brake = 0
+    self.apply_speed = 0
     self.frame = 0
     self.last_steer_frame = 0
     self.last_button_frame = 0
     self.cancel_counter = 0
+    self.pedal_steady = 0.
 
     self.lka_steering_cmd_counter = 0
     self.lka_icon_status_last = (False, False)
@@ -106,6 +110,10 @@ class CarController:
 
         at_full_stop = CC.longActive and CS.out.standstill
         near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
+        if self.CP.flags & GMFlags.CC_LONG.value:
+          if CC.longActive and CS.out.vEgo > self.CP.minEnableSpeed:
+            # Using extend instead of append since the message is only sent intermittently
+            can_sends.extend(gmcan.create_gm_cc_spam_command(self.packer_pt, self, CS, actuators))
         if self.CP.carFingerprint not in CC_ONLY_CAR:
           friction_brake_bus = CanBus.CHASSIS
           # GM Camera exceptions
@@ -119,10 +127,10 @@ class CarController:
           can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake,
                                                              idx, CC.enabled, near_stop, at_full_stop, self.CP))
 
-        # Send dashboard UI commands (ACC status)
-        send_fcw = hud_alert == VisualAlert.fcw
-        can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, CC.enabled,
-                                                            hud_v_cruise * CV.MS_TO_KPH, hud_control.leadVisible, send_fcw))
+          # Send dashboard UI commands (ACC status)
+          send_fcw = hud_alert == VisualAlert.fcw
+          can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, CC.enabled,
+                                                              hud_v_cruise * CV.MS_TO_KPH, hud_control.leadVisible, send_fcw))
 
       # Radar needs to know current speed and yaw rate (50hz),
       # and that ADAS is alive (10hz)
@@ -182,6 +190,7 @@ class CarController:
     new_actuators.steerOutputCan = self.apply_steer_last
     new_actuators.gas = self.apply_gas
     new_actuators.brake = self.apply_brake
+    new_actuators.speed = self.apply_speed
 
     self.frame += 1
     return new_actuators, can_sends
