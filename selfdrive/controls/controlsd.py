@@ -766,8 +766,8 @@ class Controls:
     hudControl.lanesVisible = self.enabled
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
 
-    hudControl.rightLaneVisible = True
-    hudControl.leftLaneVisible = True
+    hudControl.rightLaneVisible = CC.latActive
+    hudControl.leftLaneVisible = CC.latActive
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
