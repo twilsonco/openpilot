@@ -102,13 +102,25 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   // FrogPilot clickable widgets
   bool widgetClicked = false;
 
+  // Change cruise control increments button
+  const QRect maxSpeedRect(7, 25, 225, 225);
+  const bool isMaxSpeedClicked = maxSpeedRect.contains(e->pos());
+
   // Hide speed button
   const QRect speedRect(rect().center().x() - 175, 50, 350, 350);
   const bool isSpeedClicked = speedRect.contains(e->pos());
 
-  if (isSpeedClicked) {
-    speedHidden = !params.getBool("HideSpeed");
-    params.putBoolNonBlocking("HideSpeed", speedHidden);
+  if (isMaxSpeedClicked || isSpeedClicked) {
+    // Check if the click was within the max speed area
+    if (isMaxSpeedClicked) {
+      reverseCruise = !params.getBool("ReverseCruise");
+      params.putBoolNonBlocking("ReverseCruise", reverseCruise);
+      paramsMemory.putBoolNonBlocking("FrogPilotTogglesUpdated", true);
+    // Check if the click was within the speed text area
+    } else {
+      speedHidden = !params.getBool("HideSpeed");
+      params.putBoolNonBlocking("HideSpeed", speedHidden);
+    }
     widgetClicked = true;
   // If the click wasn't for anything specific, change the value of "ExperimentalMode"
   } else if (scene.experimental_mode_via_press && e->pos() != timeoutPoint) {
@@ -492,7 +504,11 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   int bottom_radius = has_eu_speed_limit ? 100 : 32;
 
   QRect set_speed_rect(QPoint(60 + (default_size.width() - set_speed_size.width()) / 2, 45), set_speed_size);
-  p.setPen(QPen(whiteColor(75), 6));
+  if (reverseCruise) {
+    p.setPen(QPen(QColor(0, 150, 255), 6));
+  } else {
+    p.setPen(QPen(whiteColor(75), 6));
+  }
   p.setBrush(blackColor(166));
   drawRoundedRect(p, set_speed_rect, top_radius, top_radius, bottom_radius, bottom_radius);
 
@@ -1022,6 +1038,10 @@ void AnnotatedCameraWidget::initializeFrogPilotWidgets() {
 
   if (params.getBool("HideSpeed")) {
     speedHidden = true;
+  }
+
+  if (params.getBool("ReverseCruise")) {
+    reverseCruise = true;
   }
 
   // Custom themes configuration
