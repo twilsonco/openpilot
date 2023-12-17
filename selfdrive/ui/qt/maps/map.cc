@@ -112,6 +112,50 @@ void MapWindow::initLayers() {
     // TODO: remove, symbol-sort-key does not seem to matter outside of each layer
     m_map->setLayoutProperty("carPosLayer", "symbol-sort-key", 0);
   }
+
+  if (!m_map->layerExists("buildingsLayer")) {
+    qDebug() << "Initializing buildingsLayer";
+    QVariantMap buildings;
+    buildings["id"] = "buildingsLayer";
+    buildings["source"] = "composite";
+    buildings["source-layer"] = "building";
+    buildings["type"] = "fill-extrusion";
+    buildings["minzoom"] = 15;
+    m_map->addLayer(buildings);
+    m_map->setFilter("buildingsLayer", QVariantList({"==", "extrude", "true"}));
+
+    QVariantList fillExtrusionHight = {
+      "interpolate",
+      QVariantList{"linear"},
+      QVariantList{"zoom"},
+      15, 0,
+      15.05, QVariantList{"get", "height"}
+    };
+
+    QVariantList fillExtrusionBase = {
+      "interpolate",
+      QVariantList{"linear"},
+      QVariantList{"zoom"},
+      15, 0,
+      15.05, QVariantList{"get", "min_height"}
+    };
+
+    QVariantList fillExtrusionOpacity = {
+      "interpolate", 
+      QVariantList{"linear"},
+      QVariantList{"zoom"},
+      15, 0,
+      15.5, .6,
+      17, .6,
+      20, 0
+    };
+
+    m_map->setPaintProperty("buildingsLayer", "fill-extrusion-color", QColor("grey"));
+    m_map->setPaintProperty("buildingsLayer", "fill-extrusion-opacity", fillExtrusionOpacity);
+    m_map->setPaintProperty("buildingsLayer", "fill-extrusion-height", fillExtrusionHight);
+    m_map->setPaintProperty("buildingsLayer", "fill-extrusion-base", fillExtrusionBase);
+    m_map->setLayoutProperty("buildingsLayer", "visibility", "visible");
+  }
 }
 
 void MapWindow::updateState(const UIState &s) {
@@ -124,7 +168,8 @@ void MapWindow::updateState(const UIState &s) {
   if (sm.updated("modelV2")) {
     // set path color on change, and show map on rising edge of navigate on openpilot
     bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled() &&
-                       (sm["controlsState"].getControlsState().getEnabled() || sm["frogpilotCarControl"].getFrogpilotCarControl().getAlwaysOnLateral());
+                       (sm["controlsState"].getControlsState().getEnabled() || sm["frogpilotCarControl"].getFrogpilotCarControl().getAlwaysOnLateral()) &&
+                       (!params.get("NavDestination").empty() || params.getInt("PrimeType") != 0);
     if (nav_enabled != uiState()->scene.navigate_on_openpilot) {
       if (loaded_once) {
         m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(nav_enabled));
