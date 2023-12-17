@@ -268,6 +268,25 @@ class CarState(CarStateBase):
       ret.leftBlindspot = cp_body.vl["BSM_STATUS_LEFT"]["BSM_ALERT"] == 1
       ret.rightBlindspot = cp_body.vl["BSM_STATUS_RIGHT"]["BSM_ALERT"] == 1
 
+    # Driving personalities function
+    if self.personalities_via_wheel and ret.cruiseState.available:
+      # Sync with the onroad UI button
+      if self.param_memory.get_bool("PersonalityChangedViaUI"):
+        self.personality_profile = self.param.get_int("LongitudinalPersonality")
+        self.param_memory.put_bool("PersonalityChangedViaUI", False)
+
+      # Change personality upon steering wheel button press
+      self.distance_button = self.cruise_setting == 3
+
+      if self.distance_button and not self.distance_previously_pressed:
+        self.param_memory.put_bool("PersonalityChangedViaWheel", True)
+        self.personality_profile = (self.previous_personality_profile + 2) % 3
+      self.distance_previously_pressed = self.distance_button
+
+      if self.personality_profile != self.previous_personality_profile and self.personality_profile >= 0:
+        self.param.put_int("LongitudinalPersonality", self.personality_profile)
+        self.previous_personality_profile = self.personality_profile
+
     # Toggle Experimental Mode from steering wheel function
     if self.experimental_mode_via_press and ret.cruiseState.available:
       lkas_pressed = self.cruise_setting == 1
