@@ -151,7 +151,7 @@ class className : public ParamValueControl { \
   Q_OBJECT \
 public: \
   className() : ParamValueControl(labelText, descText, iconPath) { \
-    if (std::string(#className) == "CameraView" || std::string(#className) == "DeviceShutdown" || std::string(#className) == "WheelIcon") { \
+    if (std::string(#className) == "CameraView" || std::string(#className) == "DeviceShutdown" || std::string(#className) == "StoppingDistance" || std::string(#className) == "WheelIcon") { \
       label.setFixedWidth(225); \
     } \
     if (std::string(#className) == "CESpeed" || std::string(#className) == "CESpeedLead") { \
@@ -283,6 +283,12 @@ ParamController(StandardJerk, "StandardJerk", "Jerk Value", "Set the jerk value 
 ParamController(StandardFollow, "StandardFollow", "Time", "Set the following distance for the 'Standard Personality'.\n\nValue represents the time (in seconds) to follow the lead vehicle.\n\nStock has a value of 1.45.", "../frogpilot/assets/other_images/standard.png",
   return QString::number(params.getInt("StandardFollow") / 10.0) + " sec";,
   return std::clamp(v, 10, 50);
+)
+
+ParamController(StoppingDistance, "StoppingDistance", "   Increase Stopping Distance", "Increase the stopping distance for a more comfortable stop.", "../assets/offroad/icon_blank.png",
+  const int distance = params.getInt("StoppingDistance");
+  return distance == 0 ? "Off" : QString::number(distance) + (isMetric ? " meters" : " feet");,
+  return std::clamp(v, 0, isMetric ? 5 : 15);
 )
 
 ParamController(WheelIcon, "WheelIcon", "Steering Wheel Icon", "Replace the stock openpilot steering wheel icon with a custom icon.\n\nWant to submit your own steering wheel? Post it in the 'feature-request' channel on the FrogPilot Discord!", "../assets/offroad/icon_openpilot.png",
