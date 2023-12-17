@@ -109,12 +109,19 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : ListWid
 
     {"LockDoors", "Lock Doors In Drive", "Automatically locks the doors when in drive and unlocks when in park.", ""},
     {"SNGHack", "Stop and Go Hack", "Enable the 'Stop and Go' hack for vehicles without stock stop and go functionality.", ""},
+    {"TSS2Tune", "TSS2 Tune", "Tuning profile based on the tuning profile from DragonPilot for TSS2 vehicles.", ""}
   };
 
   for (auto &[param, title, desc, icon] : vehicle_toggles) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
     addItem(toggle);
     toggles[param.toStdString()] = toggle;
+
+    connect(toggles["TSS2Tune"], &ToggleControl::toggleFlipped, [=]() {
+      if (ConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", parent)) {
+        Hardware::reboot();
+      }
+    });
 
     connect(toggle, &ToggleControl::toggleFlipped, [this]() {
       paramsMemory.putBool("FrogPilotTogglesUpdated", true);
@@ -146,6 +153,9 @@ void FrogPilotVehiclesPanel::setToggles() {
 
   auto sngHack = toggles["SNGHack"];
   sngHack->setVisible(toyota);
+
+  auto tss2Tune = toggles["TSS2Tune"];
+  tss2Tune->setVisible(toyota);
 
   noToggles->setVisible(!(gm || toyota));
 
