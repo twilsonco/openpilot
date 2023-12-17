@@ -176,6 +176,8 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   // propagation event to parent(HomeWindow)
   if (!widgetClicked) {
     QWidget::mousePressEvent(e);
+    const bool sidebarVisible = geometry().x() > 0;
+    params.putBoolNonBlocking("Sidebar", !sidebarVisible);
   }
 }
 
