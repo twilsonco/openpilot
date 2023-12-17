@@ -1012,6 +1012,22 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.PERMANENT: torque_nn_load_alert,
   },
 
+  FrogPilotEventName.turningLeft: {
+    ET.WARNING: Alert(
+      "Turning Left",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1, alert_rate=0.75),
+  },
+
+  FrogPilotEventName.turningRight: {
+    ET.WARNING: Alert(
+      "Turning Right",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1, alert_rate=0.75),
+  },
+
 }
 
 
