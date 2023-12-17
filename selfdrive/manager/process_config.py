@@ -112,7 +112,6 @@ procs = [
   # FrogPilot processes
   PythonProcess("fleet_manager", "selfdrive.frogpilot.fleetmanager.fleet_manager", always_run),
   PythonProcess("mapd", "selfdrive.frogpilot.functions.mapd", osm),
-  PythonProcess("otisserv", "selfdrive.frogpilot.navigation.otisserv.otisserv", always_run),
 ]
 
 managed_processes = {p.name: p for p in procs}
