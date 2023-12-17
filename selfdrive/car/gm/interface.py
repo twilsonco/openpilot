@@ -523,9 +523,9 @@ class CarInterface(CarInterfaceBase):
     
     if Params().get_bool('OPParamsLateralOverride'):
       op_params = opParams("gm car_interface.py for lateral override")
-      lat_type = op_params.get('TUNE_LAT_type')
-      ret.steerActuatorDelay = op_params.get('TUNE_LAT_steer_actuator_delay_s')
-      ret.minSteerSpeed = op_params.get('TUNE_LAT_min_steer_speed_mph') * CV.MPH_TO_MS
+      lat_type = op_params.get('TUNE_LAT_type', force_update=True)
+      ret.steerActuatorDelay = op_params.get('TUNE_LAT_steer_actuator_delay_s', force_update=True)
+      ret.minSteerSpeed = op_params.get('TUNE_LAT_min_steer_speed_mph', force_update=True) * CV.MPH_TO_MS
       if lat_type == 'torque':
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = op_params.get('TUNE_LAT_TRX_use_steering_angle', force_update=True)
