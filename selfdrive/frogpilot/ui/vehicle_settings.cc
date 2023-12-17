@@ -108,6 +108,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : ListWid
     {"LowerVolt", "Lower Volt Enable Speed", "Lowers the Volt's minimum enable speed in order to enable openpilot at any speed.", ""},
 
     {"LockDoors", "Lock Doors In Drive", "Automatically locks the doors when in drive and unlocks when in park.", ""},
+    {"SNGHack", "Stop and Go Hack", "Enable the 'Stop and Go' hack for vehicles without stock stop and go functionality.", ""},
   };
 
   for (auto &[param, title, desc, icon] : vehicle_toggles) {
@@ -142,6 +143,9 @@ void FrogPilotVehiclesPanel::setToggles() {
 
   auto lockDoors = toggles["LockDoors"];
   lockDoors->setVisible(toyota);
+
+  auto sngHack = toggles["SNGHack"];
+  sngHack->setVisible(toyota);
 
   noToggles->setVisible(!(gm || toyota));
 
