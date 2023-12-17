@@ -71,8 +71,10 @@ private:
   // FrogPilot variables
   bool isCPU;
   bool isCustomTheme;
+  bool isFahrenheit;
   bool isGPU;
   bool isMemoryUsage;
+  bool isNumericalTemp;
   bool isStorageLeft;
   bool isStorageUsed;
   int customColors;
