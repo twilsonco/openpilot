@@ -207,7 +207,7 @@ class LongitudinalPlanner:
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
-    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, have_lead, self.aggressive_acceleration, self.increased_stopping_distance,
+    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, have_lead, self.aggressive_acceleration, self.increased_stopping_distance, self.smoother_braking,
                     self.custom_personalities, self.aggressive_follow, self.standard_follow, self.relaxed_follow, personality=self.personality)
 
     self.x_desired_trajectory_full = np.interp(ModelConstants.T_IDXS, T_IDXS_MPC, self.mpc.x_solution)
@@ -274,6 +274,7 @@ class LongitudinalPlanner:
     self.acceleration_profile = self.params.get_int("AccelerationProfile") if self.longitudinal_tune else 2
     self.aggressive_acceleration = self.params.get_bool("AggressiveAcceleration") and self.longitudinal_tune
     self.increased_stopping_distance = self.params.get_int("StoppingDistance") * (1 if self.is_metric else 0.3048) if self.longitudinal_tune else 0
+    self.smoother_braking = self.params.get_bool("SmoothBraking") and self.longitudinal_tune
 
     self.conditional_experimental_mode = self.params.get_bool("ConditionalExperimental")
     if self.conditional_experimental_mode:
