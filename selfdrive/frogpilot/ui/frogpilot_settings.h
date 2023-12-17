@@ -180,6 +180,16 @@ ParamController(AccelerationProfile, "AccelerationProfile", "   Acceleration Pro
   return std::clamp(v, 1, 3);
 )
 
+ParamController(AggressiveJerk, "AggressiveJerk", "Jerk Value", "Set the jerk value for the 'Aggressive Personality'.\n\nValue represents the responsiveness of the brake/gas pedals.\n\nHigher value = Less responsive/more 'relaxed'\n\nStock has a value of 0.5.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("AggressiveJerk") / 10.0);,
+  return std::clamp(v, 1, 50);
+)
+
+ParamController(AggressiveFollow, "AggressiveFollow", "Time", "Set the following distance for the 'Aggressive Personality'.\n\nValue represents the time (in seconds) to follow the lead vehicle.\n\nStock has a value of 1.25.", "../frogpilot/assets/other_images/aggressive.png",
+  return QString::number(params.getInt("AggressiveFollow") / 10.0) + " sec";,
+  return std::clamp(v, 10, 50);
+)
+
 ParamController(CameraView, "CameraView", "Camera View (Cosmetic Only)", "Set your preferred camera view for the onroad UI. This toggle is purely cosmetic and will not affect openpilot's use of the other cameras.", "../frogpilot/assets/toggle_icons/icon_camera.png",
   const int camera = params.getInt("CameraView");
   return camera == 0 ? "Auto" : camera == 1 ? "Standard" : camera == 2 ? "Wide" : "Driver";,
@@ -196,4 +206,24 @@ ParamController(CESpeedLead, "CESpeedLead", "With Lead", "Switch to 'Experimenta
   const int speedLead = params.getInt("CESpeedLead");
   return speedLead == 0 ? "Off" : QString::number(speedLead) + (isMetric ? " kph" : " mph");,
   return std::clamp(v, 0, isMetric ? 150 : 99);
+)
+
+ParamController(RelaxedJerk, "RelaxedJerk", "Jerk Value", "Set the jerk value for the 'Relaxed Personality'.\n\nValue represents the responsiveness of the brake/gas pedals.\n\nHigher value = Less responsive/more 'relaxed'\n\nStock has a value of 1.0.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("RelaxedJerk") / 10.0);,
+  return std::clamp(v, 1, 50);
+)
+
+ParamController(RelaxedFollow, "RelaxedFollow", "Time", "Set the following distance for the 'Relaxed Personality'.\n\nValue represents the time (in seconds) to follow the lead vehicle.\n\nStock has a value of 1.75.", "../frogpilot/assets/other_images/relaxed.png",
+  return QString::number(params.getInt("RelaxedFollow") / 10.0) + " sec";,
+  return std::clamp(v, 10, 50);
+)
+
+ParamController(StandardJerk, "StandardJerk", "Jerk Value", "Set the jerk value for the 'Standard Personality'.\n\nValue represents the responsiveness of the brake/gas pedals.\n\nHigher value = Less responsive/more 'relaxed'\n\nStock has a value of 1.0.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("StandardJerk") / 10.0);,
+  return std::clamp(v, 1, 50);
+)
+
+ParamController(StandardFollow, "StandardFollow", "Time", "Set the following distance for the 'Standard Personality'.\n\nValue represents the time (in seconds) to follow the lead vehicle.\n\nStock has a value of 1.45.", "../frogpilot/assets/other_images/standard.png",
+  return QString::number(params.getInt("StandardFollow") / 10.0) + " sec";,
+  return std::clamp(v, 10, 50);
 )
