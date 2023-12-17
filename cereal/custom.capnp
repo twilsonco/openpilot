@@ -44,6 +44,7 @@ struct FrogPilotLongitudinalPlan @0x80ae746ee2596b11 {
   slcSpeedLimitOffset @8 :Float32;
   stoppedEquivalenceFactor @9 :Float32;
   stoppedEquivalenceFactorStock @10 :Float32;
+  vtscOffset @11 :Float32;
 }
 
 struct FrogPilotNavigation @0xa5cd762cd951a455 {

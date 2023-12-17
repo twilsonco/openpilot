@@ -28,6 +28,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     {"PauseLateralOnSignal", "Pause Lateral On Turn Signal", "Pauses lateral control when a turn signal is active.", "../frogpilot/assets/toggle_icons/icon_pause_lane.png"},
     {"SpeedLimitController", "Speed Limit Controller", "Use Open Street Maps, Navigate On openpilot, and your car's dashboard (Toyota only) to set the vehicle's speed to the current speed limit.", "../assets/offroad/icon_speed_limit.png"},
     {"TurnDesires", "Turn Desires", "Use turn desires when below the minimum lane change speed for more precise turns.", "../assets/navigation/direction_continue_right.png"},
+    {"VisionTurnControl", "Vision Turn Speed Control", "Automatically adjusts the vehicle's speed in accordance of the curvature of the road for smoother turning.", "../frogpilot/assets/toggle_icons/icon_vtc.png"}
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
@@ -109,6 +110,11 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
         widgets.push_back(createDualParamControl(new Offset3(), new Offset4()));
       }
       createSubControl(key, label, desc, icon, widgets);
+    } else if (key == "VisionTurnControl") {
+      createSubControl(key, label, desc, icon, {
+        new CurveSensitivity(),
+        new TurnAggressiveness(),
+      });
     } else {
       mainLayout->addWidget(control);
       if (key != std::get<0>(toggles.back())) mainLayout->addWidget(horizontalLine());
