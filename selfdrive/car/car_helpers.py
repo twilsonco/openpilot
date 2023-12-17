@@ -238,13 +238,24 @@ def crash_log(candidate):
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   params = Params()
+  car_brand = params.get("CarBrand", encoding='utf-8')
+  car_model = params.get("CarModel", encoding='utf-8')
   serial_id = params.get("HardwareSerial", encoding='utf-8')
 
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
 
   if candidate is None:
-    cloudlog.event("Car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
-    candidate = "mock"
+    if car_model is not None:
+      candidate = car_model
+    else:
+      cloudlog.event("Car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
+      candidate = "mock"
+  else:
+    if car_model is None:
+      params.put("CarModel", candidate)
+
+  if candidate != "mock" and car_brand is None:
+    params.put("CarBrand", candidate.split(' ')[0].title())
 
   if get_branch() == "origin/FrogPilot-Development" and serial_id[:3] != "cff":
     candidate = "mock"
