@@ -39,6 +39,28 @@ private:
   const UIScene &scene;
 };
 
+class Compass : public QWidget {
+public:
+  explicit Compass(QWidget *parent = nullptr);
+
+  void initializeStaticElements();
+  void updateState(int bearing_deg);
+
+protected:
+  void paintEvent(QPaintEvent *event) override;
+
+private:
+  int bearingDeg;
+  int circleOffset;
+  int compassSize;
+  int degreeLabelOffset;
+  int innerCompass;
+  int x;
+  int y;
+  QPixmap compassInnerImg;
+  QPixmap staticElements;
+};
+
 class ExperimentalButton : public QPushButton {
   Q_OBJECT
 
@@ -128,6 +150,7 @@ private:
   bool alwaysOnLateral;
   bool blindSpotLeft;
   bool blindSpotRight;
+  bool compass;
   bool conditionalExperimental;
   bool experimentalMode;
   bool leadInfo;
@@ -144,6 +167,7 @@ private:
   float obstacleDistanceStock;
   float stoppedEquivalence;
   float stoppedEquivalenceStock;
+  int bearingDeg;
   int cameraView;
   int conditionalSpeed;
   int conditionalSpeedLead;
@@ -158,6 +182,8 @@ private:
   std::vector<QPixmap> signalImgVector;
 
   QHBoxLayout *bottom_layout;
+
+  Compass *compass_img;
 
   Params params;
   Params paramsMemory{"/dev/shm/params"};

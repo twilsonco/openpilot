@@ -107,6 +107,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
   static const std::vector<std::tuple<QString, QString, QString, QString>> toggles = {
     {"CustomTheme", "Custom Theme", "Enable the ability to use custom themes.", "../frogpilot/assets/wheel_images/frog.png"},
     {"CameraView", "Camera View (Cosmetic Only)", "Set your preferred camera view for the onroad UI. This toggle is purely cosmetic and will not affect openpilot's use of the other cameras.", "../frogpilot/assets/toggle_icons/icon_camera.png"},
+    {"Compass", "Compass", "Add a compass to the onroad UI that indicates your current driving direction.", "../frogpilot/assets/toggle_icons/icon_compass.png"},
     {"CustomUI", "Custom UI", "Customize the UI to your liking.", "../assets/offroad/icon_road.png"},
     {"DriverCamera", "Driver Camera On Reverse", "Displays the driver camera when in reverse.", "../assets/img_driver_face_static.png"},
     {"GreenLightAlert", "Green Light Alert", "Displays an alert when a light turns from red to green.", "../frogpilot/assets/toggle_icons/icon_green_light.png"},
