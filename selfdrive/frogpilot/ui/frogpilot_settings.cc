@@ -25,6 +25,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     {"MTSCEnabled", "Map Turn Speed Control", "When enabled, the car will slow down when it predicts a lateral acceleration greater than 2.0 m/s^2.", "../frogpilot/assets/toggle_icons/icon_speed_map.png"},
     {"NudgelessLaneChange", "Nudgeless Lane Change", "Switch lanes without having to nudge the steering wheel.", "../frogpilot/assets/toggle_icons/icon_lane.png"},
     {"PauseLateralOnSignal", "Pause Lateral On Turn Signal", "Pauses lateral control when a turn signal is active.", "../frogpilot/assets/toggle_icons/icon_pause_lane.png"},
+    {"SpeedLimitController", "Speed Limit Controller", "Use Open Street Maps, Navigate On openpilot, and your car's dashboard (Toyota only) to set the vehicle's speed to the current speed limit.", "../assets/offroad/icon_speed_limit.png"},
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
@@ -90,6 +91,19 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
         {"LaneDetection", "Lane Detection"},
         {"OneLaneChange", "One Lane Change Per Signal"},
       }, mainLayout);
+    } else if (key == "SpeedLimitController") {
+      std::vector<QWidget*> widgets;
+      widgets.push_back(new SLCFallback());
+      widgets.push_back(new SLCPriority());
+
+      if (isMetric) {
+        widgets.push_back(createDualParamControl(new Offset1Metric(), new Offset2Metric()));
+        widgets.push_back(createDualParamControl(new Offset3Metric(), new Offset4Metric()));
+      } else {
+        widgets.push_back(createDualParamControl(new Offset1(), new Offset2()));
+        widgets.push_back(createDualParamControl(new Offset3(), new Offset4()));
+      }
+      createSubControl(key, label, desc, icon, widgets);
     } else {
       mainLayout->addWidget(control);
       if (key != std::get<0>(toggles.back())) mainLayout->addWidget(horizontalLine());
@@ -329,7 +343,7 @@ void FrogPilotPanel::setParams() {
   if (params.getBool("FireTheBabysitter") and params.getBool("NoLogging")) {
     paramsMemory.putBool("NoLogging", true);
   }
-  if (params.getBool("RoadNameUI")) {
+  if (params.getBool("RoadNameUI") || params.getBool("SpeedLimitController")) {
     paramsMemory.putBool("OSM", true);
   }
 
