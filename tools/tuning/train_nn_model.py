@@ -3,17 +3,29 @@ import numpy as np
 # import feather
 import matplotlib.pyplot as plt
 
-from common.numpy_fast import interp
+def interp(x, xp, fp):
+  N = len(xp)
 
-def create_buckets():
+  def get_interp(xv):
+    hi = 0
+    while hi < N and xv > xp[hi]:
+      hi += 1
+    low = hi - 1
+    return fp[-1] if hi == N and xv > xp[low] else (
+      fp[0] if hi == 0 else
+      (xv - xp[low]) * (fp[hi] - fp[low]) / (xp[hi] - xp[low]) + fp[low])
+
+  return [get_interp(v) for v in x] if hasattr(x, '__iter__') else get_interp(x)
+
+def create_buckets_nn(max_lat_accel=3, min_steer_speed=1, no_points_req_above_speed=31):
   min_accel = 0.16 
-  max_accel = 3
+  max_accel = 3.0
   min_vel = 1
   max_vel = 40
   mid_vel = 20
-  num_la_buckets = 12
-  num_vel_buckets = 14
-  la_min_points = 6
+  num_la_buckets = 16
+  num_vel_buckets = 18
+  la_min_points = 8
   vel_min_points = 10
 
   la_buckets = np.geomspace(min_accel, max_accel, num_la_buckets//2-1)
@@ -21,13 +33,17 @@ def create_buckets():
   vel_buckets = np.linspace(min_vel, max_vel, num_vel_buckets)
 
   la_num_points = lambda la1,la2: (la_min_points - 8*abs(min([la1,la2],key=abs)))
-  vel_num_points = lambda vel1: vel_min_points - abs(vel1 - mid_vel)
-  combined_num_points = lambda la1, la2, vel1: int(round(max(0,la_num_points(la1, la2) + vel_num_points(vel1))**1.5))
+  vel_num_points = lambda vel1: vel_min_points - abs(1.5*(vel1 - mid_vel))
+  combined_num_points = lambda la1, la2, vel1, vel2: \
+    int(round(max(0,la_num_points(la1, la2) + vel_num_points(vel1))**1.5)) \
+      if min_steer_speed <= vel1 and \
+        vel2 <= no_points_req_above_speed and \
+        max(abs(la1),abs(la2)) <= max_lat_accel else 0
 
-  BUCKETS = {((la1,la2),(vel1,vel2)): combined_num_points(la1,la2,vel1) for la1,la2 in zip(la_buckets[:-1],la_buckets[1:]) for vel1,vel2 in zip(vel_buckets[:-1], vel_buckets[1:])}
-  # for la1,la2 in zip(la_buckets[:-1],la_buckets[1:]):
-  #     for vel1,vel2 in zip(vel_buckets[:-1], vel_buckets[1:]):
-  #         print(f"(({la1:.2g},{la2:.2g}),({vel1:.2g},{vel2:.2g}))",": ", BUCKETS[((la1,la2),(vel1,vel2))])
+  BUCKETS = {((la1,la2),(vel1,vel2)): combined_num_points(la1,la2,vel1,vel2) for la1,la2 in zip(la_buckets[:-1],la_buckets[1:]) for vel1,vel2 in zip(vel_buckets[:-1], vel_buckets[1:])}
+  for vel1,vel2 in zip(vel_buckets[:-1], vel_buckets[1:]):
+      for la1,la2 in zip(la_buckets[:-1],la_buckets[1:]):
+          print(f"(({vel1:.2g},{vel2:.2g}),({la1:.2g},{la2:.2g}))",": ", BUCKETS[((la1,la2),(vel1,vel2))])
   return BUCKETS
 
 def identity(Z):
@@ -253,33 +269,6 @@ def generate_trial_lateral_training_data(kf=0.33, friction_factor=0.15, steer_th
 
 
 
-def create_buckets():
-  min_accel = 0.16 
-  max_accel = 3
-  min_vel = 1
-  max_vel = 40
-  mid_vel = 20
-  num_la_buckets = 12
-  num_vel_buckets = 14
-  la_min_points = 6
-  vel_min_points = 10
-
-  la_buckets = np.geomspace(min_accel, max_accel, num_la_buckets//2-1)
-  la_buckets = np.concatenate((-la_buckets[::-1], [0.0], la_buckets))
-  vel_buckets = np.linspace(min_vel, max_vel, num_vel_buckets)
-
-  la_num_points = lambda la1,la2: (la_min_points - 8*abs(min([la1,la2],key=abs)))
-  vel_num_points = lambda vel1: vel_min_points - abs(vel1 - mid_vel)
-  combined_num_points = lambda la1, la2, vel1: int(round(max(0,la_num_points(la1, la2) + vel_num_points(vel1))**1.5))
-
-  BUCKETS = {((la1,la2),(vel1,vel2)): combined_num_points(la1,la2,vel1) for la1,la2 in zip(la_buckets[:-1],la_buckets[1:]) for vel1,vel2 in zip(vel_buckets[:-1], vel_buckets[1:])}
-  # for la1,la2 in zip(la_buckets[:-1],la_buckets[1:]):
-  #     for vel1,vel2 in zip(vel_buckets[:-1], vel_buckets[1:]):
-  #         print(f"(({la1:.2g},{la2:.2g}),({vel1:.2g},{vel2:.2g}))",": ", BUCKETS[((la1,la2),(vel1,vel2))])
-  return BUCKETS
-
-
-
 
 def main():
   # import data as feather file
@@ -385,4 +374,6 @@ def main():
     print(model.activation_function_names)
     
 # main()
-print(create_buckets())
+buckets = create_buckets_nn(max_lat_accel=3, min_steer_speed=1, no_points_req_above_speed=31)
+total_points = sum(buckets.values())
+print(total_points)
