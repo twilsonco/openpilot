@@ -179,10 +179,12 @@ typedef struct UIScene {
   bool conditional_experimental;
   bool custom_road_ui;
   bool custom_theme;
+  bool driver_camera;
   bool enabled;
   bool experimental_mode;
   bool lead_info;
   bool map_open;
+  bool show_driver_camera;
   bool show_fps;
   bool turn_signal_left;
   bool turn_signal_right;
