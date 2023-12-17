@@ -74,6 +74,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
 
   static const std::vector<std::tuple<QString, QString, QString, QString>> toggles = {
     {"CameraView", "Camera View (Cosmetic Only)", "Set your preferred camera view for the onroad UI. This toggle is purely cosmetic and will not affect openpilot's use of the other cameras.", "../frogpilot/assets/toggle_icons/icon_camera.png"},
+    {"CustomUI", "Custom UI", "Customize the UI to your liking.", "../assets/offroad/icon_road.png"},
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
@@ -81,6 +82,23 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
     if (key == "CameraView") {
       mainLayout->addWidget(new CameraView());
       mainLayout->addWidget(horizontalLine());
+    } else if (key == "CustomUI") {
+      createSubControl(key, label, desc, icon, {
+        createDualParamControl(new LaneLinesWidth(), new RoadEdgesWidth()),
+        createDualParamControl(new PathWidth(), new PathEdgeWidth())
+      });
+      createSubButtonControl(key, {
+        {"AccelerationPath", "Acceleration Path"},
+        {"AdjacentPath", "Adjacent Paths"},
+        {"BlindSpotPath", "Blind Spot Path"},
+      }, mainLayout);
+      createSubButtonControl(key, {
+        {"ShowFPS", "FPS Counter"},
+        {"LeadInfo", "Lead Info and Logics"},
+      }, mainLayout);
+      createSubButtonControl(key, {
+        {"UnlimitedLength", "'Unlimited' Road UI Length"},
+      }, mainLayout);
     } else {
       mainLayout->addWidget(control);
       if (key != std::get<0>(toggles.back())) mainLayout->addWidget(horizontalLine());

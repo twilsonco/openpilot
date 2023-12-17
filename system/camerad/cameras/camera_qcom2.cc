@@ -939,6 +939,10 @@ void cameras_run(MultiCameraState *s) {
   // FrogPilot variables
   Params paramsMemory{"/dev/shm/params"};
 
+  const bool wide_camera_displayed = paramsMemory.getBool("WideCamera");
+  static int frame_count = 0;
+  static int fps = 0.0;
+
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
   if (s->driver_cam.enabled) threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
@@ -951,9 +955,22 @@ void cameras_run(MultiCameraState *s) {
   s->road_cam.sensors_start();
   s->wide_road_cam.sensors_start();
 
+  auto prev_time_point = std::chrono::high_resolution_clock::now();
+
   // poll events
   LOG("-- Dequeueing Video events");
   while (!do_exit) {
+
+    auto current_time_point = std::chrono::high_resolution_clock::now();
+    double elapsed_time = std::chrono::duration<double>(current_time_point - prev_time_point).count();
+
+    if (elapsed_time > 1.0) {
+      fps = frame_count / elapsed_time;
+      paramsMemory.putIntNonBlocking("CameraFPS", fps);
+      frame_count = 0;
+      prev_time_point = current_time_point;
+    }
+
     struct pollfd fds[1] = {{0}};
 
     fds[0].fd = s->video0_fd;
@@ -980,8 +997,14 @@ void cameras_run(MultiCameraState *s) {
 
         if (event_data->session_hdl == s->road_cam.session_handle) {
           s->road_cam.handle_camera_event(event_data);
+          if (!wide_camera_displayed) {
+            frame_count++;
+          }
         } else if (event_data->session_hdl == s->wide_road_cam.session_handle) {
           s->wide_road_cam.handle_camera_event(event_data);
+          if (wide_camera_displayed) {
+            frame_count++;
+          }
         } else if (event_data->session_hdl == s->driver_cam.session_handle) {
           s->driver_cam.handle_camera_event(event_data);
         } else {

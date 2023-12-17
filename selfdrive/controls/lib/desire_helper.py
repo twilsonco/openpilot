@@ -42,10 +42,37 @@ class DesireHelper:
 
     # FrogPilot variables
 
+  # Lane detection
+  def calculate_lane_width(self, lane, current_lane, road_edge):
+    # Interpolate lane values at current_lane.x positions
+    lane_x, lane_y = np.array(lane.x), np.array(lane.y)
+    edge_x, edge_y = np.array(road_edge.x), np.array(road_edge.y)
+    current_x, current_y = np.array(current_lane.x), np.array(current_lane.y)
+
+    # Interpolate lane and road edge values at current_lane.x positions
+    lane_y_interp = np.interp(current_x, lane_x[lane_x.argsort()], lane_y[lane_x.argsort()])
+    road_edge_y_interp = np.interp(current_x, edge_x[edge_x.argsort()], edge_y[edge_x.argsort()])
+
+    # Calculate the mean absolute distances
+    distance_to_lane = np.mean(np.abs(current_y - lane_y_interp))
+    distance_to_road_edge = np.mean(np.abs(current_y - road_edge_y_interp))
+
+    # Return the smallest between the two
+    return min(distance_to_lane, distance_to_road_edge)
+
   def update(self, carstate, modeldata, lateral_active, lane_change_prob):
     v_ego = carstate.vEgo
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
+
+    # Calculate left and right lane widths for the blindspot path
+    self.lane_width_left = 0
+    self.lane_width_right = 0
+    turning = abs(carstate.steeringAngleDeg) >= 60
+    if self.blindspot_path and not below_lane_change_speed and not turning:
+      # Calculate left and right lane widths
+      self.lane_width_left = self.calculate_lane_width(modeldata.laneLines[0], modeldata.laneLines[1], modeldata.roadEdges[0])
+      self.lane_width_right = self.calculate_lane_width(modeldata.laneLines[3], modeldata.laneLines[2], modeldata.roadEdges[1])
 
     if not lateral_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
@@ -116,3 +143,4 @@ class DesireHelper:
         self.desire = log.LateralPlan.Desire.none
 
   def update_frogpilot_params(self, params):
+    self.blindspot_path = params.get_bool("CustomUI") and params.get_bool("BlindSpotPath")

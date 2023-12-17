@@ -208,6 +208,21 @@ ParamController(CESpeedLead, "CESpeedLead", "With Lead", "Switch to 'Experimenta
   return std::clamp(v, 0, isMetric ? 150 : 99);
 )
 
+ParamController(LaneLinesWidth, "LaneLinesWidth", "Lanes", "Customize the lane line width.\n\nDefault matches the MUTCD average of 4 inches.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("LaneLinesWidth")) + (isMetric ? " cm" : " in");,
+  return std::clamp(v, 0, isMetric ? 60 : 24);
+)
+
+ParamController(PathEdgeWidth, "PathEdgeWidth", "Path Edges", "Customize the path edge width that displays current driving statuses.\n\nDefault is 20% of the total path.\n\nBlue = Navigation\nLight Blue = Always On Lateral\nGreen = Default with 'FrogPilot Colors'\nLight Green = Default with stock colors\nOrange = Experimental Mode Active\nYellow = Conditional Overriden", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("PathEdgeWidth")) + "%";,
+  return std::clamp(v, 0, 100);
+)
+
+ParamController(PathWidth, "PathWidth", "Path ", "Customize the path width.\n\nDefault matches the width of a 2019 Lexus ES 350.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("PathWidth") / 10.0) + (isMetric ? " m" : " ft");,
+  return std::clamp(v, 0, isMetric ? 30 : 100);
+)
+
 ParamController(RelaxedJerk, "RelaxedJerk", "Jerk Value", "Set the jerk value for the 'Relaxed Personality'.\n\nValue represents the responsiveness of the brake/gas pedals.\n\nHigher value = Less responsive/more 'relaxed'\n\nStock has a value of 1.0.", "../assets/offroad/icon_blank.png",
   return QString::number(params.getInt("RelaxedJerk") / 10.0);,
   return std::clamp(v, 1, 50);
@@ -216,6 +231,11 @@ ParamController(RelaxedJerk, "RelaxedJerk", "Jerk Value", "Set the jerk value fo
 ParamController(RelaxedFollow, "RelaxedFollow", "Time", "Set the following distance for the 'Relaxed Personality'.\n\nValue represents the time (in seconds) to follow the lead vehicle.\n\nStock has a value of 1.75.", "../frogpilot/assets/other_images/relaxed.png",
   return QString::number(params.getInt("RelaxedFollow") / 10.0) + " sec";,
   return std::clamp(v, 10, 50);
+)
+
+ParamController(RoadEdgesWidth, "RoadEdgesWidth", "Road Edges", "Customize the road edges width.\n\nDefault is 1/2 of the MUTCD average lane line width of 4 inches.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("RoadEdgesWidth")) + (isMetric ? " cm" : " in");,
+  return std::clamp(v, 0, isMetric ? 60 : 24);
 )
 
 ParamController(StandardJerk, "StandardJerk", "Jerk Value", "Set the jerk value for the 'Standard Personality'.\n\nValue represents the responsiveness of the brake/gas pedals.\n\nHigher value = Less responsive/more 'relaxed'\n\nStock has a value of 1.0.", "../assets/offroad/icon_blank.png",

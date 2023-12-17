@@ -169,15 +169,38 @@ typedef struct UIScene {
   uint64_t started_frame;
 
   // FrogPilot variables
+  bool acceleration_path;
+  bool adjacent_path;
   bool always_on_lateral;
   bool always_on_lateral_active;
+  bool blind_spot_left;
+  bool blind_spot_path;
+  bool blind_spot_right;
   bool conditional_experimental;
+  bool custom_road_ui;
   bool enabled;
   bool experimental_mode;
+  bool lead_info;
+  bool show_fps;
+  bool unlimited_road_ui_length;
   int camera_view;
   int conditional_speed;
   int conditional_speed_lead;
   int conditional_status;
+  float desired_follow;
+  float lane_line_width;
+  float lane_width_left;
+  float lane_width_right;
+  float obstacle_distance;
+  float obstacle_distance_stock;
+  float path_edge_width;
+  float path_width;
+  float road_edge_width;
+  float stopped_equivalence;
+  float stopped_equivalence_stock;
+  QPolygonF track_edge_vertices;
+  QPolygonF track_left_adjacent_lane_vertices;
+  QPolygonF track_right_adjacent_lane_vertices;
 
 } UIScene;
 

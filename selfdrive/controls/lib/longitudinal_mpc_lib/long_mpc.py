@@ -351,7 +351,7 @@ class LongitudinalMpc:
     self.cruise_min_a = min_a
     self.max_a = max_a
 
-  def update(self, radarstate, v_cruise, x, v, a, j, aggressive_acceleration, custom_personalities, aggressive_follow, standard_follow, relaxed_follow, personality=log.LongitudinalPersonality.standard):
+  def update(self, radarstate, v_cruise, x, v, a, j, have_lead, aggressive_acceleration, custom_personalities, aggressive_follow, standard_follow, relaxed_follow, personality=log.LongitudinalPersonality.standard):
     t_follow = get_T_FOLLOW(custom_personalities, aggressive_follow, standard_follow, relaxed_follow, personality)
     v_ego = self.x0[1]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
@@ -364,6 +364,12 @@ class LongitudinalMpc:
       distance_factor = np.maximum(1, lead_xv_0[:,0] - (lead_xv_0[:,1] * t_follow))
       t_follow_offset = np.clip((lead_xv_0[:,1] - v_ego), 1, distance_factor)
       t_follow = t_follow / t_follow_offset
+
+    # LongitudinalPlan variables for onroad driving insights
+    self.safe_obstacle_distance = float(np.mean(get_safe_obstacle_distance(v_ego, t_follow))) if have_lead else 0
+    self.stopped_equivalence_factor = float(np.mean(get_stopped_equivalence_factor(lead_xv_0[:, 1]))) if have_lead else 0
+    self.safe_obstacle_distance_stock = float(np.mean(get_safe_obstacle_distance(v_ego, get_T_FOLLOW(custom_personalities, aggressive_follow, standard_follow, relaxed_follow, personality)))) if have_lead else 0
+    self.stopped_equivalence_factor_stock = float(np.mean(get_stopped_equivalence_factor(lead_xv_0[:, 1]))) if have_lead else 0
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance

@@ -83,6 +83,9 @@ class LateralPlanner:
     frogpilot_plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState', 'modelV2'])
     frogpilotLateralPlan = frogpilot_plan_send.frogpilotLateralPlan
 
+    frogpilotLateralPlan.laneWidthLeft = float(self.DH.lane_width_left)
+    frogpilotLateralPlan.laneWidthRight = float(self.DH.lane_width_right)
+
     pm.send('frogpilotLateralPlan', frogpilot_plan_send)
 
   def update_frogpilot_params(self, params):
