@@ -10,6 +10,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.kalman.simple_kalman import KF1D, get_kalman_gain
 from openpilot.common.numpy_fast import clip
+from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
@@ -84,6 +85,9 @@ class CarInterfaceBase(ABC):
     self.CC = None
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
+
+    # FrogPilot variables
+    params = Params()
 
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
@@ -305,6 +309,9 @@ class CarInterfaceBase(ABC):
 
     return events
 
+  def update_frogpilot_params(self, params):
+    if hasattr(self.CC, 'update_frogpilot_variables'):
+      self.CC.update_frogpilot_variables(params)
 
 class RadarInterfaceBase(ABC):
   def __init__(self, CP):
@@ -343,6 +350,10 @@ class CarStateBase(ABC):
     x0=[[0.0], [0.0]]
     K = get_kalman_gain(DT_CTRL, np.array(A), np.array(C), np.array(Q), R)
     self.v_ego_kf = KF1D(x0=x0, A=A, C=C[0], K=K)
+
+    # FrogPilot variables
+    self.param = Params()
+    self.param_memory = Params("/dev/shm/params")
 
   def update_speed_kf(self, v_ego_raw):
     if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed
@@ -432,6 +443,7 @@ class CarStateBase(ABC):
   def get_loopback_can_parser(CP):
     return None
 
+  def update_frogpilot_params(self, params):
 
 # interface-specific helpers
 

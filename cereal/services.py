@@ -82,6 +82,14 @@ services: dict[str, tuple] = {
   "userFlag": (True, 0., 1),
   "microphone": (True, 10., 10),
 
+  # FrogPilot
+  "frogpilotCarControl": (True, 100., 10),
+  "frogpilotDeviceState": (True, 2., 1),
+  "frogpilotEvents": (True, 1., 1),
+  "frogpilotLateralPlan": (True, 20., 5),
+  "frogpilotLongitudinalPlan": (True, 20., 5),
+  "frogpilotNavigation": (True, 1., 10),
+
   # debug
   "uiDebug": (True, 0., 1),
   "testJoystick": (True, 0.),

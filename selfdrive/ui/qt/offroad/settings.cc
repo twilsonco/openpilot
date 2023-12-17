@@ -23,6 +23,9 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
+#include "selfdrive/frogpilot/ui/frogpilot_settings.h"
+#include "selfdrive/frogpilot/ui/vehicle_settings.h"
+
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
   std::vector<std::tuple<QString, QString, QString, QString>> toggle_defs{
@@ -383,6 +386,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {tr("Network"), new Networking(this)},
     {tr("Toggles"), toggles},
     {tr("Software"), new SoftwarePanel(this)},
+    {tr("Controls"), new FrogPilotControlsPanel(this)},
+    {tr("Vehicles"), new FrogPilotVehiclesPanel(this)},
+    {tr("Visuals"), new FrogPilotVisualsPanel(this)},
   };
 
   nav_btns = new QButtonGroup(this);

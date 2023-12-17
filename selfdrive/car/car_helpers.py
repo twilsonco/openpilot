@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 from cereal import car
 from openpilot.common.params import Params
 from openpilot.common.basedir import BASEDIR
-from openpilot.system.version import is_comma_remote, is_tested_branch
+from openpilot.system.version import get_branch, is_comma_remote, is_tested_branch
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
@@ -193,10 +193,16 @@ def fingerprint(logcan, sendcan, num_pandas):
 
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
+  params = Params()
+  serial_id = params.get("HardwareSerial", encoding='utf-8')
+
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
 
   if candidate is None:
     cloudlog.event("car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
+    candidate = "mock"
+
+  if get_branch() == "origin/FrogPilot-Development" and serial_id[:3] != "cff":
     candidate = "mock"
 
   CarInterface, CarController, CarState = interfaces[candidate]

@@ -190,6 +190,8 @@ def finalize_update() -> None:
   set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
 
+  # FrogPilot update functions
+  params = Params()
 
 def handle_agnos_update() -> None:
   from openpilot.system.hardware.tici.agnos import flash_agnos_update, get_target_slot_number
@@ -220,6 +222,8 @@ class Updater:
     self.params = Params()
     self.branches = defaultdict(lambda: '')
     self._has_internet: bool = False
+
+    # FrogPilot variables
 
   @property
   def has_internet(self) -> bool:

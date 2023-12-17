@@ -68,13 +68,14 @@ FrogPilot offers a wide range of customizable features that can be easily toggle
     - Approaching slower vehicles
     - Curve and stop light/stop sign detection
     - Driving below a set speed
+    - Navigation based for when crossing intersections and upcoming turns
     - Turn signal activation below 55mph for turn assistance
 ------
 🎮 **Custom UI:**
 
   - Road UI Customizations:
     - Blind spot path to indicate a vehicle is in your blind spot within that respective lane
-    - Compass that rotates according to the direction you're driving (Doesn't work on C3X)
+    - Compass that rotates according to the direction you're driving
     - Increase or decrease the lane line, path, and road edge widths
     - Path edge colors based on specific driving statuses
       - 🔵 Blue - Navigation active
@@ -93,14 +94,17 @@ FrogPilot offers a wide range of customizable features that can be easily toggle
   - Lane detection measuring the width of the adjacent lanes
   - Tap the "CPU"/"GPU" gauge to toggle between CPU and GPU monitoring
   - Tap the "MEMORY" gauge to toggle between RAM and storage monitoring
+  - Tap the "TEMP" gauge for device temperature monitoring
 ------
 🛠 **Device Behaviors:**
 
   - Adjustable screen brightness
+  - Automatic updates that auto install for a completely "set and forget" experience
   - Device can operate offline indefinitely
   - Disable uploads while onroad to help reduce data usage
   - Easy Panda firmware flashing via a "Flash Panda" button in the "Device" menu
   - Faster boot with prebuilt functionality
+  - Remove all stored driving logs to clear up space/privacy via a "Remove" button in the "Device" menu
   - Set when the device will auto-shutdown to prevent battery drain
 ------
 🚘 **Driving Behaviors:**

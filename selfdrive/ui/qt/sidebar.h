@@ -18,6 +18,8 @@ class Sidebar : public QFrame {
   Q_PROPERTY(QString netType MEMBER net_type NOTIFY valueChanged);
   Q_PROPERTY(int netStrength MEMBER net_strength NOTIFY valueChanged);
 
+  // FrogPilot properties
+
 public:
   explicit Sidebar(QWidget* parent = 0);
 
@@ -28,6 +30,9 @@ signals:
 public slots:
   void offroadTransition(bool offroad);
   void updateState(const UIState &s);
+
+  // FrogPilot slots
+  void updateFrogPilotParams();
 
 protected:
   void paintEvent(QPaintEvent *event) override;
@@ -59,4 +64,6 @@ protected:
 
 private:
   std::unique_ptr<PubMaster> pm;
+
+  // FrogPilot variables
 };
