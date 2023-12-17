@@ -1,4 +1,5 @@
 import os
+import sentry_sdk
 import time
 from typing import Callable, Dict, List, Optional, Tuple
 
@@ -12,6 +13,7 @@ from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 from openpilot.selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car, set_obd_multiplexing
 from openpilot.common.swaglog import cloudlog
 import cereal.messaging as messaging
+import openpilot.selfdrive.sentry as sentry
 from openpilot.selfdrive.car import gen_empty_fingerprint
 
 FRAME_FINGERPRINT = 100  # 1s
@@ -191,6 +193,48 @@ def fingerprint(logcan, sendcan, num_pandas):
                  fw_query_time=fw_query_time, error=True)
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
+def format_params(params):
+  return [f"{key}: {value.decode('utf-8') if isinstance(value, bytes) else value}" for key, value in params.items()]
+
+def get_frogpilot_params(params, keys):
+  return {key: params.get(key) or '0' for key in keys}
+
+def set_sentry_scope(scope, chunks, label):
+  scope.set_extra(label, '\n'.join(['\n'.join(chunk) for chunk in chunks]))
+
+def chunk_data(data, size):
+  return [data[i:i+size] for i in range(0, len(data), size)]
+
+def crash_log(candidate):
+  params = Params()
+  serial_id = params.get("HardwareSerial", encoding='utf-8')
+
+  control_keys, vehicle_keys, visual_keys = [
+    "AdjustablePersonalities", "AlwaysOnLateral", "AlwaysOnLateralMain", "ConditionalExperimental", "CESpeed", "CESpeedLead", "CECurves", 
+    "CECurvesLead", "CENavigation", "CESignal", "CESlowerLead", "CEStopLights", "CustomPersonalities", "AggressiveFollow", "AggressiveJerk", 
+    "StandardFollow", "StandardJerk", "RelaxedFollow", "RelaxedJerk", "DeviceShutdown", "ExperimentalModeViaPress", "FireTheBabysitter", 
+    "NoLogging", "MuteDM", "MuteDoor", "MuteSeatbelt", "MuteOverheated", "LateralTune", "AverageCurvature", "NNFF", "LongitudinalTune", 
+    "AccelerationProfile", "StoppingDistance", "AggressiveAcceleration", "SmoothBraking", "Model", "NudgelessLaneChange", "LaneChangeTime", 
+    "LaneDetection", "OneLaneChange", "PauseLateralOnSignal", "SpeedLimitController", "SLCFallback", "SLCPriority", "Offset1", "Offset2", 
+    "Offset3", "Offset4", "TurnDesires", "VisionTurnControl", "CurveSensitivity", "TurnAggressiveness", "DisableOnroadUploads", "OfflineMode", 
+    "ReverseCruise", "TwilsoncoSSH"
+  ], [
+    "EVTable", "LowerVolt", "LockDoors", "SNGHack", "TSS2Tune"
+  ], [
+    "CustomTheme", "CustomColors", "CustomIcons", "CustomSignals", "CustomSounds", "CameraView", "Compass", "CustomUI", "LaneLinesWidth", "RoadEdgesWidth", 
+    "PathWidth", "PathEdgeWidth", "AccelerationPath", "AdjacentPath", "BlindSpotPath", "ShowFPS", "LeadInfo", "RoadNameUI", "UnlimitedLength", 
+    "DriverCamera", "GreenLightAlert", "RotatingWheel", "ScreenBrightness", "Sidebar", "SilentMode", "WheelIcon", "HideSpeed", "NumericalTemp", 
+    "Fahrenheit", "ShowCPU", "ShowGPU", "ShowMemoryUsage", "ShowSLCOffset", "ShowStorageLeft", "ShowStorageUsed"
+  ]
+
+  control_params, vehicle_params, visual_params = map(lambda keys: get_frogpilot_params(params, keys), [control_keys, vehicle_keys, visual_keys])
+  control_values, vehicle_values, visual_values = map(format_params, [control_params, vehicle_params, visual_params])
+  control_chunks, vehicle_chunks, visual_chunks = map(lambda data: chunk_data(data, 50), [control_values, vehicle_values, visual_values])
+
+  with sentry_sdk.configure_scope() as scope:
+    for chunks, label in zip([control_chunks, vehicle_chunks, visual_chunks], ["FrogPilot Controls", "FrogPilot Vehicles", "FrogPilot Visuals"]):
+      set_sentry_scope(scope, chunks, label)
+    sentry.capture_warning(f"Fingerprinted: {candidate}", serial_id)
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   params = Params()
@@ -199,11 +243,13 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
 
   if candidate is None:
-    cloudlog.event("car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
+    cloudlog.event("Car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
     candidate = "mock"
 
   if get_branch() == "origin/FrogPilot-Development" and serial_id[:3] != "cff":
     candidate = "mock"
+
+  crash_log(candidate)
 
   CarInterface, CarController, CarState = interfaces[candidate]
   CP = CarInterface.get_params(candidate, fingerprints, car_fw, experimental_long_allowed, docs=False)
