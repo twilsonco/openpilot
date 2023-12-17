@@ -21,6 +21,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     {"FireTheBabysitter", "Fire the Babysitter", "Disable some of openpilot's 'Babysitter Protocols'.", "../frogpilot/assets/toggle_icons/icon_babysitter.png"},
     {"LateralTune", "Lateral Tuning", "Change the way openpilot steers.", "../frogpilot/assets/toggle_icons/icon_lateral_tune.png"},
     {"LongitudinalTune", "Longitudinal Tuning", "Change the way openpilot accelerates and brakes.", "../frogpilot/assets/toggle_icons/icon_longitudinal_tune.png"},
+    {"MTSCEnabled", "Map Turn Speed Control", "When enabled, the car will slow down when it predicts a lateral acceleration greater than 2.0 m/s^2.", "../frogpilot/assets/toggle_icons/icon_speed_map.png"},
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
