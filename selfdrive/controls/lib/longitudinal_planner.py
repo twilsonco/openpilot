@@ -96,6 +96,10 @@ class LongitudinalPlanner:
 
     self.is_metric = self.params.get_bool("IsMetric")
 
+    self.green_light = False
+    self.previously_driving = False
+    self.stopped_for_light_previously = False
+
   def read_param(self):
     try:
       self.personality = int(self.params.get('LongitudinalPersonality'))
@@ -170,12 +174,23 @@ class LongitudinalPlanner:
     frogpilotCarControl, frogpilotNavigation = sm['frogpilotCarControl'], sm['frogpilotNavigation']
 
     enabled = controlsState.enabled
-    have_lead = ConditionalExperimentalMode.detect_lead(radarState)
+    have_lead = radarState.leadOne.status
     v_lead = radarState.leadOne.vLead
 
     # Conditional Experimental Mode
     if self.conditional_experimental_mode and enabled:
       ConditionalExperimentalMode.update(carState, frogpilotNavigation, modelData, radarState, v_ego, v_lead)
+
+    # Green light alert
+    if self.green_light_alert:
+      self.previously_driving |= enabled
+      self.previously_driving &= frogpilotCarControl.drivingGear
+
+      stopped_for_light = ConditionalExperimentalMode.stop_sign_and_light(carState, False, 0, modelData, v_ego, 0) and carState.standstill
+
+      self.green_light = not stopped_for_light and self.stopped_for_light_previously and self.previously_driving and not carState.gasPressed
+
+      self.stopped_for_light_previously = stopped_for_light
 
     self.mpc.set_weights(prev_accel_constraint, self.custom_personalities, self.aggressive_jerk, self.standard_jerk, self.relaxed_jerk, personality=self.personality)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
@@ -231,6 +246,7 @@ class LongitudinalPlanner:
 
     frogpilotLongitudinalPlan.conditionalExperimental = ConditionalExperimentalMode.experimental_mode
     frogpilotLongitudinalPlan.distances = self.x_desired_trajectory.tolist()
+    frogpilotLongitudinalPlan.greenLight = bool(self.green_light)
 
     frogpilotLongitudinalPlan.safeObstacleDistance = self.mpc.safe_obstacle_distance
     frogpilotLongitudinalPlan.stoppedEquivalenceFactor = self.mpc.stopped_equivalence_factor
@@ -258,3 +274,5 @@ class LongitudinalPlanner:
     self.aggressive_jerk = self.params.get_int("AggressiveJerk") / 10
     self.standard_jerk = self.params.get_int("StandardJerk") / 10
     self.relaxed_jerk = self.params.get_int("RelaxedJerk") / 10
+
+    self.green_light_alert = self.params.get_bool("GreenLightAlert")
