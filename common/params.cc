@@ -278,6 +278,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ShowStorageUsed", PERSISTENT},
     {"StandardFollow", PERSISTENT},
     {"StandardJerk", PERSISTENT},
+    {"StoppingDistance", PERSISTENT},
     {"UnlimitedLength", PERSISTENT},
     {"Updated", PERSISTENT},
     {"UpdateSchedule", PERSISTENT},
