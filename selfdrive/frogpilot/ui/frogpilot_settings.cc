@@ -24,6 +24,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     {"Model", "Model Selector (Requires Reboot)", "Select your preferred openpilot model.\n\nBD = Blue Diamond (Default)\nFV = Farmville\nNLP = New Lemon Pie\nBDv1 = Blue Diamond V1", "../assets/offroad/icon_calibration.png"},
     {"MTSCEnabled", "Map Turn Speed Control", "When enabled, the car will slow down when it predicts a lateral acceleration greater than 2.0 m/s^2.", "../frogpilot/assets/toggle_icons/icon_speed_map.png"},
     {"NudgelessLaneChange", "Nudgeless Lane Change", "Switch lanes without having to nudge the steering wheel.", "../frogpilot/assets/toggle_icons/icon_lane.png"},
+    {"PauseLateralOnSignal", "Pause Lateral On Turn Signal", "Pauses lateral control when a turn signal is active.", "../frogpilot/assets/toggle_icons/icon_pause_lane.png"},
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
