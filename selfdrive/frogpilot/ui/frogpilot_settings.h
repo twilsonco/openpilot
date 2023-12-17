@@ -43,7 +43,7 @@ public:
     QObject::connect(this, &QPushButton::toggled, this, [this](bool checked) {
       params.putBoolNonBlocking(key, checked);
       paramsMemory.putBoolNonBlocking("FrogPilotTogglesUpdated", true);
-      if (key == "MuteDM") {
+      if (key == "MuteDM" || key == "RoadNameUI") {
         if (ConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
           Hardware::reboot();
         }
