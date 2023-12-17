@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QStringList>
+
 #include "selfdrive/ui/qt/offroad/settings.h"
 
 class FrogPilotVehiclesPanel : public ListWidget {
@@ -9,9 +11,16 @@ public:
   explicit FrogPilotVehiclesPanel(SettingsWindow *parent);
 
 private:
+  void setModels();
   void setToggles();
 
+  ButtonControl *selectMakeButton;
+  ButtonControl *selectModelButton;
+
   QLabel *noToggles;
+
+  QString brandSelection;
+  QStringList models;
 
   std::map<std::string, ParamControl*> toggles;
 
