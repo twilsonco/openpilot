@@ -269,6 +269,10 @@ void FrogPilotPanel::setInitialToggleStates() {
 }
 
 void FrogPilotPanel::setParams() {
+  if (params.getBool("DisableOnroadUploads")) {
+    paramsMemory.putBool("DisableOnroadUploads", true);
+  }
+
   const bool FrogsGoMoo = params.get("DongleId").substr(0, 3) == "be6";
 
   const std::map<std::string, std::string> default_values {
