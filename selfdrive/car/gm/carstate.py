@@ -36,6 +36,10 @@ class CarState(CarStateBase):
     self.pscm_status = copy.copy(pt_cp.vl["PSCMStatus"])
     self.moving_backward = pt_cp.vl["EBCMWheelSpdRear"]["MovingBackward"] != 0
 
+    # Forwarded BSM message
+    ret.leftBlindspot = pt_cp.vl["left_blindspot"]["leftbsmlight"] == 1
+    ret.rightBlindspot = pt_cp.vl["right_blindspot"]["rightbsmlight"] == 1
+
     # Variables used for avoiding LKAS faults
     self.loopback_lka_steering_cmd_updated = len(loopback_cp.vl_all["ASCMLKASteeringCmd"]["RollingCounter"]) > 0
     if self.loopback_lka_steering_cmd_updated:
@@ -146,6 +150,10 @@ class CarState(CarStateBase):
       ("PSCMSteeringAngle", 100),
       ("ECMAcceleratorPos", 80),
     ]
+
+    # BSM does not send a signal until the first instance of it lighting up
+    messages.append(("left_blindspot", 0))
+    messages.append(("right_blindspot", 0))
 
     # Used to read back last counter sent to PT by camera
     if CP.networkLocation == NetworkLocation.fwdCamera:

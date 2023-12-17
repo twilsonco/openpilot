@@ -79,6 +79,11 @@ VAL_TABLE_ LKATorqueDeliveredStatus 3 "Failed" 2 "Temp. Limited" 1 "Active" 0 "I
 VAL_TABLE_ HandsOffSWDetectionStatus 1 "Hands On" 0 "Hands Off" ;
 VAL_TABLE_ HandsOffSWDetectionMode 2 "Failed" 1 "Enabled" 0 "Disabled" ;
 
+BO_ 1 left_blindspot: 8 XXX
+ SG_ leftbsmlight : 4|1@1+ (1,0) [0|1] "" XXX
+
+BO_ 2 right_blindspot: 8 XXX
+ SG_ rightbsmlight : 0|1@1+ (1,0) [0|1] "" XXX
 
 BO_ 189 EBCMRegenPaddle: 7 K17_EBCM
  SG_ RegenPaddle : 7|4@0+ (1,0) [0|0] ""  NEO
