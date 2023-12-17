@@ -208,6 +208,30 @@ ParamController(CESpeedLead, "CESpeedLead", "With Lead", "Switch to 'Experimenta
   return std::clamp(v, 0, isMetric ? 150 : 99);
 )
 
+ParamController(CustomColors, "CustomColors", "Colors ", "Replace the stock openpilot colors with a custom color scheme.\n\nWant to submit your own color scheme? Post it in the 'feature-request' channel on the FrogPilot Discord!", "../assets/offroad/icon_blank.png",
+  const int colors = params.getInt("CustomColors");
+  return colors == 0 ? "Stock" : colors == 1 ? "Frog" : colors == 2 ? "Tesla" : "Stalin";,
+  return v >= 0 ? v % 4 : 3;
+)
+
+ParamController(CustomIcons, "CustomIcons", "Icons", "Replace the stock openpilot icons with a custom icon pack.\n\nWant to submit your own icon pack? Post it in the 'feature-request' channel on the FrogPilot Discord!", "../assets/offroad/icon_blank.png",
+  const int icons = params.getInt("CustomIcons");
+  return icons == 0 ? "Stock" : icons == 1 ? "Frog" : icons == 2 ? "Tesla" : "Stalin";,
+  return v >= 0 ? v % 4 : 3;
+)
+
+ParamController(CustomSignals, "CustomSignals", "Signals", "Enable a custom turn signal animation.\n\nWant to submit your own turn signal animation? Post it in the 'feature-request' channel on the FrogPilot Discord!", "../assets/offroad/icon_blank.png",
+  const int turnSignals = params.getInt("CustomSignals");
+  return turnSignals == 0 ? "Stock" : turnSignals == 1 ? "Frog" : "Stalin";,
+  return v >= 0 ? v % 4 : 3;
+)
+
+ParamController(CustomSounds, "CustomSounds", "Sounds", "Replace the stock openpilot sounds with a custom sound pack.\n\nWant to submit your own custom sound pack? Post it in the 'feature-request' channel on the FrogPilot Discord!", "../assets/offroad/icon_blank.png",
+  const int sounds = params.getInt("CustomSounds");
+  return sounds == 0 ? "Stock" : sounds == 1 ? "Frog" : sounds == 2 ? "Tesla" : "Stalin";,
+  return v >= 0 ? v % 4 : 3;
+)
+
 ParamController(LaneLinesWidth, "LaneLinesWidth", "Lanes", "Customize the lane line width.\n\nDefault matches the MUTCD average of 4 inches.", "../assets/offroad/icon_blank.png",
   return QString::number(params.getInt("LaneLinesWidth")) + (isMetric ? " cm" : " in");,
   return std::clamp(v, 0, isMetric ? 60 : 24);

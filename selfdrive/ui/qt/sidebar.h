@@ -70,10 +70,19 @@ private:
 
   // FrogPilot variables
   bool isCPU;
+  bool isCustomTheme;
   bool isGPU;
   bool isMemoryUsage;
   bool isStorageLeft;
   bool isStorageUsed;
+  int customColors;
+  int customIcons;
 
   ItemStatus cpu_status, memory_status, storage_status;
+
+  std::unordered_map<int, std::pair<QString, std::vector<QColor>>> themeConfiguration;
+  std::unordered_map<int, QPixmap> flag_imgs;
+  std::unordered_map<int, QPixmap> home_imgs;
+  std::unordered_map<int, QPixmap> settings_imgs;
+  std::vector<QColor> currentColors;
 };
