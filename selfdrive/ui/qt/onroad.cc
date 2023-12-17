@@ -6,6 +6,7 @@
 #include <memory>
 #include <sstream>
 
+#include <QApplication>
 #include <QDebug>
 #include <QMouseEvent>
 
@@ -65,6 +66,12 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent), scene(uiState()->
   QObject::connect(uiState(), &UIState::uiUpdate, this, &OnroadWindow::updateState);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &OnroadWindow::offroadTransition);
   QObject::connect(uiState(), &UIState::primeChanged, this, &OnroadWindow::primeChanged);
+
+  QObject::connect(&clickTimer, &QTimer::timeout, this, [this]() {
+    clickTimer.stop();
+    QMouseEvent *event = new QMouseEvent(QEvent::MouseButtonPress, timeoutPoint, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::postEvent(this, event);
+  });
 }
 
 void OnroadWindow::updateState(const UIState &s) {
@@ -95,12 +102,31 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   // FrogPilot clickable widgets
   bool widgetClicked = false;
 
+  // If the click wasn't for anything specific, change the value of "ExperimentalMode"
+  if (scene.experimental_mode_via_press && e->pos() != timeoutPoint) {
+    if (clickTimer.isActive()) {
+      clickTimer.stop();
+      if (scene.conditional_experimental) {
+        const int override_value = (scene.conditional_status >= 1 && scene.conditional_status <= 4) ? 0 : scene.conditional_status >= 5 ? 3 : 4;
+        paramsMemory.putIntNonBlocking("CEStatus", override_value);
+      } else {
+        const bool experimentalMode = params.getBool("ExperimentalMode");
+        params.putBoolNonBlocking("ExperimentalMode", !experimentalMode);
+      }
+    } else {
+      clickTimer.start(500);
+    }
+    widgetClicked = true;
+  }
+
 #ifdef ENABLE_MAPS
   if (map != nullptr && !widgetClicked) {
     // Switch between map and sidebar when using navigate on openpilot
     bool sidebarVisible = geometry().x() > 0;
     bool show_map = uiState()->scene.navigate_on_openpilot ? sidebarVisible : !sidebarVisible;
-    map->setVisible(show_map && !map->isVisible());
+    if (!scene.experimental_mode_via_press || map->isVisible()) {
+      map->setVisible(show_map && !map->isVisible());
+    }
   }
 #endif
   // propagation event to parent(HomeWindow)
@@ -295,9 +321,14 @@ ExperimentalButton::ExperimentalButton(QWidget *parent) : experimental_mode(fals
 
 void ExperimentalButton::changeMode() {
   const auto cp = (*uiState()->sm)["carParams"].getCarParams();
-  bool can_change = hasLongitudinalControl(cp) && params.getBool("ExperimentalModeConfirmed");
+  bool can_change = hasLongitudinalControl(cp) && (params.getBool("ExperimentalModeConfirmed") || scene.experimental_mode_via_press);
   if (can_change) {
-    params.putBool("ExperimentalMode", !experimental_mode);
+    if (scene.conditional_experimental) {
+      const int override_value = (scene.conditional_status >= 1 && scene.conditional_status <= 4) ? 0 : scene.conditional_status >= 5 ? 3 : 4;
+      paramsMemory.putIntNonBlocking("ConditionalStatus", override_value);
+    } else {
+      params.putBoolNonBlocking("ExperimentalMode", !experimental_mode);
+    }
   }
 }
 
@@ -1196,6 +1227,9 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
   constexpr qreal fadeDuration = 1500.0;
   constexpr qreal textDuration = 5000.0;
 
+  const QString screenSuffix = ". Double tap the screen to revert";
+  const QString wheelSuffix = ". Double press the \"LKAS\" button to revert";
+
   QMap<int, QString> conditionalStatusMap = {
     {0, "Conditional Experimental Mode ready"},
     {1, "Conditional Experimental overridden"},
@@ -1225,6 +1259,9 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
     timer.restart();
   } else if (displayStatusText && timer.hasExpired(textDuration + fadeDuration)) {
     displayStatusText = false;
+  }
+  if (!alwaysOnLateral && !mapOpen && status != STATUS_DISENGAGED && !newStatus.isEmpty()) {
+    newStatus += (conditionalStatus == 3 || conditionalStatus == 4) ? screenSuffix : (conditionalStatus == 1 || conditionalStatus == 2) ? wheelSuffix : "";
   }
 
   // Calculate opacities
