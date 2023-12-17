@@ -37,6 +37,9 @@ struct FrogPilotLongitudinalPlan @0x80ae746ee2596b11 {
   greenLight @3 :Bool;
   safeObstacleDistance @4 :Float32;
   safeObstacleDistanceStock @5 :Float32;
+  slcOverridden @6 :Bool;
+  slcSpeedLimit @7 :Float32;
+  slcSpeedLimitOffset @8 :Float32;
   stoppedEquivalenceFactor @9 :Float32;
   stoppedEquivalenceFactorStock @10 :Float32;
 }

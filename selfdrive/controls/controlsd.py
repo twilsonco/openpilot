@@ -947,7 +947,7 @@ class Controls:
         if self.conditional_experimental_mode:
           self.experimental_mode = self.sm['frogpilotLongitudinalPlan'].conditionalExperimental
         else:
-          self.experimental_mode = self.params.get_bool("ExperimentalMode")
+          self.experimental_mode = self.params.get_bool("ExperimentalMode") or self.params_memory.get_bool("SLCExperimentalMode")
       if self.CP.notCar:
         self.joystick_mode = self.params.get_bool("JoystickDebugMode")
       time.sleep(0.1)
