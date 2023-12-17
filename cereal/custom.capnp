@@ -23,6 +23,8 @@ enum FrogPilotEvents @0xf35cc4560bbf6ec2 {
   greenLight @1;
   pedalInterceptorNoBrake @2;
   torqueNNLoad @3;
+  turningLeft @4;
+  turningRight @5;
 }
 
 struct FrogPilotLateralPlan @0xda96579883444c35 {
