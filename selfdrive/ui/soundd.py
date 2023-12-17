@@ -155,7 +155,7 @@ class Soundd:
 
         if sm.updated['microphone'] and self.current_alert == AudibleAlert.none: # only update volume filter when not playing alert
           self.spl_filter_weighted.update(sm["microphone"].soundPressureWeightedDb)
-          self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x))
+          self.current_volume = max(self.calculate_volume(float(self.spl_filter_weighted.x)) - self.silent_mode, 0)
 
         self.get_audible_alert(sm)
 
@@ -168,6 +168,7 @@ class Soundd:
       self.update_frogpilot_params()
 
   def update_frogpilot_params(self):
+    self.silent_mode = self.params.get_bool("SilentMode")
 
     custom_theme = self.params.get_bool("CustomTheme")
     custom_sounds = self.params.get_int("CustomSounds") if custom_theme else 0
