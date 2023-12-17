@@ -280,6 +280,17 @@ ExperimentalButton::ExperimentalButton(QWidget *parent) : experimental_mode(fals
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
   QObject::connect(this, &QPushButton::clicked, this, &ExperimentalButton::changeMode);
+
+  // Custom steering wheel images
+  wheelImages = {
+    {0, loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size})},
+    {1, loadPixmap("../frogpilot/assets/wheel_images/lexus.png", {img_size, img_size})},
+    {2, loadPixmap("../frogpilot/assets/wheel_images/toyota.png", {img_size, img_size})},
+    {3, loadPixmap("../frogpilot/assets/wheel_images/frog.png", {img_size, img_size})},
+    {4, loadPixmap("../frogpilot/assets/wheel_images/rocket.png", {img_size, img_size})},
+    {5, loadPixmap("../frogpilot/assets/wheel_images/hyundai.png", {img_size, img_size})},
+    {6, loadPixmap("../frogpilot/assets/wheel_images/stalin.png", {img_size, img_size})}
+  };
 }
 
 void ExperimentalButton::changeMode() {
@@ -300,13 +311,25 @@ void ExperimentalButton::updateState(const UIState &s, bool leadInfo) {
   }
 
   // FrogPilot variables
+  wheelIcon = scene.wheel_icon;
+
   y_offset = leadInfo ? 10 : 0;
 }
 
 void ExperimentalButton::paintEvent(QPaintEvent *event) {
   QPainter p(this);
-  QPixmap img = experimental_mode ? experimental_img : engage_img;
-  drawIcon(p, QPoint(btn_size / 2, btn_size / 2 + y_offset), img, QColor(0, 0, 0, 166), (isDown() || (!engageable && !scene.always_on_lateral_active)) ? 0.6 : 1.0);
+  // Custom steering wheel icon
+  engage_img = wheelImages[wheelIcon];
+  QPixmap img = wheelIcon ? engage_img : (experimental_mode ? experimental_img : engage_img);
+
+  const QColor background_color = wheelIcon && !isDown() && engageable ?
+      (scene.conditional_status == 1 ? QColor(255, 246, 0, 255) :
+      (experimental_mode ? QColor(218, 111, 37, 241) :
+      (scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166)))) :
+      (scene.always_on_lateral_active ? QColor(10, 186, 181, 255) :
+      QColor(0, 0, 0, 166));
+
+  drawIcon(p, QPoint(btn_size / 2, btn_size / 2 + y_offset), img, background_color, (isDown() || (!engageable && !scene.always_on_lateral_active)) ? 0.6 : 1.0);
 }
 
 

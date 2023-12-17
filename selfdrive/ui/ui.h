@@ -188,6 +188,7 @@ typedef struct UIScene {
   int conditional_speed_lead;
   int conditional_status;
   int screen_brightness;
+  int wheel_icon;
   float desired_follow;
   float lane_line_width;
   float lane_width_left;

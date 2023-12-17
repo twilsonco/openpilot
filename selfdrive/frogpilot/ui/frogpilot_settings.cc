@@ -76,6 +76,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
     {"CameraView", "Camera View (Cosmetic Only)", "Set your preferred camera view for the onroad UI. This toggle is purely cosmetic and will not affect openpilot's use of the other cameras.", "../frogpilot/assets/toggle_icons/icon_camera.png"},
     {"CustomUI", "Custom UI", "Customize the UI to your liking.", "../assets/offroad/icon_road.png"},
     {"ScreenBrightness", "Screen Brightness", "Choose a custom screen brightness level or use the default 'Auto' brightness setting.", "../frogpilot/assets/toggle_icons/icon_light.png"},
+    {"WheelIcon", "Steering Wheel Icon", "Replace the stock openpilot steering wheel icon with a custom icon.\n\nWant to submit your own steering wheel? Message me on Discord\n@FrogsGoMoo!", "../assets/offroad/icon_openpilot.png"},
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
@@ -102,6 +103,9 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
       }, mainLayout);
     } else if (key == "ScreenBrightness") {
       mainLayout->addWidget(new ScreenBrightness());
+      mainLayout->addWidget(horizontalLine());
+    } else if (key == "WheelIcon") {
+      mainLayout->addWidget(new WheelIcon());
       mainLayout->addWidget(horizontalLine());
     } else {
       mainLayout->addWidget(control);

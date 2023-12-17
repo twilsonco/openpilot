@@ -290,6 +290,8 @@ void ui_update_params(UIState *s) {
   scene.road_edge_width = params.getInt("RoadEdgesWidth") / 12.0 * conversion;
   scene.show_fps = scene.custom_road_ui && params.getBool("ShowFPS");
   scene.unlimited_road_ui_length = scene.custom_road_ui && params.getBool("UnlimitedLength");
+
+  scene.wheel_icon = params.getInt("WheelIcon");
 }
 
 void UIState::updateStatus() {

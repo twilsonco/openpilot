@@ -55,7 +55,10 @@ private:
   bool engageable;
 
   // FrogPilot variables
+  int wheelIcon;
   int y_offset;
+
+  std::map<int, QPixmap> wheelImages;
 
   Params paramsMemory{"/dev/shm/params"};
   const UIScene &scene;
