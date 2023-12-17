@@ -263,6 +263,21 @@ class CarState(CarStateBase):
       ret.leftBlindspot = cp_body.vl["BSM_STATUS_LEFT"]["BSM_ALERT"] == 1
       ret.rightBlindspot = cp_body.vl["BSM_STATUS_RIGHT"]["BSM_ALERT"] == 1
 
+    # Toggle Experimental Mode from steering wheel function
+    if self.experimental_mode_via_press and ret.cruiseState.available:
+      lkas_pressed = self.cruise_setting == 1
+      if lkas_pressed and not self.lkas_previously_pressed:
+        if self.conditional_experimental_mode:
+          # Set "CEStatus" to work with "Conditional Experimental Mode"
+          conditional_status = self.param_memory.get_int("CEStatus")
+          override_value = 0 if conditional_status in (1, 2, 3, 4) else 1 if conditional_status >= 5 else 2
+          self.param_memory.put_int("CEStatus", override_value)
+        else:
+          experimental_mode = self.param.get_bool("ExperimentalMode")
+          # Invert the value of "ExperimentalMode"
+          put_bool_nonblocking("ExperimentalMode", not experimental_mode)
+      self.lkas_previously_pressed = lkas_pressed
+
     return ret
 
   def get_can_parser(self, CP):
