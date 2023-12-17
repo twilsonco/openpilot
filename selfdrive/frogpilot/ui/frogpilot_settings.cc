@@ -67,6 +67,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     } else if (key == "LateralTune") {
       createSubControl(key, label, desc, icon, {}, {
         {"AverageCurvature", "Average Desired Curvature", "Use Pfeiferj's distance based curvature adjustment for smoother handling of curves."},
+        {"NNFF", "NNFF - Neural Network Feedforward", "Use Twilsonco's Neural Network Feedforward torque system for more precise lateral control."}
       });
     } else if (key == "LongitudinalTune") {
       createSubControl(key, label, desc, icon, {
@@ -150,6 +151,16 @@ ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QStri
   connect(control, &ParamControl::toggleFlipped, [=](bool state) {
     paramsMemory.putBoolNonBlocking("FrogPilotTogglesUpdated", true);
 
+    if (key == "NNFF") {
+      if (params.getBool("NNFF")) {
+        const bool addSSH = ConfirmationDialog::yesorno("Would you like to grant 'twilsonco' SSH access to improve NNFF? This won't affect any added SSH keys.", parent);
+        params.putBoolNonBlocking("TwilsoncoSSH", addSSH);
+        if (addSSH) {
+          ConfirmationDialog::toggleAlert("Message 'twilsonco' on Discord to get your device properly configured.", "Acknowledge", parent);
+        }
+      }
+    }
+
     static const QMap<QString, QString> parameterWarnings = {
       {"AggressiveAcceleration", "This will make openpilot driving more aggressively behind lead vehicles!"},
       {"AlwaysOnLateralMain", "This is very experimental and isn't guaranteed to work. If you run into any issues please report it in the FrogPilot Discord!"},
@@ -159,7 +170,7 @@ ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QStri
     }
 
     static const QSet<QString> parameterReboots = {
-      "AlwaysOnLateral", "AlwaysOnLateralMain", "FireTheBabysitter", "NoLogging",
+      "AlwaysOnLateral", "AlwaysOnLateralMain", "FireTheBabysitter", "NoLogging", "NNFF",
     };
     if (parameterReboots.contains(key)) {
       if (ConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", parent)) {
