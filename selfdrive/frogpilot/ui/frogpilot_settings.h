@@ -238,6 +238,13 @@ ParamController(RoadEdgesWidth, "RoadEdgesWidth", "Road Edges", "Customize the r
   return std::clamp(v, 0, isMetric ? 60 : 24);
 )
 
+ParamController(ScreenBrightness, "ScreenBrightness", "Screen Brightness", "Set a custom screen brightness level or use the default 'Auto' brightness setting.", "../frogpilot/assets/toggle_icons/icon_light.png",
+  const int brightness = params.getInt("ScreenBrightness");
+  uiState()->scene.screen_brightness = brightness;
+  return brightness == 101 ? "Auto" : brightness == 0 ? "Off" : QString::number(brightness) + "%";,
+  return std::clamp(v, 0, 101);
+)
+
 ParamController(StandardJerk, "StandardJerk", "Jerk Value", "Set the jerk value for the 'Standard Personality'.\n\nValue represents the responsiveness of the brake/gas pedals.\n\nHigher value = Less responsive/more 'relaxed'\n\nStock has a value of 1.0.", "../assets/offroad/icon_blank.png",
   return QString::number(params.getInt("StandardJerk") / 10.0);,
   return std::clamp(v, 1, 50);
