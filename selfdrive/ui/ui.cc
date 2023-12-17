@@ -299,6 +299,7 @@ void ui_update_params(UIState *s) {
   scene.path_edge_width = params.getInt("PathEdgeWidth");
   scene.path_width = params.getInt("PathWidth") / 10.0 * (scene.is_metric ? 0.5 : 0.1524);
   scene.road_edge_width = params.getInt("RoadEdgesWidth") / 12.0 * conversion;
+  scene.road_name_ui = scene.custom_road_ui && params.getBool("RoadNameUI");
   scene.show_fps = scene.custom_road_ui && params.getBool("ShowFPS");
   scene.unlimited_road_ui_length = scene.custom_road_ui && params.getBool("UnlimitedLength");
 
