@@ -96,6 +96,15 @@ void OnroadWindow::updateState(const UIState &s) {
     bg = bgColor;
     update();
   }
+
+#ifdef ENABLE_MAPS
+  // Make sure the sidebar is always closed when the map is ope
+  if (map != nullptr) {
+    if (geometry().x() > 0 && map->isVisible()) {
+      clickTimer.start(1);
+    }
+  }
+#endif
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
