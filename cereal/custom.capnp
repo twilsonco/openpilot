@@ -23,6 +23,7 @@ struct FrogPilotLateralPlan @0xda96579883444c35 {
 }
 
 struct FrogPilotLongitudinalPlan @0x80ae746ee2596b11 {
+  distances @2 :List(Float32);
 }
 
 struct FrogPilotNavigation @0xa5cd762cd951a455 {

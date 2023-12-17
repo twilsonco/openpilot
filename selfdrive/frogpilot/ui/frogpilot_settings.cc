@@ -25,6 +25,9 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
         {"AlwaysOnLateralMain", "Enable AOL On Cruise Main", "Enables Always On Lateral by simply turning on cruise control as opposed to requiring openpilot to be enabled first."}
       });
     } else if (key == "LateralTune") {
+      createSubControl(key, label, desc, icon, {}, {
+        {"AverageCurvature", "Average Desired Curvature", "Use Pfeiferj's distance based curvature adjustment for smoother handling of curves."},
+      });
     } else if (key == "LongitudinalTune") {
       createSubControl(key, label, desc, icon, {
         new AccelerationProfile(),
