@@ -157,6 +157,44 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"] * CV.KPH_TO_MS
       ret.cruiseState.enabled = pt_cp.vl["ECMCruiseControl"]["CruiseActive"] != 0
 
+    # Driving personalities function - Credit goes to Mangomoose!
+    if self.personalities_via_wheel and ret.cruiseState.available:
+      # Sync with the onroad UI button
+      if self.param_memory.get_bool("PersonalityChangedViaUI"):
+        self.personality_profile = self.param.get_int("LongitudinalPersonality")
+        self.previous_personality_profile = self.personality_profile
+        self.param_memory.put_bool("PersonalityChangedViaUI", False)
+
+      # Check if the car has a camera
+      has_camera = self.CP.networkLocation == NetworkLocation.fwdCamera and not self.CP.flags & GMFlags.NO_CAMERA.value and not self.CP.carFingerprint in (CC_ONLY_CAR)
+
+      if has_camera:
+        # Need to subtract by 1 to comply with the personality profiles of "0", "1", and "2"
+        self.personality_profile = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCGapLevel"] - 1
+      else:
+        if self.CP.carFingerprint in SDGM_CAR:
+          self.distance_button = cam_cp.vl["ASCMSteeringButton"]["DistanceButton"]
+        else:
+          self.distance_button = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"]
+
+        if self.distance_button and not self.distance_previously_pressed:
+          if self.display_menu:
+            self.personality_profile = (self.previous_personality_profile + 2) % 3
+          self.display_timer = 350
+        self.distance_previously_pressed = self.distance_button
+
+        # Check if the display is open
+        if self.display_timer > 0:
+          self.display_timer -= 1
+          self.display_menu = True
+        else:
+          self.display_menu = False
+
+      if self.personality_profile != self.previous_personality_profile:
+        self.param.put_int("LongitudinalPersonality", self.personality_profile)
+        self.param_memory.put_bool("PersonalityChangedViaWheel", True)
+        self.previous_personality_profile = self.personality_profile
+
     # Toggle Experimental Mode from steering wheel function
     if self.experimental_mode_via_press and ret.cruiseState.available:
       if self.CP.carFingerprint in SDGM_CAR:

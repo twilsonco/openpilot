@@ -154,6 +154,9 @@ public: \
     if (std::string(#className) == "SLCFallback" || std::string(#className) == "SLCPriority") { \
       label.setFixedWidth(750); \
     } \
+    if (std::string(#className) == "AdjustablePersonalities") { \
+      label.setFixedWidth(300); \
+    } \
     if (std::string(#className) == "CameraView" || std::string(#className) == "DeviceShutdown" || std::string(#className) == "RouteInput" || std::string(#className) == "StoppingDistance" || std::string(#className) == "WheelIcon") { \
       label.setFixedWidth(225); \
     } \
@@ -185,6 +188,12 @@ ParamController(AccelerationProfile, "AccelerationProfile", "   Acceleration Pro
   const int profile = params.getInt("AccelerationProfile");
   return profile == 1 ? "Eco" : profile == 2 ? "Normal" : "Sport";,
   return std::clamp(v, 1, 3);
+)
+
+ParamController(AdjustablePersonalities, "AdjustablePersonalities", "Adjustable Personalities", "Switch personalities using the 'Distance' button on the steering wheel (GM/Lexus/Toyota Only) or via the onroad UI for other makes.\n\n1 bar = Aggressive\n2 bars = Standard\n3 bars = Relaxed", "../frogpilot/assets/toggle_icons/icon_distance.png",
+  const int selection = params.getInt("AdjustablePersonalities");
+  return selection == 0 ? "None" : selection == 1 ? "Wheel" : selection == 2 ? "UI" : "Wheel + UI";,
+  return v >= 0 ? v % 4 : 3;
 )
 
 ParamController(AggressiveJerk, "AggressiveJerk", "Jerk Value", "Set the jerk value for the 'Aggressive Personality'.\n\nValue represents the responsiveness of the brake/gas pedals.\n\nHigher value = Less responsive/more 'relaxed'\n\nStock has a value of 0.5.", "../assets/offroad/icon_blank.png",
