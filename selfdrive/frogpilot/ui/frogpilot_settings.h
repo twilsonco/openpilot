@@ -151,7 +151,7 @@ class className : public ParamValueControl { \
   Q_OBJECT \
 public: \
   className() : ParamValueControl(labelText, descText, iconPath) { \
-    if (std::string(#className) == "CameraView" || std::string(#className) == "WheelIcon") { \
+    if (std::string(#className) == "CameraView" || std::string(#className) == "DeviceShutdown" || std::string(#className) == "WheelIcon") { \
       label.setFixedWidth(225); \
     } \
     if (std::string(#className) == "CESpeed" || std::string(#className) == "CESpeedLead") { \
@@ -230,6 +230,12 @@ ParamController(CustomSounds, "CustomSounds", "Sounds", "Replace the stock openp
   const int sounds = params.getInt("CustomSounds");
   return sounds == 0 ? "Stock" : sounds == 1 ? "Frog" : sounds == 2 ? "Tesla" : "Stalin";,
   return v >= 0 ? v % 4 : 3;
+)
+
+ParamController(DeviceShutdown, "DeviceShutdown", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../frogpilot/assets/toggle_icons/icon_time.png",
+  const int time = params.getInt("DeviceShutdown");
+  return time == 0 ? "Instant" : (time > 0 && time <= 3) ? QString::number(time * 15) + " mins" : QString::number(time - 3) + (time == 4 ? " hour" : " hours");,
+  return std::clamp(v, 0, 33);
 )
 
 ParamController(LaneLinesWidth, "LaneLinesWidth", "Lanes", "Customize the lane line width.\n\nDefault matches the MUTCD average of 4 inches.", "../assets/offroad/icon_blank.png",

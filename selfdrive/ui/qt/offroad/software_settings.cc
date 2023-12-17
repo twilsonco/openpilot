@@ -62,6 +62,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
     }
   });
   time = params.getInt("UpdateTime");
+  deviceShutdown = params.getInt("DeviceShutdown") * 3600;
   updateTime->setValue(hours[time]);
   addItem(updateTime);
 
@@ -216,7 +217,7 @@ void SoftwarePanel::automaticUpdate() {
 
   static bool isDownloadCompleted = false;
   if (isDownloadCompleted && params.getBool("UpdateAvailable")) {
-    params.putBool(true);
+    params.putBool(timer > deviceShutdown ? "DoShutdown" : "DoReboot", true);
     return;
   }
 

@@ -1,5 +1,6 @@
 import time
 import threading
+from datetime import datetime, timedelta
 from typing import Optional
 
 from openpilot.common.params import Params
@@ -39,6 +40,11 @@ class PowerMonitoring:
     self.car_battery_capacity_uWh = max((CAR_BATTERY_CAPACITY_uWh / 10), int(car_battery_capacity_uWh))
 
     # FrogPilot variables
+    device_shutdown_setting = self.params.get_int("DeviceShutdown")
+    # If the toggle is set for < 1 hour, configure by 15 minute increments
+    self.device_shutdown_time = (device_shutdown_setting - 3) * 3600 if device_shutdown_setting >= 4 else device_shutdown_setting * (60 * 15)
+    self.download_schedule = self.params.get_int("UpdateSchedule")
+    self.download_time = self.params.get_int("UpdateTime")
 
   # Calculation tick
   def calculate(self, voltage: Optional[int], ignition: bool):
@@ -115,19 +121,45 @@ class PowerMonitoring:
     if offroad_timestamp is None:
       return False
 
+    if self.download_schedule:
+      self.update_shutdown_time()
+
     now = time.monotonic()
     should_shutdown = False
     offroad_time = (now - offroad_timestamp)
     low_voltage_shutdown = (self.car_voltage_mV < (VBATT_PAUSE_CHARGING * 1e3) and
                             self.car_voltage_instant_mV > (VBATT_INSTANT_PAUSE_CHARGING * 1e3) and
                             offroad_time > VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S)
-    should_shutdown |= offroad_time > MAX_TIME_OFFROAD_S
+    should_shutdown |= offroad_time > self.device_shutdown_time
     should_shutdown |= low_voltage_shutdown
     should_shutdown |= (self.car_battery_capacity_uWh <= 0)
     should_shutdown &= not ignition
     should_shutdown &= (not self.params.get_bool("DisablePowerDown"))
     should_shutdown &= in_car
-    should_shutdown &= offroad_time > DELAY_SHUTDOWN_TIME_S
+    should_shutdown &= offroad_time > DELAY_SHUTDOWN_TIME_S if self.device_shutdown_time else True  # If "Instant" is selected for the timer, shutdown immediately
     should_shutdown |= self.params.get_bool("ForcePowerDown")
     should_shutdown &= started_seen or (now > MIN_ON_TIME_S)
     return should_shutdown
+
+  def update_shutdown_time(self):
+    now = datetime.now()
+
+    # Adjust for daily or weekly schedule
+    hours = self.download_time // 2
+    minutes = (self.download_time % 2) * 30
+
+    next_update_time = datetime(now.year, now.month, now.day, hours, minutes)
+
+    if now >= next_update_time:
+      if self.download_schedule == 1:  # Daily
+        next_update_time += timedelta(days=1)
+      elif self.download_schedule == 2:  # Weekly
+        days_to_next_sunday = (6 - now.weekday()) % 7 or 7
+        next_update_time += timedelta(days=days_to_next_sunday)
+
+    # Add one hour buffer to give time for download
+    next_update_time += timedelta(hours=1)
+
+    # Update shutdown time if next update is within 24 hours
+    if next_update_time - now <= timedelta(hours=24):
+      self.device_shutdown_time = (next_update_time - now).total_seconds()
