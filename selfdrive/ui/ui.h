@@ -173,6 +173,7 @@ typedef struct UIScene {
   bool always_on_lateral_active;
   bool enabled;
   bool experimental_mode;
+  int camera_view;
 
 } UIScene;
 

@@ -643,11 +643,12 @@ void AnnotatedCameraWidget::paintGL() {
       } else if (v_ego > 15) {
         wide_cam_requested = false;
       }
-      wide_cam_requested = wide_cam_requested && sm["controlsState"].getControlsState().getExperimentalMode();
+      wide_cam_requested = wide_cam_requested && sm["controlsState"].getControlsState().getExperimentalMode() || cameraView == 2;
       // for replay of old routes, never go to widecam
       wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
     }
-    CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
+    CameraWidget::setStreamType(cameraView == 3 ? VISION_STREAM_DRIVER : 
+                                wide_cam_requested && cameraView != 1 ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 
     s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
     if (s->scene.calibration_valid) {
@@ -730,6 +731,7 @@ void AnnotatedCameraWidget::initializeFrogPilotWidgets() {
 
 void AnnotatedCameraWidget::updateFrogPilotWidgets(QPainter &p) {
   alwaysOnLateral = scene.always_on_lateral_active;
+  cameraView = scene.camera_view;
   experimentalMode = scene.experimental_mode;
 
   if (alwaysOnLateral) {

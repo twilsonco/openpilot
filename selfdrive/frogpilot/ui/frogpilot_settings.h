@@ -151,6 +151,9 @@ class className : public ParamValueControl { \
   Q_OBJECT \
 public: \
   className() : ParamValueControl(labelText, descText, iconPath) { \
+    if (std::string(#className) == "CameraView") { \
+      label.setFixedWidth(225); \
+    } \
     refresh(); \
   } \
 private: \
@@ -172,4 +175,10 @@ ParamController(AccelerationProfile, "AccelerationProfile", "   Acceleration Pro
   const int profile = params.getInt("AccelerationProfile");
   return profile == 1 ? "Eco" : profile == 2 ? "Normal" : "Sport";,
   return std::clamp(v, 1, 3);
+)
+
+ParamController(CameraView, "CameraView", "Camera View (Cosmetic Only)", "Set your preferred camera view for the onroad UI. This toggle is purely cosmetic and will not affect openpilot's use of the other cameras.", "../frogpilot/assets/toggle_icons/icon_camera.png",
+  const int camera = params.getInt("CameraView");
+  return camera == 0 ? "Auto" : camera == 1 ? "Standard" : camera == 2 ? "Wide" : "Driver";,
+  return v >= 0 ? v % 4 : 3;
 )
