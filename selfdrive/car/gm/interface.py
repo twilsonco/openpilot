@@ -81,6 +81,8 @@ class CarInterface(CarInterfaceBase):
     ret.autoResumeSng = False
     ret.enableGasInterceptor = PEDAL_MSG in fingerprint[0]
 
+    useEVTables = Params().get_bool("EVTable")
+
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
     else:
@@ -129,7 +131,7 @@ class CarInterface(CarInterfaceBase):
       ret.pcmCruise = False  # stock non-adaptive cruise control is kept off
       # supports stop and go, but initial engage must (conservatively) be above 18mph
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
-      ret.minSteerSpeed = 7 * CV.MPH_TO_MS
+      ret.minSteerSpeed = (6.7 if useEVTables else 7) * CV.MPH_TO_MS
 
       # Tuning
       ret.longitudinalTuning.kpV = [2.4, 1.5]
@@ -162,7 +164,18 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP = [0.]
       ret.lateralTuning.pid.kiV = [0.]
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_volt()
-      ret.steerActuatorDelay = 0.2
+      ret.steerActuatorDelay = 0.18 if useEVTables else 0.2
+
+      # softer long tune for ev table
+      if useEVTables: 
+        ret.longitudinalTuning.kpBP = [5., 15., 35.]
+        ret.longitudinalTuning.kpV = [0.65, .9, 0.8]
+        ret.longitudinalTuning.kiBP = [5., 15.]
+        ret.longitudinalTuning.kiV = [0.04, 0.1]
+        ret.stoppingDecelRate = 0.02  # brake_travel/s while trying to stop
+        ret.stopAccel = -0.5
+        ret.startAccel = 0.8
+        ret.vEgoStopping = 0.1
 
     elif candidate == CAR.MALIBU:
       ret.mass = 1496.
