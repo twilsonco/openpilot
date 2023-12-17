@@ -105,6 +105,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : ListWid
 
   std::vector<std::tuple<QString, QString, QString, QString>> vehicle_toggles {
     {"LongPitch", "Long Pitch Compensation", "Reduces speed and acceleration error for greater passenger comfort and improved vehicle efficiency.", ""},
+    {"LowerVolt", "Lower Volt Enable Speed", "Lowers the Volt's minimum enable speed in order to enable openpilot at any speed.", ""},
 
     {"LockDoors", "Lock Doors In Drive", "Automatically locks the doors when in drive and unlocks when in park.", ""},
   };
@@ -135,6 +136,9 @@ void FrogPilotVehiclesPanel::setToggles() {
 
   auto longPitch = toggles["LongPitch"];
   longPitch->setVisible(gm);
+
+  auto lowerVolt = toggles["LowerVolt"];
+  lowerVolt->setVisible(gm);
 
   auto lockDoors = toggles["LockDoors"];
   lockDoors->setVisible(toyota);
