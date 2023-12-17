@@ -49,6 +49,7 @@ class CarController:
     # FrogPilot variables
     self.lock_doors = False
     self.reverse_cruise_increase = False
+    self.sng_hack = False
 
     self.doors_locked = False
     self.doors_unlocked = True
@@ -56,6 +57,7 @@ class CarController:
   def update_frogpilot_variables(self, params):
     self.lock_doors = params.get_bool("LockDoors")
     self.reverse_cruise_increase = params.get_bool("ReverseCruise")
+    self.sng_hack = params.get_bool("SNGHack")
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -138,7 +140,7 @@ class CarController:
       pcm_cancel_cmd = 1
 
     # on entering standstill, send standstill request
-    if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor):
+    if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor) and not self.sng_hack:
       self.standstill_req = True
     if CS.pcm_acc_status != 8:
       # pcm entered standstill or it's disabled
