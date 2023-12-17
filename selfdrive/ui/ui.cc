@@ -304,6 +304,7 @@ void ui_update_params(UIState *s) {
 
   scene.driver_camera = params.getBool("DriverCamera");
   scene.experimental_mode_via_press = params.getBool("ExperimentalModeViaPress");
+  scene.mute_dm = params.getBool("FireTheBabysitter") && params.getBool("MuteDM");
   scene.wheel_icon = params.getInt("WheelIcon");
 }
 
