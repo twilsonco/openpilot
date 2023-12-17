@@ -24,6 +24,8 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     } else if (key == "LongitudinalTune") {
       createSubControl(key, label, desc, icon, {
         new AccelerationProfile(),
+      }, {
+        {"AggressiveAcceleration", "Aggressive Acceleration With Lead", "Accelerate more aggressively behind a lead when starting from a stop."},
       });
     } else {
       mainLayout->addWidget(control);
@@ -61,6 +63,7 @@ ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QStri
     paramsMemory.putBoolNonBlocking("FrogPilotTogglesUpdated", true);
 
     static const QMap<QString, QString> parameterWarnings = {
+      {"AggressiveAcceleration", "This will make openpilot driving more aggressively behind lead vehicles!"},
     };
     if (parameterWarnings.contains(key) && params.getBool(key.toStdString())) {
       ConfirmationDialog::toggleAlert("WARNING: " + parameterWarnings[key], "I understand the risks.", parent);

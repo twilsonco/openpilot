@@ -330,13 +330,19 @@ class LongitudinalMpc:
     self.cruise_min_a = min_a
     self.max_a = max_a
 
-  def update(self, radarstate, v_cruise, x, v, a, j, personality=log.LongitudinalPersonality.standard):
+  def update(self, radarstate, v_cruise, x, v, a, j, aggressive_acceleration, personality=log.LongitudinalPersonality.standard):
     t_follow = get_T_FOLLOW(personality)
     v_ego = self.x0[1]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
+
+    # Offset by FrogAi for FrogPilot for a more natural takeoff with a lead
+    if aggressive_acceleration:
+      distance_factor = np.maximum(1, lead_xv_0[:,0] - (lead_xv_0[:,1] * t_follow))
+      t_follow_offset = np.clip((lead_xv_0[:,1] - v_ego), 1, distance_factor)
+      t_follow = t_follow / t_follow_offset
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
