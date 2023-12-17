@@ -242,6 +242,12 @@ ParamController(DeviceShutdown, "DeviceShutdown", "Device Shutdown Timer", "Set 
   return std::clamp(v, 0, 33);
 )
 
+ParamController(LaneChangeTime, "LaneChangeTime", "   Lane Change Timer", "Set a time delay before openpilot conducts a nudgeless lane change.", "../assets/offroad/icon_blank.png",
+  const int delay = params.getInt("LaneChangeTime");
+  return delay == 0 ? "Instant" : QString::number(static_cast<double>(delay) / 2.0) + " sec";,
+  return std::clamp(v, 0, 10);
+)
+
 ParamController(LaneLinesWidth, "LaneLinesWidth", "Lanes", "Customize the lane line width.\n\nDefault matches the MUTCD average of 4 inches.", "../assets/offroad/icon_blank.png",
   return QString::number(params.getInt("LaneLinesWidth")) + (isMetric ? " cm" : " in");,
   return std::clamp(v, 0, isMetric ? 60 : 24);
