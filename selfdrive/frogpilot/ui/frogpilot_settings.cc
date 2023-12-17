@@ -23,6 +23,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     {"LongitudinalTune", "Longitudinal Tuning", "Change the way openpilot accelerates and brakes.", "../frogpilot/assets/toggle_icons/icon_longitudinal_tune.png"},
     {"Model", "Model Selector (Requires Reboot)", "Select your preferred openpilot model.\n\nBD = Blue Diamond (Default)\nFV = Farmville\nNLP = New Lemon Pie\nBDv1 = Blue Diamond V1", "../assets/offroad/icon_calibration.png"},
     {"MTSCEnabled", "Map Turn Speed Control", "When enabled, the car will slow down when it predicts a lateral acceleration greater than 2.0 m/s^2.", "../frogpilot/assets/toggle_icons/icon_speed_map.png"},
+    {"NudgelessLaneChange", "Nudgeless Lane Change", "Switch lanes without having to nudge the steering wheel.", "../frogpilot/assets/toggle_icons/icon_lane.png"},
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
@@ -79,6 +80,14 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     } else if (key == "Model") {
       mainLayout->addWidget(new Model());
       mainLayout->addWidget(horizontalLine());
+    } else if (key == "NudgelessLaneChange") {
+      createSubControl(key, label, desc, icon, {
+        new LaneChangeTime(),
+      });
+      createSubButtonControl(key, {
+        {"LaneDetection", "Lane Detection"},
+        {"OneLaneChange", "One Lane Change Per Signal"},
+      }, mainLayout);
     } else {
       mainLayout->addWidget(control);
       if (key != std::get<0>(toggles.back())) mainLayout->addWidget(horizontalLine());
