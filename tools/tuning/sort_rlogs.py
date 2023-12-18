@@ -69,12 +69,13 @@ def get_rlog_data(filename):
       
       cn = None
       fp = None
+      eps_fp = None
       did = None
       # get fingerprint and dongle id
       lr = MultiLogIterator([lp for lp in r.log_paths() if lp])
       for msg in lr:
         try:
-          if None in [fp, cn] and msg.which() == 'carParams':
+          if None in [fp, cn, eps_fp] and msg.which() == 'carParams':
             fp = msg.carParams.carFingerprint
             eps_fp = str(next((fw.fwVersion for fw in msg.carParams.carFw if fw.ecu == "eps"), ""))
             cn = msg.carParams.carName
@@ -82,7 +83,7 @@ def get_rlog_data(filename):
             did = msg.initData.dongleId
         except Exception as e:
           continue
-        if None not in [fp,cn,did]:
+        if None not in [fp,cn,did,eps_fp]:
           break
       
     return {"make":cn, 
