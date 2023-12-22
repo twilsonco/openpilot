@@ -75,7 +75,6 @@ class NumPyNeuralNetwork:
     self.activation_function_names = activation_functions
     self.input_mean = np.array(input_mean, dtype=np.float64)
     self.input_std = np.array(input_std, dtype=np.float64)
-    self.output_scale = 1.0
     if len(input_mean) != self.input_size:
       self.input_mean = np.zeros(self.input_size, dtype=np.float64)
       self.input_std = np.zeros(self.input_size, dtype=np.float64)
@@ -135,7 +134,7 @@ class NumPyNeuralNetwork:
       x = W.dot(x) + b
       self.training_cache[f"Z{i+1}"] = x
       x = activation(x)
-    return x * self.output_scale
+    return x
   
   def backward(self, Y_hat, Y, eps = 0.000000000001):
     m = Y.shape[1]
@@ -171,13 +170,13 @@ class NumPyNeuralNetwork:
     self.input_std = np.std(X, axis=1, keepdims=True)
     # normalize X
     X_normalized = (X - self.input_mean) / self.input_std
-    # get scaling factor to downscale Y to be between -1 and 1, and so that I can rescale later
-    self.output_scale = np.max(np.abs(Y))
+    # rescale Y to be between 0 and 1
+    Y_rescaled = (Y + 1) / 2
     for i in range(epochs):
       Y_hat = self.forward_w_cache(X_normalized)
-      cost = self.get_cost_value(Y_hat, Y)
+      cost = self.get_cost_value(Y_hat, Y_rescaled)
       cost_history.append(cost)
-      self.backward(Y_hat, Y)
+      self.backward(Y_hat, Y_rescaled)
       self.update_params()
       if(i % 50 == 0):
         if(verbose):
@@ -210,7 +209,7 @@ def clamp(x, lo, hi):
   return max(lo, min(hi, x))
 
 # generates theoretical training data in order to calculate a good starting set of parameters
-def generate_trial_lateral_training_data(kf=0.33, friction_factor=0.15, steer_threshold=1.2, friction_threshold=0.3, roll_kf = 0.1):
+def generate_trial_lateral_training_data(kf=0.33, friction_factor=0.15, friction_threshold=0.3, roll_kf = 0.1):
   fbp = [-friction_threshold, friction_threshold]
   fv = [-friction_factor, friction_factor]
   X = []
@@ -222,7 +221,7 @@ def generate_trial_lateral_training_data(kf=0.33, friction_factor=0.15, steer_th
           steer = kf * la
           steer += get_friction(lj, fbp, fv)
           steer -= np.sin(roll) * 9.81 * roll_kf
-          steer = clamp(steer, -steer_threshold, steer_threshold)
+          # steer = clamp(steer, -1.0, 1.0)
           X.append([v_ego, la, lj, roll])
           y.append(steer)
   return np.array(X).T, np.array(y).reshape((1, -1))
@@ -236,7 +235,7 @@ def main():
   print(X.shape)
   print(y.shape)
   
-  X, y = generate_trial_lateral_training_data()#kf=0.5, friction_factor=0.25)
+  X, y = generate_trial_lateral_training_data()
   
   model = NumPyNeuralNetwork(training=True, learning_rate=1e5)
   
@@ -303,7 +302,7 @@ def main():
   
   cost_history = model.train(X, y, 5000, True, callback_numpy_plot)
   
-  if True:
+  if False:
     # # pretty print W using 0.2g format, and as a valid python list
     W_str = "W = ["
     for layer in model.W:

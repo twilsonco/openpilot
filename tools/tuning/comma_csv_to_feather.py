@@ -252,16 +252,6 @@ def csv_files_to_feather(input_dir, check_modified=True, print_stats=False, save
     
     if len(samples) == 0:
       return False
-        
-    steer_cmd_stats = describe([s.steer_cmd for s in samples])
-    steer_cmd_filtered_stats = describe([s.steer_cmd_filtered for s in samples])
-    long_accel_stats = describe([s.a_ego for s in samples])
-    v_ego_stats = describe([s.v_ego for s in samples])
-    steering_angle_deg_stats = describe([s.steer_angle_deg for s in samples])
-    roll_stats = describe([s.roll for s in samples])
-    lat_accel_steer_angle_stats = describe([s.lateral_accel_steer_angle for s in samples])
-    lat_accel_desired_stats = describe([s.lateral_accel_desired for s in samples])
-    lat_accel_localizer_stats = describe([s.lateral_accel_localizer for s in samples])
     
     # get unique list of firmware versions
     eps_firmwares = list(set([s.eps_firmware for s in samples if s.eps_firmware != '']))
@@ -280,6 +270,17 @@ def csv_files_to_feather(input_dir, check_modified=True, print_stats=False, save
       else:
         eps_firmware = 'combined'
       samples = [s for s in full_samples if eps_firmware == 'combined' or s.eps_firmware == eps_firmware]
+      
+      steer_cmd_stats = describe([s.steer_cmd for s in samples])
+      steer_cmd_filtered_stats = describe([s.steer_cmd_filtered for s in samples])
+      long_accel_stats = describe([s.a_ego for s in samples])
+      v_ego_stats = describe([s.v_ego for s in samples])
+      steering_angle_deg_stats = describe([s.steer_angle_deg for s in samples])
+      roll_stats = describe([s.roll for s in samples])
+      lat_accel_steer_angle_stats = describe([s.lateral_accel_steer_angle for s in samples])
+      lat_accel_desired_stats = describe([s.lateral_accel_desired for s in samples])
+      lat_accel_localizer_stats = describe([s.lateral_accel_localizer for s in samples])
+      
       tot_num_points = tot_num_points_by_eps_firmware[eps_firmware] if eps_firmware != 'combined' else tot_num_points_full
       if print_stats and len(samples) > 0:
         
