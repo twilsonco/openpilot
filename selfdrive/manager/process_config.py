@@ -5,8 +5,6 @@ from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE, PC, TICI
 from openpilot.selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
 
-params_memory = Params("/dev/shm/params")
-
 WIFI = log.DeviceState.NetworkType.wifi
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
@@ -47,21 +45,21 @@ def only_offroad(started, params, CP: car.CarParams) -> bool:
 
 # FrogPilot functions
 def allow_uploads(started, params, CP: car.CarParams) -> bool:
-  enable_logging = not params_memory.get_bool("NoLogging")
+  enable_logging = not (params.get_bool("FireTheBabysitter") and params.get_bool("NoLogging"))
   wifi_connected = HARDWARE.get_network_type() == WIFI and not started
   return wifi_connected if params.get_bool("DisableOnroadUploads") else enable_logging
 
 def enable_dm(started, params, CP: car.CarParams) -> bool:
-  return (started or params.get_bool("IsDriverViewEnabled")) and not params_memory.get_bool("MuteDM")
+  return (started or params.get_bool("IsDriverViewEnabled")) and not (params.get_bool("FireTheBabysitter") and params.get_bool("MuteDM"))
 
 def enable_logging(started, params, CP: car.CarParams) -> bool:
-  return not params_memory.get_bool("NoLogging")
+  return not (params.get_bool("FireTheBabysitter") and params.get_bool("NoLogging"))
 
 def not_prime(started, params, CP: car.CarParams) -> bool:
   return params.get_int("PrimeType") == 0
 
 def osm(started, params, CP: car.CarParams) -> bool:
-  return params_memory.get_bool("OSM")
+  return params.get_bool("RoadNameUI") or params.get_bool("SpeedLimitController")
 
 procs = [
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
