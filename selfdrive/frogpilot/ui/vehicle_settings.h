@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QStringList>
+#include <set>
 
 #include "selfdrive/ui/qt/offroad/settings.h"
 
@@ -11,6 +12,7 @@ public:
   explicit FrogPilotVehiclesPanel(SettingsWindow *parent);
 
 private:
+  void setDefaults();
   void setModels();
   void setToggles();
 
@@ -19,10 +21,15 @@ private:
 
   QLabel *noToggles;
 
-  QString brandSelection;
+  QString carMake;
+  QString previousCarMake;
+
   QStringList models;
 
   std::map<std::string, ParamControl*> toggles;
+
+  std::set<QString> gmKeys;
+  std::set<QString> toyotaKeys;
 
   Params params;
   Params paramsMemory{"/dev/shm/params"};

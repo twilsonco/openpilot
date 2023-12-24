@@ -44,7 +44,6 @@ _A_TOTAL_MAX_BP = [20., 40.]
 
 # VTSC variables
 TARGET_LAT_A = 1.9  # m/s^2
-MIN_TARGET_V = 5    # m/s
 
 
 def get_max_accel(v_ego):
@@ -107,11 +106,10 @@ class LongitudinalPlanner:
     self.previously_driving = False
     self.stopped_for_light_previously = False
 
-    self.m_offset = 0
     self.overridden_speed = 0
+    self.mtsc_target = 0
     self.slc_target = 0
-    self.v_offset = 0
-    self.v_target = MIN_TARGET_V
+    self.vtsc_target = 0
 
   def read_param(self):
     try:
@@ -155,6 +153,10 @@ class LongitudinalPlanner:
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
     if self.mpc.mode == 'acc':
+      # Use stock acceleration profiles to handle MTSC/VTSC more precisely
+      # v_cruise_changed = (self.mtsc_target or self.vtsc_target) != v_cruise
+      # if v_cruise_changed:
+        # accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
       if self.acceleration_profile == 1:
         accel_limits = [get_min_accel_eco_tune(v_ego), get_max_accel_eco_tune(v_ego)]
       elif self.acceleration_profile == 3:
@@ -190,77 +192,26 @@ class LongitudinalPlanner:
     have_lead = radarState.leadOne.status
     v_lead = radarState.leadOne.vLead
 
+    self.previously_driving |= not carState.standstill and enabled
+    self.previously_driving &= frogpilotCarControl.drivingGear
+
     # Conditional Experimental Mode
-    if self.conditional_experimental_mode and enabled:
-      ConditionalExperimentalMode.update(carState, frogpilotNavigation, modelData, radarState, v_ego, v_lead, self.v_offset)
+    if self.conditional_experimental_mode and self.previously_driving:
+      ConditionalExperimentalMode.update(carState, frogpilotNavigation, modelData, radarState, v_ego, v_lead, self.mtsc_target, self.vtsc_target)
 
     # Green light alert
     if self.green_light_alert:
-      self.previously_driving |= enabled
-      self.previously_driving &= frogpilotCarControl.drivingGear
-
       stopped_for_light = ConditionalExperimentalMode.stop_sign_and_light(carState, False, 0, modelData, v_ego, 0) and carState.standstill
 
       self.green_light = not stopped_for_light and self.stopped_for_light_previously and self.previously_driving and not carState.gasPressed
 
       self.stopped_for_light_previously = stopped_for_light
 
-    # Pfeiferj's Map Turn Speed Controller
-    mtsc_v = MapTurnSpeedController.target_speed(v_ego, carState.aEgo)
-    if v_cruise > mtsc_v and mtsc_v != 0:
-      self.m_offset = max(0, int(v_cruise - mtsc_v))
-      v_cruise = mtsc_v
+    if self.previously_driving:
+      v_cruise = self.v_cruise_update(carState, modelData, enabled, v_cruise, v_ego)
     else:
-      self.m_offset = 0
-
-    # Pfeiferj's Speed Limit Controller
-    if self.speed_limit_controller:
-      SpeedLimitController.update_current_max_velocity(v_cruise)
-      desired_speed_limit = SpeedLimitController.desired_speed_limit
-
-      # Override SLC upon gas pedal press and reset upon brake/cancel button
-      self.override_slc |= carState.gasPressed
-      self.override_slc &= enabled
-      self.override_slc &= v_ego > desired_speed_limit > 0
-
-      # Set the max speed to the manual set speed
-      if carState.gasPressed:
-        self.overridden_speed = np.clip(v_ego, desired_speed_limit, v_cruise)
-      self.overridden_speed *= enabled
-
-      # Use the speed limit if its not being overridden
-      if not self.override_slc:
-        if v_cruise > desired_speed_limit > 0:
-          self.slc_target = desired_speed_limit
-          v_cruise = self.slc_target
-      else:
-        self.slc_target = self.overridden_speed
-
-    # Pfeiferj's Vision Turn Controller
-    if self.vision_turn_controller and prev_accel_constraint:
-      # Set the curve sensitivity
-      orientation_rate = np.array(np.abs(modelData.orientationRate.z)) * self.curve_sensitivity
-      velocity = np.array(modelData.velocity.x)
-
-      # Get the maximum lat accel from the model
-      self.max_pred_lat_acc = np.amax(orientation_rate * velocity)
-
-      # Get the maximum curve based on the current velocity
-      max_curve = self.max_pred_lat_acc / (v_ego**2)
-
-      # Set the target lateral acceleration
-      adjusted_target_lat_a = TARGET_LAT_A * self.turn_aggressiveness
-
-      # Get the target velocity for the maximum curve
-      self.v_target = (adjusted_target_lat_a / max_curve) ** 0.5
-      self.v_target = np.nanmax([self.v_target, MIN_TARGET_V])
-
-      # Configure the offset value for the UI
-      self.v_offset = max(0, int(v_cruise - self.v_target))
-
-      v_cruise = np.clip(v_cruise, MIN_TARGET_V, self.v_target)
-    else:
-      self.v_offset = 0
+      self.mtsc_target = 0
+      self.vtsc_target = 0
 
     self.mpc.set_weights(prev_accel_constraint, self.custom_personalities, self.aggressive_jerk, self.standard_jerk, self.relaxed_jerk, personality=self.personality)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
@@ -314,12 +265,15 @@ class LongitudinalPlanner:
     frogpilot_plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
     frogpilotLongitudinalPlan = frogpilot_plan_send.frogpilotLongitudinalPlan
 
+    frogpilotLongitudinalPlan.adjustedCruise = float(min(self.mtsc_target, self.vtsc_target))
+
     frogpilotLongitudinalPlan.conditionalExperimental = ConditionalExperimentalMode.experimental_mode
     frogpilotLongitudinalPlan.distances = self.x_desired_trajectory.tolist()
     frogpilotLongitudinalPlan.greenLight = bool(self.green_light)
 
     frogpilotLongitudinalPlan.slcOverridden = self.override_slc
-    frogpilotLongitudinalPlan.slcSpeedLimit = SpeedLimitController.desired_speed_limit
+    frogpilotLongitudinalPlan.slcOverriddenSpeed = float(self.overridden_speed)
+    frogpilotLongitudinalPlan.slcSpeedLimit = float(self.slc_target)
     frogpilotLongitudinalPlan.slcSpeedLimitOffset = SpeedLimitController.offset
 
     frogpilotLongitudinalPlan.safeObstacleDistance = self.mpc.safe_obstacle_distance
@@ -328,9 +282,67 @@ class LongitudinalPlanner:
     frogpilotLongitudinalPlan.safeObstacleDistanceStock = self.mpc.safe_obstacle_distance_stock
     frogpilotLongitudinalPlan.stoppedEquivalenceFactorStock = self.mpc.stopped_equivalence_factor_stock
 
-    frogpilotLongitudinalPlan.vtscOffset = max(self.m_offset, self.v_offset)
-
     pm.send('frogpilotLongitudinalPlan', frogpilot_plan_send)
+
+  def v_cruise_update(self, carState, modelData, enabled, v_cruise, v_ego):
+    # Pfeiferj's Map Turn Speed Controller
+    if self.map_turn_speed_controller:
+      self.mtsc_target = np.clip(MapTurnSpeedController.target_speed(v_ego, carState.aEgo), 0, v_cruise)
+      if self.mtsc_target == 0:
+        self.mtsc_target = v_cruise
+    else:
+      self.mtsc_target = v_cruise
+
+    # Pfeiferj's Speed Limit Controller
+    if self.speed_limit_controller:
+      SpeedLimitController.update_current_max_velocity(v_cruise)
+      self.slc_target = SpeedLimitController.desired_speed_limit
+
+      # Override SLC upon gas pedal press and reset upon brake/cancel button
+      self.override_slc |= carState.gasPressed
+      self.override_slc &= enabled
+      self.override_slc &= v_ego > self.slc_target
+
+      # Set the max speed to the manual set speed
+      if carState.gasPressed:
+        self.overridden_speed = np.clip(v_ego, self.slc_target, v_cruise)
+
+      self.overridden_speed *= enabled
+
+      # Use the override speed if SLC is being overridden
+      if self.override_slc:
+        self.slc_target = self.overridden_speed
+
+      if self.slc_target == 0:
+        self.slc_target = v_cruise
+    else:
+      self.overriden_speed = 0
+      self.slc_target = v_cruise
+
+    # Pfeiferj's Vision Turn Controller
+    if self.vision_turn_controller:
+      # Set the curve sensitivity
+      orientation_rate = np.array(np.abs(modelData.orientationRate.z)) * self.curve_sensitivity
+      velocity = np.array(modelData.velocity.x)
+
+      # Get the maximum lat accel from the model
+      max_pred_lat_acc = np.amax(orientation_rate * velocity)
+
+      # Get the maximum curve based on the current velocity
+      max_curve = max_pred_lat_acc / (v_ego**2)
+
+      # Set the target lateral acceleration
+      adjusted_target_lat_a = TARGET_LAT_A * self.turn_aggressiveness
+
+      # Get the target velocity for the maximum curve
+      self.vtsc_target = (adjusted_target_lat_a / max_curve) ** 0.5
+      self.vtsc_target = np.clip(self.vtsc_target, 0, v_cruise)
+      if self.vtsc_target == 0:
+        self.vtsc_target = v_cruise
+    else:
+      self.vtsc_target = v_cruise
+
+    return min(v_cruise, self.mtsc_target, self.slc_target, self.vtsc_target)
 
   def update_frogpilot_params(self):
     self.longitudinal_tune = self.params.get_bool("LongitudinalTune")
@@ -354,6 +366,7 @@ class LongitudinalPlanner:
     self.relaxed_jerk = self.params.get_int("RelaxedJerk") / 10
 
     self.green_light_alert = self.params.get_bool("GreenLightAlert")
+    self.map_turn_speed_controller = self.params.get_bool("MTSCEnabled")
 
     self.speed_limit_controller = self.params.get_bool("SpeedLimitController")
     if self.speed_limit_controller:
