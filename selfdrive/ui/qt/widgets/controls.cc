@@ -87,6 +87,29 @@ ButtonControl::ButtonControl(const QString &title, const QString &text, const QS
   hlayout->addWidget(&btn);
 }
 
+ButtonIconControl::ButtonIconControl(const QString &title, const QString &text, const QString &desc, const QString &icon, QWidget *parent) : AbstractControl(title, desc, icon, parent) {
+  btn.setText(text);
+  btn.setStyleSheet(R"(
+    QPushButton {
+      padding: 0;
+      border-radius: 50px;
+      font-size: 35px;
+      font-weight: 500;
+      color: #E4E4E4;
+      background-color: #393939;
+    }
+    QPushButton:pressed {
+      background-color: #4a4a4a;
+    }
+    QPushButton:disabled {
+      color: #33E4E4E4;
+    }
+  )");
+  btn.setFixedSize(250, 100);
+  QObject::connect(&btn, &QPushButton::clicked, this, &ButtonIconControl::clicked);
+  hlayout->addWidget(&btn);
+}
+
 // ElidedLabel
 
 ElidedLabel::ElidedLabel(QWidget *parent) : ElidedLabel({}, parent) {}

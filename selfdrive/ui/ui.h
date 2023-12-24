@@ -179,7 +179,7 @@ typedef struct UIScene {
   bool blind_spot_right;
   bool compass;
   bool conditional_experimental;
-  bool custom_road_ui;
+  bool custom_onroad_ui;
   bool custom_theme;
   bool driver_camera;
   bool enabled;
@@ -187,6 +187,7 @@ typedef struct UIScene {
   bool experimental_mode_via_press;
   bool lead_info;
   bool map_open;
+  bool model_ui;
   bool mute_dm;
   bool personalities_via_screen;
   bool road_name_ui;
@@ -209,6 +210,7 @@ typedef struct UIScene {
   int screen_brightness;
   int steering_angle_deg;
   int wheel_icon;
+  float adjusted_cruise;
   float desired_follow;
   float lane_line_width;
   float lane_width_left;
@@ -220,9 +222,9 @@ typedef struct UIScene {
   float road_edge_width;
   float speed_limit;
   float speed_limit_offset;
+  float speed_limit_overridden_speed;
   float stopped_equivalence;
   float stopped_equivalence_stock;
-  float vtsc_offset;
   QPolygonF track_edge_vertices;
   QPolygonF track_left_adjacent_lane_vertices;
   QPolygonF track_right_adjacent_lane_vertices;

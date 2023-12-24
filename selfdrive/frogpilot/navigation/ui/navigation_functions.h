@@ -44,25 +44,25 @@ QMap<QString, QString> westMap = {
 };
 
 QMap<QString, QString> territoriesMap = {
-  {"AS", "American Samoa"}, {"DC", "District of Columbia"}, 
-  {"GM", "Guam"}, {"MP", "North Mariana Islands"}, 
+  {"AS", "American Samoa"}, {"DC", "District of Columbia"},
+  {"GM", "Guam"}, {"MP", "North Mariana Islands"},
   {"PR", "Puerto Rico"}, {"VI", "Virgin Islands"}
 };
 
 QMap<QString, QString> africaMap = {
-  {"DZ", "Algeria"}, {"AO", "Angola"}, {"BJ", "Benin"}, {"BW", "Botswana"}, 
-  {"BF", "Burkina Faso"}, {"BI", "Burundi"}, {"CM", "Cameroon"}, {"CV", "Cape Verde"}, 
-  {"CF", "Central African Republic"}, {"TD", "Chad"}, {"KM", "Comoros"}, {"CG", "Congo (Brazzaville)"}, 
-  {"CD", "Congo (Kinshasa)"}, {"CI", "Ivory Coast"}, {"DJ", "Djibouti"}, {"EG", "Egypt"}, 
-  {"GQ", "Equatorial Guinea"}, {"ER", "Eritrea"}, {"SZ", "Eswatini"}, {"ET", "Ethiopia"}, 
-  {"GA", "Gabon"}, {"GM", "Gambia"}, {"GH", "Ghana"}, {"GN", "Guinea"}, 
-  {"GW", "Guinea-Bissau"}, {"KE", "Kenya"}, {"LS", "Lesotho"}, {"LR", "Liberia"}, 
-  {"LY", "Libya"}, {"MG", "Madagascar"}, {"MW", "Malawi"}, {"ML", "Mali"}, 
-  {"MR", "Mauritania"}, {"MU", "Mauritius"}, {"MA", "Morocco"}, {"MZ", "Mozambique"}, 
-  {"NA", "Namibia"}, {"NE", "Niger"}, {"NG", "Nigeria"}, {"RW", "Rwanda"}, 
-  {"ST", "Sao Tome and Principe"}, {"SN", "Senegal"}, {"SC", "Seychelles"}, {"SL", "Sierra Leone"}, 
-  {"SO", "Somalia"}, {"ZA", "South Africa"}, {"SS", "South Sudan"}, {"SD", "Sudan"}, 
-  {"TZ", "Tanzania"}, {"TG", "Togo"}, {"TN", "Tunisia"}, {"UG", "Uganda"}, 
+  {"DZ", "Algeria"}, {"AO", "Angola"}, {"BJ", "Benin"}, {"BW", "Botswana"},
+  {"BF", "Burkina Faso"}, {"BI", "Burundi"}, {"CM", "Cameroon"}, {"CV", "Cape Verde"},
+  {"CF", "Central African Republic"}, {"TD", "Chad"}, {"KM", "Comoros"}, {"CG", "Congo (Brazzaville)"},
+  {"CD", "Congo (Kinshasa)"}, {"CI", "Ivory Coast"}, {"DJ", "Djibouti"}, {"EG", "Egypt"},
+  {"GQ", "Equatorial Guinea"}, {"ER", "Eritrea"}, {"SZ", "Eswatini"}, {"ET", "Ethiopia"},
+  {"GA", "Gabon"}, {"GM", "Gambia"}, {"GH", "Ghana"}, {"GN", "Guinea"},
+  {"GW", "Guinea-Bissau"}, {"KE", "Kenya"}, {"LS", "Lesotho"}, {"LR", "Liberia"},
+  {"LY", "Libya"}, {"MG", "Madagascar"}, {"MW", "Malawi"}, {"ML", "Mali"},
+  {"MR", "Mauritania"}, {"MU", "Mauritius"}, {"MA", "Morocco"}, {"MZ", "Mozambique"},
+  {"NA", "Namibia"}, {"NE", "Niger"}, {"NG", "Nigeria"}, {"RW", "Rwanda"},
+  {"ST", "Sao Tome and Principe"}, {"SN", "Senegal"}, {"SC", "Seychelles"}, {"SL", "Sierra Leone"},
+  {"SO", "Somalia"}, {"ZA", "South Africa"}, {"SS", "South Sudan"}, {"SD", "Sudan"},
+  {"TZ", "Tanzania"}, {"TG", "Togo"}, {"TN", "Tunisia"}, {"UG", "Uganda"},
   {"EH", "Western Sahara"}, {"ZM", "Zambia"}, {"ZW", "Zimbabwe"}
 };
 
@@ -71,56 +71,56 @@ QMap<QString, QString> antarcticaMap = {
 };
 
 QMap<QString, QString> asiaMap = {
-  {"AF", "Afghanistan"}, {"AM", "Armenia"}, {"AZ", "Azerbaijan"}, {"BH", "Bahrain"}, 
-  {"BD", "Bangladesh"}, {"BT", "Bhutan"}, {"BN", "Brunei"}, {"KH", "Cambodia"}, 
-  {"CN", "China"}, {"CY", "Cyprus"}, {"GE", "Georgia"}, {"IN", "India"}, 
-  {"ID", "Indonesia"}, {"IR", "Iran"}, {"IQ", "Iraq"}, {"IL", "Israel"}, 
-  {"JP", "Japan"}, {"JO", "Jordan"}, {"KZ", "Kazakhstan"}, {"KP", "North Korea"}, 
-  {"KR", "South Korea"}, {"KW", "Kuwait"}, {"KG", "Kyrgyzstan"}, {"LA", "Laos"}, 
-  {"LB", "Lebanon"}, {"MY", "Malaysia"}, {"MV", "Maldives"}, {"MN", "Mongolia"}, 
-  {"MM", "Myanmar"}, {"NP", "Nepal"}, {"OM", "Oman"}, {"PK", "Pakistan"}, 
-  {"PS", "Palestine"}, {"PH", "Philippines"}, {"QA", "Qatar"}, {"SA", "Saudi Arabia"}, 
-  {"SG", "Singapore"}, {"LK", "Sri Lanka"}, {"SY", "Syria"}, {"TW", "Taiwan"}, 
-  {"TJ", "Tajikistan"}, {"TH", "Thailand"}, {"TL", "Timor-Leste"}, {"TR", "Turkey"}, 
-  {"TM", "Turkmenistan"}, {"AE", "United Arab Emirates"}, {"UZ", "Uzbekistan"}, {"VN", "Vietnam"}, 
+  {"AF", "Afghanistan"}, {"AM", "Armenia"}, {"AZ", "Azerbaijan"}, {"BH", "Bahrain"},
+  {"BD", "Bangladesh"}, {"BT", "Bhutan"}, {"BN", "Brunei"}, {"KH", "Cambodia"},
+  {"CN", "China"}, {"CY", "Cyprus"}, {"GE", "Georgia"}, {"IN", "India"},
+  {"ID", "Indonesia"}, {"IR", "Iran"}, {"IQ", "Iraq"}, {"IL", "Israel"},
+  {"JP", "Japan"}, {"JO", "Jordan"}, {"KZ", "Kazakhstan"}, {"KP", "North Korea"},
+  {"KR", "South Korea"}, {"KW", "Kuwait"}, {"KG", "Kyrgyzstan"}, {"LA", "Laos"},
+  {"LB", "Lebanon"}, {"MY", "Malaysia"}, {"MV", "Maldives"}, {"MN", "Mongolia"},
+  {"MM", "Myanmar"}, {"NP", "Nepal"}, {"OM", "Oman"}, {"PK", "Pakistan"},
+  {"PS", "Palestine"}, {"PH", "Philippines"}, {"QA", "Qatar"}, {"SA", "Saudi Arabia"},
+  {"SG", "Singapore"}, {"LK", "Sri Lanka"}, {"SY", "Syria"}, {"TW", "Taiwan"},
+  {"TJ", "Tajikistan"}, {"TH", "Thailand"}, {"TL", "Timor-Leste"}, {"TR", "Turkey"},
+  {"TM", "Turkmenistan"}, {"AE", "United Arab Emirates"}, {"UZ", "Uzbekistan"}, {"VN", "Vietnam"},
   {"YE", "Yemen"}
 };
 
 QMap<QString, QString> europeMap = {
-  {"AL", "Albania"}, {"AD", "Andorra"}, {"AT", "Austria"}, {"BY", "Belarus"}, 
-  {"BE", "Belgium"}, {"BA", "Bosnia and Herzegovina"}, {"BG", "Bulgaria"}, {"HR", "Croatia"}, 
-  {"CY", "Cyprus"}, {"CZ", "Czech Republic"}, {"DK", "Denmark"}, {"EE", "Estonia"}, 
-  {"FI", "Finland"}, {"FR", "France"}, {"DE", "Germany"}, {"GR", "Greece"}, 
-  {"HU", "Hungary"}, {"IS", "Iceland"}, {"IE", "Ireland"}, {"IT", "Italy"}, 
-  {"LV", "Latvia"}, {"LI", "Liechtenstein"}, {"LT", "Lithuania"}, {"LU", "Luxembourg"}, 
-  {"MT", "Malta"}, {"MD", "Moldova"}, {"MC", "Monaco"}, {"ME", "Montenegro"}, 
-  {"NL", "Netherlands"}, {"MK", "North Macedonia"}, {"NO", "Norway"}, {"PL", "Poland"}, 
-  {"PT", "Portugal"}, {"RO", "Romania"}, {"RU", "Russia"}, {"SM", "San Marino"}, 
-  {"RS", "Serbia"}, {"SK", "Slovakia"}, {"SI", "Slovenia"}, {"ES", "Spain"}, 
-  {"SE", "Sweden"}, {"CH", "Switzerland"}, {"TR", "Turkey"}, {"UA", "Ukraine"}, 
+  {"AL", "Albania"}, {"AD", "Andorra"}, {"AT", "Austria"}, {"BY", "Belarus"},
+  {"BE", "Belgium"}, {"BA", "Bosnia and Herzegovina"}, {"BG", "Bulgaria"}, {"HR", "Croatia"},
+  {"CY", "Cyprus"}, {"CZ", "Czech Republic"}, {"DK", "Denmark"}, {"EE", "Estonia"},
+  {"FI", "Finland"}, {"FR", "France"}, {"DE", "Germany"}, {"GR", "Greece"},
+  {"HU", "Hungary"}, {"IS", "Iceland"}, {"IE", "Ireland"}, {"IT", "Italy"},
+  {"LV", "Latvia"}, {"LI", "Liechtenstein"}, {"LT", "Lithuania"}, {"LU", "Luxembourg"},
+  {"MT", "Malta"}, {"MD", "Moldova"}, {"MC", "Monaco"}, {"ME", "Montenegro"},
+  {"NL", "Netherlands"}, {"MK", "North Macedonia"}, {"NO", "Norway"}, {"PL", "Poland"},
+  {"PT", "Portugal"}, {"RO", "Romania"}, {"RU", "Russia"}, {"SM", "San Marino"},
+  {"RS", "Serbia"}, {"SK", "Slovakia"}, {"SI", "Slovenia"}, {"ES", "Spain"},
+  {"SE", "Sweden"}, {"CH", "Switzerland"}, {"TR", "Turkey"}, {"UA", "Ukraine"},
   {"GB", "United Kingdom"}, {"VA", "Vatican City"}
 };
 
 QMap<QString, QString> northAmericaMap = {
-  {"AG", "Antigua and Barbuda"}, {"BS", "Bahamas"}, {"BB", "Barbados"}, {"BZ", "Belize"}, 
-  {"CA", "Canada"}, {"CR", "Costa Rica"}, {"CU", "Cuba"}, {"DM", "Dominica"}, 
-  {"DO", "Dominican Republic"}, {"SV", "El Salvador"}, {"GD", "Grenada"}, {"GT", "Guatemala"}, 
-  {"HT", "Haiti"}, {"HN", "Honduras"}, {"JM", "Jamaica"}, {"MX", "Mexico"}, 
-  {"NI", "Nicaragua"}, {"PA", "Panama"}, {"KN", "Saint Kitts and Nevis"}, {"LC", "Saint Lucia"}, 
+  {"AG", "Antigua and Barbuda"}, {"BS", "Bahamas"}, {"BB", "Barbados"}, {"BZ", "Belize"},
+  {"CA", "Canada"}, {"CR", "Costa Rica"}, {"CU", "Cuba"}, {"DM", "Dominica"},
+  {"DO", "Dominican Republic"}, {"SV", "El Salvador"}, {"GD", "Grenada"}, {"GT", "Guatemala"},
+  {"HT", "Haiti"}, {"HN", "Honduras"}, {"JM", "Jamaica"}, {"MX", "Mexico"},
+  {"NI", "Nicaragua"}, {"PA", "Panama"}, {"KN", "Saint Kitts and Nevis"}, {"LC", "Saint Lucia"},
   {"VC", "Saint Vincent and the Grenadines"}, {"TT", "Trinidad and Tobago"}, {"US", "United States"}
 };
 
 QMap<QString, QString> oceaniaMap = {
-  {"AU", "Australia"}, {"FJ", "Fiji"}, {"KI", "Kiribati"}, {"MH", "Marshall Islands"}, 
-  {"FM", "Micronesia"}, {"NR", "Nauru"}, {"NZ", "New Zealand"}, {"PW", "Palau"}, 
-  {"PG", "Papua New Guinea"}, {"WS", "Samoa"}, {"SB", "Solomon Islands"}, {"TO", "Tonga"}, 
+  {"AU", "Australia"}, {"FJ", "Fiji"}, {"KI", "Kiribati"}, {"MH", "Marshall Islands"},
+  {"FM", "Micronesia"}, {"NR", "Nauru"}, {"NZ", "New Zealand"}, {"PW", "Palau"},
+  {"PG", "Papua New Guinea"}, {"WS", "Samoa"}, {"SB", "Solomon Islands"}, {"TO", "Tonga"},
   {"TV", "Tuvalu"}, {"VU", "Vanuatu"}
 };
 
 QMap<QString, QString> southAmericaMap = {
-  {"AR", "Argentina"}, {"BO", "Bolivia"}, {"BR", "Brazil"}, {"CL", "Chile"}, 
-  {"CO", "Colombia"}, {"EC", "Ecuador"}, {"GY", "Guyana"}, {"PY", "Paraguay"}, 
-  {"PE", "Peru"}, {"SR", "Suriname"}, {"TT", "Trinidad and Tobago"}, {"UY", "Uruguay"}, 
+  {"AR", "Argentina"}, {"BO", "Bolivia"}, {"BR", "Brazil"}, {"CL", "Chile"},
+  {"CO", "Colombia"}, {"EC", "Ecuador"}, {"GY", "Guyana"}, {"PY", "Paraguay"},
+  {"PE", "Peru"}, {"SR", "Suriname"}, {"TT", "Trinidad and Tobago"}, {"UY", "Uruguay"},
   {"VE", "Venezuela"}
 };
 

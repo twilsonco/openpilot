@@ -210,21 +210,21 @@ def crash_log(candidate):
   serial_id = params.get("HardwareSerial", encoding='utf-8')
 
   control_keys, vehicle_keys, visual_keys = [
-    "AdjustablePersonalities", "AlwaysOnLateral", "AlwaysOnLateralMain", "ConditionalExperimental", "CESpeed", "CESpeedLead", "CECurves", 
-    "CECurvesLead", "CENavigation", "CESignal", "CESlowerLead", "CEStopLights", "CustomPersonalities", "AggressiveFollow", "AggressiveJerk", 
-    "StandardFollow", "StandardJerk", "RelaxedFollow", "RelaxedJerk", "DeviceShutdown", "ExperimentalModeViaPress", "FireTheBabysitter", 
-    "NoLogging", "MuteDM", "MuteDoor", "MuteSeatbelt", "MuteOverheated", "LateralTune", "AverageCurvature", "NNFF", "LongitudinalTune", 
-    "AccelerationProfile", "StoppingDistance", "AggressiveAcceleration", "SmoothBraking", "Model", "NudgelessLaneChange", "LaneChangeTime", 
-    "LaneDetection", "OneLaneChange", "PauseLateralOnSignal", "SpeedLimitController", "SLCFallback", "SLCPriority", "Offset1", "Offset2", 
-    "Offset3", "Offset4", "TurnDesires", "VisionTurnControl", "CurveSensitivity", "TurnAggressiveness", "DisableOnroadUploads", "OfflineMode", 
-    "ReverseCruise", "TwilsoncoSSH"
+    "AdjustablePersonalities", "AlwaysOnLateral", "AlwaysOnLateralMain", "ConditionalExperimental", "CESpeed", "CESpeedLead", "CECurves",
+    "CECurvesLead", "CENavigation", "CESignal", "CESlowerLead", "CEStopLights", "CEStopLightsLead", "CustomPersonalities", "AggressiveFollow",
+    "AggressiveJerk", "StandardFollow", "StandardJerk", "RelaxedFollow", "RelaxedJerk", "DeviceShutdown", "ExperimentalModeViaPress",
+    "FireTheBabysitter", "NoLogging", "MuteDM", "MuteDoor", "MuteSeatbelt", "MuteOverheated", "LateralTune", "AverageCurvature", "NNFF",
+    "LongitudinalTune", "AccelerationProfile", "StoppingDistance", "AggressiveAcceleration", "SmoothBraking", "Model", "NudgelessLaneChange",
+    "LaneChangeTime", "LaneDetection", "OneLaneChange", "PauseLateralOnSignal", "SpeedLimitController", "SLCFallback", "SLCPriority", "Offset1",
+    "Offset2", "Offset3", "Offset4", "TurnDesires", "VisionTurnControl", "CurveSensitivity", "TurnAggressiveness", "DisableOnroadUploads",
+    "OfflineMode", "ReverseCruise", "TwilsoncoSSH"
   ], [
     "EVTable", "LowerVolt", "LockDoors", "SNGHack", "TSS2Tune"
   ], [
-    "CustomTheme", "CustomColors", "CustomIcons", "CustomSignals", "CustomSounds", "CameraView", "Compass", "CustomUI", "LaneLinesWidth", "RoadEdgesWidth", 
-    "PathWidth", "PathEdgeWidth", "AccelerationPath", "AdjacentPath", "BlindSpotPath", "ShowFPS", "LeadInfo", "RoadNameUI", "UnlimitedLength", 
-    "DriverCamera", "GreenLightAlert", "RotatingWheel", "ScreenBrightness", "Sidebar", "SilentMode", "WheelIcon", "HideSpeed", "NumericalTemp", 
-    "Fahrenheit", "ShowCPU", "ShowGPU", "ShowMemoryUsage", "ShowSLCOffset", "ShowStorageLeft", "ShowStorageUsed"
+    "CustomTheme", "CustomColors", "CustomIcons", "CustomSignals", "CustomSounds", "CameraView", "Compass", "CustomUI", "LaneLinesWidth", "RoadEdgesWidth",
+    "PathWidth", "PathEdgeWidth", "AccelerationPath", "AdjacentPath", "BlindSpotPath", "ShowFPS", "LeadInfo", "RoadNameUI", "UnlimitedLength",
+    "DriverCamera", "GreenLightAlert", "ModelUI", "RotatingWheel", "ScreenBrightness", "Sidebar", "SilentMode", "WheelIcon", "HideSpeed",
+    "NumericalTemp", "Fahrenheit", "ShowCPU", "ShowGPU", "ShowMemoryUsage", "ShowSLCOffset", "ShowStorageLeft", "ShowStorageUsed"
   ]
 
   control_params, vehicle_params, visual_params = map(lambda keys: get_frogpilot_params(params, keys), [control_keys, vehicle_keys, visual_keys])
@@ -238,7 +238,7 @@ def crash_log(candidate):
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   params = Params()
-  car_brand = params.get("CarBrand", encoding='utf-8')
+  car_brand = params.get("CarMake", encoding='utf-8')
   car_model = params.get("CarModel", encoding='utf-8')
   serial_id = params.get("HardwareSerial", encoding='utf-8')
 
@@ -255,7 +255,7 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
       params.put("CarModel", candidate)
 
   if candidate != "mock" and car_brand is None:
-    params.put("CarBrand", candidate.split(' ')[0].title())
+    params.put("CarMake", candidate.split(' ')[0].title())
 
   if get_branch() == "origin/FrogPilot-Development" and serial_id[:3] != "cff":
     candidate = "mock"

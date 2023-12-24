@@ -33,18 +33,19 @@ struct FrogPilotLateralPlan @0xda96579883444c35 {
 }
 
 struct FrogPilotLongitudinalPlan @0x80ae746ee2596b11 {
-  conditionalExperimental @0 :Bool;
-  desiredFollowDistance @1 :Float32;
-  distances @2 :List(Float32);
-  greenLight @3 :Bool;
-  safeObstacleDistance @4 :Float32;
-  safeObstacleDistanceStock @5 :Float32;
-  slcOverridden @6 :Bool;
-  slcSpeedLimit @7 :Float32;
-  slcSpeedLimitOffset @8 :Float32;
-  stoppedEquivalenceFactor @9 :Float32;
-  stoppedEquivalenceFactorStock @10 :Float32;
-  vtscOffset @11 :Float32;
+  adjustedCruise @0: Float32;
+  conditionalExperimental @1 :Bool;
+  desiredFollowDistance @2 :Float32;
+  distances @3 :List(Float32);
+  greenLight @4 :Bool;
+  safeObstacleDistance @5 :Float32;
+  safeObstacleDistanceStock @6 :Float32;
+  slcOverridden @7 :Bool;
+  slcOverriddenSpeed @8 :Float32;
+  slcSpeedLimit @9 :Float32;
+  slcSpeedLimitOffset @10 :Float32;
+  stoppedEquivalenceFactor @11 :Float32;
+  stoppedEquivalenceFactorStock @12 :Float32;
 }
 
 struct FrogPilotNavigation @0xa5cd762cd951a455 {
