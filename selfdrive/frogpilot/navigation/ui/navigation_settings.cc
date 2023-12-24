@@ -98,7 +98,7 @@ void FrogPilotNavigationPanel::updateStatuses() {
   const int totalFiles = extractFromJson<int>(osmDownloadProgress, "\"total_files\":");
   const int downloadedFiles = extractFromJson<int>(osmDownloadProgress, "\"downloaded_files\":");
 
-  if (downloadedFiles >= totalFiles && !osmDownloadProgress.empty()) {
+  if (paramsMemory.get("OSMDownloadLocations").empty()) {
     downloadActive = false;
     updateDownloadedLabel();
   }
@@ -454,7 +454,7 @@ Primeless::Primeless(QWidget *parent) : QWidget(parent) {
   list->addItem(ipLabel);
 
   std::vector<QString> searchOptions{tr("MapBox"), tr("Amap"), tr("Google")};
-  ButtonParamControl *searchInput = new ButtonParamControl("SearchInput", tr("Destination Search Provider"), 
+  ButtonParamControl *searchInput = new ButtonParamControl("SearchInput", tr("Destination Search Provider"),
                                        tr("Select a search provider for destination queries in Navigate on Openpilot. Options include MapBox (recommended), Amap, and Google Maps."),
                                        "", searchOptions);
   list->addItem(searchInput);
@@ -560,7 +560,7 @@ void Primeless::createMapboxKeyControl(ButtonControl *&control, const QString &l
 }
 
 void Primeless::updateStep() {
-  currentStep = setupCompleted ? "../frogpilot/navigation/navigation_training/setup_completed.png" : 
+  currentStep = setupCompleted ? "../frogpilot/navigation/navigation_training/setup_completed.png" :
                 (mapboxPublicKeySet && mapboxSecretKeySet) ? "../frogpilot/navigation/navigation_training/both_keys_set.png" :
                 mapboxPublicKeySet ? "../frogpilot/navigation/navigation_training/public_key_set.png" : "../frogpilot/navigation/navigation_training/no_keys_set.png";
 

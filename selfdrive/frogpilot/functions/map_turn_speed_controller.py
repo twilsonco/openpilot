@@ -3,10 +3,8 @@ from openpilot.common.conversions import Conversions as CV
 import json
 import math
 from openpilot.common.numpy_fast import interp
-from time import time
 
 mem_params = Params("/dev/shm/params")
-params = Params()
 
 R = 6373000.0 # approximate radius of earth in meters
 TO_RADIANS = math.pi / 180
@@ -23,11 +21,11 @@ TARGET_OFFSET = 1.0 # seconds - This controls how soon before the curve you reac
 def calculate_accel(t, target_jerk, a_ego):
   return a_ego  + target_jerk * t
 
-def calculate_velocity(t, target_jerk, a_ego, v_ego):
-  return v_ego + a_ego * t + target_jerk/2 * (t ** 2)
-
 def calculate_distance(t, target_jerk, a_ego, v_ego):
   return t * v_ego + a_ego/2 * (t ** 2) + target_jerk/6 * (t ** 3)
+
+def calculate_velocity(t, target_jerk, a_ego, v_ego):
+  return v_ego + a_ego * t + target_jerk/2 * (t ** 2)
 
 
 # points should be in radians
@@ -40,24 +38,11 @@ def distance_to_point(ax, ay, bx, by):
 
 class MapTurnSpeedController:
   def __init__(self):
-    self.enabled = params.get_bool("MTSCEnabled")
-    self.last_params_update = time()
     self.target_lat = 0.0
     self.target_lon = 0.0
     self.target_v = 0.0
 
-  def update_params(self):
-    t = time()
-    if t > self.last_params_update + 5.0:
-      self.enabled = params.get_bool("MTSCEnabled")
-      self.last_params_update = t
-
   def target_speed(self, v_ego, a_ego) -> float:
-    self.update_params()
-
-    if not self.enabled:
-      return 0.0
-
     lat = 0.0
     lon = 0.0
     try:

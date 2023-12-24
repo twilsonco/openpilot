@@ -83,8 +83,8 @@ void ScreenRecorder::start() {
   char filename[64];
   const time_t t = time(NULL);
   const struct tm tm = *localtime(&t);
-  snprintf(filename, sizeof(filename), "%04d%02d%02d-%02d%02d%02d.mp4", 
-           tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, 
+  snprintf(filename, sizeof(filename), "%04d%02d%02d-%02d%02d%02d.mp4",
+           tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
            tm.tm_hour, tm.tm_min, tm.tm_sec);
 
   recording = true;
@@ -112,7 +112,7 @@ void ScreenRecorder::encoding_thread_func() {
                         rgb_scale_buffer.get(), recording_width * 4,
                         recording_width, recording_height,
                         libyuv::kFilterLinear);
-      encoder->encode_frame_rgba(rgb_scale_buffer.get(), recording_width, recording_height, 
+      encoder->encode_frame_rgba(rgb_scale_buffer.get(), recording_width, recording_height,
                                  static_cast<uint64_t>(nanos_since_boot() - start_time));
     }
   }

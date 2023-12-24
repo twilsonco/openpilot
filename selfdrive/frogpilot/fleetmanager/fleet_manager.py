@@ -205,7 +205,7 @@ def find_CurrentStep():
 
 @app.route("/navdirections.json", methods=['GET'])
 def find_nav_directions():
-  directory = "/data/openpilot/selfdrive/manager/" 
+  directory = "/data/openpilot/selfdrive/manager/"
   filename = "navdirections.json"
   return send_from_directory(directory, filename, as_attachment=True)
 

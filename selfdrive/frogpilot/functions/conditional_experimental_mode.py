@@ -11,11 +11,9 @@ SPEED_LIMIT = 25  # Speed limit for turn signal check
 TURN_ANGLE = 60   # Angle for turning check
 
 # Lookup table for approaching slower leads - Credit goes to the DragonPilot team!
-SLOW_LEAD_WINDOW_SIZE = 5
 SLOW_LEAD_TTC = 1.55
 
 # Lookup table for stop sign / stop light detection - Credit goes to the DragonPilot team!
-SLOW_DOWN_WINDOW_SIZE = 5
 SLOW_DOWN_PROB = 0.6
 SLOW_DOWN_BP = [0., 10., 20., 30., 40., 50., 55.]
 SLOW_DOWN_DISTANCE = [10, 30., 50., 70., 80., 90., 120.]
@@ -38,6 +36,9 @@ class GenericMovingAverageCalculator:
       return None
     return self.total / len(self.data)
 
+  def reset_data(self):
+    self.data = []
+    self.total = 0
 
 class ConditionalExperimentalMode:
   def __init__(self):
@@ -47,18 +48,17 @@ class ConditionalExperimentalMode:
 
     self.experimental_mode = False
 
-    self.previous_ego_speed = 0
-    self.previous_lead_speed = 0
-    self.previous_status_bar = 0
+    self.previous_v_ego = 0
+    self.previous_status_value = 0
     self.status_value = 0
 
-    self.curvature_gmac = GenericMovingAverageCalculator(window_size=SLOW_DOWN_WINDOW_SIZE)
-    self.slow_down_gmac = GenericMovingAverageCalculator(window_size=SLOW_DOWN_WINDOW_SIZE)
-    self.slow_lead_gmac = GenericMovingAverageCalculator(window_size=SLOW_LEAD_WINDOW_SIZE)
+    self.curvature_gmac = GenericMovingAverageCalculator(window_size=THRESHOLD)
+    self.slow_down_gmac = GenericMovingAverageCalculator(window_size=THRESHOLD)
+    self.slow_lead_gmac = GenericMovingAverageCalculator(window_size=THRESHOLD)
 
     self.update_frogpilot_params()
 
-  def update(self, carState, frogpilotNavigation, modelData, radarState, v_ego, v_lead, v_offset):
+  def update(self, carState, frogpilotNavigation, modelData, radarState, v_ego, v_lead, mtsc_offset, vtsc_offset):
     # Set the current driving states
     lead = radarState.leadOne.status
     lead_distance = radarState.leadOne.dRel
@@ -72,28 +72,27 @@ class ConditionalExperimentalMode:
       overridden = 0
 
     # Update Experimental Mode based on the current driving conditions
-    condition_met = self.check_conditions(carState, frogpilotNavigation, lead, lead_distance, modelData, speed_difference, standstill, v_ego, v_lead, v_offset)
+    condition_met = self.check_conditions(carState, frogpilotNavigation, lead, lead_distance, modelData, speed_difference, standstill, v_ego, v_lead, mtsc_offset, vtsc_offset)
     if (not self.experimental_mode and condition_met and overridden not in (1, 3)) or overridden in (2, 4):
       self.experimental_mode = True
     elif (self.experimental_mode and not condition_met and overridden not in (2, 4)) or overridden in (1, 3):
       self.experimental_mode = False
 
     # Set parameter for on-road status bar
-    status_bar = overridden if overridden in (1, 2, 3, 4) else (self.status_value if self.status_value >= 5 and self.experimental_mode else 0)
-    if status_bar != self.previous_status_bar:
-      self.previous_status_bar = status_bar
-      self.params_memory.put_int("CEStatus", status_bar)
+    status_value = overridden if overridden in (1, 2, 3, 4) else (self.status_value if self.status_value >= 5 and self.experimental_mode else 0)
+    if status_value != self.previous_status_value:
+      self.previous_status_value = status_value
+      self.params_memory.put_int("CEStatus", status_value)
 
-    self.previous_ego_speed = v_ego
-    self.previous_lead_speed = v_lead
+    self.previous_v_ego = v_ego
 
   # Check conditions for the appropriate state of Experimental Mode
-  def check_conditions(self, carState, frogpilotNavigation, lead, lead_distance, modelData, speed_difference, standstill, v_ego, v_lead, v_offset):
+  def check_conditions(self, carState, frogpilotNavigation, lead, lead_distance, modelData, speed_difference, standstill, v_ego, v_lead, mtsc_offset, vtsc_offset):
     if standstill:
       return self.experimental_mode
 
     # Prevent Experimental Mode from deactivating for a red light/stop sign so we don't accidentally run it
-    stopping_for_light = v_ego <= self.previous_ego_speed and self.status_value == 12
+    stopping_for_light = v_ego <= self.previous_v_ego and self.status_value == 12
     if stopping_for_light and self.experimental_mode:
       return True
 
@@ -123,12 +122,13 @@ class ConditionalExperimentalMode:
       return True
 
     # Road curvature check
-    if self.curves and self.road_curvature(modelData, v_ego) and (self.curves_lead or not lead) and v_offset == 0:
+    curve_detected = self.road_curvature(modelData, v_ego)
+    if self.curves and curve_detected and (self.curves_lead or not lead) and mtsc_offset == 0 and vtsc_offset == 0:
       self.status_value = 11
       return True
 
     # Stop sign and light check
-    if self.stop_lights and self.stop_sign_and_light(carState, lead, lead_distance, modelData, v_ego, v_lead) and not self.road_curvature(modelData, v_ego):
+    if self.stop_lights and self.stop_sign_and_light(carState, lead, lead_distance, modelData, v_ego, v_lead) and not curve_detected:
       self.status_value = 12
       return True
 
@@ -149,14 +149,14 @@ class ConditionalExperimentalMode:
     if not lead:
       self.slow_lead_gmac.reset_data()
 
-    if lead and v_ego >= 0.01:
+    if lead and v_ego != 0:
       self.slow_lead_gmac.add_data(lead_distance / v_ego)
 
     return self.slow_lead_gmac.get_moving_average() is not None and self.slow_lead_gmac.get_moving_average() <= SLOW_LEAD_TTC
 
   def stop_sign_and_light(self, carState, lead, lead_distance, modelData, v_ego, v_lead):
     # Check if lead is present and either slowing down or stopped
-    following_lead = lead and ((v_lead < self.previous_lead_speed) or (v_lead < 1))
+    following_lead = not self.slow_lead(lead, lead_distance, v_ego)
 
     # Check if the car is turning
     turning = abs(carState.steeringAngleDeg) >= TURN_ANGLE
@@ -166,8 +166,8 @@ class ConditionalExperimentalMode:
     model_stopping = modelData.position.x[TRAJECTORY_SIZE - 1] < interp(v_ego * 3.6, SLOW_DOWN_BP, SLOW_DOWN_DISTANCE)
 
     # Add data to slow down GMAC
-    self.slow_down_gmac.add_data(model_check and model_stopping and not following_lead and not turning)
-    return self.slow_down_gmac.get_moving_average() >= SLOW_DOWN_PROB
+    self.slow_down_gmac.add_data(model_check and model_stopping)
+    return self.slow_down_gmac.get_moving_average() >= SLOW_DOWN_PROB and (self.stop_lights_lead or not following_lead) and not turning
 
   def update_frogpilot_params(self):
     self.curves = self.params.get_bool("CECurves")
@@ -179,5 +179,6 @@ class ConditionalExperimentalMode:
     self.signal = self.params.get_bool("CESignal")
     self.slower_lead = self.params.get_bool("CESlowerLead")
     self.stop_lights = self.params.get_bool("CEStopLights")
+    self.stop_lights_lead = self.params.get_bool("CEStopLightsLead")
 
 ConditionalExperimentalMode = ConditionalExperimentalMode()
