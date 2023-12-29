@@ -143,7 +143,8 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       if self.section == '':
         to_print.append(f'{COLORS.INFO}{COLORS.UNDERLINE}{"Common" if self.compact_view else "All"} parameters:{COLORS.ENDC}{COLORS.ENDC}')
       blue_gradient = [33, 39, 45, 51, 87]
-      n_pad = max([len(i) for i in self.params])
+      lens = [len(i) for i in self.params]
+      n_pad = max(lens) if len(lens) > 0 else 0
       n_pad_idx = int(log10(len(self.params) + (0 if self.section != '' else len(sections))))+2
       n_pad_vals = max([len(str(i)) for i in values_list])+1
       for idx, param in enumerate(self.params):
