@@ -183,22 +183,20 @@ class LongitudinalPlanner:
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
     # FrogPilot variables
-    carState, controlsState, modelData, radarState = sm['carState'], sm['controlsState'], sm['modelV2'], sm['radarState']
-    enabled = controlsState.enabled
-    have_lead = radarState.leadOne.status
+    carState, modelData, radarState = sm['carState'], sm['modelV2'], sm['radarState']
+    enabled = sm['controlsState'].enabled
     standstill = carState.standstill
-    v_lead = radarState.leadOne.vLead
 
     self.previously_driving |= not standstill and enabled
     self.previously_driving &= sm['frogpilotCarControl'].drivingGear
 
     # Conditional Experimental Mode
     if self.conditional_experimental_mode and self.previously_driving:
-      ConditionalExperimentalMode.update(carState, sm['frogpilotNavigation'], modelData, radarState, v_ego, v_lead, self.mtsc_target, self.vtsc_target)
+      ConditionalExperimentalMode.update(carState, sm['frogpilotNavigation'], modelData, radarState, v_ego, self.mtsc_target, self.vtsc_target)
 
     # Green light alert
     if self.green_light_alert and self.previously_driving:
-      stopped_for_light = ConditionalExperimentalMode.stop_sign_and_light(carState, False, 0, modelData, v_ego, 0) and carState.standstill
+      stopped_for_light = ConditionalExperimentalMode.stop_sign_and_light(modelData, v_ego) and standstill
 
       self.green_light = not stopped_for_light and self.stopped_for_light_previously and not carState.gasPressed
 
@@ -215,7 +213,7 @@ class LongitudinalPlanner:
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
-    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, have_lead, self.aggressive_acceleration, self.increased_stopping_distance, self.smoother_braking,
+    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, self.aggressive_acceleration, self.increased_stopping_distance, self.smoother_braking,
                     self.custom_personalities, self.aggressive_follow, self.standard_follow, self.relaxed_follow, personality=self.personality)
 
     self.x_desired_trajectory_full = np.interp(ModelConstants.T_IDXS, T_IDXS_MPC, self.mpc.x_solution)
