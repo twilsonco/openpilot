@@ -111,15 +111,6 @@ void OnroadWindow::updateState(const UIState &s) {
     bg = bgColor;
     update();
   }
-
-#ifdef ENABLE_MAPS
-  // Make sure the sidebar is always closed when the map is ope
-  if (map != nullptr) {
-    if (geometry().x() > 0 && map->isVisible()) {
-      clickTimer.start(1);
-    }
-  }
-#endif
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
@@ -413,12 +404,12 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
   engage_img = wheelImages[wheelIcon];
   QPixmap img = wheelIcon ? engage_img : (experimental_mode ? experimental_img : engage_img);
 
-  const QColor background_color = wheelIcon && !isDown() && engageable ?
-      (scene.conditional_status == 1 ? QColor(255, 246, 0, 255) :
-      (experimental_mode ? QColor(218, 111, 37, 241) :
-      (scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166)))) :
-      (scene.always_on_lateral_active ? QColor(10, 186, 181, 255) :
-      QColor(0, 0, 0, 166));
+  const QColor background_color = scene.always_on_lateral_active ? QColor(10, 186, 181, 255) :
+    (wheelIcon && !isDown() && engageable ?
+    (scene.conditional_status == 1 ? QColor(255, 246, 0, 255) :
+    (experimental_mode ? QColor(218, 111, 37, 241) :
+    (scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166)))) :
+    QColor(0, 0, 0, 166));
 
   if (!scene.show_driver_camera) {
     if (rotatingWheel) {
@@ -1179,7 +1170,7 @@ void AnnotatedCameraWidget::updateFrogPilotWidgets(QPainter &p) {
   conditionalSpeed = scene.conditional_speed;
   conditionalSpeedLead = scene.conditional_speed_lead;
   conditionalStatus = scene.conditional_status;
-  cruiseAdjustment = fmax((0.1 * fmax(setSpeed - scene.adjusted_cruise - setSpeed - 1, 0) * (is_metric ? MS_TO_KPH : MS_TO_MPH) + 0.9 * cruiseAdjustment), 0);
+  cruiseAdjustment = fmax((0.1 * fmax(setSpeed - scene.adjusted_cruise, 0) + 0.9 * cruiseAdjustment) - 1, 0);
   customColors = scene.custom_colors;
   desiredFollow = scene.desired_follow;
   experimentalMode = scene.experimental_mode;
@@ -1367,16 +1358,22 @@ void Compass::paintEvent(QPaintEvent *event) {
 
   // Draw cardinal directions
   p.setFont(InterFont(20, QFont::Bold));
-  const QString directions[] = {"N", "E", "S", "W", "N"};
-  const int fromAngles[] = {337, 68, 158, 248, 337};
-  const int toAngles[] = {22, 112, 202, 292, 360};
-  const int alignmentFlags[] = {Qt::AlignTop | Qt::AlignHCenter, Qt::AlignRight | Qt::AlignVCenter, Qt::AlignBottom | Qt::AlignHCenter, Qt::AlignLeft | Qt::AlignVCenter, Qt::AlignTop | Qt::AlignHCenter};
-  int directionOffset = 20;
+  const QString directions[] = {"N", "E", "S", "W"};
+  const int fromAngles[] = {292, 23, 113, 203};
+  const int toAngles[] = {67, 157, 247, 337};
+  const int alignmentFlags[] = {Qt::AlignTop | Qt::AlignHCenter, Qt::AlignRight | Qt::AlignVCenter, Qt::AlignBottom | Qt::AlignHCenter, Qt::AlignLeft | Qt::AlignVCenter};
+  const int directionOffset = 20;
 
-  for (int i = 0; i < 5; ++i) {
+  for (int i = 0; i < 4; ++i) {
+    const int adjustedBearing = (bearingDeg < fromAngles[i]) ? (bearingDeg + 360) % 360 : bearingDeg;
+    const bool isInRange = (fromAngles[i] > toAngles[i]) ? 
+                           (adjustedBearing >= fromAngles[i] || adjustedBearing < toAngles[i]) : 
+                           (adjustedBearing >= fromAngles[i] && adjustedBearing < toAngles[i]);
+    p.setOpacity(isInRange ? 1.0 : 0.2);
+
     const int offset = (directions[i] == "E") ? -5 : (directions[i] == "W" ? 5 : 0);
-    p.setOpacity((bearingDeg >= fromAngles[i] && bearingDeg < toAngles[i]) ? 1.0 : 0.2);
-    QRect textRect(x - innerCompass + offset + directionOffset, y - innerCompass + directionOffset, innerCompass * 2 - 2 * directionOffset, innerCompass * 2 - 2 * directionOffset);
+    const QRect textRect(x - innerCompass + offset + directionOffset, y - innerCompass + directionOffset, 
+                         innerCompass * 2 - 2 * directionOffset, innerCompass * 2 - 2 * directionOffset);
     p.drawText(textRect, alignmentFlags[i], directions[i]);
   }
 }

@@ -44,7 +44,6 @@ class ConditionalExperimentalMode:
   def __init__(self):
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
-    self.is_metric = self.params.get_bool("IsMetric")
 
     self.experimental_mode = False
 
@@ -55,8 +54,6 @@ class ConditionalExperimentalMode:
     self.curvature_gmac = GenericMovingAverageCalculator(window_size=THRESHOLD)
     self.slow_down_gmac = GenericMovingAverageCalculator(window_size=THRESHOLD)
     self.slow_lead_gmac = GenericMovingAverageCalculator(window_size=THRESHOLD)
-
-    self.update_frogpilot_params()
 
   def update(self, carState, frogpilotNavigation, modelData, radarState, v_ego, v_lead, mtsc_offset, vtsc_offset):
     # Set the current driving states
@@ -167,14 +164,14 @@ class ConditionalExperimentalMode:
 
     # Add data to slow down GMAC
     self.slow_down_gmac.add_data(model_check and model_stopping)
-    return self.slow_down_gmac.get_moving_average() >= SLOW_DOWN_PROB and (self.stop_lights_lead or not following_lead) and not turning
+    return self.slow_down_gmac.get_moving_average() >= SLOW_DOWN_PROB and (self.stop_lights_lead or not lead) and not turning
 
-  def update_frogpilot_params(self):
+  def update_frogpilot_params(self, is_metric):
     self.curves = self.params.get_bool("CECurves")
     self.curves_lead = self.params.get_bool("CECurvesLead")
     self.experimental_mode_via_press = self.params.get_bool("ExperimentalModeViaPress")
-    self.limit = self.params.get_int("CESpeed") * (CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS)
-    self.limit_lead = self.params.get_int("CESpeedLead") * (CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS)
+    self.limit = self.params.get_int("CESpeed") * (CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS)
+    self.limit_lead = self.params.get_int("CESpeedLead") * (CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS)
     self.navigation = self.params.get_bool("CENavigation")
     self.signal = self.params.get_bool("CESignal")
     self.slower_lead = self.params.get_bool("CESlowerLead")
