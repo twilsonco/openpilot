@@ -99,8 +99,6 @@ class LongitudinalPlanner:
     # FrogPilot variables
     self.params_memory = Params("/dev/shm/params")
 
-    self.is_metric = self.params.get_bool("IsMetric")
-
     self.green_light = False
     self.override_slc = False
     self.previously_driving = False
@@ -186,32 +184,32 @@ class LongitudinalPlanner:
 
     # FrogPilot variables
     carState, controlsState, modelData, radarState = sm['carState'], sm['controlsState'], sm['modelV2'], sm['radarState']
-    frogpilotCarControl, frogpilotNavigation = sm['frogpilotCarControl'], sm['frogpilotNavigation']
-
     enabled = controlsState.enabled
     have_lead = radarState.leadOne.status
+    standstill = carState.standstill
     v_lead = radarState.leadOne.vLead
 
-    self.previously_driving |= not carState.standstill and enabled
-    self.previously_driving &= frogpilotCarControl.drivingGear
+    self.previously_driving |= not standstill and enabled
+    self.previously_driving &= sm['frogpilotCarControl'].drivingGear
 
     # Conditional Experimental Mode
     if self.conditional_experimental_mode and self.previously_driving:
-      ConditionalExperimentalMode.update(carState, frogpilotNavigation, modelData, radarState, v_ego, v_lead, self.mtsc_target, self.vtsc_target)
+      ConditionalExperimentalMode.update(carState, sm['frogpilotNavigation'], modelData, radarState, v_ego, v_lead, self.mtsc_target, self.vtsc_target)
 
     # Green light alert
-    if self.green_light_alert:
+    if self.green_light_alert and self.previously_driving:
       stopped_for_light = ConditionalExperimentalMode.stop_sign_and_light(carState, False, 0, modelData, v_ego, 0) and carState.standstill
 
-      self.green_light = not stopped_for_light and self.stopped_for_light_previously and self.previously_driving and not carState.gasPressed
+      self.green_light = not stopped_for_light and self.stopped_for_light_previously and not carState.gasPressed
 
       self.stopped_for_light_previously = stopped_for_light
 
-    if self.previously_driving:
-      v_cruise = self.v_cruise_update(carState, modelData, enabled, v_cruise, v_ego)
-    else:
-      self.mtsc_target = 0
-      self.vtsc_target = 0
+    # Update v_cruise for speed limiter functions
+    v_ego_cluster = carState.vEgoCluster
+    v_ego_raw = carState.vEgoRaw
+    v_ego_diff = v_ego_raw - v_ego_cluster if v_ego_cluster > 0 else 0
+    v_cruise += v_ego_diff
+    v_cruise = self.v_cruise_update(carState, enabled, modelData, v_cruise, v_ego)
 
     self.mpc.set_weights(prev_accel_constraint, self.custom_personalities, self.aggressive_jerk, self.standard_jerk, self.relaxed_jerk, personality=self.personality)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
@@ -265,7 +263,7 @@ class LongitudinalPlanner:
     frogpilot_plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
     frogpilotLongitudinalPlan = frogpilot_plan_send.frogpilotLongitudinalPlan
 
-    frogpilotLongitudinalPlan.adjustedCruise = float(min(self.mtsc_target, self.vtsc_target))
+    frogpilotLongitudinalPlan.adjustedCruise = float(min(self.mtsc_target, self.vtsc_target)) * (CV.MS_TO_KPH if self.is_metric else CV.MS_TO_MPH)
 
     frogpilotLongitudinalPlan.conditionalExperimental = ConditionalExperimentalMode.experimental_mode
     frogpilotLongitudinalPlan.distances = self.x_desired_trajectory.tolist()
@@ -284,7 +282,7 @@ class LongitudinalPlanner:
 
     pm.send('frogpilotLongitudinalPlan', frogpilot_plan_send)
 
-  def v_cruise_update(self, carState, modelData, enabled, v_cruise, v_ego):
+  def v_cruise_update(self, carState, enabled, modelData, v_cruise, v_ego):
     # Pfeiferj's Map Turn Speed Controller
     if self.map_turn_speed_controller:
       self.mtsc_target = np.clip(MapTurnSpeedController.target_speed(v_ego, carState.aEgo), 0, v_cruise)
@@ -345,15 +343,17 @@ class LongitudinalPlanner:
     return min(v_cruise, self.mtsc_target, self.slc_target, self.vtsc_target)
 
   def update_frogpilot_params(self):
+    self.is_metric = self.params.get_bool("IsMetric")
+
     self.longitudinal_tune = self.params.get_bool("LongitudinalTune")
     self.acceleration_profile = self.params.get_int("AccelerationProfile") if self.longitudinal_tune else 2
     self.aggressive_acceleration = self.params.get_bool("AggressiveAcceleration") and self.longitudinal_tune
-    self.increased_stopping_distance = self.params.get_int("StoppingDistance") * (1 if self.is_metric else 0.3048) if self.longitudinal_tune else 0
+    self.increased_stopping_distance = self.params.get_int("StoppingDistance") * (1 if self.is_metric else CV.FOOT_TO_METER) if self.longitudinal_tune else 0
     self.smoother_braking = self.params.get_bool("SmoothBraking") and self.longitudinal_tune
 
     self.conditional_experimental_mode = self.params.get_bool("ConditionalExperimental")
     if self.conditional_experimental_mode:
-      ConditionalExperimentalMode.update_frogpilot_params()
+      ConditionalExperimentalMode.update_frogpilot_params(self.is_metric)
       if not self.params.get_bool("ExperimentalMode"):
         self.params.put_bool("ExperimentalMode", True)
 

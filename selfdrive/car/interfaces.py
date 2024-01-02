@@ -492,7 +492,7 @@ class CarStateBase(ABC):
 
     self.display_menu = False
     self.distance_previously_pressed = False
-    self.lkas_previously_pressed = False
+    self.lkas_previously_pressed = True
     self.main_enabled = False
     self.profile_restored = False
 

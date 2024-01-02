@@ -13,14 +13,14 @@ MODEL_NAME = {
   0: "blue-diamond",
   1: "blue-diamond-v1",
   2: "farmville",
-  3: "new-lemon-pie",
-  4: "new-delhi",
+  3: "new-delhi",
+  4: "new-lemon-pie",
 }
 
 def set_model_list_parameter(params):
   """Create a string of all the model names for future comparisons."""
   # Retrieve the previous model list
-  previous_model_list = (params.get("ModelList", "") or b"").decode('utf-8')
+  previous_model_list = params.get("ModelList", encoding='utf-8')
 
   # Create a new model list
   model_list = "".join(MODEL_NAME.values())
@@ -28,7 +28,7 @@ def set_model_list_parameter(params):
   if previous_model_list != model_list:
     # Reset the selected model if the model list changed
     params.put_int("Model", 0)
-    params.put("ModelList".encode('utf-8'), model_list)
+    params.put("ModelList", model_list)
     params.remove("CalibrationParams");
     params.remove("LiveTorqueParameters");
 
@@ -52,6 +52,10 @@ def copy_model_variant(params):
 
     # Copy over the onnx file
     shutil.copy(onnx_path, destination)
+
+    # Reset the calibration
+    params.remove("CalibrationParams")
+    params.remove("LiveTorqueParameters")
 
     # Reboot
     HARDWARE.reboot()

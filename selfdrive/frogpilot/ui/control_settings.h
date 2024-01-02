@@ -15,9 +15,8 @@ private:
   void hideSubToggles();
   void parentToggleClicked();
   void setDefaults();
-  void updateMetric();
+  void updateState();
 
-  ButtonControl *backButton;
   ButtonControl *slscPriorityButton;
   ButtonIconControl *modelSelectorButton;
   DualParamValueControl *conditionalSpeedsImperial;
