@@ -203,10 +203,6 @@ class LongitudinalPlanner:
       self.stopped_for_light_previously = stopped_for_light
 
     # Update v_cruise for speed limiter functions
-    v_ego_cluster = carState.vEgoCluster
-    v_ego_raw = carState.vEgoRaw
-    v_ego_diff = v_ego_raw - v_ego_cluster if v_ego_cluster > 0 else 0
-    v_cruise += v_ego_diff
     v_cruise = self.v_cruise_update(carState, enabled, modelData, v_cruise, v_ego)
 
     self.mpc.set_weights(prev_accel_constraint, self.custom_personalities, self.aggressive_jerk, self.standard_jerk, self.relaxed_jerk, personality=self.personality)
@@ -338,7 +334,8 @@ class LongitudinalPlanner:
     else:
       self.vtsc_target = v_cruise
 
-    return min(v_cruise, self.mtsc_target, self.slc_target, self.vtsc_target)
+    v_ego_diff = max(carState.vEgoRaw - carState.vEgoCluster, 0)
+    return min(v_cruise, self.mtsc_target, self.slc_target, self.vtsc_target) - v_ego_diff
 
   def update_frogpilot_params(self):
     self.is_metric = self.params.get_bool("IsMetric")
