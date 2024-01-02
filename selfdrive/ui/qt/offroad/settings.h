@@ -36,6 +36,9 @@ private:
   QWidget *sidebar_widget;
   QButtonGroup *nav_btns;
   QStackedWidget *panel_widget;
+
+  // FrogPilot variables
+  Params paramsMemory{"/dev/shm/params"};
 };
 
 class DevicePanel : public ListWidget {

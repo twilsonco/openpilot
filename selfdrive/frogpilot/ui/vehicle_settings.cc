@@ -68,7 +68,7 @@ QStringList getCarNames(const QString &dirPath, const QString &carMake) {
 
 FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : ListWidget(parent) {
   selectMakeButton = new ButtonControl(tr("Select Make"), tr("SELECT"));
-  connect(selectMakeButton, &ButtonControl::clicked, [this]() {
+  QObject::connect(selectMakeButton, &ButtonControl::clicked, [this]() {
     std::string currentModel = params.get("CarMake");
     QStringList makes = {
       "Acura", "Audi", "BMW", "Buick", "Cadillac", "Chevrolet", "Chrysler", "Dodge", "Ford", "GM", "GMC",
@@ -87,7 +87,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : ListWid
 
   selectModelButton = new ButtonControl(tr("Select Model"), tr("SELECT"));
   const QString modelSelection = QString::fromStdString(params.get("CarModel"));
-  connect(selectModelButton, &ButtonControl::clicked, [this]() {
+  QObject::connect(selectModelButton, &ButtonControl::clicked, [this]() {
     const std::string currentModel = params.get("CarModel");
     const QString newModelSelection = MultiOptionDialog::getSelection(tr("Select a Model"), models, QString::fromStdString(currentModel), this);
     if (!newModelSelection.isEmpty()) {
@@ -118,14 +118,18 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : ListWid
     addItem(toggle);
     toggles[param.toStdString()] = toggle;
 
-    connect(toggles["TSS2Tune"], &ToggleControl::toggleFlipped, [=]() {
+    QObject::connect(toggles["TSS2Tune"], &ToggleControl::toggleFlipped, [=]() {
       if (ConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", parent)) {
         Hardware::reboot();
       }
     });
 
-    connect(toggle, &ToggleControl::toggleFlipped, [this]() {
-      paramsMemory.putBool("FrogPilotTogglesUpdated", true);
+    QObject::connect(toggle, &ToggleControl::toggleFlipped, [this]() {
+      std::thread([this]() {
+        paramsMemory.putBool("FrogPilotTogglesUpdated", true);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        paramsMemory.putBool("FrogPilotTogglesUpdated", false);
+      }).detach();
     });
   }
 
@@ -190,7 +194,7 @@ void FrogPilotVehiclesPanel::setDefaults() {
     {"LongPitch", FrogsGoMoo ? "0" : "1"},
     {"LowerVolt", FrogsGoMoo ? "0" : "1"},
     {"LockDoors", "0"},
-    {"SNGHack", "1"},
+    {"SNGHack", FrogsGoMoo ? "0" : "1"},
     {"TSS2Tune", "1"},
   };
 
