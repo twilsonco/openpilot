@@ -263,10 +263,13 @@ static void update_state(UIState *s) {
     }
     scene.adjusted_cruise = frogpilotLongitudinalPlan.getAdjustedCruise();
   }
-  if (sm.updated("gpsLocationExternal")) {
-    const auto gpsLocationExternal = sm["gpsLocationExternal"].getGpsLocationExternal();
+  if (sm.updated("liveLocationKalman")) {
+    const auto liveLocationKalman = sm["liveLocationKalman"].getLiveLocationKalman();
     if (scene.compass) {
-      scene.bearing_deg = gpsLocationExternal.getBearingDeg();
+      const auto orientation = liveLocationKalman.getCalibratedOrientationNED();
+      if (orientation.getValid()) {
+        scene.bearing_deg = RAD2DEG(orientation.getValue()[2]);
+      }
     }
   }
   if (sm.updated("wideRoadCameraState")) {
@@ -323,7 +326,6 @@ void ui_update_params(UIState *s) {
 
   scene.mute_dm = params.getBool("FireTheBabysitter") && params.getBool("MuteDM");
   scene.personalities_via_screen = (params.getInt("AdjustablePersonalities") == 2 || params.getInt("AdjustablePersonalities") == 3);
-
   scene.rotating_wheel = params.getBool("RotatingWheel");
   scene.speed_limit_controller = params.getBool("SpeedLimitController");
 
@@ -360,7 +362,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "carState", "liveLocationKalman", "driverStateV2",
-    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "uiPlan", "gpsLocationExternal", 
+    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "uiPlan", "liveLocationKalman",
     "frogpilotCarControl", "frogpilotDeviceState", "frogpilotLateralPlan", "frogpilotLongitudinalPlan",
   });
 
@@ -393,15 +395,9 @@ void UIState::update() {
 
   // Update FrogPilot variables when they are changed
   static Params paramsMemory{"/dev/shm/params"};
-  static bool toggles_checked = false;
   if (paramsMemory.getBool("FrogPilotTogglesUpdated")) {
     ui_update_params(this);
     emit uiUpdateFrogPilotParams();
-    // Loop through twice so other parts of the code update first
-    if (toggles_checked) {
-      paramsMemory.putBool("FrogPilotTogglesUpdated", false);
-    }
-    toggles_checked = !toggles_checked;
   }
 
   // FrogPilot live variables that need to be constantly checked

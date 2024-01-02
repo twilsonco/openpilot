@@ -223,8 +223,8 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     {0, "Blue Diamond V2"},
     {1, "Blue Diamond V1"},
     {2, "Farmville"},
-    {3, "New Lemon Pie"},
-    {4, "New Delhi"},
+    {3, "New Delhi"},
+    {4, "New Lemon Pie"},
   };
 
   modelName = MODEL_NAME[params.getInt("Model")];
