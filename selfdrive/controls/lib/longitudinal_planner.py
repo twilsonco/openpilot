@@ -152,10 +152,10 @@ class LongitudinalPlanner:
 
     if self.mpc.mode == 'acc':
       # Use stock acceleration profiles to handle MTSC/VTSC more precisely
-      # v_cruise_changed = (self.mtsc_target or self.vtsc_target) != v_cruise
-      # if v_cruise_changed:
-        # accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
-      if self.acceleration_profile == 1:
+      v_cruise_changed = (self.mtsc_target or self.vtsc_target) != v_cruise
+      if v_cruise_changed:
+        accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
+      elif self.acceleration_profile == 1:
         accel_limits = [get_min_accel_eco_tune(v_ego), get_max_accel_eco_tune(v_ego)]
       elif self.acceleration_profile == 3:
         accel_limits = [get_min_accel_sport_tune(v_ego), get_max_accel_sport_tune(v_ego)]
@@ -203,7 +203,11 @@ class LongitudinalPlanner:
       self.stopped_for_light_previously = stopped_for_light
 
     # Update v_cruise for speed limiter functions
-    v_cruise = self.v_cruise_update(carState, enabled, modelData, v_cruise, v_ego)
+    if not standstill:
+      v_cruise = self.v_cruise_update(carState, enabled, modelData, v_cruise, v_ego)
+    else:
+      self.mtsc_target = v_cruise
+      self.vtsc_target = v_cruise
 
     self.mpc.set_weights(prev_accel_constraint, self.custom_personalities, self.aggressive_jerk, self.standard_jerk, self.relaxed_jerk, personality=self.personality)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
