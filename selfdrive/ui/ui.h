@@ -200,6 +200,7 @@ typedef struct UIScene {
   bool turn_signal_left;
   bool turn_signal_right;
   bool unlimited_road_ui_length;
+  bool use_si;
   int bearing_deg;
   int camera_view;
   int conditional_speed;
@@ -225,9 +226,8 @@ typedef struct UIScene {
   float speed_limit_overridden_speed;
   float stopped_equivalence;
   float stopped_equivalence_stock;
+  QPolygonF track_adjacent_vertices[6];
   QPolygonF track_edge_vertices;
-  QPolygonF track_left_adjacent_lane_vertices;
-  QPolygonF track_right_adjacent_lane_vertices;
 
 } UIScene;
 

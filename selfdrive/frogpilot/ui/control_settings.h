@@ -2,9 +2,10 @@
 
 #include <set>
 
+#include "selfdrive/frogpilot/ui/frogpilot_functions.h"
 #include "selfdrive/ui/qt/offroad/settings.h"
 
-class FrogPilotControlsPanel : public ListWidget {
+class FrogPilotControlsPanel : public FrogPilotListWidget {
   Q_OBJECT
 
 public:
@@ -14,13 +15,12 @@ private:
   void hideEvent(QHideEvent *event);
   void hideSubToggles();
   void parentToggleClicked();
-  void setDefaults();
   void updateState();
 
   ButtonControl *slscPriorityButton;
   ButtonIconControl *modelSelectorButton;
-  DualParamValueControl *conditionalSpeedsImperial;
-  DualParamValueControl *conditionalSpeedsMetric;
+  DualParamControl *conditionalSpeedsImperial;
+  DualParamControl *conditionalSpeedsMetric;
 
   std::set<QString> conditionalExperimentalKeys;
   std::set<QString> customPersonalitiesKeys;

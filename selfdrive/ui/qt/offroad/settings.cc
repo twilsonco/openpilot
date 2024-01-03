@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <QDebug>
+#include <QScrollBar>
 
 #include "selfdrive/ui/qt/network/networking.h"
 
@@ -469,7 +470,22 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     ScrollView *panel_frame = new ScrollView(panel, this);
     panel_widget->addWidget(panel_frame);
 
+    if (name == tr("Controls") || name == tr("Visuals")) {
+      QScrollBar *scrollbar = panel_frame->verticalScrollBar();
+
+      QObject::connect(scrollbar, &QScrollBar::valueChanged, this, [this](int value) {
+        if (paramsMemory.getInt("FrogPilotTogglesOpen") == 0) {
+          previousScrollPosition = value;
+        }
+      });
+
+      QObject::connect(scrollbar, &QScrollBar::rangeChanged, this, [this, panel_frame]() {
+        panel_frame->restorePosition(previousScrollPosition);
+      });
+    }
+
     QObject::connect(btn, &QPushButton::clicked, [=, w = panel_frame]() {
+      previousScrollPosition = 0;
       btn->setChecked(true);
       panel_widget->setCurrentWidget(w);
     });
