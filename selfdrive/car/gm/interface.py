@@ -7,9 +7,11 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
-from openpilot.selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus, GMFlags, CC_ONLY_CAR, SDGM_CAR
+from openpilot.selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus, GMFlags, CC_ONLY_CAR, SDGM_CAR, SLOW_ACC
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
 from openpilot.selfdrive.controls.lib.drive_helpers import get_friction
+
+params = Params()
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -85,7 +87,8 @@ class CarInterface(CarInterfaceBase):
     ret.autoResumeSng = False
     ret.enableGasInterceptor = PEDAL_MSG in fingerprint[0]
 
-    useEVTables = Params().get_bool("EVTable")
+    useGasRegenCmd = params.get_bool("GasRegenCmd")
+    useEVTables = params.get_bool("EVTable")
 
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
@@ -113,6 +116,9 @@ class CarInterface(CarInterfaceBase):
       ret.stoppingDecelRate = 2.0  # reach brake quickly after enabling
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
+
+      if candidate in SLOW_ACC and useGasRegenCmd:
+        ret.longitudinalTuning.kpV = [1.5, 1.125]
 
       if experimental_long:
         ret.pcmCruise = False
@@ -265,6 +271,8 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.3
       ret.centerToFront = ret.wheelbase * 0.5
       ret.tireStiffnessFactor = 1.0
+      if useGasRegenCmd:
+        ret.stopAccel = -0.25
       # On the Bolt, the ECM and camera independently check that you are either above 5 kph or at a stop
       # with foot on brake to allow engagement, but this platform only has that check in the camera.
       # TODO: check if this is split by EV/ICE with more platforms in the future
