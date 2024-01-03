@@ -1,4 +1,3 @@
-#include <filesystem>
 #include <QDir>
 #include <QRegularExpression>
 #include <QTextStream>
@@ -6,7 +5,7 @@
 #include "selfdrive/frogpilot/ui/vehicle_settings.h"
 #include "selfdrive/ui/ui.h"
 
-QStringList getCarNames(const QString &dirPath, const QString &carMake) {
+QStringList getCarNames(const QString &carMake) {
   QMap<QString, QString> makeMap;
   makeMap["acura"] = "honda";
   makeMap["audi"] = "volkswagen";
@@ -37,14 +36,13 @@ QStringList getCarNames(const QString &dirPath, const QString &carMake) {
   makeMap["volkswagen"] = "volkswagen";
   makeMap["skoda"] = "volkswagen";
 
-  QStringList names;
+  QString dirPath = "../../selfdrive/car";
   QDir dir(dirPath);
-  QString lowerCaseCarMake = carMake.toLower();
-
-  QString targetFolder = makeMap.value(lowerCaseCarMake, lowerCaseCarMake);
+  QString targetFolder = makeMap.value(carMake, carMake);
+  QStringList names;
 
   foreach (const QString &folder, dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
-    if (folder.toLower() == targetFolder) {
+    if (folder == targetFolder) {
       QFile file(dirPath + "/" + folder + "/values.py");
       if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QRegularExpression regex("class CAR\\(StrEnum\\):([\\s\\S]*?)(?=^\\w)", QRegularExpression::MultilineOption);
@@ -66,19 +64,20 @@ QStringList getCarNames(const QString &dirPath, const QString &carMake) {
   return names;
 }
 
-FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : ListWidget(parent) {
+FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPilotListWidget(parent) {
   selectMakeButton = new ButtonControl(tr("Select Make"), tr("SELECT"));
   QObject::connect(selectMakeButton, &ButtonControl::clicked, [this]() {
-    std::string currentModel = params.get("CarMake");
+    std::string currentMake = params.get("CarMake");
     QStringList makes = {
       "Acura", "Audi", "BMW", "Buick", "Cadillac", "Chevrolet", "Chrysler", "Dodge", "Ford", "GM", "GMC",
       "Genesis", "Honda", "Hyundai", "Infiniti", "Jeep", "Kia", "Lexus", "Lincoln", "MAN", "Mazda",
       "Mercedes", "Nissan", "Ram", "SEAT", "Subaru", "Tesla", "Toyota", "Volkswagen", "Volvo", "Škoda",
     };
 
-    const QString newMakeSelection = MultiOptionDialog::getSelection(tr("Select a Make"), makes, QString::fromStdString(currentModel), this);
+    QString newMakeSelection = MultiOptionDialog::getSelection(tr("Select a Make"), makes, QString::fromStdString(currentMake), this);
     if (!newMakeSelection.isEmpty()) {
-      params.put("CarMake", newMakeSelection.toStdString());
+      carMake = newMakeSelection;
+      params.put("CarMake", carMake.toStdString());
       selectMakeButton->setValue(newMakeSelection);
       setModels();
     }
@@ -86,10 +85,10 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : ListWid
   addItem(selectMakeButton);
 
   selectModelButton = new ButtonControl(tr("Select Model"), tr("SELECT"));
-  const QString modelSelection = QString::fromStdString(params.get("CarModel"));
+  QString modelSelection = QString::fromStdString(params.get("CarModel"));
   QObject::connect(selectModelButton, &ButtonControl::clicked, [this]() {
-    const std::string currentModel = params.get("CarModel");
-    const QString newModelSelection = MultiOptionDialog::getSelection(tr("Select a Model"), models, QString::fromStdString(currentModel), this);
+    std::string currentModel = params.get("CarModel");
+    QString newModelSelection = MultiOptionDialog::getSelection(tr("Select a Model"), models, QString::fromStdString(currentModel), this);
     if (!newModelSelection.isEmpty()) {
       params.put("CarModel", newModelSelection.toStdString());
       selectModelButton->setValue(newModelSelection);
@@ -97,13 +96,9 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : ListWid
   });
   selectModelButton->setValue(modelSelection);
   addItem(selectModelButton);
+  selectModelButton->setVisible(false);
 
-  noToggles = new QLabel(tr("No additional options available for the selected make."));
-  noToggles->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  noToggles->setAlignment(Qt::AlignCenter);
-  addItem(noToggles);
-
-  const std::vector<std::tuple<QString, QString, QString, QString>> vehicleToggles {
+  std::vector<std::tuple<QString, QString, QString, QString>> vehicleToggles {
     {"EVTable", "EV Lookup Tables", "Smoothen out the gas and brake controls for EV vehicles.", ""},
     {"LongPitch", "Long Pitch Compensation", "Reduce speed and acceleration error for greater passenger comfort and improved vehicle efficiency.", ""},
     {"LowerVolt", "Lower Volt Enable Speed", "Lower the Volt's minimum enable speed to enable openpilot at any speed.", ""},
@@ -113,16 +108,12 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : ListWid
     {"TSS2Tune", "TSS2 Tune", "Tuning profile based on the tuning profile from DragonPilot for TSS2 vehicles.", ""}
   };
 
-  for (const auto &[param, title, desc, icon] : vehicleToggles) {
+  for (auto &[param, title, desc, icon] : vehicleToggles) {
     ParamControl *toggle = new ParamControl(param, title, desc, icon, this);
-    addItem(toggle);
-    toggles[param.toStdString()] = toggle;
 
-    QObject::connect(toggles["TSS2Tune"], &ToggleControl::toggleFlipped, [=]() {
-      if (ConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", parent)) {
-        Hardware::reboot();
-      }
-    });
+    addItem(toggle);
+    toggle->setVisible(false);
+    toggles[param.toStdString()] = toggle;
 
     QObject::connect(toggle, &ToggleControl::toggleFlipped, [this]() {
       std::thread([this]() {
@@ -133,83 +124,57 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : ListWid
     });
   }
 
-  QObject::connect(uiState(), &UIState::uiUpdate, this, [this]() {
-    if (this->isVisible()) {
-      this->setModels();
-    }
-  });
-
   gmKeys = {"EVTable", "LongPitch", "LowerVolt"};
   toyotaKeys = {"LockDoors", "SNGHack", "TSS2Tune"};
 
-  setDefaults();
-  setModels();
+  std::set<std::string> rebootKeys = {"TSS2Tune"};
+  for (const std::string &key : rebootKeys) {
+    QObject::connect(toggles[key], &ToggleControl::toggleFlipped, [this]() {
+      if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
+        Hardware::reboot();
+      }
+    });
+  }
+
+  QObject::connect(uiState(), &UIState::offroadTransition, this, [this](bool offroad) {
+    if (!offroad) {
+      std::thread([this]() {
+        while (carMake.isEmpty()) {
+          std::this_thread::sleep_for(std::chrono::seconds(1));
+          carMake = QString::fromStdString(params.get("CarMake"));
+        }
+        setModels();
+      }).detach();
+    }
+  });
+
+  carMake = QString::fromStdString(params.get("CarMake"));
+  if (!carMake.isEmpty()) {
+    setModels();
+  }
 }
 
 void FrogPilotVehiclesPanel::setModels() {
-  std::thread([this] {
-    carMake = QString::fromStdString(params.get("CarMake"));
-    const QString dirPath = "../../selfdrive/car";
-    models = getCarNames(dirPath, carMake);
-    setToggles();
-  }).detach();
+  models = getCarNames(carMake.toLower());
+  setToggles();
 }
 
 void FrogPilotVehiclesPanel::setToggles() {
-  std::thread([this] {
-    selectModelButton->setVisible(!carMake.isEmpty());
+  selectMakeButton->setValue(carMake);
+  selectModelButton->setVisible(!carMake.isEmpty());
 
-    if (!carMake.isEmpty()) {
-      if (previousCarMake == carMake) return;
-    }
+  bool gm = carMake == "Buick" || carMake == "Cadillac" || carMake == "Chevrolet" || carMake == "GM" || carMake == "GMC";
+  bool toyota = carMake == "Lexus" || carMake == "Toyota";
 
-    previousCarMake = carMake;
-    selectMakeButton->setValue(carMake);
+  for (auto &[key, toggle] : toggles) {
+    toggle->setVisible(false);
 
-    const bool gm = carMake == "Buick" || carMake == "Cadillac" || carMake == "Chevrolet" || carMake == "GM" || carMake == "GMC";
-    const bool toyota = carMake == "Lexus" || carMake == "Toyota";
-
-    for (const auto &[key, toggle] : toggles) {
-      const bool gmToggles = gmKeys.find(key.c_str()) != gmKeys.end();
-      const bool toyotaToggles = toyotaKeys.find(key.c_str()) != toyotaKeys.end();
-
-      if (gm) {
-        toggle->setVisible(gmToggles);
-      } else if (toyota) {
-        toggle->setVisible(toyotaToggles);
-      } else {
-        toggle->setVisible(false);
-      }
-
-      noToggles->setVisible(!(gm || toyota));
-    }
-  }).detach();
-}
-
-void FrogPilotVehiclesPanel::setDefaults() {
-  const bool FrogsGoMoo = params.get("DongleId").substr(0, 3) == "be6";
-
-  const std::map<std::string, std::string> defaultValues {
-    {"EVTable", FrogsGoMoo ? "0" : "1"},
-    {"LongPitch", FrogsGoMoo ? "0" : "1"},
-    {"LowerVolt", FrogsGoMoo ? "0" : "1"},
-    {"LockDoors", "0"},
-    {"SNGHack", FrogsGoMoo ? "0" : "1"},
-    {"TSS2Tune", "1"},
-  };
-
-  bool rebootRequired = false;
-  for (const auto &[key, value] : defaultValues) {
-    if (params.get(key).empty()) {
-      params.put(key, value);
-      rebootRequired = true;
+    if (gm) {
+      toggle->setVisible(gmKeys.find(key.c_str()) != gmKeys.end());
+    } else if (toyota) {
+      toggle->setVisible(toyotaKeys.find(key.c_str()) != toyotaKeys.end());
     }
   }
 
-  if (rebootRequired) {
-    while (!std::filesystem::exists("/data/openpilot/prebuilt")) {
-      std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
-    Hardware::reboot();
-  }
+  update();
 }

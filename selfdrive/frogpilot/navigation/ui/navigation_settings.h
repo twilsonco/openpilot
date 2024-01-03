@@ -1,9 +1,10 @@
 #pragma once
 
+#include "selfdrive/frogpilot/ui/frogpilot_functions.h"
 #include "selfdrive/ui/qt/network/wifi_manager.h"
 #include "selfdrive/ui/qt/offroad/settings.h"
-#include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
+#include "selfdrive/ui/ui.h"
 
 class Primeless : public QWidget {
   Q_OBJECT
@@ -21,7 +22,7 @@ private:
   void updateStep();
 
   QVBoxLayout *mainLayout;
-  ListWidget *list;
+  FrogPilotListWidget *list;
 
   QPushButton *backButton;
   QLabel *imageLabel;

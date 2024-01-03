@@ -1,11 +1,7 @@
-#include <cmath>
-#include <filesystem>
-#include <unordered_set>
-
 #include "selfdrive/frogpilot/ui/visual_settings.h"
 #include "selfdrive/ui/ui.h"
 
-FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : ListWidget(parent) {
+FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilotListWidget(parent) {
   const std::vector<std::tuple<QString, QString, QString, QString>> visualToggles {
     {"CustomTheme", "Custom Themes", "Enable the ability to use custom themes.", "../frogpilot/assets/wheel_images/frog.png"},
     {"CustomColors", "Custom Colors", "Switch out the standard openpilot color scheme with a custom color scheme.\n\nWant to submit your own color scheme? Post it in the 'feature-request' channel in the FrogPilot Discord!", ""},
@@ -67,6 +63,13 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : ListWidge
         }
       });
       toggle = customUIToggle;
+    } else if (param == "LeadInfo") {
+      std::vector<QString> leadInfoToggles{tr("UseSI")};
+      std::vector<QString> leadInfoToggleNames{tr("Use SI Values")};
+
+      toggle = new ParamToggleControl("LeadInfo", tr("Lead Info and Logics"), 
+                                      tr("Get detailed information about the vehicle ahead, including speed and distance, and the logic behind your following distance."), 
+                                      "", leadInfoToggles, leadInfoToggleNames);
 
     } else if (param == "ModelUI") {
       ParamManageControl *modelUIToggle = new ParamManageControl(param, title, desc, icon, this);
@@ -132,7 +135,6 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : ListWidge
   QObject::connect(uiState(), &UIState::uiUpdate, this, &FrogPilotVisualsPanel::updateState);
 
   hideSubToggles();
-  setDefaults();
 }
 
 void FrogPilotVisualsPanel::updateState() {
@@ -205,56 +207,4 @@ void FrogPilotVisualsPanel::hideEvent(QHideEvent *event) {
   paramsMemory.putInt("FrogPilotTogglesOpen", 0);
 
   hideSubToggles();
-}
-
-void FrogPilotVisualsPanel::setDefaults() {
-  const bool FrogsGoMoo = params.get("DongleId").substr(0, 3) == "be6";
-
-  const std::map<std::string, std::string> defaultValues {
-    {"AccelerationPath", "1"},
-    {"AdjacentPath", FrogsGoMoo ? "1" : "0"},
-    {"BlindSpotPath", "1"},
-    {"CameraView", FrogsGoMoo ? "1" : "0"},
-    {"Compass", FrogsGoMoo ? "1" : "0"},
-    {"CustomColors", "1"},
-    {"CustomIcons", "1"},
-    {"CustomSignals", "1"},
-    {"CustomSounds", "1"},
-    {"CustomTheme", "1"},
-    {"CustomUI", "1"},
-    {"DriverCamera", "0"},
-    {"GreenLightAlert", "0"},
-    {"LaneLinesWidth", "4"},
-    {"LeadInfo", FrogsGoMoo ? "1" : "0"},
-    {"ModelUI", "1"},
-    {"NumericalTemp", FrogsGoMoo ? "1" : "0"},
-    {"PathEdgeWidth", "20"},
-    {"PathWidth", "61"},
-    {"RoadEdgesWidth", "2"},
-    {"RoadNameUI", "1"},
-    {"RotatingWheel", "1"},
-    {"ScreenBrightness", "101"},
-    {"ShowCPU", FrogsGoMoo ? "1" : "0"},
-    {"ShowMemoryUsage", FrogsGoMoo ? "1" : "0"},
-    {"ShowFPS", FrogsGoMoo ? "1" : "0"},
-    {"Sidebar", FrogsGoMoo ? "1" : "0"},
-    {"SilentMode", "0"},
-    {"UnlimitedLength", "1"},
-    {"WheelIcon", FrogsGoMoo ? "1" : "0"},
-  };
-
-  bool rebootRequired = false;
-  for (const auto &[key, value] : defaultValues) {
-    if (params.get(key).empty()) {
-      params.put(key, value);
-      rebootRequired = true;
-    }
-  }
-
-  if (rebootRequired) {
-    while (!std::filesystem::exists("/data/openpilot/prebuilt")) {
-      std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
-    Hardware::reboot();
-  }
 }

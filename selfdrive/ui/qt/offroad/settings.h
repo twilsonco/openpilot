@@ -38,6 +38,8 @@ private:
   QStackedWidget *panel_widget;
 
   // FrogPilot variables
+  int previousScrollPosition;
+
   Params paramsMemory{"/dev/shm/params"};
 };
 

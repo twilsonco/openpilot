@@ -14,10 +14,7 @@ SshControl::SshControl() :
       if (username.length() > 0) {
         setText(tr("LOADING"));
         setEnabled(false);
-        getUserKeys(username, true);
-        if (params.getBool("TwilsoncoSSH")) {
-          getUserKeys("twilsonco", false);
-        }
+        getUserKeys(username);
       }
     } else {
       params.remove("GithubUsername");
@@ -41,17 +38,13 @@ void SshControl::refresh() {
   setEnabled(true);
 }
 
-void SshControl::getUserKeys(const QString &username, bool isUserInput = true) {
+void SshControl::getUserKeys(const QString &username) {
   HttpRequest *request = new HttpRequest(this, false);
   QObject::connect(request, &HttpRequest::requestDone, [=](const QString &resp, bool success) {
     if (success) {
       if (!resp.isEmpty()) {
-        std::string existing_keys = params.get("GithubSshKeys");
-        existing_keys += resp.toStdString();
-        if (isUserInput) {
-          params.put("GithubUsername", username.toStdString());
-        }
-        params.put("GithubSshKeys", existing_keys);
+        params.put("GithubUsername", username.toStdString());
+        params.put("GithubSshKeys", resp.toStdString());
       } else {
         ConfirmationDialog::alert(tr("Username '%1' has no keys on GitHub").arg(username), this);
       }
