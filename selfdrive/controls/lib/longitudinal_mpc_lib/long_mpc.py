@@ -369,8 +369,9 @@ class LongitudinalMpc:
 
     # Offset by FrogAi for FrogPilot for a more natural takeoff with a lead
     if aggressive_acceleration:
-      distance_factor = np.maximum(1, lead_xv_0[:,0] - ((lead_xv_0[:,1]) * t_follow) + STOP_DISTANCE)
-      t_follow_offset = np.clip((lead_xv_0[:,1] - v_ego), 1, distance_factor)
+      distance_factor = np.maximum(1, lead_xv_0[:,0] - (lead_xv_0[:,1] * t_follow))
+      standstill_offset = max(STOP_DISTANCE - v_ego, 0)
+      t_follow_offset = np.clip((lead_xv_0[:,1] - v_ego) + standstill_offset, 1, distance_factor)
       t_follow = t_follow / t_follow_offset
 
     # Offset by FrogAi for FrogPilot for a more natural approach to a slower lead
