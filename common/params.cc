@@ -260,6 +260,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Fahrenheit", PERSISTENT},
     {"FireTheBabysitter", PERSISTENT},
     {"FrogPilotTogglesUpdated", PERSISTENT},
+    {"GasRegenCmd", PERSISTENT},
     {"GMapKey", PERSISTENT},
     {"GoatScream", PERSISTENT},
     {"GreenLightAlert", PERSISTENT},
