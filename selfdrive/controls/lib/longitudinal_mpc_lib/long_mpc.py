@@ -97,13 +97,8 @@ def get_T_FOLLOW(custom_personalities=False, aggressive_follow=1.25, standard_fo
     else:
       raise NotImplementedError("Longitudinal personality not supported")
 
-def get_stopped_equivalence_factor(v_ego, v_lead, increased_stopping_distance):
-  distance_offset = 0
-  if np.all(increased_stopping_distance >= v_lead):
-    speed_difference = v_ego - v_lead
-    # Increase the stopping distance for a more comfortable stop
-    distance_offset -= np.maximum(0, increased_stopping_distance - speed_difference)
-  return (v_lead**2) / (2 * COMFORT_BRAKE) + distance_offset
+def get_stopped_equivalence_factor(v_lead):
+  return (v_lead**2) / (2 * COMFORT_BRAKE)
 
 def get_safe_obstacle_distance(v_ego, t_follow):
   return (v_ego**2) / (2 * COMFORT_BRAKE) + t_follow * v_ego + STOP_DISTANCE
@@ -329,10 +324,10 @@ class LongitudinalMpc:
     lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
     return lead_xv
 
-  def process_lead(self, lead):
+  def process_lead(self, lead, increased_stopping_distance):
     v_ego = self.x0[1]
     if lead is not None and lead.status:
-      x_lead = lead.dRel
+      x_lead = lead.dRel - increased_stopping_distance
       v_lead = lead.vLead
       a_lead = lead.aLeadK
       a_lead_tau = lead.aLeadTau
@@ -364,8 +359,8 @@ class LongitudinalMpc:
     v_ego = self.x0[1]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
-    lead_xv_0 = self.process_lead(radarstate.leadOne)
-    lead_xv_1 = self.process_lead(radarstate.leadTwo)
+    lead_xv_0 = self.process_lead(radarstate.leadOne, increased_stopping_distance)
+    lead_xv_1 = self.process_lead(radarstate.leadTwo, increased_stopping_distance)
 
     # Offset by FrogAi for FrogPilot for a more natural takeoff with a lead
     if aggressive_acceleration:
@@ -382,16 +377,16 @@ class LongitudinalMpc:
 
     # LongitudinalPlan variables for onroad driving insights
     self.safe_obstacle_distance = float(np.mean(get_safe_obstacle_distance(v_ego, t_follow))) if self.status else 0
-    self.stopped_equivalence_factor = float(np.mean(get_stopped_equivalence_factor(v_ego, lead_xv_0[:,1], increased_stopping_distance))) if self.status else 0
+    self.stopped_equivalence_factor = float(np.mean(get_stopped_equivalence_factor(lead_xv_0[:,1]))) if self.status else 0
 
     self.safe_obstacle_distance_stock = float(np.mean(get_safe_obstacle_distance(v_ego, get_T_FOLLOW(custom_personalities, aggressive_follow, standard_follow, relaxed_follow, personality)))) if self.status else 0
-    self.stopped_equivalence_factor_stock = float(np.mean(get_stopped_equivalence_factor(v_ego, lead_xv_0[:,1], False))) if self.status else 0
+    self.stopped_equivalence_factor_stock = float(np.mean(get_stopped_equivalence_factor(lead_xv_0[:,1]))) if self.status else 0
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
-    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(v_ego, lead_xv_0[:,1], increased_stopping_distance)
-    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(v_ego, lead_xv_1[:,1], increased_stopping_distance)
+    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
+    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
 
     self.params[:,0] = ACCEL_MIN
     self.params[:,1] = self.max_a
