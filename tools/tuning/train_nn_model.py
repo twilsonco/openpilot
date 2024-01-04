@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
-# import feather
+import feather
 import matplotlib.pyplot as plt
 
 def interp(x, xp, fp):
@@ -40,7 +40,10 @@ def create_buckets_nn(max_lat_accel=3, min_steer_speed=1, no_points_req_above_sp
         vel2 <= no_points_req_above_speed and \
         max(abs(la1),abs(la2)) <= max_lat_accel else 0
 
-  BUCKETS = {((la1,la2),(vel1,vel2)): combined_num_points(la1,la2,vel1,vel2) for la1,la2 in zip(la_buckets[:-1],la_buckets[1:]) for vel1,vel2 in zip(vel_buckets[:-1], vel_buckets[1:])}
+  BUCKETS = {((la1,la2),(vel1,vel2)): combined_num_points(la1,la2,vel1,vel2) \
+            for la1,la2 in zip(la_buckets[:-1],la_buckets[1:]) \
+            for vel1,vel2 in zip(vel_buckets[:-1], vel_buckets[1:])}
+  
   for vel1,vel2 in zip(vel_buckets[:-1], vel_buckets[1:]):
       for la1,la2 in zip(la_buckets[:-1],la_buckets[1:]):
           print(f"(({vel1:.2g},{vel2:.2g}),({la1:.2g},{la2:.2g}))",": ", BUCKETS[((la1,la2),(vel1,vel2))])
@@ -250,15 +253,22 @@ def clamp(x, lo, hi):
   return max(lo, min(hi, x))
 
 # generates theoretical training data in order to calculate a good starting set of parameters
-def generate_trial_lateral_training_data(kf=0.33, friction_factor=0.15, steer_threshold=1.2, friction_threshold=0.3, roll_kf = 0.1):
+def generate_trial_lateral_training_data(kf=0.33, 
+                                         friction_factor=0.15, 
+                                         steer_threshold=1.5, 
+                                         friction_threshold=0.3, 
+                                         roll_kf = 0.1,
+                                         max_lat_accel=4,
+                                         max_lat_jerk=3,
+                                         max_roll=0.2):
   fbp = [-friction_threshold, friction_threshold]
   fv = [-friction_factor, friction_factor]
   X = []
   y = []
   for v_ego in np.linspace(1.0, 40.0, 20):
-    for la in np.linspace(-4, 4, 100):
-      for lj in np.linspace(-3, 3, 10):
-        for roll in np.linspace(-0.2, 0.2, 10):
+    for la in np.linspace(-max_lat_accel, max_lat_accel, 100):
+      for lj in np.linspace(-max_lat_jerk, max_lat_jerk, 10):
+        for roll in np.linspace(-max_roll, max_roll, 10):
           steer = kf * la
           steer += get_friction(lj, fbp, fv)
           steer -= np.sin(roll) * 9.81 * roll_kf
@@ -273,13 +283,13 @@ def generate_trial_lateral_training_data(kf=0.33, friction_factor=0.15, steer_th
 def main():
   # import data as feather file
   columns = ['steer_cmd', 'v_ego', 'lateral_accel', 'lateral_jerk', 'roll']
-  # data = feather.read_dataframe("/Users/haiiro/NoSync/CHEVROLET_VOLT_PREMIER_2017_balanced.feather", columns=columns)
-  # X = data[columns[1:]].to_numpy().T
-  # y = data[columns[0]].to_numpy().reshape((1, -1))
-  # print(X.shape)
-  # print(y.shape)
+  data = feather.read_dataframe("/Users/haiiro/NoSync/CHEVROLET_VOLT_PREMIER_2017_balanced.feather", columns=columns)
+  X = data[columns[1:]].to_numpy().T
+  y = data[columns[0]].to_numpy().reshape((1, -1))
+  print(X.shape)
+  print(y.shape)
   
-  X, y = generate_trial_lateral_training_data()#kf=0.5, friction_factor=0.25)
+  # X, y = generate_trial_lateral_training_data()#kf=0.5, friction_factor=0.25)
   
   model = NumPyNeuralNetwork(training=True, learning_rate=1e5)
   
@@ -373,7 +383,7 @@ def main():
     
     print(model.activation_function_names)
     
-# main()
-buckets = create_buckets_nn(max_lat_accel=3, min_steer_speed=1, no_points_req_above_speed=31)
-total_points = sum(buckets.values())
-print(total_points)
+main()
+# buckets = create_buckets_nn(max_lat_accel=3, min_steer_speed=1, no_points_req_above_speed=31)
+# total_points = sum(buckets.values())
+# print(total_points)
