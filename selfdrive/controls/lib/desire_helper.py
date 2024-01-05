@@ -37,6 +37,24 @@ TURN_DESIRES = {
   TurnDirection.turnRight: log.LateralPlan.Desire.turnRight,
 }
 
+# Lane detection
+def calculate_lane_width(lane, current_lane, road_edge):
+  # Interpolate lane values at current_lane.x positions
+  lane_x, lane_y = np.array(lane.x), np.array(lane.y)
+  edge_x, edge_y = np.array(road_edge.x), np.array(road_edge.y)
+  current_x, current_y = np.array(current_lane.x), np.array(current_lane.y)
+
+  # Interpolate lane and road edge values at current_lane.x positions
+  lane_y_interp = np.interp(current_x, lane_x[lane_x.argsort()], lane_y[lane_x.argsort()])
+  road_edge_y_interp = np.interp(current_x, edge_x[edge_x.argsort()], edge_y[edge_x.argsort()])
+
+  # Calculate the mean absolute distances
+  distance_to_lane = np.mean(np.abs(current_y - lane_y_interp))
+  distance_to_road_edge = np.mean(np.abs(current_y - road_edge_y_interp))
+
+  # Return the smallest between the two
+  return min(distance_to_lane, distance_to_road_edge)
+
 
 class DesireHelper:
   def __init__(self):
@@ -54,24 +72,6 @@ class DesireHelper:
     self.turn_completed = False
     self.lane_change_wait_timer = 0
 
-  # Lane detection
-  def calculate_lane_width(self, lane, current_lane, road_edge):
-    # Interpolate lane values at current_lane.x positions
-    lane_x, lane_y = np.array(lane.x), np.array(lane.y)
-    edge_x, edge_y = np.array(road_edge.x), np.array(road_edge.y)
-    current_x, current_y = np.array(current_lane.x), np.array(current_lane.y)
-
-    # Interpolate lane and road edge values at current_lane.x positions
-    lane_y_interp = np.interp(current_x, lane_x[lane_x.argsort()], lane_y[lane_x.argsort()])
-    road_edge_y_interp = np.interp(current_x, edge_x[edge_x.argsort()], edge_y[edge_x.argsort()])
-
-    # Calculate the mean absolute distances
-    distance_to_lane = np.mean(np.abs(current_y - lane_y_interp))
-    distance_to_road_edge = np.mean(np.abs(current_y - road_edge_y_interp))
-
-    # Return the smallest between the two
-    return min(distance_to_lane, distance_to_road_edge)
-
   def update(self, carstate, modeldata, lateral_active, lane_change_prob):
     v_ego = carstate.vEgo
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
@@ -83,8 +83,8 @@ class DesireHelper:
     turning = abs(carstate.steeringAngleDeg) >= 60
     if self.blindspot_path and not below_lane_change_speed and not turning:
       # Calculate left and right lane widths
-      self.lane_width_left = self.calculate_lane_width(modeldata.laneLines[0], modeldata.laneLines[1], modeldata.roadEdges[0])
-      self.lane_width_right = self.calculate_lane_width(modeldata.laneLines[3], modeldata.laneLines[2], modeldata.roadEdges[1])
+      self.lane_width_left = calculate_lane_width(modeldata.laneLines[0], modeldata.laneLines[1], modeldata.roadEdges[0])
+      self.lane_width_right = calculate_lane_width(modeldata.laneLines[3], modeldata.laneLines[2], modeldata.roadEdges[1])
 
     # Calculate the desired lane width for nudgeless lane change with lane detection
     if not (self.lane_detection and one_blinker) or below_lane_change_speed or turning:
@@ -98,7 +98,7 @@ class DesireHelper:
       desired_lane = modeldata.laneLines[blinker_index if carstate.leftBlinker else blinker_index + 2]
       road_edge = modeldata.roadEdges[blinker_index]
       # Check if the lane width exceeds the threshold
-      lane_available = self.calculate_lane_width(desired_lane, current_lane, road_edge) >= min_lane_threshold
+      lane_available = calculate_lane_width(desired_lane, current_lane, road_edge) >= min_lane_threshold
 
     if not lateral_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
