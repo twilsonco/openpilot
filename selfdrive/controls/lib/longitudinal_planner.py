@@ -191,12 +191,12 @@ class LongitudinalPlanner:
     self.previously_driving &= sm['frogpilotCarControl'].drivingGear
 
     # Conditional Experimental Mode
-    if self.conditional_experimental_mode and self.previously_driving:
-      ConditionalExperimentalMode.update(carState, sm['frogpilotNavigation'], modelData, radarState, v_ego, self.mtsc_target, self.vtsc_target)
+    if (self.conditional_experimental_mode or self.green_light_alert) and self.previously_driving:
+      ConditionalExperimentalMode.update(carState, sm['frogpilotNavigation'], modelData, radarState, v_cruise, v_ego, self.green_light_alert, self.mtsc_target, self.vtsc_target)
 
     # Green light alert
     if self.green_light_alert and self.previously_driving:
-      stopped_for_light = ConditionalExperimentalMode.stop_sign_and_light(modelData, v_ego) and standstill
+      stopped_for_light = ConditionalExperimentalMode.red_light_detected and standstill
 
       self.green_light = not stopped_for_light and self.stopped_for_light_previously and not carState.gasPressed
 
