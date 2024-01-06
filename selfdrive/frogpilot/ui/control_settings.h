@@ -19,11 +19,14 @@ private:
 
   ButtonControl *slscPriorityButton;
   ButtonIconControl *modelSelectorButton;
+
+  DualParamControl *aggressiveProfile;
   DualParamControl *conditionalSpeedsImperial;
   DualParamControl *conditionalSpeedsMetric;
+  DualParamControl *standardProfile;
+  DualParamControl *relaxedProfile;
 
   std::set<QString> conditionalExperimentalKeys;
-  std::set<QString> customPersonalitiesKeys;
   std::set<QString> fireTheBabysitterKeys;
   std::set<QString> laneChangeKeys;
   std::set<QString> lateralTuneKeys;

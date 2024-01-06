@@ -115,10 +115,6 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
       }).detach();
     });
 
-    QObject::connect(static_cast<ParamValueControl*>(toggles["ScreenBrightness"]), &ParamValueControl::valueChanged, [](int value) {
-      uiState()->scene.screen_brightness = value;
-    });
-
     QObject::connect(static_cast<ParamValueControl*>(toggle), &ParamValueControl::buttonPressed, [this]() {
       std::thread([this]() {
         paramsMemory.putBool("FrogPilotTogglesUpdated", true);
