@@ -78,13 +78,14 @@ class DesireHelper:
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
 
     # Calculate left and right lane widths for the blindspot path
-    self.lane_width_left = 0
-    self.lane_width_right = 0
     turning = abs(carstate.steeringAngleDeg) >= 60
     if self.blindspot_path and not below_lane_change_speed and not turning:
       # Calculate left and right lane widths
       self.lane_width_left = calculate_lane_width(modeldata.laneLines[0], modeldata.laneLines[1], modeldata.roadEdges[0])
       self.lane_width_right = calculate_lane_width(modeldata.laneLines[3], modeldata.laneLines[2], modeldata.roadEdges[1])
+    else:
+      self.lane_width_left = 0
+      self.lane_width_right = 0
 
     # Calculate the desired lane width for nudgeless lane change with lane detection
     if not (self.lane_detection and one_blinker) or below_lane_change_speed or turning:

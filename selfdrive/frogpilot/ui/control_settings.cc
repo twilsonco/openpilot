@@ -15,13 +15,6 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
     {"CESignal", "Turn Signal When Below Highway Speeds", "Switch to 'Experimental Mode' when using turn signals below highway speeds to help assit with turns.", ""},
 
     {"CustomPersonalities", "Custom Driving Personalities", "Customize the driving personality profiles to your driving style.", "../frogpilot/assets/toggle_icons/icon_custom.png"},
-    {"AggressiveFollow", "Aggressive Follow Time", "Set the 'Aggressive' personality' following distance. Represents seconds to follow behind the lead vehicle.\n\nStock: 1.25 seconds.", "../frogpilot/assets/other_images/aggressive.png"},
-    {"AggressiveJerk", "Aggressive Jerk Value", "Configure brake/gas pedal responsiveness for the 'Aggressive' personality. Higher values yield a more 'relaxed' response.\n\nStock: 0.5.", "../frogpilot/assets/other_images/aggressive.png"},
-    {"StandardFollow", "Standard Follow Time", "Set the 'Standard' personality following distance. Represents seconds to follow behind the lead vehicle.\n\nStock: 1.45 seconds.", "../frogpilot/assets/other_images/standard.png"},
-    {"StandardJerk", "Standard Jerk Value", "Adjust brake/gas pedal responsiveness for the 'Standard' personality. Higher values yield a more 'relaxed' response.\n\nStock: 1.0.", "../frogpilot/assets/other_images/standard.png"},
-    {"RelaxedFollow", "Relaxed Follow Time", "Set the 'Relaxed' personality following distance. Represents seconds to follow behind the lead vehicle.\n\nStock: 1.75 seconds.", "../frogpilot/assets/other_images/relaxed.png"},
-    {"RelaxedJerk", "Relaxed Jerk Value", "Set brake/gas pedal responsiveness for the 'Relaxed' personality. Higher values yield a more 'relaxed' response.\n\nStock: 1.0.", "../frogpilot/assets/other_images/relaxed.png"},
-
     {"DeviceShutdown", "Device Shutdown Timer", "Configure the timer for automatic device shutdown when offroad conserving energy and preventing battery drain.", "../frogpilot/assets/toggle_icons/icon_time.png"},
     {"ExperimentalModeViaPress", "Experimental Mode Via 'LKAS' Button / Screen", "Toggle Experimental Mode by double-clicking the 'Lane Departure'/'LKAS' button or double tapping screen.\n\nOverrides 'Conditional Experimental Mode'.", "../assets/img_experimental_white.svg"},
 
@@ -133,15 +126,41 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
       QObject::connect(customPersonalitiesToggle, &ParamManageControl::manageButtonClicked, this, [this]() {
         parentToggleClicked();
         for (auto &[key, toggle] : toggles) {
-          toggle->setVisible(customPersonalitiesKeys.find(key.c_str()) != customPersonalitiesKeys.end());
+          toggle->setVisible(false);
         }
+        aggressiveProfile->setVisible(true);
+        standardProfile->setVisible(true);
+        relaxedProfile->setVisible(true);
       });
 
       toggle = customPersonalitiesToggle;
-    } else if (param == "AggressiveFollow" || param == "StandardFollow" || param == "RelaxedFollow") {
-      toggle = new ParamValueControl(param, title, desc, icon, 10, 50, std::map<int, QString>(), this, false, " seconds", 10);
-    } else if (param == "AggressiveJerk" || param == "StandardJerk" || param == "RelaxedJerk") {
-      toggle = new ParamValueControl(param, title, desc, icon, 1, 50, std::map<int, QString>(), this, false, "", 10);
+
+      ParamValueControl *aggressiveFollow = new ParamValueControl("AggressiveFollow", "Follow",
+      "Set the 'Aggressive' personality' following distance. Represents seconds to follow behind the lead vehicle.\n\nStock: 1.25 seconds.", "../frogpilot/assets/other_images/aggressive.png",
+      10, 50, std::map<int, QString>(), this, false, " sec", 10);
+      ParamValueControl *aggressiveJerk = new ParamValueControl("AggressiveJerk", " Jerk",
+      "Configure brake/gas pedal responsiveness for the 'Aggressive' personality. Higher values yield a more 'relaxed' response.\n\nStock: 0.5.", "", 1, 50,
+                                                                std::map<int, QString>(), this, false, "", 10);
+      aggressiveProfile = new DualParamControl(aggressiveFollow, aggressiveJerk, this, true);
+      addItem(aggressiveProfile);
+
+      ParamValueControl *standardFollow = new ParamValueControl("StandardFollow", "Follow",
+      "Set the 'Standard' personality following distance. Represents seconds to follow behind the lead vehicle.\n\nStock: 1.45 seconds.", "../frogpilot/assets/other_images/standard.png",
+      10, 50, std::map<int, QString>(), this, false, " sec", 10);
+      ParamValueControl *standardJerk = new ParamValueControl("StandardJerk", " Jerk",
+      "Adjust brake/gas pedal responsiveness for the 'Standard' personality. Higher values yield a more 'relaxed' response.\n\nStock: 1.0.", "", 1, 50,
+                                                              std::map<int, QString>(), this, false, "", 10);
+      standardProfile = new DualParamControl(standardFollow, standardJerk, this, true);
+      addItem(standardProfile);
+
+      ParamValueControl *relaxedFollow = new ParamValueControl("RelaxedFollow", "Follow",
+      "Set the 'Relaxed' personality following distance. Represents seconds to follow behind the lead vehicle.\n\nStock: 1.75 seconds.", "../frogpilot/assets/other_images/relaxed.png",
+      10, 50, std::map<int, QString>(), this, false, " sec", 10);
+      ParamValueControl *relaxedJerk = new ParamValueControl("RelaxedJerk", " Jerk",
+      "Set brake/gas pedal responsiveness for the 'Relaxed' personality. Higher values yield a more 'relaxed' response.\n\nStock: 1.0.", "", 1, 50,
+                                                             std::map<int, QString>(), this, false, "", 10);
+      relaxedProfile = new DualParamControl(relaxedFollow, relaxedJerk, this, true);
+      addItem(relaxedProfile);
 
     } else if (param == "DeviceShutdown") {
       std::map<int, QString> shutdownLabels;
@@ -340,7 +359,6 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
   }
 
   conditionalExperimentalKeys = {"CECurves", "CECurvesLead", "CESlowerLead", "CENavigation", "CEStopLights", "CESignal"};
-  customPersonalitiesKeys = {"AggressiveFollow", "AggressiveJerk", "StandardFollow", "StandardJerk", "RelaxedFollow", "RelaxedJerk"};
   fireTheBabysitterKeys = {"NoLogging", "MuteDM", "MuteDoor", "MuteOverheated", "MuteSeatbelt"};
   laneChangeKeys = {"LaneChangeTime", "LaneDetection", "OneLaneChange", "PauseLateralOnSignal"};
   lateralTuneKeys = {"AverageCurvature", "NNFF"};
@@ -444,23 +462,28 @@ void FrogPilotControlsPanel::updateState() {
 
 void FrogPilotControlsPanel::parentToggleClicked() {
   paramsMemory.putInt("FrogPilotTogglesOpen", 1);
+  aggressiveProfile->setVisible(false);
   conditionalSpeedsImperial->setVisible(false);
   conditionalSpeedsMetric->setVisible(false);
   modelSelectorButton->setVisible(false);
   slscPriorityButton->setVisible(false);
+  standardProfile->setVisible(false);
+  relaxedProfile->setVisible(false);
 }
 
 void FrogPilotControlsPanel::hideSubToggles() {
   paramsMemory.putInt("FrogPilotTogglesOpen", 0);
 
+  aggressiveProfile->setVisible(false);
   conditionalSpeedsImperial->setVisible(false);
   conditionalSpeedsMetric->setVisible(false);
   modelSelectorButton->setVisible(true);
   slscPriorityButton->setVisible(false);
+  standardProfile->setVisible(false);
+  relaxedProfile->setVisible(false);
 
   for (auto &[key, toggle] : toggles) {
     const bool subToggles = conditionalExperimentalKeys.find(key.c_str()) != conditionalExperimentalKeys.end() ||
-                            customPersonalitiesKeys.find(key.c_str()) != customPersonalitiesKeys.end() ||
                             fireTheBabysitterKeys.find(key.c_str()) != fireTheBabysitterKeys.end() ||
                             laneChangeKeys.find(key.c_str()) != laneChangeKeys.end() ||
                             lateralTuneKeys.find(key.c_str()) != lateralTuneKeys.end() ||

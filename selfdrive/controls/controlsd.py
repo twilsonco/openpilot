@@ -953,11 +953,16 @@ class Controls:
       if self.CP.openpilotLongitudinalControl:
         if self.conditional_experimental_mode:
           self.experimental_mode = self.sm['frogpilotLongitudinalPlan'].conditionalExperimental
+          time.sleep(0.01)
         else:
           self.experimental_mode = self.params.get_bool("ExperimentalMode") or self.params_memory.get_bool("SLCExperimentalMode")
+          time.sleep(0.1)
       if self.CP.notCar:
         self.joystick_mode = self.params.get_bool("JoystickDebugMode")
-      time.sleep(0.1)
+
+      # Update FrogPilot parameters
+      if self.params_memory.get_bool("FrogPilotTogglesUpdated"):
+        self.update_frogpilot_params()
 
   def controlsd_thread(self):
     e = threading.Event()
@@ -968,10 +973,6 @@ class Controls:
         self.step()
         self.rk.monitor_time()
         self.prof.display()
-
-        # Update FrogPilot parameters
-        if self.params_memory.get_bool("FrogPilotTogglesUpdated"):
-          self.update_frogpilot_params()
 
     except SystemExit:
       e.set()

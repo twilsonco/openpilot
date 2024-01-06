@@ -185,8 +185,8 @@ class ParamValueControl : public ParamControl {
   Q_OBJECT
 
 public:
-  ParamValueControl(const QString &param, const QString &title, const QString &desc, const QString &icon, 
-                    const int &minValue, const int &maxValue, const std::map<int, QString> &valueLabels, 
+  ParamValueControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
+                    const int &minValue, const int &maxValue, const std::map<int, QString> &valueLabels,
                     QWidget *parent = nullptr, const bool &loop = true, const QString &label = "", const int &division = 1)
     : ParamControl(param, title, desc, icon, parent),
       minValue(minValue), maxValue(maxValue), valueLabelMappings(valueLabels), loop(loop), labelText(label), division(division) {
@@ -298,9 +298,15 @@ class DualParamControl : public QFrame {
   Q_OBJECT
 
 public:
-  DualParamControl(ParamControl *control1, ParamControl *control2, QWidget *parent = nullptr)
+  DualParamControl(ParamControl *control1, ParamControl *control2, QWidget *parent = nullptr, bool split=false)
     : QFrame(parent) {
     QHBoxLayout *hlayout = new QHBoxLayout(this);
+
+    control1->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+    control1->setMaximumWidth(split ? 800 : 700);
+
+    control2->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+    control2->setMaximumWidth(800);
 
     hlayout->addWidget(control1);
     hlayout->addWidget(control2);
