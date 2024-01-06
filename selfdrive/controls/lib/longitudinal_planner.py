@@ -150,7 +150,7 @@ class LongitudinalPlanner:
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
-    if self.mpc.mode == 'acc':
+    if self.mpc.mode == 'acc' or self.acceleration_profile:
       # Use stock acceleration profiles to handle MTSC/VTSC more precisely
       v_cruise_changed = (self.mtsc_target or self.vtsc_target) != v_cruise
       if v_cruise_changed:
@@ -183,7 +183,7 @@ class LongitudinalPlanner:
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
     # FrogPilot variables
-    carState, modelData, radarState = sm['carState'], sm['modelV2'], sm['radarState']
+    carState, modelData = sm['carState'], sm['modelV2']
     enabled = sm['controlsState'].enabled
     standstill = carState.standstill
 
@@ -192,18 +192,16 @@ class LongitudinalPlanner:
 
     # Conditional Experimental Mode
     if (self.conditional_experimental_mode or self.green_light_alert) and self.previously_driving:
-      ConditionalExperimentalMode.update(carState, sm['frogpilotNavigation'], modelData, radarState, v_cruise, v_ego, self.green_light_alert, self.mtsc_target, self.vtsc_target)
+      ConditionalExperimentalMode.update(carState, sm['frogpilotNavigation'], modelData, sm['radarState'], standstill, v_ego)
 
     # Green light alert
     if self.green_light_alert and self.previously_driving:
       stopped_for_light = ConditionalExperimentalMode.red_light_detected and standstill
-
       self.green_light = not stopped_for_light and self.stopped_for_light_previously and not carState.gasPressed
-
       self.stopped_for_light_previously = stopped_for_light
 
     # Update v_cruise for speed limiter functions
-    if not standstill:
+    if not standstill and self.previously_driving:
       v_cruise = self.v_cruise_update(carState, enabled, modelData, v_cruise, v_ego)
     else:
       self.mtsc_target = v_cruise
@@ -276,7 +274,6 @@ class LongitudinalPlanner:
     frogpilotLongitudinalPlan.stoppedEquivalenceFactor = self.mpc.stopped_equivalence_factor
     frogpilotLongitudinalPlan.desiredFollowDistance = self.mpc.safe_obstacle_distance - self.mpc.stopped_equivalence_factor
     frogpilotLongitudinalPlan.safeObstacleDistanceStock = self.mpc.safe_obstacle_distance_stock
-    frogpilotLongitudinalPlan.stoppedEquivalenceFactorStock = self.mpc.stopped_equivalence_factor_stock
 
     pm.send('frogpilotLongitudinalPlan', frogpilot_plan_send)
 

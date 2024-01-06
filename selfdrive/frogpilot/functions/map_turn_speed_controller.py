@@ -1,10 +1,11 @@
-from openpilot.common.params import Params
-from openpilot.common.conversions import Conversions as CV
 import json
 import math
-from openpilot.common.numpy_fast import interp
 
-mem_params = Params("/dev/shm/params")
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.numpy_fast import interp
+from openpilot.common.params import Params
+
+params_memory = Params("/dev/shm/params")
 
 R = 6373000.0 # approximate radius of earth in meters
 TO_RADIANS = math.pi / 180
@@ -46,13 +47,13 @@ class MapTurnSpeedController:
     lat = 0.0
     lon = 0.0
     try:
-      position = json.loads(mem_params.get("LastGPSPosition"))
+      position = json.loads(params_memory.get("LastGPSPosition"))
       lat = position["latitude"]
       lon = position["longitude"]
     except: return 0.0
 
     try:
-      target_velocities = json.loads(mem_params.get("MapTargetVelocities"))
+      target_velocities = json.loads(params_memory.get("MapTargetVelocities"))
     except: return 0.0
 
     min_dist = 1000

@@ -1189,7 +1189,6 @@ void AnnotatedCameraWidget::updateFrogPilotWidgets(QPainter &p) {
   slcSpeedLimit = scene.speed_limit;
   slcSpeedLimitOffset = scene.speed_limit_offset * (is_metric ? MS_TO_KPH : MS_TO_MPH);
   stoppedEquivalence = scene.stopped_equivalence;
-  stoppedEquivalenceStock = scene.stopped_equivalence_stock;
   turnSignalLeft = scene.turn_signal_left;
   turnSignalRight = scene.turn_signal_right;
   useSI = scene.use_si;
@@ -1462,7 +1461,6 @@ void AnnotatedCameraWidget::drawLeadInfo(QPainter &p) {
                            + p.fontMetrics().horizontalAdvance(obstacleText)
                            + p.fontMetrics().horizontalAdvance(createDiffText(obstacleDistance, obstacleDistanceStock))
                            + p.fontMetrics().horizontalAdvance(stopText)
-                           + p.fontMetrics().horizontalAdvance(createDiffText(stoppedEquivalence, stoppedEquivalenceStock))
                            + p.fontMetrics().horizontalAdvance(followText);
 
   int textStartPos = adjustedRect.x() + (adjustedRect.width() - totalTextWidth) / 2;
@@ -1479,7 +1477,6 @@ void AnnotatedCameraWidget::drawLeadInfo(QPainter &p) {
   drawText(obstacleText, Qt::white);
   drawText(createDiffText(obstacleDistance, obstacleDistanceStock), (obstacleDistance - obstacleDistanceStock) > 0 ? Qt::green : Qt::red);
   drawText(stopText, Qt::white);
-  drawText(createDiffText(stoppedEquivalence, stoppedEquivalenceStock), (stoppedEquivalence - stoppedEquivalenceStock) > 0 ? Qt::green : Qt::red);
   drawText(followText, Qt::white);
 
   p.restore();

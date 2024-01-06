@@ -117,12 +117,12 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
                          net_output_data['lane_lines'][0,near_lane,:,1]) / 2
 
       # Determine which set of averages to use
-      if np.all(np.abs(lane_x_avg) > np.abs(road_edge_x_avg)):
-        x_min = lane_x_avg
-        y_min = lane_y_avg
-      else:
+      if np.any(np.abs(road_edge_x_avg) < np.abs(lane_x_avg)):
         x_min = road_edge_x_avg
         y_min = road_edge_y_avg
+      else:
+        x_min = lane_x_avg
+        y_min = lane_y_avg
 
       fill_xyzt(lane_line, PLAN_T_IDXS, np.array(ModelConstants.X_IDXS), x_min, y_min)
 
