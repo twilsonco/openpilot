@@ -152,7 +152,7 @@ class LongitudinalPlanner:
 
     if self.mpc.mode == 'acc' or self.acceleration_profile:
       # Use stock acceleration profiles to handle MTSC/VTSC more precisely
-      v_cruise_changed = (self.mtsc_target or self.vtsc_target) != v_cruise
+      v_cruise_changed = (self.mtsc_target or self.vtsc_target) + 1 < v_cruise
       if v_cruise_changed:
         accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
       elif self.acceleration_profile == 1:
@@ -201,7 +201,7 @@ class LongitudinalPlanner:
       self.stopped_for_light_previously = stopped_for_light
 
     # Update v_cruise for speed limiter functions
-    if not standstill and self.previously_driving:
+    if v_ego > TARGET_LAT_A and self.previously_driving:
       v_cruise = self.v_cruise_update(carState, enabled, modelData, v_cruise, v_ego)
     else:
       self.mtsc_target = v_cruise
