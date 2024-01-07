@@ -18,7 +18,7 @@ bool FrogPilotConfirmationDialog::yesorno(const QString &prompt_text, QWidget *p
   return d.exec();
 }
 
-ButtonIconControl::ButtonIconControl(const QString &title, const QString &text, const QString &desc, const QString &icon, QWidget *parent) : AbstractControl(title, desc, icon, parent) {
+FrogPilotButtonIconControl::FrogPilotButtonIconControl(const QString &title, const QString &text, const QString &desc, const QString &icon, QWidget *parent) : AbstractControl(title, desc, icon, parent) {
   btn.setText(text);
   btn.setStyleSheet(R"(
     QPushButton {
@@ -37,7 +37,7 @@ ButtonIconControl::ButtonIconControl(const QString &title, const QString &text, 
     }
   )");
   btn.setFixedSize(250, 100);
-  QObject::connect(&btn, &QPushButton::clicked, this, &ButtonIconControl::clicked);
+  QObject::connect(&btn, &QPushButton::clicked, this, &FrogPilotButtonIconControl::clicked);
   hlayout->addWidget(&btn);
 }
 

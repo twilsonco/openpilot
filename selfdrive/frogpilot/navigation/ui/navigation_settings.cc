@@ -246,6 +246,7 @@ void FrogPilotNavigationPanel::setMaps() {
 
     if (!states.isEmpty() || !countries.isEmpty()) {
       downloadOfflineMapsButton->setVisible(true);
+      update();
     } else {
       params.remove("MapsSelected");
     }
