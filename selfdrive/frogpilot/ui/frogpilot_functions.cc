@@ -82,6 +82,7 @@ void setDefaultParams() {
     {"EVTable", FrogsGoMoo ? "0" : "1"},
     {"ExperimentalModeViaPress", "1"},
     {"FireTheBabysitter", FrogsGoMoo ? "1" : "0"},
+    {"GoatScream", "1"},
     {"GreenLightAlert", "0"},
     {"LaneChangeTime", "0"},
     {"LaneDetection", "1"},
