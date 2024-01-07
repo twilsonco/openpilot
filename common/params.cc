@@ -262,6 +262,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"FrogPilotTogglesOpen", CLEAR_ON_MANAGER_START},
     {"FrogPilotTogglesUpdated", PERSISTENT},
     {"GMapKey", PERSISTENT},
+    {"GoatScream", PERSISTENT},
     {"GreenLightAlert", PERSISTENT},
     {"HideSpeed", PERSISTENT},
     {"LaneChangeTime", PERSISTENT},

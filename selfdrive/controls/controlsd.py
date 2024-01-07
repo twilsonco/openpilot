@@ -1002,6 +1002,7 @@ class Controls:
     self.custom_theme = self.params.get_bool("CustomTheme")
     self.custom_sounds = self.params.get_int("CustomSounds") if self.custom_theme else 0
     self.frog_sounds = self.custom_sounds == 1
+    self.goat_scream = self.params.get_bool("GoatScream") and self.frog_sounds
 
     self.green_light_alert = self.params.get_bool("GreenLightAlert")
     self.pause_lateral_on_signal = self.params.get_bool("PauseLateralOnSignal")
