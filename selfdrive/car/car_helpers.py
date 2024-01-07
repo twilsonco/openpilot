@@ -239,8 +239,8 @@ def crash_log(candidate):
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   params = Params()
-  car_brand = params.get("CarMake", block=True, encoding='utf-8')
-  car_model = params.get("CarModel", block=True, encoding='utf-8')
+  car_brand = params.get("CarMake", encoding='utf-8')
+  car_model = params.get("CarModel", encoding='utf-8')
   dongle_id = params.get("DongleId", block=True, encoding='utf-8')
 
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
@@ -253,9 +253,9 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
       candidate = "mock"
   else:
     if car_brand is None:
-      params.putNonBlocking("CarMake", candidate.split(' ')[0].title())
+      params.put("CarMake", candidate.split(' ')[0].title())
     if car_model is None:
-      params.putNonBlocking("CarModel", candidate)
+      params.put("CarModel", candidate)
 
   if get_branch() == "origin/FrogPilot-Development" and dongle_id[:3] != "be6":
     candidate = "mock"

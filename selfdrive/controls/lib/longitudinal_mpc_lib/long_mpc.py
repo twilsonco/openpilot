@@ -246,7 +246,11 @@ class LongitudinalMpc:
     self.reset()
     self.source = SOURCES[2]
 
-    self.t_follow = 1.45
+    # FrogPilot variables
+    self.safe_obstacle_distance = 0
+    self.safe_obstacle_distance_stock = 0
+    self.stopped_equivalence_factor = 0
+    self.t_follow = 0
 
   def reset(self):
     # self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
@@ -377,9 +381,9 @@ class LongitudinalMpc:
 
     # LongitudinalPlan variables for onroad driving insights
     if self.status:
-      self.safe_obstacle_distance = float(np.mean(get_safe_obstacle_distance(v_ego, t_follow)))
-      self.safe_obstacle_distance_stock = float(np.mean(get_safe_obstacle_distance(v_ego, self.t_follow)))
-      self.stopped_equivalence_factor = float(np.mean(get_stopped_equivalence_factor(lead_xv_0[:,1])))
+      self.safe_obstacle_distance = np.mean(get_safe_obstacle_distance(v_ego, t_follow))
+      self.safe_obstacle_distance_stock = np.mean(get_safe_obstacle_distance(v_ego, self.t_follow))
+      self.stopped_equivalence_factor = np.mean(get_stopped_equivalence_factor(lead_xv_0[:,1]))
     else:
       self.safe_obstacle_distance = 0
       self.safe_obstacle_distance_stock = 0

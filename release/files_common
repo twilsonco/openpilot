@@ -587,6 +587,7 @@ tinygrad_repo/tinygrad/shape/*
 tinygrad_repo/tinygrad/*.py
 
 selfdrive/frogpilot/functions/conditional_experimental_mode.py
+selfdrive/frogpilot/functions/frogpilot_planner.py
 selfdrive/frogpilot/functions/map_turn_speed_controller.py
 selfdrive/frogpilot/functions/model_switcher.py
 selfdrive/frogpilot/functions/speed_limit_controller.py
