@@ -53,11 +53,11 @@ private:
   QVBoxLayout inner_layout;
 };
 
-class ButtonIconControl : public AbstractControl {
+class FrogPilotButtonIconControl : public AbstractControl {
   Q_OBJECT
 
 public:
-  ButtonIconControl(const QString &title, const QString &text, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
+  FrogPilotButtonIconControl(const QString &title, const QString &text, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
   inline void setText(const QString &text) { btn.setText(text); }
   inline QString text() const { return btn.text(); }
 
@@ -71,11 +71,75 @@ private:
   QPushButton btn;
 };
 
-class ParamManageControl : public ParamControl {
+class FrogPilotButtonParamControl : public ParamControl {
+  Q_OBJECT
+public:
+  FrogPilotButtonParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
+                     const std::vector<QString> &button_texts, const int minimum_button_width = 225)
+    : ParamControl(param, title, desc, icon) {
+    const QString style = R"(
+      QPushButton {
+        border-radius: 50px;
+        font-size: 40px;
+        font-weight: 500;
+        height:100px;
+        padding: 0 25 0 25;
+        color: #E4E4E4;
+        background-color: #393939;
+      }
+      QPushButton:pressed {
+        background-color: #4a4a4a;
+      }
+      QPushButton:checked:enabled {
+        background-color: #33Ab4C;
+      }
+      QPushButton:disabled {
+        color: #33E4E4E4;
+      }
+    )";
+
+    key = param.toStdString();
+    int value = atoi(params.get(key).c_str());
+
+    button_group = new QButtonGroup(this);
+    button_group->setExclusive(true);
+    for (size_t i = 0; i < button_texts.size(); i++) {
+      QPushButton *button = new QPushButton(button_texts[i], this);
+      button->setCheckable(true);
+      button->setChecked(i == value);
+      button->setStyleSheet(style);
+      button->setMinimumWidth(minimum_button_width);
+      hlayout->addWidget(button);
+      button_group->addButton(button, i);
+    }
+
+    QObject::connect(button_group, QOverload<int, bool>::of(&QButtonGroup::buttonToggled), [=](int id, bool checked) {
+      if (checked) {
+        params.put(key, std::to_string(id));
+        refresh();
+      }
+    });
+
+    toggle.hide();
+  }
+
+  void setEnabled(bool enable) {
+    for (auto btn : button_group->buttons()) {
+      btn->setEnabled(enable);
+    }
+  }
+
+private:
+  std::string key;
+  Params params;
+  QButtonGroup *button_group;
+};
+
+class FrogPilotParamManageControl : public ParamControl {
   Q_OBJECT
 
 public:
-  ParamManageControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr)
+  FrogPilotParamManageControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr)
     : ParamControl(param, title, desc, icon, parent),
       key(param.toStdString()),
       manageButton(new ButtonControl(tr(""), tr("MANAGE"), tr(""))) {
@@ -85,7 +149,7 @@ public:
       refresh();
     });
 
-    connect(manageButton, &ButtonControl::clicked, this, &ParamManageControl::manageButtonClicked);
+    connect(manageButton, &ButtonControl::clicked, this, &FrogPilotParamManageControl::manageButtonClicked);
   }
 
   void refresh() {
@@ -107,10 +171,10 @@ private:
   ButtonControl *manageButton;
 };
 
-class ParamToggleControl : public ParamControl {
+class FrogPilotParamToggleControl : public ParamControl {
   Q_OBJECT
 public:
-  ParamToggleControl(const QString &param, const QString &title, const QString &desc,
+  FrogPilotParamToggleControl(const QString &param, const QString &title, const QString &desc,
                      const QString &icon, const std::vector<QString> &button_params, 
                      const std::vector<QString> &button_texts, QWidget *parent = nullptr, 
                      const int minimum_button_width = 225)
@@ -181,11 +245,11 @@ private:
   QButtonGroup *button_group;
 };
 
-class ParamValueControl : public ParamControl {
+class FrogPilotParamValueControl : public ParamControl {
   Q_OBJECT
 
 public:
-  ParamValueControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
+  FrogPilotParamValueControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
                     const int &minValue, const int &maxValue, const std::map<int, QString> &valueLabels,
                     QWidget *parent = nullptr, const bool &loop = true, const QString &label = "", const int &division = 1)
     : ParamControl(param, title, desc, icon, parent),
@@ -294,11 +358,11 @@ private:
   }
 };
 
-class DualParamControl : public QFrame {
+class FrogPilotDualParamControl : public QFrame {
   Q_OBJECT
 
 public:
-  DualParamControl(ParamControl *control1, ParamControl *control2, QWidget *parent = nullptr, bool split=false)
+  FrogPilotDualParamControl(ParamControl *control1, ParamControl *control2, QWidget *parent = nullptr, bool split=false)
     : QFrame(parent) {
     QHBoxLayout *hlayout = new QHBoxLayout(this);
 
@@ -313,11 +377,11 @@ public:
   }
 };
 
-class ParamValueToggleControl : public ParamControl {
+class FrogPilotParamValueToggleControl : public ParamControl {
   Q_OBJECT
 
 public:
-  ParamValueToggleControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
+  FrogPilotParamValueToggleControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
                           const int &minValue, const int &maxValue, const std::map<int, QString> &valueLabels,
                           QWidget *parent = nullptr, const bool &loop = true, const QString &label = "", const int &division = 1,
                           const std::vector<QString> &button_params = std::vector<QString>(), const std::vector<QString> &button_texts = std::vector<QString>(),

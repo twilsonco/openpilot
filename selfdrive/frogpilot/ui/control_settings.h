@@ -16,15 +16,16 @@ private:
   void hideSubToggles();
   void parentToggleClicked();
   void updateState();
+  void updateToggles();
 
   ButtonControl *slscPriorityButton;
-  ButtonIconControl *modelSelectorButton;
+  FrogPilotButtonIconControl *modelSelectorButton;
 
-  DualParamControl *aggressiveProfile;
-  DualParamControl *conditionalSpeedsImperial;
-  DualParamControl *conditionalSpeedsMetric;
-  DualParamControl *standardProfile;
-  DualParamControl *relaxedProfile;
+  FrogPilotDualParamControl *aggressiveProfile;
+  FrogPilotDualParamControl *conditionalSpeedsImperial;
+  FrogPilotDualParamControl *conditionalSpeedsMetric;
+  FrogPilotDualParamControl *standardProfile;
+  FrogPilotDualParamControl *relaxedProfile;
 
   std::set<QString> conditionalExperimentalKeys;
   std::set<QString> fireTheBabysitterKeys;
