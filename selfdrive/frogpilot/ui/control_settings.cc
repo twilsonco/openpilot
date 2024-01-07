@@ -50,6 +50,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
     {"Offset3", "Speed Limit Offset (55-64 mph)", "Speed limit offset for speed limits between 55-64 mph.", ""},
     {"Offset4", "Speed Limit Offset (65-99 mph)", "Speed limit offset for speed limits between 65-99 mph.", ""},
     {"SLCFallback", "Fallback Method", "Choose your fallback method for when there are no speed limits currently being obtained from Navigation, OSM, and the car's dashboard.", ""},
+    {"SLCOverride", "Override Method", "Choose your preferred method to override the current speed limit.", ""},
     {"SLCPriority", "Priority Order", "Determine the priority order for what speed limits to use.", ""},
 
     {"TurnDesires", "Use Turn Desires", "Use turn desires for enhanced precision in turns below the minimum lane change speed.", "../assets/navigation/direction_continue_right.png"},
@@ -259,6 +260,10 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
       std::vector<QString> fallbackOptions{tr("None"), tr("Experimental Mode"), tr("Previous Limit")};
       FrogPilotButtonParamControl *fallbackSelection = new FrogPilotButtonParamControl(param, title, desc, icon, fallbackOptions);
       toggle = fallbackSelection;
+    } else if (param == "SLCOverride") {
+      std::vector<QString> overrideOptions{tr("None"), tr("Gas Pedal"), tr("Max Set Speed")};
+      FrogPilotButtonParamControl *overrideSelection = new FrogPilotButtonParamControl(param, title, desc, icon, overrideOptions);
+      toggle = overrideSelection;
     } else if (param == "SLCPriority") {
       const QStringList priorities {
         "Navigation, Dashboard, Offline Maps",
