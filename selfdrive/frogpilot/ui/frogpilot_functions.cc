@@ -121,6 +121,7 @@ void setDefaultParams() {
     {"Sidebar", FrogsGoMoo ? "1" : "0"},
     {"SilentMode", "0"},
     {"SLCFallback", "2"},
+    {"SLCOverride", FrogsGoMoo ? "2" : "1"},
     {"SLCPriority", "1"},
     {"SmoothBraking", "1"},
     {"SNGHack", FrogsGoMoo ? "0" : "1"},

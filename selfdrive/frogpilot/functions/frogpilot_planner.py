@@ -114,9 +114,12 @@ class FrogPilotPlanner:
       self.slc_target = SpeedLimitController.desired_speed_limit
 
       # Override SLC upon gas pedal press and reset upon brake/cancel button
-      self.override_slc |= carState.gasPressed
-      self.override_slc &= controlsState.enabled
-      self.override_slc &= v_ego > self.slc_target
+      if self.speed_limit_controller_override:
+        self.override_slc |= carState.gasPressed
+        self.override_slc &= controlsState.enabled
+        self.override_slc &= v_ego > self.slc_target
+      else:
+        self.override_slc = False
 
       # Set the max speed to the manual set speed
       if carState.gasPressed:
@@ -126,7 +129,10 @@ class FrogPilotPlanner:
 
       # Use the override speed if SLC is being overridden
       if self.override_slc:
-        self.slc_target = self.overridden_speed
+        if self.speed_limit_controller_override == 1:
+          self.slc_target = v_cruise
+        elif self.speed_limit_controller_override == 2:
+          self.slc_target = self.overridden_speed
 
       if self.slc_target == 0:
         self.slc_target = v_cruise
@@ -226,6 +232,7 @@ class FrogPilotPlanner:
     self.one_lane_change = params.get_bool("OneLaneChange") if self.nudgeless else False
 
     self.speed_limit_controller = params.get_bool("SpeedLimitController")
+    self.speed_limit_controller_override = params.get_int("SLCOverride")
     if self.speed_limit_controller:
       SpeedLimitController.update_frogpilot_params()
 
