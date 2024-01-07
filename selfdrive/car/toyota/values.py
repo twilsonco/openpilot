@@ -6,6 +6,7 @@ from typing import Dict, List, Set, Union
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
+from openpilot.common.params import Params
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarParts, CarHarness
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
@@ -16,7 +17,7 @@ PEDAL_TRANSITION = 10. * CV.MPH_TO_MS
 
 
 class CarControllerParams:
-  ACCEL_MAX = 1.5  # m/s2, lower than allowed 2.0 m/s2 for tuning reasons
+  ACCEL_MAX = 4.0 if Params().get_int("AccelerationProfile") == 4 else 1.6
   ACCEL_MIN = -3.5  # m/s2
 
   STEER_STEP = 1

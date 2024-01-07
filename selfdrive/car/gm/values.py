@@ -6,6 +6,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from openpilot.common.numpy_fast import interp
+from openpilot.common.params import Params
 from openpilot.selfdrive.car import dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 Ecu = car.CarParams.Ecu
@@ -33,7 +34,7 @@ class CarControllerParams:
   # to apply some more braking if we're on a downhill slope.
   # Our controller should still keep the 2 second average above
   # -3.5 m/s^2 as per planner limits
-  ACCEL_MAX = 2.  # m/s^2
+  ACCEL_MAX = 4.0 if Params().get_int("AccelerationProfile") == 4 else 2.0
   ACCEL_MIN = -4.  # m/s^2
 
   def __init__(self, CP):

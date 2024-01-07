@@ -82,7 +82,7 @@ class FrogPilotPlanner:
       self.accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
     elif self.acceleration_profile == 1:
       self.accel_limits = [get_min_accel_eco_tune(v_ego), get_max_accel_eco_tune(v_ego)]
-    elif self.acceleration_profile == 3:
+    elif self.acceleration_profile in (2, 3):
       self.accel_limits = [get_min_accel_sport_tune(v_ego), get_max_accel_sport_tune(v_ego)]
     else:
       self.accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
