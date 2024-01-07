@@ -192,15 +192,11 @@ private:
   bool useSI;
   double maxAcceleration;
   float cruiseAdjustment;
-  float desiredFollow;
   float laneWidthLeft;
   float laneWidthRight;
-  float obstacleDistance;
-  float obstacleDistanceStock;
   float slcOverriddenSpeed;
   float slcSpeedLimit;
   float slcSpeedLimitOffset;
-  float stoppedEquivalence;
   int bearingDeg;
   int cameraView;
   int conditionalSpeed;
@@ -208,6 +204,10 @@ private:
   int conditionalStatus;
   int customColors;
   int customSignals;
+  int desiredFollow;
+  int obstacleDistance;
+  int obstacleDistanceStock;
+  int stoppedEquivalence;
   int totalFrames = 8;
   QTimer *animationTimer;
   size_t animationFrameIndex;

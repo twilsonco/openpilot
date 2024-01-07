@@ -213,5 +213,3 @@ class ConditionalExperimentalMode:
     self.slower_lead = self.params.get_bool("CESlowerLead")
     self.stop_lights = self.params.get_bool("CEStopLights")
     self.stop_lights_lead = self.params.get_bool("CEStopLightsLead")
-
-ConditionalExperimentalMode = ConditionalExperimentalMode()
