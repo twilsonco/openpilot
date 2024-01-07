@@ -117,6 +117,7 @@ public:
       if (checked) {
         params.put(key, std::to_string(id));
         refresh();
+        emit buttonClicked(id);
       }
     });
 
@@ -128,6 +129,9 @@ public:
       btn->setEnabled(enable);
     }
   }
+
+signals:
+  void buttonClicked(int id);
 
 private:
   std::string key;

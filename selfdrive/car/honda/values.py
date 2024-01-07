@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Union
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
+from openpilot.common.params import Params
 from panda.python import uds
 from openpilot.selfdrive.car import dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
@@ -20,7 +21,7 @@ class CarControllerParams:
   # Our controller should still keep the 2 second average above
   # -3.5 m/s^2 as per planner limits
   NIDEC_ACCEL_MIN = -4.0  # m/s^2
-  NIDEC_ACCEL_MAX = 1.6  # m/s^2, lower than 2.0 m/s^2 for tuning reasons
+  ACCEL_MAX = 4.0 if Params().get_int("AccelerationProfile") == 4 else 1.6
 
   NIDEC_ACCEL_LOOKUP_BP = [-1., 0., .6]
   NIDEC_ACCEL_LOOKUP_V = [-4.8, 0., 2.0]
@@ -32,7 +33,7 @@ class CarControllerParams:
   NIDEC_BRAKE_MAX = 1024 // 4
 
   BOSCH_ACCEL_MIN = -3.5  # m/s^2
-  BOSCH_ACCEL_MAX = 2.0  # m/s^2
+  ACCEL_MAX = 4.0 if Params().get_int("AccelerationProfile") == 4 else 2.0
 
   BOSCH_GAS_LOOKUP_BP = [-0.2, 2.0]  # 2m/s^2
   BOSCH_GAS_LOOKUP_V = [0, 1600]
