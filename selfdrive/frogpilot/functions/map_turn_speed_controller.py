@@ -150,5 +150,3 @@ class MapTurnSpeedController:
     self.target_lon = target_lon
 
     return min_v
-
-MapTurnSpeedController = MapTurnSpeedController()

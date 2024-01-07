@@ -68,18 +68,22 @@ class DesireHelper:
 
     # FrogPilot variables
     self.turn_direction = TurnDirection.none
+
     self.lane_change_completed = False
     self.turn_completed = False
-    self.lane_change_wait_timer = 0
 
-  def update(self, carstate, modeldata, lateral_active, lane_change_prob):
+    self.lane_change_wait_timer = 0
+    self.lane_width_left = 0
+    self.lane_width_right = 0
+
+  def update(self, carstate, modeldata, lateral_active, lane_change_prob, frogpilot_planner):
     v_ego = carstate.vEgo
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
 
     # Calculate left and right lane widths for the blindspot path
     turning = abs(carstate.steeringAngleDeg) >= 60
-    if self.blindspot_path and not below_lane_change_speed and not turning:
+    if frogpilot_planner.blindspot_path and not below_lane_change_speed and not turning:
       # Calculate left and right lane widths
       self.lane_width_left = calculate_lane_width(modeldata.laneLines[0], modeldata.laneLines[1], modeldata.roadEdges[0])
       self.lane_width_right = calculate_lane_width(modeldata.laneLines[3], modeldata.laneLines[2], modeldata.roadEdges[1])
@@ -88,7 +92,7 @@ class DesireHelper:
       self.lane_width_right = 0
 
     # Calculate the desired lane width for nudgeless lane change with lane detection
-    if not (self.lane_detection and one_blinker) or below_lane_change_speed or turning:
+    if not (frogpilot_planner.lane_detection and one_blinker) or below_lane_change_speed or turning:
       lane_available = True
     else:
       # Set the minimum lane threshold to 2.8 meters
@@ -104,7 +108,7 @@ class DesireHelper:
     if not lateral_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
       self.lane_change_direction = LaneChangeDirection.none
-    elif one_blinker and below_lane_change_speed and self.turn_desires:
+    elif one_blinker and below_lane_change_speed and frogpilot_planner.turn_desires:
       self.turn_direction = TurnDirection.turnLeft if carstate.leftBlinker else TurnDirection.turnRight
       # Set the "turn_completed" flag to prevent lane changes after completing a turn
       self.turn_completed = True
@@ -133,7 +137,7 @@ class DesireHelper:
 
         # Conduct a nudgeless lane change if all the conditions are true
         self.lane_change_wait_timer += DT_MDL
-        if self.nudgeless and lane_available and not self.lane_change_completed and self.lane_change_wait_timer >= self.lane_change_delay:
+        if frogpilot_planner.nudgeless and lane_available and not self.lane_change_completed and self.lane_change_wait_timer >= frogpilot_planner.lane_change_delay:
           torque_applied = True
           self.lane_change_wait_timer = 0
 
@@ -142,7 +146,7 @@ class DesireHelper:
           self.lane_change_direction = LaneChangeDirection.none
         elif torque_applied and not blindspot_detected:
           # Set the "lane_change_completed" flag to prevent any more lane changes if the toggle is on
-          self.lane_change_completed = self.one_lane_change
+          self.lane_change_completed = frogpilot_planner.one_lane_change
           self.lane_change_state = LaneChangeState.laneChangeStarting
 
       # LaneChangeState.laneChangeStarting
@@ -193,13 +197,3 @@ class DesireHelper:
         self.keep_pulse_timer = 0.0
       elif self.desire in (log.LateralPlan.Desire.keepLeft, log.LateralPlan.Desire.keepRight):
         self.desire = log.LateralPlan.Desire.none
-
-  def update_frogpilot_params(self, params):
-    self.blindspot_path = params.get_bool("CustomUI") and params.get_bool("BlindSpotPath")
-
-    self.nudgeless = params.get_bool("NudgelessLaneChange")
-    self.lane_change_delay = params.get_int("LaneChangeTime") if self.nudgeless else 0
-    self.lane_detection = params.get_bool("LaneDetection") if self.nudgeless else False
-    self.one_lane_change = params.get_bool("OneLaneChange") if self.nudgeless else False
-
-    self.turn_desires = params.get_bool("TurnDesires")
