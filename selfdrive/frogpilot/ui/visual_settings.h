@@ -16,6 +16,7 @@ private:
   void hideSubToggles();
   void parentToggleClicked();
   void updateState();
+  void updateToggles();
 
   std::set<QString> customOnroadUIKeys;
   std::set<QString> customThemeKeys;
