@@ -198,7 +198,7 @@ class ConditionalExperimentalMode:
     # Check if the model data is consistent and wants to stop
     model_check = len(modelData.orientation.x) == len(modelData.position.x) == TRAJECTORY_SIZE
     model_stopping = modelData.position.x[TRAJECTORY_SIZE - 1] < interp(v_ego * CV.MS_TO_KPH, SLOW_DOWN_BP, SLOW_DOWN_DISTANCE)
-    self.slow_down_gmac.add_data(model_check and model_stopping and not self.curve_detected and not (self.slower_lead_detected or self.lead_slowing_down))
+    self.slow_down_gmac.add_data(model_check and model_stopping and not self.curve_detected)
 
     self.red_light_detected = self.slow_down_gmac.get_moving_average() >= PROBABILITY
 
