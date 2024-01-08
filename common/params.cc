@@ -259,7 +259,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"EVTable", PERSISTENT},
     {"Fahrenheit", PERSISTENT},
     {"FireTheBabysitter", PERSISTENT},
-    {"FrogPilotTogglesOpen", CLEAR_ON_MANAGER_START},
     {"FrogPilotTogglesUpdated", PERSISTENT},
     {"GMapKey", PERSISTENT},
     {"GoatScream", PERSISTENT},

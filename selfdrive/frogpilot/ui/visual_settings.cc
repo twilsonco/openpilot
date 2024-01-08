@@ -137,6 +137,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
   customThemeKeys = {"CustomColors", "CustomIcons", "CustomSignals", "CustomSounds"};
   modelUIKeys = {"AccelerationPath", "LaneLinesWidth", "PathEdgeWidth", "PathWidth", "RoadEdgesWidth", "UnlimitedLength"};
 
+  QObject::connect(parent, &SettingsWindow::closeParentToggle, this, &FrogPilotVisualsPanel::hideSubToggles);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &FrogPilotVisualsPanel::updateState);
 
   hideSubToggles();
@@ -151,71 +152,63 @@ void FrogPilotVisualsPanel::updateToggles() {
 }
 
 void FrogPilotVisualsPanel::updateState() {
-  if (isVisible()) {
-    if (paramsMemory.getInt("FrogPilotTogglesOpen") == 2) {
-      hideSubToggles();
-    }
+  static bool checkedOnBoot = false;
+
+  bool previousIsMetric = isMetric;
+  isMetric = params.getBool("IsMetric");
+
+  if (checkedOnBoot) {
+    if (previousIsMetric == isMetric) return;
+  }
+  checkedOnBoot = true;
+
+  if (isMetric != previousIsMetric) {
+    double distanceConversion = isMetric ? INCH_TO_CM : CM_TO_INCH;
+    double speedConversion = isMetric ? FOOT_TO_METER : METER_TO_FOOT;
+    params.putInt("LaneLinesWidth", std::nearbyint(params.getInt("LaneLinesWidth") * distanceConversion));
+    params.putInt("RoadEdgesWidth", std::nearbyint(params.getInt("RoadEdgesWidth") * distanceConversion));
+    params.putInt("PathWidth", std::nearbyint(params.getInt("PathWidth") * speedConversion));
   }
 
-  std::thread([this] {
-    static bool checkedOnBoot = false;
+  FrogPilotParamValueControl *laneLinesWidthToggle = static_cast<FrogPilotParamValueControl*>(toggles["LaneLinesWidth"]);
+  FrogPilotParamValueControl *roadEdgesWidthToggle = static_cast<FrogPilotParamValueControl*>(toggles["RoadEdgesWidth"]);
+  FrogPilotParamValueControl *pathWidthToggle = static_cast<FrogPilotParamValueControl*>(toggles["PathWidth"]);
 
-    bool previousIsMetric = isMetric;
-    isMetric = params.getBool("IsMetric");
+  if (isMetric) {
+    laneLinesWidthToggle->setDescription("Customize the lane line width.\n\nDefault matches the Vienna average of 10 centimeters.");
+    roadEdgesWidthToggle->setDescription("Customize the road edges width.\n\nDefault is 1/2 of the Vienna average lane line width of 10 centimeters.");
 
-    if (checkedOnBoot) {
-      if (previousIsMetric == isMetric) return;
-    }
-    checkedOnBoot = true;
+    laneLinesWidthToggle->updateControl(0, 60, " centimeters");
+    roadEdgesWidthToggle->updateControl(0, 60, " centimeters");
+    pathWidthToggle->updateControl(0, 30, " meters");
+  } else {
+    laneLinesWidthToggle->setDescription("Customize the lane line width.\n\nDefault matches the MUTCD average of 4 inches.");
+    roadEdgesWidthToggle->setDescription("Customize the road edges width.\n\nDefault is 1/2 of the MUTCD average lane line width of 4 inches.");
 
-    if (isMetric != previousIsMetric) {
-      const double distanceConversion = isMetric ? INCH_TO_CM : CM_TO_INCH;
-      const double speedConversion = isMetric ? FOOT_TO_METER : METER_TO_FOOT;
-      params.putInt("LaneLinesWidth", std::nearbyint(params.getInt("LaneLinesWidth") * distanceConversion));
-      params.putInt("RoadEdgesWidth", std::nearbyint(params.getInt("RoadEdgesWidth") * distanceConversion));
-      params.putInt("PathWidth", std::nearbyint(params.getInt("PathWidth") * speedConversion));
-    }
+    laneLinesWidthToggle->updateControl(0, 24, " inches");
+    roadEdgesWidthToggle->updateControl(0, 24, " inches");
+    pathWidthToggle->updateControl(0, 100, " feet");
+  }
 
-    FrogPilotParamValueControl *laneLinesWidthToggle = static_cast<FrogPilotParamValueControl*>(toggles["LaneLinesWidth"]);
-    FrogPilotParamValueControl *roadEdgesWidthToggle = static_cast<FrogPilotParamValueControl*>(toggles["RoadEdgesWidth"]);
-    FrogPilotParamValueControl *pathWidthToggle = static_cast<FrogPilotParamValueControl*>(toggles["PathWidth"]);
+  laneLinesWidthToggle->refresh();
+  roadEdgesWidthToggle->refresh();
 
-    if (isMetric) {
-      laneLinesWidthToggle->setDescription("Customize the lane line width.\n\nDefault matches the Vienna average of 10 centimeters.");
-      roadEdgesWidthToggle->setDescription("Customize the road edges width.\n\nDefault is 1/2 of the Vienna average lane line width of 10 centimeters.");
-
-      laneLinesWidthToggle->updateControl(0, 60, " centimeters");
-      roadEdgesWidthToggle->updateControl(0, 60, " centimeters");
-      pathWidthToggle->updateControl(0, 30, " meters");
-    } else {
-      laneLinesWidthToggle->setDescription("Customize the lane line width.\n\nDefault matches the MUTCD average of 4 inches.");
-      roadEdgesWidthToggle->setDescription("Customize the road edges width.\n\nDefault is 1/2 of the MUTCD average lane line width of 4 inches.");
-
-      laneLinesWidthToggle->updateControl(0, 24, " inches");
-      roadEdgesWidthToggle->updateControl(0, 24, " inches");
-      pathWidthToggle->updateControl(0, 100, " feet");
-    }
-
-    laneLinesWidthToggle->refresh();
-    roadEdgesWidthToggle->refresh();
-
-    previousIsMetric = isMetric;
-  }).detach();
+  previousIsMetric = isMetric;
 }
 
 void FrogPilotVisualsPanel::parentToggleClicked() {
-  paramsMemory.putInt("FrogPilotTogglesOpen", 1);
+  this->openParentToggle();
 }
 
 void FrogPilotVisualsPanel::hideSubToggles() {
-  paramsMemory.putInt("FrogPilotTogglesOpen", 0);
-
   for (auto &[key, toggle] : toggles) {
     const bool subToggles = modelUIKeys.find(key.c_str()) != modelUIKeys.end() ||
                             customOnroadUIKeys.find(key.c_str()) != customOnroadUIKeys.end() ||
                             customThemeKeys.find(key.c_str()) != customThemeKeys.end();
     toggle->setVisible(!subToggles);
   }
+
+  this->closeParentToggle();
 }
 
 void FrogPilotVisualsPanel::hideEvent(QHideEvent *event) {

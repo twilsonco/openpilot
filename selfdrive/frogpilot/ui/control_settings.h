@@ -11,6 +11,10 @@ class FrogPilotControlsPanel : public FrogPilotListWidget {
 public:
   explicit FrogPilotControlsPanel(SettingsWindow *parent);
 
+signals:
+  void closeParentToggle();
+  void openParentToggle();
+
 private:
   void hideEvent(QHideEvent *event);
   void hideSubToggles();
