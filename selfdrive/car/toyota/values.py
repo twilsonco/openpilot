@@ -17,7 +17,7 @@ PEDAL_TRANSITION = 10. * CV.MPH_TO_MS
 
 
 class CarControllerParams:
-  ACCEL_MAX = 4.0 if Params().get_int("AccelerationProfile") == 4 else 1.6
+  ACCEL_MAX = 4.0 if Params().get_int("AccelerationProfile") == 3 else 1.6
   ACCEL_MIN = -3.5  # m/s2
 
   STEER_STEP = 1

@@ -53,12 +53,10 @@ def plannerd_thread():
     sm.update()
 
     if sm.updated['modelV2']:
-      frogpilot_planner.update(sm)
-      frogpilot_planner.publish(sm, pm)
       lateral_planner.update(sm, frogpilot_planner)
-      lateral_planner.publish(sm, pm)
+      lateral_planner.publish(sm, pm, frogpilot_planner)
       longitudinal_planner.update(sm, frogpilot_planner)
-      longitudinal_planner.publish(sm, pm)
+      longitudinal_planner.publish(sm, pm, frogpilot_planner)
       publish_ui_plan(sm, pm, lateral_planner, longitudinal_planner)
 
     if params_memory.get_bool("FrogPilotTogglesUpdated"):

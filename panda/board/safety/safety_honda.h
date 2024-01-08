@@ -12,7 +12,7 @@ const int HONDA_GAS_INTERCEPTOR_THRESHOLD = 492;
 #define HONDA_GET_INTERCEPTOR(msg) (((GET_BYTE((msg), 0) << 8) + GET_BYTE((msg), 1) + (GET_BYTE((msg), 2) << 8) + GET_BYTE((msg), 3)) / 2U)  // avg between 2 tracks
 
 const LongitudinalLimits HONDA_BOSCH_LONG_LIMITS = {
-  .max_accel = 200,   // accel is used for brakes
+  .max_accel = 400,   // accel is used for brakes
   .min_accel = -350,
 
   .max_gas = 2000,

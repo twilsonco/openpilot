@@ -5,7 +5,7 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
-from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, T_IDXS as T_IDXS_MPC
+from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
 from openpilot.selfdrive.frogpilot.functions.conditional_experimental_mode import ConditionalExperimentalMode
@@ -54,7 +54,6 @@ class FrogPilotPlanner:
   def __init__(self, params):
     self.DH = DesireHelper()
     self.cem = ConditionalExperimentalMode()
-    self.mpc = LongitudinalMpc()
     self.mtsc = MapTurnSpeedController()
 
     self.override_slc = False
@@ -69,7 +68,7 @@ class FrogPilotPlanner:
 
     self.update_frogpilot_params(params)
 
-  def update(self, sm):
+  def update(self, sm, mpc):
     carState, controlsState, modelData = sm['carState'], sm['controlsState'], sm['modelV2']
 
     v_cruise_kph = min(controlsState.vCruise, V_CRUISE_MAX)
@@ -94,9 +93,11 @@ class FrogPilotPlanner:
     if v_ego > MIN_TARGET_V:
       self.v_cruise = self.update_v_cruise(carState, controlsState, modelData, v_cruise, v_ego)
     else:
+      self.mtsc_target = v_cruise
+      self.vtsc_target = v_cruise
       self.v_cruise = v_cruise
 
-    self.x_desired_trajectory_full = np.interp(ModelConstants.T_IDXS, T_IDXS_MPC, self.mpc.x_solution)
+    self.x_desired_trajectory_full = np.interp(ModelConstants.T_IDXS, T_IDXS_MPC, mpc.x_solution)
     self.x_desired_trajectory = self.x_desired_trajectory_full[:CONTROL_N]
 
   def update_v_cruise(self, carState, controlsState, modelData, v_cruise, v_ego):
@@ -121,19 +122,18 @@ class FrogPilotPlanner:
       else:
         self.override_slc = False
 
-      # Set the max speed to the manual set speed
-      if carState.gasPressed:
-        self.overridden_speed = np.clip(v_ego, self.slc_target, v_cruise)
-
       self.overridden_speed *= controlsState.enabled
 
       # Use the override speed if SLC is being overridden
       if self.override_slc:
         if self.speed_limit_controller_override == 1:
-          self.slc_target = v_cruise
-        elif self.speed_limit_controller_override == 2:
+          # Set the max speed to the manual set speed
+          if carState.gasPressed:
+            self.overridden_speed = np.clip(v_ego, self.slc_target, v_cruise)
           self.slc_target = self.overridden_speed
-
+        elif self.speed_limit_controller_override == 2:
+          self.overridden_speed = v_cruise
+          self.slc_target = v_cruise
       if self.slc_target == 0:
         self.slc_target = v_cruise
     else:
@@ -166,35 +166,34 @@ class FrogPilotPlanner:
     v_ego_diff = max(carState.vEgoRaw - carState.vEgoCluster, 0)
     return min(v_cruise, self.mtsc_target, self.slc_target, self.vtsc_target) - v_ego_diff
 
-  def publish(self, sm, pm):
-    # FrogPilot lateral variables
+  def publish_lateral(self, sm, pm, DH):
     frogpilot_lateral_plan_send = messaging.new_message('frogpilotLateralPlan')
     frogpilot_lateral_plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState', 'modelV2'])
     frogpilotLateralPlan = frogpilot_lateral_plan_send.frogpilotLateralPlan
 
-    frogpilotLateralPlan.laneWidthLeft = float(self.DH.lane_width_left)
-    frogpilotLateralPlan.laneWidthRight = float(self.DH.lane_width_right)
+    frogpilotLateralPlan.laneWidthLeft = float(DH.lane_width_left)
+    frogpilotLateralPlan.laneWidthRight = float(DH.lane_width_right)
 
     pm.send('frogpilotLateralPlan', frogpilot_lateral_plan_send)
 
+  def publish_longitudinal(self, sm, pm, mpc):
     frogpilot_longitudinal_plan_send = messaging.new_message('frogpilotLongitudinalPlan')
     frogpilot_longitudinal_plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
     frogpilotLongitudinalPlan = frogpilot_longitudinal_plan_send.frogpilotLongitudinalPlan
 
     frogpilotLongitudinalPlan.adjustedCruise = float(min(self.mtsc_target, self.vtsc_target) * (CV.MS_TO_KPH if self.is_metric else CV.MS_TO_MPH))
-
-    frogpilotLongitudinalPlan.conditionalExperimental = self.cem.experimental_mode
     frogpilotLongitudinalPlan.distances = self.x_desired_trajectory.tolist()
+    frogpilotLongitudinalPlan.redLight = bool(self.cem.red_light_detected)
 
     frogpilotLongitudinalPlan.slcOverridden = self.override_slc
     frogpilotLongitudinalPlan.slcOverriddenSpeed = float(self.overridden_speed)
     frogpilotLongitudinalPlan.slcSpeedLimit = float(self.slc_target)
     frogpilotLongitudinalPlan.slcSpeedLimitOffset = float(SpeedLimitController.offset)
 
-    frogpilotLongitudinalPlan.safeObstacleDistance = self.mpc.safe_obstacle_distance
-    frogpilotLongitudinalPlan.stoppedEquivalenceFactor = self.mpc.stopped_equivalence_factor
-    frogpilotLongitudinalPlan.desiredFollowDistance = self.mpc.safe_obstacle_distance - self.mpc.stopped_equivalence_factor
-    frogpilotLongitudinalPlan.safeObstacleDistanceStock = self.mpc.safe_obstacle_distance_stock
+    frogpilotLongitudinalPlan.safeObstacleDistance = mpc.safe_obstacle_distance
+    frogpilotLongitudinalPlan.stoppedEquivalenceFactor = mpc.stopped_equivalence_factor
+    frogpilotLongitudinalPlan.desiredFollowDistance = mpc.safe_obstacle_distance - mpc.stopped_equivalence_factor
+    frogpilotLongitudinalPlan.safeObstacleDistanceStock = mpc.safe_obstacle_distance_stock
 
     pm.send('frogpilotLongitudinalPlan', frogpilot_longitudinal_plan_send)
 
