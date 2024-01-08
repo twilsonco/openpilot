@@ -19,7 +19,7 @@ private:
   void hideEvent(QHideEvent *event);
   void hideSubToggles();
   void parentToggleClicked();
-  void updateState();
+  void updateMetric();
   void updateToggles();
 
   std::set<QString> customOnroadUIKeys;

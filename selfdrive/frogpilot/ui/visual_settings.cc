@@ -138,9 +138,10 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
   modelUIKeys = {"AccelerationPath", "LaneLinesWidth", "PathEdgeWidth", "PathWidth", "RoadEdgesWidth", "UnlimitedLength"};
 
   QObject::connect(parent, &SettingsWindow::closeParentToggle, this, &FrogPilotVisualsPanel::hideSubToggles);
-  QObject::connect(uiState(), &UIState::uiUpdate, this, &FrogPilotVisualsPanel::updateState);
+  QObject::connect(parent, &SettingsWindow::updateMetric, this, &FrogPilotVisualsPanel::updateMetric);
 
   hideSubToggles();
+  updateMetric();
 }
 
 void FrogPilotVisualsPanel::updateToggles() {
@@ -151,16 +152,9 @@ void FrogPilotVisualsPanel::updateToggles() {
   }).detach();
 }
 
-void FrogPilotVisualsPanel::updateState() {
-  static bool checkedOnBoot = false;
-
+void FrogPilotVisualsPanel::updateMetric() {
   bool previousIsMetric = isMetric;
   isMetric = params.getBool("IsMetric");
-
-  if (checkedOnBoot) {
-    if (previousIsMetric == isMetric) return;
-  }
-  checkedOnBoot = true;
 
   if (isMetric != previousIsMetric) {
     double distanceConversion = isMetric ? INCH_TO_CM : CM_TO_INCH;
