@@ -123,6 +123,10 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   connect(toggles["ExperimentalLongitudinalEnabled"], &ToggleControl::toggleFlipped, [=]() {
     updateToggles();
   });
+
+  connect(toggles["IsMetric"], &ToggleControl::toggleFlipped, [=]() {
+    updateMetric();
+  });
 }
 
 void TogglesPanel::expandToggleDescription(const QString &param) {
@@ -429,6 +433,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   TogglesPanel *toggles = new TogglesPanel(this);
   QObject::connect(this, &SettingsWindow::expandToggleDescription, toggles, &TogglesPanel::expandToggleDescription);
+  QObject::connect(toggles, &TogglesPanel::updateMetric, this, &SettingsWindow::updateMetric);
 
   FrogPilotControlsPanel *controls = new FrogPilotControlsPanel(this);
   QObject::connect(controls, &FrogPilotControlsPanel::closeParentToggle, this, [this]() {frogPilotTogglesOpen = false;});
