@@ -42,10 +42,10 @@ What is FrogPilot? 🐸
 FrogPilot is my custom "Frog Themed" fork of openpilot that has been tailored to improve the driving experience for my 2019 Lexus ES 350. I resync with the latest version of master quite frequently, so this fork is always up to date. I also strive to make every commit I make easy to read and easily cherry-pickable, so feel free to use any of my features in your own personal forks in any way that you see fit!
 
 ------
-
 FrogPilot was last updated on:
+<img width="10%" align="left" src="./selfdrive/assets/img_spinner_comma.png">
 
-**January 1st, 2024**
+**January 12th, 2024**
 
 Features
 ------
