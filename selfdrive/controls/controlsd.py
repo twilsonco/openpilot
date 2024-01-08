@@ -31,8 +31,6 @@ from openpilot.selfdrive.controls.lib.alertmanager import AlertManager, set_offr
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.system.hardware import HARDWARE
 
-from openpilot.selfdrive.frogpilot.functions.conditional_experimental_mode import ConditionalExperimentalMode
-
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
@@ -471,7 +469,7 @@ class Controls:
 
     # Green light alert
     if self.green_light_alert and self.enabled:
-      stopped_for_light = ConditionalExperimentalMode.red_light_detected and CS.standstill
+      stopped_for_light = self.sm['frogpilotLongitudinalPlan'].redLight and CS.standstill
       green_light = not stopped_for_light and self.stopped_for_light_previously and not CS.gasPressed
       self.stopped_for_light_previously = stopped_for_light
 

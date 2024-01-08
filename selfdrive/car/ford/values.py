@@ -32,7 +32,7 @@ class CarControllerParams:
   ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.000225, 0.00015])
   CURVATURE_ERROR = 0.002  # ~6 degrees at 10 m/s, ~10 degrees at 35 m/s
 
-  ACCEL_MAX = 4.0 if Params().get_int("AccelerationProfile") == 4 else 2.0
+  ACCEL_MAX = 4.0 if Params().get_int("AccelerationProfile") == 3 else 2.0
   ACCEL_MIN = -3.5              # m/s^2 max deceleration
   MIN_GAS = -0.5
   INACTIVE_GAS = -5.0

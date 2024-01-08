@@ -17,7 +17,7 @@ Ecu = car.CarParams.Ecu
 
 class CarControllerParams:
   ACCEL_MIN = -3.5 # m/s
-  ACCEL_MAX = 4.0 if Params().get_int("AccelerationProfile") == 4 else 2.0
+  ACCEL_MAX = 4.0 if Params().get_int("AccelerationProfile") == 3 else 2.0
 
   def __init__(self, CP):
     self.STEER_DELTA_UP = 3
