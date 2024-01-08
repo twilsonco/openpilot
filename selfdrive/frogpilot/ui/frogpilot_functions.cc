@@ -47,7 +47,7 @@ void setDefaultParams() {
 
   std::map<std::string, std::string> defaultValues {
     {"AccelerationPath", FrogsGoMoo ? "1" : "0"},
-    {"AccelerationProfile", "2"},
+    {"AccelerationProfile", FrogsGoMoo ? "3" : "2"},
     {"AdjacentPath", FrogsGoMoo ? "1" : "0"},
     {"AdjustablePersonalities", "3"},
     {"AggressiveAcceleration", "1"},
