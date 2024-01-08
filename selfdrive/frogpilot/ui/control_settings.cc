@@ -379,6 +379,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
     });
   }
 
+  QObject::connect(parent, &SettingsWindow::closeParentToggle, this, &FrogPilotControlsPanel::hideSubToggles);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &FrogPilotControlsPanel::updateState);
 
   hideSubToggles();
@@ -393,87 +394,78 @@ void FrogPilotControlsPanel::updateToggles() {
 }
 
 void FrogPilotControlsPanel::updateState() {
-  if (isVisible()) {
-    if (paramsMemory.getInt("FrogPilotTogglesOpen") == 2) {
-      hideSubToggles();
-    }
+  static bool checkedOnBoot = false;
+
+  bool previousIsMetric = isMetric;
+  isMetric = params.getBool("IsMetric");
+
+  if (checkedOnBoot) {
+    if (previousIsMetric == isMetric) return;
+  }
+  checkedOnBoot = true;
+
+  if (isMetric != previousIsMetric) {
+    double distanceConversion = isMetric ? FOOT_TO_METER : METER_TO_FOOT;
+    double speedConversion = isMetric ? MILE_TO_KM : KM_TO_MILE;
+    params.putInt("CESpeed", std::nearbyint(params.getInt("CESpeed") * speedConversion));
+    params.putInt("CESpeedLead", std::nearbyint(params.getInt("CESpeedLead") * speedConversion));
+    params.putInt("Offset1", std::nearbyint(params.getInt("Offset1") * speedConversion));
+    params.putInt("Offset2", std::nearbyint(params.getInt("Offset2") * speedConversion));
+    params.putInt("Offset3", std::nearbyint(params.getInt("Offset3") * speedConversion));
+    params.putInt("Offset4", std::nearbyint(params.getInt("Offset4") * speedConversion));
+    params.putInt("StoppingDistance", std::nearbyint(params.getInt("StoppingDistance") * distanceConversion));
   }
 
-  std::thread([this] {
-    static bool checkedOnBoot = false;
+  FrogPilotParamValueControl *offset1Toggle = static_cast<FrogPilotParamValueControl*>(toggles["Offset1"]);
+  FrogPilotParamValueControl *offset2Toggle = static_cast<FrogPilotParamValueControl*>(toggles["Offset2"]);
+  FrogPilotParamValueControl *offset3Toggle = static_cast<FrogPilotParamValueControl*>(toggles["Offset3"]);
+  FrogPilotParamValueControl *offset4Toggle = static_cast<FrogPilotParamValueControl*>(toggles["Offset4"]);
+  FrogPilotParamValueControl *stoppingDistanceToggle = static_cast<FrogPilotParamValueControl*>(toggles["StoppingDistance"]);
 
-    bool previousIsMetric = isMetric;
-    isMetric = params.getBool("IsMetric");
+  if (isMetric) {
+    offset1Toggle->setTitle("Speed Limit Offset (0-34 kph)");
+    offset2Toggle->setTitle("Speed Limit Offset (35-54 kph)");
+    offset3Toggle->setTitle("Speed Limit Offset (55-64 kph)");
+    offset4Toggle->setTitle("Speed Limit Offset (65-99 kph)");
 
-    if (checkedOnBoot) {
-      if (previousIsMetric == isMetric) return;
-    }
-    checkedOnBoot = true;
+    offset1Toggle->setDescription("Set speed limit offset for limits between 0-34 kph.");
+    offset2Toggle->setDescription("Set speed limit offset for limits between 35-54 kph.");
+    offset3Toggle->setDescription("Set speed limit offset for limits between 55-64 kph.");
+    offset4Toggle->setDescription("Set speed limit offset for limits between 65-99 kph.");
 
-    if (isMetric != previousIsMetric) {
-      const double distanceConversion = isMetric ? FOOT_TO_METER : METER_TO_FOOT;
-      const double speedConversion = isMetric ? MILE_TO_KM : KM_TO_MILE;
-      params.putInt("CESpeed", std::nearbyint(params.getInt("CESpeed") * speedConversion));
-      params.putInt("CESpeedLead", std::nearbyint(params.getInt("CESpeedLead") * speedConversion));
-      params.putInt("Offset1", std::nearbyint(params.getInt("Offset1") * speedConversion));
-      params.putInt("Offset2", std::nearbyint(params.getInt("Offset2") * speedConversion));
-      params.putInt("Offset3", std::nearbyint(params.getInt("Offset3") * speedConversion));
-      params.putInt("Offset4", std::nearbyint(params.getInt("Offset4") * speedConversion));
-      params.putInt("StoppingDistance", std::nearbyint(params.getInt("StoppingDistance") * distanceConversion));
-    }
+    offset1Toggle->updateControl(0, 99, " kph");
+    offset2Toggle->updateControl(0, 99, " kph");
+    offset3Toggle->updateControl(0, 99, " kph");
+    offset4Toggle->updateControl(0, 99, " kph");
+    stoppingDistanceToggle->updateControl(0, 5, " meters");
+  } else {
+    offset1Toggle->setTitle("Speed Limit Offset (0-34 mph)");
+    offset2Toggle->setTitle("Speed Limit Offset (35-54 mph)");
+    offset3Toggle->setTitle("Speed Limit Offset (55-64 mph)");
+    offset4Toggle->setTitle("Speed Limit Offset (65-99 mph)");
 
-    FrogPilotParamValueControl *offset1Toggle = static_cast<FrogPilotParamValueControl*>(toggles["Offset1"]);
-    FrogPilotParamValueControl *offset2Toggle = static_cast<FrogPilotParamValueControl*>(toggles["Offset2"]);
-    FrogPilotParamValueControl *offset3Toggle = static_cast<FrogPilotParamValueControl*>(toggles["Offset3"]);
-    FrogPilotParamValueControl *offset4Toggle = static_cast<FrogPilotParamValueControl*>(toggles["Offset4"]);
-    FrogPilotParamValueControl *stoppingDistanceToggle = static_cast<FrogPilotParamValueControl*>(toggles["StoppingDistance"]);
+    offset1Toggle->setDescription("Set speed limit offset for limits between 0-34 mph.");
+    offset2Toggle->setDescription("Set speed limit offset for limits between 35-54 mph.");
+    offset3Toggle->setDescription("Set speed limit offset for limits between 55-64 mph.");
+    offset4Toggle->setDescription("Set speed limit offset for limits between 65-99 mph.");
 
-    if (isMetric) {
-      offset1Toggle->setTitle("Speed Limit Offset (0-34 kph)");
-      offset2Toggle->setTitle("Speed Limit Offset (35-54 kph)");
-      offset3Toggle->setTitle("Speed Limit Offset (55-64 kph)");
-      offset4Toggle->setTitle("Speed Limit Offset (65-99 kph)");
+    offset1Toggle->updateControl(0, 99, " mph");
+    offset2Toggle->updateControl(0, 99, " mph");
+    offset3Toggle->updateControl(0, 99, " mph");
+    offset4Toggle->updateControl(0, 99, " mph");
+    stoppingDistanceToggle->updateControl(0, 10, " feet");
+  }
 
-      offset1Toggle->setDescription("Set speed limit offset for limits between 0-34 kph.");
-      offset2Toggle->setDescription("Set speed limit offset for limits between 35-54 kph.");
-      offset3Toggle->setDescription("Set speed limit offset for limits between 55-64 kph.");
-      offset4Toggle->setDescription("Set speed limit offset for limits between 65-99 kph.");
+  offset1Toggle->refresh();
+  offset2Toggle->refresh();
+  offset3Toggle->refresh();
+  offset4Toggle->refresh();
+  stoppingDistanceToggle->refresh();
 
-      offset1Toggle->updateControl(0, 99, " kph");
-      offset2Toggle->updateControl(0, 99, " kph");
-      offset3Toggle->updateControl(0, 99, " kph");
-      offset4Toggle->updateControl(0, 99, " kph");
-      stoppingDistanceToggle->updateControl(0, 5, " meters");
-    } else {
-      offset1Toggle->setTitle("Speed Limit Offset (0-34 mph)");
-      offset2Toggle->setTitle("Speed Limit Offset (35-54 mph)");
-      offset3Toggle->setTitle("Speed Limit Offset (55-64 mph)");
-      offset4Toggle->setTitle("Speed Limit Offset (65-99 mph)");
-
-      offset1Toggle->setDescription("Set speed limit offset for limits between 0-34 mph.");
-      offset2Toggle->setDescription("Set speed limit offset for limits between 35-54 mph.");
-      offset3Toggle->setDescription("Set speed limit offset for limits between 55-64 mph.");
-      offset4Toggle->setDescription("Set speed limit offset for limits between 65-99 mph.");
-
-      offset1Toggle->updateControl(0, 99, " mph");
-      offset2Toggle->updateControl(0, 99, " mph");
-      offset3Toggle->updateControl(0, 99, " mph");
-      offset4Toggle->updateControl(0, 99, " mph");
-      stoppingDistanceToggle->updateControl(0, 10, " feet");
-    }
-
-    offset1Toggle->refresh();
-    offset2Toggle->refresh();
-    offset3Toggle->refresh();
-    offset4Toggle->refresh();
-    stoppingDistanceToggle->refresh();
-
-    previousIsMetric = isMetric;
-  }).detach();
+  previousIsMetric = isMetric;
 }
 
 void FrogPilotControlsPanel::parentToggleClicked() {
-  paramsMemory.putInt("FrogPilotTogglesOpen", 1);
   aggressiveProfile->setVisible(false);
   conditionalSpeedsImperial->setVisible(false);
   conditionalSpeedsMetric->setVisible(false);
@@ -481,11 +473,11 @@ void FrogPilotControlsPanel::parentToggleClicked() {
   slscPriorityButton->setVisible(false);
   standardProfile->setVisible(false);
   relaxedProfile->setVisible(false);
+
+  this->openParentToggle();
 }
 
 void FrogPilotControlsPanel::hideSubToggles() {
-  paramsMemory.putInt("FrogPilotTogglesOpen", 0);
-
   aggressiveProfile->setVisible(false);
   conditionalSpeedsImperial->setVisible(false);
   conditionalSpeedsMetric->setVisible(false);
@@ -504,6 +496,8 @@ void FrogPilotControlsPanel::hideSubToggles() {
                             visionTurnControlKeys.find(key.c_str()) != visionTurnControlKeys.end();
     toggle->setVisible(!subToggles);
   }
+
+  this->closeParentToggle();
 }
 
 void FrogPilotControlsPanel::hideEvent(QHideEvent *event) {
