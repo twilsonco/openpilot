@@ -36,8 +36,11 @@ NON_LINEAR_TORQUE_PARAMS = {
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_pid_accel_limits(CP, current_speed, cruise_speed):
-    return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
+  def get_pid_accel_limits(CP, current_speed, cruise_speed, sport_plus):
+    if sport_plus:
+      return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX_PLUS
+    else:
+      return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   # Determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
   @staticmethod
@@ -431,5 +434,5 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c, now_nanos):
+  def apply(self, c, now_nanos, sport_plus):
     return self.CC.update(c, self.CS, now_nanos)

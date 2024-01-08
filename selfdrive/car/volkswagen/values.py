@@ -6,7 +6,6 @@ from typing import Dict, List, Union
 from cereal import car
 from panda.python import uds
 from opendbc.can.can_define import CANDefine
-from openpilot.common.params import Params
 from openpilot.selfdrive.car import dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                            Device
@@ -35,7 +34,7 @@ class CarControllerParams:
   STEER_TIME_ALERT = STEER_TIME_MAX - 10   # If mitigation fails, time to soft disengage before EPS timer expires
   STEER_TIME_STUCK_TORQUE = 1.9            # EPS limits same torque to 6 seconds, reset timer 3x within that period
 
-  ACCEL_MAX = 4.0 if Params().get_int("AccelerationProfile") == 3 else 2.0
+  ACCEL_MAX = 2.0                          # 2.0 m/s max acceleration
   ACCEL_MIN = -3.5                         # 3.5 m/s max deceleration
 
   def __init__(self, CP):

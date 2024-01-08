@@ -56,5 +56,5 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c, now_nanos):
+  def apply(self, c, now_nanos, sport_plus):
     return self.CC.update(c, self.CS, now_nanos)
