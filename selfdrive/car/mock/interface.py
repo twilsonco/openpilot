@@ -30,6 +30,6 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c, now_nanos):
+  def apply(self, c, now_nanos, sport_plus):
     actuators = car.CarControl.Actuators.new_message()
     return actuators, []

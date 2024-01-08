@@ -7,7 +7,6 @@ from typing import Dict, List, Optional, Set, Tuple, Union
 from cereal import car
 from panda.python import uds
 from openpilot.common.conversions import Conversions as CV
-from openpilot.common.params import Params
 from openpilot.selfdrive.car import dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
@@ -17,7 +16,8 @@ Ecu = car.CarParams.Ecu
 
 class CarControllerParams:
   ACCEL_MIN = -3.5 # m/s
-  ACCEL_MAX = 4.0 if Params().get_int("AccelerationProfile") == 3 else 2.0
+  ACCEL_MAX = 2.0 # m/s
+  ACCEL_MAX_PLUS = 4.0 # m/s
 
   def __init__(self, CP):
     self.STEER_DELTA_UP = 3
