@@ -33,6 +33,7 @@ signals:
 
   // FrogPilot signals
   void closeParentToggle();
+  void updateMetric();
 private:
   QPushButton *sidebar_alert_widget;
   QWidget *sidebar_widget;
@@ -66,6 +67,10 @@ class TogglesPanel : public ListWidget {
 public:
   explicit TogglesPanel(SettingsWindow *parent);
   void showEvent(QShowEvent *event) override;
+
+signals:
+  // FrogPilot signals
+  void updateMetric();
 
 public slots:
   void expandToggleDescription(const QString &param);

@@ -245,10 +245,10 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
       FrogPilotParamManageControl *speedLimitControllerToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
       QObject::connect(speedLimitControllerToggle, &FrogPilotParamManageControl::manageButtonClicked, this, [this]() {
         parentToggleClicked();
-        slscPriorityButton->setVisible(true);
         for (auto &[key, toggle] : toggles) {
           toggle->setVisible(speedLimitControllerKeys.find(key.c_str()) != speedLimitControllerKeys.end());
         }
+        slscPriorityButton->setVisible(true);
       });
       toggle = speedLimitControllerToggle;
     } else if (param == "Offset1" || param == "Offset2" || param == "Offset3" || param == "Offset4") {
@@ -258,7 +258,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
       FrogPilotButtonParamControl *fallbackSelection = new FrogPilotButtonParamControl(param, title, desc, icon, fallbackOptions);
       toggle = fallbackSelection;
     } else if (param == "SLCOverride") {
-      std::vector<QString> overrideOptions{tr("None"), tr("Gas Pedal"), tr("Max Set Speed")};
+      std::vector<QString> overrideOptions{tr("None"), tr("Manual Set Speed"), tr("Max Set Speed")};
       FrogPilotButtonParamControl *overrideSelection = new FrogPilotButtonParamControl(param, title, desc, icon, overrideOptions);
       toggle = overrideSelection;
     } else if (param == "SLCPriority") {
@@ -367,7 +367,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
   laneChangeKeys = {"LaneChangeTime", "LaneDetection", "OneLaneChange", "PauseLateralOnSignal"};
   lateralTuneKeys = {"AverageCurvature", "NNFF"};
   longitudinalTuneKeys = {"AccelerationProfile", "AggressiveAcceleration", "SmoothBraking", "StoppingDistance"};
-  speedLimitControllerKeys = {"Offset1", "Offset2", "Offset3", "Offset4", "SLCFallback", "SLCPriority"};
+  speedLimitControllerKeys = {"Offset1", "Offset2", "Offset3", "Offset4", "SLCFallback", "SLCOverride", "SLCPriority"};
   visionTurnControlKeys = {"CurveSensitivity", "TurnAggressiveness"};
 
   std::set<std::string> rebootKeys = {"AlwaysOnLateral", "FireTheBabysitter", "NoLogging", "MuteDM", "NNFF"};
@@ -380,9 +380,10 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
   }
 
   QObject::connect(parent, &SettingsWindow::closeParentToggle, this, &FrogPilotControlsPanel::hideSubToggles);
-  QObject::connect(uiState(), &UIState::uiUpdate, this, &FrogPilotControlsPanel::updateState);
+  QObject::connect(parent, &SettingsWindow::updateMetric, this, &FrogPilotControlsPanel::updateMetric);
 
   hideSubToggles();
+  updateMetric();
 }
 
 void FrogPilotControlsPanel::updateToggles() {
@@ -393,16 +394,9 @@ void FrogPilotControlsPanel::updateToggles() {
   }).detach();
 }
 
-void FrogPilotControlsPanel::updateState() {
-  static bool checkedOnBoot = false;
-
+void FrogPilotControlsPanel::updateMetric() {
   bool previousIsMetric = isMetric;
   isMetric = params.getBool("IsMetric");
-
-  if (checkedOnBoot) {
-    if (previousIsMetric == isMetric) return;
-  }
-  checkedOnBoot = true;
 
   if (isMetric != previousIsMetric) {
     double distanceConversion = isMetric ? FOOT_TO_METER : METER_TO_FOOT;
