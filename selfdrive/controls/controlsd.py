@@ -204,7 +204,7 @@ class Controls:
     self.desired_curvature = 0.0
     self.desired_curvature_rate = 0.0
     self.experimental_mode = False
-    self.v_cruise_helper = VCruiseHelper(self.CP, self.is_metric)
+    self.v_cruise_helper = VCruiseHelper(self.CP)
     self.recalibrating_seen = False
     self.nn_alert_shown = False
 
