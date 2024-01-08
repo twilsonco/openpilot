@@ -200,9 +200,6 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
         if (id == 3) {
           FrogPilotConfirmationDialog::toggleAlert("WARNING: This maxes out openpilot's acceleration from 2.0 m/s to 4.0 m/s and may cause oscillations when accelerating!", 
           "I understand the risks.", this);
-          if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
-            Hardware::reboot();
-          }
         }
       });
     } else if (param == "StoppingDistance") {

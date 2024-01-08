@@ -35,7 +35,7 @@ class CarController:
     self.lkas_enabled_last = False
     self.steer_alert_last = False
 
-  def update(self, CC, CS, now_nanos):
+  def update(self, CC, CS, now_nanos, sport_plus):
     can_sends = []
 
     actuators = CC.actuators
@@ -85,7 +85,10 @@ class CarController:
     # send acc msg at 50Hz
     if self.CP.openpilotLongitudinalControl and (self.frame % CarControllerParams.ACC_CONTROL_STEP) == 0:
       # Both gas and accel are in m/s^2, accel is used solely for braking
-      accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+      if sport_plus:
+        accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX_PLUS)
+      else:
+        accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
       gas = accel
       if not CC.longActive or gas < CarControllerParams.MIN_GAS:
         gas = CarControllerParams.INACTIVE_GAS
