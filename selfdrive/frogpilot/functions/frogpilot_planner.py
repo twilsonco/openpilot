@@ -64,6 +64,8 @@ class FrogPilotPlanner:
   def update(self, sm, mpc):
     carState, controlsState, modelData = sm['carState'], sm['controlsState'], sm['modelV2']
 
+    enabled = controlsState.enabled
+
     v_cruise_kph = min(controlsState.vCruise, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
     v_ego = carState.vEgo
@@ -80,11 +82,11 @@ class FrogPilotPlanner:
       self.accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
 
     # Conditional Experimental Mode
-    if self.conditional_experimental_mode:
+    if self.conditional_experimental_mode and enabled:
       self.cem.update(carState, sm['frogpilotNavigation'], sm['modelV2'], sm['radarState'], carState.standstill, v_ego)
 
     if v_ego > MIN_TARGET_V:
-      self.v_cruise = self.update_v_cruise(carState, controlsState, modelData, v_cruise, v_ego)
+      self.v_cruise = self.update_v_cruise(carState, controlsState, modelData, enabled, v_cruise, v_ego)
     else:
       self.mtsc_target = v_cruise
       self.vtsc_target = v_cruise
@@ -93,7 +95,7 @@ class FrogPilotPlanner:
     self.x_desired_trajectory_full = np.interp(ModelConstants.T_IDXS, T_IDXS_MPC, mpc.x_solution)
     self.x_desired_trajectory = self.x_desired_trajectory_full[:CONTROL_N]
 
-  def update_v_cruise(self, carState, controlsState, modelData, v_cruise, v_ego):
+  def update_v_cruise(self, carState, controlsState, modelData, enabled, v_cruise, v_ego):
     # Pfeiferj's Map Turn Speed Controller
     if self.map_turn_speed_controller:
       self.mtsc_target = np.clip(self.mtsc.target_speed(v_ego, carState.aEgo), MIN_TARGET_V, v_cruise)
@@ -110,12 +112,12 @@ class FrogPilotPlanner:
       # Override SLC upon gas pedal press and reset upon brake/cancel button
       if self.speed_limit_controller_override:
         self.override_slc |= carState.gasPressed
-        self.override_slc &= controlsState.enabled
+        self.override_slc &= enabled
         self.override_slc &= v_ego > self.slc_target
       else:
         self.override_slc = False
 
-      self.overridden_speed *= controlsState.enabled
+      self.overridden_speed *= enabled
 
       # Use the override speed if SLC is being overridden
       if self.override_slc:
