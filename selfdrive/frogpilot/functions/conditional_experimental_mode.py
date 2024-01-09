@@ -130,7 +130,7 @@ class ConditionalExperimentalMode:
       return True
 
     # Stop sign and light check
-    if self.stop_lights and self.red_light_detected and (self.stop_lights_lead or not self.lead_detected):
+    if self.stop_lights and self.red_light_detected and (self.stop_lights_lead or not self.lead_slowing_down):
       self.status_value = 12
       return True
 
@@ -152,7 +152,7 @@ class ConditionalExperimentalMode:
   def v_lead_slowing_down(self, radarState):
     if self.lead_detected:
       v_lead = radarState.leadOne.vLead
-      self.lead_slowing_down_gmac.add_data(v_lead < self.previous_v_lead)
+      self.lead_slowing_down_gmac.add_data(v_lead < self.previous_v_lead or v_lead < 1)
       self.lead_slowing_down = self.lead_slowing_down_gmac.get_moving_average() >= PROBABILITY
       self.previous_v_lead = v_lead
     else:
@@ -198,7 +198,7 @@ class ConditionalExperimentalMode:
     # Check if the model data is consistent and wants to stop
     model_check = len(modelData.orientation.x) == len(modelData.position.x) == TRAJECTORY_SIZE
     model_stopping = modelData.position.x[TRAJECTORY_SIZE - 1] < interp(v_ego * CV.MS_TO_KPH, SLOW_DOWN_BP, SLOW_DOWN_DISTANCE)
-    self.slow_down_gmac.add_data(model_check and model_stopping and not self.curve_detected)
+    self.slow_down_gmac.add_data(model_check and model_stopping and not self.curve_detected and not self.slower_lead_detected)
 
     self.red_light_detected = self.slow_down_gmac.get_moving_average() >= PROBABILITY
 
