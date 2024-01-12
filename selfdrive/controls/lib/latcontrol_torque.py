@@ -282,10 +282,11 @@ class LatControlTorque(LatControl):
 
         # compute NN error response.
         lookahead_lateral_jerk = apply_deadzone(lookahead_lateral_jerk, self.lat_jerk_deadzone)
+        if self.use_steering_angle or lookahead_lateral_jerk == 0.0:
+          lookahead_lateral_jerk = 0.0
+          self.actual_lateral_jerk.x = 0.0
         lateral_jerk_setpoint = self.lat_jerk_friction_factor * lookahead_lateral_jerk
         lateral_jerk_measurement = self.lat_jerk_friction_factor * self.actual_lateral_jerk.x
-        if self.use_steering_angle or lookahead_lateral_jerk == 0.0:
-          lateral_jerk_measurement = 0.0
 
         # compute NNFF error response
         nnff_setpoint_input = [CS.vEgo, setpoint, lateral_jerk_setpoint, roll] \
