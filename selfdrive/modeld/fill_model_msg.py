@@ -105,26 +105,18 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
       lane_line = modelV2.laneLines[i]
       far_lane, near_lane, road_edge = (0, 1, 0) if i == 4 else (3, 2, 1)
 
-      # Calculate averages for lane lines and road edges
-      lane_x_avg = (net_output_data['lane_lines'][0,far_lane,:,0] +
-                    net_output_data['lane_lines'][0,near_lane,:,0]) / 2
-      lane_y_avg = (net_output_data['lane_lines'][0,far_lane,:,1] +
-                    net_output_data['lane_lines'][0,near_lane,:,1]) / 2
+      y_min = net_output_data['lane_lines'][0, near_lane,:,0]
+      z_min = net_output_data['lane_lines'][0, near_lane,:,1]
+      lane_diff = np.abs(net_output_data['lane_lines'][0,near_lane] - net_output_data['lane_lines'][0,far_lane])
+      road_edge_diff = np.abs(net_output_data['lane_lines'][0,near_lane] - net_output_data['road_edges'][0,road_edge])
 
-      road_edge_x_avg = (net_output_data['road_edges'][0,road_edge,:,0] +
-                         net_output_data['lane_lines'][0,near_lane,:,0]) / 2
-      road_edge_y_avg = (net_output_data['road_edges'][0,road_edge,:,1] +
-                         net_output_data['lane_lines'][0,near_lane,:,1]) / 2
+      y_min += np.where(lane_diff[:,0] < road_edge_diff[:,0], net_output_data['lane_lines'][0,far_lane,:,0], net_output_data['road_edges'][0,road_edge,:,0])
+      z_min += np.where(lane_diff[:,1] < road_edge_diff[:,1], net_output_data['lane_lines'][0,far_lane,:,1], net_output_data['road_edges'][0,road_edge,:,1])
 
-      # Determine which set of averages to use
-      if np.all(np.abs(road_edge_x_avg) < np.abs(lane_x_avg)):
-        x_min = road_edge_x_avg
-        y_min = road_edge_y_avg
-      else:
-        x_min = lane_x_avg
-        y_min = lane_y_avg
+      y_min /= 2
+      z_min /= 2
 
-      fill_xyzt(lane_line, PLAN_T_IDXS, np.array(ModelConstants.X_IDXS), x_min, y_min)
+      fill_xyzt(lane_line, PLAN_T_IDXS, np.array(ModelConstants.X_IDXS), y_min, z_min)
 
   modelV2.laneLineStds = net_output_data['lane_lines_stds'][0,:,0,0].tolist()
   modelV2.laneLineProbs = net_output_data['lane_lines_prob'][0,1::2].tolist()
