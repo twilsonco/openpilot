@@ -300,7 +300,7 @@ class CarState(CarStateBase):
 
     # Toggle Experimental Mode from steering wheel function
     if self.experimental_mode_via_press and ret.cruiseState.available:
-      lkas_pressed = cp.vl[self.cruise_btns_msg_canfd]["LFA_BTN"]
+      lkas_pressed = cp.vl[self.cruise_btns_msg_canfd]["LKAS_BTN"]
       if lkas_pressed and not self.lkas_previously_pressed:
         if self.conditional_experimental_mode:
           # Set "CEStatus" to work with "Conditional Experimental Mode"
