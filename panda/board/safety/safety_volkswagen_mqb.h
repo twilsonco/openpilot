@@ -230,7 +230,9 @@ static bool volkswagen_mqb_tx_hook(CANPacket_t *to_send) {
       desired_accel = (((GET_BYTE(to_send, 7) << 3) | ((GET_BYTE(to_send, 6) & 0xE0U) >> 5)) * 5U) - 7220U;
     }
 
-    violation |= longitudinal_accel_checks(desired_accel, VOLKSWAGEN_MQB_LONG_LIMITS);
+    if (desired_accel != 0) {
+      violation |= longitudinal_accel_checks(desired_accel, VOLKSWAGEN_MQB_LONG_LIMITS);
+    }
 
     if (violation) {
       tx = false;
