@@ -520,8 +520,9 @@ This resulted in [NNFF fits for 106 cars](https://github.com/twilsonco/openpilot
 
 ## Where to try?
 
-`installer.comma.ai/twilsonco/nnff-ni-driving` is the current "master"-based fork with NNFF for 122 cars total
-`installer.comma.ai/twilsonco/nnff-sunny` is the SunnyPilot `dev-c3` branch with NNFF added
+`https://installer.comma.ai/twilsonco/nnff-master` is the current "master"-based fork with NNFF for over 500 cars (incl. different EPS firmwares of the same cars) total
+`https://installer.comma.ai/sunnyhaibin/dev-c3` is SunnyPilot's fast-paced branch with NNFF (called "NNLC") added
+`https://installer.comma.ai/frogai/frogpilot` FrogPilot also has NNFF added
 
 # Future of data-driven lateral controls improvements
 
