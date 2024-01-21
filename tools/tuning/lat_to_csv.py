@@ -28,9 +28,11 @@ from typing import List
 import time
 
 DEBUG=0 # number of segments to load. 0 for no debugging
-MAX_LAT_FILES = 9000
+MAX_LAT_FILES = 7000
 
 DONGLE_ID_BLACKLIST = {}
+
+STEER_AND_EPS_SOURCE_CARS = ["GENESIS", "MAZDA", "SUBARU"]
 
 def sanitize(filename):
     """Return a fairly safe version of the filename.
@@ -675,6 +677,8 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
     
     tot_num_points = 0
     tot_num_points_by_eps_firmware = defaultdict(int)
+    tot_num_pickle = 0
+    tot_num_pickle_by_eps_firmware = defaultdict(int)
     
     if DEBUG:
       random.shuffle(pickle_files)
@@ -688,8 +692,13 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
           pk = pickle.load(f)
         except:
           continue
+        pickle_incremented = False
         for s in pk:
           eps_fp = s.car_eps_fp
+          if not pickle_incremented:
+            tot_num_pickle += 1
+            tot_num_pickle_by_eps_firmware[eps_fp] += 1
+            pickle_incremented = True
           if skip_by_eps_firmware[eps_fp]:
             continue
           if s.v_ego < 0.1 or (s.car_make in ["chrysler"] and abs(s.lateral_accel) > 0.1 and s.lateral_accel_device == 0.0):
@@ -989,7 +998,8 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
 
         # adjust the spacing between subplots
         np.set_printoptions(precision=2)
-        approx_logtime = len(pickle_files) / 60.0
+        num_pickle = tot_num_pickle_by_eps_firmware[eps_firmware] if eps_firmware != 'combined' else tot_num_pickle
+        approx_logtime = num_pickle / 60.0
         eps_firmware_str = "" if len(eps_firmwares) <= 1 else f" | eps_firmware: {eps_firmware}"
         suptitle=f"{carname}{eps_firmware_str} ({approx_logtime:0.0f} hrs of log data) | lat_accel (factor {1.0/slopes[0]:0.3f}) vs. steer cmd and eps/driver torque\nLeft three columns colored by user, right three by speed (up to {human_readable(batch_size)} pts per plot) | steer cmd: {describe_to_string(steer_cmd_stats)}\neps: {describe_to_string(eps_stats)} | driver: {describe_to_string(driver_stats)}\nlat accel: {describe_to_string(lat_accel_stats)} | lat jerk {describe_to_string(describe([s.lateral_jerk for s in samples]))}\nv_ego {describe_to_string(v_ego_stats)} | a_ego {describe_to_string(long_accel_stats)}\nroll {describe_to_string(roll_stats)}"
         if DEBUG:
@@ -1042,15 +1052,27 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
         # This also requires checking the times of each point.
         
         no_eps_torque_data = True
+        pos_found = False
+        neg_found = False
         for s in samples:
-          if abs(s.torque_eps) > 0.5:
+          if not pos_found and s.torque_eps > 0.5:
+            pos_found = True
+          elif not neg_found and s.torque_eps < -0.5:
+            neg_found = True
+          if pos_found and neg_found:
             print("  eps torque > 0.5 detected, can use eps torque data")
             no_eps_torque_data = False
             break
         
         approx_lat_jerk = True
+        pos_found = False
+        neg_found = False
         for s in samples:
-          if abs(s.lateral_jerk) > 0.5:
+          if not pos_found and s.lateral_jerk > 0.5:
+            pos_found = True
+          elif not neg_found and s.lateral_jerk < -0.5:
+            neg_found = True
+          if pos_found and neg_found:
             print("  lateral jerk > 0.5 detected, not approximating lateral jerk")
             approx_lat_jerk = False
             break
@@ -1104,9 +1126,14 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
           check_sources = ['combined_torque_good', 'driver_torque_good', 'eps_torque_good', 'steer_cmd_good']
           torque_sources = ['torque_adjusted_eps']
           check_sources = ['eps_torque_good']
+          # torque_sources = ['steer_cmd']
+          # check_sources = ['steer_cmd_good']
           if no_eps_torque_data:
             torque_sources = ['steer_cmd']
             check_sources = ['steer_cmd_good']
+          elif any([chk in model for chk in STEER_AND_EPS_SOURCE_CARS]):
+            torque_sources = ['torque_adjusted_eps', 'steer_cmd']
+            check_sources = ['eps_torque_good', 'steer_cmd_good']
           eps_firmware_str = "" if len(eps_firmwares) <= 1 else f"_{sanitize(eps_firmware)}"
           for torque_source, check_source in zip(torque_sources, check_sources):
             print(f"  Processing {torque_source}...")
@@ -1116,13 +1143,13 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
             outdata = []
             dt_max = min([j-i for i, j in zip(record_times[:-1], record_times[1:])])
             iter = 0
-            data.reverse()
+            # data.reverse()
             with tqdm(total=len(data)) as pbar:
-              while len(data) > 0:
-              # for sample in data:
+              # while len(data) > 0:
+              for sample in data:
                 iter += 1
                 pbar.update(1)
-                sample = data.pop()
+                # sample = data.pop()
                 if iter > 10000000:
                   gc.collect()
                   iter = 0
@@ -1157,9 +1184,10 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
             if len(outdata) < 100:
               continue
             
-            samples = None
-            data = None
-            gc.collect()
+            if torque_source == torque_sources[-1]:
+              samples = None
+              data = None
+              gc.collect()
             
             # pickle.dump(data, open(output_csv.replace(".csv", ".pkl"), "wb"))
             # pickle.dump(data, lzma.open(output_csv.replace(".csv", ".pkl.xz"), "wb"))
@@ -1194,8 +1222,7 @@ def has_upper_word(text):
     return False
 
 # iterate over all directories and subdirectories in the specified path
-whitelist = []
-whitelist = []
+whitelist = [] + STEER_AND_EPS_SOURCE_CARS
 blacklist = ["nissan", "ford", "mock"]
 dirlist=[]
 ignore_files_with_past_num_days = 0
@@ -1213,7 +1240,7 @@ for root, dirs, files in os.walk(input_dir):
             # if the modified time is within the cutoff and the corresponding flag is set, skip directory.
             # Get png file modifited time:
             if print_stats:
-              png_files = sorted([f for f in os.listdir(d) if f.endswith('.png')])
+              png_files = sorted([f for f in os.listdir(d) if f.endswith('.png') if "_b'" not in f or "combined" in f])
               if len(png_files) > 0:
                 png_file = os.path.join(d, png_files[0])
                 png_file_mtime = os.path.getmtime(png_file)
@@ -1221,7 +1248,7 @@ for root, dirs, files in os.walk(input_dir):
                   print(f"Skipping {d} because png file is too new")
                   continue
             if save_output:
-              feather_files = sorted([f for f in os.listdir(d) if f.endswith('.feather')])
+              feather_files = sorted([f for f in os.listdir(d) if f.endswith('.feather') if "_b'" not in f or "combined" in f])
               if len(feather_files) > 0:
                 feather_file = os.path.join(d, feather_files[0])
                 feather_file_mtime = os.path.getmtime(feather_file)
