@@ -7,6 +7,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     {"AccelerationPath", "Acceleration Path", "Visualize the car's intended acceleration or deceleration with a color-coded path.", ""},
 
     {"QOLVisuals", "Quality of Life", "Miscellaneous quality of life changes to improve your overall openpilot experience.", "../frogpilot/assets/toggle_icons/quality_of_life.png"},
+    {"DriveStats", "Drive Stats In Home Screen", "Display your device's drive stats in the home screen.", ""},
   };
 
   for (const auto &[param, title, desc, icon] : visualToggles) {
@@ -56,7 +57,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     });
   }
 
-  std::set<std::string> rebootKeys = {""};
+  std::set<std::string> rebootKeys = {"DriveStats"};
   for (const std::string &key : rebootKeys) {
     QObject::connect(toggles[key], &ToggleControl::toggleFlipped, [this]() {
       if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
@@ -68,7 +69,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
   customOnroadUIKeys = {"AccelerationPath"};
   customThemeKeys = {};
   modelUIKeys = {};
-  qolKeys = {};
+  qolKeys = {"DriveStats"};
 
   QObject::connect(device(), &Device::interactiveTimeout, this, &FrogPilotVisualsPanel::hideSubToggles);
   QObject::connect(parent, &SettingsWindow::closeParentToggle, this, &FrogPilotVisualsPanel::hideSubToggles);
