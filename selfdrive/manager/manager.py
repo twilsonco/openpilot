@@ -9,6 +9,7 @@ from typing import List, Tuple, Union
 from cereal import log
 import cereal.messaging as messaging
 import openpilot.selfdrive.sentry as sentry
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params, ParamKeyType
 from openpilot.common.text_window import TextWindow
 from openpilot.selfdrive.boardd.set_time import set_time
@@ -23,6 +24,7 @@ from openpilot.system.version import is_dirty, get_commit, get_version, get_orig
                            is_tested_branch, is_release_branch
 
 
+PREBUILT_FILE = os.path.join(BASEDIR, 'prebuilt')
 
 def manager_init() -> None:
   # update system time from panda
@@ -301,6 +303,10 @@ def main() -> None:
   manager_init()
   if os.getenv("PREPAREONLY") is not None:
     return
+
+  # Remove the prebuilt file to prevent boot failures
+  if os.path.exists(PREBUILT_FILE):
+    os.remove(PREBUILT_FILE)
 
   # SystemExit on sigterm
   signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))

@@ -13,11 +13,13 @@ import psutil
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.dict_helpers import strip_deprecated_keys
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_TRML
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
+from openpilot.selfdrive.manager.manager import PREBUILT_FILE
 from openpilot.system.hardware import HARDWARE, TICI, AGNOS
 from openpilot.system.loggerd.config import get_available_bytes, get_available_percent, get_used_bytes
 from openpilot.selfdrive.statsd import statlog
@@ -451,6 +453,10 @@ def thermald_thread(end_event, hw_queue) -> None:
     count += 1
     should_start_prev = should_start
 
+    # Create the prebuilt file if it doesn't exist
+    if not os.path.exists(PREBUILT_FILE):
+      if os.path.exists(os.path.join(BASEDIR, "selfdrive/modeld/models/supercombo.thneed")):
+        os.system(f"touch {PREBUILT_FILE}")
 
 def main():
   hw_queue = queue.Queue(maxsize=1)
