@@ -23,6 +23,8 @@ private:
   void updateMetric();
   void updateToggles();
 
+  FrogPilotButtonIconControl *modelSelectorButton;
+
   FrogPilotDualParamControl *aggressiveProfile;
   FrogPilotDualParamControl *conditionalSpeedsImperial;
   FrogPilotDualParamControl *conditionalSpeedsMetric;

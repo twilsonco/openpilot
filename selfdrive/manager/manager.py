@@ -23,6 +23,7 @@ from openpilot.system.version import is_dirty, get_commit, get_version, get_orig
                            get_normalized_origin, terms_version, training_version, \
                            is_tested_branch, is_release_branch
 
+from openpilot.selfdrive.frogpilot.functions.model_switcher import set_model
 
 PREBUILT_FILE = os.path.join(BASEDIR, 'prebuilt')
 
@@ -224,6 +225,8 @@ def manager_init() -> None:
   for p in managed_processes.values():
     p.prepare()
 
+  # Set the desired model
+  set_model(params)
 
 def manager_cleanup() -> None:
   # send signals to kill all procs
