@@ -256,6 +256,7 @@ static void update_state(UIState *s) {
       scene.speed_limit_overridden_speed = frogpilotPlan.getSlcOverriddenSpeed();
     }
     scene.adjusted_cruise = frogpilotPlan.getAdjustedCruise();
+    scene.vtsc_controlling_curve = frogpilotPlan.getVtscControllingCurve();
   }
   if (sm.updated("liveLocationKalman")) {
     auto liveLocationKalman = sm["liveLocationKalman"].getLiveLocationKalman();

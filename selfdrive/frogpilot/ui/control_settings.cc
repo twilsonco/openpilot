@@ -62,6 +62,10 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
     {"SLCOverride", "Override Method", "Choose your preferred method to override the current speed limit.", ""},
 
     {"TurnDesires", "Use Turn Desires", "Use turn desires for enhanced precision in turns below the minimum lane change speed.", "../assets/navigation/direction_continue_right.png"},
+
+    {"VisionTurnControl", "Vision Turn Speed Controller", "Slow down for detected road curvature for smoother curve handling.", "../frogpilot/assets/toggle_icons/icon_vtc.png"},
+    {"CurveSensitivity", "Curve Detection Sensitivity", "Set curve detection sensitivity. Higher values prompt earlier responses, lower values lead to smoother but later reactions.", ""},
+    {"TurnAggressiveness", "Turn Speed Aggressiveness", "Set turn speed aggressiveness. Higher values result in faster turns, lower values yield gentler turns.", ""},
   };
 
   for (const auto &[param, title, desc, icon] : controlToggles) {
@@ -368,6 +372,18 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
       slscPriorityButton->setValue(initialPriorities.join(", "));
       addItem(slscPriorityButton);
 
+    } else if (param == "VisionTurnControl") {
+      FrogPilotParamManageControl *visionTurnControlToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
+      QObject::connect(visionTurnControlToggle, &FrogPilotParamManageControl::manageButtonClicked, this, [this]() {
+        parentToggleClicked();
+        for (auto &[key, toggle] : toggles) {
+          toggle->setVisible(visionTurnControlKeys.find(key.c_str()) != visionTurnControlKeys.end());
+        }
+      });
+      toggle = visionTurnControlToggle;
+    } else if (param == "CurveSensitivity" || param == "TurnAggressiveness") {
+      toggle = new FrogPilotParamValueControl(param, title, desc, icon, 1, 200, std::map<int, QString>(), this, false, "%");
+
     } else {
       toggle = new ParamControl(param, title, desc, icon, this);
     }
@@ -409,7 +425,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
   mtscKeys = {"MTSCAggressiveness"};
   qolKeys = {"DisableOnroadUploads", "HigherBitrate", "NavChill", "PauseLateralOnSignal", "ReverseCruise", "SetSpeedOffset"};
   speedLimitControllerKeys = {"Offset1", "Offset2", "Offset3", "Offset4", "SLCFallback", "SLCOverride", "SLCPriority"};
-  visionTurnControlKeys = {};
+  visionTurnControlKeys = {"CurveSensitivity", "TurnAggressiveness"};
 
   QObject::connect(uiState(), &UIState::offroadTransition, this, [this](bool offroad) {
     if (!offroad) {
