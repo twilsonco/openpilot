@@ -6,8 +6,12 @@ from openpilot.selfdrive.controls.lib.longitudinal_planner import A_CRUISE_MIN, 
 
 from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
 
+from openpilot.selfdrive.frogpilot.functions.conditional_experimental_mode import ConditionalExperimentalMode
+
 class FrogPilotPlanner:
   def __init__(self, params, params_memory):
+    self.cem = ConditionalExperimentalMode()
+
     self.v_cruise = 0
 
     self.accel_limits = [A_CRUISE_MIN, get_max_accel(0)]
@@ -17,6 +21,8 @@ class FrogPilotPlanner:
   def update(self, carState, controlsState, modelData, mpc, sm, v_cruise, v_ego):
     enabled = controlsState.enabled
 
+    road_curvature = FrogPilotFunctions.road_curvature(modelData, v_ego)
+
     # Acceleration profiles
     if self.acceleration_profile == 1:
       self.accel_limits = [FrogPilotFunctions.get_min_accel_eco(v_ego), FrogPilotFunctions.get_max_accel_eco(v_ego)]
@@ -24,6 +30,10 @@ class FrogPilotPlanner:
       self.accel_limits = [FrogPilotFunctions.get_min_accel_sport(v_ego), FrogPilotFunctions.get_max_accel_sport(v_ego)]
     else:
       self.accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
+
+    # Conditional Experimental Mode
+    if self.conditional_experimental_mode and enabled:
+      self.cem.update(carState, sm['frogpilotNavigation'], modelData, mpc, sm['radarState'], road_curvature, carState.standstill, v_ego)
 
     self.v_cruise = self.update_v_cruise(carState, controlsState, modelData, enabled, v_cruise, v_ego)
 
@@ -45,6 +55,8 @@ class FrogPilotPlanner:
     frogpilot_plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
     frogpilotPlan = frogpilot_plan_send.frogpilotPlan
 
+    frogpilotPlan.conditionalExperimental = self.cem.experimental_mode
+
     frogpilotPlan.laneWidthLeft = self.lane_width_left
     frogpilotPlan.laneWidthRight = self.lane_width_right
 
@@ -52,6 +64,11 @@ class FrogPilotPlanner:
 
   def update_frogpilot_params(self, params, params_memory):
     self.is_metric = params.get_bool("IsMetric")
+
+    self.conditional_experimental_mode = params.get_bool("ConditionalExperimental")
+    if self.conditional_experimental_mode:
+      self.cem.update_frogpilot_params(self.is_metric, params)
+      params.put_bool("ExperimentalMode", True)
 
     custom_ui = params.get_bool("CustomUI")
     self.blind_spot_path = params.get_bool("BlindSpotPath") and custom_ui

@@ -175,6 +175,7 @@ typedef struct UIScene {
   bool blind_spot_left;
   bool blind_spot_path;
   bool blind_spot_right;
+  bool conditional_experimental;
   bool custom_onroad_ui;
   bool enabled;
   bool experimental_mode;
@@ -183,6 +184,9 @@ typedef struct UIScene {
   float lane_width_left;
   float lane_width_right;
   int camera_view;
+  int conditional_speed;
+  int conditional_speed_lead;
+  int conditional_status;
   QPolygonF track_adjacent_vertices[6];
 
 } UIScene;

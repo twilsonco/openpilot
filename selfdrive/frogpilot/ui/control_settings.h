@@ -23,6 +23,9 @@ private:
   void updateMetric();
   void updateToggles();
 
+  FrogPilotDualParamControl *conditionalSpeedsImperial;
+  FrogPilotDualParamControl *conditionalSpeedsMetric;
+
   std::set<QString> conditionalExperimentalKeys;
   std::set<QString> fireTheBabysitterKeys;
   std::set<QString> laneChangeKeys;
