@@ -182,6 +182,7 @@ typedef struct UIScene {
   bool quality_of_life_visuals;
   float lane_width_left;
   float lane_width_right;
+  int camera_view;
   QPolygonF track_adjacent_vertices[6];
 
 } UIScene;
