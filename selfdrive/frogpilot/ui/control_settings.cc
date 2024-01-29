@@ -22,6 +22,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
     {"AggressiveAcceleration", "Aggressive Acceleration With Lead", "Increase acceleration aggressiveness when following a lead vehicle from a stop.", ""},
 
     {"QOLControls", "Quality of Life", "Miscellaneous quality of life changes to improve your overall openpilot experience.", "../frogpilot/assets/toggle_icons/quality_of_life.png"},
+    {"DisableOnroadUploads", "Disable Onroad Uploads", "Prevent large data uploads when onroad.", ""},
   };
 
   for (const auto &[param, title, desc, icon] : controlToggles) {
@@ -215,7 +216,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
   lateralTuneKeys = {};
   longitudinalTuneKeys = {"AccelerationProfile", "AggressiveAcceleration"};
   mtscKeys = {};
-  qolKeys = {};
+  qolKeys = {"DisableOnroadUploads"};
   speedLimitControllerKeys = {};
   visionTurnControlKeys = {};
 
