@@ -38,6 +38,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     {"HideSpeed", "Hide Speed", "Hide the speed indicator in the onroad UI. Additional toggle allows it to be hidden/shown via tapping the speed itself.", ""},
 
     {"ScreenBrightness", "Screen Brightness", "Customize your screen brightness.", "../frogpilot/assets/toggle_icons/icon_light.png"},
+    {"SilentMode", "Silent Mode", "Mute openpilot sounds for a quieter driving experience.", "../frogpilot/assets/toggle_icons/icon_mute.png"},
   };
 
   for (const auto &[param, title, desc, icon] : visualToggles) {
