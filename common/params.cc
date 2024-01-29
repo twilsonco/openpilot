@@ -278,6 +278,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"QOLVisuals", PERSISTENT},
     {"RelaxedFollow", PERSISTENT},
     {"RelaxedJerk", PERSISTENT},
+    {"ReverseCruise", PERSISTENT},
+    {"ReverseCruiseUI", PERSISTENT},
     {"RoadEdgesWidth", PERSISTENT},
     {"ShowCPU", PERSISTENT},
     {"ShowGPU", PERSISTENT},
