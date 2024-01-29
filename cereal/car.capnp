@@ -116,11 +116,13 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     locationdPermanentError @118;
     paramsdTemporaryError @50;
     paramsdPermanentError @119;
+    openpilotCrashedRandomEvents @120;
     frogSteerSaturated @121;
     greenLight @122;
     openpilotCrashed @123;
     pedalInterceptorNoBrake @124;
     torqueNNLoad @125;
+    firefoxSteerSaturated @128;
 
     radarCanErrorDEPRECATED @15;
     communityFeatureDisallowedDEPRECATED @62;
@@ -412,6 +414,9 @@ struct CarControl {
       prompt @6;
       promptRepeat @7;
       promptDistracted @8;
+
+      fart @9;
+      firefox @10;
     }
   }
 

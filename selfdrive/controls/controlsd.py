@@ -90,7 +90,10 @@ class Controls:
     mute_dm = fire_the_babysitter and self.params.get_bool("MuteDM")
 
     self.openpilot_crashed = False
+    self.random_event_triggered = False
     self.stopped_for_light_previously = False
+
+    self.random_event_timer = 0
 
     ignore = self.sensor_packets + ['testJoystick']
     if SIMULATION:
@@ -249,6 +252,9 @@ class Controls:
     # Show crash log event if openpilot crashed
     if os.path.isfile(os.path.join(sentry.CRASHES_DIR, 'error.txt')):
       self.events.add(EventName.openpilotCrashed)
+      if self.random_events and not self.openpilot_crashed:
+        self.events.add(EventName.openpilotCrashedRandomEvents)
+        self.openpilot_crashed = True
       return
 
     # Add joystick event, static on cars, dynamic on nonCars
@@ -632,6 +638,14 @@ class Controls:
 
     frogpilot_plan = self.sm['frogpilotPlan']
 
+    # Reset the Random Event flag
+    if self.random_event_triggered:
+      self.random_event_timer += 1
+      if self.random_event_timer >= 500:
+        self.random_event_triggered = False
+        self.random_event_timer = 0
+        self.params_memory.remove("CurrentRandomEvent")
+
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
 
@@ -725,8 +739,13 @@ class Controls:
         turning = abs(lac_log.desiredLateralAccel) > 1.0
         good_speed = CS.vEgo > 5
         max_torque = abs(self.last_actuators.steer) > 0.99
-        if undershooting and turning and good_speed and max_torque:
-          lac_log.active and self.events.add(EventName.frogSteerSaturated if self.goat_scream else EventName.steerSaturated)
+        if undershooting and turning and good_speed and max_torque and not self.random_event_triggered:
+          if self.sm.frame % 10000 == 0:
+            lac_log.active and self.events.add(EventName.firefoxSteerSaturated)
+            self.params_memory.put_int("CurrentRandomEvent", 1)
+            self.random_event_triggered = True
+          else:
+            lac_log.active and self.events.add(EventName.frogSteerSaturated if self.goat_scream else EventName.steerSaturated)
       elif lac_log.saturated:
         # TODO probably should not use dpath_points but curvature
         dpath_points = model_v2.position.y
@@ -1004,6 +1023,8 @@ class Controls:
     self.pause_lateral_on_signal = self.params.get_int("PauseLateralOnSignal") * (CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS) if quality_of_life else 0
     self.frogpilot_variables.reverse_cruise_increase = self.params.get_bool("ReverseCruise") and quality_of_life
     self.frogpilot_variables.set_speed_offset = self.params.get_int("SetSpeedOffset") * (1 if self.is_metric else CV.MPH_TO_KPH) if quality_of_life else 0
+
+    self.random_events = self.params.get_bool("RandomEvents")
 
 def main():
   controls = Controls()
