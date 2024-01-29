@@ -352,6 +352,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SLCPriority2", PERSISTENT},
     {"SLCPriority3", PERSISTENT},
     {"SmoothBraking", PERSISTENT},
+    {"SNGHack", PERSISTENT},
     {"SpeedLimitController", PERSISTENT},
     {"StandardFollow", PERSISTENT},
     {"StandardJerk", PERSISTENT},

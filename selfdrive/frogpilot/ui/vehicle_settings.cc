@@ -107,6 +107,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
     {"LowerVolt", "Lower Volt Enable Speed", "Lower the Volt's minimum enable speed to enable openpilot at any speed.", ""},
 
     {"LockDoors", "Lock Doors In Drive", "Automatically lock the doors when in drive and unlock when in park.", ""},
+    {"SNGHack", "Stop and Go Hack", "Enable the 'Stop and Go' hack for vehicles without stock stop and go functionality.", ""},
   };
 
   for (auto &[param, title, desc, icon] : vehicleToggles) {
@@ -122,7 +123,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
   }
 
   gmKeys = {"GasRegenCmd", "LongPitch", "LowerVolt"};
-  toyotaKeys = {"LockDoors"};
+  toyotaKeys = {"LockDoors", "SNGHack"};
 
   std::set<std::string> rebootKeys = {"GasRegenCmd", "LongPitch", "LowerVolt"};
   for (const std::string &key : rebootKeys) {

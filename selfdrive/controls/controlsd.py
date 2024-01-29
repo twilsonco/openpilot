@@ -1017,6 +1017,7 @@ class Controls:
     longitudinal_tune = self.params.get_bool("LongitudinalTune")
     self.frogpilot_variables.sport_plus = self.params.get_int("AccelerationProfile") == 3 and longitudinal_tune
 
+    self.frogpilot_variables.sng_hack = self.params.get_bool("SNGHack")
     self.frogpilot_variables.personalities_via_wheel = self.params.get_bool("PersonalitiesViaWheel") and self.params.get_bool("AdjustablePersonalities")
 
     quality_of_life = self.params.get_bool("QOLControls")
