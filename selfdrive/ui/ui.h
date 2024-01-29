@@ -180,6 +180,7 @@ typedef struct UIScene {
   bool custom_theme;
   bool enabled;
   bool experimental_mode;
+  bool map_open;
   bool model_ui;
   bool quality_of_life_controls;
   bool quality_of_life_visuals;
