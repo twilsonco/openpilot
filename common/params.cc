@@ -223,6 +223,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"OfflineMode", PERSISTENT},
     {"QOLControls", PERSISTENT},
     {"QOLVisuals", PERSISTENT},
+    {"UpdateSchedule", PERSISTENT},
+    {"UpdateTime", PERSISTENT},
 };
 
 } // namespace
