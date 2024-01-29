@@ -15,7 +15,7 @@ const SteeringLimits VOLKSWAGEN_MQB_STEERING_LIMITS = {
 // longitudinal limits
 // acceleration in m/s2 * 1000 to avoid floating point math
 const LongitudinalLimits VOLKSWAGEN_MQB_LONG_LIMITS = {
-  .max_accel = 2000,
+  .max_accel = 4000,
   .min_accel = -3500,
   .inactive_accel = 3010,  // VW sends one increment above the max range when inactive
 };
@@ -231,7 +231,9 @@ static bool volkswagen_mqb_tx_hook(const CANPacket_t *to_send) {
       desired_accel = (((GET_BYTE(to_send, 7) << 3) | ((GET_BYTE(to_send, 6) & 0xE0U) >> 5)) * 5U) - 7220U;
     }
 
-    violation |= longitudinal_accel_checks(desired_accel, VOLKSWAGEN_MQB_LONG_LIMITS);
+    if (desired_accel != 0) {
+      violation |= longitudinal_accel_checks(desired_accel, VOLKSWAGEN_MQB_LONG_LIMITS);
+    }
 
     if (violation) {
       tx = false;
