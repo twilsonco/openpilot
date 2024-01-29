@@ -118,6 +118,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     paramsdPermanentError @119;
     frogSteerSaturated @121;
     greenLight @122;
+    openpilotCrashed @123;
     torqueNNLoad @125;
 
     radarCanErrorDEPRECATED @15;
