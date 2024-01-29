@@ -70,6 +70,14 @@ class FrogPilotPlanner:
       self.cem.update_frogpilot_params(self.is_metric, params)
       params.put_bool("ExperimentalMode", True)
 
+    self.custom_personalities = params.get_bool("CustomPersonalities")
+    self.aggressive_follow = params.get_int("AggressiveFollow") / 10
+    self.standard_follow = params.get_int("StandardFollow") / 10
+    self.relaxed_follow = params.get_int("RelaxedFollow") / 10
+    self.aggressive_jerk = params.get_int("AggressiveJerk") / 10
+    self.standard_jerk = params.get_int("StandardJerk") / 10
+    self.relaxed_jerk = params.get_int("RelaxedJerk") / 10
+
     custom_ui = params.get_bool("CustomUI")
     self.blind_spot_path = params.get_bool("BlindSpotPath") and custom_ui
 

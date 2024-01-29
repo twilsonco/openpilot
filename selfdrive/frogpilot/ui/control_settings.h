@@ -23,8 +23,11 @@ private:
   void updateMetric();
   void updateToggles();
 
+  FrogPilotDualParamControl *aggressiveProfile;
   FrogPilotDualParamControl *conditionalSpeedsImperial;
   FrogPilotDualParamControl *conditionalSpeedsMetric;
+  FrogPilotDualParamControl *standardProfile;
+  FrogPilotDualParamControl *relaxedProfile;
 
   std::set<QString> conditionalExperimentalKeys;
   std::set<QString> fireTheBabysitterKeys;
