@@ -201,6 +201,7 @@ typedef struct UIScene {
   bool turn_signal_right;
   bool unlimited_road_ui_length;
   bool use_si;
+  float adjusted_cruise;
   float lane_line_width;
   float lane_width_left;
   float lane_width_right;

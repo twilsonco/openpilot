@@ -246,6 +246,7 @@ static void update_state(UIState *s) {
       scene.obstacle_distance_stock = frogpilotPlan.getSafeObstacleDistanceStock();
       scene.stopped_equivalence = frogpilotPlan.getStoppedEquivalenceFactor();
     }
+    scene.adjusted_cruise = frogpilotPlan.getAdjustedCruise();
   }
   if (sm.updated("liveLocationKalman")) {
     auto liveLocationKalman = sm["liveLocationKalman"].getLiveLocationKalman();
