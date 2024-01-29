@@ -47,6 +47,12 @@ class CarControllerParams:
       # Camera transitions to MAX_ACC_REGEN from ZERO_GAS and uses friction brakes instantly
       max_regen_acceleration = 0.
 
+    elif CP.carFingerprint in SDGM_CAR:
+      self.MAX_GAS = 3400
+      self.MAX_ACC_REGEN = 1514
+      self.INACTIVE_REGEN = 1554
+      max_regen_acceleration = 0.
+
     else:
       self.MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
       self.MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
@@ -87,6 +93,7 @@ class CAR(StrEnum):
   YUKON_CC = "GMC YUKON NO ACC"
   CT6_CC = "CADILLAC CT6 NO ACC"
   TRAILBLAZER_CC = "CHEVROLET TRAILBLAZER 2024 NO ACC"
+  XT4 = "CADILLAC XT4 2023"
 
 
 class Footnote(Enum):
@@ -138,6 +145,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.YUKON_CC: GMCarInfo("GMC Yukon No ACC"),
   CAR.CT6_CC: GMCarInfo("Cadillac CT6 No ACC"),
   CAR.TRAILBLAZER_CC: GMCarInfo("Chevrolet Trailblazer 2024 No ACC"),
+  CAR.XT4: GMCarInfo("Cadillac XT4 2023", "Driver Assist Package"),
 }
 
 
@@ -175,6 +183,9 @@ DBC[CAR.VOLT_CC] = DBC[CAR.VOLT]
 
 EV_CAR = {CAR.VOLT, CAR.BOLT_EUV, CAR.VOLT_CC, CAR.BOLT_CC}
 CC_ONLY_CAR = {CAR.VOLT_CC, CAR.BOLT_CC, CAR.EQUINOX_CC, CAR.SUBURBAN_CC, CAR.YUKON_CC, CAR.CT6_CC, CAR.TRAILBLAZER_CC}
+
+# We're integrated at the Safety Data Gateway Module on these cars
+SDGM_CAR = {CAR.XT4}
 
 # We're integrated at the camera with VOACC on these cars (instead of ASCM w/ OBD-II harness)
 CAMERA_ACC_CAR = {CAR.BOLT_EUV, CAR.SILVERADO, CAR.EQUINOX, CAR.TRAILBLAZER}
