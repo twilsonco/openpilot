@@ -187,6 +187,7 @@ typedef struct UIScene {
   bool lead_info;
   bool map_open;
   bool model_ui;
+  bool mute_dm;
   bool quality_of_life_controls;
   bool quality_of_life_visuals;
   bool show_driver_camera;
