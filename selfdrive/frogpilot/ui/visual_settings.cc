@@ -3,6 +3,12 @@
 
 FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilotListWidget(parent) {
   const std::vector<std::tuple<QString, QString, QString, QString>> visualToggles {
+    {"CustomTheme", "Custom Themes", "Enable the ability to use custom themes.", "../frogpilot/assets/wheel_images/frog.png"},
+    {"CustomColors", "Color Theme", "Switch out the standard openpilot color scheme with a custom color scheme.\n\nWant to submit your own color scheme? Post it in the 'feature-request' channel in the FrogPilot Discord!", ""},
+    {"CustomIcons", "Icon Pack", "Switch out the standard openpilot icons with a set of custom icons.\n\nWant to submit your own icon pack? Post it in the 'feature-request' channel in the FrogPilot Discord!", ""},
+    {"CustomSignals", "Turn Signals", "Add custom animations for your turn signals for a personal touch!\n\nWant to submit your own turn signal animation? Post it in the 'feature-request' channel in the FrogPilot Discord!", ""},
+    {"CustomSounds", "Sound Pack", "Switch out the standard openpilot sounds with a set of custom sounds.\n\nWant to submit your own sound pack? Post it in the 'feature-request' channel in the FrogPilot Discord!", ""},
+
     {"CameraView", "Camera View", "Choose your preferred camera view for the onroad UI. This is a visual change only and doesn't impact openpilot.", "../frogpilot/assets/toggle_icons/icon_camera.png"},
 
     {"CustomUI", "Custom Onroad UI", "Customize the Onroad UI with some additional visual functions.", "../assets/offroad/icon_road.png"},
@@ -20,6 +26,32 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
       std::vector<QString> cameraOptions{tr("Auto"), tr("Standard"), tr("Wide"), tr("Driver")};
       FrogPilotButtonParamControl *preferredCamera = new FrogPilotButtonParamControl(param, title, desc, icon, cameraOptions);
       toggle = preferredCamera;
+
+    } else if (param == "CustomTheme") {
+      FrogPilotParamManageControl *customThemeToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
+      QObject::connect(customThemeToggle, &FrogPilotParamManageControl::manageButtonClicked, this, [this]() {
+        parentToggleClicked();
+        for (auto &[key, toggle] : toggles) {
+          toggle->setVisible(customThemeKeys.find(key.c_str()) != customThemeKeys.end());
+        }
+      });
+      toggle = customThemeToggle;
+    } else if (param == "CustomColors" || param == "CustomIcons" || param == "CustomSignals" || param == "CustomSounds") {
+      std::vector<QString> themeOptions{tr("Stock"), tr("Frog"), tr("Tesla"), tr("Stalin")};
+      FrogPilotButtonParamControl *themeSelection = new FrogPilotButtonParamControl(param, title, desc, icon, themeOptions);
+      toggle = themeSelection;
+
+      if (param == "CustomSounds") {
+        QObject::connect(static_cast<FrogPilotButtonParamControl*>(toggle), &FrogPilotButtonParamControl::buttonClicked, [this](int id) {
+          if (id == 1) {
+            if (FrogPilotConfirmationDialog::yesorno("Do you want to enable the bonus 'Goat' sound effect?", this)) {
+              params.putBoolNonBlocking("GoatScream", true);
+            } else {
+              params.putBoolNonBlocking("GoatScream", false);
+            }
+          }
+        });
+      }
 
     } else if (param == "CustomUI") {
       FrogPilotParamManageControl *customUIToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
@@ -75,7 +107,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
   }
 
   customOnroadUIKeys = {"AccelerationPath", "BlindSpotPath"};
-  customThemeKeys = {};
+  customThemeKeys = {"CustomColors", "CustomIcons", "CustomSignals", "CustomSounds"};
   modelUIKeys = {};
   qolKeys = {"DriveStats"};
 
