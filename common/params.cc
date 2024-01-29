@@ -212,6 +212,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"AccelerationPath", PERSISTENT},
     {"AccelerationProfile", PERSISTENT},
     {"AggressiveAcceleration", PERSISTENT},
+    {"AlwaysOnLateral", PERSISTENT},
+    {"AlwaysOnLateralMain", PERSISTENT},
     {"ApiCache_DriveStats", PERSISTENT},
     {"CustomUI", PERSISTENT},
     {"DriveStats", PERSISTENT},
