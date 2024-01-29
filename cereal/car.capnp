@@ -122,6 +122,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     openpilotCrashed @123;
     pedalInterceptorNoBrake @124;
     torqueNNLoad @125;
+    turningLeft @126;
+    turningRight @127;
     firefoxSteerSaturated @128;
 
     radarCanErrorDEPRECATED @15;

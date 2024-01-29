@@ -360,6 +360,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"StoppingDistance", PERSISTENT},
     {"TetheringEnabled", PERSISTENT},
     {"TSS2Tune", PERSISTENT},
+    {"TurnDesires", PERSISTENT},
     {"UnlimitedLength", PERSISTENT},
     {"Updated", PERSISTENT},
     {"UpdateSchedule", PERSISTENT},
