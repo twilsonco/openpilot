@@ -641,18 +641,20 @@ class Controls:
     gear = car.CarState.GearShifter
     driving_gear = CS.gearShifter not in (gear.neutral, gear.park, gear.reverse, gear.unknown)
 
+    signal_check = not ((CS.leftBlinker or CS.rightBlinker) and CS.vEgo < self.pause_lateral_on_signal and not CS.standstill)
+
     # Always on lateral
     if self.always_on_lateral:
       self.lateral_allowed &= CS.cruiseState.available
       self.lateral_allowed |= CS.cruiseState.enabled or (CS.cruiseState.available and self.always_on_lateral_main)
 
-      self.FPCC.alwaysOnLateral = self.lateral_allowed and driving_gear
+      self.FPCC.alwaysOnLateral = self.lateral_allowed and driving_gear and signal_check
       if self.FPCC.alwaysOnLateral:
         self.current_alert_types.append(ET.WARNING)
 
     # Check which actuators can be enabled
     standstill = CS.vEgo <= max(self.CP.minSteerSpeed, MIN_LATERAL_CONTROL_SPEED) or CS.standstill
-    CC.latActive = (self.active or self.FPCC.alwaysOnLateral) and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
+    CC.latActive = (self.active or self.FPCC.alwaysOnLateral) and signal_check and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
                    (not standstill or self.joystick_mode) and not self.openpilot_crashed
     CC.longActive = self.enabled and not self.events.contains(ET.OVERRIDE_LONGITUDINAL) and self.CP.openpilotLongitudinalControl and not self.openpilot_crashed
 
@@ -995,6 +997,7 @@ class Controls:
     self.frogpilot_variables.sport_plus = self.params.get_int("AccelerationProfile") == 3 and longitudinal_tune
 
     quality_of_life = self.params.get_bool("QOLControls")
+    self.pause_lateral_on_signal = self.params.get_int("PauseLateralOnSignal") * (CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS) if quality_of_life else 0
     self.frogpilot_variables.reverse_cruise_increase = self.params.get_bool("ReverseCruise") and quality_of_life
 
 def main():
