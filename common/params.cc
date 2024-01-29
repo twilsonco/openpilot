@@ -263,6 +263,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LaneLinesWidth", PERSISTENT},
     {"LateralTune", PERSISTENT},
     {"LeadInfo", PERSISTENT},
+    {"LockDoors", PERSISTENT},
     {"LongitudinalTune", PERSISTENT},
     {"LongPitch", PERSISTENT},
     {"ModelUI", PERSISTENT},

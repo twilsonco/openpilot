@@ -973,6 +973,7 @@ class Controls:
 
     self.green_light_alert = self.params.get_bool("GreenLightAlert")
 
+    self.frogpilot_variables.lock_doors = self.params.get_bool("LockDoors")
     self.frogpilot_variables.long_pitch = self.params.get_bool("LongPitch")
 
     longitudinal_tune = self.params.get_bool("LongitudinalTune")

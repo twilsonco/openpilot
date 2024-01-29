@@ -104,6 +104,8 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
   std::vector<std::tuple<QString, QString, QString, QString>> vehicleToggles {
     {"GasRegenCmd", "GM Truck Gas Tune", "Increase acceleration and smoothen brake to stop. For use on Silverado/Sierra only.", ""},
     {"LongPitch", "Long Pitch Compensation", "Reduce speed and acceleration error for greater passenger comfort and improved vehicle efficiency.", ""},
+
+    {"LockDoors", "Lock Doors In Drive", "Automatically lock the doors when in drive and unlock when in park.", ""},
   };
 
   for (auto &[param, title, desc, icon] : vehicleToggles) {
@@ -119,7 +121,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
   }
 
   gmKeys = {"GasRegenCmd", "LongPitch"};
-  toyotaKeys = {};
+  toyotaKeys = {"LockDoors"};
 
   std::set<std::string> rebootKeys = {"GasRegenCmd", "LongPitch"};
   for (const std::string &key : rebootKeys) {
