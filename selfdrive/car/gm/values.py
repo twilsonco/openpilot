@@ -172,6 +172,7 @@ class CanBus:
   DROPPED = 192
 
 class GMFlags(IntFlag):
+  CC_LONG = 2
   NO_ACCELERATOR_POS_MSG = 8
 
 
