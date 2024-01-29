@@ -172,11 +172,17 @@ typedef struct UIScene {
   bool acceleration_path;
   bool always_on_lateral;
   bool always_on_lateral_active;
+  bool blind_spot_left;
+  bool blind_spot_path;
+  bool blind_spot_right;
   bool custom_onroad_ui;
   bool enabled;
   bool experimental_mode;
   bool quality_of_life_controls;
   bool quality_of_life_visuals;
+  float lane_width_left;
+  float lane_width_right;
+  QPolygonF track_adjacent_vertices[6];
 
 } UIScene;
 
