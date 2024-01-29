@@ -244,6 +244,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"GoatScream", PERSISTENT},
     {"LaneLinesWidth", PERSISTENT},
     {"LateralTune", PERSISTENT},
+    {"LeadInfo", PERSISTENT},
     {"LongitudinalTune", PERSISTENT},
     {"ModelUI", PERSISTENT},
     {"OfflineMode", PERSISTENT},
@@ -264,6 +265,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"UnlimitedLength", PERSISTENT},
     {"UpdateSchedule", PERSISTENT},
     {"UpdateTime", PERSISTENT},
+    {"UseSI", PERSISTENT},
 };
 
 } // namespace
