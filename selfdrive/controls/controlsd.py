@@ -948,6 +948,8 @@ class Controls:
     frog_sounds = custom_sounds == 1
     self.goat_scream = self.params.get_bool("GoatScream") and frog_sounds
 
+    self.frogpilot_variables.experimental_mode_via_lkas = self.params.get_bool("ExperimentalModeViaLKAS") and self.params.get_bool("ExperimentalModeActivation")
+
     longitudinal_tune = self.params.get_bool("LongitudinalTune")
     self.frogpilot_variables.sport_plus = self.params.get_int("AccelerationProfile") == 3 and longitudinal_tune
 

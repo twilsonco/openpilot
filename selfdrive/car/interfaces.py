@@ -362,6 +362,7 @@ class CarStateBase(ABC):
     self.param = Params()
     self.param_memory = Params("/dev/shm/params")
 
+    self.lkas_previously_pressed = False
     self.main_enabled = False
 
   def update_speed_kf(self, v_ego_raw):
