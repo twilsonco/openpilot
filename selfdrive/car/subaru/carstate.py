@@ -7,6 +7,7 @@ from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, CanBus, SubaruFlags
 from openpilot.selfdrive.car import CanSignalRateCalculator
 
+from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -16,7 +17,7 @@ class CarState(CarStateBase):
 
     self.angle_rate_calulator = CanSignalRateCalculator(50)
 
-  def update(self, cp, cp_cam, cp_body):
+  def update(self, cp, cp_cam, cp_body, frogpilot_variables):
     ret = car.CarState.new_message()
 
     throttle_msg = cp.vl["Throttle"] if self.car_fingerprint not in HYBRID_CARS else cp_body.vl["Throttle_Hybrid"]

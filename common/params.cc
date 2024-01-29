@@ -207,6 +207,14 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Version", PERSISTENT},
     {"VisionRadarToggle", PERSISTENT},
     {"WheeledBody", PERSISTENT},
+
+    // FrogPilot parameters
+    {"CustomUI", PERSISTENT},
+    {"FrogPilotTogglesUpdated", PERSISTENT},
+    {"LateralTune", PERSISTENT},
+    {"LongitudinalTune", PERSISTENT},
+    {"QOLControls", PERSISTENT},
+    {"QOLVisuals", PERSISTENT},
 };
 
 } // namespace

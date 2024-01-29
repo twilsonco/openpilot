@@ -20,7 +20,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 13.
     return ret
 
-  def _update(self, c):
+  def _update(self, c, frogpilot_variables):
     self.sm.update(0)
     gps_sock = 'gpsLocationExternal' if self.sm.rcv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
 
@@ -30,6 +30,6 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c, now_nanos):
+  def apply(self, c, now_nanos, frogpilot_variables):
     actuators = car.CarControl.Actuators.new_message()
     return actuators, []

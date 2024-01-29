@@ -7,6 +7,8 @@ from openpilot.common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.nissan.values import CAR, DBC, CarControllerParams
 
+from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
+
 TORQUE_SAMPLES = 12
 
 class CarState(CarStateBase):
@@ -20,7 +22,7 @@ class CarState(CarStateBase):
     self.steeringTorqueSamples = deque(TORQUE_SAMPLES*[0], TORQUE_SAMPLES)
     self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
 
-  def update(self, cp, cp_adas, cp_cam):
+  def update(self, cp, cp_adas, cp_cam, frogpilot_variables):
     ret = car.CarState.new_message()
 
     if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):

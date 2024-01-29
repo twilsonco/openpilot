@@ -7,6 +7,8 @@ from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD
 
+from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
+
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
 STANDSTILL_THRESHOLD = 10 * 0.0311 * CV.KPH_TO_MS
@@ -26,7 +28,7 @@ class CarState(CarStateBase):
     self.cam_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
 
-  def update(self, pt_cp, cam_cp, loopback_cp):
+  def update(self, pt_cp, cam_cp, loopback_cp, frogpilot_variables):
     ret = car.CarState.new_message()
 
     self.prev_cruise_buttons = self.cruise_buttons

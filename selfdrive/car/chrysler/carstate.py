@@ -5,6 +5,7 @@ from opendbc.can.can_define import CANDefine
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS
 
+from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -21,7 +22,7 @@ class CarState(CarStateBase):
     else:
       self.shifter_values = can_define.dv["GEAR"]["PRNDL"]
 
-  def update(self, cp, cp_cam):
+  def update(self, cp, cp_cam, frogpilot_variables):
 
     ret = car.CarState.new_message()
 

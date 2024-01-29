@@ -11,6 +11,8 @@ from openpilot.selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HOND
                                                  HONDA_BOSCH_RADARLESS
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
+from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
+
 TransmissionType = car.CarParams.TransmissionType
 
 
@@ -108,7 +110,7 @@ class CarState(CarStateBase):
     # However, on cars without a digital speedometer this is not always present (HRV, FIT, CRV 2016, ILX and RDX)
     self.dash_speed_seen = False
 
-  def update(self, cp, cp_cam, cp_body):
+  def update(self, cp, cp_cam, cp_body, frogpilot_variables):
     ret = car.CarState.new_message()
 
     # car params

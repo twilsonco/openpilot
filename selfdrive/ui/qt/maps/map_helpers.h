@@ -7,6 +7,7 @@
 #include <QMapboxGL>
 #include <QGeoCoordinate>
 
+#include "common/params.h"
 #include "common/util.h"
 #include "common/transformations/coordinates.hpp"
 #include "common/transformations/orientation.hpp"

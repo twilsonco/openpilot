@@ -99,10 +99,10 @@ class CarInterface(CarInterfaceBase):
     ret.centerToFront = ret.wheelbase * 0.44
     return ret
 
-  def _update(self, c):
-    ret = self.CS.update(self.cp, self.cp_cam)
+  def _update(self, c, frogpilot_variables):
+    ret = self.CS.update(self.cp, self.cp_cam, frogpilot_variables)
 
-    events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
+    events = self.create_common_events(ret, frogpilot_variables, extra_gears=[GearShifter.manumatic])
     if not self.CS.vehicle_sensors_valid:
       events.add(car.CarEvent.EventName.vehicleSensorsInvalid)
     if self.CS.unsupported_platform:
@@ -112,5 +112,5 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c, now_nanos):
-    return self.CC.update(c, self.CS, now_nanos)
+  def apply(self, c, now_nanos, frogpilot_variables):
+    return self.CC.update(c, self.CS, now_nanos, frogpilot_variables)

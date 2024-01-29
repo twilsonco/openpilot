@@ -1,0 +1,38 @@
+name: Merge FrogPilot into MAKE-PRS-HERE
+
+on:
+  push:
+    branches:
+      - FrogPilot
+
+jobs:
+  merge-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Get current time
+        run: echo "CURRENT_TIME=$(TZ='America/Phoenix' date +'%B %d, %Y Update')" >> $GITHUB_ENV
+
+      - name: Merge changes from FrogPilot to MAKE-PRS-HERE
+        run: |
+          git config user.name "FrogAi"
+          git config user.email "91348155+FrogAi@users.noreply.github.com"
+          git fetch origin
+          git checkout MAKE-PRS-HERE
+          set +e
+          git merge --squash --allow-unrelated-histories origin/FrogPilot
+          MERGE_STATUS=$?
+          if [[ $MERGE_STATUS -ne 0 ]]; then
+            git checkout --theirs .
+            git add .
+          fi
+          set -e
+          git commit -m "$CURRENT_TIME"
+          git push origin MAKE-PRS-HERE
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
