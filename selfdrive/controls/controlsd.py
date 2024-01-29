@@ -998,6 +998,8 @@ class Controls:
     longitudinal_tune = self.params.get_bool("LongitudinalTune")
     self.frogpilot_variables.sport_plus = self.params.get_int("AccelerationProfile") == 3 and longitudinal_tune
 
+    self.frogpilot_variables.personalities_via_wheel = self.params.get_bool("PersonalitiesViaWheel") and self.params.get_bool("AdjustablePersonalities")
+
     quality_of_life = self.params.get_bool("QOLControls")
     self.pause_lateral_on_signal = self.params.get_int("PauseLateralOnSignal") * (CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS) if quality_of_life else 0
     self.frogpilot_variables.reverse_cruise_increase = self.params.get_bool("ReverseCruise") and quality_of_life

@@ -196,6 +196,7 @@ typedef struct UIScene {
   bool model_ui;
   bool mute_dm;
   bool numerical_temp;
+  bool personalities_via_screen;
   bool quality_of_life_controls;
   bool quality_of_life_visuals;
   bool reverse_cruise;

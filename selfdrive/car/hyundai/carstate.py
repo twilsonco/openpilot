@@ -180,6 +180,22 @@ class CarState(CarStateBase):
     if self.prev_main_buttons == 0 and self.main_buttons[-1] != 0:
       self.main_enabled = not self.main_enabled
 
+    # Driving personalities function
+    if frogpilot_variables.personalities_via_wheel and ret.cruiseState.available:
+      # Sync with the onroad UI button
+      if self.param_memory.get_bool("PersonalityChangedViaUI"):
+        self.personality_profile = self.param.get_int("LongitudinalPersonality")
+        self.param_memory.put_bool("PersonalityChangedViaUI", False)
+
+      # Change personality upon steering wheel button press
+      if self.cruise_buttons[-1] == Buttons.GAP_DIST and self.prev_cruise_buttons == 0:
+        self.param_memory.put_bool("PersonalityChangedViaWheel", True)
+        self.personality_profile = (self.previous_personality_profile + 2) % 3
+
+      if self.personality_profile != self.previous_personality_profile and self.personality_profile >= 0:
+        self.param.put_int("LongitudinalPersonality", self.personality_profile)
+        self.previous_personality_profile = self.personality_profile
+
     # Toggle Experimental Mode from steering wheel function
     if frogpilot_variables.experimental_mode_via_lkas and ret.cruiseState.available and self.CP.flags & HyundaiFlags.CAN_LFA_BTN:
       lkas_pressed = cp.vl["BCM_PO_11"]["LFA_Pressed"]
@@ -275,6 +291,22 @@ class CarState(CarStateBase):
     if self.CP.flags & HyundaiFlags.CANFD_HDA2:
       self.hda2_lfa_block_msg = copy.copy(cp_cam.vl["CAM_0x362"] if self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING
                                           else cp_cam.vl["CAM_0x2a4"])
+
+    # Driving personalities function
+    if frogpilot_variables.personalities_via_wheel and ret.cruiseState.available:
+      # Sync with the onroad UI button
+      if self.param_memory.get_bool("PersonalityChangedViaUI"):
+        self.personality_profile = self.param.get_int("LongitudinalPersonality")
+        self.param_memory.put_bool("PersonalityChangedViaUI", False)
+
+      # Change personality upon steering wheel button press
+      if self.cruise_buttons[-1] == Buttons.GAP_DIST and self.prev_cruise_buttons == 0:
+        self.param_memory.put_bool("PersonalityChangedViaWheel", True)
+        self.personality_profile = (self.previous_personality_profile + 2) % 3
+
+      if self.personality_profile != self.previous_personality_profile and self.personality_profile >= 0:
+        self.param.put_int("LongitudinalPersonality", self.personality_profile)
+        self.previous_personality_profile = self.personality_profile
 
     # Toggle Experimental Mode from steering wheel function
     if frogpilot_variables.experimental_mode_via_lkas and ret.cruiseState.available:
