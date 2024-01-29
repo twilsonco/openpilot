@@ -324,6 +324,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"StandardFollow", PERSISTENT},
     {"StandardJerk", PERSISTENT},
     {"StoppingDistance", PERSISTENT},
+    {"TetheringEnabled", PERSISTENT},
     {"UnlimitedLength", PERSISTENT},
     {"UpdateSchedule", PERSISTENT},
     {"UpdateTime", PERSISTENT},
