@@ -199,6 +199,7 @@ typedef struct UIScene {
   bool quality_of_life_visuals;
   bool reverse_cruise;
   bool reverse_cruise_ui;
+  bool road_name_ui;
   bool show_driver_camera;
   bool turn_signal_left;
   bool turn_signal_right;

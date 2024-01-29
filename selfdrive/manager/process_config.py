@@ -54,6 +54,9 @@ def enable_dm(started, params, CP: car.CarParams) -> bool:
 def enable_logging(started, params, CP: car.CarParams) -> bool:
   return not (params.get_bool("FireTheBabysitter") and params.get_bool("NoLogging"))
 
+def osm(started, params, CP: car.CarParams) -> bool:
+  return params.get_bool("RoadNameUI")
+
 procs = [
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
 
@@ -102,6 +105,7 @@ procs = [
 
   # FrogPilot processes
   PythonProcess("fleet_manager", "selfdrive.frogpilot.fleetmanager.fleet_manager", always_run),
+  PythonProcess("mapd", "selfdrive.frogpilot.functions.mapd", osm),
 ]
 
 managed_processes = {p.name: p for p in procs}
