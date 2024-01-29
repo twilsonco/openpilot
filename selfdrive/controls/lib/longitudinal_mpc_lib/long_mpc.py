@@ -326,10 +326,10 @@ class LongitudinalMpc:
     lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
     return lead_xv
 
-  def process_lead(self, lead):
+  def process_lead(self, lead, increased_stopping_distance):
     v_ego = self.x0[1]
     if lead is not None and lead.status:
-      x_lead = lead.dRel
+      x_lead = lead.dRel - increased_stopping_distance
       v_lead = lead.vLead
       a_lead = lead.aLeadK
       a_lead_tau = lead.aLeadTau
@@ -361,13 +361,13 @@ class LongitudinalMpc:
     v_ego = self.x0[1]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
-    lead_xv_0 = self.process_lead(radarstate.leadOne)
-    lead_xv_1 = self.process_lead(radarstate.leadTwo)
+    lead_xv_0 = self.process_lead(radarstate.leadOne, frogpilot_planner.increased_stopping_distance)
+    lead_xv_1 = self.process_lead(radarstate.leadTwo, frogpilot_planner.increased_stopping_distance)
 
     # Offset by FrogAi for FrogPilot for a more natural takeoff with a lead
     if frogpilot_planner.aggressive_acceleration:
       distance_factor = np.maximum(1, lead_xv_0[:,0] - (lead_xv_0[:,1] * t_follow))
-      standstill_offset = max(STOP_DISTANCE - (v_ego**COMFORT_BRAKE), 0)
+      standstill_offset = max(STOP_DISTANCE + frogpilot_planner.increased_stopping_distance - (v_ego**COMFORT_BRAKE), 0)
       self.acceleration_offset = np.clip((lead_xv_0[:,1] - v_ego) + standstill_offset, 1, distance_factor)
       t_follow = t_follow / self.acceleration_offset
     else:
