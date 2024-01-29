@@ -131,6 +131,11 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
     bool show_map = uiState()->scene.navigate_on_openpilot ? sidebarVisible : !sidebarVisible;
     if (!clickTimer.isActive()) {
       map->setVisible(show_map && !map->isVisible());
+      if (scene.full_map) {
+        map->setFixedWidth(width());
+      } else {
+        map->setFixedWidth(topWidget(this)->width() / 2 - UI_BORDER_SIZE);
+      }
     }
   }
 #endif
@@ -342,7 +347,7 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   QPixmap img = experimental_mode ? experimental_img : engage_img;
 
-  if (!scene.show_driver_camera) {
+  if (!(scene.show_driver_camera || scene.map_open && scene.full_map)) {
     drawIcon(p, QPoint(btn_size / 2, btn_size / 2 + y_offset), img, QColor(0, 0, 0, 166), (isDown() || !(engageable || scene.always_on_lateral_active)) ? 0.6 : 1.0);
   }
 }
@@ -416,7 +421,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   has_eu_speed_limit = (nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::VIENNA);
   is_metric = s.scene.is_metric;
   speedUnit =  s.scene.is_metric ? tr("km/h") : tr("mph");
-  hideBottomIcons = (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE || customSignals && (turnSignalLeft || turnSignalRight)) || showDriverCamera;
+  hideBottomIcons = (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE || customSignals && (turnSignalLeft || turnSignalRight)) || fullMapOpen || showDriverCamera;
   status = s.status;
 
   // update engageability/experimental mode button
@@ -526,10 +531,12 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   }
 
   // current speed
-  p.setFont(InterFont(176, QFont::Bold));
-  drawText(p, rect().center().x(), 210, speedStr);
-  p.setFont(InterFont(66));
-  drawText(p, rect().center().x(), 290, speedUnit, 200);
+  if (!fullMapOpen) {
+    p.setFont(InterFont(176, QFont::Bold));
+    drawText(p, rect().center().x(), 210, speedStr);
+    p.setFont(InterFont(66));
+    drawText(p, rect().center().x(), 290, speedUnit, 200);
+  }
 
   p.restore();
 }
@@ -1009,6 +1016,7 @@ void AnnotatedCameraWidget::updateFrogPilotWidgets(QPainter &p) {
   conditionalStatus = scene.conditional_status;
   customColors = scene.custom_colors;
   experimentalMode = scene.experimental_mode;
+  fullMapOpen = mapOpen && scene.full_map;
   laneWidthLeft = scene.lane_width_left;
   laneWidthRight = scene.lane_width_right;
   leadInfo = scene.lead_info;
@@ -1019,7 +1027,7 @@ void AnnotatedCameraWidget::updateFrogPilotWidgets(QPainter &p) {
   turnSignalLeft = scene.turn_signal_left;
   turnSignalRight = scene.turn_signal_right;
 
-  if (!showDriverCamera) {
+  if (!(showDriverCamera || fullMapOpen)) {
     if (leadInfo) {
       drawLeadInfo(p);
     }
