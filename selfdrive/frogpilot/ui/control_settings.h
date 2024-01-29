@@ -23,6 +23,8 @@ private:
   void updateMetric();
   void updateToggles();
 
+  ButtonControl *slscPriorityButton;
+
   FrogPilotButtonIconControl *modelSelectorButton;
 
   FrogPilotDualParamControl *aggressiveProfile;

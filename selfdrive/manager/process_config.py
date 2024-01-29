@@ -55,7 +55,7 @@ def enable_logging(started, params, CP: car.CarParams) -> bool:
   return not (params.get_bool("FireTheBabysitter") and params.get_bool("NoLogging"))
 
 def osm(started, params, CP: car.CarParams) -> bool:
-  return params.get_bool("RoadNameUI")
+  return params.get_bool("RoadNameUI") or params.get_bool("SpeedLimitController")
 
 procs = [
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),

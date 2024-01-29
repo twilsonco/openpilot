@@ -12,6 +12,7 @@ from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CAN_G
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
 from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
+from openpilot.selfdrive.frogpilot.functions.speed_limit_controller import SpeedLimitController
 
 PREV_BUTTON_SAMPLES = 8
 CLUSTER_SAMPLE_RATE = 20  # frames
@@ -53,6 +54,16 @@ class CarState(CarStateBase):
     self.cluster_speed_counter = CLUSTER_SAMPLE_RATE
 
     self.params = CarControllerParams(CP)
+
+  def calculate_speed_limit(self, cp, cp_cam):
+    if self.CP.carFingerprint in CANFD_CAR:
+      speed_limit_bus = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
+      return speed_limit_bus.vl["CLUSTER_SPEED_LIMIT"]["SPEED_LIMIT_1"]
+    else:
+      if "SpeedLim_Nav_Clu" not in cp.vl["Navi_HU"]:
+        return 0
+      speed_limit = cp.vl["Navi_HU"]["SpeedLim_Nav_Clu"]
+      return speed_limit if speed_limit not in (0, 255) else 0
 
   def update(self, cp, cp_cam, conditional_experimental_mode, frogpilot_variables):
     if self.CP.carFingerprint in CANFD_CAR:
@@ -176,6 +187,10 @@ class CarState(CarStateBase):
         FrogPilotFunctions.lkas_button_function(conditional_experimental_mode)
       self.lkas_previously_pressed = lkas_pressed
 
+    SpeedLimitController.load_state()
+    SpeedLimitController.car_speed_limit = self.calculate_speed_limit(cp, cp_cam) * speed_conv
+    SpeedLimitController.write_car_state()
+
     return ret
 
   def update_canfd(self, cp, cp_cam, conditional_experimental_mode, frogpilot_variables):
@@ -268,6 +283,10 @@ class CarState(CarStateBase):
         FrogPilotFunctions.lkas_button_function(conditional_experimental_mode)
       self.lkas_previously_pressed = lkas_pressed
 
+    SpeedLimitController.load_state()
+    SpeedLimitController.car_speed_limit = self.calculate_speed_limit(cp, cp_cam) * speed_factor
+    SpeedLimitController.write_car_state()
+
     return ret
 
   def get_can_parser(self, CP):
@@ -319,6 +338,10 @@ class CarState(CarStateBase):
 
     if CP.flags & HyundaiFlags.CAN_LFA_BTN:
       messages.append(("BCM_PO_11", 50))
+
+    messages += [
+      ("Navi_HU", 5),
+    ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
@@ -375,6 +398,9 @@ class CarState(CarStateBase):
         ("SCC_CONTROL", 50),
       ]
 
+    if CP.flags & HyundaiFlags.CANFD_HDA2:
+      messages.append(("CLUSTER_SPEED_LIMIT", 10))
+
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus(CP).ECAN)
 
   @staticmethod
@@ -387,5 +413,8 @@ class CarState(CarStateBase):
       messages += [
         ("SCC_CONTROL", 50),
       ]
+
+    if not (CP.flags & HyundaiFlags.CANFD_HDA2):
+      messages.append(("CLUSTER_SPEED_LIMIT", 10))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus(CP).CAM)

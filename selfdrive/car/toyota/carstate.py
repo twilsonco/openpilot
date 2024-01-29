@@ -12,6 +12,7 @@ from openpilot.selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_T
                                                   TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR
 
 from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
+from openpilot.selfdrive.frogpilot.functions.speed_limit_controller import SpeedLimitController
 
 SteerControlType = car.CarParams.SteerControlType
 
@@ -47,6 +48,8 @@ class CarState(CarStateBase):
     self.lkas_hud = {}
 
     # FrogPilot variables
+
+    self.traffic_signals = {}
 
   def update(self, cp, cp_cam, conditional_experimental_mode, frogpilot_variables):
     ret = car.CarState.new_message()
@@ -173,7 +176,31 @@ class CarState(CarStateBase):
         FrogPilotFunctions.lkas_button_function(conditional_experimental_mode)
       self.lkas_previously_pressed = lkas_pressed
 
+    # Traffic signals for Speed Limit Controller - Credit goes to the DragonPilot team!
+    self.update_traffic_signals(cp_cam)
+    SpeedLimitController.load_state()
+    SpeedLimitController.car_speed_limit = self.calculate_speed_limit()
+    SpeedLimitController.write_car_state()
+
     return ret
+
+  def update_traffic_signals(self, cp_cam):
+    signals = ["TSGN1", "SPDVAL1", "SPLSGN1", "TSGN2", "SPLSGN2", "TSGN3", "SPLSGN3", "TSGN4", "SPLSGN4"]
+    new_values = {signal: cp_cam.vl["RSA1"].get(signal, cp_cam.vl["RSA2"].get(signal)) for signal in signals}
+
+    if new_values != self.traffic_signals:
+      self.traffic_signals.update(new_values)
+
+  def calculate_speed_limit(self):
+    tsgn1 = self.traffic_signals.get("TSGN1", None)
+    spdval1 = self.traffic_signals.get("SPDVAL1", None)
+
+    if tsgn1 == 1:
+      return spdval1 * CV.KPH_TO_MS
+    elif tsgn1 == 36:
+      return spdval1 * CV.MPH_TO_MS
+    else:
+      return 0
 
   @staticmethod
   def get_can_parser(CP):
@@ -225,6 +252,11 @@ class CarState(CarStateBase):
   @staticmethod
   def get_cam_can_parser(CP):
     messages = []
+
+    messages += [
+      ("RSA1", 0),
+      ("RSA2", 0),
+    ]
 
     if CP.carFingerprint != CAR.PRIUS_V:
       messages += [

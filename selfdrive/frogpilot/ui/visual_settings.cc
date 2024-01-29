@@ -19,6 +19,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     {"FPSCounter", "FPS Counter", "Display the Frames Per Second (FPS) of your onroad UI for monitoring system performance.", ""},
     {"LeadInfo", "Lead Info and Logics", "Get detailed information about the vehicle ahead, including speed and distance, and the logic behind your following distance.", ""},
     {"RoadNameUI", "Road Name", "See the name of the road you're on at the bottom of your screen. Sourced from OpenStreetMap.", ""},
+    {"UseVienna", "Use Vienna Speed Limit Signs", "Use the Vienna (EU) speed limit style signs as opposed to MUTCD (US).", ""},
 
     {"DriverCamera", "Driver Camera On Reverse", "Show the driver's camera feed when you shift to reverse.", "../assets/img_driver_face_static.png"},
     {"GreenLightAlert", "Green Light Alert", "Get an alert when a traffic light changes from red to green.", "../frogpilot/assets/toggle_icons/icon_green_light.png"},
@@ -36,6 +37,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     {"DriveStats", "Drive Stats In Home Screen", "Display your device's drive stats in the home screen.", ""},
     {"FullMap", "Full Sized Map", "Maximize the size of the map in the onroad UI.", ""},
     {"HideSpeed", "Hide Speed", "Hide the speed indicator in the onroad UI. Additional toggle allows it to be hidden/shown via tapping the speed itself.", ""},
+    {"ShowSLCOffset", "Show Speed Limit Offset", "Show the speed limit offset seperated from the speed limit in the onroad UI when using 'Speed Limit Controller'.", ""},
 
     {"ScreenBrightness", "Screen Brightness", "Customize your screen brightness.", "../frogpilot/assets/toggle_icons/icon_light.png"},
     {"SilentMode", "Silent Mode", "Mute openpilot sounds for a quieter driving experience.", "../frogpilot/assets/toggle_icons/icon_mute.png"},
@@ -127,6 +129,10 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
       std::vector<QString> hideSpeedToggles{"HideSpeedUI"};
       std::vector<QString> hideSpeedToggleNames{tr("Control Via UI")};
       toggle = new FrogPilotParamToggleControl(param, title, desc, icon, hideSpeedToggles, hideSpeedToggleNames);
+    } else if (param == "ShowSLCOffset") {
+      std::vector<QString> slcOffsetToggles{"ShowSLCOffsetUI"};
+      std::vector<QString> slcOffsetToggleNames{tr("Control Via UI")};
+      toggle = new FrogPilotParamToggleControl(param, title, desc, icon, slcOffsetToggles, slcOffsetToggleNames);
 
     } else if (param == "ScreenBrightness") {
       std::map<int, QString> brightnessLabels;
@@ -168,10 +174,10 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     });
   }
 
-  customOnroadUIKeys = {"AccelerationPath", "AdjacentPath", "BlindSpotPath", "FPSCounter", "LeadInfo", "RoadNameUI"};
+  customOnroadUIKeys = {"AccelerationPath", "AdjacentPath", "BlindSpotPath", "FPSCounter", "LeadInfo", "RoadNameUI", "UseVienna"};
   customThemeKeys = {"CustomColors", "CustomIcons", "CustomSignals", "CustomSounds"};
   modelUIKeys = {"LaneLinesWidth", "PathEdgeWidth", "PathWidth", "RoadEdgesWidth", "UnlimitedLength"};
-  qolKeys = {"DriveStats", "FullMap", "HideSpeed"};
+  qolKeys = {"DriveStats", "FullMap", "HideSpeed", "ShowSLCOffset"};
 
   QObject::connect(device(), &Device::interactiveTimeout, this, &FrogPilotVisualsPanel::hideSubToggles);
   QObject::connect(parent, &SettingsWindow::closeParentToggle, this, &FrogPilotVisualsPanel::hideSubToggles);

@@ -31,6 +31,8 @@ from openpilot.system.hardware import HARDWARE
 
 import openpilot.selfdrive.sentry as sentry
 
+from openpilot.selfdrive.frogpilot.functions.speed_limit_controller import SpeedLimitController
+
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
@@ -950,7 +952,7 @@ class Controls:
       self.is_metric = self.params.get_bool("IsMetric")
       if self.CP.openpilotLongitudinalControl:
          if not self.conditional_experimental_mode:
-            self.experimental_mode = self.params.get_bool("ExperimentalMode")
+           self.experimental_mode = self.params.get_bool("ExperimentalMode") or SpeedLimitController.experimental_mode
       else:
         self.experimental_mode = False
       if self.CP.notCar:

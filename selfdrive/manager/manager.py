@@ -185,6 +185,41 @@ def manager_init() -> None:
     if params.get(k) is None:
       params.put(k, v)
 
+  # Remove this after the June 14th update
+  previous_speed_limit = params.get_float("PreviousSpeedLimit")
+  if previous_speed_limit >= 50:
+    params.put_float("PreviousSpeedLimit", previous_speed_limit / 100)
+
+  slc_priority = params.get_int("SLCPriority")
+  if slc_priority != 0:
+    priorities_mapping = {
+      1: ["Dashboard", "Navigation", "Offline Maps"],
+      2: ["Navigation", "Offline Maps", "Dashboard"],
+      3: ["Navigation", "Offline Maps", "None"],
+      4: ["Navigation", "Dashboard", "None"],
+      5: ["Navigation", "None", "None"],
+      6: ["Offline Maps", "Dashboard", "Navigation"],
+      7: ["Offline Maps", "Navigation", "Dashboard"],
+      8: ["Offline Maps", "Navigation", "None"],
+      9: ["Offline Maps", "Dashboard", "None"],
+      10: ["Offline Maps", "None", "None"],
+      11: ["Dashboard", "Navigation", "Offline Maps"],
+      12: ["Dashboard", "Offline Maps", "Navigation"],
+      13: ["Dashboard", "Offline Maps", "None"],
+      14: ["Dashboard", "Navigation", "None"],
+      15: ["Dashboard", "None", "None"],
+      16: ["Highest", "None", "None"],
+      17: ["Lowest", "None", "None"],
+      18: ["None", "None", "None"],
+    }
+
+    primary_priorities = ["None", "Dashboard", "Navigation", "Offline Maps", "Highest", "Lowest"]
+    old_priorities = priorities_mapping.get(slc_priority + 1, ["None", "None", "None"])
+
+    for i, priority in enumerate(old_priorities, start=1):
+      params.put_float(f"SLCPriority{i}", primary_priorities.index(priority))
+      params.put_int("SLCPriority", 0)
+
   # Create folders needed for msgq
   try:
     os.mkdir("/dev/shm")
