@@ -20,6 +20,7 @@ SNG_DIST_COST = MPC_COST_LONG.DISTANCE
 SNG_ACCEL_COST = MPC_COST_LONG.ACCELERATION
 
 CLOSE_FOLLOW_MIN_FOLLOW_DIST_S = 0.2
+MEDIUM_FOLLOW_MIN_FOLLOW_DIST_S = 0.5
 FOLLOW_PROFILES = [
   [ # one-bar
     [-1.4, 2.8], # bp0 and bp1; lead car relative velocities [m/s] (set both to 0.0 to disable dynamic brakepoints)
@@ -70,6 +71,14 @@ close_max_delta_follow = abs(CLOSE_FOLLOW_EQUIL_FOLLOW_DISTANCE - CLOSE_FOLLOW_M
 CLOSE_TOWARDS_BP = [0.0, 2.0] # corresponds to the bounds of the FP_close_gas_factor opParam
 CLOSE_TOWARDS_V = [0.0, close_max_delta_follow]
 CLOSE_AWAY_RANGE = abs(cp[1][-1] - CLOSE_FOLLOW_EQUIL_FOLLOW_DISTANCE)
+
+mp = FOLLOW_PROFILES[1] # close follow profile
+# these are used for opParams adjustment of close-follow responsiveness
+MEDIUM_FOLLOW_EQUIL_FOLLOW_DISTANCE = interp(0.0, mp[0], mp[1])
+medium_max_delta_follow = abs(MEDIUM_FOLLOW_EQUIL_FOLLOW_DISTANCE - MEDIUM_FOLLOW_MIN_FOLLOW_DIST_S)
+MEDIUM_TOWARDS_BP = [0.0, 2.0] # corresponds to the bounds of the FP_close_gas_factor opParam
+MEDIUM_TOWARDS_V = [0.0, medium_max_delta_follow]
+MEDIUM_AWAY_RANGE = abs(mp[1][-1] - MEDIUM_FOLLOW_EQUIL_FOLLOW_DISTANCE)
 
 FP_MIN_MAX_DIST_COSTS = [[f(f(fp[6]),f(fp[8])) for f in [min,max]] for fp in FOLLOW_PROFILES]
 
@@ -353,13 +362,23 @@ class LeadMpc():
   
   def update_op_params(self):
     self._close_gas_factor = self._op_params.get('FP_close_gas_factor')
+    self._medium_gas_factor = self._op_params.get('FP_medium_gas_factor')
     self._follow_distance_offsets = [self._op_params.get(f"FP_{i}_distance_offset_s") for i in ['close','medium','far']]
+    # update close follow gas factor
     close_follow_towards_delta = interp(self._close_gas_factor, CLOSE_TOWARDS_BP, CLOSE_TOWARDS_V)
     new_close_follow_towards = max(CLOSE_FOLLOW_MIN_FOLLOW_DIST_S,
                                    CLOSE_FOLLOW_EQUIL_FOLLOW_DISTANCE - close_follow_towards_delta)
     close_follow_away_delta = CLOSE_AWAY_RANGE * self._close_gas_factor
     new_close_follow_away = CLOSE_FOLLOW_EQUIL_FOLLOW_DISTANCE + close_follow_away_delta
     self._follow_profiles[0][1] = [new_close_follow_towards, new_close_follow_away]
+    # now medium follow gas factor
+    medium_follow_towards_delta = interp(self._medium_gas_factor, MEDIUM_TOWARDS_BP, MEDIUM_TOWARDS_V)
+    new_medium_follow_towards = max(MEDIUM_FOLLOW_MIN_FOLLOW_DIST_S,
+                                    MEDIUM_FOLLOW_EQUIL_FOLLOW_DISTANCE - medium_follow_towards_delta)
+    medium_follow_away_delta = MEDIUM_AWAY_RANGE * self._medium_gas_factor
+    new_medium_follow_away = MEDIUM_FOLLOW_EQUIL_FOLLOW_DISTANCE + medium_follow_away_delta
+    self._follow_profiles[1][1] = [new_medium_follow_towards, new_medium_follow_away]
+    
     self.stopping_distance_offset = self._op_params.get('FP_stop_distance_offset_m')
 
   def update(self, CS, radarstate, v_cruise, a_target, active):
