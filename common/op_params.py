@@ -477,7 +477,7 @@ class opParams:
       
       'CB_VTSC_accel_rate_limit': Param(1.0, float, 'The vision turn controller output acceleration is rate-limited so that when you exit a curve, acceleration resumes smoothly. Increase/decrease for faster/slower ramping.', live=True, min_val=0.1, max_val=10.0, unit="m/s²/s"),
       
-      'CB_VTSC_lat_accel_factor': Param(0.85, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the lateral acceleration values used in the lookup. A value less/greater than 1.0 will make curve braking more/less sensitive to lateral acceleration and apply braking sooner/later.', live=True, min_val=0.01, max_val=3.0),
+      'CB_VTSC_lat_accel_factor': Param(1.1, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the lateral acceleration values used in the lookup. A value less/greater than 1.0 will make curve braking more/less sensitive to lateral acceleration and apply braking sooner/later.', live=True, min_val=0.01, max_val=3.0),
       
       'CB_VTSC_long_accel_factor': Param(0.9, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the output values of longitudinal acceleration. A value less/greater than 1.0 will decrease/increase the brake intensity for a given curve.', live=True, min_val=0.01, max_val=3.0),
       
@@ -783,16 +783,6 @@ class opParams:
 
     self._to_delete = []  # a list of unused params you want to delete from users' params file
     self._to_reset = {
-      '2023/11/18-18:00:00': ['MADS_OP_decel_ms2', 
-                             'MADS_OP_one_time_stop_decel_factor', 
-                             'CB_VTSC_lat_accel_factor', 
-                             'CB_VTSC_long_accel_factor', 
-                             'TUNE_LAT_TRX_NNFF_lat_jerk_friction_factor',
-                             'TUNE_LAT_TRX_NNFF_lat_accel_friction_factor',
-                             'TUNE_LONG_kp',
-                             'TUNE_LAT_TRX_friction_lookahead_v',
-                             r'TUNE_LAT_mpc_.*',
-                             'TUNE_LAT_min_steer_speed_mph'],
       '2023/11/30-11:00:00': [r'TUNE_LAT_TRX_error_downscale_.*'],
       }  # a dict where each key is a date in 'yyyy/mm/dd-hh:mm' (24-hour) format, and the value is a list of names of params OR regular expressions to match params you want reset to their default values if the modification date is before the key date
       # use something that doesn't match the date string format and the associated list of param names or regex's will apply no matter the modified date of the param
