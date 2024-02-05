@@ -322,6 +322,12 @@ enum LaneChangeDirection {
   right @2;
 }
 
+enum TurnDirection {
+  none @0;
+  turnLeft @1;
+  turnRight @2;
+}
+
 struct CanData {
   address @0 :UInt32;
   busTime @1 :UInt16;
@@ -944,6 +950,7 @@ struct ModelDataV2 {
     hardBrakePredicted @7 :Bool;
     laneChangeState @8 :LaneChangeState;
     laneChangeDirection @9 :LaneChangeDirection;
+    turnDirection @10 :TurnDirection;
 
 
     # deprecated
