@@ -345,6 +345,7 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.rotating_wheel = params.getBool("RotatingWheel");
   scene.screen_brightness = params.getInt("ScreenBrightness");
   scene.speed_limit_controller = params.getBool("SpeedLimitController");
+  scene.wheel_icon = params.getInt("WheelIcon");
 }
 
 void UIState::updateStatus() {
