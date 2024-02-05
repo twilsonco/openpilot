@@ -157,6 +157,9 @@ class Soundd:
           self.spl_filter_weighted.update(sm["microphone"].soundPressureWeightedDb)
           self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x))
 
+        if self.alert_volume_control and self.current_alert in self.volume_map:
+          self.current_volume = min(self.volume_map[self.current_alert] / 100.0, self.current_volume)
+
         self.get_audible_alert(sm)
 
         rk.keep_time()
@@ -168,6 +171,19 @@ class Soundd:
           self.update_frogpilot_params()
 
   def update_frogpilot_params(self):
+    self.alert_volume_control = self.params.get_bool("AlertVolumeControl")
+
+    self.volume_map = {
+      AudibleAlert.disengage: self.params.get_int("DisengageVolume"),
+      AudibleAlert.engage: self.params.get_int("EngageVolume"),
+      AudibleAlert.prompt: self.params.get_int("PromptVolume"),
+      AudibleAlert.promptRepeat: self.params.get_int("PromptDistractedVolume"),
+      AudibleAlert.promptDistracted: self.params.get_int("RefuseVolume"),
+      AudibleAlert.warningSoft: self.params.get_int("WarningSoftVolume"),
+      AudibleAlert.warningImmediate: self.params.get_int("WarningImmediateVolume")
+    }
+
+    self.load_sounds()
 
 def main():
   s = Soundd()
