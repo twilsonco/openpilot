@@ -23,8 +23,11 @@ private:
   void updateMetric();
   void updateToggles();
 
+  FrogPilotDualParamControl *aggressiveProfile;
   FrogPilotDualParamControl *conditionalSpeedsImperial;
   FrogPilotDualParamControl *conditionalSpeedsMetric;
+  FrogPilotDualParamControl *standardProfile;
+  FrogPilotDualParamControl *relaxedProfile;
 
   std::set<QString> conditionalExperimentalKeys = {"CECurves", "CECurvesLead", "CESlowerLead", "CENavigation", "CEStopLights", "CESignal"};
   std::set<QString> fireTheBabysitterKeys = {};
