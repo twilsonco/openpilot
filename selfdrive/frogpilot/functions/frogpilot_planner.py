@@ -71,6 +71,8 @@ class FrogPilotPlanner:
     frogpilotPlan.laneWidthLeft = self.lane_width_left
     frogpilotPlan.laneWidthRight = self.lane_width_right
 
+    frogpilotPlan.redLight = self.cem.red_light_detected
+
     pm.send('frogpilotPlan', frogpilot_plan_send)
 
   def update_frogpilot_params(self, params, params_memory):
