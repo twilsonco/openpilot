@@ -101,6 +101,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
   addItem(forceFingerprint);
 
   std::vector<std::tuple<QString, QString, QString, QString>> vehicleToggles {
+    {"GasRegenCmd", "GM Truck Gas Tune", "Increase acceleration and smoothen brake to stop. For use on Silverado/Sierra only.", ""},
     {"LongPitch", "Long Pitch Compensation", "Reduce speed and acceleration error for greater passenger comfort and improved vehicle efficiency.", ""},
 
     {"LongitudinalTune", "Longitudinal Tune", "Use a custom Toyota longitudinal tune.", ""},
@@ -142,7 +143,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
     });
   }
 
-  std::set<std::string> rebootKeys = {};
+  std::set<std::string> rebootKeys = {"GasRegenCmd"};
   for (const std::string &key : rebootKeys) {
     QObject::connect(toggles[key], &ToggleControl::toggleFlipped, [this]() {
       if (started) {
