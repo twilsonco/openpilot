@@ -32,7 +32,7 @@ private:
   std::set<QString> conditionalExperimentalKeys = {"CECurves", "CECurvesLead", "CESlowerLead", "CENavigation", "CEStopLights", "CESignal"};
   std::set<QString> fireTheBabysitterKeys = {"NoLogging", "MuteDM", "MuteDoor", "MuteOverheated", "MuteSeatbelt"};
   std::set<QString> laneChangeKeys = {};
-  std::set<QString> lateralTuneKeys = {};
+  std::set<QString> lateralTuneKeys = {"ForceAutoTune"};
   std::set<QString> longitudinalTuneKeys = {"AccelerationProfile", "AggressiveAcceleration"};
   std::set<QString> mtscKeys = {};
   std::set<QString> qolKeys = {"DisableOnroadUploads"};
