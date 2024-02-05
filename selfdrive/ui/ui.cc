@@ -256,6 +256,7 @@ static void update_state(UIState *s) {
       scene.speed_limit_overridden_speed = frogpilotPlan.getSlcOverriddenSpeed();
     }
     scene.adjusted_cruise = frogpilotPlan.getAdjustedCruise();
+    scene.vtsc_controlling_curve = frogpilotPlan.getVtscControllingCurve();
   }
   if (sm.updated("liveLocationKalman")) {
     auto liveLocationKalman = sm["liveLocationKalman"].getLiveLocationKalman();
@@ -317,6 +318,7 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.custom_signals = custom_theme ? params.getInt("CustomSignals") : 0;
 
   scene.disable_smoothing_mtsc = params.getBool("DisableMTSCSmoothing");
+  scene.disable_smoothing_vtsc = params.getBool("DisableVTSCSmoothing");
   scene.driver_camera = params.getBool("DriverCamera");
   scene.experimental_mode_via_screen = params.getBool("ExperimentalModeViaScreen") && params.getBool("ExperimentalModeActivation");
   scene.fahrenheit = params.getBool("Fahrenheit");
