@@ -32,6 +32,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
 
     {"QOLControls", "Quality of Life", "Miscellaneous quality of life changes to improve your overall openpilot experience.", "../frogpilot/assets/toggle_icons/quality_of_life.png"},
     {"DisableOnroadUploads", "Disable Onroad Uploads", "Prevent large data uploads when onroad.", ""},
+    {"HigherBitrate", "Higher Bitrate Recording", "Increases the quality of the footage uploaded to comma connect.", ""},
   };
 
   for (const auto &[param, title, desc, icon] : controlToggles) {
@@ -229,7 +230,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
     });
   }
 
-  std::set<std::string> rebootKeys = {"AlwaysOnLateral", "MuteDM"};
+  std::set<std::string> rebootKeys = {"AlwaysOnLateral", "HigherBitrate", "MuteDM"};
   for (const std::string &key : rebootKeys) {
     QObject::connect(toggles[key], &ToggleControl::toggleFlipped, [this]() {
       if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
