@@ -92,10 +92,13 @@ class Controls:
 
     self.driving_gear = False
     self.openpilot_crashed = False
+    self.random_event_triggered = False
     self.stopped_for_light_previously = False
+    self.vCruise69_alert_played = False
 
     self.previous_lead_distance = 0
     self.previous_speed_limit = 0
+    self.random_event_timer = 0
 
     ignore = self.sensor_packets + ['testJoystick']
     if SIMULATION:
@@ -253,6 +256,9 @@ class Controls:
     # Show crash log event if openpilot crashed
     if os.path.isfile(os.path.join(sentry.CRASHES_DIR, 'error.txt')):
       self.events.add(EventName.openpilotCrashed)
+      if self.random_events and not self.openpilot_crashed:
+        self.events.add(EventName.openpilotCrashedRandomEvents)
+        self.openpilot_crashed = True
       return
 
     # Add joystick event, static on cars, dynamic on nonCars
@@ -505,6 +511,19 @@ class Controls:
       if speed_limit_changed:
         self.events.add(EventName.speedLimitChanged)
 
+    # vCruise set to 69 Random Event alert
+    if self.random_events:
+      conversion = 1 if self.is_metric else CV.KPH_TO_MPH
+      v_cruise = self.v_cruise_helper.v_cruise_cluster_kph if self.v_cruise_helper.v_cruise_cluster_kph != 0.0 else self.v_cruise_helper.v_cruise_kph
+      v_cruise *= conversion
+
+      if 70 > v_cruise >= 69:
+        if not self.vCruise69_alert_played:
+          self.events.add(EventName.vCruise69)
+          self.vCruise69_alert_played = True
+      else:
+        self.vCruise69_alert_played = False
+
   def data_sample(self):
     """Receive data from sockets and update carState"""
 
@@ -663,6 +682,14 @@ class Controls:
 
     frogpilot_plan = self.sm['frogpilotPlan']
 
+    # Reset the Random Event flag
+    if self.random_event_triggered:
+      self.random_event_timer += 1
+      if self.random_event_timer >= 500:
+        self.random_event_triggered = False
+        self.random_event_timer = 0
+        self.params_memory.remove("CurrentRandomEvent")
+
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
 
@@ -756,8 +783,13 @@ class Controls:
         turning = abs(lac_log.desiredLateralAccel) > 1.0
         good_speed = CS.vEgo > 5
         max_torque = abs(self.last_actuators.steer) > 0.99
-        if undershooting and turning and good_speed and max_torque:
-          lac_log.active and self.events.add(EventName.frogSteerSaturated if self.goat_scream else EventName.steerSaturated)
+        if undershooting and turning and good_speed and max_torque and not self.random_event_triggered:
+          if self.sm.frame % 10000 == 0:
+            lac_log.active and self.events.add(EventName.firefoxSteerSaturated)
+            self.params_memory.put_int("CurrentRandomEvent", 1)
+            self.random_event_triggered = True
+          else:
+            lac_log.active and self.events.add(EventName.frogSteerSaturated if self.goat_scream else EventName.steerSaturated)
       elif lac_log.saturated:
         # TODO probably should not use dpath_points but curvature
         dpath_points = model_v2.position.y
@@ -1046,6 +1078,8 @@ class Controls:
     self.frogpilot_variables.reverse_cruise_increase = self.params.get_bool("ReverseCruise") and quality_of_life
     self.frogpilot_variables.set_speed_limit = self.params.get_bool("SetSpeedLimit") and quality_of_life
     self.frogpilot_variables.set_speed_offset = self.params.get_int("SetSpeedOffset") * (1 if self.is_metric else CV.MPH_TO_KPH) if quality_of_life else 0
+
+    self.random_events = self.params.get_bool("RandomEvents")
 
 def main():
   controls = Controls()
