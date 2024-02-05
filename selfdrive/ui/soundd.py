@@ -1,11 +1,12 @@
 import math
 import numpy as np
+import os
 import time
 import wave
 
 from typing import Dict, Optional, Tuple
 
-from cereal import car, messaging
+from cereal import car, custom, messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
@@ -40,6 +41,11 @@ sound_list: Dict[int, Tuple[str, Optional[int], float]] = {
 
   AudibleAlert.warningSoft: ("warning_soft.wav", None, MAX_VOLUME),
   AudibleAlert.warningImmediate: ("warning_immediate.wav", None, MAX_VOLUME),
+
+  # Random Events
+  AudibleAlert.fart: ("fart.wav", 1, MAX_VOLUME),
+  AudibleAlert.firefox: ("firefox.wav", 1, MAX_VOLUME),
+  AudibleAlert.noice: ("noice.wav", 1, MAX_VOLUME),
 }
 
 def check_controls_timeout_alert(sm):
@@ -57,6 +63,8 @@ class Soundd:
     # FrogPilot variables
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
+
+    self.random_events_directory = BASEDIR + "/selfdrive/frogpilot/assets/random_events/sounds/"
 
     self.update_frogpilot_params()
 
@@ -77,7 +85,10 @@ class Soundd:
     for sound in sound_list:
       filename, play_count, volume = sound_list[sound]
 
-      wavefile = wave.open(self.sound_directory + filename, 'r')
+      if os.path.exists(os.path.join(self.random_events_directory, filename)):
+        wavefile = wave.open(self.random_events_directory + filename, 'r')
+      else:
+        wavefile = wave.open(self.sound_directory + filename, 'r')
 
       assert wavefile.getnchannels() == 1
       assert wavefile.getsampwidth() == 2

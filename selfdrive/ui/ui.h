@@ -81,7 +81,7 @@ struct Alert {
         alert = {"openpilot crashed", "Please post the error log in the FrogPilot Discord!",
                  "controlsWaiting", cereal::ControlsState::AlertSize::MID,
                  cereal::ControlsState::AlertStatus::NORMAL,
-                 AudibleAlert::NONE};
+                 Params().getBool("RandomEvents") ? AudibleAlert::FART : AudibleAlert::NONE};
       } else if (controls_frame < started_frame) {
         // car is started, but controlsState hasn't been seen at all
         alert = {"openpilot Unavailable", "Waiting for controls to start",
@@ -200,6 +200,7 @@ typedef struct UIScene {
   bool model_ui;
   bool numerical_temp;
   bool personalities_via_screen;
+  bool random_events;
   bool reverse_cruise;
   bool reverse_cruise_ui;
   bool road_name_ui;
@@ -232,6 +233,7 @@ typedef struct UIScene {
   int conditional_speed;
   int conditional_speed_lead;
   int conditional_status;
+  int current_random_event;
   int custom_colors;
   int custom_icons;
   int custom_signals;
