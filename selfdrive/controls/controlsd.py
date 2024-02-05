@@ -29,6 +29,8 @@ from openpilot.selfdrive.controls.lib.alertmanager import AlertManager, set_offr
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.system.hardware import HARDWARE
 
+import openpilot.selfdrive.sentry as sentry
+
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
@@ -87,6 +89,7 @@ class Controls:
     mute_dm = fire_the_babysitter and self.params.get_bool("MuteDM")
 
     self.driving_gear = False
+    self.openpilot_crashed = False
     self.stopped_for_light_previously = False
 
     self.previous_lead_distance = 0
@@ -243,6 +246,11 @@ class Controls:
     """Compute onroadEvents from carState"""
 
     self.events.clear()
+
+    # Show crash log event if openpilot crashed
+    if os.path.isfile(os.path.join(sentry.CRASHES_DIR, 'error.txt')):
+      self.events.add(EventName.openpilotCrashed)
+      return
 
     # Add joystick event, static on cars, dynamic on nonCars
     if self.joystick_mode:
@@ -665,8 +673,8 @@ class Controls:
     # Check which actuators can be enabled
     standstill = CS.vEgo <= max(self.CP.minSteerSpeed, MIN_LATERAL_CONTROL_SPEED) or CS.standstill
     CC.latActive = (self.active or self.FPCC.alwaysOnLateral) and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
-                   (not standstill or self.joystick_mode)
-    CC.longActive = self.enabled and not self.events.contains(ET.OVERRIDE_LONGITUDINAL) and self.CP.openpilotLongitudinalControl
+                   (not standstill or self.joystick_mode) and not self.openpilot_crashed
+    CC.longActive = self.enabled and not self.events.contains(ET.OVERRIDE_LONGITUDINAL) and self.CP.openpilotLongitudinalControl and not self.openpilot_crashed
 
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
