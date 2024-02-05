@@ -109,6 +109,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
 
     {"LockDoors", "Lock Doors In Drive", "Automatically lock the doors when in drive and unlock when in park.", ""},
     {"LongitudinalTune", "Longitudinal Tune", "Use a custom Toyota longitudinal tune.", ""},
+    {"SNGHack", "Stop and Go Hack", "Enable the 'Stop and Go' hack for vehicles without stock stop and go functionality.", ""},
   };
 
   for (const auto &[param, title, desc, icon] : vehicleToggles) {
