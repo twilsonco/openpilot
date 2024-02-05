@@ -22,6 +22,8 @@ struct FrogPilotNavigation @0xda96579883444c35 {
 }
 
 struct FrogPilotPlan @0x80ae746ee2596b11 {
+  laneWidthLeft @3 :Float32;
+  laneWidthRight @4 :Float32;
 }
 
 struct CustomReserved5 @0xa5cd762cd951a455 {
