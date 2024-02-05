@@ -22,6 +22,7 @@ from openpilot.system.version import is_dirty, get_commit, get_version, get_orig
                            get_normalized_origin, terms_version, training_version, \
                            is_tested_branch, is_release_branch
 
+from openpilot.selfdrive.frogpilot.functions.model_switcher import set_model
 
 
 def manager_init() -> None:
@@ -296,6 +297,9 @@ def manager_init() -> None:
   # preimport all processes
   for p in managed_processes.values():
     p.prepare()
+
+  # Set the desired model
+  set_model(params)
 
 
 def manager_cleanup() -> None:
