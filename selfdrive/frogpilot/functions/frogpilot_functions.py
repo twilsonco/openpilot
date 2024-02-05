@@ -48,3 +48,9 @@ class FrogPilotFunctions:
     distance_to_road_edge = np.mean(np.abs(current_y - road_edge_y_interp))
 
     return min(distance_to_lane, distance_to_road_edge)
+
+  @staticmethod
+  def road_curvature(modelData, v_ego):
+    predicted_velocities = np.array(modelData.velocity.x)
+    curvature_ratios = np.abs(np.array(modelData.acceleration.y)) / (predicted_velocities**2)
+    return np.amax(curvature_ratios * (v_ego**2))

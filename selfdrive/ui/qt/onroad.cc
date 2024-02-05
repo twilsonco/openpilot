@@ -175,7 +175,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
   int margin = 40;
   int radius = 30;
-  int offset = scene.always_on_lateral ? 25 : 0;
+  int offset = scene.always_on_lateral || scene.conditional_experimental ? 25 : 0;
   if (alert.size == cereal::ControlsState::AlertSize::FULL) {
     margin = 0;
     radius = 0;
@@ -563,7 +563,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
 
   // base icon
   int offset = UI_BORDER_SIZE + btn_size / 2;
-  offset += alwaysOnLateral ? 25 : 0;
+  offset += alwaysOnLateral || conditionalExperimental ? 25 : 0;
   int x = rightHandDM ? width() - offset : offset;
   int y = height() - offset;
   float opacity = dmActive ? 0.65 : 0.2;
@@ -759,9 +759,13 @@ void AnnotatedCameraWidget::updateFrogPilotWidgets(QPainter &p) {
   blindSpotLeft = scene.blind_spot_left;
   blindSpotRight = scene.blind_spot_right;
   cameraView = scene.camera_view;
+  conditionalExperimental = scene.conditional_experimental;
+  conditionalSpeed = scene.conditional_speed;
+  conditionalSpeedLead = scene.conditional_speed_lead;
+  conditionalStatus = scene.conditional_status;
   experimentalMode = scene.experimental_mode;
 
-  if (alwaysOnLateral) {
+  if (alwaysOnLateral || conditionalExperimental) {
     drawStatusBar(p);
   }
 
@@ -793,9 +797,27 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
   p.setOpacity(1.0);
   p.drawRoundedRect(statusBarRect, 30, 30);
 
+  std::map<int, QString> conditionalStatusMap = {
+    {0, "Conditional Experimental Mode ready"},
+    {1, "Conditional Experimental overridden"},
+    {2, "Experimental Mode manually activated"},
+    {3, "Conditional Experimental overridden"},
+    {4, "Experimental Mode manually activated"},
+    {5, "Experimental Mode activated for navigation" + (mapOpen ? "" : QString(" instructions input"))},
+    {6, "Experimental Mode activated due to" + (mapOpen ? "SLC" : QString(" no speed limit set"))},
+    {7, "Experimental Mode activated due to" + (mapOpen ? " speed" : " speed being less than " + QString::number(conditionalSpeedLead) + (is_metric ? " kph" : " mph"))},
+    {8, "Experimental Mode activated due to" + (mapOpen ? " speed" : " speed being less than " + QString::number(conditionalSpeed) + (is_metric ? " kph" : " mph"))},
+    {9, "Experimental Mode activated for slower lead"},
+    {10, "Experimental Mode activated for turn" + (mapOpen ? "" : QString(" / lane change"))},
+    {11, "Experimental Mode activated for curve"},
+    {12, "Experimental Mode activated for stop" + (mapOpen ? "" : QString(" sign / stop light"))},
+  };
+
   // Update status text
   if (alwaysOnLateralActive) {
     newStatus = QString("Always On Lateral active. Press the \"Cruise Control\" button to disable");
+  } else if (conditionalExperimental) {
+    newStatus = conditionalStatusMap[status != STATUS_DISENGAGED ? conditionalStatus : 0];
   }
 
   // Check if status has changed

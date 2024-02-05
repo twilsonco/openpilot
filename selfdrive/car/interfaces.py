@@ -215,14 +215,14 @@ class CarInterfaceBase(ABC):
   def _update(self, c: car.CarControl) -> car.CarState:
     pass
 
-  def update(self, c: car.CarControl, can_strings: List[bytes], frogpilot_variables) -> car.CarState:
+  def update(self, c: car.CarControl, can_strings: List[bytes], conditional_experimental_mode, frogpilot_variables) -> car.CarState:
     # parse can
     for cp in self.can_parsers:
       if cp is not None:
         cp.update_strings(can_strings)
 
     # get CarState
-    ret = self._update(c, frogpilot_variables)
+    ret = self._update(c, conditional_experimental_mode, frogpilot_variables)
 
     ret.canValid = all(cp.can_valid for cp in self.can_parsers if cp is not None)
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)

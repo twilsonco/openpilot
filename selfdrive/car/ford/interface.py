@@ -103,8 +103,8 @@ class CarInterface(CarInterfaceBase):
     ret.centerToFront = ret.wheelbase * 0.44
     return ret
 
-  def _update(self, c, frogpilot_variables):
-    ret = self.CS.update(self.cp, self.cp_cam, frogpilot_variables)
+  def _update(self, c, conditional_experimental_mode, frogpilot_variables):
+    ret = self.CS.update(self.cp, self.cp_cam, conditional_experimental_mode, frogpilot_variables)
 
     events = self.create_common_events(ret, frogpilot_variables, extra_gears=[GearShifter.manumatic])
     if not self.CS.vehicle_sensors_valid:

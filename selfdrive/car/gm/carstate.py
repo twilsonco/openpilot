@@ -28,7 +28,7 @@ class CarState(CarStateBase):
 
     # FrogPilot variables
 
-  def update(self, pt_cp, cam_cp, loopback_cp, frogpilot_variables):
+  def update(self, pt_cp, cam_cp, loopback_cp, conditional_experimental_mode, frogpilot_variables):
     ret = car.CarState.new_message()
 
     self.prev_cruise_buttons = self.cruise_buttons
