@@ -311,7 +311,7 @@ def manager_cleanup() -> None:
 
 
 def update_frogpilot_params(started, params, params_memory):
-  keys = ["DisableOnroadUploads"]
+  keys = ["DisableOnroadUploads", "FireTheBabysitter", "NoLogging"]
   if not started:
     keys.append("MuteDM")
   for key in keys:
