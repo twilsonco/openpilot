@@ -217,6 +217,14 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
       font-size: 55px;
     }
   )");
+
+  // Set the model name
+  std::map<int, QString> MODEL_NAME {
+    {0, "Los Angeles"},
+    {1, "Certified Herbalist"},
+  };
+
+  modelName = MODEL_NAME[params.getInt("Model")];
 }
 
 void OffroadHome::showEvent(QShowEvent *event) {
@@ -230,7 +238,7 @@ void OffroadHome::hideEvent(QHideEvent *event) {
 
 void OffroadHome::refresh() {
   date->setText(QLocale(uiState()->language.mid(5)).toString(QDateTime::currentDateTime(), "dddd, MMMM d"));
-  version->setText(getBrand() + " v" + getVersion().left(14).trimmed());
+  version->setText(getBrand() + " v" + getVersion().left(14).trimmed() + " - " + modelName);
 
   bool updateAvailable = update_widget->refresh();
   int alerts = alerts_widget->refresh();

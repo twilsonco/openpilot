@@ -25,6 +25,8 @@ private:
   void updateState(const UIState &s);
   void updateToggles();
 
+  FrogPilotButtonIconControl *modelSelectorButton;
+
   FrogPilotDualParamControl *aggressiveProfile;
   FrogPilotDualParamControl *conditionalSpeedsImperial;
   FrogPilotDualParamControl *conditionalSpeedsMetric;

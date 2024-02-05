@@ -27,6 +27,8 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
     {"AggressiveAcceleration", "Aggressive Acceleration With Lead", "Increase acceleration aggressiveness when following a lead vehicle from a stop.", ""},
     {"StoppingDistance", "Increase Stop Distance Behind Lead", "Increase the stopping distance for a more comfortable stop from lead vehicles.", ""},
 
+    {"Model", "Model Selector", "Choose your preferred openpilot model.", "../assets/offroad/icon_calibration.png"},
+
     {"MTSCEnabled", "Map Turn Speed Control", "Slow down for anticipated curves detected by your downloaded maps.", "../frogpilot/assets/toggle_icons/icon_speed_map.png"},
     {"DisableMTSCSmoothing", "Disable MTSC UI Smoothing", "Disables the smoothing for the requested speed in the onroad UI.", ""},
     {"MTSCCurvatureCheck", "Model Curvature Detection Failsafe", "Only trigger MTSC when the model detects a curve in the road. Purely used as a failsafe to prevent false positives. Leave this off if you never experience false positives.", ""},
@@ -204,6 +206,26 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
     } else if (param == "StoppingDistance") {
       toggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 10, std::map<int, QString>(), this, false, " feet");
 
+    } else if (param == "Model") {
+      modelSelectorButton = new FrogPilotButtonIconControl(title, tr("SELECT"), desc, icon);
+      QStringList models = {"Los Angeles (Default)", "Certified Herbalist"};
+      QObject::connect(modelSelectorButton, &FrogPilotButtonIconControl::clicked, this, [this, models]() {
+        int currentModel = params.getInt("Model");
+        QString currentModelLabel = models[currentModel];
+
+        QString selection = MultiOptionDialog::getSelection(tr("Select a driving model"), models, currentModelLabel, this);
+        if (!selection.isEmpty()) {
+          int selectedModel = models.indexOf(selection);
+          params.putInt("Model", selectedModel);
+          modelSelectorButton->setValue(selection);
+          if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
+            Hardware::reboot();
+          }
+        }
+      });
+      modelSelectorButton->setValue(models[params.getInt("Model")]);
+      addItem(modelSelectorButton);
+
     } else if (param == "MTSCEnabled") {
       FrogPilotParamManageControl *mtscToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
       QObject::connect(mtscToggle, &FrogPilotParamManageControl::manageButtonClicked, this, [this]() {
@@ -328,6 +350,7 @@ void FrogPilotControlsPanel::parentToggleClicked() {
   aggressiveProfile->setVisible(false);
   conditionalSpeedsImperial->setVisible(false);
   conditionalSpeedsMetric->setVisible(false);
+  modelSelectorButton->setVisible(false);
   standardProfile->setVisible(false);
   relaxedProfile->setVisible(false);
 
@@ -338,6 +361,7 @@ void FrogPilotControlsPanel::hideSubToggles() {
   aggressiveProfile->setVisible(false);
   conditionalSpeedsImperial->setVisible(false);
   conditionalSpeedsMetric->setVisible(false);
+  modelSelectorButton->setVisible(true);
   standardProfile->setVisible(false);
   relaxedProfile->setVisible(false);
 
