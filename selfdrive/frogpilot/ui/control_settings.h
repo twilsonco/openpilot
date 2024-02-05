@@ -30,7 +30,7 @@ private:
   FrogPilotDualParamControl *relaxedProfile;
 
   std::set<QString> conditionalExperimentalKeys = {"CECurves", "CECurvesLead", "CESlowerLead", "CENavigation", "CEStopLights", "CESignal"};
-  std::set<QString> fireTheBabysitterKeys = {};
+  std::set<QString> fireTheBabysitterKeys = {"NoLogging", "MuteDM", "MuteDoor", "MuteOverheated", "MuteSeatbelt"};
   std::set<QString> laneChangeKeys = {};
   std::set<QString> lateralTuneKeys = {};
   std::set<QString> longitudinalTuneKeys = {"AccelerationProfile", "AggressiveAcceleration"};
