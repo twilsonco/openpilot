@@ -54,7 +54,7 @@ class FrogPilotPlanner:
       self.v_cruise = v_cruise
 
     # Lane detection
-    check_lane_width = self.adjacent_lanes or self.blind_spot_path
+    check_lane_width = self.adjacent_lanes or self.blind_spot_path or self.lane_detection
     if check_lane_width and v_ego >= LANE_CHANGE_SPEED_MIN:
       self.lane_width_left = float(self.fpf.calculate_lane_width(modelData.laneLines[0], modelData.laneLines[1], modelData.roadEdges[0]))
       self.lane_width_right = float(self.fpf.calculate_lane_width(modelData.laneLines[3], modelData.laneLines[2], modelData.roadEdges[1]))
@@ -115,6 +115,8 @@ class FrogPilotPlanner:
     custom_ui = params.get_bool("CustomUI")
     self.adjacent_lanes = params.get_bool("AdjacentPath") and custom_ui
     self.blind_spot_path = params.get_bool("BlindSpotPath") and custom_ui
+
+    self.lane_detection = params.get_bool("LaneDetection") and params.get_bool("NudgelessLaneChange")
 
     longitudinal_tune = params.get_bool("LongitudinalTune")
     self.acceleration_profile = params.get_int("AccelerationProfile") if longitudinal_tune else 0
