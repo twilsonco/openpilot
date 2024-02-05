@@ -301,6 +301,7 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.disable_smoothing_mtsc = params.getBool("DisableMTSCSmoothing");
   scene.driver_camera = params.getBool("DriverCamera");
   scene.experimental_mode_via_screen = params.getBool("ExperimentalModeViaScreen") && params.getBool("ExperimentalModeActivation");
+  scene.fahrenheit = params.getBool("Fahrenheit");
 
   scene.model_ui = params.getBool("ModelUI");
   scene.lane_line_width = params.getInt("LaneLinesWidth") * (scene.is_metric ? 1 : INCH_TO_CM) / 200;
@@ -308,6 +309,8 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.path_width = params.getInt("PathWidth") / 10.0 * (scene.is_metric ? 1 : FOOT_TO_METER) / 2;
   scene.road_edge_width = params.getInt("RoadEdgesWidth") * (scene.is_metric ? 1 : INCH_TO_CM) / 200;
   scene.unlimited_road_ui_length = params.getBool("UnlimitedLength") && scene.model_ui;
+
+  scene.numerical_temp = params.getBool("NumericalTemp");
 
   bool quality_of_life_controls = params.getBool("QOLControls");
   scene.reverse_cruise = params.getBool("ReverseCruise") && quality_of_life_controls;
