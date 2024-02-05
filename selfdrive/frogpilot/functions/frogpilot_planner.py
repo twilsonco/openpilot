@@ -90,6 +90,7 @@ class FrogPilotPlanner:
     self.relaxed_jerk = params.get_float("RelaxedJerk")
 
     custom_ui = params.get_bool("CustomUI")
+    self.adjacent_lanes = params.get_bool("AdjacentPath") and custom_ui
     self.blind_spot_path = params.get_bool("BlindSpotPath") and custom_ui
 
     longitudinal_tune = params.get_bool("LongitudinalTune")
