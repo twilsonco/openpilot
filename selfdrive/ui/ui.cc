@@ -342,6 +342,7 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.hide_speed = params.getBool("HideSpeed") && quality_of_life_visuals;
   scene.hide_speed_ui = params.getBool("HideSpeedUI") && scene.hide_speed;
 
+  scene.personalities_via_screen = params.getBool("PersonalitiesViaScreen") && params.getBool("AdjustablePersonalities");
   scene.rotating_wheel = params.getBool("RotatingWheel");
   scene.screen_brightness = params.getInt("ScreenBrightness");
   scene.speed_limit_controller = params.getBool("SpeedLimitController");

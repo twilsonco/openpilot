@@ -200,6 +200,7 @@ typedef struct UIScene {
   bool model_ui;
   bool mute_dm;
   bool numerical_temp;
+  bool personalities_via_screen;
   bool reverse_cruise;
   bool reverse_cruise_ui;
   bool road_name_ui;
