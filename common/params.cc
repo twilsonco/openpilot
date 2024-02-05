@@ -231,6 +231,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"RefuseVolume", PERSISTENT},
     {"SilentMode", PERSISTENT},
     {"StockTune", PERSISTENT},
+    {"UpdateSchedule", PERSISTENT},
+    {"UpdateTime", PERSISTENT},
     {"WarningSoftVolume", PERSISTENT},
     {"WarningImmediateVolume", PERSISTENT},
 };
