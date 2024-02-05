@@ -327,7 +327,10 @@ class Controls:
       direction = self.sm['modelV2'].meta.laneChangeDirection
       if (CS.leftBlindspot and direction == LaneChangeDirection.left) or \
          (CS.rightBlindspot and direction == LaneChangeDirection.right):
-        self.events.add(EventName.laneChangeBlocked)
+        if self.loud_blindspot_alert:
+          self.events.add(EventName.laneChangeBlockedLoud)
+        else:
+          self.events.add(EventName.laneChangeBlocked)
       else:
         if direction == LaneChangeDirection.left:
           self.events.add(EventName.preLaneChangeLeft)
@@ -975,6 +978,7 @@ class Controls:
     custom_alerts = self.params.get_bool("CustomAlerts")
     self.green_light_alert = self.params.get_bool("GreenLightAlert") and custom_alerts
     self.lead_departing_alert = self.params.get_bool("LeadDepartingAlert") and custom_alerts
+    self.loud_blindspot_alert = self.params.get_bool("LoudBlindspotAlert") and custom_alerts
 
     custom_theme = self.params.get_bool("CustomTheme")
     custom_sounds = self.params.get_int("CustomSounds") if custom_theme else 0
