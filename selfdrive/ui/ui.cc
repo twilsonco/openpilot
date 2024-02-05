@@ -341,6 +341,7 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.full_map = params.getBool("FullMap") && quality_of_life_visuals;
   scene.hide_speed = params.getBool("HideSpeed") && quality_of_life_visuals;
   scene.hide_speed_ui = params.getBool("HideSpeedUI") && scene.hide_speed;
+  scene.wheel_speed = params.getBool("WheelSpeed") && quality_of_life_visuals;
 
   scene.personalities_via_screen = params.getBool("PersonalitiesViaScreen") && params.getBool("AdjustablePersonalities");
   scene.random_events = params.getBool("RandomEvents");
