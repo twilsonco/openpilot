@@ -99,6 +99,30 @@ private:
   QPixmap settings_img;
 };
 
+// FrogPilot buttons
+class PersonalityButton : public QPushButton {
+public:
+  explicit PersonalityButton(QWidget *parent = 0);
+
+  void checkUpdate();
+  void handleClick();
+  void updateState();
+
+private:
+  void paintEvent(QPaintEvent *event) override;
+
+  Params params;
+  Params paramsMemory{"/dev/shm/params"};
+
+  UIScene &scene;
+
+  int personalityProfile = 0;
+
+  QElapsedTimer transitionTimer;
+
+  QVector<std::pair<QPixmap, QString>> profile_data;
+};
+
 // container window for the NVG UI
 class AnnotatedCameraWidget : public CameraWidget {
   Q_OBJECT
@@ -149,6 +173,7 @@ private:
   UIScene &scene;
 
   Compass *compass_img;
+  PersonalityButton *personality_btn;
   ScreenRecorder *recorder_btn;
 
   QHBoxLayout *bottom_layout;
@@ -163,6 +188,7 @@ private:
   bool fullMapOpen;
   bool leadInfo;
   bool mapOpen;
+  bool onroadAdjustableProfiles;
   bool roadNameUI;
   bool showDriverCamera;
   bool showSLCOffset;
