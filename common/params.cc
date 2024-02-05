@@ -337,6 +337,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SchedulePending", PERSISTENT},
     {"ScreenBrightness", PERSISTENT},
     {"SearchInput", PERSISTENT},
+    {"SetSpeedOffset", PERSISTENT},
     {"SilentMode", PERSISTENT},
     {"ShowCPU", PERSISTENT},
     {"ShowGPU", PERSISTENT},
