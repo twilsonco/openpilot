@@ -98,3 +98,4 @@ class FrogPilotPlanner:
     longitudinal_tune = params.get_bool("LongitudinalTune")
     self.acceleration_profile = params.get_int("AccelerationProfile") if longitudinal_tune else 0
     self.aggressive_acceleration = params.get_bool("AggressiveAcceleration") and longitudinal_tune
+    self.increased_stopping_distance = params.get_int("StoppingDistance") * (1 if self.is_metric else CV.FOOT_TO_METER) if longitudinal_tune else 0
