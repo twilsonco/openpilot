@@ -853,6 +853,7 @@ void AnnotatedCameraWidget::updateFrogPilotWidgets(QPainter &p) {
   conditionalStatus = scene.conditional_status;
   customColors = scene.custom_colors;
   experimentalMode = scene.experimental_mode;
+  mapOpen = scene.map_open;
   turnSignalLeft = scene.turn_signal_left;
   turnSignalRight = scene.turn_signal_right;
 
@@ -943,7 +944,7 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
 
   // Update status text
   if (alwaysOnLateralActive) {
-    newStatus = QString("Always On Lateral active. Press the \"Cruise Control\" button to disable");
+    newStatus = QString("Always On Lateral active") + (mapOpen ? "" : ". Press the \"Cruise Control\" button to disable");
   } else if (conditionalExperimental) {
     newStatus = conditionalStatusMap[status != STATUS_DISENGAGED ? conditionalStatus : 0];
   }
