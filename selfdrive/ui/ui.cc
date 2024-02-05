@@ -249,6 +249,12 @@ static void update_state(UIState *s) {
       scene.obstacle_distance_stock = frogpilotPlan.getSafeObstacleDistanceStock();
       scene.stopped_equivalence = frogpilotPlan.getStoppedEquivalenceFactor();
     }
+    if (scene.speed_limit_controller) {
+      scene.speed_limit = frogpilotPlan.getSlcSpeedLimit();
+      scene.speed_limit_offset = frogpilotPlan.getSlcSpeedLimitOffset();
+      scene.speed_limit_overridden = frogpilotPlan.getSlcOverridden();
+      scene.speed_limit_overridden_speed = frogpilotPlan.getSlcOverriddenSpeed();
+    }
     scene.adjusted_cruise = frogpilotPlan.getAdjustedCruise();
   }
   if (sm.updated("liveLocationKalman")) {
@@ -303,6 +309,7 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.lead_info = params.getBool("LeadInfo") && custom_onroad_ui;
   scene.use_si = params.getBool("UseSI") && scene.lead_info;
   scene.road_name_ui = params.getBool("RoadNameUI") && custom_onroad_ui;
+  scene.use_vienna_slc_sign = params.getBool("UseVienna") && custom_onroad_ui;
 
   bool custom_theme = params.getBool("CustomTheme");
   scene.custom_colors = custom_theme ? params.getInt("CustomColors") : 0;
@@ -327,6 +334,8 @@ void ui_update_frogpilot_params(UIState *s) {
   bool quality_of_life_controls = params.getBool("QOLControls");
   scene.reverse_cruise = params.getBool("ReverseCruise") && quality_of_life_controls;
   scene.reverse_cruise_ui = params.getBool("ReverseCruiseUI") && scene.reverse_cruise;
+  scene.show_slc_offset = params.getBool("ShowSLCOffset") && quality_of_life_controls;
+  scene.show_slc_offset_ui = params.getBool("ShowSLCOffsetUI") && quality_of_life_controls;
 
   bool quality_of_life_visuals = params.getBool("QOLVisuals");
   scene.full_map = params.getBool("FullMap") && quality_of_life_visuals;
@@ -335,6 +344,7 @@ void ui_update_frogpilot_params(UIState *s) {
 
   scene.rotating_wheel = params.getBool("RotatingWheel");
   scene.screen_brightness = params.getInt("ScreenBrightness");
+  scene.speed_limit_controller = params.getBool("SpeedLimitController");
 }
 
 void UIState::updateStatus() {

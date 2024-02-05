@@ -5,6 +5,8 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.realtime import DT_CTRL
 
+from openpilot.selfdrive.frogpilot.functions.speed_limit_controller import SpeedLimitController
+
 # WARNING: this value was determined based on the model's training distribution,
 #          model predictions above this speed can be unpredictable
 # V_CRUISE's are in kph
@@ -140,7 +142,9 @@ class VCruiseHelper:
     if self.CP.pcmCruise:
       return
 
-    if conditional_experimental_mode:
+    if SpeedLimitController.desired_speed_limit != 0 and frogpilot_variables.set_speed_limit:
+      initial = SpeedLimitController.desired_speed_limit
+    elif conditional_experimental_mode:
       initial = V_CRUISE_INITIAL
     else:
       initial = V_CRUISE_INITIAL_EXPERIMENTAL_MODE if experimental_mode else V_CRUISE_INITIAL

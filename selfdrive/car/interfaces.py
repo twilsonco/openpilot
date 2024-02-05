@@ -22,6 +22,7 @@ from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 
 from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
+from openpilot.selfdrive.frogpilot.functions.speed_limit_controller import SpeedLimitController
 
 ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
@@ -497,6 +498,7 @@ class CarStateBase(ABC):
 
     # FrogPilot variables
     self.fpf = FrogPilotFunctions()
+    self.slc = SpeedLimitController
 
     self.lkas_previously_pressed = False
 

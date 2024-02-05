@@ -23,6 +23,8 @@ private:
   void updateMetric();
   void updateToggles();
 
+  ButtonControl *slscPriorityButton;
+
   FrogPilotButtonIconControl *modelSelectorButton;
 
   FrogPilotDualParamControl *aggressiveProfile;
@@ -37,8 +39,8 @@ private:
   std::set<QString> lateralTuneKeys = {"ForceAutoTune", "NNFF"};
   std::set<QString> longitudinalTuneKeys = {"AccelerationProfile", "AggressiveAcceleration", "SmoothBraking", "StoppingDistance"};
   std::set<QString> mtscKeys = {"DisableMTSCSmoothing", "MTSCAggressiveness", "MTSCLimit"};
-  std::set<QString> qolKeys = {"DisableOnroadUploads", "HigherBitrate", "NavChill", "PauseLateralOnSignal", "ReverseCruise", "SetSpeedOffset"};
-  std::set<QString> speedLimitControllerKeys = {};
+  std::set<QString> qolKeys = {"DisableOnroadUploads", "HigherBitrate", "NavChill", "PauseLateralOnSignal", "ReverseCruise", "SetSpeedLimit", "SetSpeedOffset"};
+  std::set<QString> speedLimitControllerKeys = {"Offset1", "Offset2", "Offset3", "Offset4", "SLCFallback", "SLCOverride", "SLCPriority"};
   std::set<QString> visionTurnControlKeys = {};
 
   std::map<std::string, ParamControl*> toggles;
