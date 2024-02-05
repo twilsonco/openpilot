@@ -29,8 +29,8 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def _update(self, c, frogpilot_variables):
-    ret = self.CS.update(self.cp, frogpilot_variables)
+  def _update(self, c, conditional_experimental_mode, frogpilot_variables):
+    ret = self.CS.update(self.cp, conditional_experimental_mode, frogpilot_variables)
 
     # wait for everything to init first
     if self.frame > int(5. / DT_CTRL):

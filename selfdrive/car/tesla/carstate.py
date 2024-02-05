@@ -20,7 +20,7 @@ class CarState(CarStateBase):
     self.acc_state = 0
     self.das_control_counters = deque(maxlen=32)
 
-  def update(self, cp, cp_cam, frogpilot_variables):
+  def update(self, cp, cp_cam, conditional_experimental_mode, frogpilot_variables):
     ret = car.CarState.new_message()
 
     # Vehicle speed

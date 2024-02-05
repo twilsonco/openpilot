@@ -23,7 +23,10 @@ private:
   void updateMetric();
   void updateToggles();
 
-  std::set<QString> conditionalExperimentalKeys = {};
+  FrogPilotDualParamControl *conditionalSpeedsImperial;
+  FrogPilotDualParamControl *conditionalSpeedsMetric;
+
+  std::set<QString> conditionalExperimentalKeys = {"CECurves", "CECurvesLead", "CESlowerLead", "CENavigation", "CEStopLights", "CESignal"};
   std::set<QString> fireTheBabysitterKeys = {};
   std::set<QString> laneChangeKeys = {};
   std::set<QString> lateralTuneKeys = {};

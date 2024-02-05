@@ -20,7 +20,7 @@ class CarState(CarStateBase):
     self.steeringTorqueSamples = deque(TORQUE_SAMPLES*[0], TORQUE_SAMPLES)
     self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
 
-  def update(self, cp, cp_adas, cp_cam, frogpilot_variables):
+  def update(self, cp, cp_adas, cp_cam, conditional_experimental_mode, frogpilot_variables):
     ret = car.CarState.new_message()
 
     if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):

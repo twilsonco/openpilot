@@ -346,8 +346,8 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def _update(self, c, frogpilot_variables):
-    ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback, frogpilot_variables)
+  def _update(self, c, conditional_experimental_mode, frogpilot_variables):
+    ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback, conditional_experimental_mode, frogpilot_variables)
 
     # Don't add event if transitioning from INIT, unless it's to an actual button
     if self.CS.cruise_buttons != CruiseButtons.UNPRESS or self.CS.prev_cruise_buttons != CruiseButtons.INIT:
