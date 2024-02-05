@@ -22,7 +22,7 @@ private:
   void updateMetric();
   void updateToggles();
 
-  std::set<QString> alertVolumeControlKeys = {};
+  std::set<QString> alertVolumeControlKeys = {"EngageVolume", "DisengageVolume", "RefuseVolume", "PromptVolume", "PromptDistractedVolume", "WarningSoftVolume", "WarningImmediateVolume"};
   std::set<QString> customAlertsKeys = {};
   std::set<QString> customOnroadUIKeys = {"AccelerationPath"};
   std::set<QString> customThemeKeys = {};
