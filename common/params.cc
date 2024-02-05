@@ -310,6 +310,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"NoLogging", PERSISTENT},
     {"NudgelessLaneChange", PERSISTENT},
     {"NumericalTemp", PERSISTENT},
+    {"OfflineMode", PERSISTENT},
     {"OneLaneChange", PERSISTENT},
     {"PathEdgeWidth", PERSISTENT},
     {"PathWidth", PERSISTENT},
