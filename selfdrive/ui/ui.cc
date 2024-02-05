@@ -310,6 +310,8 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.mute_dm = params.getBool("MuteDM") && params.getBool("FireTheBabysitter");
 
   bool quality_of_life_controls = params.getBool("QOLControls");
+  scene.reverse_cruise = params.getBool("ReverseCruise") && quality_of_life_controls;
+  scene.reverse_cruise_ui = params.getBool("ReverseCruiseUI") && scene.reverse_cruise;
 
   bool quality_of_life_visuals = params.getBool("QOLVisuals");
   scene.full_map = params.getBool("FullMap") && quality_of_life_visuals;
