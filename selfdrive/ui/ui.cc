@@ -313,6 +313,8 @@ void ui_update_frogpilot_params(UIState *s) {
 
   bool quality_of_life_visuals = params.getBool("QOLVisuals");
   scene.full_map = params.getBool("FullMap") && quality_of_life_visuals;
+  scene.hide_speed = params.getBool("HideSpeed") && quality_of_life_visuals;
+  scene.hide_speed_ui = params.getBool("HideSpeedUI") && scene.hide_speed;
 }
 
 void UIState::updateStatus() {
