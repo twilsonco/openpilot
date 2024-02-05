@@ -38,7 +38,7 @@ private:
   std::set<QString> conditionalExperimentalKeys = {"CECurves", "CECurvesLead", "CESlowerLead", "CENavigation", "CEStopLights", "CESignal"};
   std::set<QString> fireTheBabysitterKeys = {"NoLogging", "MuteOverheated", "OfflineMode"};
   std::set<QString> laneChangeKeys = {"LaneChangeTime", "LaneDetection", "LaneDetectionWidth", "OneLaneChange"};
-  std::set<QString> lateralTuneKeys = {"ForceAutoTune", "NNFF", "UseLateralJerk"};
+  std::set<QString> lateralTuneKeys = {"ForceAutoTune", "NNFF", "SteerRatio", "UseLateralJerk"};
   std::set<QString> longitudinalTuneKeys = {"AccelerationProfile", "AggressiveAcceleration", "SmoothBraking", "StoppingDistance"};
   std::set<QString> mtscKeys = {"DisableMTSCSmoothing", "MTSCAggressiveness", "MTSCCurvatureCheck", "MTSCLimit"};
   std::set<QString> qolKeys = {"DisableOnroadUploads", "HigherBitrate", "NavChill", "PauseLateralOnSignal", "ReverseCruise", "SetSpeedLimit", "SetSpeedOffset"};
@@ -52,4 +52,6 @@ private:
 
   bool isMetric = params.getBool("IsMetric");
   bool started = false;
+
+  float steerRatioStock = params.getFloat("SteerRatioStock");
 };
