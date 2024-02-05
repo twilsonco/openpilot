@@ -178,11 +178,17 @@ typedef struct UIScene {
   bool conditional_experimental;
   bool enabled;
   bool experimental_mode;
+  bool model_ui;
   bool turn_signal_left;
   bool turn_signal_right;
+  bool unlimited_road_ui_length;
 
+  float lane_line_width;
   float lane_width_left;
   float lane_width_right;
+  float path_edge_width;
+  float path_width;
+  float road_edge_width;
 
   int camera_view;
   int conditional_speed;
@@ -193,6 +199,7 @@ typedef struct UIScene {
   int custom_signals;
 
   QPolygonF track_adjacent_vertices[6];
+  QPolygonF track_edge_vertices;
 
 } UIScene;
 
