@@ -1081,6 +1081,7 @@ class Controls:
     self.frogpilot_variables.set_speed_offset = self.params.get_int("SetSpeedOffset") * (1 if self.is_metric else CV.MPH_TO_KPH) if quality_of_life else 0
 
     self.random_events = self.params.get_bool("RandomEvents")
+    self.frogpilot_variables.use_ev_tables = self.params.get_bool("EVTable")
 
 def main():
   controls = Controls()
