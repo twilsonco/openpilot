@@ -243,6 +243,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CustomSounds", PERSISTENT},
     {"CustomTheme", PERSISTENT},
     {"CydiaTune", PERSISTENT},
+    {"DeviceShutdown", PERSISTENT},
     {"DisengageVolume", PERSISTENT},
     {"DriveStats", PERSISTENT},
     {"EngageVolume", PERSISTENT},
