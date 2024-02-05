@@ -299,6 +299,7 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.fps_counter = params.getBool("FPSCounter") && custom_onroad_ui;
   scene.lead_info = params.getBool("LeadInfo") && custom_onroad_ui;
   scene.use_si = params.getBool("UseSI") && scene.lead_info;
+  scene.road_name_ui = params.getBool("RoadNameUI") && custom_onroad_ui;
 
   bool custom_theme = params.getBool("CustomTheme");
   scene.custom_colors = custom_theme ? params.getInt("CustomColors") : 0;
