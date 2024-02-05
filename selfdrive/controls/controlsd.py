@@ -31,6 +31,8 @@ from openpilot.system.hardware import HARDWARE
 
 import openpilot.selfdrive.sentry as sentry
 
+from openpilot.selfdrive.frogpilot.functions.speed_limit_controller import SpeedLimitController
+
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
@@ -93,6 +95,7 @@ class Controls:
     self.stopped_for_light_previously = False
 
     self.previous_lead_distance = 0
+    self.previous_speed_limit = 0
 
     ignore = self.sensor_packets + ['testJoystick']
     if SIMULATION:
@@ -492,6 +495,15 @@ class Controls:
 
       if lead_departing and lead.vLead > 1 and not CS.gasPressed and CS.standstill:
         self.events.add(EventName.leadDeparting)
+
+    # Speed limit changed alert
+    if self.speed_limit_alert:
+      speed_limit = SpeedLimitController.desired_speed_limit
+      speed_limit_changed = abs(speed_limit - self.previous_speed_limit) > 1 and self.previous_speed_limit != 0
+      self.previous_speed_limit = speed_limit
+
+      if speed_limit_changed:
+        self.events.add(EventName.speedLimitChanged)
 
   def data_sample(self):
     """Receive data from sockets and update carState"""
@@ -971,7 +983,7 @@ class Controls:
       self.is_metric = self.params.get_bool("IsMetric")
       if self.CP.openpilotLongitudinalControl:
          if not self.conditional_experimental_mode:
-           self.experimental_mode = self.params.get_bool("ExperimentalMode")
+           self.experimental_mode = self.params.get_bool("ExperimentalMode") or SpeedLimitController.experimental_mode
       else:
         self.experimental_mode = False
       if self.CP.notCar:
@@ -1002,6 +1014,7 @@ class Controls:
     self.green_light_alert = self.params.get_bool("GreenLightAlert") and custom_alerts
     self.lead_departing_alert = self.params.get_bool("LeadDepartingAlert") and custom_alerts
     self.loud_blindspot_alert = self.params.get_bool("LoudBlindspotAlert") and custom_alerts
+    self.speed_limit_alert = self.params.get_bool("SpeedLimitChangedAlert") and self.params.get_bool("SpeedLimitController") and custom_alerts
 
     custom_theme = self.params.get_bool("CustomTheme")
     custom_sounds = self.params.get_int("CustomSounds") if custom_theme else 0
@@ -1029,6 +1042,7 @@ class Controls:
     quality_of_life = self.params.get_bool("QOLControls")
     self.pause_lateral_on_signal = self.params.get_int("PauseLateralOnSignal") * (CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS) if quality_of_life else 0
     self.frogpilot_variables.reverse_cruise_increase = self.params.get_bool("ReverseCruise") and quality_of_life
+    self.frogpilot_variables.set_speed_limit = self.params.get_bool("SetSpeedLimit") and quality_of_life
     self.frogpilot_variables.set_speed_offset = self.params.get_int("SetSpeedOffset") * (1 if self.is_metric else CV.MPH_TO_KPH) if quality_of_life else 0
 
 def main():

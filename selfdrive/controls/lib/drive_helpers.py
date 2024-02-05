@@ -5,6 +5,8 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.realtime import DT_CTRL
 
+from openpilot.selfdrive.frogpilot.functions.speed_limit_controller import SpeedLimitController
+
 # WARNING: this value was determined based on the model's training distribution,
 #          model predictions above this speed can be unpredictable
 # V_CRUISE's are in kph
@@ -44,6 +46,9 @@ class VCruiseHelper:
     self.v_cruise_kph_last = 0
     self.button_timers = {ButtonType.decelCruise: 0, ButtonType.accelCruise: 0}
     self.button_change_states = {btn: {"standstill": False, "enabled": False} for btn in self.button_timers}
+
+    # FrogPilot variables
+    self.slc = SpeedLimitController
 
   @property
   def v_cruise_initialized(self):
@@ -151,8 +156,10 @@ class VCruiseHelper:
     else:
       self.v_cruise_kph = int(round(clip(CS.vEgo * CV.MS_TO_KPH, initial, V_CRUISE_MAX)))
 
-    self.v_cruise_cluster_kph = self.v_cruise_kph
+    if self.slc.desired_speed_limit != 0 and frogpilot_variables.set_speed_limit:
+      self.v_cruise_kph = self.slc.desired_speed_limit * CV.MS_TO_KPH
 
+    self.v_cruise_cluster_kph = self.v_cruise_kph
 
 def apply_deadzone(error, deadzone):
   if error > deadzone:

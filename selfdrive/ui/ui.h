@@ -205,11 +205,16 @@ typedef struct UIScene {
   bool road_name_ui;
   bool rotating_wheel;
   bool show_driver_camera;
+  bool show_slc_offset;
+  bool show_slc_offset_ui;
+  bool speed_limit_controller;
+  bool speed_limit_overridden;
   bool tethering_enabled;
   bool turn_signal_left;
   bool turn_signal_right;
   bool unlimited_road_ui_length;
   bool use_si;
+  bool use_vienna_slc_sign;
 
   float adjusted_cruise;
   float lane_line_width;
@@ -218,6 +223,9 @@ typedef struct UIScene {
   float path_edge_width;
   float path_width;
   float road_edge_width;
+  float speed_limit;
+  float speed_limit_offset;
+  float speed_limit_overridden_speed;
 
   int bearing_deg;
   int camera_view;
