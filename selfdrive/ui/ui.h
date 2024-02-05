@@ -216,6 +216,7 @@ typedef struct UIScene {
   bool unlimited_road_ui_length;
   bool use_si;
   bool use_vienna_slc_sign;
+  bool wheel_speed;
 
   float adjusted_cruise;
   float lane_line_width;
