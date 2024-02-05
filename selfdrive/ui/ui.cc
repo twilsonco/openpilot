@@ -282,6 +282,8 @@ void ui_update_frogpilot_params(UIState *s) {
 
   bool custom_onroad_ui = params.getBool("CustomUI");
   scene.acceleration_path = params.getBool("AccelerationPath") && custom_onroad_ui;
+  scene.adjacent_path = params.getBool("AdjacentPath") && custom_onroad_ui;
+  scene.adjacent_path_metrics = params.getBool("AdjacentPathMetrics") && scene.adjacent_path;
   scene.blind_spot_path = params.getBool("BlindSpotPath") && custom_onroad_ui;
   scene.lead_info = params.getBool("LeadInfo") && custom_onroad_ui;
   scene.use_si = params.getBool("UseSI") && scene.lead_info;
