@@ -4,6 +4,7 @@
 
 #include "selfdrive/frogpilot/ui/frogpilot_ui_functions.h"
 #include "selfdrive/ui/qt/offroad/settings.h"
+#include "selfdrive/ui/ui.h"
 
 class FrogPilotControlsPanel : public FrogPilotListWidget {
   Q_OBJECT
@@ -21,6 +22,7 @@ private:
   void parentToggleClicked();
   void updateCarToggles();
   void updateMetric();
+  void updateState(const UIState &s);
   void updateToggles();
 
   ButtonControl *slscPriorityButton;
@@ -49,5 +51,7 @@ private:
   Params paramsMemory{"/dev/shm/params"};
 
   bool isMetric = params.getBool("IsMetric");
+  bool started = false;
+
   float steerRatioStock = params.getFloat("SteerRatioStock");
 };

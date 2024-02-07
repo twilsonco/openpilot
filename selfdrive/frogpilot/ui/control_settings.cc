@@ -1,5 +1,4 @@
 #include "selfdrive/frogpilot/ui/control_settings.h"
-#include "selfdrive/ui/ui.h"
 
 FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPilotListWidget(parent) {
   const std::vector<std::tuple<QString, QString, QString, QString>> controlToggles {
@@ -93,8 +92,10 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
           FrogPilotConfirmationDialog::toggleAlert("WARNING: This is very experimental and isn't guaranteed to work. If you run into any issues, please report it in the FrogPilot Discord!",
           "I understand the risks.", this);
         }
-        if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
-          Hardware::reboot();
+        if (started) {
+          if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
+            Hardware::reboot();
+          }
         }
       });
 
@@ -264,7 +265,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
             params.remove("CalibrationParams");
             params.remove("LiveTorqueParameters");
           }
-          if (UIState().scene.started) {
+          if (started) {
             if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
               Hardware::reboot();
             }
@@ -436,9 +437,11 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
 
   std::set<std::string> rebootKeys = {"AlwaysOnLateral", "HigherBitrate", "NNFF", "MuteDM", "UseLateralJerk"};
   for (const std::string &key : rebootKeys) {
-    QObject::connect(toggles[key], &ToggleControl::toggleFlipped, [this]() {
-      if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
-        Hardware::reboot();
+    QObject::connect(toggles[key], &ToggleControl::toggleFlipped, [this, key]() {
+      if (started) {
+        if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
+          Hardware::reboot();
+        }
       }
     });
   }
@@ -447,9 +450,14 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
   QObject::connect(parent, &SettingsWindow::closeParentToggle, this, &FrogPilotControlsPanel::hideSubToggles);
   QObject::connect(parent, &SettingsWindow::updateMetric, this, &FrogPilotControlsPanel::updateMetric);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &FrogPilotControlsPanel::updateCarToggles);
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &FrogPilotControlsPanel::updateState);
 
   hideSubToggles();
   updateMetric();
+}
+
+void FrogPilotControlsPanel::updateState(const UIState &s) {
+  started = s.scene.started;
 }
 
 void FrogPilotControlsPanel::updateToggles() {
