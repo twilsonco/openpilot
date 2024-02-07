@@ -27,9 +27,12 @@ from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLCont
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
+MODEL_NAME = Params().get("Model", encoding='utf-8')
+
 MODEL_PATHS = {
-  ModelRunner.THNEED: Path(__file__).parent / 'models/supercombo.thneed',
-  ModelRunner.ONNX: Path(__file__).parent / 'models/supercombo.onnx'}
+  ModelRunner.THNEED: Path(__file__).parent / f'models/models/{MODEL_NAME}.thneed',
+  ModelRunner.ONNX: Path(__file__).parent / f'models/models/{MODEL_NAME}.onnx'
+}
 
 METADATA_PATH = Path(__file__).parent / 'models/supercombo_metadata.pkl'
 
