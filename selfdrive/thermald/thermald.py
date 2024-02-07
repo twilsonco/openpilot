@@ -13,6 +13,7 @@ import psutil
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.dict_helpers import strip_deprecated_keys
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
@@ -25,6 +26,8 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring
 from openpilot.selfdrive.thermald.fan_controller import TiciFanController
 from openpilot.system.version import terms_version, training_version
+
+PREBUILT_FILE = os.path.join(BASEDIR, 'prebuilt')
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -451,6 +454,9 @@ def thermald_thread(end_event, hw_queue) -> None:
     count += 1
     should_start_prev = should_start
 
+    # Create the prebuilt file if it doesn't exist
+    if not os.path.exists(PREBUILT_FILE):
+      os.system(f"touch {PREBUILT_FILE}")
 
 def main():
   hw_queue = queue.Queue(maxsize=1)
