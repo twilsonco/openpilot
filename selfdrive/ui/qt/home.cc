@@ -220,12 +220,10 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   )");
 
   // Set the model name
-  std::map<int, QString> MODEL_NAME {
-    {0, "Los Angeles"},
-    {1, "Certified Herbalist"},
+  MODEL_NAME = {
+    {"los-angeles", "Los Angeles"},
+    {"certified-herbalist", "Certified Herbalist"},
   };
-
-  modelName = MODEL_NAME[params.getInt("Model")];
 }
 
 void OffroadHome::showEvent(QShowEvent *event) {
@@ -238,8 +236,10 @@ void OffroadHome::hideEvent(QHideEvent *event) {
 }
 
 void OffroadHome::refresh() {
+  QString model = QString::fromStdString(params.get("Model"));
+
   date->setText(QLocale(uiState()->language.mid(5)).toString(QDateTime::currentDateTime(), "dddd, MMMM d"));
-  version->setText(getBrand() + " v" + getVersion().left(14).trimmed() + " - " + modelName);
+  version->setText(getBrand() + " v" + getVersion().left(14).trimmed() + " - " + MODEL_NAME[model]);
 
   bool updateAvailable = update_widget->refresh();
   int alerts = alerts_widget->refresh();

@@ -247,22 +247,33 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
 
     } else if (param == "Model") {
       modelSelectorButton = new FrogPilotButtonIconControl(title, tr("SELECT"), desc, icon);
-      QStringList models = {"Los Angeles (Default)", "Certified Herbalist"};
-      QObject::connect(modelSelectorButton, &FrogPilotButtonIconControl::clicked, this, [this, models]() {
-        int currentModel = params.getInt("Model");
-        QString currentModelLabel = models[currentModel];
+      QStringList models = {"los-angeles", "certified-herbalist"};
+      QStringList modelLabels = {"Los Angeles (Default)", "Certified Herbalist"};
+      QObject::connect(modelSelectorButton, &FrogPilotButtonIconControl::clicked, this, [this, models, modelLabels]() {
+        QString currentModelValue = QString::fromStdString(params.get("Model"));
+        int currentModelIndex = models.indexOf(currentModelValue);
+        QString currentModelLabel = modelLabels[currentModelIndex];
 
-        QString selection = MultiOptionDialog::getSelection(tr("Select a driving model"), models, currentModelLabel, this);
+        QString selection = MultiOptionDialog::getSelection(tr("Select a driving model"), modelLabels, currentModelLabel, this);
         if (!selection.isEmpty()) {
-          int selectedModel = models.indexOf(selection);
-          params.putInt("Model", selectedModel);
+          int selectedModelIndex = modelLabels.indexOf(selection);
+          QString selectedModelValue = models[selectedModelIndex];
+          params.put("Model", selectedModelValue.toStdString());
           modelSelectorButton->setValue(selection);
-          if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
-            Hardware::reboot();
+          if (FrogPilotConfirmationDialog::yesorno("Do you want to start with a fresh calibration for the newly selected model?", this)) {
+            params.remove("CalibrationParams");
+            params.remove("LiveTorqueParameters");
+          }
+          if (UIState().scene.started) {
+            if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
+              Hardware::reboot();
+            }
           }
         }
       });
-      modelSelectorButton->setValue(models[params.getInt("Model")]);
+      int initialModelIndex = models.indexOf(QString::fromStdString(params.get("Model")));
+      QString initialModelLabel = modelLabels[initialModelIndex];
+      modelSelectorButton->setValue(initialModelLabel);
       addItem(modelSelectorButton);
 
     } else if (param == "MTSCEnabled") {
