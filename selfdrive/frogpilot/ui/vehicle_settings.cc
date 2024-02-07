@@ -3,7 +3,6 @@
 #include <QTextStream>
 
 #include "selfdrive/frogpilot/ui/vehicle_settings.h"
-#include "selfdrive/ui/ui.h"
 
 QStringList getCarNames(const QString &carMake) {
   QMap<QString, QString> makeMap;
@@ -127,8 +126,10 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
       toggle = new FrogPilotButtonsParamControl(param, title, desc, icon, tuneOptions);
 
       QObject::connect(static_cast<FrogPilotButtonsParamControl*>(toggle), &FrogPilotButtonsParamControl::buttonClicked, [this]() {
-        if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
-          Hardware::reboot();
+        if (started) {
+          if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
+            Hardware::reboot();
+          }
         }
       });
 
@@ -151,8 +152,10 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
   std::set<std::string> rebootKeys = {"CrosstrekTorque", "GasRegenCmd", "LowerVolt"};
   for (const std::string &key : rebootKeys) {
     QObject::connect(toggles[key], &ToggleControl::toggleFlipped, [this]() {
-      if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
-        Hardware::reboot();
+      if (started) {
+        if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
+          Hardware::reboot();
+        }
       }
     });
   }
@@ -173,6 +176,12 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
   if (!carMake.isEmpty()) {
     setModels();
   }
+
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &FrogPilotVehiclesPanel::updateState);
+}
+
+void FrogPilotVehiclesPanel::updateState(const UIState &s) {
+  started = s.scene.started;
 }
 
 void FrogPilotVehiclesPanel::updateToggles() {

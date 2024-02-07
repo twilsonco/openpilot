@@ -1,5 +1,4 @@
 #include "selfdrive/frogpilot/ui/visual_settings.h"
-#include "selfdrive/ui/ui.h"
 
 FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilotListWidget(parent) {
   const std::vector<std::tuple<QString, QString, QString, QString>> visualToggles {
@@ -212,9 +211,11 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
 
   std::set<std::string> rebootKeys = {"DriveStats"};
   for (const std::string &key : rebootKeys) {
-    QObject::connect(toggles[key], &ToggleControl::toggleFlipped, [this]() {
-      if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
-        Hardware::reboot();
+    QObject::connect(toggles[key], &ToggleControl::toggleFlipped, [this, key]() {
+      if (started || key == "DriveStats") {
+        if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
+          Hardware::reboot();
+        }
       }
     });
   }
@@ -225,6 +226,12 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
 
   hideSubToggles();
   updateMetric();
+
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &FrogPilotVisualsPanel::updateState);
+}
+  
+void FrogPilotVisualsPanel::updateState(const UIState &s) {
+  started = s.scene.started;
 }
 
 void FrogPilotVisualsPanel::updateToggles() {
