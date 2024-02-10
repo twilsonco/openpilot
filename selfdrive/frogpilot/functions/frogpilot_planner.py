@@ -36,11 +36,8 @@ class FrogPilotPlanner:
 
     self.update_frogpilot_params(params, params_memory)
 
-  def update(self, carState, controlsState, modelData, mpc, sm, v_ego):
+  def update(self, carState, controlsState, modelData, mpc, sm, v_cruise, v_ego):
     enabled = controlsState.enabled
-
-    v_cruise_kph = controlsState.vCruiseCluster if controlsState.vCruiseCluster != 0.0 else controlsState.vCruise
-    v_cruise = v_cruise_kph * CV.KPH_TO_MS
 
     # Acceleration profiles
     v_cruise_changed = (self.mtsc_target or self.vtsc_target) + 1 < v_cruise  # Use stock acceleration profiles to handle MTSC/VTSC more precisely
@@ -139,7 +136,8 @@ class FrogPilotPlanner:
     else:
       self.vtsc_target = v_cruise
 
-    return min(v_cruise, self.mtsc_target, self.slc_target, self.vtsc_target)
+    v_ego_diff = max(carState.vEgoRaw - carState.vEgoCluster, 0)
+    return min(v_cruise, self.mtsc_target, self.slc_target, self.vtsc_target) - v_ego_diff
 
   def publish(self, sm, pm, mpc):
     frogpilot_plan_send = messaging.new_message('frogpilotPlan')
