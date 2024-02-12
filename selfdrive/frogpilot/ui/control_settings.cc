@@ -40,8 +40,9 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
 
     {"MTSCEnabled", "Map Turn Speed Control", "Slow down for anticipated curves detected by your downloaded maps.", "../frogpilot/assets/toggle_icons/icon_speed_map.png"},
     {"DisableMTSCSmoothing", "Disable MTSC UI Smoothing", "Disables the smoothing for the requested speed in the onroad UI.", ""},
+    {"MTSCCurvatureCheck", "Model Curvature Detection Failsafe", "Only trigger MTSC when the model detects a curve in the road. Purely used as a failsafe to prevent false positives. Leave this off if you never experience false positives.", ""},
+    {"MTSCLimit", "Speed Change Hard Cap", "Set a hard cap for MTSC. If MTSC requests a speed decrease greater than this value, it ignores the requested speed from MTSC. Purely used as a failsafe to prevent false positives. Leave this off if you never experience false positives.", ""},
     {"MTSCAggressiveness", "Turn Speed Aggressiveness", "Set turn speed aggressiveness. Higher values result in faster turns, lower values yield gentler turns.\n\nA change of +- 1% results in the velocity being raised or lowered by about 1 mph.", ""},
-    {"MTSCLimit", "Turn Speed Limit", "Set a limit for MTSC based on your current speed. Helps prevent false positives on straight roads.\n\nExample:\n\nCurrent speed = 50mph\nMTSC requested speed = 25mph (25 / 50 = 50%)\nTurn Speed Limit = 25%\nMTSC won't activate because 50% > 25%\n\nA limit of 100% allows all speeds and 0% allows none.", ""},
 
     {"NudgelessLaneChange", "Nudgeless Lane Change", "Enable lane changes without manual steering input.", "../frogpilot/assets/toggle_icons/icon_lane.png"},
     {"LaneChangeTime", "Lane Change Timer", "Specify a delay before executing a nudgeless lane change.", ""},
@@ -289,7 +290,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
     } else if (param == "MTSCAggressiveness") {
       toggle = new FrogPilotParamValueControl(param, title, desc, icon, 1, 200, std::map<int, QString>(), this, false, "%");
     } else if (param == "MTSCLimit") {
-      toggle = new FrogPilotParamValueControl(param, title, desc, icon, 1, 100, std::map<int, QString>(), this, false, "%");
+      toggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 99, std::map<int, QString>(), this, false, " mph");
 
     } else if (param == "QOLControls") {
       FrogPilotParamManageControl *qolToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
@@ -505,6 +506,7 @@ void FrogPilotControlsPanel::updateMetric() {
     params.putIntNonBlocking("CESpeed", std::nearbyint(params.getInt("CESpeed") * speedConversion));
     params.putIntNonBlocking("CESpeedLead", std::nearbyint(params.getInt("CESpeedLead") * speedConversion));
     params.putIntNonBlocking("LaneDetectionWidth", std::nearbyint(params.getInt("LaneDetectionWidth") * distanceConversion));
+    params.putIntNonBlocking("MTSCLimit", std::nearbyint(params.getInt("MTSCLimit") * speedConversion));
     params.putIntNonBlocking("Offset1", std::nearbyint(params.getInt("Offset1") * speedConversion));
     params.putIntNonBlocking("Offset2", std::nearbyint(params.getInt("Offset2") * speedConversion));
     params.putIntNonBlocking("Offset3", std::nearbyint(params.getInt("Offset3") * speedConversion));
@@ -515,6 +517,7 @@ void FrogPilotControlsPanel::updateMetric() {
   }
 
   FrogPilotParamValueControl *laneWidthToggle = static_cast<FrogPilotParamValueControl*>(toggles["LaneDetectionWidth"]);
+  FrogPilotParamValueControl *mtscLimitToggle = static_cast<FrogPilotParamValueControl*>(toggles["MTSCLimit"]);
   FrogPilotParamValueControl *offset1Toggle = static_cast<FrogPilotParamValueControl*>(toggles["Offset1"]);
   FrogPilotParamValueControl *offset2Toggle = static_cast<FrogPilotParamValueControl*>(toggles["Offset2"]);
   FrogPilotParamValueControl *offset3Toggle = static_cast<FrogPilotParamValueControl*>(toggles["Offset3"]);
@@ -535,6 +538,8 @@ void FrogPilotControlsPanel::updateMetric() {
     offset4Toggle->setDescription("Set speed limit offset for limits between 65-99 kph.");
 
     laneWidthToggle->updateControl(0, 30, " meters", 10);
+
+    mtscLimitToggle->updateControl(0, 99, " kph");
 
     offset1Toggle->updateControl(0, 99, " kph");
     offset2Toggle->updateControl(0, 99, " kph");
@@ -557,6 +562,8 @@ void FrogPilotControlsPanel::updateMetric() {
 
     laneWidthToggle->updateControl(0, 100, " feet", 10);
 
+    mtscLimitToggle->updateControl(0, 99, " mph");
+
     offset1Toggle->updateControl(0, 99, " mph");
     offset2Toggle->updateControl(0, 99, " mph");
     offset3Toggle->updateControl(0, 99, " mph");
@@ -568,6 +575,7 @@ void FrogPilotControlsPanel::updateMetric() {
   }
 
   laneWidthToggle->refresh();
+  mtscLimitToggle->refresh();
   offset1Toggle->refresh();
   offset2Toggle->refresh();
   offset3Toggle->refresh();

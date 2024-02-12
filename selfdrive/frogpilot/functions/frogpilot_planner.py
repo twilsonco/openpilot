@@ -78,7 +78,9 @@ class FrogPilotPlanner:
     # Pfeiferj's Map Turn Speed Controller
     if self.map_turn_speed_controller and enabled:
       self.mtsc_target = np.clip(self.mtsc.target_speed(v_ego, carState.aEgo), MIN_TARGET_V, v_cruise)
-      if self.mtsc_target / v_ego > self.mtsc_limit:
+      if self.mtsc_curvature_check and self.road_curvature < 1.0:
+        self.mtsc_target = v_cruise
+      if v_ego - self.mtsc_limit > self.mtsc_target:
         self.mtsc_target = v_cruise
     else:
       self.mtsc_target = v_cruise
@@ -196,7 +198,8 @@ class FrogPilotPlanner:
 
     self.map_turn_speed_controller = params.get_bool("MTSCEnabled")
     if self.map_turn_speed_controller:
-      self.mtsc_limit = params.get_float("MTSCLimit") / 100
+      self.mtsc_curvature_check = params.get_bool("MTSCCurvatureCheck")
+      self.mtsc_limit = params.get_float("MTSCLimit") * (CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS)
       params_memory.put_float("MapTargetLatA", 2 * (params.get_int("MTSCAggressiveness") / 100))
 
     self.speed_limit_controller = params.get_bool("SpeedLimitController")
