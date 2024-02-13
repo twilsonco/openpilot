@@ -10,6 +10,7 @@
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
+#include "selfdrive/common/params.h"
 
 ExitHandler do_exit;
 int main(int argc, char *argv[]) {
@@ -24,7 +25,25 @@ int main(int argc, char *argv[]) {
   err = sd_journal_seek_tail(journal);
   assert(err >= 0);
 
+  bool low_overhead_mode = Params().getBool("LowOverheadMode");
+  int param_check_interval_base = 1000;
+  int param_check_interval = param_check_interval_base;
+  int iter = param_check_interval + 1;
+
   while (!do_exit) {
+    iter++;
+    if (iter > param_check_interval){
+      low_overhead_mode = Params().getBool("LowOverheadMode");
+      iter = 0;
+    }
+    if (low_overhead_mode){
+      param_check_interval = 5;
+      util::sleep_for(1000);
+      continue;
+    }
+    else{
+      param_check_interval = param_check_interval_base;
+    }
     err = sd_journal_next(journal);
     assert(err >= 0);
 

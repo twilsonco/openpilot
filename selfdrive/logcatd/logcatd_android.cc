@@ -7,6 +7,7 @@
 
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/common/util.h"
+#include "selfdrive/common/params.h"
 
 int main() {
   setpriority(PRIO_PROCESS, 0, -15);
@@ -16,6 +17,11 @@ int main() {
 
   log_time last_log_time = {};
   logger_list *logger_list = android_logger_list_alloc(ANDROID_LOG_RDONLY | ANDROID_LOG_NONBLOCK, 0, 0);
+
+  bool low_overhead_mode = Params().getBool("LowOverheadMode");
+  int param_check_interval_base = 1000;
+  int param_check_interval = param_check_interval_base;
+  int iter = param_check_interval + 1;
 
   while (!do_exit) {
     // setup android logging
@@ -36,6 +42,19 @@ int main() {
     assert(kernel_logger);
 
     while (!do_exit) {
+      iter++;
+      if (iter > param_check_interval){
+        low_overhead_mode = Params().getBool("LowOverheadMode");
+        iter = 0;
+      }
+      if (low_overhead_mode){
+        param_check_interval = 5;
+        util::sleep_for(1000);
+        continue;
+      }
+      else{
+        param_check_interval = param_check_interval_base;
+      }
       log_msg log_msg;
       int err = android_logger_list_read(logger_list, &log_msg);
       if (err <= 0) break;

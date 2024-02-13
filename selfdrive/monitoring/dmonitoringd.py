@@ -6,7 +6,7 @@ from selfdrive.controls.lib.events import Events
 from selfdrive.monitoring.driver_monitor import DriverStatus
 from selfdrive.locationd.calibrationd import Calibration
 from selfdrive.monitoring.hands_on_wheel_monitor import HandsOnWheelStatus
-
+import time
 
 def dmonitoringd_thread(sm=None, pm=None):
   if pm is None:
@@ -27,9 +27,25 @@ def dmonitoringd_thread(sm=None, pm=None):
   driver_engaged = False
   steering_wheel_engaged = False
   hands_on_wheel_monitoring_enabled = Params().get_bool("HandsOnWheelMonitoring")
+  
+  low_overhead_mode = Params().get_bool("LowOverheadMode")
+  param_check_iter_base = 200
+  param_check_iter = param_check_iter_base
+  iter = param_check_iter + 1
 
   # 10Hz <- dmonitoringmodeld
   while True:
+    iter += 1
+    if iter >= param_check_iter:
+      iter = 0
+      low_overhead_mode = Params().get_bool("LowOverheadMode")
+    if low_overhead_mode:
+      time.sleep(1)
+      param_check_iter = 5
+      continue
+    else:
+      param_check_iter = param_check_iter_base
+      
     sm.update()
 
     if not sm.updated['driverState']:

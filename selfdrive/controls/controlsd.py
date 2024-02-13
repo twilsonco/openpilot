@@ -97,6 +97,9 @@ class Controls:
     joystick_packet = ['testJoystick'] if self.joystick_mode else []
     
     self.gray_panda_support_enabled = params.get_bool("GrayPandaSupport")
+    self.low_overhead_mode = params.get_bool("LowOverheadMode")
+    self.low_overhead_ignore_base = {"loggerd", "updated", "uploader", "dmonitoringmodeld", "dmonitoringd"}
+    self.low_overhead_ignore = self.low_overhead_ignore_base
 
     self.sm = sm
     if self.sm is None:
@@ -282,7 +285,8 @@ class Controls:
 
     self.events.clear()
     self.events.add_from_msg(CS.events)
-    self.events.add_from_msg(self.sm['driverMonitoringState'].events)
+    if not self.low_overhead_mode:
+      self.events.add_from_msg(self.sm['driverMonitoringState'].events)
     self.events.add_from_msg(self.sm['longitudinalPlan'].eventsDEPRECATED)
 
     # Handle startup event
@@ -307,6 +311,11 @@ class Controls:
       if screen_tapped:
         self.CI.screen_tapped = True
         put_nonblocking("ScreenTapped", "0")
+      self.low_overhead_mode = self._params.get_bool("LowOverheadMode")
+      if self.low_overhead_mode:
+        self.low_overhead_ignore = self.low_overhead_ignore_base
+      else:
+        self.low_overhead_ignore = set()
       self.distance_last = CS.vEgo * (t - self.params_check_last_t)
       self.distance_traveled_total += self.distance_last
       if CS.gearShifter in ['drive', 'low', 'reverse']:
@@ -354,7 +363,7 @@ class Controls:
             self.intervention_count_total += 1
           self.intervention_last_t = t
           self.intervention_dist = 0.0
-        if not car_interaction and self.sm['driverMonitoringState'].isDistracted or CS.vEgo < 0.1:
+        if not car_interaction and not self.low_overhead_mode and self.sm['driverMonitoringState'].isDistracted or CS.vEgo < 0.1:
           if CS.vEgo > 0.1 and self.distraction_timer > 2.0:
             self.distraction_count_session += 1
             self.distraction_count_total += 1
@@ -472,15 +481,15 @@ class Controls:
       self.events.add(EventName.radarFault)
     elif not self.sm.valid["pandaState"]:
       self.events.add(EventName.usbError)
-    elif not self.sm.all_alive_and_valid():
+    elif not self.sm.all_alive_and_valid(ignore=list(self.low_overhead_ignore)):
       self.events.add(EventName.commIssue)
       if not self.logged_comm_issue:
-        invalid = [s for s, valid in self.sm.valid.items() if not valid]
-        not_alive = [s for s, alive in self.sm.alive.items() if not alive]
+        invalid = [s for s, valid in self.sm.valid.items() if not valid and s not in self.low_overhead_ignore]
+        not_alive = [s for s, alive in self.sm.alive.items() if not alive and s not in self.low_overhead_ignore]
         cloudlog.event("commIssue", invalid=invalid, not_alive=not_alive)
         self.logged_comm_issue = True
-    else:
-      self.logged_comm_issue = False
+      else:
+        self.logged_comm_issue = False
 
     if not self.sm['lateralPlan'].mpcSolutionValid:
       self.events.add(EventName.plannerError)
@@ -532,7 +541,7 @@ class Controls:
 
       # Check if all manager processes are running
       not_running = set(p.name for p in self.sm['managerState'].processes if not p.running)
-      if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
+      if self.sm.rcv_frame['managerState'] and (not_running - (IGNORE_PROCESSES | self.low_overhead_ignore)):
         self.events.add(EventName.processNotRunning)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
@@ -926,7 +935,7 @@ class Controls:
     CC.onePedalD = float(self.CI.CC.one_pedal_pid.d)
     CC.onePedalF = float(self.CI.CC.one_pedal_pid.f)
 
-    force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
+    force_decel = (not self.low_overhead_mode and self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
                   (self.state == State.softDisabling)
 
     # Curvature & Steering angle

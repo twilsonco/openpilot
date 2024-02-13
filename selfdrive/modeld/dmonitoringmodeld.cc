@@ -8,6 +8,7 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/modeld/models/dmonitoring.h"
+#include "selfdrive/common/params.h"
 
 ExitHandler do_exit;
 
@@ -15,7 +16,26 @@ void run_model(DMonitoringModelState &model, VisionIpcClient &vipc_client) {
   PubMaster pm({"driverState"});
   double last = 0;
 
+  bool low_overhead_mode = Params().getBool("LowOverheadMode");
+  int last_param_check_iter = 0;
+  int param_check_interval_base = 200;
+  int param_check_interval = param_check_interval_base;
+  int iter = param_check_interval + 1;
+
   while (!do_exit) {
+    iter++;
+    if (iter > param_check_interval){
+      low_overhead_mode = Params().getBool("LowOverheadMode");
+      iter = 0;
+    }
+    if (low_overhead_mode){
+      param_check_interval = 5;
+      util::sleep_for(1000);
+      continue;
+    }
+    else{
+      param_check_interval = param_check_interval_base;
+    }
     VisionIpcBufExtra extra = {};
     VisionBuf *buf = vipc_client.recv(&extra);
     if (buf == nullptr) continue;

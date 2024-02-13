@@ -6,6 +6,8 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/locationd/ublox_msg.h"
+#include "selfdrive/common/params.h"
+
 
 ExitHandler do_exit;
 using namespace ublox;
@@ -22,8 +24,26 @@ int main() {
   assert(subscriber != NULL);
   subscriber->setTimeout(100);
 
+  bool gray_panda_support = Params().getBool("GrayPandaSupport");
+  int last_param_check_iter = 0;
+  int param_check_interval_base = 1000;
+  int param_check_interval = param_check_interval_base;
+  int iter = param_check_interval + 1;
 
   while (!do_exit) {
+    iter++;
+    if (iter > param_check_interval){
+      gray_panda_support = Params().getBool("GrayPandaSupport");
+      iter = 0;
+    }
+    if (gray_panda_support){
+      param_check_interval = 5;
+      util::sleep_for(1000);
+      continue;
+    }
+    else{
+      param_check_interval = param_check_interval_base;
+    }
     Message * msg = subscriber->receive();
     if (!msg) {
       if (errno == EINTR) {
