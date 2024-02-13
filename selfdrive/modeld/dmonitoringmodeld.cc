@@ -17,7 +17,6 @@ void run_model(DMonitoringModelState &model, VisionIpcClient &vipc_client) {
   double last = 0;
 
   bool low_overhead_mode = Params().getBool("LowOverheadMode");
-  int last_param_check_iter = 0;
   int param_check_interval_base = 200;
   int param_check_interval = param_check_interval_base;
   int iter = param_check_interval + 1;

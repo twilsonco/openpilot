@@ -25,7 +25,6 @@ int main() {
   subscriber->setTimeout(100);
 
   bool gray_panda_support = Params().getBool("GrayPandaSupport");
-  int last_param_check_iter = 0;
   int param_check_interval_base = 1000;
   int param_check_interval = param_check_interval_base;
   int iter = param_check_interval + 1;
