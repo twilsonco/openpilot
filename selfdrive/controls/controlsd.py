@@ -98,7 +98,7 @@ class Controls:
     
     self.gray_panda_support_enabled = params.get_bool("GrayPandaSupport")
     self.low_overhead_mode = params.get_bool("LowOverheadMode")
-    self.low_overhead_ignore_base = {"loggerd", "updated", "uploader", "dmonitoringmodeld", "dmonitoringd"}
+    self.low_overhead_ignore_base = {"loggerd", "updated", "uploader", "dmonitoringmodeld", "dmonitoringd", "driverMonitoringState"}
     self.low_overhead_ignore = self.low_overhead_ignore_base
 
     self.sm = sm
