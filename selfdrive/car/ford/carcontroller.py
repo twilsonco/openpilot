@@ -135,7 +135,7 @@ class CarController:
         dist_from_lane_center_rate = (interp(self.future_lookup_time[1], ModelConstants.T_IDXS, dist_from_lane_center_full) \
           - interp(self.future_lookup_time[0], ModelConstants.T_IDXS, dist_from_lane_center_full)) / self.future_lookup_time_diff
         # Downscale dist_from_lane_center_rate when under or approaching high curvature
-        max_abs_desired_curvature = max(np.abs(np.array(model_data.orientationRate.z[:lookahead_upper_idx]) * self.model_orientation_rate_z_scale))
+        max_abs_desired_curvature = max(np.abs(np.array(model_data.orientationRate.z[0:lookahead_upper_idx]) * self.model_orientation_rate_z_scale))
         dist_from_lane_center_rate *= interp(max_abs_desired_curvature, self.max_curvature_for_dist_from_lane_center_rate_bp, [1.0, 0.0])
         
         # Downscale both dist_from_lane_center and _rate when lanelines are unclear
