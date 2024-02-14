@@ -128,7 +128,7 @@ class CarController:
         lookahead_curvature_rate = get_lookahead_value(predicted_curvature_rate[LAT_PLAN_MIN_IDX:lookahead_upper_idx], desired_curvature_rate)
         
         # Now get distance from lane center
-        dist_from_lane_center_full = np.array(model_data.laneLines[1].y) + np.array(model_data.laneLines[2].y) / 2
+        dist_from_lane_center_full = (np.array(model_data.laneLines[1].y) + np.array(model_data.laneLines[2].y)) / 2
         dist_from_lane_center = interp(self.future_lookup_time[0], ModelConstants.T_IDXS, dist_from_lane_center_full)
         
         # Now get distance from lane center rate
