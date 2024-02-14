@@ -17,6 +17,7 @@ CACHE_DIR = Path("/data/scons_cache" if AGNOS else "/tmp/scons_cache")
 
 TOTAL_SCONS_NODES = 2560
 MAX_BUILD_PROGRESS = 100
+PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 def build(spinner: Spinner, dirty: bool = False, minimal: bool = False) -> None:
   env = os.environ.copy()
@@ -84,7 +85,7 @@ def build(spinner: Spinner, dirty: bool = False, minimal: bool = False) -> None:
     f.unlink()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and not PREBUILT:
   spinner = Spinner()
   spinner.update_progress(0, 100)
   build(spinner, is_dirty(), minimal = AGNOS)
