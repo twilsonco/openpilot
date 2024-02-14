@@ -166,7 +166,7 @@ class LatControlTorque(LatControl):
           lookahead = interp(CS.vEgo, self.friction_look_ahead_bp, self.friction_look_ahead_v)
           friction_upper_idx = next((i for i, val in enumerate(ModelConstants.T_IDXS) if val > lookahead), 16)
           predicted_lateral_jerk = get_predicted_lateral_jerk(model_data.acceleration.y, self.t_diffs)
-          desired_lateral_jerk = (interp(self.desired_lat_jerk_time, ModelConstants.T_IDXS, model_data.acceleration.y) - actual_lateral_accel) / self.desired_lat_jerk_time
+          desired_lateral_jerk = (interp(self.desired_lat_jerk_time, ModelConstants.T_IDXS, model_data.acceleration.y) - desired_lateral_accel) / self.desired_lat_jerk_time
           lookahead_lateral_jerk = get_lookahead_value(predicted_lateral_jerk[LAT_PLAN_MIN_IDX:friction_upper_idx], desired_lateral_jerk)
           if self.use_steering_angle or lookahead_lateral_jerk == 0.0:
             lookahead_lateral_jerk = 0.0
