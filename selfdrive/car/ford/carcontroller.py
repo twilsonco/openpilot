@@ -116,7 +116,7 @@ class CarController:
       if model_data is not None and len(model_data.orientation.x) >= CONTROL_N:
         # "lookahead" is used to check whether current curvature rate is "deliberate" i.e. will persist over a long enough time.
         # Don't want to send short-lived curvature rate-based commands.
-        lookahead = interp(CS.vEgo, self.look_ahead_bp, self.look_ahead_v)
+        lookahead = interp(CS.out.vEgo, self.look_ahead_bp, self.look_ahead_v)
         lookahead_upper_idx = next((i for i, val in enumerate(ModelConstants.T_IDXS) if val > lookahead), 16)
         
         # Computing three values: desired curvature rate, distance from lane center, and distance from lane center rate
