@@ -560,6 +560,7 @@ typedef struct UIScene {
   line_vertices_data lane_vertices_left, lane_vertices_right;
 
   bool dm_active, engageable;
+  bool low_overhead_mode;
 
   // lead
   vertex_data lead_vertices[2];
