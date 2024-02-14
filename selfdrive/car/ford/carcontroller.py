@@ -5,7 +5,7 @@ from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.ford import fordcan
 from openpilot.selfdrive.car.ford.values import CANFD_CAR, CarControllerParams
-from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
+from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N, apply_deadzone
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
@@ -61,7 +61,7 @@ class CarController:
     self.main_on_last = False
     self.lkas_enabled_last = False
     self.steer_alert_last = False
-    
+
     # for computing other lat control inputs
     self.look_ahead_v = [0.8, 1.8] # how many seconds in the future to look ahead in [0, ~2.1] in 0.1 increments
     self.look_ahead_bp = [9.0, 35.0] # corresponding speeds in m/s in [0, ~40] in 1.0 increments
@@ -73,10 +73,23 @@ class CarController:
     self.dist_from_lane_center_scale = -1.0
     self.dist_from_lane_center_rate_scale = -0.07 # determined in plotjuggler to best match with `LatCtlPath_An_Actl`
     # scale down dist_from_lane_center_rate input when under high curvature (current or predicted)
-    self.max_curvature_for_dist_from_lane_center_rate_bp = [0.003, 0.005]
+    self.max_curvature_for_dist_from_lane_center_rate_bp = [0.0015, 0.0035]
     self.model_orientation_rate_z_scale = 0.04 # determined in plotjuggler to best match with `controlsState/desiredCurvature`
     # scale down both dist_from_lane_center and _rate when lanelines are unclear
     self.min_laneline_confidence_bp = [0.4, 0.6]
+
+    # values from previous frame and rate limits
+    self.curvature_rate_last = 0.0
+    self.dist_from_lane_center_last = 0.0
+    self.dist_from_lane_center_rate_last = 0.0
+
+    # rate limits determined by inspecting rate limits of stock signals in plotjuggler
+    self.curvature_rate_rate_limit = 6e-5
+    self.dist_from_lane_center_rate_limit = 0.1
+    self.dist_from_lane_center_rate_rate_limit = 0.015
+
+    # deadzone for dist_from_lane_center_rate
+    self.dist_from_lane_center_rate_deadzone = 0.01
 
 
   def update(self, CC, CS, now_nanos, model_data=None):
@@ -112,13 +125,13 @@ class CarController:
         apply_curvature = 0.
 
       self.apply_curvature_last = apply_curvature
-      
+
       if model_data is not None and len(model_data.orientation.x) >= CONTROL_N:
         # "lookahead" is used to check whether current curvature rate is "deliberate" i.e. will persist over a long enough time.
         # Don't want to send short-lived curvature rate-based commands.
         lookahead = interp(CS.out.vEgo, self.look_ahead_bp, self.look_ahead_v)
         lookahead_upper_idx = next((i for i, val in enumerate(ModelConstants.T_IDXS) if val > lookahead), 16)
-        
+
         # Computing three values: desired curvature rate, distance from lane center, and distance from lane center rate
         # First get desired curvature rate
         predicted_curvature_rate = get_time_derivatives(model_data.orientationRate.z, self.t_diffs)
@@ -126,21 +139,46 @@ class CarController:
           - interp(self.future_lookup_time[0], ModelConstants.T_IDXS, model_data.orientationRate.z)) / self.future_lookup_time_diff
         # Lookahead curvature rate is what will be sent to the car
         lookahead_curvature_rate = get_lookahead_value(predicted_curvature_rate[LAT_PLAN_MIN_IDX:lookahead_upper_idx], desired_curvature_rate)
-        
+
         # Now get distance from lane center
         dist_from_lane_center_full = (np.array(model_data.laneLines[1].y) + np.array(model_data.laneLines[2].y)) / 2
         dist_from_lane_center = interp(self.future_lookup_time[0], ModelConstants.T_IDXS, dist_from_lane_center_full)
-        
+
         # Now get distance from lane center rate
         dist_from_lane_center_rate = (interp(self.future_lookup_time[1], ModelConstants.T_IDXS, dist_from_lane_center_full) \
           - interp(self.future_lookup_time[0], ModelConstants.T_IDXS, dist_from_lane_center_full)) / self.future_lookup_time_diff
         # Downscale dist_from_lane_center_rate when under or approaching high curvature
         max_abs_desired_curvature = max([abs(i) * self.model_orientation_rate_z_scale for i in list(model_data.orientationRate.z)[0:lookahead_upper_idx]]+[abs(actuators.curvature)])
-        dist_from_lane_center_rate *= interp(max_abs_desired_curvature, self.max_curvature_for_dist_from_lane_center_rate_bp, [1.0, 0.0])
-        
+        dist_from_lane_center_rate_curvature_scale = interp(max_abs_desired_curvature, self.max_curvature_for_dist_from_lane_center_rate_bp, [1.0, 0.0])
+
         # Downscale both dist_from_lane_center and _rate when lanelines are unclear
         laneline_confidence = (model_data.laneLineProbs[1] + model_data.laneLineProbs[2]) / 2
         laneline_confidence_scale = interp(laneline_confidence, self.min_laneline_confidence_bp, [0.0, 1.0])
+
+        # apply scaling factors
+        lookahead_curvature_rate *= self.desired_curvature_rate_scale
+        dist_from_lane_center *= self.dist_from_lane_center_scale
+        dist_from_lane_center_rate *= self.dist_from_lane_center_rate_scale
+
+        # apply deadzones and rate limits
+        dist_from_lane_center_rate = apply_deadzone(dist_from_lane_center_rate, self.dist_from_lane_center_rate_deadzone)
+        dist_from_lane_center = clip(dist_from_lane_center, 
+                                     self.dist_from_lane_center_last - self.dist_from_lane_center_rate_limit, 
+                                     self.dist_from_lane_center_last + self.dist_from_lane_center_rate_limit)
+        dist_from_lane_center_rate = clip(dist_from_lane_center_rate,
+                                          self.dist_from_lane_center_rate_last - self.dist_from_lane_center_rate_rate_limit,
+                                          self.dist_from_lane_center_rate_last + self.dist_from_lane_center_rate_rate_limit)
+        lookahead_curvature_rate = clip(lookahead_curvature_rate,
+                                        self.curvature_rate_last - self.curvature_rate_rate_limit,
+                                        self.curvature_rate_last + self.curvature_rate_rate_limit)
+
+        # save values for next frame
+        self.curvature_rate_last = lookahead_curvature_rate
+        self.dist_from_lane_center_last = dist_from_lane_center
+        self.dist_from_lane_center_rate_last = dist_from_lane_center_rate
+
+        # appply downscaling based on curvature ane laneline confidence
+        dist_from_lane_center_rate *= dist_from_lane_center_rate_curvature_scale
         dist_from_lane_center *= laneline_confidence_scale
         dist_from_lane_center_rate *= laneline_confidence_scale
       else:
@@ -148,23 +186,22 @@ class CarController:
         dist_from_lane_center = 0.0
         dist_from_lane_center_rate = 0.0
 
-
       if self.CP.carFingerprint in CANFD_CAR:
         # TODO: extended mode
         mode = 1 if CC.latActive else 0
         counter = (self.frame // CarControllerParams.STEER_STEP) % 0x10
         can_sends.append(fordcan.create_lat_ctl2_msg(self.packer, self.CAN, mode, 
-                                                     dist_from_lane_center * self.dist_from_lane_center_scale, 
-                                                     dist_from_lane_center_rate * self.dist_from_lane_center_rate_scale, 
+                                                     dist_from_lane_center, 
+                                                     dist_from_lane_center_rate, 
                                                      -apply_curvature, 
-                                                     lookahead_curvature_rate * self.desired_curvature_rate_scale, 
+                                                     lookahead_curvature_rate, 
                                                      counter))
       else:
         can_sends.append(fordcan.create_lat_ctl_msg(self.packer, self.CAN, CC.latActive, 
-                                                    dist_from_lane_center * self.dist_from_lane_center_scale, 
-                                                    dist_from_lane_center_rate * self.dist_from_lane_center_rate_scale, 
+                                                    dist_from_lane_center, 
+                                                    dist_from_lane_center_rate, 
                                                     -apply_curvature, 
-                                                    lookahead_curvature_rate * self.desired_curvature_rate_scale))
+                                                    lookahead_curvature_rate))
 
     # send lka msg at 33Hz
     if (self.frame % CarControllerParams.LKA_STEP) == 0:
