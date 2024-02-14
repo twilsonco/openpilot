@@ -74,7 +74,7 @@ class CarController:
     self.dist_from_lane_center_rate_scale = -0.07 # determined in plotjuggler to best match with `LatCtlPath_An_Actl`
     # scale down dist_from_lane_center_rate input when under high curvature (current or predicted)
     self.max_curvature_for_dist_from_lane_center_rate_bp = [0.003, 0.005]
-    self.model_orientation_rate_z_scale = 0.05
+    self.model_orientation_rate_z_scale = 0.04 # determined in plotjuggler to best match with `controlsState/desiredCurvature`
     # scale down both dist_from_lane_center and _rate when lanelines are unclear
     self.min_laneline_confidence_bp = [0.4, 0.6]
 
@@ -135,7 +135,7 @@ class CarController:
         dist_from_lane_center_rate = (interp(self.future_lookup_time[1], ModelConstants.T_IDXS, dist_from_lane_center_full) \
           - interp(self.future_lookup_time[0], ModelConstants.T_IDXS, dist_from_lane_center_full)) / self.future_lookup_time_diff
         # Downscale dist_from_lane_center_rate when under or approaching high curvature
-        max_abs_desired_curvature = max([abs(i) * self.model_orientation_rate_z_scale for i in list(model_data.orientationRate.z)[0:lookahead_upper_idx]])
+        max_abs_desired_curvature = max([abs(i) * self.model_orientation_rate_z_scale for i in list(model_data.orientationRate.z)[0:lookahead_upper_idx]]+[abs(actuators.curvature)])
         dist_from_lane_center_rate *= interp(max_abs_desired_curvature, self.max_curvature_for_dist_from_lane_center_rate_bp, [1.0, 0.0])
         
         # Downscale both dist_from_lane_center and _rate when lanelines are unclear
