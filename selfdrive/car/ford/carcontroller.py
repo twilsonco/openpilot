@@ -152,7 +152,7 @@ class CarController:
       if self.CP.carFingerprint in CANFD_CAR:
         # TODO: extended mode
         mode = 1 if CC.latActive else 0
-        counter = (self.frame // CarControllerParams.STEER_STEP) % 0xF
+        counter = (self.frame // CarControllerParams.STEER_STEP) % 0x10
         can_sends.append(fordcan.create_lat_ctl2_msg(self.packer, self.CAN, mode, 
                                                      dist_from_lane_center * self.dist_from_lane_center_scale, 
                                                      dist_from_lane_center_rate * self.dist_from_lane_center_rate_scale, 
