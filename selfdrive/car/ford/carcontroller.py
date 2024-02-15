@@ -151,6 +151,8 @@ class CarController:
         if lane_change:
           dist_from_lane_center = 0.0
           dist_from_lane_center_rate = 0.0
+          dist_from_lane_center_rate_curvature_scale = 0.0
+          laneline_confidence_scale = 0.0
         else:
           dist_from_lane_center_full = (np.array(model_data.laneLines[1].y) + np.array(model_data.laneLines[2].y)) / 2
           dist_from_lane_center = interp(self.future_lookup_time[0], ModelConstants.T_IDXS, dist_from_lane_center_full)
