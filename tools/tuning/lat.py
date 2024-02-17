@@ -169,8 +169,6 @@ class Sample():
   torque_driver: float = np.nan # -1,1
   # curvature_plan: float = np.nan # lag
   # curvature_true: float = np.nan # lag
-  desired_curvature: float = np.nan
-  desired_curvature_rate: float = np.nan
   lateral_accel: float = np.nan
   lateral_jerk: float = np.nan
   roll: float = np.nan
@@ -179,8 +177,6 @@ class Sample():
   lateral_accel_device: float = np.nan
   steer_cmd: float = np.nan
   steer_cmd_out: float = np.nan
-  desired_steer_angle: float = np.nan
-  desired_steer_rate: float = np.nan
   desired_accel: float = np.nan
   gas_cmd: float = np.nan
   gas_cmd_out: float = np.nan
