@@ -279,16 +279,6 @@ def collect(lr):
         s.t_llk = msg.logMonoTime
         s.yaw_rate = msg.liveLocationKalman.angularVelocityCalibrated.value[2]
         s.pitch = msg.liveLocationKalman.orientationNED.value[1]
-      elif msg.which() == 'lateralPlan':
-        s.t_lat_p = msg.logMonoTime
-        # logs before 2021-05 don't have this field
-        try:
-          s.desired_curvature_rate = msg.lateralPlan.curvatureRates[0]
-          s.desired_curvature = msg.lateralPlan.curvatures[0]
-        except:
-          s.desired_curvature_rate = 0
-          s.desired_curvature = 0
-        continue
       elif VM is None and msg.which() == 'carParams':
         CP = msg.carParams
         VM = VehicleModel(CP)
@@ -298,7 +288,6 @@ def collect(lr):
       # assert all messages have been received
       valid = not np.isnan(s.v_ego) and \
               not np.isnan(s.t_llk) and \
-              not np.isnan(s.t_lat_p) and \
               not np.isnan(s.t_cc) and \
               VM is not None and \
               not np.isnan(s.t_lp)
@@ -336,7 +325,6 @@ def collect(lr):
             "t_cs": ["v_ego", "a_ego", "steer_angle", "steer_rate", "torque_eps", "torque_driver", "gas", "gas_pressed", "brake", "brake_pressed"],
             "t_lp": ["steer_offset", "steer_offset_average", "roll", "stiffnessFactor", "steerRatio"],
             "t_cc": ["enabled", "steer_cmd_out", "gas_cmd_out", "brake_cmd_out", "steer_cmd", "gas_cmd", "brake_cmd", "desired_accel"],
-            "t_lat_p": ["desired_curvature_rate", "desired_curvature"],
             }
           for t_field, field_list in t_field_dict.items():
             t_field_list = [getattr(s, t_field) for s in sample_deque]
@@ -356,8 +344,6 @@ def collect(lr):
           cur_sample.lateral_jerk = current_curvature_rate * s.v_ego**2
           cur_sample.curvature_device = (cur_sample.yaw_rate / s.v_ego) if s.v_ego > 0.01 else 0.
           cur_sample.lateral_accel_device = cur_sample.yaw_rate * s.v_ego  - (np.sin(s.roll) * ACCELERATION_DUE_TO_GRAVITY)
-          cur_sample.desired_steer_angle = math.degrees(VM.get_steer_from_curvature(-s.desired_curvature, s.v_ego, s.roll))
-          cur_sample.desired_steer_rate = math.degrees(VM.get_steer_from_curvature(-s.desired_curvature_rate, s.v_ego, 0))
             
           # then append the interpolated sample to the list of samples
           samples.append(deepcopy(cur_sample))
@@ -388,91 +374,16 @@ def filter(samples):
   global MAX_DRIVER_TORQUE, MAX_EPS_TORQUE, MAX_SPEED, MIN_CURVATURE_RATE, MAX_CURVATURE_RATE, MAX_STEER_RATE, MIN_STEER_RATE
   # Order these to remove the most samples first
   
-  
-  # Some rlogs use [-300,300] for torque, others [-3,3]
-  # Scale both from STEER_MAX to [-1,1]
-  # steer_torque_key = "torque_eps" # gm
-  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
-  # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
-  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
-  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
-  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
-  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
-  # for s in samples:
-  #   if MAX_DRIVER_TORQUE > 40 or MAX_EPS_TORQUE > 40:
-  #     s.torque_driver /= 300
-  #     s.torque_eps /= 300
-  #   else:
-  #     s.torque_driver /= 3
-  #     s.torque_eps /= 3
-      
-  # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
-  
-  # VW MQB cars, str cmd units 0.01Nm, 3.0Nm max
-  # steer_torque_key = "steer_cmd" # vw
-  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
-  # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
-  # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
-  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
-  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
-  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
-  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
-  # for s in samples:
-  #   s.torque_driver /= 300
-    
-  # VW PQ cars {CAR.PASSAT_NMS, CAR.SHARAN_MK2}, str cmd units 0.01Nm, 3.0Nm max
-  # steer_torque_key = "steer_cmd" # vw
-  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
-  # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
-  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
-  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
-  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
-  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
-  # for s in samples:
-  #   s.torque_driver /= 300
-  #   setattr(s, steer_torque_key, getattr(s,steer_torque_key) * 3)
-  #   if s.v_ego > 89.4:
-  #     s.v_ego = 0.0
-      
-  # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
-  
-  #hyundai
-  # driver torque units 0.01Nm
-  # eps torque units 0.2Nm
-  # max torque 4.0Nm
   steer_torque_key = "torque_eps" # vw
   MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
   MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
   MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
-  MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
-  MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
   MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
   MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
   for s in samples:
     s.torque_driver /= 100 * 4
     s.torque_eps /= 5 * 4
   MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
-  
-  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
-  # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
-  # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
-  
-  # all chrysler and ram 1500: steer scaled to 261. 361 for ram hd
-  # steer_torque_key = "torque_eps" # vw
-  # MAX_DRIVER_TORQUE = max(MAX_DRIVER_TORQUE, np.max(np.abs(np.array([s.torque_driver for s in samples]))))
-  # MAX_EPS_TORQUE = max(MAX_EPS_TORQUE, np.max(np.abs(np.array([getattr(s, steer_torque_key) for s in samples]))))
-  # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
-  # MIN_CURVATURE_RATE = min(MIN_CURVATURE_RATE, np.min(np.array([s.desired_curvature_rate for s in samples])))
-  # MAX_CURVATURE_RATE = max(MAX_CURVATURE_RATE, np.max(np.array([s.desired_curvature_rate for s in samples])))
-  # MIN_STEER_RATE = min(MIN_STEER_RATE, np.min(np.array([s.steer_rate for s in samples])))
-  # MAX_STEER_RATE = max(MAX_STEER_RATE, np.max(np.array([s.steer_rate for s in samples])))
-  # for s in samples:
-  #   s.torque_driver /= 261
-  #   s.torque_eps /= 261
-  # MAX_SPEED = max(MAX_SPEED, np.max(np.array([s.v_ego for s in samples])))
-  
-  # print(f'max eps torque = {eps:0.4f}')
-  # print(f"max driver torque = {driver:0.4f}")
   
   # Enabled and no steer pressed or not enabled and driver steer under threshold
   mask = np.array([(s.enabled and s.torque_driver <= STEER_PRESSED_MIN) or (not s.enabled and s.torque_driver <= STEER_PRESSED_MAX) for s in samples])
@@ -492,34 +403,11 @@ def filter(samples):
     curv_per_deg = 1/3000.0
     mask = np.array([s.enabled or np.abs(((s.steer_angle - s.steer_offset) * curv_per_deg) * s.v_ego**2) < max_lat_accel  for s in samples])
     samples = samples[mask]
-    
-    
-  
-  # these next two can be used if only driver torque is available
-  # driver steer under threshold
-  # data = np.array([s.torque_driver for s in samples])
-  # mask = np.abs(data) <= STEER_PRESSED_MAX
-  # samples = samples[mask]
-  
-  # NOT Enabled
-  # mask = np.array([not s.enabled for s in samples])
-  # samples = samples[mask]
-
-  # No steer rate: holding steady curve or straight
-  # data = np.array([s.desired_curvature_rate for s in samples])
-  # mask = np.abs(data) < CURVATURE_RATE_MIN # determined from plotjuggler
-  # samples = samples[mask]
 
   # No steer rate: holding steady curve or straight
   data = np.array([s.steer_rate for s in samples])
   mask = np.abs(data) < STEER_RATE_MIN
   samples = samples[mask]
-
-  # GM no steering below 7 mph
-  # data = np.array([s.v_ego for s in samples])
-  # mask = SPEED_MIN * CV.MPH_TO_MS <= data
-  # mask &= data <= SPEED_MAX * CV.MPH_TO_MS
-  # samples = samples[mask]
   
   data = np.array([s.v_ego for s in samples])
   if IS_ANGLE_PLOT:
@@ -528,11 +416,6 @@ def filter(samples):
     mask = SPEED_MIN * CV.MPH_TO_MS <= data
   mask &= data <= SPEED_MAX * CV.MPH_TO_MS
   samples = samples[mask]
-
-  # Not saturated
-  # data = np.array([s.torque_eps for s in samples])
-  # mask = np.abs(data) < 4.0
-  # samples = samples[mask]
 
   return [CleanSample(
     speed = s.v_ego,
@@ -758,8 +641,6 @@ def load(path, route=None, preprocess=False, dongleid=False, outpath=""):
         print(f'max eps torque = {MAX_EPS_TORQUE:0.4f}')
         print(f"max driver torque = {MAX_DRIVER_TORQUE:0.4f}")
         print(f"max speed = {MAX_SPEED*2.24:0.4f} mph")
-        print(f"min curvature rate = {MIN_CURVATURE_RATE:0.4f}")
-        print(f"max curvature rate = {MAX_CURVATURE_RATE:0.4f}")
         print(f"min steer rate = {MIN_STEER_RATE:0.4f}")
         print(f"max steer rate = {MAX_STEER_RATE:0.4f}")
         print(f"{describe(steer_offsets) = }")
