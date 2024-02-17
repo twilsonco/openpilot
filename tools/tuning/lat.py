@@ -694,8 +694,9 @@ if __name__ == '__main__':
   parser.add_argument('--preprocess', action='store_true')
   parser.add_argument('--dongleid', type=str)
   
-  # define debug args using '      python3 /home/haiiro/openpilot-batch/openpilot/tools/tuning/lat.py --preprocess --path "$curdir/$dongle" --outpath "$outdir"'
-  # debug_args = ['--preprocess', '--path', '/Volumes/video/scratch-video/rlogs/gm/CHEVROLET VOLT PREMIER 2017/2e983c9898739c34', ]
+  #define debug args using '      python3 /home/haiiro/openpilot-batch/openpilot/tools/tuning/lat.py --preprocess --path "$curdir/$dongle" --outpath "$outdir"'
+  # debug_args = ['--preprocess', '--path', '/mnt/video/scratch-video/rlogs/hyundai/HYUNDAI SANTA FE 2022/1cbf25ced339760c', '--outpath', '/mnt/video/scratch-video/latfiles/hyundai/HYUNDAI SANTA FE 2022']
+  # args = parser.parse_args(debug_args)
   
   args = parser.parse_args()
   
