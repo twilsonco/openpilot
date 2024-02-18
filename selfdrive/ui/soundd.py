@@ -164,12 +164,12 @@ class Soundd:
       while True:
         sm.update(0)
 
-        if sm.updated['microphone'] and self.current_alert == AudibleAlert.none: # only update volume filter when not playing alert
+        if sm.updated['microphone'] and self.current_alert == AudibleAlert.none and not self.alert_volume_control: # only update volume filter when not playing alert
           self.spl_filter_weighted.update(sm["microphone"].soundPressureWeightedDb)
           self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x))
 
-        if self.alert_volume_control and self.current_alert in self.volume_map:
-          self.current_volume = min(self.volume_map[self.current_alert] / 100.0, self.current_volume)
+        elif self.alert_volume_control and self.current_alert in self.volume_map:
+          self.current_volume = self.volume_map[self.current_alert] / 100.0
 
         self.get_audible_alert(sm)
 
