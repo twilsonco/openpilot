@@ -509,6 +509,10 @@ class opParams:
       
       'LP_auto_auto_minimum_speed_mph': Param(10.0, float, 'Minimum speed at which traffic-based "auto auto lane position" will activate', min_val=5.0, max_val=90.0, unit='mph'),
       
+      'LP_auto_auto_minimum_laneline_prob': Param(0.5, float, 'The minimum laneline probability one of the lanelines must have (from 0 to 1) in order for auto auto lane position to activate.', live=True, min_val=0.2, max_val=1.0),
+      
+      'LP_auto_auto_use_max_lane_prob': Param(True, bool, 'If enabled, only one laneline needs to be over the minimum probability threshold in order for auto auto lane position mode to activate, so both lanelines will need to be below the threshold in order for it to not activate. This also affects the way that manual adjustable lane offset deactivates. If enabled, both lanelines need to go away before it will revert to center position due to low laneline confidence.', live=True),
+      
       'LP_offset': Param(0.11, float, 'This controls the offset distance of the left and right lane positions, as a factor of current lane width, when manual adjustable lane position is used', live=True, min_val=0.01, max_val=0.3, is_common=True),
       
       'LP_offset_maximum_m': Param(0.7, float, 'Adjustable lane positioning picks the offset based on the current lane width. Use this to cap the max offset possible', min_val=0.01, max_val=1.5, unit='meters'),
