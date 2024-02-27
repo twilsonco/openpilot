@@ -175,6 +175,7 @@ def manager_init() -> None:
     ("PathEdgeWidth", "20"),
     ("PathWidth", "61"),
     ("PauseLateralOnSignal", "0"),
+    ("PedalsOnUI", "1"),
     ("PersonalitiesViaScreen", "0" if FrogsGoMoo else "1"),
     ("PersonalitiesViaWheel", "1"),
     ("PreferredSchedule", "0"),
