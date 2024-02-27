@@ -9,6 +9,7 @@ from typing import List, Tuple, Union
 from cereal import log
 import cereal.messaging as messaging
 import openpilot.selfdrive.sentry as sentry
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params, ParamKeyType
 from openpilot.common.text_window import TextWindow
 from openpilot.system.hardware import HARDWARE, PC
@@ -21,6 +22,7 @@ from openpilot.system.version import is_dirty, get_commit, get_version, get_orig
                            get_normalized_origin, terms_version, training_version, \
                            is_tested_branch, is_release_branch, get_commit_date
 
+from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import DEFAULT_MODEL
 
 
 def manager_init() -> None:
@@ -57,6 +59,14 @@ def manager_init() -> None:
     params.put_bool("SilentMode", False)
 
   #######################################################################
+
+  # Check if the currently selected model still exists
+  current_model = params.get("Model", encoding='utf-8')
+  models_folder = os.path.join(BASEDIR, 'selfdrive/modeld/models/models')
+  model_exists = current_model in [os.path.splitext(file)[0] for file in os.listdir(models_folder)]
+
+  if not model_exists:
+    params.remove("Model")
 
   FrogsGoMoo = HARDWARE.get_serial()[:3] == "cff"
 
