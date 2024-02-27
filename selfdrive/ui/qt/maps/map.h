@@ -77,6 +77,7 @@ private:
   void clearRoute();
   void updateDestinationMarker();
   uint64_t route_rcv_frame = 0;
+  uint64_t model_rcv_frame = 0;
 
   // FrogPilot variables
   Params params;
