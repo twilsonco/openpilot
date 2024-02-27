@@ -362,6 +362,7 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.hide_speed_ui = scene.hide_speed && params.getBool("HideSpeedUI");
 
   scene.personalities_via_screen = params.getBool("PersonalitiesViaScreen") && params.getBool("AdjustablePersonalities");
+  scene.random_events = params.getBool("RandomEvents");
   scene.rotating_wheel = params.getBool("RotatingWheel");
   scene.screen_brightness = params.getInt("ScreenBrightness");
 
@@ -444,6 +445,9 @@ void UIState::update() {
   // FrogPilot live variables that need to be constantly checked
   if (scene.conditional_experimental) {
     scene.conditional_status = paramsMemory.getInt("CEStatus");
+  }
+  if (scene.random_events) {
+    scene.current_random_event = paramsMemory.getInt("CurrentRandomEvent");
   }
 }
 
