@@ -6,6 +6,7 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD, GMFlags, CC_ONLY_CAR, CAMERA_ACC_CAR, SDGM_CAR
+from openpilot.selfdrive.controls.lib.drive_helpers import CRUISE_LONG_PRESS
 
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
@@ -167,44 +168,70 @@ class CarState(CarStateBase):
         ret.leftBlindspot = cam_cp.vl["BCMBlindSpotMonitor"]["LeftBSM"] == 1
         ret.rightBlindspot = cam_cp.vl["BCMBlindSpotMonitor"]["RightBSM"] == 1
 
+    # FrogPilot functions
+    has_camera = self.CP.networkLocation == NetworkLocation.fwdCamera
+    has_camera &= not self.CP.flags & GMFlags.NO_CAMERA.value
+    has_camera &= not self.CP.carFingerprint in CC_ONLY_CAR
+
+    if self.CP.carFingerprint in SDGM_CAR:
+      distance_pressed = cam_cp.vl["ASCMSteeringButton"]["DistanceButton"]
+    else:
+      distance_pressed = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"]
+
     # Driving personalities function - Credit goes to Mangomoose!
-    if frogpilot_variables.personalities_via_wheel and ret.cruiseState.available:
+    if ret.cruiseState.available:
       # Sync with the onroad UI button
       if self.fpf.personality_changed_via_ui:
         self.personality_profile = self.fpf.current_personality
-        self.previous_personality_profile = self.personality_profile
         self.fpf.reset_personality_changed_param()
 
-      # Check if the car has a camera
-      has_camera = self.CP.networkLocation == NetworkLocation.fwdCamera
-      has_camera &= not self.CP.flags & GMFlags.NO_CAMERA.value
-      has_camera &= not self.CP.carFingerprint in (CC_ONLY_CAR)
+      if distance_pressed:
+        if self.display_menu:
+          self.distance_pressed_counter += 1
 
-      if has_camera:
-        # Need to subtract by 1 to comply with the personality profiles of "0", "1", and "2"
-        self.personality_profile = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCGapLevel"] - 1
-      else:
-        if self.CP.carFingerprint in SDGM_CAR:
-          distance_button = cam_cp.vl["ASCMSteeringButton"]["DistanceButton"]
-        else:
-          distance_button = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"]
-
-        if distance_button and not self.distance_previously_pressed:
-          if self.display_menu:
-            self.personality_profile = (self.previous_personality_profile + 2) % 3
+        if not self.distance_previously_pressed:
           self.display_timer = 350
-        self.distance_previously_pressed = distance_button
 
-        # Check if the display is open
-        if self.display_timer > 0:
-          self.display_timer -= 1
-          self.display_menu = True
+        self.display_menu = True
+
+      elif self.distance_previously_pressed:
+        # Set the distance lines on the dash to match the new personality if the button was held down for less than 0.5 seconds
+        if self.distance_pressed_counter < CRUISE_LONG_PRESS and frogpilot_variables.personalities_via_wheel and self.display_menu:
+          if has_camera:
+            # Need to subtract by 1 to comply with the personality profiles of "0", "1", and "2"
+            self.personality_profile = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCGapLevel"] - 1
+          else:
+            self.personality_profile = (self.personality_profile + 2) % 3
+
+          self.fpf.distance_button_function(self.personality_profile)
+
+        self.distance_pressed_counter = 0
+
+      # Check if the display is open
+      if self.display_timer > 0:
+        self.display_timer -= 1
+      else:
+        self.display_menu = False
+
+      # Switch the current state of Experimental Mode if the button is held down for 0.5 seconds
+      if self.distance_pressed_counter == CRUISE_LONG_PRESS and frogpilot_variables.experimental_mode_via_distance:
+        if frogpilot_variables.conditional_experimental_mode:
+          self.fpf.update_cestatus_distance()
         else:
-          self.display_menu = False
+          self.fpf.update_experimental_mode()
 
-      if self.personality_profile != self.previous_personality_profile and self.personality_profile >= 0:
-        self.fpf.distance_button_function(self.personality_profile)
-        self.previous_personality_profile = self.personality_profile
+      # Switch the current state of Traffic Mode if the button is held down for 2.5 seconds
+      if self.distance_pressed_counter == CRUISE_LONG_PRESS * 5 and frogpilot_variables.traffic_mode:
+        self.fpf.update_traffic_mode()
+
+        # Revert the previous changes to Experimental Mode
+        if frogpilot_variables.experimental_mode_via_distance:
+          if frogpilot_variables.conditional_experimental_mode:
+            self.fpf.update_cestatus_distance()
+          else:
+            self.fpf.update_experimental_mode()
+
+      self.distance_previously_pressed = distance_pressed
 
     # Toggle Experimental Mode from steering wheel function
     if frogpilot_variables.experimental_mode_via_lkas and ret.cruiseState.available:
