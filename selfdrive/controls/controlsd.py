@@ -98,7 +98,7 @@ class Controls:
     
     self.gray_panda_support_enabled = params.get_bool("GrayPandaSupport")
     self.low_overhead_mode = params.get_bool("LowOverheadMode")
-    self.low_overhead_ignore_base = {"loggerd", "updated", "uploader", "dmonitoringmodeld", "dmonitoringd", "driverMonitoringState"}
+    self.low_overhead_ignore_base = {"loggerd", "updated", "uploader", "dmonitoringmodeld", "dmonitoringd", "driverMonitoringState", "gpsLocationExternal"}
     self.low_overhead_ignore = self.low_overhead_ignore_base
 
     self.sm = sm
@@ -482,14 +482,15 @@ class Controls:
     elif not self.sm.valid["pandaState"]:
       self.events.add(EventName.usbError)
     elif not self.sm.all_alive_and_valid(ignore=list(self.low_overhead_ignore)):
-      self.events.add(EventName.commIssue)
-      if not self.logged_comm_issue:
-        invalid = [s for s, valid in self.sm.valid.items() if not valid and s not in self.low_overhead_ignore]
-        not_alive = [s for s, alive in self.sm.alive.items() if not alive and s not in self.low_overhead_ignore]
-        cloudlog.event("commIssue", invalid=invalid, not_alive=not_alive)
-        self.logged_comm_issue = True
-      else:
-        self.logged_comm_issue = False
+      invalid = [s for s, valid in self.sm.valid.items() if not valid and s not in self.low_overhead_ignore]
+      not_alive = [s for s, alive in self.sm.alive.items() if not alive and s not in self.low_overhead_ignore]
+      if len(invalid) + len(not_alive) > 0:
+        self.events.add(EventName.commIssue)
+        if not self.logged_comm_issue:
+          cloudlog.event("commIssue", invalid=invalid, not_alive=not_alive)
+          self.logged_comm_issue = True
+        else:
+          self.logged_comm_issue = False
 
     if not self.sm['lateralPlan'].mpcSolutionValid:
       self.events.add(EventName.plannerError)
