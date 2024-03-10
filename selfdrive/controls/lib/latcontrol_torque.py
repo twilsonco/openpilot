@@ -211,8 +211,8 @@ class LatControlTorque(LatControl):
         torque_from_measurement = self.torque_from_nn(nnff_measurement_input)
         torque_from_error = self.torque_from_nn(nnff_error_input)
         pid_log.error = torque_from_setpoint - torque_from_measurement
-        if sign(pid_log.error) == sign(torque_from_error) and abs(pid_log.error) < abs(torque_from_error):
-          pid_log.error = torque_from_error
+        # if sign(pid_log.error) == sign(torque_from_error) and abs(pid_log.error) < abs(torque_from_error):
+        #   pid_log.error = torque_from_error
 
         # compute feedforward (same as nn setpoint output)
         error = setpoint - measurement
