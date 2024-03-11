@@ -417,7 +417,7 @@ def manager_thread() -> None:
 
     # Exit main loop when uninstall/shutdown/reboot is needed
     shutdown = False
-    for param in ("DoUninstall", "DoShutdown", "DoReboot", "DoSoftReboot"):
+    for param in ("DoUninstall", "DoShutdown", "DoReboot"):
       if params.get_bool(param):
         shutdown = True
         params.put("LastManagerExitReason", f"{param} {datetime.datetime.now()}")
@@ -493,9 +493,6 @@ def main() -> None:
   if params.get_bool("DoUninstall"):
     cloudlog.warning("uninstalling")
     HARDWARE.uninstall()
-  elif params.get_bool("DoSoftReboot"):
-    cloudlog.warning("softreboot")
-    HARDWARE.soft_reboot()
   elif params.get_bool("DoReboot"):
     cloudlog.warning("reboot")
     HARDWARE.reboot()
