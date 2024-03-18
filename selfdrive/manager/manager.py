@@ -81,7 +81,7 @@ def manager_init():
     ("OpenPilotSecondsEngaged", "0"),
     ("EndToEndToggle", "1"),
     ("EnableTorqueControl", "1"),
-    ("EnableNNFF", "0"),
+    ("EnableNNFF", "1"),
     ("LanelessMode", "2"),
     ("LanePositionEnabled", "1"),
     ("AutoAutoLanePosition", "1"),
@@ -100,14 +100,14 @@ def manager_init():
     ("MADSLeadBraking", "0"),
     ("MADSPauseBlinkerSteering", "1"),
     ("FollowLevel", "2"),
-    ("DynamicFollow", "1"),
+    ("DynamicFollow", "0"),
     ("DynamicFollowToggle", "1"),
     ("CoastingBrakeOverSpeed", "0"),
     ("FrictionBrakePercent", "0"),
     ("BrakeIndicator", "1"),
     ("PowerMeterMode", "0"),
     ("PowerMeterMetric", "1"),
-    ("PrintLeadInfo", "0"),
+    ("PrintLeadInfo", "1"),
     ("PrintAdjacentLeadSpeeds", "1"),
     ("PrintAdjacentLeadSpeedsAtLead", "1"),
     ("ExtendedRadar", "1"),
@@ -115,7 +115,7 @@ def manager_init():
     ("DisableOnroadUploads", "0"),
     ("LowOverheadMode", "0"),
     ("FPVolt", "0"),
-    ("MeasureConfigNum", "3"),
+    ("MeasureConfigNum", "0"),
     ("MeasureSlot00", "34"), # percent grade 
     ("MeasureSlot01", "31"), # elevation 
     ("MeasureSlot02", "6"), # engine RPM + coolant temp F
@@ -229,7 +229,7 @@ def manager_thread():
     if sm['deviceState'].freeSpacePercent < 5:
       not_run.append("loggerd")
     elif params.get_bool("LowOverheadMode"):
-      low_overhead_ignore = ["loggerd","proclogd","updated","uploader","logmessaged"]
+      low_overhead_ignore = ["loggerd","proclogd","updated","uploader","dmonitoringmodeld","dmonitoringd"]
       not_run += low_overhead_ignore
 
     started = sm['deviceState'].started

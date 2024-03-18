@@ -3490,7 +3490,7 @@ static void ui_draw_vision_face(UIState *s) {
   const int center_x = maxspeed_rect.centerX();
   int center_y = s->fb_h - footer_h / 2;
   center_y = offset_button_y(s, center_y, radius);
-  ui_draw_circle_image(s, center_x, center_y, radius, "driver_face", s->scene.dm_active);
+  ui_draw_circle_image(s, center_x, center_y, radius, "driver_face", s->scene.dm_active && !s->scene.low_overhead_mode);
 }
 
 static void ui_draw_vision_power_meter(UIState *s) {

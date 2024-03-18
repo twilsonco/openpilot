@@ -133,7 +133,13 @@ void encoder_thread(const LogCameraInfo &cam_info) {
 
   bool ready = false;
 
+  bool low_overhead_mode = Params().getBool("LowOverheadMode");
+  int param_check_interval_base = 1000;
+  int param_check_interval = param_check_interval_base;
+  int iter = param_check_interval + 1;
+
   while (!do_exit) {
+
     if (!vipc_client.connect(false)) {
       util::sleep_for(5);
       continue;
@@ -155,6 +161,19 @@ void encoder_thread(const LogCameraInfo &cam_info) {
     }
 
     while (!do_exit) {
+      iter++;
+      if (iter > param_check_interval){
+        low_overhead_mode = Params().getBool("LowOverheadMode");
+        iter = 0;
+      }
+      if (low_overhead_mode){
+        param_check_interval = 5;
+        util::sleep_for(1000);
+        continue;
+      }
+      else{
+        param_check_interval = param_check_interval_base;
+      }
       VisionIpcBufExtra extra;
       VisionBuf* buf = vipc_client.recv(&extra);
       if (buf == nullptr) continue;

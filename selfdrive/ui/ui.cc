@@ -318,6 +318,7 @@ static void update_state(UIState *s) {
   
   if (t - scene.paramsCheckLast > scene.paramsCheckFreq){
     scene.paramsCheckLast = t;
+    scene.low_overhead_mode = Params().getBool("LowOverheadMode");
     scene.auto_brightness_enabled = Params().getBool("AutoBrightness");
     scene.show_cur_speed = Params().getBool("PrintCurrentSpeed");
     scene.disableDisengageOnGasEnabled = Params().getBool("DisableDisengageOnGas");

@@ -387,7 +387,9 @@ class opParams:
       
       'FP_stop_distance_offset_m': Param(1.0, float, 'Adjusts the stopping distances for all follow profiles. Increase to increase distance between you and stopped lead car.', live=True, min_val=-0.5, max_val=5.0, unit='meters'),
       
-      'FP_close_gas_factor': Param(1.0, float, 'Controls how proactively OpenPilot will adjust in response to a change in the lead car velocity when using the close follow profile. Increase to make close follow more responsive.', live=True, min_val=0.1, max_val=2.0),
+      'FP_close_gas_factor': Param(1.0, float, 'Controls how proactively OpenPilot will adjust in response to a change in the lead car velocity when using the close follow profile. Increase to make close follow more responsive.', live=True, min_val=0.0, max_val=2.0),
+      
+      'FP_medium_gas_factor': Param(1.0, float, 'Controls how proactively OpenPilot will adjust in response to a change in the lead car velocity when using the medium follow profile. Increase to make medium follow more responsive.', live=True, min_val=0.0, max_val=2.0),
       
       'FP_close_distance_offset_s': Param(0.0, float, 'Add or subtract follow distance from the close follow profile', live=True, min_val=-0.5, max_val=3.0, unit='seconds follow distance'),
       
@@ -475,7 +477,7 @@ class opParams:
       
       'CB_VTSC_accel_rate_limit': Param(1.0, float, 'The vision turn controller output acceleration is rate-limited so that when you exit a curve, acceleration resumes smoothly. Increase/decrease for faster/slower ramping.', live=True, min_val=0.1, max_val=10.0, unit="m/s²/s"),
       
-      'CB_VTSC_lat_accel_factor': Param(0.85, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the lateral acceleration values used in the lookup. A value less/greater than 1.0 will make curve braking more/less sensitive to lateral acceleration and apply braking sooner/later.', live=True, min_val=0.01, max_val=3.0),
+      'CB_VTSC_lat_accel_factor': Param(1.2, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the lateral acceleration values used in the lookup. A value less/greater than 1.0 will make curve braking more/less sensitive to lateral acceleration and apply braking sooner/later.', live=True, min_val=0.01, max_val=3.0),
       
       'CB_VTSC_long_accel_factor': Param(0.9, float, 'The vision turn controller uses the car\'s lateral acceleration in order to lookup corresponding desired values of output longitudinal acceleration. Use this to scale the output values of longitudinal acceleration. A value less/greater than 1.0 will decrease/increase the brake intensity for a given curve.', live=True, min_val=0.01, max_val=3.0),
       
@@ -485,7 +487,7 @@ class opParams:
       
       'CB_VTSC_low_speed_scale_state_highway': Param(0.9, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds on freeways. By 55mph, no scaling is applied. A value less/greater than 1.0 will increase/decrease the speed at which curves are taken at low speeds.', live=True, min_val=0.01, max_val=2.0),
       
-      'CB_VTSC_low_speed_scale_default': Param(0.95, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds for all other types of roads (e.g. neighborhood and most city streets). By 55mph, no scaling is applied. A value less/greater than 1.0 will increase/decrease the speed at which curves are taken at low speeds.', live=True, min_val=0.01, max_val=2.0),
+      'CB_VTSC_low_speed_scale_default': Param(1.0, float, 'This scales the perceived car speed used by the vision turn speed controller at low speeds for all other types of roads (e.g. neighborhood and most city streets). By 55mph, no scaling is applied. A value less/greater than 1.0 will increase/decrease the speed at which curves are taken at low speeds.', live=True, min_val=0.01, max_val=2.0),
       
       #####
       
@@ -506,6 +508,10 @@ class opParams:
       #####
       
       'LP_auto_auto_minimum_speed_mph': Param(10.0, float, 'Minimum speed at which traffic-based "auto auto lane position" will activate', min_val=5.0, max_val=90.0, unit='mph'),
+      
+      'LP_auto_auto_minimum_laneline_prob': Param(0.5, float, 'The minimum laneline probability one of the lanelines must have (from 0 to 1) in order for auto auto lane position to activate.', live=True, min_val=0.2, max_val=1.0),
+      
+      'LP_auto_auto_use_max_lane_prob': Param(True, bool, 'If enabled, only one laneline needs to be over the minimum probability threshold in order for auto auto lane position mode to activate, so both lanelines will need to be below the threshold in order for it to not activate. This also affects the way that manual adjustable lane offset deactivates. If enabled, both lanelines need to go away before it will revert to center position due to low laneline confidence.', live=True),
       
       'LP_offset': Param(0.11, float, 'This controls the offset distance of the left and right lane positions, as a factor of current lane width, when manual adjustable lane position is used', live=True, min_val=0.01, max_val=0.3, is_common=True),
       
@@ -781,16 +787,6 @@ class opParams:
 
     self._to_delete = []  # a list of unused params you want to delete from users' params file
     self._to_reset = {
-      '2023/11/18-18:00:00': ['MADS_OP_decel_ms2', 
-                             'MADS_OP_one_time_stop_decel_factor', 
-                             'CB_VTSC_lat_accel_factor', 
-                             'CB_VTSC_long_accel_factor', 
-                             'TUNE_LAT_TRX_NNFF_lat_jerk_friction_factor',
-                             'TUNE_LAT_TRX_NNFF_lat_accel_friction_factor',
-                             'TUNE_LONG_kp',
-                             'TUNE_LAT_TRX_friction_lookahead_v',
-                             r'TUNE_LAT_mpc_.*',
-                             'TUNE_LAT_min_steer_speed_mph'],
       '2023/11/30-11:00:00': [r'TUNE_LAT_TRX_error_downscale_.*'],
       }  # a dict where each key is a date in 'yyyy/mm/dd-hh:mm' (24-hour) format, and the value is a list of names of params OR regular expressions to match params you want reset to their default values if the modification date is before the key date
       # use something that doesn't match the date string format and the associated list of param names or regex's will apply no matter the modified date of the param

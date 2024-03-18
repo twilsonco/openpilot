@@ -221,20 +221,20 @@ class SubMaster():
         else:
           self.alive[s] = True
 
-  def all_alive(self, service_list=None) -> bool:
+  def all_alive(self, service_list=None, ignore = []) -> bool:
     if service_list is None:  # check all
       service_list = self.alive.keys()
-    return all(self.alive[s] for s in service_list if s not in self.ignore_alive)
+    return all(self.alive[s] for s in service_list if s not in self.ignore_alive and s not in ignore)
 
-  def all_valid(self, service_list=None) -> bool:
+  def all_valid(self, service_list=None, ignore = []) -> bool:
     if service_list is None:  # check all
       service_list = self.valid.keys()
-    return all(self.valid[s] for s in service_list)
+    return all(self.valid[s] for s in service_list if s not in ignore)
 
-  def all_alive_and_valid(self, service_list=None) -> bool:
+  def all_alive_and_valid(self, service_list=None, ignore = []) -> bool:
     if service_list is None:  # check all
       service_list = self.alive.keys()
-    return self.all_alive(service_list=service_list) and self.all_valid(service_list=service_list)
+    return self.all_alive(service_list=service_list, ignore=ignore) and self.all_valid(service_list=service_list, ignore=ignore)
 
 class PubMaster():
   def __init__(self, services: List[str]):
