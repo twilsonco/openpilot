@@ -901,26 +901,30 @@ class opParams:
           if opparam_mtime > param_param_mtime:
             cloudlog.warning(f'opParams: {key}: Overwriting param param ({self.fork_params[key].param_param}) with opparam ({key})')
             self.put_params(key, param.value)
-          else:
-            cloudlog.warning(f'opParams: {key}: Overwriting opparam with param param ({self.fork_params[key].param_param})')
-            if param.param_param_use_ord and param.has_allowed_vals:
-              val = int(param._params.get(param.param_param, encoding="utf8"))
-              if val < len(param.allowed_vals):
-                param.value = param.allowed_vals[val]
-              else:
-                param.value = param._params.get(param.param_param)
-            else:
-              param.value = param._params.get(param.param_param)
-            if param.has_allowed_types and type(param.value) not in param.allowed_types:
-              for t in param.allowed_types:
-                try:
-                  param.value = t(param.value)
-                  break
-                except:
-                  continue
-              if type(param.value) not in param.allowed_types:
-                raise ValueError
-            self.put(key, param.value, reason="overwriting opparam with param param", do_log=False)
+            # need to now update the param value with the same value to keep its modification date newer than the param param
+            _write_param(key, param.value, reason="overwriting param param with opparam", do_log=False)
+          # else:
+          #   cloudlog.warning(f'opParams: {key}: Overwriting opparam with param param ({self.fork_params[key].param_param})')
+          #   if param.param_param_use_ord and param.has_allowed_vals:
+          #     val = int(param._params.get(param.param_param, encoding="utf8"))
+          #     if val < len(param.allowed_vals):
+          #       param.value = param.allowed_vals[val]
+          #     else:
+          #       param.value = param._params.get(param.param_param)
+          #   else:
+          #     param.value = param._params.get(param.param_param)
+          #   if param.has_allowed_types and type(param.value) not in param.allowed_types:
+          #     for t in param.allowed_types:
+          #       try:
+          #         param.value = t(param.value)
+          #         break
+          #       except:
+          #         continue
+          #     if type(param.value) not in param.allowed_types:
+          #       raise ValueError
+          #   self.put(key, param.value, reason="overwriting opparam with param param", do_log=False)
+          #   # need to now update the param param with the same value to keep its modification date newer than the opparam
+          #   self.put_params(key, param.value)
                 
   
   def _load_params(self, can_import=False):
