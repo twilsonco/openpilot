@@ -217,27 +217,6 @@ class Param:
       try:
         val = None
         self._params.check_key(self.param_param)
-        if self.param_param_read_on_startup:
-          if self.param_param_use_ord and self.has_allowed_vals:
-            val = int(self._params.get(self.param_param, encoding="utf8"))
-            if val < len(self.allowed_vals):
-              self.value = self.allowed_vals[val]
-            else:
-              self.value = self._params.get(self.param_param)
-          else:
-            self.value = self._params.get(self.param_param)
-          if self.has_allowed_types and type(self.value) not in self.allowed_types:
-            for t in self.allowed_types:
-              try:
-                self.value = t(self.value)
-                break
-              except:
-                continue
-            if type(self.value) not in self.allowed_types:
-              raise ValueError 
-          # cloudlog.info(f"opParams: Read in param value '{self.value}' from param '{self.param_param}' on startup")
-        else:
-          self.value = self.default_value
       except Exception as e:
         cloudlog.warning(f"Corresponding param '{self.param_param}' for this op_param is invalid! Read {val = }, {self.value = }. Exception: {e}, {self.allowed_types = }")
         self.param_param = ''
@@ -901,7 +880,25 @@ class opParams:
           if opparam_mtime > param_param_mtime:
             cloudlog.warning(f'opParams: {key}: Overwriting param param ({self.fork_params[key].param_param}) with opparam ({key})')
             self.put_params(key, param.value)
-          
+          else:
+            cloudlog.warning(f'opParams: {key}: Overwriting opparam with param param ({self.fork_params[key].param_param})')
+            if param.param_param_use_ord and param.has_allowed_vals:
+              val = int(param._params.get(param.param_param, encoding="utf8"))
+              if val < len(param.allowed_vals):
+                param.value = param.allowed_vals[val]
+              else:
+                param.value = param._params.get(param.param_param)
+            else:
+              param.value = param._params.get(param.param_param)
+            if param.has_allowed_types and type(param.value) not in param.allowed_types:
+              for t in param.allowed_types:
+                try:
+                  param.value = t(param.value)
+                  break
+                except:
+                  continue
+              if type(param.value) not in param.allowed_types:
+                raise ValueError           
   
   def _load_params(self, can_import=False):
     if not os.path.exists(PARAMS_DIR):
