@@ -919,7 +919,9 @@ class opParams:
                 except:
                   continue
               if type(param.value) not in param.allowed_types:
-                raise ValueError           
+                raise ValueError
+            self.put(key, param.value, reason="overwriting opparam with param param", do_log=False)
+                
   
   def _load_params(self, can_import=False):
     if not os.path.exists(PARAMS_DIR):
