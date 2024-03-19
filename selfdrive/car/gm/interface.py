@@ -347,6 +347,8 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpV = [2.4, 1.5]
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.36]
+    
+    nnff = Params().get_bool("EnableNNFF")
 
     if candidate in [CAR.VOLT, CAR.VOLT18]:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -362,7 +364,6 @@ class CarInterface(CarInterfaceBase):
       if (Params().get_bool("EnableTorqueControl")):
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        nnff = Params().get_bool("EnableNNFF")
         ret.lateralTuning.torque.kp = 1.0 if nnff else 0.48
         ret.lateralTuning.torque.ki = 0.15
         ret.lateralTuning.torque.kd = 0.0 if nnff else 0.04
@@ -417,9 +418,9 @@ class CarInterface(CarInterfaceBase):
       if (Params().get_bool("EnableTorqueControl")):
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 0.66
+        ret.lateralTuning.torque.kp = 1.0 if nnff else 0.66
         ret.lateralTuning.torque.ki = 0.15
-        ret.lateralTuning.torque.kd = 0.03
+        ret.lateralTuning.torque.kd = 0.0 if nnff else 0.03
         ret.lateralTuning.torque.kf = 1. # custom ff
         ret.lateralTuning.torque.friction = 0.01
       else:
@@ -445,9 +446,9 @@ class CarInterface(CarInterfaceBase):
       if (Params().get_bool("EnableTorqueControl")):
         ret.lateralTuning.init('torque')
         ret.lateralTuning.torque.useSteeringAngle = True
-        ret.lateralTuning.torque.kp = 0.48
+        ret.lateralTuning.torque.kp = 1.0 if nnff else 0.48
         ret.lateralTuning.torque.ki = 0.13
-        ret.lateralTuning.torque.kd = 0.03
+        ret.lateralTuning.torque.kd = 0.0 if nnff else 0.03
         ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
         ret.lateralTuning.torque.friction = 0.14
       else:
