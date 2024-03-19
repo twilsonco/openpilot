@@ -577,7 +577,7 @@ class CarState(CarStateBase):
     ret.cruiseState.standstill = False
     ret.cruiseMain = self.cruiseMain
     
-    ret.onePedalModeActive = self.one_pedal_mode_active and not self.long_active and self.time_in_drive_one_pedal >= self.MADS_long_min_time_in_drive and not self.park_assist_active
+    ret.onePedalModeActive = self.is_ev and self.one_pedal_mode_active and not self.long_active and self.time_in_drive_one_pedal >= self.MADS_long_min_time_in_drive and not self.park_assist_active
     if self.long_active:
       ret.brakePressed = ret.brakePressed or self.regen_paddle_pressed
     ret.onePedalModeTemporary = self.one_pedal_mode_temporary
