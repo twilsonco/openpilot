@@ -75,6 +75,7 @@ class LatControlTorque(LatControl):
     # Twilsonco's Lateral Neural Network Feedforward
     self.use_nn = CI.has_lateral_torque_nn
     self.use_lateral_jerk = CI.use_lateral_jerk
+    self.nnff_no_lateraj_jerk = False  # TODO: make this a parameter in the UI
 
     if self.use_nn or self.use_lateral_jerk:
       # Instantaneous lateral jerk changes very rapidly, making it not useful on its own,
@@ -159,27 +160,22 @@ class LatControlTorque(LatControl):
       lateral_jerk_setpoint = 0
       lateral_jerk_measurement = 0
 
-      if self.use_nn or self.use_lateral_jerk:
-        # prepare "look-ahead" desired lateral jerk
-        lat_accel_friction_factor = self.lat_accel_friction_factor
-        if len(model_data.acceleration.y) == ModelConstants.IDX_N:
-          lookahead = interp(CS.vEgo, self.friction_look_ahead_bp, self.friction_look_ahead_v)
-          friction_upper_idx = next((i for i, val in enumerate(ModelConstants.T_IDXS) if val > lookahead), 16)
-          predicted_lateral_jerk = get_predicted_lateral_jerk(model_data.acceleration.y, self.t_diffs)
-          desired_lateral_jerk = (interp(self.desired_lat_jerk_time, ModelConstants.T_IDXS, model_data.acceleration.y) - actual_lateral_accel) / self.desired_lat_jerk_time
-          lookahead_lateral_jerk = get_lookahead_value(predicted_lateral_jerk[LAT_PLAN_MIN_IDX:friction_upper_idx], desired_lateral_jerk)
-          if self.use_steering_angle or lookahead_lateral_jerk == 0.0:
-            lookahead_lateral_jerk = 0.0
-            actual_lateral_jerk = 0.0
-            lat_accel_friction_factor = 1.0
-          lateral_jerk_setpoint = self.lat_jerk_friction_factor * lookahead_lateral_jerk
-          lateral_jerk_measurement = self.lat_jerk_friction_factor * actual_lateral_jerk
-        else:
-          lateral_jerk_setpoint = 0.0
-          lateral_jerk_measurement = 0.0
-          lookahead_lateral_jerk = 0.0
-
       model_good = model_data is not None and len(model_data.orientation.x) >= CONTROL_N
+      if model_good and (self.use_nn or self.use_lateral_jerk):
+        # prepare "look-ahead" desired lateral jerk
+        lookahead = interp(CS.vEgo, self.friction_look_ahead_bp, self.friction_look_ahead_v)
+        friction_upper_idx = next((i for i, val in enumerate(ModelConstants.T_IDXS) if val > lookahead), 16)
+        predicted_lateral_jerk = get_predicted_lateral_jerk(model_data.acceleration.y, self.t_diffs)
+        desired_lateral_jerk = (interp(self.desired_lat_jerk_time, ModelConstants.T_IDXS, model_data.acceleration.y) - desired_lateral_accel) / self.desired_lat_jerk_time
+        lookahead_lateral_jerk = get_lookahead_value(predicted_lateral_jerk[LAT_PLAN_MIN_IDX:friction_upper_idx], desired_lateral_jerk)
+        lat_accel_friction_factor = self.lat_accel_friction_factor
+        if self.nnff_no_lateraj_jerk or self.use_steering_angle or lookahead_lateral_jerk == 0.0:
+          lookahead_lateral_jerk = 0.0
+          actual_lateral_jerk = 0.0
+          lat_accel_friction_factor = 1.0
+        lateral_jerk_setpoint = self.lat_jerk_friction_factor * lookahead_lateral_jerk
+        lateral_jerk_measurement = self.lat_jerk_friction_factor * actual_lateral_jerk
+
       if self.use_nn and model_good:
         # update past data
         roll = params.roll
