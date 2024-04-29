@@ -340,7 +340,7 @@ class CarState(CarStateBase):
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
     ret.gasPressed = ret.gas > GAS_PRESSED_THRESHOLD
     self.gasPressed = ret.gasPressed
-    if self.gasPressed or self.vEgo < 0.2:
+    if self.gasPressed or self.vEgo < 0.2 or self.vEgo > 2.0:
       self.resume_required = False
 
     ret.steeringAngleDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelAngle"]
