@@ -2,7 +2,7 @@
 import importlib
 import math
 from collections import deque
-from typing import Optional, Dict, Any
+from typing import Any, Optional
 
 import capnp
 from cereal import messaging, log, car
@@ -13,6 +13,7 @@ from openpilot.common.swaglog import cloudlog
 
 from openpilot.common.simple_kalman import KF1D
 
+from openpilot.selfdrive.frogpilot.controls.lib.model_manager import RADARLESS_MODELS
 
 # Default lead acceleration decay set to 50% at 1s
 _LEAD_ACCEL_TAU = 1.5
@@ -125,7 +126,7 @@ def laplacian_pdf(x: float, mu: float, b: float):
   return math.exp(-abs(x-mu)/b)
 
 
-def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks: Dict[int, Track]):
+def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks: dict[int, Track]):
   offset_vision_dist = lead.x[0] - RADAR_TO_CAMERA
 
   def prob(c):
@@ -133,7 +134,7 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
     prob_y = laplacian_pdf(c.yRel, -lead.y[0], lead.yStd[0])
     prob_v = laplacian_pdf(c.vRel + v_ego, lead.v[0], lead.vStd[0])
 
-    # This is isn't exactly right, but good heuristic
+    # This isn't exactly right, but it's a good heuristic
     return prob_d * prob_y * prob_v
 
   track = max(tracks.values(), key=prob)
@@ -166,10 +167,10 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
   }
 
 
-def get_lead(v_ego: float, ready: bool, tracks: Dict[int, Track], lead_msg: capnp._DynamicStructReader,
-             model_v_ego: float, low_speed_override: bool = True) -> Dict[str, Any]:
+def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capnp._DynamicStructReader,
+             model_v_ego: float, lead_detection_threshold: float, low_speed_override: bool = True) -> dict[str, Any]:
   # Determine leads, this is where the essential logic happens
-  if len(tracks) > 0 and ready and lead_msg.prob > .5:
+  if len(tracks) > 0 and ready and lead_msg.prob > lead_detection_threshold:
     track = match_vision_to_track(v_ego, lead_msg, tracks)
   else:
     track = None
@@ -177,7 +178,7 @@ def get_lead(v_ego: float, ready: bool, tracks: Dict[int, Track], lead_msg: capn
   lead_dict = {'status': False}
   if track is not None:
     lead_dict = track.get_RadarState(lead_msg.prob)
-  elif (track is None) and ready and (lead_msg.prob > .5):
+  elif (track is None) and ready and (lead_msg.prob > lead_detection_threshold):
     lead_dict = get_RadarState_from_vision(lead_msg, v_ego, model_v_ego)
 
   if low_speed_override:
@@ -194,19 +195,28 @@ def get_lead(v_ego: float, ready: bool, tracks: Dict[int, Track], lead_msg: capn
 
 class RadarD:
   def __init__(self, radar_ts: float, delay: int = 0):
+    self.points: dict[int, tuple[float, float, float]] = {}
+
     self.current_time = 0.0
 
-    self.tracks: Dict[int, Track] = {}
+    self.tracks: dict[int, Track] = {}
     self.kalman_params = KalmanParams(radar_ts)
 
     self.v_ego = 0.0
     self.v_ego_hist = deque([0.0], maxlen=delay+1)
     self.last_v_ego_frame = -1
 
-    self.radar_state: Optional[capnp._DynamicStructBuilder] = None
+    self.radar_state: capnp._DynamicStructBuilder | None = None
     self.radar_state_valid = False
+    self.radar_tracks_valid = False
 
     self.ready = False
+
+    # FrogPilot variables
+    self.params = Params()
+    self.params_memory = Params("/dev/shm/params")
+
+    self.update_frogpilot_params()
 
   def update(self, sm: messaging.SubMaster, rr: Optional[car.RadarData]):
     self.ready = sm.seen['modelV2']
@@ -257,8 +267,12 @@ class RadarD:
       model_v_ego = self.v_ego
     leads_v3 = sm['modelV2'].leadsV3
     if len(leads_v3) > 1:
-      self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, low_speed_override=True)
-      self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, low_speed_override=False)
+      self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, self.lead_detection_threshold, low_speed_override=True)
+      self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, self.lead_detection_threshold, low_speed_override=False)
+
+    # Update FrogPilot parameters
+    if self.params_memory.get_bool("FrogPilotTogglesUpdated"):
+      self.update_frogpilot_params()
 
   def publish(self, pm: messaging.PubMaster, lag_ms: float):
     assert self.radar_state is not None
@@ -281,6 +295,35 @@ class RadarD:
       }
     pm.send('liveTracks', tracks_msg)
 
+  def update_radardless(self, rr: Optional[car.RadarData]):
+    radar_points = []
+    radar_errors = []
+    if rr is not None:
+      radar_points = rr.points
+      radar_errors = rr.errors
+
+    self.radar_tracks_valid = len(radar_errors) == 0
+
+    self.points = {}
+    for pt in radar_points:
+      self.points[pt.trackId] = (pt.dRel, pt.yRel, pt.vRel)
+
+  def publish_radardless(self):
+    tracks_msg = messaging.new_message('liveTracks', len(self.points))
+    tracks_msg.valid = self.radar_tracks_valid
+    for index, tid in enumerate(sorted(self.points.keys())):
+      tracks_msg.liveTracks[index] = {
+        "trackId": tid,
+        "dRel": float(self.points[tid][0]) + RADAR_TO_CAMERA,
+        "yRel": -float(self.points[tid][1]),
+        "vRel": float(self.points[tid][2]),
+      }
+
+    return tracks_msg
+
+  def update_frogpilot_params(self):
+    longitudinal_tune = self.params.get_bool("LongitudinalTune")
+    self.lead_detection_threshold = self.params.get_int("LeadDetectionThreshold") / 100 if longitudinal_tune else .5
 
 # fuses camera and radar data for best lead detection
 def main():
@@ -298,26 +341,43 @@ def main():
 
   # *** setup messaging
   can_sock = messaging.sub_sock('can')
-  sm = messaging.SubMaster(['modelV2', 'carState'], frequency=int(1./DT_CTRL))
-  pm = messaging.PubMaster(['radarState', 'liveTracks'])
+  pub_sock = messaging.pub_sock('liveTracks')
 
   RI = RadarInterface(CP)
 
+  # TODO timing is different between cars, need a single time step for all cars
+  # TODO just take the fastest one for now, and keep resending same messages for slower radars
   rk = Ratekeeper(1.0 / CP.radarTimeStep, print_delay_threshold=None)
   RD = RadarD(CP.radarTimeStep, RI.delay)
 
-  while 1:
-    can_strings = messaging.drain_sock_raw(can_sock, wait_for_one=True)
-    rr = RI.update(can_strings)
-    sm.update(0)
-    if rr is None:
-      continue
+  RADARLESS = Params().get("Model", block=True, encoding='utf-8') in RADARLESS_MODELS
 
-    RD.update(sm, rr)
-    RD.publish(pm, -rk.remaining*1000.0)
+  if not RADARLESS:
+    sm = messaging.SubMaster(['modelV2', 'carState'], frequency=int(1./DT_CTRL))
+    pm = messaging.PubMaster(['radarState', 'liveTracks'])
 
-    rk.monitor_time()
+    while True:
+      can_strings = messaging.drain_sock_raw(can_sock, wait_for_one=True)
+      rr = RI.update(can_strings)
+      sm.update(0)
+      if rr is None:
+        continue
 
+      RD.update(sm, rr)
+      RD.publish(pm, -rk.remaining*1000.0)
+      rk.monitor_time()
+  else:
+    while True:
+      can_strings = messaging.drain_sock_raw(can_sock, wait_for_one=True)
+      rr = RI.update(can_strings)
+      if rr is None:
+        continue
+
+      RD.update_radardless(rr)
+      msg = RD.publish_radardless()
+      pub_sock.send(msg.to_bytes())
+
+      rk.monitor_time()
 
 if __name__ == "__main__":
   main()

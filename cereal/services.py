@@ -46,6 +46,7 @@ services: dict[str, tuple] = {
   "androidLog": (True, 0.),
   "carState": (True, 100., 10),
   "carControl": (True, 100., 10),
+  "carOutput": (True, 100., 10),
   "longitudinalPlan": (True, 20., 5),
   "procLog": (True, 0.5, 15),
   "gpsLocationExternal": (True, 10., 10),
@@ -83,6 +84,7 @@ services: dict[str, tuple] = {
 
   # FrogPilot
   "frogpilotCarControl": (True, 100., 10),
+  "frogpilotCarState": (True, 100., 10),
   "frogpilotDeviceState": (True, 2., 1),
   "frogpilotNavigation": (True, 1., 10),
   "frogpilotPlan": (True, 20., 5),

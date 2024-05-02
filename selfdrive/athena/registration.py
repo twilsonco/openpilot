@@ -4,7 +4,6 @@ import json
 import jwt
 import random, string
 from pathlib import Path
-from typing import Optional
 
 from datetime import datetime, timedelta
 from openpilot.common.api import api_get
@@ -24,12 +23,12 @@ def is_registered_device() -> bool:
   return dongle not in (None, UNREGISTERED_DONGLE_ID)
 
 
-def register(show_spinner=False) -> Optional[str]:
+def register(show_spinner=False) -> str | None:
   params = Params()
 
   IMEI = params.get("IMEI", encoding='utf8')
   HardwareSerial = params.get("HardwareSerial", encoding='utf8')
-  dongle_id: Optional[str] = params.get("DongleId", encoding='utf8')
+  dongle_id: str | None = params.get("DongleId", encoding='utf8')
   needs_registration = None in (IMEI, HardwareSerial, dongle_id)
 
   pubkey = Path(Paths.persist_root()+"/comma/id_rsa.pub")
@@ -49,8 +48,8 @@ def register(show_spinner=False) -> Optional[str]:
     # Block until we get the imei
     serial = HARDWARE.get_serial()
     start_time = time.monotonic()
-    imei1: Optional[str] = None
-    imei2: Optional[str] = None
+    imei1: str | None = None
+    imei2: str | None = None
     while imei1 is None and imei2 is None:
       try:
         imei1, imei2 = HARDWARE.get_imei(0), HARDWARE.get_imei(1)
@@ -76,8 +75,8 @@ def register(show_spinner=False) -> Optional[str]:
         if resp.status_code in (402, 403):
           cloudlog.info(f"Unable to register device, got {resp.status_code}")
           dongle_id = ''.join(random.choices(string.ascii_lowercase + string.digits, k=16))
-          params.put_bool("FireTheBabysitter", True)
-          params.put_bool("NoLogging", True)
+        elif Params("/persist/params").get_bool("FrogsGoMoo"):
+          dongle_id = "FrogsGoMooDongle"
         else:
           dongleauth = json.loads(resp.text)
           dongle_id = dongleauth["dongle_id"]

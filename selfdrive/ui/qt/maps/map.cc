@@ -54,7 +54,18 @@ MapWindow::~MapWindow() {
 
 void MapWindow::initLayers() {
   // This doesn't work from initializeGL
-    if (!m_map->layerExists("navLayer")) {
+  if (!m_map->layerExists("modelPathLayer")) {
+    qDebug() << "Initializing modelPathLayer";
+    QVariantMap modelPath;
+    //modelPath["id"] = "modelPathLayer";
+    modelPath["type"] = "line";
+    modelPath["source"] = "modelPathSource";
+    m_map->addLayer("modelPathLayer", modelPath);
+    m_map->setPaintProperty("modelPathLayer", "line-color", QColor("red"));
+    m_map->setPaintProperty("modelPathLayer", "line-width", 5.0);
+    m_map->setLayoutProperty("modelPathLayer", "line-cap", "round");
+  }
+  if (!m_map->layerExists("navLayer")) {
     qDebug() << "Initializing navLayer";
     QVariantMap nav;
     nav["type"] = "line";
@@ -67,17 +78,6 @@ void MapWindow::initLayers() {
     m_map->setPaintProperty("navLayer", "line-color-transition", transition);
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
-  }
-if (!m_map->layerExists("modelPathLayer")) {
-    qDebug() << "Initializing modelPathLayer";
-    QVariantMap modelPath;
-    //modelPath["id"] = "modelPathLayer";
-    modelPath["type"] = "line";
-    modelPath["source"] = "modelPathSource";
-    m_map->addLayer("modelPathLayer", modelPath);
-    m_map->setPaintProperty("modelPathLayer", "line-color", QColor("red"));
-    m_map->setPaintProperty("modelPathLayer", "line-width", 5.0);
-    m_map->setLayoutProperty("modelPathLayer", "line-cap", "round");
   }
   if (!m_map->layerExists("pinLayer")) {
     qDebug() << "Initializing pinLayer";
@@ -109,7 +109,6 @@ if (!m_map->layerExists("modelPathLayer")) {
     // TODO: remove, symbol-sort-key does not seem to matter outside of each layer
     m_map->setLayoutProperty("carPosLayer", "symbol-sort-key", 0);
   }
-
   if (!m_map->layerExists("buildingsLayer")) {
     qDebug() << "Initializing buildingsLayer";
     QVariantMap buildings;
@@ -194,7 +193,8 @@ void MapWindow::updateState(const UIState &s) {
       last_bearing = RAD2DEG(locationd_orientation.getValue()[2]);
       velocity_filter.update(std::max(10.0, locationd_velocity.getValue()[0]));
     }
-}
+  }
+
   // Credit to jakethesnake420
   if (loaded_once && (sm.rcv_frame("uiPlan") != model_rcv_frame)) {
     auto locationd_location = sm["liveLocationKalman"].getLiveLocationKalman();

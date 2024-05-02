@@ -119,22 +119,25 @@ struct CarEvent @0x9b1657f34caf3ad3 {
 
     # FrogPilot events
     accel30 @120;
-    firefoxSteerSaturated @121;
-    frogSteerSaturated @122;
-    greenLight @123;
-    holidayActive @124;
-    laneChangeBlockedLoud @125;
-    leadDeparting @126;
-    noLaneAvailable @127;
-    openpilotCrashed @128;
-    openpilotCrashedRandomEvents @129;
-    pedalInterceptorNoBrake @130;
-    speedLimitChanged @131;
-    torqueNNLoad @132;
-    turningLeft @133;
-    turningRight @134;
-    vCruise69 @135;
-    yourFrogTriedToKillMe @136;
+    accel35 @121;
+    accel40 @122;
+    blockUser @123;
+    firefoxSteerSaturated @124;
+    goatSteerSaturated @125;
+    greenLight @126;
+    holidayActive @127;
+    laneChangeBlockedLoud @128;
+    leadDeparting @129;
+    noLaneAvailable @130;
+    openpilotCrashed @131;
+    openpilotCrashedRandomEvents @132;
+    pedalInterceptorNoBrake @133;
+    speedLimitChanged @134;
+    torqueNNLoad @135;
+    turningLeft @136;
+    turningRight @137;
+    vCruise69 @138;
+    yourFrogTriedToKillMe @139;
 
     radarCanErrorDEPRECATED @15;
     communityFeatureDisallowedDEPRECATED @62;
@@ -342,13 +345,11 @@ struct CarControl {
   # Actuator commands as computed by controlsd
   actuators @6 :Actuators;
 
+  # moved to CarOutput
+  actuatorsOutputDEPRECATED @10 :Actuators;
+
   leftBlinker @15: Bool;
   rightBlinker @16: Bool;
-
-  # Any car specific rate limits or quirks applied by
-  # the CarController are reflected in actuatorsOutput
-  # and matches what is sent to the car
-  actuatorsOutput @10 :Actuators;
 
   orientationNED @13 :List(Float32);
   angularVelocity @14 :List(Float32);
@@ -399,7 +400,7 @@ struct CarControl {
     leftLaneVisible @7: Bool;
     rightLaneDepart @8: Bool;
     leftLaneDepart @9: Bool;
-    leadVelocity @10: Float32;
+    leadDistanceBars @10: Int8;  # 1-3: 1 is closest, 3 is farthest. some ports may utilize 2-4 bars instead
 
     enum VisualAlert {
       # these are the choices from the Honda
@@ -430,10 +431,15 @@ struct CarControl {
 
       # Random Events
       angry @9;
-      fart @10;
-      firefox @11;
-      noice @12;
-      uwu @13;
+      doc @10;
+      fart @11;
+      firefox @12;
+      nessie @13;
+      noice @14;
+      uwu @15;
+
+      # Other
+      goat @16;
     }
   }
 
@@ -443,6 +449,13 @@ struct CarControl {
   activeDEPRECATED @7 :Bool;
   rollDEPRECATED @8 :Float32;
   pitchDEPRECATED @9 :Float32;
+}
+
+struct CarOutput {
+  # Any car specific rate limits or quirks applied by
+  # the CarController are reflected in actuatorsOutput
+  # and matches what is sent to the car
+  actuatorsOutput @0 :CarControl.Actuators;
 }
 
 # ****** car param ******
@@ -624,6 +637,7 @@ struct CarParams {
     hyundaiCanfd @28;
     volkswagenMqbEvo @29;
     chryslerCusw @30;
+    psa @31;
   }
 
   enum SteerControlType {

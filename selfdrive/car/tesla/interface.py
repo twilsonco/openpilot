@@ -8,7 +8,7 @@ from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def _get_params(ret, params, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret, params, candidate, fingerprint, car_fw, disable_openpilot_long, experimental_long, docs):
     ret.carName = "tesla"
 
     # There is no safe way to do steer blending with user torque,
@@ -28,33 +28,26 @@ class CarInterface(CarInterfaceBase):
 
     # Check if we have messages on an auxiliary panda, and that 0x2bf (DAS_control) is present on the AP powertrain bus
     # If so, we assume that it is connected to the longitudinal harness.
+    flags = (Panda.FLAG_TESLA_RAVEN if candidate == CAR.MODELS_RAVEN else 0)
     if (CANBUS.autopilot_powertrain in fingerprint.keys()) and (0x2bf in fingerprint[CANBUS.autopilot_powertrain].keys()):
-      ret.openpilotLongitudinalControl = True
+      ret.openpilotLongitudinalControl = not disable_openpilot_long
+      flags |= Panda.FLAG_TESLA_LONG_CONTROL
       ret.safetyConfigs = [
-        get_safety_config(car.CarParams.SafetyModel.tesla, Panda.FLAG_TESLA_LONG_CONTROL),
-        get_safety_config(car.CarParams.SafetyModel.tesla, Panda.FLAG_TESLA_LONG_CONTROL | Panda.FLAG_TESLA_POWERTRAIN),
+        get_safety_config(car.CarParams.SafetyModel.tesla, flags),
+        get_safety_config(car.CarParams.SafetyModel.tesla, flags | Panda.FLAG_TESLA_POWERTRAIN),
       ]
     else:
       ret.openpilotLongitudinalControl = False
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.tesla, 0)]
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.tesla, flags)]
 
     ret.steerLimitTimer = 1.0
     ret.steerActuatorDelay = 0.25
-
-    if candidate in (CAR.AP2_MODELS, CAR.AP1_MODELS):
-      ret.mass = 2100.
-      ret.wheelbase = 2.959
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 15.0
-    else:
-      raise ValueError(f"Unsupported car: {candidate}")
-
     return ret
 
   def _update(self, c, frogpilot_variables):
     ret = self.CS.update(self.cp, self.cp_cam, frogpilot_variables)
 
-    ret.events = self.create_common_events(ret, frogpilot_variables).to_msg()
+    ret.events = self.create_common_events(ret).to_msg()
 
     return ret
 

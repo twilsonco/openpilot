@@ -1,8 +1,7 @@
 import os
-import sentry_sdk
 import threading
 import time
-from typing import Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
 
 from cereal import car
 from openpilot.common.params import Params
@@ -12,6 +11,7 @@ from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 from openpilot.selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car, set_obd_multiplexing
+from openpilot.selfdrive.car.mock.values import CAR as MOCK
 from openpilot.common.swaglog import cloudlog
 import cereal.messaging as messaging
 import openpilot.selfdrive.sentry as sentry
@@ -66,7 +66,7 @@ def load_interfaces(brand_names):
   return ret
 
 
-def _get_interface_names() -> Dict[str, List[str]]:
+def _get_interface_names() -> dict[str, list[str]]:
   # returns a dict of brand name and its respective models
   brand_names = {}
   for brand_name, brand_models in get_interface_attr("CAR").items():
@@ -80,7 +80,7 @@ interface_names = _get_interface_names()
 interfaces = load_interfaces(interface_names)
 
 
-def can_fingerprint(next_can: Callable) -> Tuple[Optional[str], Dict[int, dict]]:
+def can_fingerprint(next_can: Callable) -> tuple[str | None, dict[int, dict]]:
   finger = gen_empty_fingerprint()
   candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
   frame = 0
@@ -192,65 +192,18 @@ def fingerprint(logcan, sendcan, num_pandas):
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
                  fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, vin_rx_bus=vin_rx_bus,
                  fingerprints=repr(finger), fw_query_time=fw_query_time, error=True)
+
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
-def chunk_data(data, size):
-  return [data[i:i+size] for i in range(0, len(data), size)]
 
-def format_params(params):
-  return [f"{key}: {value.decode('utf-8') if isinstance(value, bytes) else value}" for key, value in params.items()]
+def get_car_interface(CP):
+  CarInterface, CarController, CarState = interfaces[CP.carFingerprint]
+  return CarInterface(CP, CarController, CarState)
 
-def get_frogpilot_params(params, keys):
-  return {key: params.get(key) or '0' for key in keys}
 
-def set_sentry_scope(scope, chunks, label):
-  scope.set_extra(label, '\n'.join(['\n'.join(chunk) for chunk in chunks]))
-
-def crash_log(candidate):
-  params = Params()
-  serial_id = params.get("HardwareSerial", encoding='utf-8')
-
-  control_keys, vehicle_keys, visual_keys, tracking_keys = [
-    "AdjustablePersonalities", "PersonalitiesViaWheel", "PersonalitiesViaScreen", "AlwaysOnLateral", "AlwaysOnLateralMain",
-    "ConditionalExperimental", "CESpeed", "CESpeedLead", "CECurves", "CECurvesLead", "CENavigation", "CENavigationIntersections",
-    "CENavigationLead", "CENavigationTurns", "CESlowerLead", "CEStopLights", "CEStopLightsLead", "CESignal", "CustomPersonalities",
-    "AggressiveFollow", "AggressiveJerk", "StandardFollow", "StandardJerk", "RelaxedFollow", "RelaxedJerk", "DeviceShutdown",
-    "ExperimentalModeActivation", "ExperimentalModeViaLKAS", "ExperimentalModeViaScreen", "FireTheBabysitter", "NoLogging", "MuteOverheated",
-    "OfflineMode", "LateralTune", "ForceAutoTune", "NNFF", "SteerRatio", "UseLateralJerk", "LongitudinalTune", "AccelerationProfile",
-    "DecelerationProfile", "AggressiveAcceleration", "StoppingDistance", "SmoothBraking", "Model", "MTSCEnabled", "DisableMTSCSmoothing",
-    "MTSCAggressiveness", "MTSCCurvatureCheck", "MTSCLimit", "NudgelessLaneChange", "LaneChangeTime", "LaneDetection", "LaneDetectionWidth",
-    "OneLaneChange", "QOLControls", "DisableOnroadUploads", "HigherBitrate", "NavChill", "PauseLateralOnSignal", "ReverseCruise", "ReverseCruiseUI",
-    "SetSpeedLimit", "SetSpeedOffset",  "SpeedLimitController", "Offset1", "Offset2", "Offset3", "Offset4", "SLCConfirmation", "SLCFallback",
-    "SLCPriority1", "SLCPriority2", "SLCPriority3", "SLCOverride", "TurnDesires", "VisionTurnControl", "DisableVTSCSmoothing", "CurveSensitivity",
-    "TurnAggressiveness"
-  ], [
-    "EVTable", "GasRegenCmd", "LongPitch", "LowerVolt", "CrosstrekTorque", "CydiaTune", "DragonPilotTune", "FrogsGoMooTune", "LockDoors", "SNGHack"
-  ], [
-    "CustomTheme", "HolidayThemes", "CustomColors", "CustomIcons", "CustomSignals", "CustomSounds", "GoatScream", "AlertVolumeControl", "DisengageVolume",
-    "EngageVolume", "PromptVolume", "PromptDistractedVolume", "RefuseVolume", "WarningSoftVolume", "WarningImmediateVolume", "CameraView",
-    "Compass", "CustomAlerts", "GreenLightAlert", "LeadDepartingAlert", "LoudBlindspotAlert", "SpeedLimitChangedAlert", "CustomUI", "AccelerationPath",
-    "AdjacentPath", "AdjacentPathMetrics", "BlindSpotPath", "FPSCounter", "LeadInfo", "UseSI", "PedalsOnUI", "RoadNameUI", "UseVienna", "DriverCamera",
-    "ModelUI", "DynamicPathWidth", "LaneLinesWidth", "PathEdgeWidth", "PathWidth", "RoadEdgesWidth", "UnlimitedLength", "QOLVisuals", "DriveStats",
-    "FullMap", "HideSpeed", "HideSpeedUI", "ShowSLCOffset", "SpeedLimitChangedAlert", "WheelSpeed", "RandomEvents", "ScreenBrightness", "WheelIcon",
-    "RotatingWheel", "NumericalTemp", "Fahrenheit", "ShowCPU", "ShowGPU", "ShowIP", "ShowMemoryUsage", "ShowStorageLeft", "ShowStorageUsed", "Sidebar"
-  ], [
-    "FrogPilotDrives", "FrogPilotKilometers", "FrogPilotMinutes"
-  ]
-
-  control_params, vehicle_params, visual_params, tracking_params = map(lambda keys: get_frogpilot_params(params, keys), [control_keys, vehicle_keys, visual_keys, tracking_keys])
-  control_values, vehicle_values, visual_values, tracking_values = map(format_params, [control_params, vehicle_params, visual_params, tracking_params])
-  control_chunks, vehicle_chunks, visual_chunks, tracking_chunks = map(lambda data: chunk_data(data, 50), [control_values, vehicle_values, visual_values, tracking_values])
-
-  with sentry_sdk.configure_scope() as scope:
-    for chunks, label in zip([control_chunks, vehicle_chunks, visual_chunks, tracking_chunks], ["FrogPilot Controls", "FrogPilot Vehicles", "FrogPilot Visuals", "FrogPilot Tracking"]):
-      set_sentry_scope(scope, chunks, label)
-    sentry.capture_warning(f"Fingerprinted: {candidate}", serial_id)
-
-def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
-  params = Params()
+def get_car(params, logcan, sendcan, disable_openpilot_long, experimental_long_allowed, num_pandas=1):
   car_brand = params.get("CarMake", encoding='utf-8')
   car_model = params.get("CarModel", encoding='utf-8')
-  dongle_id = params.get("DongleId", encoding='utf-8')
 
   force_fingerprint = params.get_bool("ForceFingerprint")
 
@@ -262,33 +215,37 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
     else:
       cloudlog.event("car doesn't match any fingerprints", fingerprints=repr(fingerprints), error=True)
       candidate = "mock"
-  elif car_model is None:
+
+  if car_model is None and candidate != "mock":
     params.put("CarMake", candidate.split(' ')[0].title())
     params.put("CarModel", candidate)
 
-  if get_short_branch() == "FrogPilot-Development" and not Params("/persist/comma/params").get_bool("FrogsGoMoo"):
+  if get_short_branch() == "FrogPilot-Development" and not Params("/persist/params").get_bool("FrogsGoMoo"):
+    cloudlog.event("Blocked user from using the 'FrogPilot-Development' branch", fingerprints=repr(fingerprints), error=True)
     candidate = "mock"
+    fingerprint_log = threading.Thread(target=sentry.capture_fingerprint, args=(params, candidate, True,))
+    fingerprint_log.start()
+  elif not params.get_bool("FingerprintLogged"):
+    fingerprint_log = threading.Thread(target=sentry.capture_fingerprint, args=(params, candidate,))
+    fingerprint_log.start()
 
-  setFingerprintLog = threading.Thread(target=crash_log, args=(candidate,))
-  setFingerprintLog.start()
-
-  CarInterface, CarController, CarState = interfaces[candidate]
-  CP = CarInterface.get_params(params, candidate, fingerprints, car_fw, experimental_long_allowed, docs=False)
+  CarInterface, _, _ = interfaces[candidate]
+  CP = CarInterface.get_params(params, candidate, fingerprints, car_fw, disable_openpilot_long, experimental_long_allowed, docs=False)
   CP.carVin = vin
   CP.carFw = car_fw
   CP.fingerprintSource = source
   CP.fuzzyFingerprint = not exact_match
 
-  return CarInterface(CP, CarController, CarState), CP
+  return get_car_interface(CP), CP
 
-def write_car_param(fingerprint="mock"):
+def write_car_param(platform=MOCK.MOCK):
   params = Params()
-  CarInterface, _, _ = interfaces[fingerprint]
-  CP = CarInterface.get_non_essential_params(fingerprint)
+  CarInterface, _, _ = interfaces[platform]
+  CP = CarInterface.get_non_essential_params(platform)
   params.put("CarParams", CP.to_bytes())
 
 def get_demo_car_params():
-  fingerprint="mock"
-  CarInterface, _, _ = interfaces[fingerprint]
-  CP = CarInterface.get_non_essential_params(fingerprint)
+  platform = MOCK.MOCK
+  CarInterface, _, _ = interfaces[platform]
+  CP = CarInterface.get_non_essential_params(platform)
   return CP

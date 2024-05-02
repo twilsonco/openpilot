@@ -52,8 +52,7 @@ void DBCFile::cleanupAutoSaveFile() {
 bool DBCFile::writeContents(const QString &fn) {
   QFile file(fn);
   if (file.open(QIODevice::WriteOnly)) {
-    file.write(generateDBC().toUtf8());
-    return true;
+    return file.write(generateDBC().toUtf8()) >= 0;
   }
   return false;
 }
@@ -75,10 +74,6 @@ cabana::Msg *DBCFile::msg(uint32_t address) {
 cabana::Msg *DBCFile::msg(const QString &name) {
   auto it = std::find_if(msgs.begin(), msgs.end(), [&name](auto &m) { return m.second.name == name; });
   return it != msgs.end() ? &(it->second) : nullptr;
-}
-
-int DBCFile::signalCount() {
-  return std::accumulate(msgs.cbegin(), msgs.cend(), 0, [](int &n, const auto &m) { return n + m.second.sigs.size(); });
 }
 
 void DBCFile::parse(const QString &content) {
@@ -196,12 +191,12 @@ void DBCFile::parse(const QString &content) {
 }
 
 QString DBCFile::generateDBC() {
-  QString dbc_string, signal_comment, message_comment, val_desc;
+  QString dbc_string, comment, val_desc;
   for (const auto &[address, m] : msgs) {
     const QString transmitter = m.transmitter.isEmpty() ? DEFAULT_NODE_NAME : m.transmitter;
     dbc_string += QString("BO_ %1 %2: %3 %4\n").arg(address).arg(m.name).arg(m.size).arg(transmitter);
     if (!m.comment.isEmpty()) {
-      message_comment += QString("CM_ BO_ %1 \"%2\";\n").arg(address).arg(m.comment);
+      comment += QString("CM_ BO_ %1 \"%2\";\n").arg(address).arg(m.comment);
     }
     for (auto sig : m.getSignals()) {
       QString multiplexer_indicator;
@@ -224,9 +219,9 @@ QString DBCFile::generateDBC() {
                         .arg(sig->unit)
                         .arg(sig->receiver_name.isEmpty() ? DEFAULT_NODE_NAME : sig->receiver_name);
       if (!sig->comment.isEmpty()) {
-        signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(sig->comment);
+        comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(sig->comment);
       }
-      if (!sig->val_desc.isEmpty()) {
+      if (!sig->val_desc.empty()) {
         QStringList text;
         for (auto &[val, desc] : sig->val_desc) {
           text << QString("%1 \"%2\"").arg(val).arg(desc);
@@ -236,5 +231,5 @@ QString DBCFile::generateDBC() {
     }
     dbc_string += "\n";
   }
-  return dbc_string + message_comment + signal_comment + val_desc;
+  return dbc_string + comment + val_desc;
 }

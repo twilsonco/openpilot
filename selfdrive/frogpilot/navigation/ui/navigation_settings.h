@@ -1,6 +1,6 @@
 #pragma once
 
-#include "selfdrive/frogpilot/ui/frogpilot_ui_functions.h"
+#include "selfdrive/frogpilot/ui/qt/widgets/frogpilot_controls.h"
 #include "selfdrive/ui/qt/network/wifi_manager.h"
 #include "selfdrive/ui/qt/offroad/settings.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"

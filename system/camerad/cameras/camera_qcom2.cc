@@ -981,16 +981,12 @@ void cameras_run(MultiCameraState *s) {
         // for debugging
         //do_exit = do_exit || event_data->u.frame_msg.frame_id > (30*20);
 
-        // Increment frame count
         frameCount++;
 
-        // Calculate and display FPS every second
         std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
         if (currentTime - startTime >= fpsUpdateInterval) {
           double fps = static_cast<double>(frameCount) / std::chrono::duration<double>(currentTime - startTime).count();
           paramsMemory.putIntNonBlocking("CameraFPS", fps / 3);
-
-          // Reset counter and timer
           frameCount = 0;
           startTime = currentTime;
         }

@@ -24,9 +24,9 @@ widgets_src = ["ui.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc", "qt/
                "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
                "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#third_party/qrcode/QrCode.cc",
                "qt/request_repeater.cc", "qt/qt_window.cc", "qt/network/networking.cc", "qt/network/wifi_manager.cc",
-               "../frogpilot/ui/frogpilot_ui_functions.cc", "../frogpilot/navigation/ui/navigation_settings.cc",
-               "../frogpilot/ui/control_settings.cc", "../frogpilot/ui/vehicle_settings.cc",
-               "../frogpilot/ui/visual_settings.cc"]
+               "../frogpilot/ui/qt/widgets/frogpilot_controls.cc", "../frogpilot/navigation/ui/navigation_settings.cc",
+               "../frogpilot/ui/qt/offroad/control_settings.cc", "../frogpilot/ui/qt/offroad/vehicle_settings.cc",
+               "../frogpilot/ui/qt/offroad/visual_settings.cc"]
 
 qt_env['CPPDEFINES'] = []
 if maps:
@@ -44,14 +44,6 @@ qt_src = ["main.cc", "qt/sidebar.cc", "qt/onroad.cc", "qt/body.cc",
           "qt/offroad/software_settings.cc", "qt/offroad/onboarding.cc",
           "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc",
           "../frogpilot/screenrecorder/omx_encoder.cc", "../frogpilot/screenrecorder/screenrecorder.cc"]
-
-if GetOption("nosr"):
-  qt_env.Append(CXXFLAGS=['-DNO_SR'])
-  base_libs.remove('OmxCore')
-  qt_libs.remove('OmxCore')
-  qt_src.remove("../frogpilot/screenrecorder/screenrecorder.cc")
-  qt_src.remove("../frogpilot/screenrecorder/omx_encoder.cc")
-  print("Removing Screen Recorder")
 
 # build translation files
 with open(File("translations/languages.json").abspath) as f:

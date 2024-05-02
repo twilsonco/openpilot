@@ -20,12 +20,12 @@ public:
   }
 
   static std::string get_name() {
-    std::string devicetree_model = util::read_file("/sys/firmware/devicetree/base/model");
-    return (devicetree_model.find("tizi") != std::string::npos) ? "tizi" : "tici";
+    std::string model = util::read_file("/sys/firmware/devicetree/base/model");
+    return model.substr(std::string("comma ").size());
   }
 
   static cereal::InitData::DeviceType get_device_type() {
-    return (get_name() == "tizi") ? cereal::InitData::DeviceType::TIZI : cereal::InitData::DeviceType::TICI;
+    return (get_name() == "tizi") ? cereal::InitData::DeviceType::TIZI : (get_name() == "mici" ? cereal::InitData::DeviceType::MICI : cereal::InitData::DeviceType::TICI);
   }
 
   static int get_voltage() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()); }
@@ -50,24 +50,6 @@ public:
   }
 
   static void reboot() { std::system("sudo reboot"); }
-  static void soft_reboot() {
-    const std::vector<std::string> commands = {
-      "tmux kill-session -t comma",
-      "rm -f /tmp/safe_staging_overlay.lock",
-      "tmux new -s comma -d '/data/continue.sh'"
-    };
-    for (const auto& cmd : commands) {
-      int retry_limit = 3;
-      int result;
-      do {
-        result = std::system(cmd.c_str());
-        --retry_limit;
-      } while (result != 0 && retry_limit > 0);
-      if (result != 0) {
-        reboot();
-      }
-    }
-  }
   static void poweroff() { std::system("sudo poweroff"); }
   static void set_brightness(int percent) {
     std::string max = util::read_file("/sys/class/backlight/panel0-backlight/max_brightness");

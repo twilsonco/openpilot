@@ -10,9 +10,6 @@ from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, \
                                                   TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR
-from openpilot.selfdrive.controls.lib.drive_helpers import CRUISE_LONG_PRESS
-
-from openpilot.selfdrive.frogpilot.functions.speed_limit_controller import SpeedLimitController
 
 SteerControlType = car.CarParams.SteerControlType
 
@@ -45,19 +42,38 @@ class CarState(CarStateBase):
     self.accurate_steer_angle_seen = False
     self.angle_offset = FirstOrderFilter(None, 60.0, DT_CTRL, initialized=False)
 
+    self.prev_distance_button = 0
+    self.distance_button = 0
+
+    self.pcm_follow_distance = 0
+
     self.low_speed_lockout = False
     self.acc_type = 1
     self.lkas_hud = {}
 
     # FrogPilot variables
-    self.profile_restored = False
     self.zss_compute = False
     self.zss_cruise_active_last = False
 
+    self.pcm_accel_net = 0.0
+    self.pcm_neutral_force = 0.0
     self.zss_angle_offset = 0
     self.zss_threshold_count = 0
 
-    self.traffic_signals = {}
+  # Traffic signals for Speed Limit Controller - Credit goes to the DragonPilot team!
+  def calculate_speed_limit(self, cp_cam, frogpilot_variables):
+    signals = ["TSGN1", "SPDVAL1", "SPLSGN1", "TSGN2", "SPLSGN2", "TSGN3", "SPLSGN3", "TSGN4", "SPLSGN4"]
+    traffic_signals = {signal: cp_cam.vl["RSA1"].get(signal, cp_cam.vl["RSA2"].get(signal)) for signal in signals}
+
+    tsgn1 = traffic_signals.get("TSGN1", None)
+    spdval1 = traffic_signals.get("SPDVAL1", None)
+
+    if tsgn1 == 1 and not frogpilot_variables.force_mph_dashboard:
+      return spdval1 * CV.KPH_TO_MS
+    elif tsgn1 == 36 or frogpilot_variables.force_mph_dashboard:
+      return spdval1 * CV.MPH_TO_MS
+    else:
+      return 0
 
   def update(self, cp, cp_cam, frogpilot_variables):
     ret = car.CarState.new_message()
@@ -182,79 +198,37 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint != CAR.PRIUS_V:
       self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
 
-    # if openpilot does not control longitudinal, in this case, assume 0x343 is on bus0
-    # 1) the car is no longer sending standstill
-    # 2) the car is still in standstill
-    if not self.CP.openpilotLongitudinalControl:
-      self.stock_resume_ready = cp.vl["ACC_CONTROL"]["RELEASE_STANDSTILL"] == 1
+    if self.CP.carFingerprint not in UNSUPPORTED_DSU_CAR:
+      self.pcm_follow_distance = cp.vl["PCM_CRUISE_2"]["PCM_FOLLOW_DISTANCE"]
 
-    # FrogPilot functions
     if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) or (self.CP.flags & ToyotaFlags.SMART_DSU and not self.CP.flags & ToyotaFlags.RADAR_CAN_FILTER):
       # distance button is wired to the ACC module (camera or radar)
+      self.prev_distance_button = self.distance_button
       if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
-        distance_pressed = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
+        self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
       else:
-        distance_pressed = cp.vl["SDSU"]["FD_BUTTON"]
+        self.distance_button = cp.vl["SDSU"]["FD_BUTTON"]
 
-    # Switch the current state of Experimental Mode if the LKAS button is double pressed
-    if frogpilot_variables.experimental_mode_via_lkas and ret.cruiseState.available and self.CP.carFingerprint != CAR.PRIUS_V:
+    if self.CP.carFingerprint != CAR.PRIUS_V:
+      self.lkas_previously_enabled = self.lkas_enabled
       message_keys = ["LDA_ON_MESSAGE", "SET_ME_X02"]
-      lkas_pressed = any(self.lkas_hud.get(key) == 1 for key in message_keys)
+      self.lkas_enabled = any(self.lkas_hud.get(key) == 1 for key in message_keys)
 
-      if lkas_pressed and not self.lkas_previously_pressed:
-        if frogpilot_variables.conditional_experimental_mode:
-          self.fpf.update_cestatus_lkas()
-        else:
-          self.fpf.update_experimental_mode()
+    self.params_memory.put_float("CarSpeedLimit", self.calculate_speed_limit(cp_cam, frogpilot_variables))
 
-      self.lkas_previously_pressed = lkas_pressed
+    self.cruise_decreased_previously = self.cruise_decreased
+    self.cruise_increased_previously = self.cruise_increased
 
-    # Distance button functions
-    if ret.cruiseState.available:
-      if distance_pressed:
-        self.distance_pressed_counter += 1
-      elif self.distance_previously_pressed:
-        # Set the distance lines on the dash to match the new personality if the button was held down for less than 0.5 seconds
-        if self.distance_pressed_counter < CRUISE_LONG_PRESS:
-          self.previous_personality_profile = (self.personality_profile + 2) % 3
-          self.fpf.distance_button_function(self.previous_personality_profile)
-          self.profile_restored = False
-        self.distance_pressed_counter = 0
+    self.cruise_decreased = self.pcm_acc_status == 10
+    self.cruise_increased = self.pcm_acc_status == 9
 
-      # Switch the current state of Experimental Mode if the button is held down for 0.5 seconds
-      if self.distance_pressed_counter == CRUISE_LONG_PRESS and frogpilot_variables.experimental_mode_via_distance:
-        if frogpilot_variables.conditional_experimental_mode:
-          self.fpf.update_cestatus_distance()
-        else:
-          self.fpf.update_experimental_mode()
-
-      self.distance_previously_pressed = distance_pressed
-
-    # Update the distance lines on the dash upon ignition/onroad UI button clicked
-    if frogpilot_variables.personalities_via_wheel and ret.cruiseState.available:
-      # Need to subtract by 1 to comply with the personality profiles of "0", "1", and "2"
-      self.personality_profile = cp.vl["PCM_CRUISE_SM"]["DISTANCE_LINES"] - 1
-
-      # Sync with the onroad UI button
-      if self.fpf.personality_changed_via_ui:
-        self.profile_restored = False
-        self.previous_personality_profile = self.fpf.current_personality
-        self.fpf.reset_personality_changed_param()
-
-      # Set personality to the previous drive's personality or when the user changes it via the UI
-      if self.personality_profile == self.previous_personality_profile:
-        self.profile_restored = True
-      if not self.profile_restored:
-        self.distance_button = not self.distance_button
-
-    # Traffic signals for Speed Limit Controller - Credit goes to the DragonPilot team!
-    self.update_traffic_signals(cp_cam)
-    SpeedLimitController.car_speed_limit = self.calculate_speed_limit(frogpilot_variables)
-    SpeedLimitController.write_car_state()
+    self.pcm_accel_net = cp.vl["PCM_CRUISE"]["ACCEL_NET"]
+    self.pcm_neutral_force = cp.vl["PCM_CRUISE"]["NEUTRAL_FORCE"]
 
     # ZSS Support - Credit goes to the DragonPilot team!
     if self.CP.flags & ToyotaFlags.ZSS and self.zss_threshold_count < ZSS_THRESHOLD_COUNT:
       zorro_steer = cp.vl["SECONDARY_STEER_ANGLE"]["ZORRO_STEER"]
+
       # Only compute ZSS offset when acc is active
       zss_cruise_active = ret.cruiseState.available
       if zss_cruise_active and not self.zss_cruise_active_last:
@@ -277,24 +251,6 @@ class CarState(CarStateBase):
         ret.steeringAngleDeg = new_steering_angle_deg
 
     return ret
-
-  def update_traffic_signals(self, cp_cam):
-    signals = ["TSGN1", "SPDVAL1", "SPLSGN1", "TSGN2", "SPLSGN2", "TSGN3", "SPLSGN3", "TSGN4", "SPLSGN4"]
-    new_values = {signal: cp_cam.vl["RSA1"].get(signal, cp_cam.vl["RSA2"].get(signal)) for signal in signals}
-
-    if new_values != self.traffic_signals:
-      self.traffic_signals.update(new_values)
-
-  def calculate_speed_limit(self, frogpilot_variables):
-    tsgn1 = self.traffic_signals.get("TSGN1", None)
-    spdval1 = self.traffic_signals.get("SPDVAL1", None)
-
-    if tsgn1 == 1 and not frogpilot_variables.force_mph_dashboard:
-      return spdval1 * CV.KPH_TO_MS
-    elif tsgn1 == 36 or frogpilot_variables.force_mph_dashboard:
-      return spdval1 * CV.MPH_TO_MS
-    else:
-      return 0
 
   @staticmethod
   def get_can_parser(CP):
@@ -330,7 +286,7 @@ class CarState(CarStateBase):
     if CP.enableBsm:
       messages.append(("BSM", 1))
 
-    if not CP.openpilotLongitudinalControl or (CP.carFingerprint in RADAR_ACC_CAR and not CP.flags & ToyotaFlags.DISABLE_RADAR.value):
+    if CP.carFingerprint in RADAR_ACC_CAR and not CP.flags & ToyotaFlags.DISABLE_RADAR.value:
       if not CP.flags & ToyotaFlags.SMART_DSU.value:
         messages += [
           ("ACC_CONTROL", 33),
@@ -373,8 +329,5 @@ class CarState(CarStateBase):
         ("ACC_CONTROL", 33),
         ("PCS_HUD", 1),
       ]
-
-    if not CP.openpilotLongitudinalControl and CP.carFingerprint not in (TSS2_CAR, UNSUPPORTED_DSU_CAR):
-      messages.append(("ACC_CONTROL", 33))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)

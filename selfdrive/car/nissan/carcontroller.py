@@ -1,13 +1,14 @@
 from cereal import car
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_std_steer_angle_limits
+from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.car.nissan import nissancan
 from openpilot.selfdrive.car.nissan.values import CAR, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
@@ -67,7 +68,7 @@ class CarController:
     if self.CP.carFingerprint != CAR.ALTIMA:
       if self.frame % 2 == 0:
         can_sends.append(nissancan.create_lkas_hud_msg(self.packer, CS.lkas_hud_msg, CC.enabled, hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                                       hud_control.leftLaneDepart, hud_control.rightLaneDepart))
+                                                       hud_control.leftLaneDepart, hud_control.rightLaneDepart, CC.latActive))
 
       if self.frame % 50 == 0:
         can_sends.append(nissancan.create_lkas_hud_info_msg(

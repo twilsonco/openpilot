@@ -10,6 +10,7 @@ public:
 
   // FrogPilot functions
   void restorePosition(int previousScrollPosition);
+
 protected:
   void hideEvent(QHideEvent *e) override;
 };

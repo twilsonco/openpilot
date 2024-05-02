@@ -1,15 +1,16 @@
-from cereal import car
-from openpilot.common.conversions import Conversions as CV
+from cereal import car, custom
 from panda import Panda
 from panda.python import uds
 from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
                                         MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR, STOP_AND_GO_CAR
-from openpilot.selfdrive.car import get_safety_config
+from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
+ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 SteerControlType = car.CarParams.SteerControlType
+FrogPilotButtonType = custom.FrogPilotCarState.ButtonEvent.Type
 
 
 class CarInterface(CarInterfaceBase):
@@ -21,7 +22,7 @@ class CarInterface(CarInterfaceBase):
       return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
-  def _get_params(ret, params, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret, params, candidate, fingerprint, car_fw, disable_openpilot_long, experimental_long, docs):
     ret.carName = "toyota"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.toyota)]
     ret.safetyConfigs[0].safetyParam = EPS_SCALE[candidate]
@@ -48,8 +49,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
-    stop_and_go = candidate in TSS2_CAR
-
     # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
     # 0x2AA is sent by a similar device which intercepts the radar instead of DSU on NO_DSU_CARs
     if 0x2FF in fingerprint[0] or (0x2AA in fingerprint[0] and candidate in NO_DSU_CAR):
@@ -58,74 +57,22 @@ class CarInterface(CarInterfaceBase):
     if 0x2AA in fingerprint[0] and candidate in NO_DSU_CAR:
       ret.flags |= ToyotaFlags.RADAR_CAN_FILTER.value
 
+    # In TSS2 cars, the camera does long control
+    found_ecus = [fw.ecu for fw in car_fw]
+    ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) \
+                                        and not (ret.flags & ToyotaFlags.SMART_DSU)
+
     if candidate == CAR.PRIUS:
-      ret.wheelbase = 2.70
-      ret.steerRatio = 15.74   # unknown end-to-end spec
-      ret.tireStiffnessFactor = 0.6371   # hand-tune
-      ret.mass = 3045. * CV.LB_TO_KG
       # Only give steer angle deadzone to for bad angle sensor prius
       for fw in car_fw:
         if fw.ecu == "eps" and not fw.fwVersion == b'8965B47060\x00\x00\x00\x00\x00\x00':
           ret.steerActuatorDelay = 0.25
           CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg=0.2)
 
-    elif candidate == CAR.PRIUS_V:
-      ret.wheelbase = 2.78
-      ret.steerRatio = 17.4
-      ret.tireStiffnessFactor = 0.5533
-      ret.mass = 3340. * CV.LB_TO_KG
-
-    elif candidate in (CAR.RAV4, CAR.RAV4H):
-      ret.wheelbase = 2.65
-      ret.steerRatio = 16.88   # 14.5 is spec end-to-end
-      ret.tireStiffnessFactor = 0.5533
-      ret.mass = 3650. * CV.LB_TO_KG  # mean between normal and hybrid
-
-    elif candidate == CAR.COROLLA:
-      ret.wheelbase = 2.70
-      ret.steerRatio = 18.27
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
-      ret.mass = 2860. * CV.LB_TO_KG  # mean between normal and hybrid
-
     elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RX_TSS2):
-      ret.wheelbase = 2.79
-      ret.steerRatio = 16.  # 14.8 is spec end-to-end
       ret.wheelSpeedFactor = 1.035
-      ret.tireStiffnessFactor = 0.5533
-      ret.mass = 4481. * CV.LB_TO_KG  # mean between min and max
-
-    elif candidate in (CAR.CHR, CAR.CHR_TSS2):
-      ret.wheelbase = 2.63906
-      ret.steerRatio = 13.6
-      ret.tireStiffnessFactor = 0.7933
-      ret.mass = 3300. * CV.LB_TO_KG
-
-    elif candidate in (CAR.CAMRY, CAR.CAMRY_TSS2):
-      ret.wheelbase = 2.82448
-      ret.steerRatio = 13.7
-      ret.tireStiffnessFactor = 0.7933
-      ret.mass = 3400. * CV.LB_TO_KG  # mean between normal and hybrid
-
-    elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDER_TSS2):
-      # TODO: TSS-P models can do stop and go, but unclear if it requires sDSU or unplugging DSU
-      ret.wheelbase = 2.8194  # average of 109.8 and 112.2 in
-      ret.steerRatio = 16.0
-      ret.tireStiffnessFactor = 0.8
-      ret.mass = 4516. * CV.LB_TO_KG  # mean between normal and hybrid
-
-    elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALON_TSS2):
-      # starting from 2019, all Avalon variants have stop and go
-      # https://engage.toyota.com/static/images/toyota_safety_sense/TSS_Applicability_Chart.pdf
-      ret.wheelbase = 2.82
-      ret.steerRatio = 14.8  # Found at https://pressroom.toyota.com/releases/2016+avalon+product+specs.download
-      ret.tireStiffnessFactor = 0.7983
-      ret.mass = 3505. * CV.LB_TO_KG  # mean between normal and hybrid
 
     elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023):
-      ret.wheelbase = 2.68986
-      ret.steerRatio = 14.3
-      ret.tireStiffnessFactor = 0.7933
-      ret.mass = 3585. * CV.LB_TO_KG  # Average between ICE and Hybrid
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP = [0.0]
       ret.lateralTuning.pid.kpBP = [0.0]
@@ -142,91 +89,15 @@ class CarInterface(CarInterfaceBase):
           ret.lateralTuning.pid.kf = 0.00004
           break
 
-    elif candidate == CAR.COROLLA_TSS2:
-      ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
-      ret.steerRatio = 13.9
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
-      ret.mass = 3060. * CV.LB_TO_KG
-
-    elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ES_TSS2):
-      ret.wheelbase = 2.8702
-      ret.steerRatio = 16.0  # not optimized
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
-      ret.mass = 3677. * CV.LB_TO_KG  # mean between min and max
-
-    elif candidate == CAR.SIENNA:
-      ret.wheelbase = 3.03
-      ret.steerRatio = 15.5
-      ret.tireStiffnessFactor = 0.444
-      ret.mass = 4590. * CV.LB_TO_KG
-
-    elif candidate in (CAR.LEXUS_IS, CAR.LEXUS_IS_TSS2, CAR.LEXUS_RC):
-      ret.wheelbase = 2.79908
-      ret.steerRatio = 13.3
-      ret.tireStiffnessFactor = 0.444
-      ret.mass = 3736.8 * CV.LB_TO_KG
-
-    elif candidate == CAR.LEXUS_GS_F:
-      ret.wheelbase = 2.84988
-      ret.steerRatio = 13.3
-      ret.tireStiffnessFactor = 0.444
-      ret.mass = 4034. * CV.LB_TO_KG
-
-    elif candidate == CAR.LEXUS_CTH:
-      ret.wheelbase = 2.60
-      ret.steerRatio = 18.6
-      ret.tireStiffnessFactor = 0.517
-      ret.mass = 3108 * CV.LB_TO_KG  # mean between min and max
-
-    elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2):
-      ret.wheelbase = 2.66
-      ret.steerRatio = 14.7
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
-      ret.mass = 4070 * CV.LB_TO_KG
-
-    elif candidate == CAR.LEXUS_LC_TSS2:
-      ret.wheelbase = 2.87
-      ret.steerRatio = 13.0
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
-      ret.mass = 4500 * CV.LB_TO_KG
-
-    elif candidate == CAR.PRIUS_TSS2:
-      ret.wheelbase = 2.70002  # from toyota online sepc.
-      ret.steerRatio = 13.4   # True steerRatio from older prius
-      ret.tireStiffnessFactor = 0.6371   # hand-tune
-      ret.mass = 3115. * CV.LB_TO_KG
-
-    elif candidate == CAR.MIRAI:
-      ret.wheelbase = 2.91
-      ret.steerRatio = 14.8
-      ret.tireStiffnessFactor = 0.8
-      ret.mass = 4300. * CV.LB_TO_KG
-
-    elif candidate == CAR.ALPHARD_TSS2:
-      ret.wheelbase = 3.00
-      ret.steerRatio = 14.2
-      ret.tireStiffnessFactor = 0.444
-      ret.mass = 4305. * CV.LB_TO_KG
-
     ret.centerToFront = ret.wheelbase * 0.44
 
     # TODO: Some TSS-P platforms have BSM, but are flipped based on region or driving direction.
     # Detect flipped signals and enable for C-HR and others
     ret.enableBsm = 0x3F6 in fingerprint[0] and candidate in TSS2_CAR
 
-    # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
-    # 0x2AA is sent by a similar device which intercepts the radar instead of DSU on NO_DSU_CARs
-    if 0x2FF in fingerprint[0] or (0x2AA in fingerprint[0] and candidate in NO_DSU_CAR):
-      ret.flags |= ToyotaFlags.SMART_DSU.value
-
     # No radar dbc for cars without DSU which are not TSS 2.0
     # TODO: make an adas dbc file for dsu-less models
     ret.radarUnavailable = DBC[candidate]['radar'] is None or candidate in (NO_DSU_CAR - TSS2_CAR)
-
-    # In TSS2 cars, the camera does long control
-    found_ecus = [fw.ecu for fw in car_fw]
-    ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) \
-                                        and not (ret.flags & ToyotaFlags.SMART_DSU)
 
     # if the smartDSU is detected, openpilot can send ACC_CONTROL and the smartDSU will block it from the DSU or radar.
     # since we don't yet parse radar on TSS2/TSS-P radar-based ACC cars, gate longitudinal behind experimental toggle
@@ -250,6 +121,7 @@ class CarInterface(CarInterfaceBase):
     #  - TSS2 radar ACC cars w/o smartDSU installed (disables radar)
     #  - TSS-P DSU-less cars w/ CAN filter installed (no radar parser yet)
     ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR) or bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value)
+    ret.openpilotLongitudinalControl &= not disable_openpilot_long
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
     ret.enableGasInterceptor = 0x201 in fingerprint[0] and ret.openpilotLongitudinalControl
 
@@ -270,19 +142,16 @@ class CarInterface(CarInterfaceBase):
       # on stock Toyota this is -2.5
       ret.stopAccel = -2.5
       tune.deadzoneBP = [0., 16., 20., 30.]
-      tune.deadzoneV = [0., .03, .06, .15]
-      ret.stoppingDecelRate = 0.17  # This is okay for TSS-P
-      if candidate in TSS2_CAR:
-        ret.vEgoStopping = 0.25
-        ret.vEgoStarting = 0.25
-        ret.stoppingDecelRate = 0.009  # reach stopping target smoothly
+      tune.deadzoneV = [.04, .05, .08, .15]
+      ret.stoppingDecelRate = 0.17
       tune.kpBP = [0., 5.]
       tune.kpV = [0.8, 1.]
       tune.kiBP = [0., 5.]
       tune.kiV = [0.3, 1.]
     elif params.get_bool("FrogsGoMooTune"):
       tune.deadzoneBP = [0., 16., 20., 30.]
-      tune.deadzoneV = [0., .03, .06, .15]
+      tune.deadzoneV =  [0., .03, .06, .15]
+
       tune.kpBP = [0., 5., 20.]
       tune.kpV = [1.3, 1.0, 0.7]
 
@@ -291,14 +160,10 @@ class CarInterface(CarInterfaceBase):
       tune.kiV =  [.35, .215, .195, .10, .01]
 
       if candidate in TSS2_CAR:
-        ret.stopAccel = -0.40
-        ret.stoppingDecelRate = 0.009  # reach stopping target smoothly
-      else:
-        ret.stopAccel = -2.5  # on stock Toyota this is -2.5
-        ret.stoppingDecelRate = 0.3  # This is okay for TSS-P
-
-      ret.vEgoStarting = 0.1
-      ret.vEgoStopping = 0.1
+        ret.vEgoStopping = 0.15          # car is near 0.1 to 0.2 when car starts requesting stopping accel
+        ret.vEgoStarting = 0.15          # needs to be > or == vEgoStopping
+        ret.stopAccel = -0.40            # Toyota requests -0.4 when stopped
+        ret.stoppingDecelRate = 0.09     # reach stopping target smoothly
     elif (candidate in TSS2_CAR or ret.enableGasInterceptor) and params.get_bool("DragonPilotTune"):
       # Credit goes to the DragonPilot team!
       tune.deadzoneBP = [0., 16., 20., 30.]
@@ -341,8 +206,16 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c, frogpilot_variables):
     ret = self.CS.update(self.cp, self.cp_cam, frogpilot_variables)
 
+    if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) or (self.CP.flags & ToyotaFlags.SMART_DSU and not self.CP.flags & ToyotaFlags.RADAR_CAN_FILTER):
+      ret.buttonEvents = [
+        *create_button_events(self.CS.cruise_increased, self.CS.cruise_increased_previously, {1: ButtonType.accelCruise}),
+        *create_button_events(self.CS.cruise_decreased, self.CS.cruise_decreased_previously, {1: ButtonType.decelCruise}),
+        *create_button_events(self.CS.distance_button, self.CS.prev_distance_button, {1: ButtonType.gapAdjustCruise}),
+        *create_button_events(self.CS.lkas_enabled, self.CS.lkas_previously_enabled, {1: FrogPilotButtonType.lkas}),
+      ]
+
     # events
-    events = self.create_common_events(ret, frogpilot_variables)
+    events = self.create_common_events(ret)
 
     # Lane Tracing Assist control is unavailable (EPS_STATUS->LTA_STATE=0) until
     # the more accurate angle sensor signal is initialized

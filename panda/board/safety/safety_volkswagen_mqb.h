@@ -247,9 +247,7 @@ static bool volkswagen_mqb_tx_hook(const CANPacket_t *to_send) {
         violation |= longitudinal_accel_checks(desired_accel, VOLKSWAGEN_MQB_LONG_LIMITS_SPORT);
       }
     } else {
-      if (desired_accel != 0) {
-        violation |= longitudinal_accel_checks(desired_accel, VOLKSWAGEN_MQB_LONG_LIMITS);
-      }
+      violation |= longitudinal_accel_checks(desired_accel, VOLKSWAGEN_MQB_LONG_LIMITS);
     }
 
     if (violation) {

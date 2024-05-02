@@ -41,6 +41,8 @@ const char frame_fragment_shader[] =
   "out vec4 colorOut;\n"
   "void main() {\n"
   "  colorOut = texture(uTexture, vTexCoord);\n"
+  // gamma to improve worst case visibility when dark
+  "  colorOut.rgb = pow(colorOut.rgb, vec3(1.0/1.28));\n"
   "}\n";
 #else
 #ifdef __APPLE__
@@ -217,9 +219,6 @@ void CameraWidget::updateFrameMat() {
     if (active_stream_type == VISION_STREAM_DRIVER) {
       if (stream_width > 0 && stream_height > 0) {
         frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
-        if (uiState()->scene.show_driver_camera) {
-          frame_mat.v[0] *= -1.0;
-        }
       }
     } else {
       // Project point at "infinity" to compute x and y offsets

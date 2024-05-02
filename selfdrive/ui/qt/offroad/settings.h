@@ -11,9 +11,9 @@
 #include <QWidget>
 
 
+#include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
-#include "selfdrive/ui/ui.h"
 
 // ********** settings window + top-level panels **********
 class SettingsWindow : public QFrame {
@@ -26,6 +26,9 @@ public:
 protected:
   void showEvent(QShowEvent *event) override;
 
+  // FrogPilot widgets
+  void hideEvent(QHideEvent *event) override;
+
 signals:
   void closeSettings();
   void reviewTrainingGuide();
@@ -36,6 +39,7 @@ signals:
   void closeParentToggle();
   void closeSubParentToggle();
   void updateMetric();
+
 private:
   QPushButton *sidebar_alert_widget;
   QWidget *sidebar_widget;
@@ -60,7 +64,6 @@ signals:
 private slots:
   void poweroff();
   void reboot();
-  void softreboot();
   void updateCalibDescription();
 
 private:
@@ -82,6 +85,9 @@ signals:
 
 public slots:
   void expandToggleDescription(const QString &param);
+
+private slots:
+  void updateState(const UIState &s);
 
 private:
   Params params;
@@ -105,7 +111,6 @@ private:
 
   QLabel *onroadLbl;
   LabelControl *versionLbl;
-  ButtonControl *errorLogBtn;
   ButtonControl *installBtn;
   ButtonControl *downloadBtn;
   ButtonControl *targetBranchBtn;
@@ -114,12 +119,6 @@ private:
   ParamWatcher *fs_watch;
 
   // FrogPilot variables
-  void automaticUpdate();
-
+  Params paramsMemory{"/dev/shm/params"};
   UIScene &scene;
-
-  ButtonControl *updateTime;
-
-  int schedule;
-  int time;
 };

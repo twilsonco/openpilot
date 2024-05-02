@@ -127,10 +127,6 @@ public:
     QObject::connect(&toggle, &Toggle::stateChanged, this, &ToggleControl::toggleFlipped);
   }
 
-  void setVisualOn() {
-    toggle.togglePosition();
-  }
-
   void setEnabled(bool enabled) {
     toggle.setEnabled(enabled);
     toggle.update();
@@ -231,10 +227,8 @@ public:
       button_group->addButton(button, i);
     }
 
-    QObject::connect(button_group, QOverload<int, bool>::of(&QButtonGroup::buttonToggled), [=](int id, bool checked) {
-      if (checked) {
-        params.put(key, std::to_string(id));
-      }
+    QObject::connect(button_group, QOverload<int>::of(&QButtonGroup::buttonClicked), [=](int id) {
+      params.put(key, std::to_string(id));
     });
   }
 
@@ -242,6 +236,19 @@ public:
     for (auto btn : button_group->buttons()) {
       btn->setEnabled(enable);
     }
+  }
+
+  void setCheckedButton(int id) {
+    button_group->button(id)->setChecked(true);
+  }
+
+  void refresh() {
+    int value = atoi(params.get(key).c_str());
+    button_group->button(value)->setChecked(true);
+  }
+
+  void showEvent(QShowEvent *event) override {
+    refresh();
   }
 
 private:

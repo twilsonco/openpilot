@@ -17,7 +17,6 @@
 const int btn_size = 192;
 const int img_size = (btn_size / 4) * 3;
 
-// FrogPilot global variables
 static double fps;
 
 // ***** onroad widgets *****
@@ -43,12 +42,14 @@ class Compass : public QWidget {
 public:
   explicit Compass(QWidget *parent = nullptr);
 
-  void updateState(int bearing_deg);
+  void updateState();
 
 protected:
   void paintEvent(QPaintEvent *event) override;
 
 private:
+  UIScene &scene;
+
   int bearingDeg;
   int circleOffset;
   int compassSize;
@@ -56,8 +57,35 @@ private:
   int innerCompass;
   int x;
   int y;
+
   QPixmap compassInnerImg;
   QPixmap staticElements;
+};
+
+class DistanceButton : public QPushButton {
+public:
+  explicit DistanceButton(QWidget *parent = nullptr);
+
+  void buttonPressed();
+  void buttonReleased();
+  void updateState();
+
+protected:
+  void paintEvent(QPaintEvent *event) override;
+
+private:
+  Params paramsMemory{"/dev/shm/params"};
+
+  UIScene &scene;
+
+  bool trafficModeActive;
+
+  int personality;
+
+  QElapsedTimer transitionTimer;
+
+  QVector<std::pair<QPixmap, QString>> profile_data;
+  QVector<std::pair<QPixmap, QString>> profile_data_kaofui;
 };
 
 class ExperimentalButton : public QPushButton {
@@ -78,6 +106,7 @@ private:
   bool engageable;
 
   // FrogPilot variables
+  Params paramsMemory{"/dev/shm/params"};
   UIScene &scene;
 
   QMap<int, QPixmap> wheelImages;
@@ -86,8 +115,10 @@ private:
   QMovie engage_gif;
   QLabel *gifLabel;
 
+  bool docRandomEventTriggered;
   bool firefoxRandomEventTriggered;
   bool rotatingWheel;
+  bool treeFiddyRandomEventTriggered;
   bool weebRandomEventTriggered;
 
   int steeringAngleDeg;
@@ -130,29 +161,6 @@ private:
   float acceleration;
 };
 
-class PersonalityButton : public QPushButton {
-public:
-  explicit PersonalityButton(QWidget *parent = 0);
-
-  void checkUpdate();
-  void handleClick();
-  void updateState();
-
-private:
-  void paintEvent(QPaintEvent *event) override;
-
-  Params params;
-  Params paramsMemory{"/dev/shm/params"};
-
-  UIScene &scene;
-
-  int personalityProfile = 0;
-
-  QElapsedTimer transitionTimer;
-
-  QVector<std::pair<QPixmap, QString>> profile_data;
-};
-
 // container window for the NVG UI
 class AnnotatedCameraWidget : public CameraWidget {
   Q_OBJECT
@@ -191,7 +199,8 @@ private:
 
   // FrogPilot widgets
   void initializeFrogPilotWidgets();
-  void updateFrogPilotWidgets(QPainter &p);
+  void paintFrogPilotWidgets(QPainter &p);
+  void updateFrogPilotWidgets();
 
   void drawLeadInfo(QPainter &p);
   void drawSLCConfirmation(QPainter &p);
@@ -200,34 +209,31 @@ private:
 
   // FrogPilot variables
   Params paramsMemory{"/dev/shm/params"};
-
   UIScene &scene;
 
   Compass *compass_img;
+  DistanceButton *distance_btn;
   PedalIcons *pedal_icons;
-  PersonalityButton *personality_btn;
   ScreenRecorder *recorder_btn;
 
   QHBoxLayout *bottom_layout;
 
-  bool alwaysOnLateral;
   bool alwaysOnLateralActive;
+  bool bigMapOpen;
   bool blindSpotLeft;
   bool blindSpotRight;
   bool compass;
-  bool conditionalExperimental;
   bool experimentalMode;
-  bool fullMapOpen;
   bool leadInfo;
   bool mapOpen;
-  bool onroadAdjustableProfiles;
-  bool pedalsOnUI;
-  bool rightHandDrive;
+  bool onroadDistanceButton;
   bool roadNameUI;
-  bool showDriverCamera;
+  bool showAlwaysOnLateralStatusBar;
+  bool showConditionalExperimentalStatusBar;
   bool showSLCOffset;
   bool slcOverridden;
   bool speedLimitController;
+  bool trafficModeActive;
   bool turnSignalLeft;
   bool turnSignalRight;
   bool useViennaSLCSign;
@@ -235,16 +241,14 @@ private:
 
   float cruiseAdjustment;
   float distanceConversion;
+  float laneDetectionWidth;
   float laneWidthLeft;
   float laneWidthRight;
-  float slcSpeedLimit;
   float slcSpeedLimitOffset;
   float speedConversion;
 
-  int availableImages;
+  int alertSize;
   int cameraView;
-  int conditionalSpeed;
-  int conditionalSpeedLead;
   int conditionalStatus;
   int currentHolidayTheme;
   int customColors;
@@ -255,17 +259,16 @@ private:
 
   QString leadDistanceUnit;
   QString leadSpeedUnit;
-  QString themePath;
-  QStringList imagePaths;
 
   size_t animationFrameIndex;
 
-  std::unordered_map<int, std::tuple<QString, int, QColor, std::map<double, QBrush>>> holidayThemeConfiguration;
-  std::unordered_map<int, std::tuple<QString, int, QColor, std::map<double, QBrush>>> themeConfiguration;
+  std::unordered_map<int, std::tuple<QString, QColor, std::map<double, QBrush>>> themeConfiguration;
+  std::unordered_map<int, std::tuple<QString, QColor, std::map<double, QBrush>>> holidayThemeConfiguration;
   std::vector<QPixmap> signalImgVector;
 
   QTimer *animationTimer;
 
+  inline QColor blueColor(int alpha = 255) { return QColor(0, 150, 255, alpha); }
   inline QColor greenColor(int alpha = 242) { return QColor(23, 134, 68, alpha); }
 
 protected:
@@ -274,7 +277,7 @@ protected:
   void showEvent(QShowEvent *event) override;
   void updateFrameMat() override;
   void drawLaneLines(QPainter &painter, const UIState *s);
-  void drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd);
+  void drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd, const float v_ego);
   void drawHud(QPainter &p);
   void drawDriverState(QPainter &painter, const UIState *s);
   void paintEvent(QPaintEvent *event) override;
@@ -307,16 +310,10 @@ private:
   QWidget *map = nullptr;
   QHBoxLayout* split;
 
-  // FrogPilot widgets
-  void updateFPSCounter();
-
   // FrogPilot variables
   UIScene &scene;
+  Params params;
   Params paramsMemory{"/dev/shm/params"};
-
-  double avgFPS;
-  double maxFPS = 0.0;
-  double minFPS = 99.9;
 
   QPoint timeoutPoint = QPoint(420, 69);
   QTimer clickTimer;

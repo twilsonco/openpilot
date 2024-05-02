@@ -5,54 +5,51 @@ from openpilot.common.params import Params
 from openpilot.system.hardware import PC, TICI
 from openpilot.selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
 
+
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
-def driverview(started: bool, params: Params, params_memory: Params, CP: car.CarParams) -> bool:
+def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started or params.get_bool("IsDriverViewEnabled")
 
-def notcar(started: bool, params: Params, params_memory: Params, CP: car.CarParams) -> bool:
+def notcar(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and CP.notCar
 
-def iscar(started: bool, params: Params, params_memory: Params, CP: car.CarParams) -> bool:
+def iscar(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and not CP.notCar
 
-def logging(started, params, params_memory, CP: car.CarParams) -> bool:
+def logging(started, params, CP: car.CarParams) -> bool:
   run = (not CP.notCar) or not params.get_bool("DisableLogging")
   return started and run
 
 def ublox_available() -> bool:
   return os.path.exists('/dev/ttyHS0') and not os.path.exists('/persist/comma/use-quectel-gps')
 
-def ublox(started, params, params_memory, CP: car.CarParams) -> bool:
+def ublox(started, params, CP: car.CarParams) -> bool:
   use_ublox = ublox_available()
   if use_ublox != params.get_bool("UbloxAvailable"):
     params.put_bool("UbloxAvailable", use_ublox)
   return started and use_ublox
 
-def qcomgps(started, params, params_memory, CP: car.CarParams) -> bool:
+def qcomgps(started, params, CP: car.CarParams) -> bool:
   return started and not ublox_available()
 
-def always_run(started, params, params_memory, CP: car.CarParams) -> bool:
+def always_run(started, params, CP: car.CarParams) -> bool:
   return True
 
-def only_onroad(started: bool, params, params_memory, CP: car.CarParams) -> bool:
+def only_onroad(started: bool, params, CP: car.CarParams) -> bool:
   return started
 
-def only_offroad(started, params, params_memory, CP: car.CarParams) -> bool:
+def only_offroad(started, params, CP: car.CarParams) -> bool:
   return not started
 
 # FrogPilot functions
-def allow_uploads(started, params, params_memory, CP: car.CarParams) -> bool:
-  allow_uploads = not (params_memory.get_bool("FireTheBabysitter") and params_memory.get_bool("NoUploads"))
-  at_home = not started or not params_memory.get_bool("DisableOnroadUploads")
-  return allow_uploads and at_home
+def allow_logging(started, params, CP: car.CarParams) -> bool:
+  allow_logging = not (params.get_bool("DeviceManagement") and params.get_bool("NoLogging"))
+  return allow_logging and logging(started, params, CP)
 
-def allow_logging(started, params, params_memory, CP: car.CarParams) -> bool:
-  allow_logging = not (params_memory.get_bool("FireTheBabysitter") and params_memory.get_bool("NoLogging"))
-  return allow_logging and logging(started, params, params_memory, CP)
-
-def osm(started, params, params_memory, CP: car.CarParams) -> bool:
-  return params_memory.get_bool("RoadNameUI") or params_memory.get_bool("SpeedLimitController")
+def allow_uploads(started, params, CP: car.CarParams) -> bool:
+  allow_uploads = not (params.get_bool("DeviceManagement") and params.get_bool("NoUploads"))
+  return allow_uploads
 
 procs = [
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
@@ -82,16 +79,17 @@ procs = [
   PythonProcess("deleter", "system.loggerd.deleter", always_run),
   PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", driverview, enabled=(not PC or WEBCAM)),
   PythonProcess("qcomgpsd", "system.qcomgpsd.qcomgpsd", qcomgps, enabled=TICI),
+  #PythonProcess("ugpsd", "system.ugpsd", only_onroad, enabled=TICI),
   PythonProcess("navd", "selfdrive.navd.navd", only_onroad),
   PythonProcess("pandad", "selfdrive.boardd.pandad", always_run),
   PythonProcess("paramsd", "selfdrive.locationd.paramsd", only_onroad),
   NativeProcess("ubloxd", "system/ubloxd", ["./ubloxd"], ublox, enabled=TICI),
-  PythonProcess("pigeond", "system.sensord.pigeond", ublox, enabled=TICI),
+  PythonProcess("pigeond", "system.ubloxd.pigeond", ublox, enabled=TICI),
   PythonProcess("plannerd", "selfdrive.controls.plannerd", only_onroad),
   PythonProcess("radard", "selfdrive.controls.radard", only_onroad),
   PythonProcess("thermald", "selfdrive.thermald.thermald", always_run),
-  PythonProcess("tombstoned", "selfdrive.tombstoned", allow_logging, enabled=not PC),
-  PythonProcess("updated", "selfdrive.updated", always_run, enabled=not PC),
+  PythonProcess("tombstoned", "selfdrive.tombstoned", always_run, enabled=not PC),
+  PythonProcess("updated", "selfdrive.updated.updated", always_run, enabled=not PC),
   PythonProcess("uploader", "system.loggerd.uploader", allow_uploads),
   PythonProcess("statsd", "selfdrive.statsd", allow_logging),
 
@@ -102,8 +100,8 @@ procs = [
 
   # FrogPilot processes
   PythonProcess("fleet_manager", "selfdrive.frogpilot.fleetmanager.fleet_manager", always_run),
-  PythonProcess("frogpilot_process", "selfdrive.frogpilot.functions.frogpilot_process", always_run),
-  PythonProcess("mapd", "selfdrive.frogpilot.functions.mapd", osm),
+  PythonProcess("frogpilot_process", "selfdrive.frogpilot.frogpilot_process", always_run),
+  PythonProcess("mapd", "selfdrive.frogpilot.navigation.mapd", always_run),
 ]
 
 managed_processes = {p.name: p for p in procs}

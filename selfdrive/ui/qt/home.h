@@ -33,7 +33,6 @@ private:
   Params params;
 
   QTimer* timer;
-  ElidedLabel* date;
   ElidedLabel* version;
   QStackedLayout* center_layout;
   UpdateAlert *update_widget;
@@ -42,7 +41,7 @@ private:
   QPushButton* update_notif;
 
   // FrogPilot variables
-  std::map<QString, QString> MODEL_NAME;
+  ElidedLabel* date;
 };
 
 class HomeWindow : public QWidget {
@@ -57,7 +56,7 @@ signals:
 
 public slots:
   void offroadTransition(bool offroad);
-  void showDriverView(bool show);
+  void showDriverView(bool show, bool started=false);
   void showSidebar(bool show);
   void showMapPanel(bool show);
 

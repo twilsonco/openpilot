@@ -12,15 +12,15 @@ class WiFiPromptWidget : public QFrame {
 public:
   explicit WiFiPromptWidget(QWidget* parent = 0);
 
-private:
-  // FrogPilot variables
-  Params params;
-
 signals:
   void openSettings(int index = 0, const QString &param = "");
 
 public slots:
   void updateState(const UIState &s);
+
+private:
+  // FrogPilot variables
+  Params params;
 
 protected:
   QStackedLayout *stack;

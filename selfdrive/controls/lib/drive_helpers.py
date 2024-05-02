@@ -93,22 +93,18 @@ class VCruiseHelper:
           long_press = True
           break
 
-    # Reverse the long press value for reverse cruise increase
-    if frogpilot_variables.reverse_cruise_increase:
-      long_press = not long_press
-
     if button_type is None:
       return
 
     # Confirm or deny the new speed limit value
     if speed_limit_changed:
       if button_type == ButtonType.accelCruise:
-        self.params_memory.put_bool("SLCConfirmed", True);
-        self.params_memory.put_bool("SLCConfirmedPressed", True);
+        self.params_memory.put_bool("SLCConfirmed", True)
+        self.params_memory.put_bool("SLCConfirmedPressed", True)
         return
       elif button_type == ButtonType.decelCruise:
-        self.params_memory.put_bool("SLCConfirmed", False);
-        self.params_memory.put_bool("SLCConfirmedPressed", True);
+        self.params_memory.put_bool("SLCConfirmed", False)
+        self.params_memory.put_bool("SLCConfirmedPressed", True)
         return
 
     # Don't adjust speed when pressing resume to exit standstill
@@ -120,13 +116,13 @@ class VCruiseHelper:
     if not self.button_change_states[button_type]["enabled"]:
       return
 
-    v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
-    if long_press and self.v_cruise_kph % v_cruise_delta != 0:  # partial interval
+    v_cruise_delta_interval = frogpilot_variables.custom_cruise_increase_long if long_press else frogpilot_variables.custom_cruise_increase
+    v_cruise_delta = v_cruise_delta * v_cruise_delta_interval
+    if v_cruise_delta_interval % 5 == 0 and self.v_cruise_kph % v_cruise_delta != 0:  # partial interval
       self.v_cruise_kph = CRUISE_NEAREST_FUNC[button_type](self.v_cruise_kph / v_cruise_delta) * v_cruise_delta
     else:
       self.v_cruise_kph += v_cruise_delta * CRUISE_INTERVAL_SIGN[button_type]
 
-    # Apply offset
     v_cruise_offset = (frogpilot_variables.set_speed_offset * CRUISE_INTERVAL_SIGN[button_type]) if long_press else 0
     if v_cruise_offset < 0:
       v_cruise_offset = frogpilot_variables.set_speed_offset - v_cruise_delta
@@ -155,24 +151,19 @@ class VCruiseHelper:
     if self.CP.pcmCruise:
       return
 
-    if frogpilot_variables.conditional_experimental_mode:
-      initial = V_CRUISE_INITIAL
-    else:
-      initial = V_CRUISE_INITIAL_EXPERIMENTAL_MODE if experimental_mode else V_CRUISE_INITIAL
+    initial = V_CRUISE_INITIAL_EXPERIMENTAL_MODE if experimental_mode else V_CRUISE_INITIAL
 
     # 250kph or above probably means we never had a set speed
     if any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in CS.buttonEvents) and self.v_cruise_kph_last < 250:
       self.v_cruise_kph = self.v_cruise_kph_last
     else:
-      # Initial set speed
       if desired_speed_limit != 0 and frogpilot_variables.set_speed_limit:
-        # If there's a known speed limit and the corresponding FP toggle is set, push it to the car
         self.v_cruise_kph = int(round(desired_speed_limit * CV.MS_TO_KPH))
       else:
-        # Use fixed initial set speed from mode etc.
         self.v_cruise_kph = int(round(clip(CS.vEgo * CV.MS_TO_KPH, initial, V_CRUISE_MAX)))
 
     self.v_cruise_cluster_kph = self.v_cruise_kph
+
 
 def apply_deadzone(error, deadzone):
   if error > deadzone:

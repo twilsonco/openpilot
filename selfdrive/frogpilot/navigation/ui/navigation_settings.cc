@@ -204,11 +204,11 @@ void FrogPilotNavigationPanel::downloadSchedule() {
 }
 
 void FrogPilotNavigationPanel::cancelDownload(QWidget *parent) {
-  if (FrogPilotConfirmationDialog::yesorno("Are you sure you want to cancel the download?", parent)) {
+  if (FrogPilotConfirmationDialog::yesorno(tr("Are you sure you want to cancel the download?"), parent)) {
     std::thread([&] {
       std::system("pkill mapd");
     }).detach();
-    if (FrogPilotConfirmationDialog::toggle("Reboot required to re-enable map downloads", "Reboot Now", parent)) {
+    if (FrogPilotConfirmationDialog::toggle(tr("Reboot required to re-enable map downloads"), tr("Reboot Now"), parent)) {
       Hardware::reboot();
     }
     downloadActive = false;
@@ -225,7 +225,7 @@ void FrogPilotNavigationPanel::downloadMaps() {
 }
 
 void FrogPilotNavigationPanel::removeMaps(QWidget *parent) {
-  if (FrogPilotConfirmationDialog::yesorno("Are you sure you want to delete all of your downloaded maps?", parent)) {
+  if (FrogPilotConfirmationDialog::yesorno(tr("Are you sure you want to delete all of your downloaded maps?"), parent)) {
     std::thread([&] {
       lastMapsDownload->setVisible(false);
       removeOfflineMapsButton->setVisible(false);
@@ -480,7 +480,7 @@ Primeless::Primeless(QWidget *parent) : QWidget(parent) {
   setupLayout->addWidget(imageLabel, 0, Qt::AlignCenter);
   imageLabel->hide();
 
-  ButtonControl *setupButton = new ButtonControl(tr("Mapbox Setup Instructions"), tr("VIEW"), tr("View the instructions to set up MapBox for Primeless Navigation."), this);
+  ButtonControl *setupButton = new ButtonControl(tr("Setup Instructions"), tr("VIEW"), tr("View the instructions to set up MapBox for Primeless Navigation."), this);
   QObject::connect(setupButton, &ButtonControl::clicked, this, [this]() {
     updateStep();
     backButton->hide();
