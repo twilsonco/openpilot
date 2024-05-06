@@ -146,7 +146,16 @@ def capture_fingerprint(params, candidate, blocked=False):
 
 
 def capture_exception(*args, **kwargs) -> None:
-  save_exception(traceback.format_exc())
+  exc_text = traceback.format_exc()
+
+  phrases_to_check = [
+    "To overwrite it, set 'overwrite' to True.",
+  ]
+
+  if any(phrase in exc_text for phrase in phrases_to_check):
+    return
+
+  save_exception(exc_text)
   cloudlog.error("crash", exc_info=kwargs.get('exc_info', 1))
 
   FrogPilot = "frogai" in get_origin().lower()

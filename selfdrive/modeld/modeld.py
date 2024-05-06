@@ -35,7 +35,7 @@ DISABLE_NAV = MODEL_NAME not in NAVIGATION_MODELS
 DISABLE_RADAR = MODEL_NAME in RADARLESS_MODELS
 
 MODEL_PATHS = {
-  ModelRunner.THNEED: Path(__file__).parent / ('models/supercombo.thneed' if MODEL_NAME == DEFAULT_MODEL else f'{MODELS_PATH}/{MODEL_NAME}.thneed'),
+  ModelRunner.THNEED: Path(__file__).parent / ('models/supercombo.thneed' if MODEL_NAME == DEFAULT_MODEL or not Params().get_bool("ModelSelector") else f'{MODELS_PATH}/{MODEL_NAME}.thneed'),
   ModelRunner.ONNX: Path(__file__).parent / 'models/supercombo.onnx'}
 
 METADATA_PATH = Path(__file__).parent / 'models/supercombo_metadata.pkl'

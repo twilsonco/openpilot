@@ -125,8 +125,9 @@ class CarState(CarStateBase):
     if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
       self.es_infotainment_msg = copy.copy(cp_cam.vl["ES_Infotainment"])
 
-    self.lkas_previously_enabled = self.lkas_enabled
-    self.lkas_enabled = cp_cam.vl["ES_LKAS_State"]["LKAS_Dash_State"]
+    if self.car_fingerprint not in PREGLOBAL_CARS:
+      self.lkas_previously_enabled = self.lkas_enabled
+      self.lkas_enabled = cp_cam.vl["ES_LKAS_State"]["LKAS_Dash_State"]
 
     return ret
 

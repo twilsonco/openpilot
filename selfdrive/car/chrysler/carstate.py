@@ -140,11 +140,14 @@ class CarState(CarStateBase):
         ("ESP_8", 50),
         ("EPS_3", 50),
         ("Transmission_Status", 50),
+        ("Center_Stack_1", 1),
+        ("Center_Stack_2", 1),
       ]
     else:
       messages += [
         ("GEAR", 50),
         ("SPEED_1", 100),
+        ("TRACTION_BUTTON", 1),
       ]
       messages += CarState.get_cruise_messages()
 

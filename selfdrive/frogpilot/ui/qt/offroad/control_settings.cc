@@ -361,7 +361,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
     } else if (param == "StoppingDistance") {
       toggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 10, std::map<int, QString>(), this, false, tr(" feet"));
     } else if (param == "LeadDetectionThreshold") {
-      toggle = new FrogPilotParamValueControl(param, title, desc, icon, 1, 100, std::map<int, QString>(), this, false, "%");
+      toggle = new FrogPilotParamValueControl(param, title, desc, icon, 1, 99, std::map<int, QString>(), this, false, "%");
     } else if (param == "SmoothBraking" && !isRelease) {
       std::vector<QString> brakingToggles{"SmoothBrakingJerk", "SmoothBrakingFarLead"};
       std::vector<QString> brakingToggleNames{tr("Apply to Jerk"), tr("Far Lead Offset")};
@@ -567,6 +567,12 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
           if (FrogPilotConfirmationDialog::yesorno(tr("Do you want to start with a fresh calibration for the newly selected model?"), this)) {
             params.remove("CalibrationParams");
             params.remove("LiveTorqueParameters");
+          }
+
+          if (started) {
+            if (FrogPilotConfirmationDialog::toggle(tr("Reboot required to take effect."), tr("Reboot Now"), this)) {
+              Hardware::reboot();
+            }
           }
         }
       });
@@ -869,7 +875,7 @@ void FrogPilotControlsPanel::updateState(const UIState &s) {
   }
 
   downloadModelBtn->setEnabled(s.scene.online);
-  modelManagerToggle->setEnabled(!s.scene.started);
+  modelManagerToggle->setEnabled(!s.scene.started || s.scene.parked);
 }
 
 void FrogPilotControlsPanel::updateToggles() {

@@ -65,20 +65,20 @@ class ThemeManager:
       if holiday.endswith("_week"):
         if self.is_within_week_of(date, current_date):
           if theme_id != self.previous_theme_id:
-            update_holiday = threading.Thread(target=update_holiday_theme, args=(theme_id,))
+            update_holiday = threading.Thread(target=self.update_holiday_theme, args=(theme_id,))
             update_holiday.start()
           self.previous_theme_id = theme_id
           return
 
       elif current_date.date() == date.date():
         if theme_id != self.previous_theme_id:
-          update_holiday = threading.Thread(target=update_holiday_theme, args=(theme_id,))
+          update_holiday = threading.Thread(target=self.update_holiday_theme, args=(theme_id,))
           update_holiday.start()
         self.previous_theme_id = theme_id
         return
 
     if self.previous_theme_id != 0:
-      update_holiday = threading.Thread(target=update_holiday_theme, args=(0,))
+      update_holiday = threading.Thread(target=self.update_holiday_theme, args=(0,))
       update_holiday.start()
     self.previous_theme_id = 0
 

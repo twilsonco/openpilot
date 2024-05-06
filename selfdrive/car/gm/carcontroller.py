@@ -2,6 +2,7 @@ from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.numpy_fast import interp, clip
+from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_driver_steer_torque_limits, create_gas_interceptor_command
@@ -51,6 +52,8 @@ class CarController(CarControllerBase):
     self.packer_ch = CANPacker(DBC[self.CP.carFingerprint]['chassis'])
 
     # FrogPilot variables
+    self.params_ = Params()
+
     self.pitch = FirstOrderFilter(0., 0.09 * 4, DT_CTRL * 4)  # runs at 25 Hz
     self.accel_g = 0.0
 

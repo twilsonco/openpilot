@@ -176,33 +176,9 @@ class CarController(CarControllerBase):
     # only calculate pcm_accel_cmd when long is active to prevent disengagement from accelerator depression
     if CC.longActive:
       if frogpilot_variables.sport_plus:
-        if self.frogs_go_moo_tune:
-          wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
-
-          gas_accel = compute_gb_toyota(actuators.accel, CS.out.vEgo) + wind_brake
-          self.pcm_accel_comp = clip(gas_accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.03, self.pcm_accel_comp + 0.03)
-          pcm_accel_cmd = gas_accel + self.pcm_accel_comp
-
-          if not CC.longActive:
-            pcm_accel_cmd = 0.0
-
-          pcm_accel_cmd = clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX_PLUS)
-        else:
-          pcm_accel_cmd = clip(actuators.accel + accel_offset, self.params.ACCEL_MIN, self.params.ACCEL_MAX_PLUS)
+        pcm_accel_cmd = clip(actuators.accel + accel_offset, self.params.ACCEL_MIN, self.params.ACCEL_MAX_PLUS)
       else:
-        if self.frogs_go_moo_tune:
-          wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
-
-          gas_accel = compute_gb_toyota(actuators.accel, CS.out.vEgo) + wind_brake
-          self.pcm_accel_comp = clip(gas_accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.03, self.pcm_accel_comp + 0.03)
-          pcm_accel_cmd = gas_accel + self.pcm_accel_comp
-
-          if not CC.longActive:
-            pcm_accel_cmd = 0.0
-
-          pcm_accel_cmd = clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
-        else:
-          pcm_accel_cmd = clip(actuators.accel + accel_offset, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
+        pcm_accel_cmd = clip(actuators.accel + accel_offset, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
     else:
       pcm_accel_cmd = 0.
 

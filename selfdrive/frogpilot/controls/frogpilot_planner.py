@@ -10,7 +10,7 @@ from openpilot.common.params import Params
 
 from openpilot.selfdrive.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.selfdrive.controls.lib.desire_helper import LANE_CHANGE_SPEED_MIN
-from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
+from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_UNSET
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import A_CHANGE_COST, J_EGO_COST, COMFORT_BRAKE, STOP_DISTANCE, get_jerk_factor, \
                                                                            get_safe_obstacle_distance, get_stopped_equivalence_factor, get_T_FOLLOW
 from openpilot.selfdrive.controls.lib.longitudinal_planner import A_CRUISE_MIN, Lead, get_max_accel
@@ -76,7 +76,7 @@ class FrogPilotPlanner:
     self.vtsc_target = 0
 
   def update(self, carState, controlsState, frogpilotCarControl, frogpilotNavigation, liveLocationKalman, modelData, radarState):
-    v_cruise_kph = min(controlsState.vCruise, V_CRUISE_MAX)
+    v_cruise_kph = min(controlsState.vCruise, V_CRUISE_UNSET)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
     v_ego = max(carState.vEgo, 0)
     v_lead = self.lead_one.vLead
@@ -144,8 +144,8 @@ class FrogPilotPlanner:
       jerk = interp(v_ego, TRAFFIC_MODE_BP, self.traffic_mode_jerk)
       t_follow = interp(v_ego, TRAFFIC_MODE_BP, self.traffic_mode_t_follow)
 
+    lead_distance = self.lead_one.dRel
     stopping_distance = STOP_DISTANCE + max(self.increased_stopping_distance - v_ego if not trafficModeActive else 0, 0)
-    lead_distance = self.lead_one.dRel + stopping_distance
 
     # Offset by FrogAi for FrogPilot for a more natural takeoff with a lead
     if self.aggressive_acceleration and not self.release:
@@ -323,7 +323,7 @@ class FrogPilotPlanner:
 
     self.speed_limit_controller = self.CP.openpilotLongitudinalControl and self.params.get_bool("SpeedLimitController")
     self.speed_limit_confirmation = self.speed_limit_controller and self.params.get_bool("SLCConfirmation")
-    self.speed_limit_controller_override = self.speed_limit_controller and self.params.get_int("SLCOverride")
+    self.speed_limit_controller_override = self.params.get_int("SLCOverride") if self.speed_limit_controller else 0
 
     self.vision_turn_controller = self.CP.openpilotLongitudinalControl and self.params.get_bool("VisionTurnControl")
     self.curve_sensitivity = self.params.get_int("CurveSensitivity") / 100 if self.vision_turn_controller else 1
