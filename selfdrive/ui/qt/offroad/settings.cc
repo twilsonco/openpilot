@@ -202,6 +202,7 @@ void TogglesPanel::updateToggles() {
       bool conditional_experimental = params.getBool("ConditionalExperimental");
       if (conditional_experimental) {
         params.putBool("ExperimentalMode", true);
+        params.putBool("ExperimentalModeConfirmed", true);
         experimental_mode_toggle->refresh();
       }
       experimental_mode_toggle->setEnabled(!conditional_experimental);
@@ -285,62 +286,6 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     }
   });
   addItem(translateBtn);
-
-  // Delete driving footage button
-  auto deleteDrivingDataBtn = new ButtonControl(tr("Delete Driving Data"), tr("DELETE"), tr("This button provides a swift and secure way to permanently delete all "
-    "stored driving footage and data from your device. Ideal for maintaining privacy or freeing up space.")
-  );
-  connect(deleteDrivingDataBtn, &ButtonControl::clicked, [=]() {
-    if (!ConfirmationDialog::confirm(tr("Are you sure you want to permanently delete all of your driving footage and data?"), tr("Delete"), this)) return;
-    std::thread([&] {
-      deleteDrivingDataBtn->setValue(tr("Deleting footage..."));
-      std::system("rm -rf /data/media/0/realdata");
-      deleteDrivingDataBtn->setValue(tr("Deleted!"));
-      std::this_thread::sleep_for(std::chrono::seconds(3));
-      deleteDrivingDataBtn->setValue("");
-    }).detach();
-  });
-  addItem(deleteDrivingDataBtn);
-
-  // Panda flashing button
-  auto flashPandaBtn = new ButtonControl(tr("Flash Panda"), tr("FLASH"), tr("Use this button to troubleshoot and update the Panda device's firmware."));
-  connect(flashPandaBtn, &ButtonControl::clicked, [=]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to flash the Panda?"), tr("Flash"), this)) {
-      std::thread([=]() {
-        flashPandaBtn->setValue(tr("Flashing..."));
-
-        QProcess process;
-
-        process.setWorkingDirectory("/data/openpilot/panda/board");
-        process.start("/bin/sh", QStringList{"-c", "./recover.py"});
-        process.waitForFinished();
-        process.start("/bin/sh", QStringList{"-c", "./flash.py"});
-        process.waitForFinished();
-
-        process.setWorkingDirectory("/data/openpilot/panda/tests");
-        process.start("/bin/sh", QStringList{"-c", "python reflash_internal_panda.py"});
-        process.waitForFinished();
-
-        Hardware::reboot();
-      }).detach();
-    }
-  });
-  addItem(flashPandaBtn);
-
-  // Reset toggle button
-  auto resetTogglesBtn = new ButtonControl(tr("Reset Toggle Settings"), tr("RESET"), tr("Reset your toggle settings back to default."));
-  connect(resetTogglesBtn, &ButtonControl::clicked, [=]() {
-    if (!ConfirmationDialog::confirm(tr("Are you sure you want to completely reset your toggle settings? This is irreversible!"), tr("Reset"), this)) return;
-    std::thread([&] {
-      resetTogglesBtn->setValue(tr("Resetting toggles..."));
-
-      std::system("find /data/params -type f ! -name 'FrogPilotDrives' ! -name 'FrogPilotMinutes' ! -name 'FrogPilotKilometers' -exec rm {} +");
-      std::system("find /persist/params -type f ! -name 'FrogPilotDrives' ! -name 'FrogPilotMinutes' ! -name 'FrogPilotKilometers' -exec rm {} +");
-
-      Hardware::reboot();
-    }).detach();
-  });
-  addItem(resetTogglesBtn);
 
   // Backup FrogPilot
   std::vector<QString> frogpilotBackupOptions{tr("Backup"), tr("Delete"), tr("Restore")};
@@ -507,10 +452,9 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
           if (result == 0) {
             std::cout << "Restore successful from " << sourcePath << " to " << targetPath << std::endl;
             toggleBackup->setValue(tr("Success!"));
-            paramsMemory.putBool("FrogPilotTogglesUpdated", true);
+            updateFrogPilotToggles();
             std::this_thread::sleep_for(std::chrono::seconds(3));
             toggleBackup->setValue("");
-            paramsMemory.putBool("FrogPilotTogglesUpdated", false);
           } else {
             std::cerr << "Restore failed with error code: " << result << std::endl;
             toggleBackup->setValue(tr("Failed..."));
@@ -522,6 +466,63 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     }
   });
   addItem(toggleBackup);
+
+  // Delete driving footage button
+  auto deleteDrivingDataBtn = new ButtonControl(tr("Delete Driving Data"), tr("DELETE"), tr("This button provides a swift and secure way to permanently delete all "
+    "stored driving footage and data from your device. Ideal for maintaining privacy or freeing up space.")
+  );
+  connect(deleteDrivingDataBtn, &ButtonControl::clicked, [=]() {
+    if (!ConfirmationDialog::confirm(tr("Are you sure you want to permanently delete all of your driving footage and data?"), tr("Delete"), this)) return;
+    std::thread([&] {
+      deleteDrivingDataBtn->setValue(tr("Deleting footage..."));
+      std::system("rm -rf /data/media/0/realdata");
+      deleteDrivingDataBtn->setValue(tr("Deleted!"));
+      std::this_thread::sleep_for(std::chrono::seconds(3));
+      deleteDrivingDataBtn->setValue("");
+    }).detach();
+  });
+  addItem(deleteDrivingDataBtn);
+
+  // Delete long term toggle storage button
+  auto resetTogglesBtn = new ButtonControl(tr("Reset Toggles To Default"), tr("RESET"), tr("Reset your toggle settings back to their default settings."));
+  connect(resetTogglesBtn, &ButtonControl::clicked, [=]() {
+    if (!ConfirmationDialog::confirm(tr("Are you sure you want to completely reset all of your toggle settings?"), tr("Reset"), this)) return;
+    std::thread([&] {
+      resetTogglesBtn->setValue(tr("Resetting toggles..."));
+      std::system("rm -rf /persist/params");
+      params.putBool("DoToggleReset", true);
+      resetTogglesBtn->setValue(tr("Reset!"));
+      std::this_thread::sleep_for(std::chrono::seconds(2));
+      resetTogglesBtn->setValue(tr("Rebooting..."));
+      std::this_thread::sleep_for(std::chrono::seconds(3));
+      Hardware::reboot();
+    }).detach();
+  });
+  addItem(resetTogglesBtn);
+
+  // Panda flashing button
+  auto flashPandaBtn = new ButtonControl(tr("Flash Panda"), tr("FLASH"), tr("Use this button to troubleshoot and update the Panda device's firmware."));
+  connect(flashPandaBtn, &ButtonControl::clicked, [=]() {
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to flash the Panda?"), tr("Flash"), this)) {
+      std::thread([=]() {
+        QProcess process;
+        flashPandaBtn->setValue(tr("Flashing..."));
+
+        process.setWorkingDirectory("/data/openpilot/panda/board");
+        process.start("/bin/sh", QStringList{"-c", "./recover.py"});
+        process.waitForFinished();
+        process.start("/bin/sh", QStringList{"-c", "./flash.py"});
+        process.waitForFinished();
+
+        process.setWorkingDirectory("/data/openpilot/panda/tests");
+        process.start("/bin/sh", QStringList{"-c", "python reflash_internal_panda.py"});
+        process.waitForFinished();
+
+        Hardware::reboot();
+      }).detach();
+    }
+  });
+  addItem(flashPandaBtn);
 
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     for (auto btn : findChildren<ButtonControl *>()) {
@@ -611,6 +612,7 @@ void SettingsWindow::hideEvent(QHideEvent *event) {
 
   parentToggleOpen = false;
   subParentToggleOpen = false;
+  subSubParentToggleOpen = false;
 
   previousScrollPosition = 0;
 }
@@ -652,7 +654,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   sidebar_layout->addSpacing(10);
   sidebar_layout->addWidget(close_btn, 0, Qt::AlignRight);
   QObject::connect(close_btn, &QPushButton::clicked, [this]() {
-    if (subParentToggleOpen) {
+    if (subSubParentToggleOpen) {
+      closeSubSubParentToggle();
+      subSubParentToggleOpen = false;
+    } else if (subParentToggleOpen) {
       closeSubParentToggle();
       subParentToggleOpen = false;
     } else if (parentToggleOpen) {
@@ -673,11 +678,12 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(toggles, &TogglesPanel::updateMetric, this, &SettingsWindow::updateMetric);
 
   FrogPilotControlsPanel *frogpilotControls = new FrogPilotControlsPanel(this);
-  QObject::connect(frogpilotControls, &FrogPilotControlsPanel::openSubParentToggle, this, [this]() {subParentToggleOpen = true;});
-  QObject::connect(frogpilotControls, &FrogPilotControlsPanel::openParentToggle, this, [this]() {parentToggleOpen = true;});
+  QObject::connect(frogpilotControls, &FrogPilotControlsPanel::openParentToggle, this, [this]() {parentToggleOpen=true;});
+  QObject::connect(frogpilotControls, &FrogPilotControlsPanel::openSubParentToggle, this, [this]() {subParentToggleOpen=true;});
+  QObject::connect(frogpilotControls, &FrogPilotControlsPanel::openSubSubParentToggle, this, [this]() {subSubParentToggleOpen=true;});
 
   FrogPilotVisualsPanel *frogpilotVisuals = new FrogPilotVisualsPanel(this);
-  QObject::connect(frogpilotVisuals, &FrogPilotVisualsPanel::openParentToggle, this, [this]() {parentToggleOpen = true;});
+  QObject::connect(frogpilotVisuals, &FrogPilotVisualsPanel::openParentToggle, this, [this]() {parentToggleOpen=true;});
 
   QList<QPair<QString, QWidget *>> panels = {
     {tr("Device"), device},
@@ -720,7 +726,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     ScrollView *panel_frame = new ScrollView(panel, this);
     panel_widget->addWidget(panel_frame);
 
-    if (name == tr("Controls")) {
+    if (name == tr("Controls") || name == tr("Visuals")) {
       QScrollBar *scrollbar = panel_frame->verticalScrollBar();
 
       QObject::connect(scrollbar, &QScrollBar::valueChanged, this, [this](int value) {

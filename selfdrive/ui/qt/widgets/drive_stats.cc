@@ -68,10 +68,10 @@ void DriveStats::updateStats() {
   QJsonObject json = stats_.object();
 
   auto updateFrogPilot = [this](const QJsonObject& obj, StatsLabels& labels) {
-    labels.routes->setText(QString::number(params.getInt("FrogPilotDrives")));
-    labels.distance->setText(QString::number(int(params.getFloat("FrogPilotKilometers") * (metric_ ? 1 : KM_TO_MILE))));
+    labels.routes->setText(QString::number(paramsTracking.getInt("FrogPilotDrives")));
+    labels.distance->setText(QString::number(int(paramsTracking.getFloat("FrogPilotKilometers") * (metric_ ? 1 : KM_TO_MILE))));
     labels.distance_unit->setText(getDistanceUnit());
-    labels.hours->setText(QString::number(int(params.getFloat("FrogPilotMinutes") / 60)));
+    labels.hours->setText(QString::number(int(paramsTracking.getFloat("FrogPilotMinutes") / 60)));
   };
 
   updateFrogPilot(json["frogpilot"].toObject(), frogPilot_);

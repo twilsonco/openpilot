@@ -1,7 +1,16 @@
 #include <filesystem>
 
-#include "selfdrive/frogpilot/ui/qt/widgets/frogpilot_controls.h"
 #include "selfdrive/ui/ui.h"
+
+Params paramsMemory{"/dev/shm/params"};
+
+void updateFrogPilotToggles() {
+  std::thread([]() {
+    paramsMemory.putBool("FrogPilotTogglesUpdated", true);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    paramsMemory.putBool("FrogPilotTogglesUpdated", false);
+  }).detach();
+}
 
 bool FrogPilotConfirmationDialog::toggle(const QString &prompt_text, const QString &confirm_text, QWidget *parent) {
   ConfirmationDialog d = ConfirmationDialog(prompt_text, confirm_text, tr("Reboot Later"), false, parent);

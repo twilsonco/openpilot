@@ -107,7 +107,7 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def _update(self, c, frogpilot_variables):
 
-    ret = self.CS.update(self.cp, self.cp_cam, self.cp_body, frogpilot_variables)
+    ret, fp_ret = self.CS.update(self.cp, self.cp_cam, self.cp_body, frogpilot_variables)
 
     ret.buttonEvents = [
       *create_button_events(self.CS.lkas_enabled, self.CS.lkas_previously_enabled, {1: FrogPilotButtonType.lkas}),
@@ -115,7 +115,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = self.create_common_events(ret).to_msg()
 
-    return ret
+    return ret, fp_ret
 
   @staticmethod
   def init(CP, logcan, sendcan):

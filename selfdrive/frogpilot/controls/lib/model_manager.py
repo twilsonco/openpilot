@@ -1,13 +1,15 @@
+import http.client
 import os
-import stat
-import time
+import socket
+import urllib.error
 import urllib.request
 
 from openpilot.common.params import Params
 from openpilot.system.version import get_short_branch
 
 VERSION = 'v1' if get_short_branch() == "FrogPilot" else 'v2'
-REPOSITORY_URL = 'https://github.com/FrogAi/FrogPilot-Resources/releases/download'
+GITHUB_REPOSITORY_URL = 'https://raw.githubusercontent.com/FrogAi/FrogPilot-Resources/'
+GITLAB_REPOSITORY_URL = 'https://gitlab.com/FrogAi/FrogPilot-Resources/-/raw/'
 
 DEFAULT_MODEL = "wd-40"
 DEFAULT_MODEL_NAME = "WD40 (Default)"
@@ -19,34 +21,46 @@ RADARLESS_MODELS = {"radical-turtle"}
 params = Params()
 params_memory = Params("/dev/shm/params")
 
+def ping_url(url, timeout=5):
+  try:
+    urllib.request.urlopen(url, timeout=timeout)
+    return True
+  except (urllib.error.URLError, socket.timeout, http.client.RemoteDisconnected):
+    return False
+
+def determine_url(model):
+  if ping_url(GITHUB_REPOSITORY_URL):
+    return f"{GITHUB_REPOSITORY_URL}/Models/{model}.thneed"
+  else:
+    return f"{GITLAB_REPOSITORY_URL}/Models/{model}.thneed"
+
 def delete_deprecated_models():
   populate_models()
 
   available_models = params.get("AvailableModels", encoding='utf-8').split(',')
 
-  if available_models:
-    current_model = params.get("Model", block=True, encoding='utf-8')
-    current_model_file = os.path.join(MODELS_PATH, f"{current_model}.thneed")
+  current_model = params.get("Model", block=True, encoding='utf-8')
+  current_model_file = os.path.join(MODELS_PATH, f"{current_model}.thneed")
 
-    if current_model not in available_models or not os.path.exists(current_model_file):
-      params.put("Model", DEFAULT_MODEL)
-      params.put("ModelName", DEFAULT_MODEL_NAME)
-
-    for model_file in os.listdir(MODELS_PATH):
-      if model_file.endswith('.thneed') and model_file[:-7] not in available_models:
-        os.remove(os.path.join(MODELS_PATH, model_file))
-  else:
+  if current_model not in available_models or not os.path.exists(current_model_file):
     params.put("Model", DEFAULT_MODEL)
     params.put("ModelName", DEFAULT_MODEL_NAME)
+
+  for model_file in os.listdir(MODELS_PATH):
+    if model_file.endswith('.thneed') and model_file[:-7] not in available_models:
+      os.remove(os.path.join(MODELS_PATH, model_file))
 
 def download_model():
   model = params_memory.get("ModelToDownload", encoding='utf-8')
   model_path = os.path.join(MODELS_PATH, f"{model}.thneed")
-  url = f"{REPOSITORY_URL}/{model}/{model}.thneed"
 
-  os.makedirs(MODELS_PATH, exist_ok=True)
+  if os.path.exists(model_path):
+    print(f"Model {model} already exists, skipping download.")
+    return
 
-  for attempt in range(5):
+  url = determine_url(model)
+
+  for attempt in range(3):
     try:
       with urllib.request.urlopen(url) as f:
         total_file_size = int(f.getheader('Content-Length'))
@@ -55,48 +69,42 @@ def download_model():
 
         with open(model_path, 'wb') as output:
           current_file_size = 0
-          while chunk := f.read(8192):
+          for chunk in iter(lambda: f.read(8192), b''):
             output.write(chunk)
             current_file_size += len(chunk)
             progress = (current_file_size / total_file_size) * 100
             params_memory.put_int("ModelDownloadProgress", int(progress))
           os.fsync(output)
 
-      if os.path.getsize(model_path) == total_file_size:
-        print(f"Successfully downloaded the {model} model!")
-        break
-      else:
-        raise Exception("Downloaded model file size does not match expected size. Retrying...")
-
+      verify_download(model_path, total_file_size)
+      return
     except Exception as e:
-      print(f"Attempt {attempt + 1} failed with error: {e}. Retrying...")
-      if os.path.exists(model_path):
-        os.remove(model_path)
-      time.sleep(5)
+      handle_download_error(model_path, attempt, e, url)
+
+def verify_download(model_path, total_file_size):
+  if os.path.getsize(model_path) == total_file_size:
+    print(f"Successfully downloaded the model!")
   else:
-    print(f"Failed to download the {model} model after {attempt + 1} attempts. Giving up... :(")
+    raise Exception("Downloaded file size does not match expected size.")
+
+def handle_download_error(model_path, attempt, exception, url):
+  print(f"Attempt {attempt + 1} failed with error: {exception}. Retrying...")
+  if os.path.exists(model_path):
+    os.remove(model_path)
+  if attempt == 2:
+    print(f"Failed to download the model after 3 attempts from {url}")
 
 def populate_models():
-  model_names_url = f"https://raw.githubusercontent.com/FrogAi/FrogPilot-Resources/master/model_names_{VERSION}.txt"
+  url = f"{GITHUB_REPOSITORY_URL}Versions/model_names_{VERSION}.txt" if ping_url(GITHUB_REPOSITORY_URL) else f"{GITLAB_REPOSITORY_URL}Versions/model_names_{VERSION}.txt"
+  try:
+    with urllib.request.urlopen(url) as response:
+      model_info = [line.decode('utf-8').strip().split(' - ') for line in response.readlines()]
+    update_params(model_info)
+  except Exception as e:
+    print(f"Failed to update models list. Error: {e}")
 
-  for attempt in range(5):
-    try:
-      with urllib.request.urlopen(model_names_url) as response:
-        model_info = [line.decode('utf-8').strip().split(' - ') for line in response.readlines() if ' - ' in line.decode('utf-8')]
-
-      available_models = ','.join(model[0] for model in model_info)
-      available_models_names = [model[1] for model in model_info]
-
-      params.put("AvailableModels", available_models)
-      params.put("AvailableModelsNames", ','.join(available_models_names))
-
-      current_model_name = params.get("ModelName", encoding='utf-8')
-      if current_model_name not in available_models_names and "(Default)" in current_model_name:
-        updated_model_name = current_model_name.replace("(Default)", "").strip()
-        params.put("ModelName", updated_model_name)
-
-    except Exception as e:
-      print(f"Failed to update models list. Error: {e}. Retrying...")
-      time.sleep(5)
-  else:
-    print(f"Failed to update models list after 5 attempts. Giving up... :(")
+def update_params(model_info):
+  available_models = ','.join(model[0] for model in model_info)
+  params.put("AvailableModels", available_models)
+  params.put("AvailableModelsNames", ','.join(model[1] for model in model_info))
+  print("Models list updated successfully.")

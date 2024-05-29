@@ -13,7 +13,7 @@ from openpilot.common.swaglog import cloudlog
 
 from openpilot.common.simple_kalman import KF1D
 
-from openpilot.selfdrive.frogpilot.controls.lib.model_manager import RADARLESS_MODELS
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
 
 # Default lead acceleration decay set to 50% at 1s
 _LEAD_ACCEL_TAU = 1.5
@@ -213,10 +213,7 @@ class RadarD:
     self.ready = False
 
     # FrogPilot variables
-    self.params = Params()
-    self.params_memory = Params("/dev/shm/params")
-
-    self.update_frogpilot_params()
+    self.frogpilot_toggles = FrogPilotVariables.toggles
 
   def update(self, sm: messaging.SubMaster, rr: Optional[car.RadarData]):
     self.ready = sm.seen['modelV2']
@@ -267,12 +264,12 @@ class RadarD:
       model_v_ego = self.v_ego
     leads_v3 = sm['modelV2'].leadsV3
     if len(leads_v3) > 1:
-      self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, self.lead_detection_threshold, low_speed_override=True)
-      self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, self.lead_detection_threshold, low_speed_override=False)
+      self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, self.frogpilot_toggles.lead_detection_threshold, low_speed_override=True)
+      self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, self.frogpilot_toggles.lead_detection_threshold, low_speed_override=False)
 
     # Update FrogPilot parameters
-    if self.params_memory.get_bool("FrogPilotTogglesUpdated"):
-      self.update_frogpilot_params()
+    if FrogPilotVariables.toggles_updated:
+      FrogPilotVariables.update_frogpilot_params()
 
   def publish(self, pm: messaging.PubMaster, lag_ms: float):
     assert self.radar_state is not None
@@ -321,10 +318,6 @@ class RadarD:
 
     return tracks_msg
 
-  def update_frogpilot_params(self):
-    longitudinal_tune = self.params.get_bool("LongitudinalTune")
-    self.lead_detection_threshold = self.params.get_int("LeadDetectionThreshold") / 100 if longitudinal_tune else .5
-
 # fuses camera and radar data for best lead detection
 def main():
   config_realtime_process(5, Priority.CTRL_LOW)
@@ -350,9 +343,7 @@ def main():
   rk = Ratekeeper(1.0 / CP.radarTimeStep, print_delay_threshold=None)
   RD = RadarD(CP.radarTimeStep, RI.delay)
 
-  RADARLESS = Params().get("Model", block=True, encoding='utf-8') in RADARLESS_MODELS
-
-  if not RADARLESS:
+  if not FrogPilotVariables.toggles.radarless_model:
     sm = messaging.SubMaster(['modelV2', 'carState'], frequency=int(1./DT_CTRL))
     pm = messaging.PubMaster(['radarState', 'liveTracks'])
 

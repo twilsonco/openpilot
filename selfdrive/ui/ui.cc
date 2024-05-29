@@ -48,7 +48,7 @@ void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model_data) {
   const cereal::XYZTData::Reader &line = model_data.getPosition();
   for (int i = 0; i < model_data.getLeadsV3().size() && i < 2; ++i) {
     const auto &lead = model_data.getLeadsV3()[i];
-    if (lead.getProb() > 0.5) {
+    if (lead.getProb() > s->scene.lead_detection_threshold) {
       float d_rel = lead.getX()[0];
       float y_rel = lead.getY()[0];
       float z = line.getZ()[get_path_length_idx(line, d_rel)];
@@ -123,7 +123,7 @@ void update_model(UIState *s,
   auto lead_count = model.getLeadsV3().size();
   if (lead_count > 0) {
     auto lead_one = model.getLeadsV3()[0];
-    if (lead_one.getProb() > 0.5) {
+    if (lead_one.getProb() > scene.lead_detection_threshold) {
       const float lead_d = lead_one.getX()[0] * 2.;
       max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
     }
@@ -223,9 +223,13 @@ static void update_state(UIState *s) {
   } else if ((s->sm->frame - s->sm->rcv_frame("pandaStates")) > 5*UI_FREQ) {
     scene.pandaType = cereal::PandaState::PandaType::UNKNOWN;
   }
+  if (sm.updated("carControl")) {
+    auto carControl = sm["carControl"].getCarControl();
+    scene.steer = carControl.getActuators().getSteer();
+  }
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
-    ui_update_frogpilot_params(s);
+    updateFrogPilotToggles();
   }
   if (sm.updated("carState")) {
     auto carState = sm["carState"].getCarState();
@@ -235,7 +239,7 @@ static void update_state(UIState *s) {
     scene.parked = carState.getGearShifter() == cereal::CarState::GearShifter::PARK;
     scene.reverse = carState.getGearShifter() == cereal::CarState::GearShifter::REVERSE;
     scene.standstill = carState.getStandstill();
-    scene.steering_angle_deg = carState.getSteeringAngleDeg();
+    scene.steering_angle_deg = -carState.getSteeringAngleDeg();
     scene.turn_signal_left = carState.getLeftBlinker();
     scene.turn_signal_right = carState.getRightBlinker();
   }
@@ -255,18 +259,22 @@ static void update_state(UIState *s) {
     scene.speed_limit_changed = scene.speed_limit_controller && frogpilotCarControl.getSpeedLimitChanged();
     scene.traffic_mode_active = frogpilotCarControl.getTrafficModeActive();
   }
+  if (sm.updated("frogpilotCarState")) {
+    auto frogpilotCarState = sm["frogpilotCarState"].getFrogpilotCarState();
+    scene.brake_lights_on = frogpilotCarState.getBrakeLights();
+  }
   if (sm.updated("frogpilotPlan")) {
     auto frogpilotPlan = sm["frogpilotPlan"].getFrogpilotPlan();
     scene.acceleration_jerk = frogpilotPlan.getAccelerationJerk();
     scene.acceleration_jerk_difference = frogpilotPlan.getAccelerationJerkStock() - scene.acceleration_jerk;
     scene.adjusted_cruise = frogpilotPlan.getAdjustedCruise();
     scene.desired_follow = frogpilotPlan.getDesiredFollowDistance();
-    scene.ego_jerk = frogpilotPlan.getEgoJerk();
-    scene.ego_jerk_difference = frogpilotPlan.getEgoJerkStock() - scene.ego_jerk;
     scene.lane_width_left = frogpilotPlan.getLaneWidthLeft();
     scene.lane_width_right = frogpilotPlan.getLaneWidthRight();
     scene.obstacle_distance = frogpilotPlan.getSafeObstacleDistance();
     scene.obstacle_distance_stock = frogpilotPlan.getSafeObstacleDistanceStock();
+    scene.speed_jerk = frogpilotPlan.getSpeedJerk();
+    scene.speed_jerk_difference = frogpilotPlan.getSpeedJerkStock() - scene.speed_jerk;
     scene.speed_limit = frogpilotPlan.getSlcSpeedLimit();
     scene.speed_limit_offset = frogpilotPlan.getSlcSpeedLimitOffset();
     scene.speed_limit_overridden = frogpilotPlan.getSlcOverridden();
@@ -312,9 +320,6 @@ void ui_update_frogpilot_params(UIState *s) {
   Params params = Params();
   UIScene &scene = s->scene;
 
-  std::string branch = params.get("GitBranch");
-  bool isRelease = branch == "FrogPilot";
-
   bool always_on_lateral = params.getBool("AlwaysOnLateral");
   scene.show_aol_status_bar = always_on_lateral && !params.getBool("HideAOLStatusBar");
 
@@ -325,20 +330,16 @@ void ui_update_frogpilot_params(UIState *s) {
 
   bool custom_onroad_ui = params.getBool("CustomUI");
   bool custom_paths = custom_onroad_ui && params.getBool("CustomPaths");
-  bool developer_ui = !isRelease && custom_onroad_ui && params.getBool("DeveloperUI");
   scene.acceleration_path = custom_paths && params.getBool("AccelerationPath");
   scene.adjacent_path = custom_paths && params.getBool("AdjacentPath");
   scene.adjacent_path_metrics = scene.adjacent_path && params.getBool("AdjacentPathMetrics");
   scene.blind_spot_path = custom_paths && params.getBool("BlindSpotPath");
   scene.compass = custom_onroad_ui && params.getBool("Compass");
-  scene.fps_counter = custom_onroad_ui && params.getBool("FPSCounter");
-  scene.lead_info = scene.longitudinal_control && custom_onroad_ui && params.getBool("LeadInfo");
   scene.pedals_on_ui = custom_onroad_ui && params.getBool("PedalsOnUI");
+  scene.dynamic_pedals_on_ui = scene.pedals_on_ui && params.getBool("DynamicPedalsOnUI");
+  scene.static_pedals_on_ui = scene.pedals_on_ui && params.getBool("StaticPedalsOnUI");
   scene.road_name_ui = custom_onroad_ui && params.getBool("RoadNameUI");
   scene.rotating_wheel = custom_onroad_ui && params.getBool("RotatingWheel");
-  scene.show_jerk = scene.longitudinal_control && developer_ui && params.getBool("ShowJerk");
-  scene.show_tuning = scene.has_auto_tune && developer_ui && !(params.getBool("LateralTune") && params.getBool("NNFF")) && params.getBool("ShowTuning");
-  scene.use_si = (scene.lead_info || developer_ui) && params.getBool("UseSI");
   scene.wheel_icon = custom_onroad_ui ? params.getInt("WheelIcon") : 0;
 
   bool custom_theme = params.getBool("CustomTheme");
@@ -348,12 +349,41 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.holiday_themes = custom_theme && params.getBool("HolidayThemes");
   scene.random_events = custom_theme && params.getBool("RandomEvents");
 
+  bool developer_ui = params.getBool("DeveloperUI");
+  bool border_metrics = developer_ui && params.getBool("BorderMetrics");
+  scene.show_blind_spot = border_metrics && params.getBool("BlindSpotMetrics");
+  scene.show_signal = border_metrics && params.getBool("SignalMetrics");
+  scene.show_steering = border_metrics && params.getBool("ShowSteering");
+  scene.fps_counter = developer_ui && params.getBool("FPSCounter");
+  scene.lead_info = scene.longitudinal_control && developer_ui && params.getBool("LongitudinalMetrics");
+  scene.numerical_temp = developer_ui && params.getBool("NumericalTemp");
+  scene.fahrenheit = scene.numerical_temp && params.getBool("Fahrenheit");
+  scene.show_jerk = scene.longitudinal_control && developer_ui && params.getBool("LongitudinalMetrics");
+  scene.show_tuning = developer_ui && scene.has_auto_tune && params.getBool("LateralMetrics");
+  scene.sidebar_metrics = developer_ui && params.getBool("SidebarMetrics");
+  scene.is_CPU = scene.sidebar_metrics && params.getBool("ShowCPU");
+  scene.is_GPU = scene.sidebar_metrics && params.getBool("ShowGPU");
+  scene.is_IP = scene.sidebar_metrics && params.getBool("ShowIP");
+  scene.is_memory = scene.sidebar_metrics && params.getBool("ShowMemoryUsage");
+  scene.is_storage_left = scene.sidebar_metrics && params.getBool("ShowStorageLeft");
+  scene.is_storage_used = scene.sidebar_metrics && params.getBool("ShowStorageUsed");
+  scene.use_si = developer_ui && params.getBool("UseSI");
+
   scene.disable_smoothing_mtsc = params.getBool("MTSCEnabled") && params.getBool("DisableMTSCSmoothing");
   scene.disable_smoothing_vtsc = params.getBool("VisionTurnControl") && params.getBool("DisableVTSCSmoothing");
+
+  bool driving_personalities = scene.longitudinal_control && params.getBool("DrivingPersonalities");
+  scene.onroad_distance_button = driving_personalities && params.getBool("OnroadDistanceButton");
+  scene.use_kaofui_icons = scene.onroad_distance_button && params.getBool("KaofuiIcons");
+
   scene.experimental_mode_via_screen = scene.longitudinal_control && params.getBool("ExperimentalModeActivation") && params.getBool("ExperimentalModeViaTap");
 
   bool lane_detection = params.getBool("NudgelessLaneChange") && params.getInt("LaneDetectionWidth") != 0;
-  scene.lane_detection_width = lane_detection ? params.getInt("LaneDetectionWidth") * (scene.is_metric ? 1 : FOOT_TO_METER) / 10 : 2.75f;
+  scene.lane_detection_width = lane_detection ? params.getInt("LaneDetectionWidth") * (scene.is_metric ? 1 : FOOT_TO_METER) / 10.0f : 2.75f;
+
+  bool longitudinal_tune = scene.longitudinal_control && params.getBool("LongitudinalTune");
+  bool radarless_model = params.get("Model") == "radical-turtle";
+  scene.lead_detection_threshold = longitudinal_tune && !radarless_model ? params.getInt("LeadDetectionThreshold") / 100.0f : 0.5;
 
   scene.model_ui = params.getBool("ModelUI");
   scene.dynamic_path_width = scene.model_ui && params.getBool("DynamicPathWidth");
@@ -365,10 +395,8 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.unlimited_road_ui_length = scene.model_ui && params.getBool("UnlimitedLength");
 
   bool quality_of_life_controls = params.getBool("QOLControls");
-  scene.onroad_distance_button = scene.longitudinal_control && quality_of_life_controls && params.getBool("OnroadDistanceButton");
-  scene.use_kaofui_icons = scene.onroad_distance_button && params.getBool("KaofuiIcons");
   scene.reverse_cruise = quality_of_life_controls && params.getBool("ReverseCruise");
-  scene.reverse_cruise_ui = scene.reverse_cruise && params.getBool("ReverseCruiseUI");
+  scene.reverse_cruise_ui = params.getBool("ReverseCruiseUI");
 
   bool quality_of_life_visuals = params.getBool("QOLVisuals");
   scene.big_map = quality_of_life_visuals && params.getBool("BigMap");
@@ -378,8 +406,6 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.hide_speed = quality_of_life_visuals && params.getBool("HideSpeed");
   scene.hide_speed_ui = scene.hide_speed && params.getBool("HideSpeedUI");
   scene.map_style = quality_of_life_visuals ? params.getInt("MapStyle") : 0;
-  scene.numerical_temp = quality_of_life_visuals && params.getBool("NumericalTemp");
-  scene.fahrenheit = scene.numerical_temp && params.getBool("Fahrenheit");
   scene.wheel_speed = quality_of_life_visuals && params.getBool("WheelSpeed");
 
   bool screen_management = params.getBool("ScreenManagement");
@@ -435,8 +461,8 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState",
     "pandaStates", "carParams", "driverMonitoringState", "carState", "liveLocationKalman", "driverStateV2",
-    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "uiPlan", "liveTorqueParameters",
-    "frogpilotCarControl", "frogpilotDeviceState", "frogpilotPlan",
+    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "uiPlan", "carControl", "liveTorqueParameters",
+    "frogpilotCarControl", "frogpilotCarState", "frogpilotDeviceState", "frogpilotPlan",
   });
 
   Params params;
@@ -472,10 +498,10 @@ void UIState::update() {
   }
 
   // FrogPilot live variables that need to be constantly checked
-  scene.conditional_status = scene.conditional_experimental ? paramsMemory.getInt("CEStatus") : 0;
+  scene.conditional_status = scene.conditional_experimental && scene.enabled ? paramsMemory.getInt("CEStatus") : 0;
   scene.current_holiday_theme = scene.holiday_themes ? paramsMemory.getInt("CurrentHolidayTheme") : 0;
   scene.current_random_event = scene.random_events ? paramsMemory.getInt("CurrentRandomEvent") : 0;
-  scene.driver_camera_timer = (scene.driver_camera && scene.reverse) ? scene.driver_camera_timer + 1 : 0;
+  scene.driver_camera_timer = scene.driver_camera && scene.reverse ? scene.driver_camera_timer + 1 : 0;
 }
 
 void UIState::setPrimeType(PrimeType type) {
@@ -547,7 +573,7 @@ void Device::updateBrightness(const UIState &s) {
   } else if (s.scene.started && s.scene.screen_brightness_onroad != 101) {
     brightness = interactive_timeout > 0 ? fmax(5, s.scene.screen_brightness_onroad) : s.scene.screen_brightness_onroad;
   } else if (s.scene.screen_brightness != 101) {
-    brightness = fmax(5, s.scene.screen_brightness);
+    brightness = s.scene.screen_brightness;
   }
 
   if (brightness != last_brightness) {

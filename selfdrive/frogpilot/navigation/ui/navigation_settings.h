@@ -80,12 +80,11 @@ public:
 
 private:
   void cancelDownload(QWidget *parent);
-  void checkIfUpdateMissed();
   void downloadMaps();
-  void downloadSchedule();
   void hideEvent(QHideEvent *event);
   void removeMaps(QWidget *parent);
   void setMaps();
+  void showEvent(QShowEvent *event);
   void updateDownloadedLabel();
   void updateState();
   void updateStatuses();
@@ -107,9 +106,6 @@ private:
 
   bool downloadActive;
   bool previousDownloadActive;
-  bool scheduleCompleted;
-  bool schedulePending;
-  int schedule;
   QString elapsedTime;
   QString offlineFolderPath = "/data/media/0/osm/offline";
   std::string osmDownloadProgress;

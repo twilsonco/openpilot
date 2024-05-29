@@ -10,8 +10,6 @@ from openpilot.selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_
                                         UNSUPPORTED_DSU_CAR, STOP_AND_GO_CAR, TSS2_CAR
 from opendbc.can.packer import CANPacker
 
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import CRUISING_SPEED
-
 LongCtrlState = car.CarControl.Actuators.LongControlState
 SteerControlType = car.CarParams.SteerControlType
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -29,17 +27,17 @@ MAX_USER_TORQUE = 500
 MAX_LTA_ANGLE = 94.9461  # deg
 MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
 
-# PCM compensatory force calculation threshold
-# a variation in accel command is more pronounced at higher speeds, let compensatory forces ramp to zero before
-# applying when speed is high
-COMPENSATORY_CALCULATION_THRESHOLD_V = [-0.3, -0.25, 0.]  # m/s^2
-COMPENSATORY_CALCULATION_THRESHOLD_BP = [0., 11., 23.]  # m/s
-
 # Lock / unlock door commands - Credit goes to AlexandreSato!
 LOCK_CMD = b'\x40\x05\x30\x11\x00\x80\x00\x00'
 UNLOCK_CMD = b'\x40\x05\x30\x11\x00\x40\x00\x00'
 
 PARK = car.CarState.GearShifter.park
+
+# PCM compensatory force calculation threshold
+# a variation in accel command is more pronounced at higher speeds, let compensatory forces ramp to zero before
+# applying when speed is high
+COMPENSATORY_CALCULATION_THRESHOLD_V = [-0.3, -0.25, 0.]  # m/s^2
+COMPENSATORY_CALCULATION_THRESHOLD_BP = [0., 11., 23.]  # m/s
 
 
 def compute_gb_toyota(accel, speed):
@@ -76,10 +74,10 @@ class CarController(CarControllerBase):
     self.cydia_tune = params.get_bool("CydiaTune")
     self.frogs_go_moo_tune = params.get_bool("FrogsGoMooTune")
 
+    self.pcm_accel_comp = 0
+
     self.doors_locked = False
     self.doors_unlocked = True
-
-    self.pcm_accel_comp = 0
 
   def update(self, CC, CS, now_nanos, frogpilot_variables):
     actuators = CC.actuators
@@ -110,6 +108,14 @@ class CarController(CarControllerBase):
       if self.frame % 2 == 0:
         # EPS uses the torque sensor angle to control with, offset to compensate
         apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
+
+        # PFEIFER - TSH {{
+        # Ignore limits while overriding, this prevents pull when releasing the wheel. This will cause messages to be
+        # blocked by panda safety, usually while the driver is overriding and limited to at most 1 message while the
+        # driver is not overriding.
+        if CS.out.steeringPressed:
+          self.last_angle = apply_angle
+        # }} PFEIFER - TSH
 
         # Angular rate limit based on speed
         apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgoRaw, self.params)
@@ -176,9 +182,33 @@ class CarController(CarControllerBase):
     # only calculate pcm_accel_cmd when long is active to prevent disengagement from accelerator depression
     if CC.longActive:
       if frogpilot_variables.sport_plus:
-        pcm_accel_cmd = clip(actuators.accel + accel_offset, self.params.ACCEL_MIN, self.params.ACCEL_MAX_PLUS)
+        if self.frogs_go_moo_tune:
+          wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
+
+          gas_accel = compute_gb_toyota(actuators.accel, CS.out.vEgo) + wind_brake
+          self.pcm_accel_comp = clip(gas_accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.03, self.pcm_accel_comp + 0.03)
+          pcm_accel_cmd = gas_accel + self.pcm_accel_comp
+
+          if not CC.longActive:
+            pcm_accel_cmd = 0.0
+
+          pcm_accel_cmd = clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX_PLUS)
+        else:
+          pcm_accel_cmd = clip(actuators.accel + accel_offset, self.params.ACCEL_MIN, self.params.ACCEL_MAX_PLUS)
       else:
-        pcm_accel_cmd = clip(actuators.accel + accel_offset, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
+        if self.frogs_go_moo_tune:
+          wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
+
+          gas_accel = compute_gb_toyota(actuators.accel, CS.out.vEgo) + wind_brake
+          self.pcm_accel_comp = clip(gas_accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.03, self.pcm_accel_comp + 0.03)
+          pcm_accel_cmd = gas_accel + self.pcm_accel_comp
+
+          if not CC.longActive:
+            pcm_accel_cmd = 0.0
+
+          pcm_accel_cmd = clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
+        else:
+          pcm_accel_cmd = clip(actuators.accel + accel_offset, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
     else:
       pcm_accel_cmd = 0.
 
@@ -269,7 +299,7 @@ class CarController(CarControllerBase):
     new_actuators.gas = self.gas
 
     # Lock doors when in drive / unlock doors when in park
-    if self.doors_unlocked and CS.out.gearShifter != PARK and CS.out.vEgo >= CRUISING_SPEED:
+    if self.doors_unlocked and CS.out.gearShifter != PARK:
       if frogpilot_variables.lock_doors:
         can_sends.append(make_can_msg(0x750, LOCK_CMD, 0))
       self.doors_locked = True

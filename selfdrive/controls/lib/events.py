@@ -351,7 +351,7 @@ def joystick_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster,
   return NormalPermanentAlert("Joystick Mode", vals)
 
 
-# FrogPilot alerts
+# FrogPilot Alerts
 def holiday_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   holiday_messages = {
     1: ("Happy April Fool's Day! 🤡", "aprilFoolsAlert"),
@@ -1011,9 +1011,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   # FrogPilot Events
   EventName.blockUser: {
-    ET.PERMANENT: NormalPermanentAlert("Dashcam mode",
-                                       "Please don't use the 'Development' branch!",
-                                       priority=Priority.HIGHEST),
+    ET.NO_ENTRY: NoEntryAlert("Please don't use the 'Development' branch!"),
   },
 
   EventName.goatSteerSaturated: {
@@ -1089,7 +1087,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "Turning Left",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1, alert_rate=0.75),
+      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .1, alert_rate=0.75),
   },
 
   EventName.turningRight: {
@@ -1097,7 +1095,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "Turning Right",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1, alert_rate=0.75),
+      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .1, alert_rate=0.75),
   },
 
   # Random Events

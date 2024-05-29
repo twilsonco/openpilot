@@ -6,6 +6,8 @@
 
 #include "selfdrive/ui/qt/widgets/controls.h"
 
+void updateFrogPilotToggles();
+
 class FrogPilotConfirmationDialog : public ConfirmationDialog {
   Q_OBJECT
 
@@ -422,6 +424,7 @@ public:
         params.putBool(this->button_params[i].toStdString(), checked);
         button_group->button(i)->setChecked(checked);
         emit buttonClicked(checked);
+        emit buttonTypeClicked(i);
       });
 
       hlayout->insertWidget(hlayout->indexOf(&toggle) - 1, button);
@@ -461,6 +464,7 @@ public:
 
 signals:
   void buttonClicked(const bool checked);
+  void buttonTypeClicked(int i);
 
 private:
   std::string key;
@@ -546,18 +550,19 @@ public:
 
     QString text;
     auto it = valueLabelMappings.find(value);
+    int decimals = interval < 1.0f ? static_cast<int>(-std::log10(interval)) : 2;
 
     if (division > 1.0f) {
       text = QString::number(value / division, 'g', division >= 10.0f ? 4 : 3);
-    } else if (interval < 1.0f && value < 10.0f) {
-      text = QString::number(value / division, 'f', 2);
-    } else if (interval < 1.0f && value > 10.0f) {
-      text = QString::number(value, 'f', 2);
     } else {
       if (it != valueLabelMappings.end()) {
         text = it->second;
       } else {
-        text = QString::number(value, 'g', 4);
+        if (value >= 100.0f) {
+          text = QString::number(value, 'f', 0);
+        } else {
+          text = QString::number(value, interval < 1.0f ? 'f' : 'g', decimals);
+        }
       }
     }
 
@@ -674,6 +679,7 @@ public:
 
       connect(button, &QPushButton::clicked, [this, button_params, i](bool checked) {
         params.putBool(button_params[i].toStdString(), checked);
+        emit buttonClicked();
         refresh();
       });
 
@@ -691,6 +697,9 @@ public:
       button->setChecked(params.getBool(param.toStdString()));
     }
   }
+
+signals:
+  void buttonClicked();
 
 private:
   Params params;

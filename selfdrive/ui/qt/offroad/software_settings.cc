@@ -16,7 +16,6 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 #include "system/hardware/hw.h"
 
-#include "selfdrive/frogpilot/ui/qt/widgets/frogpilot_controls.h"
 
 void SoftwarePanel::checkForUpdates() {
   std::system("pkill -SIGUSR1 -f selfdrive.updated.updated");
@@ -34,13 +33,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent), scene(uiStat
   // automatic updates toggle
   ParamControl *automaticUpdatesToggle = new ParamControl("AutomaticUpdates", tr("Automatically Update FrogPilot"),
                                                        tr("FrogPilot will automatically update itself and it's assets when you're offroad and connected to Wi-Fi."), "");
-  connect(automaticUpdatesToggle, &ToggleControl::toggleFlipped, [this]() {
-    std::thread([this]() {
-      paramsMemory.putBool("FrogPilotTogglesUpdated", true);
-      std::this_thread::sleep_for(std::chrono::seconds(1));
-      paramsMemory.putBool("FrogPilotTogglesUpdated", false);
-    }).detach();
-  });
+  connect(automaticUpdatesToggle, &ToggleControl::toggleFlipped, this, updateFrogPilotToggles);
   addItem(automaticUpdatesToggle);
 
   // download update btn
@@ -106,7 +99,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent), scene(uiStat
   // error log button
   auto errorLogBtn = new ButtonControl(tr("Error Log"), tr("VIEW"), tr("View the error log for openpilot crashes."));
   connect(errorLogBtn, &ButtonControl::clicked, [=]() {
-    std::string txt = util::read_file("/data/community/crashes/error.txt");
+    const std::string txt = util::read_file("/data/community/crashes/error.txt");
     ConfirmationDialog::rich(QString::fromStdString(txt), this);
   });
   addItem(errorLogBtn);

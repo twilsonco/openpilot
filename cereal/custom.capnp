@@ -20,6 +20,13 @@ struct FrogPilotCarState @0xaedffd8f31e7b55d {
       lkas @0;
     }
   }
+
+  brakeLights @0 :Bool;
+  dashboardSpeedLimit @1 :Float32;
+  distanceLongPressed @2 :Bool;
+  ecoGear @3 :Bool;
+  hasCamera @4 :Bool;
+  sportGear @5 :Bool;
 }
 
 struct FrogPilotDeviceState @0xf35cc4560bbf6ec2 {
@@ -30,6 +37,7 @@ struct FrogPilotDeviceState @0xf35cc4560bbf6ec2 {
 struct FrogPilotNavigation @0xda96579883444c35 {
   approachingIntersection @0 :Bool;
   approachingTurn @1 :Bool;
+  navigationSpeedLimit @2 :Float32;
 }
 
 struct FrogPilotPlan @0x80ae746ee2596b11 {
@@ -38,20 +46,20 @@ struct FrogPilotPlan @0x80ae746ee2596b11 {
   adjustedCruise @2 :Float64;
   conditionalExperimental @3 :Bool;
   desiredFollowDistance @4 :Int16;
-  egoJerk @5 :Float32;
-  egoJerkStock @6 :Float32;
-  jerk @7 :Float32;
-  laneWidthLeft @8 :Float32;
-  laneWidthRight @9 :Float32;
-  minAcceleration @10 :Float32;
-  maxAcceleration @11 :Float32;
-  redLight @12 :Bool;
-  safeObstacleDistance @13 :Int16;
-  safeObstacleDistanceStock @14 :Int16;
-  slcOverridden @15 :Bool;
-  slcOverriddenSpeed @16 :Float64;
-  slcSpeedLimit @17 :Float64;
-  slcSpeedLimitOffset @18 :Float32;
+  laneWidthLeft @5 :Float32;
+  laneWidthRight @6 :Float32;
+  leadDeparting @7 :Bool;
+  maxAcceleration @8 :Float32;
+  minAcceleration @9 :Float32;
+  redLight @10 :Bool;
+  safeObstacleDistance @11 :Int16;
+  safeObstacleDistanceStock @12 :Int16;
+  slcOverridden @13 :Bool;
+  slcOverriddenSpeed @14 :Float64;
+  slcSpeedLimit @15 :Float64;
+  slcSpeedLimitOffset @16 :Float32;
+  speedJerk @17 :Float32;
+  speedJerkStock @18 :Float32;
   stoppedEquivalenceFactor @19 :Int16;
   tFollow @20 :Float32;
   unconfirmedSlcSpeedLimit @21 :Float64;

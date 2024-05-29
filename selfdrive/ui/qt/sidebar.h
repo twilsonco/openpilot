@@ -75,8 +75,10 @@ private:
   bool isGPU;
   bool isIP;
   bool isMemoryUsage;
+  bool isNumericalTemp;
   bool isStorageLeft;
   bool isStorageUsed;
+  bool sidebarMetrics;
 
   std::unordered_map<int, std::pair<QString, std::vector<QColor>>> themeConfiguration;
   std::unordered_map<int, QPixmap> flag_imgs;

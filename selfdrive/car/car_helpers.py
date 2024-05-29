@@ -223,10 +223,10 @@ def get_car(params, logcan, sendcan, disable_openpilot_long, experimental_long_a
   if get_short_branch() == "FrogPilot-Development" and not Params("/persist/params").get_bool("FrogsGoMoo"):
     cloudlog.event("Blocked user from using the 'FrogPilot-Development' branch", fingerprints=repr(fingerprints), error=True)
     candidate = "mock"
-    fingerprint_log = threading.Thread(target=sentry.capture_fingerprint, args=(params, candidate, True,))
+    fingerprint_log = threading.Thread(target=sentry.capture_fingerprint, args=(candidate, params, True,))
     fingerprint_log.start()
   elif not params.get_bool("FingerprintLogged"):
-    fingerprint_log = threading.Thread(target=sentry.capture_fingerprint, args=(params, candidate,))
+    fingerprint_log = threading.Thread(target=sentry.capture_fingerprint, args=(candidate, params,))
     fingerprint_log.start()
 
   CarInterface, _, _ = interfaces[candidate]

@@ -40,15 +40,6 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"userFlag"});
 
   // FrogPilot variables
-  isCPU = params.getBool("ShowCPU");
-  isGPU = params.getBool("ShowGPU");
-
-  isIP = params.getBool("ShowIP");
-
-  isMemoryUsage = params.getBool("ShowMemoryUsage");
-  isStorageLeft = params.getBool("ShowStorageLeft");
-  isStorageUsed = params.getBool("ShowStorageUsed");
-
   holidayThemeConfiguration = {
     {0, {"stock", {QColor(255, 255, 255)}}},
     {1, {"april_fools", {QColor(255, 165, 0)}}},
@@ -98,47 +89,44 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
 }
 
 void Sidebar::mousePressEvent(QMouseEvent *event) {
-  // Declare the click boxes
   QRect cpuRect = {30, 496, 240, 126};
   QRect memoryRect = {30, 654, 240, 126};
-  QRect networkRect = {30, 196, 240, 126};
   QRect tempRect = {30, 338, 240, 126};
 
   static int showChip = 0;
   static int showMemory = 0;
-  static int showNetwork = 0;
   static int showTemp = 0;
 
-  // Swap between the respective metrics upon tap
-  if (cpuRect.contains(event->pos())) {
+  if (cpuRect.contains(event->pos()) && sidebarMetrics) {
     showChip = (showChip + 1) % 3;
 
     isCPU = (showChip == 1);
     isGPU = (showChip == 2);
 
+    scene.is_CPU = isCPU;
+    scene.is_GPU = isGPU;
+
     params.putBoolNonBlocking("ShowCPU", isCPU);
     params.putBoolNonBlocking("ShowGPU", isGPU);
 
     update();
-  } else if (memoryRect.contains(event->pos())) {
+  } else if (memoryRect.contains(event->pos()) && sidebarMetrics) {
     showMemory = (showMemory + 1) % 4;
 
     isMemoryUsage = (showMemory == 1);
     isStorageLeft = (showMemory == 2);
     isStorageUsed = (showMemory == 3);
 
+    scene.is_memory = isMemoryUsage;
+    scene.is_storage_left = isStorageLeft;
+    scene.is_storage_used = isStorageUsed;
+
     params.putBoolNonBlocking("ShowMemoryUsage", isMemoryUsage);
     params.putBoolNonBlocking("ShowStorageLeft", isStorageLeft);
     params.putBoolNonBlocking("ShowStorageUsed", isStorageUsed);
 
     update();
-  } else if (networkRect.contains(event->pos())) {
-    showNetwork = (showNetwork + 1) % 2;
-    isIP = (showNetwork == 1);
-    params.putBoolNonBlocking("ShowIP", isIP);
-
-    update();
-  } else if (tempRect.contains(event->pos())) {
+  } else if (tempRect.contains(event->pos()) && sidebarMetrics) {
     showTemp = (showTemp + 1) % 3;
 
     scene.fahrenheit = showTemp == 2;
@@ -201,12 +189,18 @@ void Sidebar::updateState(const UIState &s) {
 
   auto frogpilotDeviceState = sm["frogpilotDeviceState"].getFrogpilotDeviceState();
 
-  bool isNumericalTemp = scene.numerical_temp;
+  isCPU = scene.is_CPU;
+  isGPU = scene.is_GPU;
+  isIP = scene.is_IP;
+  isMemoryUsage = scene.is_memory;
+  isNumericalTemp = scene.numerical_temp;
+  isStorageLeft = scene.is_storage_left;
+  isStorageUsed = scene.is_storage_used;
+  sidebarMetrics = scene.sidebar_metrics;
 
   int maxTempC = deviceState.getMaxTempC();
   QString max_temp = scene.fahrenheit ? QString::number(maxTempC * 9 / 5 + 32) + "°F" : QString::number(maxTempC) + "°C";
 
-  // FrogPilot metrics
   if (isCPU || isGPU) {
     auto cpu_loads = deviceState.getCpuUsagePercent();
     int cpu_usage = std::accumulate(cpu_loads.begin(), cpu_loads.end(), 0) / cpu_loads.size();

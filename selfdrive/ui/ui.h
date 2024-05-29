@@ -18,6 +18,8 @@
 #include "selfdrive/ui/qt/network/wifi_manager.h"
 #include "system/hardware/hw.h"
 
+#include "selfdrive/frogpilot/ui/qt/widgets/frogpilot_controls.h"
+
 const int UI_BORDER_SIZE = 30;
 const int UI_HEADER_HEIGHT = 420;
 
@@ -114,8 +116,10 @@ typedef enum UIStatus {
 
   // FrogPilot statuses
   STATUS_ALWAYS_ON_LATERAL_ACTIVE,
+  STATUS_CONDITIONAL_OVERRIDDEN,
+  STATUS_EXPERIMENTAL_MODE_ACTIVE,
+  STATUS_NAVIGATION_ACTIVE,
   STATUS_TRAFFIC_MODE_ACTIVE,
-
 } UIStatus;
 
 enum PrimeType {
@@ -135,6 +139,9 @@ const QColor bg_colors [] = {
 
   // FrogPilot colors
   [STATUS_ALWAYS_ON_LATERAL_ACTIVE] = QColor(0x0a, 0xba, 0xb5, 0xf1),
+  [STATUS_CONDITIONAL_OVERRIDDEN] = QColor(0xff, 0xff, 0x00, 0xf1),
+  [STATUS_EXPERIMENTAL_MODE_ACTIVE] = QColor(0xda, 0x6f, 0x25, 0xf1),
+  [STATUS_NAVIGATION_ACTIVE] = QColor(0x31, 0xa1, 0xee, 0xf1),
   [STATUS_TRAFFIC_MODE_ACTIVE] = QColor(0xc9, 0x22, 0x31, 0xf1),
 };
 
@@ -187,12 +194,14 @@ typedef struct UIScene {
   bool blind_spot_left;
   bool blind_spot_path;
   bool blind_spot_right;
+  bool brake_lights_on;
   bool compass;
   bool conditional_experimental;
   bool disable_smoothing_mtsc;
   bool disable_smoothing_vtsc;
   bool driver_camera;
   bool dynamic_path_width;
+  bool dynamic_pedals_on_ui;
   bool enabled;
   bool experimental_mode;
   bool experimental_mode_via_screen;
@@ -207,6 +216,12 @@ typedef struct UIScene {
   bool hide_speed;
   bool hide_speed_ui;
   bool holiday_themes;
+  bool is_CPU;
+  bool is_GPU;
+  bool is_IP;
+  bool is_memory;
+  bool is_storage_left;
+  bool is_storage_used;
   bool lead_info;
   bool live_valid;
   bool map_open;
@@ -225,16 +240,21 @@ typedef struct UIScene {
   bool rotating_wheel;
   bool screen_recorder;
   bool show_aol_status_bar;
+  bool show_blind_spot;
   bool show_cem_status_bar;
   bool show_jerk;
+  bool show_signal;
   bool show_slc_offset;
   bool show_slc_offset_ui;
+  bool show_steering;
   bool show_tuning;
+  bool sidebar_metrics;
   bool speed_limit_changed;
   bool speed_limit_controller;
   bool speed_limit_overridden;
   bool standby_mode;
   bool standstill;
+  bool static_pedals_on_ui;
   bool tethering_enabled;
   bool traffic_mode;
   bool traffic_mode_active;
@@ -252,20 +272,22 @@ typedef struct UIScene {
   float acceleration_jerk;
   float acceleration_jerk_difference;
   float adjusted_cruise;
-  float ego_jerk;
-  float ego_jerk_difference;
   float friction;
   float lane_detection_width;
   float lane_line_width;
   float lane_width_left;
   float lane_width_right;
   float lat_accel;
+  float lead_detection_threshold;
   float path_edge_width;
   float path_width;
   float road_edge_width;
+  float speed_jerk;
+  float speed_jerk_difference;
   float speed_limit;
   float speed_limit_offset;
   float speed_limit_overridden_speed;
+  float steer;
   float unconfirmed_speed_limit;
 
   int alert_size;

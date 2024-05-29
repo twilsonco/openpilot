@@ -92,7 +92,12 @@ enum {
   GM_BTN_CANCEL = 6,
 };
 
-enum {GM_ASCM, GM_CAM, GM_SDGM} gm_hw = GM_ASCM;
+typedef enum {
+  GM_ASCM,
+  GM_CAM,
+  GM_SDGM
+} GmHardware;
+GmHardware gm_hw = GM_ASCM;
 bool gm_cam_long = false;
 bool gm_pcm_cruise = false;
 bool gm_has_acc = true;
@@ -124,7 +129,6 @@ static void gm_rx_hook(const CANPacket_t *to_push) {
     // SDGM buttons are on bus 2
     handle_gm_wheel_buttons(to_push);
   }
-
   if (GET_BUS(to_push) == 0U) {
     int addr = GET_ADDR(to_push);
 
@@ -154,8 +158,11 @@ static void gm_rx_hook(const CANPacket_t *to_push) {
     }
 
     if ((addr == 0xC9) && ((gm_hw == GM_CAM) || (gm_hw == GM_SDGM))) {
-      acc_main_on = GET_BIT(to_push, 29U);
-      brake_pressed = GET_BIT(to_push, 40U);
+      brake_pressed = GET_BIT(to_push, 40U) != 0U;
+    }
+
+    if (addr == 0xC9) {
+      acc_main_on = GET_BIT(to_push, 29U) != 0U;
     }
 
     if (addr == 0x1C4) {
@@ -312,7 +319,7 @@ static safety_config gm_init(uint16_t param) {
     } else {
       gm_long_limits = &GM_ASCM_LONG_LIMITS;
     }
-  } else if (gm_hw == GM_CAM) {
+  } else if ((gm_hw == GM_CAM) || (gm_hw == GM_SDGM)) {
     if (sport_mode) {
       gm_long_limits = &GM_CAM_LONG_LIMITS_SPORT;
     } else {

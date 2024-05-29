@@ -106,7 +106,7 @@ class CarInterface(CarInterfaceBase):
 
   # returns a car.CarState
   def _update(self, c, frogpilot_variables):
-    ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType, frogpilot_variables)
+    ret, fp_ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType, frogpilot_variables)
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
                                        pcm_enable=not self.CS.CP.openpilotLongitudinalControl,
@@ -131,7 +131,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = events.to_msg()
 
-    return ret
+    return ret, fp_ret
 
   def apply(self, c, now_nanos, frogpilot_variables):
     new_actuators, can_sends, self.eps_timer_soft_disable_alert = self.CC.update(c, self.CS, self.ext_bus, now_nanos, frogpilot_variables)

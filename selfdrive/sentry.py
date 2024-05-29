@@ -11,7 +11,7 @@ from datetime import datetime
 from enum import Enum
 from sentry_sdk.integrations.threading import ThreadingIntegration
 
-from openpilot.common.params import Params
+from openpilot.common.params import Params, ParamKeyType
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_commit, get_short_branch, get_origin, get_version
@@ -61,13 +61,13 @@ def report_tombstone(fn: str, message: str, contents: str) -> None:
       time.sleep(600)
 
 
-def chunk_data(data, size):
-  return [data[i:i+size] for i in range(0, len(data), size)]
+def chunk_data(data):
+  return [data[i:i+1] for i in range(len(data))]
 
 
 def format_params(params):
   formatted_params = []
-  for k, v in params.items():
+  for k, v in sorted(params.items()):
     if isinstance(v, bytes):
       param_value = format(float(v), '.12g') if v.replace(b'.', b'').isdigit() else v.decode()
     elif isinstance(v, float):
@@ -78,64 +78,66 @@ def format_params(params):
   return formatted_params
 
 
-def get_frogpilot_params(params, keys):
-  return {key: params.get(key) or '0' for key in keys}
+def get_frogpilot_params_by_type(param_type, params):
+  keys = [
+    key.decode('utf-8') if isinstance(key, bytes) else key
+    for key in params.all_keys()
+    if params.get_key_type(key) & param_type
+  ]
+
+  return {
+    key: (params.get(key).decode('utf-8') if isinstance(params.get(key), bytes) else params.get(key) or '0')
+    for key in keys
+  }
 
 
 def set_sentry_scope(scope, chunks, label):
-  scope.set_extra(label, '\n'.join(['\n'.join(chunk) for chunk in chunks]))
+  scope.set_extra(label, '\n'.join('\n'.join(chunk) for chunk in chunks))
 
 
-def capture_fingerprint(params, candidate, blocked=False):
+def capture_fingerprint(candidate, params, blocked=False):
   bind_user()
 
-  control_keys, vehicle_keys, visual_keys, other_keys, tracking_keys = [
-    "AlwaysOnLateral", "AlwaysOnLateralMain", "HideAOLStatusBar", "ConditionalExperimental", "CESpeed", "CESpeedLead", "CECurves", "CECurvesLead",
-    "CENavigation", "CENavigationIntersections", "CENavigationTurns", "CENavigationLead", "CESlowerLead", "CEStopLights", "CEStopLightsLead",
-    "CESignal", "HideCEMStatusBar", "CustomPersonalities", "TrafficFollow", "TrafficJerk", "AggressiveFollow", "AggressiveJerk", "StandardFollow",
-    "StandardJerk", "RelaxedFollow", "RelaxedJerk", "DeviceManagement", "IncreaseThermalLimits", "DeviceShutdown", "NoLogging", "NoUploads", "LowVoltageShutdown",
-    "OfflineMode", "ExperimentalModeActivation", "ExperimentalModeViaLKAS", "ExperimentalModeViaTap", "ExperimentalModeViaDistance", "LateralTune",
-    "ForceAutoTune", "NNFF", "NNFFLite", "SteerRatio", "TacoTune", "TurnDesires", "SteerRatio", "LongitudinalTune", "AccelerationProfile", "DecelerationProfile",
-    "AggressiveAcceleration", "StoppingDistance", "LeadDetectionThreshold", "SmoothBraking", "SmoothBrakingFarLead", "SmoothBrakingJerk", "TrafficMode",
-    "MTSCEnabled", "DisableMTSCSmoothing", "MTSCCurvatureCheck", "MTSCAggressiveness", "ModelSelector", "Model", "NudgelessLaneChange", "LaneChangeTime",
-    "LaneDetectionWidth", "OneLaneChange", "LaneDetectionWidth", "QOLControls", "CustomCruise", "CustomCruiseLong", "DisableOnroadUploads", "HigherBitrate",
-    "OnroadDistanceButton", "KaofuiIcons", "PauseLateralSpeed", "PauseLateralOnSignal", "ReverseCruise", "SetSpeedOffset", "SpeedLimitController", "Offset1",
-    "Offset2", "Offset3", "Offset4", "SLCFallback", "SLCOverride", "SLCPriority", "SLCConfirmation", "SLCConfirmationLower", "SLCConfirmationHigher",
-    "ForceMPHDashboard", "SLCLookaheadHigher", "SLCLookaheadLower", "SetSpeedLimit", "ShowSLCOffset", "ShowSLCOffsetUI", "UseVienna", "VisionTurnControl",
-    "DisableVTSCSmoothing", "CurveSensitivity", "TurnAggressiveness",
-  ], [
-    "ForceFingerprint", "DisableOpenpilotLongitudinal", "EVTable", "LongPitch", "GasRegenCmd", "CrosstrekTorque", "LockDoors", "StockTune", "CydiaTune",
-    "DragonPilotTune", "FrogsGoMooTune", "LockDoors", "SNGHack",
-  ], [
-    "AlertVolumeControl", "DisengageVolume", "EngageVolume", "PromptVolume", "PromptDistractedVolume", "RefuseVolume", "WarningSoftVolume",
-    "WarningImmediateVolume", "CustomAlerts", "GreenLightAlert", "LeadDepartingAlert", "LoudBlindspotAlert", "SpeedLimitChangedAlert", "CustomUI",
-    "Compass", "DeveloperUI", "ShowJerk", "LeadInfo", "ShowTuning", "UseSI", "FPSCounter", "CustomPaths", "AccelerationPath", "AdjacentPath", "BlindSpotPath",
-    "AdjacentPathMetrics", "PedalsOnUI", "RoadNameUI", "WheelIcon", "RotatingWheel", "CustomTheme", "CustomColors", "CustomIcons", "CustomSignals", "CustomSounds",
-    "GoatScream", "HolidayThemes", "RandomEvents", "ModelUI", "DynamicPathWidth", "HideLeadMarker", "LaneLinesWidth", "PathEdgeWidth", "PathWidth", "RoadEdgesWidth",
-    "UnlimitedLength", "QOLVisuals", "BigMap", "FullMap", "CameraView", "DriverCamera", "HideSpeed", "HideSpeedUI", "MapStyle", "NumericalTemp", "Fahrenheit",
-    "WheelSpeed", "ScreenManagement", "HideUIElements", "HideAlerts", "HideMapIcon", "HideMaxSpeed", "ScreenBrightness", "ScreenBrightnessOnroad", "ScreenRecorder",
-    "ScreenTimeout", "ScreenTimeoutOnroad", "StandbyMode",
-  ], [
-    "AutomaticUpdates", "ShowCPU", "ShowGPU", "ShowIP", "ShowMemoryUsage", "ShowStorageLeft", "ShowStorageUsed", "Sidebar", "TetheringEnabled",
-  ], [
-    "FrogPilotDrives", "FrogPilotKilometers", "FrogPilotMinutes"
-  ]
+  control_params = get_frogpilot_params_by_type(ParamKeyType.FROGPILOT_CONTROLS, params)
+  vehicle_params = get_frogpilot_params_by_type(ParamKeyType.FROGPILOT_VEHICLES, params)
+  visual_params = get_frogpilot_params_by_type(ParamKeyType.FROGPILOT_VISUALS, params)
+  other_params = get_frogpilot_params_by_type(ParamKeyType.FROGPILOT_OTHER, params)
+  tracking_params = get_frogpilot_params_by_type(ParamKeyType.FROGPILOT_TRACKING, params)
 
-  control_params, vehicle_params, visual_params, other_params, tracking_params = map(lambda keys: get_frogpilot_params(params, keys), [control_keys, vehicle_keys, visual_keys, other_keys, tracking_keys])
-  control_values, vehicle_values, visual_values, other_values, tracking_values = map(format_params, [control_params, vehicle_params, visual_params, other_params, tracking_params])
-  control_chunks, vehicle_chunks, visual_chunks, other_chunks, tracking_chunks = map(lambda data: chunk_data(data, 50), [control_values, vehicle_values, visual_values, other_values, tracking_values])
+  control_values = format_params(control_params)
+  vehicle_values = format_params(vehicle_params)
+  visual_values = format_params(visual_params)
+  other_values = format_params(other_params)
+  tracking_values = format_params(tracking_params)
+
+  control_chunks = chunk_data(control_values)
+  vehicle_chunks = chunk_data(vehicle_values)
+  visual_chunks = chunk_data(visual_values)
+  other_chunks = chunk_data(other_values)
+  tracking_chunks = chunk_data(tracking_values)
+
+  chunks_labels = [
+    (control_chunks, "FrogPilot Controls"),
+    (vehicle_chunks, "FrogPilot Vehicles"),
+    (visual_chunks, "FrogPilot Visuals"),
+    (other_chunks, "FrogPilot Other"),
+    (tracking_chunks, "FrogPilot Tracking")
+  ]
 
   no_internet = 0
   while True:
     if sentry_pinged():
-      for chunks, label in zip([control_chunks, vehicle_chunks, visual_chunks, other_chunks, tracking_chunks], ["FrogPilot Controls", "FrogPilot Vehicles", "FrogPilot Visuals", "Other Toggles", "FrogPilot Tracking"]):
+      for chunks, label in chunks_labels:
         with sentry_sdk.configure_scope() as scope:
           set_sentry_scope(scope, chunks, label)
+          scope.fingerprint = [candidate, HARDWARE.get_serial()]
+
       if blocked:
         sentry_sdk.capture_message("Blocked user from using the development branch", level='error')
       else:
-        sentry_sdk.capture_message("Fingerprinted %s" % candidate, level='info')
+        sentry_sdk.capture_message(f"Fingerprinted {candidate}", level='info')
         params.put_bool("FingerprintLogged", True)
+
       sentry_sdk.flush()
       break
     else:
@@ -150,6 +152,7 @@ def capture_exception(*args, **kwargs) -> None:
 
   phrases_to_check = [
     "To overwrite it, set 'overwrite' to True.",
+    "device reports readiness to read but returned no data",
   ]
 
   if any(phrase in exc_text for phrase in phrases_to_check):

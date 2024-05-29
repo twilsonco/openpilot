@@ -1,5 +1,5 @@
 import copy
-from cereal import car
+from cereal import car, custom
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
@@ -35,6 +35,7 @@ class CarState(CarStateBase):
 
   def update(self, pt_cp, cam_cp, loopback_cp, frogpilot_variables):
     ret = car.CarState.new_message()
+    fp_ret = custom.FrogPilotCarState.new_message()
 
     self.prev_cruise_buttons = self.cruise_buttons
     self.prev_distance_button = self.distance_button
@@ -168,13 +169,18 @@ class CarState(CarStateBase):
         ret.leftBlindspot = cam_cp.vl["BCMBlindSpotMonitor"]["LeftBSM"] == 1
         ret.rightBlindspot = cam_cp.vl["BCMBlindSpotMonitor"]["RightBSM"] == 1
 
+    # FrogPilot carstate functions
+    fp_ret.hasCamera = not (self.CP.flags & GMFlags.NO_CAMERA.value) and self.CP.carFingerprint not in CC_ONLY_CAR
+
+    fp_ret.sportGear = pt_cp.vl["SportMode"]["SportMode"] == 1
+
     self.lkas_previously_enabled = self.lkas_enabled
     if self.CP.carFingerprint in SDGM_CAR:
       self.lkas_enabled = cam_cp.vl["ASCMSteeringButton"]["LKAButton"]
     else:
       self.lkas_enabled = pt_cp.vl["ASCMSteeringButton"]["LKAButton"]
 
-    return ret
+    return ret, fp_ret
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -213,6 +219,7 @@ class CarState(CarStateBase):
       ("EBCMFrictionBrakeStatus", 20),
       ("PSCMSteeringAngle", 100),
       ("ECMAcceleratorPos", 80),
+      ("SportMode", 0),
     ]
 
     if CP.carFingerprint in SDGM_CAR:
@@ -239,7 +246,6 @@ class CarState(CarStateBase):
       messages += [
         ("ASCMLKASteeringCmd", 0),
       ]
-
       if CP.flags & GMFlags.NO_ACCELERATOR_POS_MSG.value:
         messages.remove(("ECMAcceleratorPos", 80))
         messages.append(("EBCMBrakePedalPosition", 100))

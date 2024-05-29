@@ -22,6 +22,8 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.system.version import is_tested_branch
 
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
+
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
@@ -237,9 +239,6 @@ class Updater:
     self.branches = defaultdict(str)
     self._has_internet: bool = False
 
-    # FrogPilot variables
-    self.offline_mode = self.params.get_bool("DeviceManagement") and self.params.get_bool("OfflineMode")
-
   @property
   def has_internet(self) -> bool:
     return self._has_internet
@@ -312,8 +311,10 @@ class Updater:
           version = f.read().split('"')[1]
 
         commit_unix_ts = run(["git", "show", "-s", "--format=%ct", "HEAD"], basedir).rstrip()
-        dt = datetime.datetime.fromtimestamp(int(commit_unix_ts))
-        commit_date = dt.strftime("%b %d")
+        match = re.search(r'\d+', commit_unix_ts)
+        if match:
+          dt = datetime.datetime.fromtimestamp(int(match.group(0)))
+          commit_date = dt.strftime("%b %d")
       except Exception:
         cloudlog.exception("updater.get_description")
       return f"{version} / {branch} / {commit} / {commit_date}"
@@ -328,7 +329,7 @@ class Updater:
       set_offroad_alert(alert, False)
 
     now = datetime.datetime.utcnow()
-    if self.offline_mode:
+    if FrogPilotVariables.toggles.offline_mode:
       last_update = now
     dt = now - last_update
     if failed_count > 15 and exception is not None and self.has_internet:
@@ -448,9 +449,7 @@ def main() -> None:
 
     # Run the update loop
     first_run = True
-    branches_set = "FrogPilot" in (params.get("UpdaterAvailableBranches", encoding='utf-8') or "").split(',')
     install_date_set = params.get("InstallDate") is not None and params.get("Updated") is not None
-    install_date_set &= params.get("InstallDate") != "November 21, 2023 - 02:10PM"  # Remove this on the June 1st update
 
     while True:
       wait_helper.ready_event.clear()
@@ -474,7 +473,7 @@ def main() -> None:
           params.put("InstallDate", datetime.datetime.now().astimezone(ZoneInfo('America/Phoenix')).strftime("%B %d, %Y - %I:%M%p").encode('utf8'))
           install_date_set = True
 
-        if not (params.get_bool("AutomaticUpdates") or params_memory.get_bool("ManualUpdateInitiated") or not branches_set):
+        if not (params.get_bool("AutomaticUpdates") or params_memory.get_bool("ManualUpdateInitiated")):
           wait_helper.sleep(60*60*24*365*100)
           continue
 
@@ -483,7 +482,6 @@ def main() -> None:
         # check for update
         params.put("UpdaterState", "checking...")
         updater.check_for_update()
-        branches_set = True
         params_memory.put_bool("ManualUpdateInitiated", False)
 
         # download update

@@ -26,7 +26,7 @@ class CarD:
   def __init__(self, CI=None):
     self.can_sock = messaging.sub_sock('can', timeout=20)
     self.sm = messaging.SubMaster(['pandaStates'])
-    self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
+    self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput', 'frogpilotCarState'])
 
     self.can_rcv_timeout_counter = 0      # conseuctive timeout count
     self.can_rcv_cum_timeout_counter = 0  # cumulative timeout count
@@ -55,8 +55,8 @@ class CarD:
     if not disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
-    always_on_lateral = self.params.get_bool("AlwaysOnLateral")
-    if always_on_lateral:
+    self.always_on_lateral = self.params.get_bool("AlwaysOnLateral")
+    if self.always_on_lateral:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.ALWAYS_ON_LATERAL
 
     self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.RAISE_LONGITUDINAL_LIMITS_TO_ISO_MAX
@@ -92,7 +92,7 @@ class CarD:
 
     # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
-    self.CS = self.CI.update(self.CC_prev, can_strs, frogpilot_variables)
+    self.CS, self.FPCS = self.CI.update(self.CC_prev, can_strs, frogpilot_variables)
 
     self.sm.update(0)
 
@@ -136,6 +136,12 @@ class CarD:
     if self.last_actuators is not None:
       co_send.carOutput.actuatorsOutput = self.last_actuators
     self.pm.send('carOutput', co_send)
+
+    # FrogPilot carState
+    fp_cs_send = messaging.new_message('frogpilotCarState')
+    fp_cs_send.valid = self.CS.canValid
+    fp_cs_send.frogpilotCarState = self.FPCS
+    self.pm.send('frogpilotCarState', fp_cs_send)
 
   def controls_update(self, CC: car.CarControl, frogpilot_variables):
     """control update loop, driven by carControl"""

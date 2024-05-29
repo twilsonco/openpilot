@@ -77,15 +77,14 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
   addItem(selectMakeButton);
 
   selectModelButton = new ButtonControl(tr("Select Model"), tr("SELECT"));
-  QString modelSelection = QString::fromStdString(params.get("CarModel"));
   QObject::connect(selectModelButton, &ButtonControl::clicked, [this]() {
     QString newModelSelection = MultiOptionDialog::getSelection(tr("Select a Model"), models, "", this);
     if (!newModelSelection.isEmpty()) {
+      carModel = newModelSelection;
       params.putNonBlocking("CarModel", newModelSelection.toStdString());
       selectModelButton->setValue(newModelSelection);
     }
   });
-  selectModelButton->setValue(modelSelection);
   addItem(selectModelButton);
   selectModelButton->setVisible(false);
 
@@ -97,7 +96,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
   QObject::connect(disableOpenpilotLong, &ToggleControl::toggleFlipped, [=](bool state) {
     if (state) {
       if (FrogPilotConfirmationDialog::yesorno(tr("Are you sure you want to completely disable openpilot longitudinal control?"), this)) {
-        params.putBool("DisableOpenpilotLongitudinal", state);
+        params.putBoolNonBlocking("DisableOpenpilotLongitudinal", state);
         if (started) {
           if (FrogPilotConfirmationDialog::toggle(tr("Reboot required to take effect."), tr("Reboot Now"), this)) {
             Hardware::reboot();
@@ -105,28 +104,36 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
         }
       }
     } else {
-      params.putBool("DisableOpenpilotLongitudinal", state);
+      params.putBoolNonBlocking("DisableOpenpilotLongitudinal", state);
     }
     updateCarToggles();
   });
   addItem(disableOpenpilotLong);
 
   std::vector<std::tuple<QString, QString, QString, QString>> vehicleToggles {
-    {"EVTable", tr("EV Lookup Tables"), tr("Smoothen out the gas and brake controls for EV vehicles."), ""},
     {"LongPitch", tr("Long Pitch Compensation"), tr("Smoothen out the gas and pedal controls."), ""},
     {"GasRegenCmd", tr("Truck Tune"), tr("Increase the acceleration and smoothen out the brake control when coming to a stop. For use on Silverado/Sierra only."), ""},
 
     {"CrosstrekTorque", tr("Subaru Crosstrek Torque Increase"), tr("Increases the maximum allowed torque for the Subaru Crosstrek."), ""},
 
     {"ToyotaDoors", tr("Automatically Lock/Unlock Doors"), tr("Automatically lock the doors when in drive and unlock when in park."), ""},
-    {"LongitudinalTune", tr("Longitudinal Tune"), tr("Use a custom Toyota longitudinal tune.\n\nCydia = More focused on TSS-P vehicles but works for all Toyotas\n\nDragonPilot = Focused on TSS2 vehicles\n\nFrogPilot = Takes the best of both worlds with some personal tweaks focused around FrogsGoMoo's 2019 Lexus ES 350"), ""},
+    {"ClusterOffset", tr("Cluster Offset"), tr("Set the cluster offset openpilot uses to try and match the speed displayed on the dash."), ""},
     {"SNGHack", tr("Stop and Go Hack"), tr("Enable the 'Stop and Go' hack for vehicles without stock stop and go functionality."), ""},
+    {"ToyotaTune", tr("Toyota Tune"), tr("Use a custom Toyota longitudinal tune.\n\nCydia = More focused on TSS-P vehicles but works for all Toyotas\n\nDragonPilot = Focused on TSS2 vehicles\n\nFrogPilot = Takes the best of both worlds with some personal tweaks focused around FrogsGoMoo's 2019 Lexus ES 350"), ""},
   };
 
   for (const auto &[param, title, desc, icon] : vehicleToggles) {
-    ParamControl *toggle;
+    AbstractControl *toggle;
 
-    if (param == "LongitudinalTune") {
+    if (param == "ToyotaDoors") {
+      std::vector<QString> lockToggles{"LockDoors", "UnlockDoors"};
+      std::vector<QString> lockToggleNames{tr("Lock"), tr("Unlock")};
+      toggle = new FrogPilotParamToggleControl(param, title, desc, icon, lockToggles, lockToggleNames);
+
+    } else if (param == "ClusterOffset") {
+      toggle = new FrogPilotParamValueControl(param, title, desc, icon, 1.000, 1.050, std::map<int, QString>(), this, false, "x", 1, 0.001);
+
+    } else if (param == "ToyotaTune") {
       std::vector<std::pair<QString, QString>> tuneOptions{
         {"StockTune", tr("Stock")},
         {"CydiaTune", tr("Cydia")},
@@ -143,11 +150,6 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
         }
       });
 
-    } else if (param == "ToyotaDoors") {
-      std::vector<QString> lockToggles{"LockDoors", "UnlockDoors"};
-      std::vector<QString> lockToggleNames{tr("Lock"), tr("Unlock")};
-      toggle = new FrogPilotParamToggleControl(param, title, desc, icon, lockToggles, lockToggleNames);
-
     } else {
       toggle = new ParamControl(param, title, desc, icon, this);
     }
@@ -156,9 +158,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
     addItem(toggle);
     toggles[param.toStdString()] = toggle;
 
-    QObject::connect(toggle, &ToggleControl::toggleFlipped, [this]() {
-      updateToggles();
-    });
+    QObject::connect(static_cast<ToggleControl*>(toggle), &ToggleControl::toggleFlipped, &updateFrogPilotToggles);
 
     QObject::connect(toggle, &AbstractControl::showDescriptionEvent, [this]() {
       update();
@@ -167,7 +167,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
 
   std::set<QString> rebootKeys = {"CrosstrekTorque", "GasRegenCmd"};
   for (const QString &key : rebootKeys) {
-    QObject::connect(toggles[key.toStdString().c_str()], &ToggleControl::toggleFlipped, [this]() {
+    QObject::connect(static_cast<ToggleControl*>(toggles[key.toStdString().c_str()]), &ToggleControl::toggleFlipped, [this]() {
       if (started) {
         if (FrogPilotConfirmationDialog::toggle(tr("Reboot required to take effect."), tr("Reboot Now"), this)) {
           Hardware::reboot();
@@ -181,6 +181,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
       while (carMake.isEmpty()) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         carMake = QString::fromStdString(params.get("CarMake"));
+        carModel = QString::fromStdString(params.get("CarModel"));
       }
       setModels();
       updateCarToggles();
@@ -190,6 +191,8 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
   QObject::connect(uiState(), &UIState::uiUpdate, this, &FrogPilotVehiclesPanel::updateState);
 
   carMake = QString::fromStdString(params.get("CarMake"));
+  carModel = QString::fromStdString(params.get("CarModel"));
+
   if (!carMake.isEmpty()) {
     setModels();
   }
@@ -201,22 +204,7 @@ void FrogPilotVehiclesPanel::updateState(const UIState &s) {
   started = s.scene.started;
 }
 
-void FrogPilotVehiclesPanel::updateToggles() {
-  std::thread([this]() {
-    paramsMemory.putBool("FrogPilotTogglesUpdated", true);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    paramsMemory.putBool("FrogPilotTogglesUpdated", false);
-  }).detach();
-}
-
 void FrogPilotVehiclesPanel::updateCarToggles() {
-  std::set<std::string> evCars = {
-    "CHEVROLET BOLT EUV 2022",
-    "CHEVROLET BOLT EV NO ACC",
-    "CHEVROLET VOLT NO ACC",
-    "CHEVROLET VOLT PREMIER 2017",
-  };
-
   auto carParams = params.get("CarParamsPersistent");
   if (!carParams.empty()) {
     AlignedBuffer aligned_buf;
@@ -228,14 +216,12 @@ void FrogPilotVehiclesPanel::updateCarToggles() {
     hasExperimentalOpenpilotLongitudinal = CP.getExperimentalLongitudinalAvailable();
     hasOpenpilotLongitudinal = CP.getOpenpilotLongitudinalControl();
     hasSNG = CP.getMinEnableSpeed() <= 0;
-    isEVCar = evCars.count(carFingerprint) > 0;
     isGMTruck = carFingerprint == "CHEVROLET SILVERADO 1500 2020";
     isImpreza = carFingerprint == "SUBARU IMPREZA LIMITED 2019";
   } else {
     hasExperimentalOpenpilotLongitudinal = false;
     hasOpenpilotLongitudinal = true;
     hasSNG = false;
-    isEVCar = true;
     isGMTruck = true;
     isImpreza = true;
   }
@@ -252,16 +238,16 @@ void FrogPilotVehiclesPanel::hideToggles() {
   disableOpenpilotLong->setVisible(hasOpenpilotLongitudinal && !hasExperimentalOpenpilotLongitudinal && !params.getBool("HideDisableOpenpilotLongitudinal"));
 
   selectMakeButton->setValue(carMake);
+  selectModelButton->setValue(carModel);
   selectModelButton->setVisible(!carMake.isEmpty());
 
   bool gm = carMake == "Buick" || carMake == "Cadillac" || carMake == "Chevrolet" || carMake == "GM" || carMake == "GMC";
   bool subaru = carMake == "Subaru";
   bool toyota = carMake == "Lexus" || carMake == "Toyota";
 
-  std::set<QString> evCarKeys = {"EVTable"};
   std::set<QString> gmTruckKeys = {"GasRegenCmd"};
   std::set<QString> imprezaKeys = {"CrosstrekTorque"};
-  std::set<QString> longitudinalKeys = {"EVTable", "GasRegenCmd", "LongitudinalTune", "LongPitch", "SNGHack"};
+  std::set<QString> longitudinalKeys = {"GasRegenCmd", "ToyotaTune", "LongPitch", "SNGHack"};
   std::set<QString> sngKeys = {"SNGHack"};
 
   for (auto &[key, toggle] : toggles) {
@@ -273,10 +259,6 @@ void FrogPilotVehiclesPanel::hideToggles() {
       }
 
       if (hasSNG && sngKeys.find(key.c_str()) != sngKeys.end()) {
-        continue;
-      }
-
-      if (!isEVCar && evCarKeys.find(key.c_str()) != evCarKeys.end()) {
         continue;
       }
 

@@ -5,7 +5,6 @@ from openpilot.common.params import Params
 from openpilot.system.hardware import PC, TICI
 from openpilot.selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
 
-
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
 def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
@@ -48,7 +47,7 @@ def allow_logging(started, params, CP: car.CarParams) -> bool:
   return allow_logging and logging(started, params, CP)
 
 def allow_uploads(started, params, CP: car.CarParams) -> bool:
-  allow_uploads = not (params.get_bool("DeviceManagement") and params.get_bool("NoUploads"))
+  allow_uploads = not (params.get_bool("DeviceManagement") and params.get_bool("NoUploads") and not params.get_bool("DisableOnroadUploads"))
   return allow_uploads
 
 procs = [
@@ -69,7 +68,7 @@ procs = [
   NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"], only_onroad),
   PythonProcess("navmodeld", "selfdrive.modeld.navmodeld", only_onroad),
   NativeProcess("sensord", "system/sensord", ["./sensord"], only_onroad, enabled=not PC),
-  NativeProcess("ui", "selfdrive/ui", ["./ui"], always_run, watchdog_max_dt=(5 if not PC else None), always_watchdog=only_offroad),
+  NativeProcess("ui", "selfdrive/ui", ["./ui"], always_run, watchdog_max_dt=(30 if not PC else None)),
   PythonProcess("soundd", "selfdrive.ui.soundd", only_onroad),
   NativeProcess("locationd", "selfdrive/locationd", ["./locationd"], only_onroad),
   NativeProcess("boardd", "selfdrive/boardd", ["./boardd"], always_run, enabled=False),

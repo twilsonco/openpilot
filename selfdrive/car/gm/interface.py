@@ -149,7 +149,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_SDGM
 
     else:  # ASCM, OBD-II harness
-      ret.openpilotLongitudinalControl = True
+      ret.openpilotLongitudinalControl = not disable_openpilot_long
       ret.networkLocation = NetworkLocation.gateway
       ret.radarUnavailable = RADAR_HEADER_MSG not in fingerprint[CanBus.OBSTACLE] and not docs
       ret.pcmCruise = False  # stock non-adaptive cruise control is kept off
@@ -160,7 +160,6 @@ class CarInterface(CarInterfaceBase):
       # Tuning
       ret.longitudinalTuning.kpV = [2.4, 1.5]
       ret.longitudinalTuning.kiV = [0.36]
-
       if ret.enableGasInterceptor:
         # Need to set ASCM long limits when using pedal interceptor, instead of camera ACC long limits
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_ASCM_LONG
@@ -176,13 +175,13 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
     if candidate in (CAR.VOLT, CAR.VOLT_CC):
-      ret.minEnableSpeed = -1
       ret.lateralTuning.pid.kpBP = [0., 40.]
       ret.lateralTuning.pid.kpV = [0., 0.17]
       ret.lateralTuning.pid.kiBP = [0.]
       ret.lateralTuning.pid.kiV = [0.]
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_volt()
       ret.steerActuatorDelay = 0.2
+      ret.minEnableSpeed = -1.
 
     elif candidate == CAR.ACADIA:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
@@ -242,19 +241,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate == CAR.BABYENCLAVE:
-      ret.steerActuatorDelay = 0.2
-      ret.minSteerSpeed = 10 * CV.KPH_TO_MS
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
     elif candidate == CAR.CT6_CC:
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-    elif candidate == CAR.TRAX:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.MALIBU_CC:
       ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    elif candidate == CAR.TRAX:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     if ret.enableGasInterceptor:
@@ -305,9 +299,6 @@ class CarInterface(CarInterfaceBase):
     if candidate in CC_ONLY_CAR:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_NO_ACC
 
-    if ACCELERATOR_POS_MSG not in fingerprint[CanBus.POWERTRAIN]:
-      ret.flags |= GMFlags.NO_ACCELERATOR_POS_MSG.value
-
     # Exception for flashed cars, or cars whose camera was removed
     if (ret.networkLocation == NetworkLocation.fwdCamera or candidate in CC_ONLY_CAR) and CAM_MSG not in fingerprint[CanBus.CAMERA] and not candidate in SDGM_CAR:
       ret.flags |= GMFlags.NO_CAMERA.value
@@ -320,7 +311,7 @@ class CarInterface(CarInterfaceBase):
 
   # returns a car.CarState
   def _update(self, c, frogpilot_variables):
-    ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback, frogpilot_variables)
+    ret, fp_ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback, frogpilot_variables)
 
     # Don't add event if transitioning from INIT, unless it's to an actual button
     if self.CS.cruise_buttons != CruiseButtons.UNPRESS or self.CS.prev_cruise_buttons != CruiseButtons.INIT:
@@ -346,7 +337,7 @@ class CarInterface(CarInterfaceBase):
     if below_min_enable_speed and not (ret.standstill and ret.brake >= 20 and
                                       (self.CP.networkLocation == NetworkLocation.fwdCamera and not self.CP.carFingerprint in SDGM_CAR)):
       events.add(EventName.belowEngageSpeed)
-    if ret.cruiseState.standstill and not self.disable_resumeRequired and not self.CP.autoResumeSng:
+    if ret.cruiseState.standstill and not (self.CP.autoResumeSng or self.disable_resumeRequired):
       events.add(EventName.resumeRequired)
       self.resumeRequired_shown = True
 
@@ -373,7 +364,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = events.to_msg()
 
-    return ret
+    return ret, fp_ret
 
   def apply(self, c, now_nanos, frogpilot_variables):
     return self.CC.update(c, self.CS, now_nanos, frogpilot_variables)

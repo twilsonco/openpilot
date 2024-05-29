@@ -117,7 +117,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     paramsdTemporaryError @50;
     paramsdPermanentError @119;
 
-    # FrogPilot events
+    # FrogPilot Events
     accel30 @120;
     accel35 @121;
     accel40 @122;

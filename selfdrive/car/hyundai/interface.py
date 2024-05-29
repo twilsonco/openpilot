@@ -159,7 +159,7 @@ class CarInterface(CarInterfaceBase):
       disable_ecu(logcan, sendcan, bus=CanBus(CP).ECAN, addr=0x7B1, com_cont_req=b'\x28\x83\x01')
 
   def _update(self, c, frogpilot_variables):
-    ret = self.CS.update(self.cp, self.cp_cam, frogpilot_variables)
+    ret, fp_ret = self.CS.update(self.cp, self.cp_cam, frogpilot_variables)
 
     if self.CS.CP.openpilotLongitudinalControl:
       ret.buttonEvents = [
@@ -184,7 +184,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = events.to_msg()
 
-    return ret
+    return ret, fp_ret
 
   def apply(self, c, now_nanos, frogpilot_variables):
     return self.CC.update(c, self.CS, now_nanos, frogpilot_variables)

@@ -32,7 +32,9 @@ def register(show_spinner=False) -> str | None:
   needs_registration = None in (IMEI, HardwareSerial, dongle_id)
 
   pubkey = Path(Paths.persist_root()+"/comma/id_rsa.pub")
-  if not pubkey.is_file():
+  if Params("/persist/params").get_bool("FrogsGoMoo"):
+    dongle_id = "FrogsGoMooDongle"
+  elif not pubkey.is_file():
     dongle_id = UNREGISTERED_DONGLE_ID
     cloudlog.warning(f"missing public key: {pubkey}")
   elif needs_registration:
@@ -75,8 +77,6 @@ def register(show_spinner=False) -> str | None:
         if resp.status_code in (402, 403):
           cloudlog.info(f"Unable to register device, got {resp.status_code}")
           dongle_id = ''.join(random.choices(string.ascii_lowercase + string.digits, k=16))
-        elif Params("/persist/params").get_bool("FrogsGoMoo"):
-          dongle_id = "FrogsGoMooDongle"
         else:
           dongleauth = json.loads(resp.text)
           dongle_id = dongleauth["dongle_id"]

@@ -24,6 +24,7 @@ from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
 from openpilot.selfdrive.frogpilot.controls.lib.model_manager import DEFAULT_MODEL, MODELS_PATH, NAVIGATION_MODELS, RADARLESS_MODELS
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
@@ -35,7 +36,7 @@ DISABLE_NAV = MODEL_NAME not in NAVIGATION_MODELS
 DISABLE_RADAR = MODEL_NAME in RADARLESS_MODELS
 
 MODEL_PATHS = {
-  ModelRunner.THNEED: Path(__file__).parent / ('models/supercombo.thneed' if MODEL_NAME == DEFAULT_MODEL or not Params().get_bool("ModelSelector") else f'{MODELS_PATH}/{MODEL_NAME}.thneed'),
+  ModelRunner.THNEED: Path(__file__).parent / ('models/supercombo.thneed' if MODEL_NAME == DEFAULT_MODEL else f'{MODELS_PATH}/{MODEL_NAME}.thneed'),
   ModelRunner.ONNX: Path(__file__).parent / 'models/supercombo.onnx'}
 
 METADATA_PATH = Path(__file__).parent / 'models/supercombo_metadata.pkl'
@@ -126,7 +127,7 @@ class ModelState:
     return outputs
 
 
-def main(demo=False):
+def main(demo=False, frogpilot_toggles=None):
   cloudlog.warning("modeld init")
 
   sentry.set_tag("daemon", PROCESS_NAME)
@@ -319,7 +320,7 @@ def main(demo=False):
       l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
       r_lane_change_prob = desire_state[log.Desire.laneChangeRight]
       lane_change_prob = l_lane_change_prob + r_lane_change_prob
-      DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob, sm['frogpilotPlan'])
+      DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob, sm['frogpilotPlan'], frogpilot_toggles)
       modelv2_send.modelV2.meta.laneChangeState = DH.lane_change_state
       modelv2_send.modelV2.meta.laneChangeDirection = DH.lane_change_direction
       modelv2_send.modelV2.meta.turnDirection = DH.turn_direction
@@ -330,6 +331,9 @@ def main(demo=False):
 
     last_vipc_frame_id = meta_main.frame_id
 
+    # Update FrogPilot parameters
+    if FrogPilotVariables.toggles_updated:
+      FrogPilotVariables.update_frogpilot_params()
 
 if __name__ == "__main__":
   try:
@@ -337,7 +341,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--demo', action='store_true', help='A boolean for demo mode.')
     args = parser.parse_args()
-    main(demo=args.demo)
+    main(demo=args.demo, frogpilot_toggles=FrogPilotVariables.toggles)
   except KeyboardInterrupt:
     cloudlog.warning(f"child {PROCESS_NAME} got SIGINT")
   except Exception:

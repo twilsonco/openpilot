@@ -131,7 +131,7 @@ class CAR(Platforms):
   VOLT = GMPlatformConfig(
     "CHEVROLET VOLT PREMIER 2017",
     [GMCarDocs("Chevrolet Volt 2017-18", min_enable_speed=0, video_link="https://youtu.be/QeMCN_4TFfQ")],
-    GMCarSpecs(mass=1607, wheelbase=2.69, steerRatio=17.7, centerToFrontRatio=0.45, tireStiffnessFactor=0.469, minEnableSpeed=-1),
+    GMCarSpecs(mass=1607, wheelbase=2.69, steerRatio=17.7, centerToFrontRatio=0.45, tireStiffnessFactor=0.469),
     dbc_dict=dbc_dict('gm_global_a_powertrain_volt', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis')
   )
   CADILLAC_ATS = GMPlatformConfig(
@@ -247,20 +247,15 @@ class CAR(Platforms):
     [GMCarDocs("Cadillac XT4 2023", "Driver Assist Package")],
     CarSpecs(mass=1660, wheelbase=2.78, steerRatio=14.4, centerToFrontRatio=0.4),
   )
-  BABYENCLAVE = GMPlatformConfig(
-    "BUICK BABY ENCLAVE 2020",
-    [GMCarDocs("Buick Baby Enclave 2020-23")],
-    CarSpecs(mass=2050, wheelbase=2.86, steerRatio=16.0, centerToFrontRatio=0.5),
+  MALIBU_CC = GMPlatformConfig(
+    "CHEVROLET MALIBU NO ACC 2023",
+    [GMCarDocs("Chevrolet Malibu 2023 No ACC")],
+    CarSpecs(mass=1450, wheelbase=2.8, steerRatio=15.8, centerToFrontRatio=0.4),
   )
   TRAX = GMPlatformConfig(
     "CHEVROLET TRAX 2024",
     [GMCarDocs("Chevrolet TRAX 2024")],
     CarSpecs(mass=1365, wheelbase=2.7, steerRatio=16.4, centerToFrontRatio=0.4),
-  )
-  MALIBU_CC = GMPlatformConfig(
-    "CHEVROLET MALIBU NO ACC 2023",
-    [GMCarDocs("Chevrolet Malibu 2023 No ACC")],
-    CarSpecs(mass=1450, wheelbase=2.8, steerRatio=15.8, centerToFrontRatio=0.4),
   )
 
 
@@ -291,6 +286,7 @@ class GMFlags(IntFlag):
   CC_LONG = 2
   NO_CAMERA = 4
   NO_ACCELERATOR_POS_MSG = 8
+
 
 # In a Data Module, an identifier is a string used to recognize an object,
 # either by itself or together with the identifiers of parent objects.
@@ -345,7 +341,7 @@ EV_CAR = {CAR.VOLT, CAR.BOLT_EUV, CAR.VOLT_CC, CAR.BOLT_CC}
 CC_ONLY_CAR = {CAR.VOLT_CC, CAR.BOLT_CC, CAR.EQUINOX_CC, CAR.SUBURBAN_CC, CAR.YUKON_CC, CAR.CT6_CC, CAR.TRAILBLAZER_CC, CAR.MALIBU_CC}
 
 # We're integrated at the Safety Data Gateway Module on these cars
-SDGM_CAR = {CAR.XT4, CAR.BABYENCLAVE}
+SDGM_CAR = {CAR.XT4}
 
 # Slow acceleration cars
 SLOW_ACC = {CAR.SILVERADO}

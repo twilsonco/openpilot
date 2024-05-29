@@ -109,6 +109,7 @@ void MapWindow::initLayers() {
     // TODO: remove, symbol-sort-key does not seem to matter outside of each layer
     m_map->setLayoutProperty("carPosLayer", "symbol-sort-key", 0);
   }
+  // Credit goes to jakethesnake420!
   if (!m_map->layerExists("buildingsLayer")) {
     qDebug() << "Initializing buildingsLayer";
     QVariantMap buildings;

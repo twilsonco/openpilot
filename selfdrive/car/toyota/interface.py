@@ -57,6 +57,11 @@ class CarInterface(CarInterfaceBase):
     if 0x2AA in fingerprint[0] and candidate in NO_DSU_CAR:
       ret.flags |= ToyotaFlags.RADAR_CAN_FILTER.value
 
+    # 0x343 should not be present on bus 2 on cars other than TSS2_CAR unless we are re-routing DSU
+    if (0x343 in fingerprint[2] or 0x4CB in fingerprint[2]) and candidate not in TSS2_CAR:
+      if not (ret.flags & ToyotaFlags.SMART_DSU.value):
+        ret.flags |= ToyotaFlags.DSU_BYPASS.value
+
     # In TSS2 cars, the camera does long control
     found_ecus = [fw.ecu for fw in car_fw]
     ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) \
@@ -121,6 +126,7 @@ class CarInterface(CarInterfaceBase):
     #  - TSS2 radar ACC cars w/o smartDSU installed (disables radar)
     #  - TSS-P DSU-less cars w/ CAN filter installed (no radar parser yet)
     ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR) or bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value)
+    ret.openpilotLongitudinalControl |= bool(ret.flags & ToyotaFlags.DSU_BYPASS.value)
     ret.openpilotLongitudinalControl &= not disable_openpilot_long
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
     ret.enableGasInterceptor = 0x201 in fingerprint[0] and ret.openpilotLongitudinalControl
@@ -150,7 +156,8 @@ class CarInterface(CarInterfaceBase):
       tune.kiV = [0.3, 1.]
     elif params.get_bool("FrogsGoMooTune"):
       tune.deadzoneBP = [0., 16., 20., 30.]
-      tune.deadzoneV = [0., .03, .06, .15]
+      tune.deadzoneV =  [0., .03, .06, .15]
+
       tune.kpBP = [0., 5., 20.]
       tune.kpV = [1.3, 1.0, 0.7]
 
@@ -159,14 +166,13 @@ class CarInterface(CarInterfaceBase):
       tune.kiV =  [.35, .215, .195, .10, .01]
 
       if candidate in TSS2_CAR:
-        ret.stopAccel = -2.5
-        ret.stoppingDecelRate = 0.009  # reach stopping target smoothly
+        ret.stopAccel = -0.4           # Toyota requests -0.4 when stopped
       else:
-        ret.stopAccel = -2.5  # on stock Toyota this is -2.5
-        ret.stoppingDecelRate = 0.17  # This is okay for TSS-P
+        ret.stopAccel = -2.5           # on stock Toyota this is -2.5
 
-      ret.vEgoStarting = 0.1
-      ret.vEgoStopping = 0.1
+      ret.stoppingDecelRate = 0.17
+      ret.vEgoStopping = 0.15          # car is near 0.1 to 0.2 when car starts requesting stopping accel
+      ret.vEgoStarting = 0.15          # needs to be > or == vEgoStopping
     elif (candidate in TSS2_CAR or ret.enableGasInterceptor) and params.get_bool("DragonPilotTune"):
       # Credit goes to the DragonPilot team!
       tune.deadzoneBP = [0., 16., 20., 30.]
@@ -207,7 +213,7 @@ class CarInterface(CarInterfaceBase):
 
   # returns a car.CarState
   def _update(self, c, frogpilot_variables):
-    ret = self.CS.update(self.cp, self.cp_cam, frogpilot_variables)
+    ret, fp_ret = self.CS.update(self.cp, self.cp_cam, frogpilot_variables)
 
     if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) or (self.CP.flags & ToyotaFlags.SMART_DSU and not self.CP.flags & ToyotaFlags.RADAR_CAN_FILTER):
       ret.buttonEvents = [
@@ -241,7 +247,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = events.to_msg()
 
-    return ret
+    return ret, fp_ret
 
   # pass in a car.CarControl
   # to be called @ 100hz

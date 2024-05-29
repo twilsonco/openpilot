@@ -1,6 +1,6 @@
 import copy
 
-from cereal import car
+from cereal import car, custom
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import mean
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -55,8 +55,8 @@ class CarState(CarStateBase):
     self.zss_compute = False
     self.zss_cruise_active_last = False
 
-    self.pcm_accel_net = 0.0
-    self.pcm_neutral_force = 0.0
+    self.pcm_accel_net = 0
+    self.pcm_neutral_force = 0
     self.zss_angle_offset = 0
     self.zss_threshold_count = 0
 
@@ -77,6 +77,7 @@ class CarState(CarStateBase):
 
   def update(self, cp, cp_cam, frogpilot_variables):
     ret = car.CarState.new_message()
+    fp_ret = custom.FrogPilotCarState.new_message()
 
     ret.doorOpen = any([cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FL"], cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FR"],
                         cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_RL"], cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_RR"]])
@@ -100,10 +101,7 @@ class CarState(CarStateBase):
     )
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    if self.CP.carFingerprint == CAR.LEXUS_ES_TSS2:
-      ret.vEgoCluster = ret.vEgo * 1.023456789
-    else:
-      ret.vEgoCluster = ret.vEgo * 1.015  # minimum of all the cars
+    ret.vEgoCluster = ret.vEgo * frogpilot_variables.cluster_offset
 
     ret.standstill = abs(ret.vEgoRaw) < 1e-3
 
@@ -162,9 +160,9 @@ class CarState(CarStateBase):
       conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
       ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
 
-    cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
+    cp_acc = cp_cam if (self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) or bool(self.CP.flags & ToyotaFlags.DSU_BYPASS.value)) else cp
 
-    if self.CP.carFingerprint in TSS2_CAR and not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
+    if (self.CP.flags & ToyotaFlags.DSU_BYPASS.value) or (self.CP.carFingerprint in TSS2_CAR and not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value):
       if not (self.CP.flags & ToyotaFlags.SMART_DSU.value):
         self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_acc.vl["PCS_HUD"]["FCW"])
@@ -209,18 +207,24 @@ class CarState(CarStateBase):
       else:
         self.distance_button = cp.vl["SDSU"]["FD_BUTTON"]
 
-    if self.CP.carFingerprint != CAR.PRIUS_V:
-      self.lkas_previously_enabled = self.lkas_enabled
-      message_keys = ["LDA_ON_MESSAGE", "SET_ME_X02"]
-      self.lkas_enabled = any(self.lkas_hud.get(key) == 1 for key in message_keys)
-
-    self.params_memory.put_float("CarSpeedLimit", self.calculate_speed_limit(cp_cam, frogpilot_variables))
+    # FrogPilot carstate functions
+    fp_ret.brakeLights = bool(cp.vl["ESP_CONTROL"]["BRAKE_LIGHTS_ACC"])
 
     self.cruise_decreased_previously = self.cruise_decreased
     self.cruise_increased_previously = self.cruise_increased
 
     self.cruise_decreased = self.pcm_acc_status == 10
     self.cruise_increased = self.pcm_acc_status == 9
+
+    fp_ret.dashboardSpeedLimit = self.calculate_speed_limit(cp_cam, frogpilot_variables)
+
+    fp_ret.ecoGear = cp.vl["GEAR_PACKET"]['ECON_ON'] == 1
+    fp_ret.sportGear = cp.vl["GEAR_PACKET"]['SPORT_ON_2' if self.CP.flags & ToyotaFlags.NO_DSU else 'SPORT_ON'] == 1
+
+    if self.CP.carFingerprint != CAR.PRIUS_V:
+      self.lkas_previously_enabled = self.lkas_enabled
+      message_keys = ["LDA_ON_MESSAGE", "SET_ME_X02"]
+      self.lkas_enabled = any(self.lkas_hud.get(key) == 1 for key in message_keys)
 
     self.pcm_accel_net = cp.vl["PCM_CRUISE"]["ACCEL_NET"]
     self.pcm_neutral_force = cp.vl["PCM_CRUISE"]["NEUTRAL_FORCE"]
@@ -250,7 +254,7 @@ class CarState(CarStateBase):
         # Apply offset
         ret.steeringAngleDeg = new_steering_angle_deg
 
-    return ret
+    return ret, fp_ret
 
   @staticmethod
   def get_can_parser(CP):
@@ -295,7 +299,7 @@ class CarState(CarStateBase):
         ("PCS_HUD", 1),
       ]
 
-    if CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR) and not CP.enableDsu and not CP.flags & ToyotaFlags.DISABLE_RADAR.value:
+    if CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR) and not CP.enableDsu and not (CP.flags & ToyotaFlags.DISABLE_RADAR.value or CP.flags & ToyotaFlags.DSU_BYPASS.value):
       messages += [
         ("PRE_COLLISION", 33),
       ]
@@ -323,7 +327,7 @@ class CarState(CarStateBase):
         ("LKAS_HUD", 1),
       ]
 
-    if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
+    if CP.flags & ToyotaFlags.DSU_BYPASS.value or CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       messages += [
         ("PRE_COLLISION", 33),
         ("ACC_CONTROL", 33),

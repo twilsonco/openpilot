@@ -29,8 +29,6 @@ FrogPilotNavigationPanel::FrogPilotNavigationPanel(QWidget *parent) : QFrame(par
                                           "time you're offroad with a WiFi connection."),
                                           "",
                                           scheduleOptions);
-  schedule = params.getInt("PreferredSchedule");
-  schedulePending = params.getBool("SchedulePending");
   list->addItem(preferredSchedule);
 
   list->addItem(offlineMapsSize = new LabelControl(tr("Offline Maps Size"), formatSize(calculateDirectorySize(offlineFolderPath))));
@@ -76,8 +74,6 @@ FrogPilotNavigationPanel::FrogPilotNavigationPanel(QWidget *parent) : QFrame(par
   mainLayout->setCurrentWidget(navigationWidget);
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &FrogPilotNavigationPanel::updateState);
-
-  checkIfUpdateMissed();
 }
 
 void FrogPilotNavigationPanel::hideEvent(QHideEvent *event) {
@@ -85,10 +81,17 @@ void FrogPilotNavigationPanel::hideEvent(QHideEvent *event) {
   mainLayout->setCurrentWidget(navigationWidget);
 }
 
+void FrogPilotNavigationPanel::showEvent(QShowEvent *event) {
+  downloadActive = !paramsMemory.get("OSMDownloadLocations").empty();
+  lastMapsDownload->setText(QString::fromStdString(params.get("LastMapsUpdate")));
+  qint64 fileSize = calculateDirectorySize(offlineFolderPath);
+  offlineMapsSize->setText(formatSize(fileSize));
+  removeOfflineMapsButton->setVisible(QDir(offlineFolderPath).exists() && !downloadActive);
+}
+
 void FrogPilotNavigationPanel::updateState() {
   if (!isVisible() && downloadActive) updateVisibility(downloadActive);
   if (downloadActive) updateStatuses();
-  if (schedule) downloadSchedule();
 }
 
 void FrogPilotNavigationPanel::updateStatuses() {
@@ -136,31 +139,6 @@ void FrogPilotNavigationPanel::updateVisibility(bool visibility) {
   update();
 }
 
-void FrogPilotNavigationPanel::checkIfUpdateMissed() {
-  std::string lastMapsUpdate = params.get("LastMapsUpdate");
-
-  if (lastMapsUpdate.empty() || schedule == 0) {
-    return;
-  }
-
-  std::time_t currentTime = std::time(nullptr);
-  std::tm *now = std::localtime(&currentTime);
-
-  std::tm lastUpdate = {};
-  sscanf(lastMapsUpdate.c_str(), "%d-%d-%d", &lastUpdate.tm_year, &lastUpdate.tm_mon, &lastUpdate.tm_mday);
-  lastUpdate.tm_year -= 1900;
-  lastUpdate.tm_mon -= 1;
-
-  std::time_t lastUpdateTime = std::mktime(&lastUpdate);
-  std::tm *lastUpdateDay = std::localtime(&lastUpdateTime);
-
-  if (schedule == 1) {
-    schedulePending = (now->tm_wday == 0 && lastUpdateDay->tm_wday != 0) || (now->tm_wday > lastUpdateDay->tm_wday);
-  } else if (schedule == 2) {
-    schedulePending = (now->tm_mday == 1 && lastUpdate.tm_mday != 1) || (now->tm_mon != lastUpdate.tm_mon);
-  }
-}
-
 void FrogPilotNavigationPanel::updateDownloadedLabel() {
   std::time_t t = std::time(nullptr);
   std::tm now = *std::localtime(&t);
@@ -175,32 +153,6 @@ void FrogPilotNavigationPanel::updateDownloadedLabel() {
   std::string lastMapsUpdate = date.toString("MMMM d").toStdString() + suffix + date.toString(", yyyy").toStdString();
   lastMapsDownload->setText(QString::fromStdString(lastMapsUpdate));
   params.put("LastMapsUpdate", lastMapsUpdate);
-}
-
-void FrogPilotNavigationPanel::downloadSchedule() {
-  const bool wifi = (*uiState()->sm)["deviceState"].getDeviceState().getNetworkType() == cereal::DeviceState::NetworkType::WIFI;
-
-  const std::time_t t = std::time(nullptr);
-  const std::tm *now = std::localtime(&t);
-
-  const bool isScheduleTime = (schedule == 1 && now->tm_wday == 0) || (schedule == 2 && now->tm_mday == 1);
-
-  if ((isScheduleTime || schedulePending) && !(scene.started || scheduleCompleted) && wifi) {
-    downloadMaps();
-    scheduleCompleted = true;
-
-    if (schedulePending) {
-      schedulePending = false;
-      params.putBool("SchedulePending", false);
-    }
-  } else if (!isScheduleTime) {
-    scheduleCompleted = false;
-  } else {
-    if (!schedulePending) {
-      params.putBool("SchedulePending", true);
-    }
-    schedulePending = true;
-  }
 }
 
 void FrogPilotNavigationPanel::cancelDownload(QWidget *parent) {

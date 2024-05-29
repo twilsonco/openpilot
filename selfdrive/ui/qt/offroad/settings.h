@@ -38,6 +38,7 @@ signals:
   // FrogPilot signals
   void closeParentToggle();
   void closeSubParentToggle();
+  void closeSubSubParentToggle();
   void updateMetric();
 
 private:
@@ -49,6 +50,7 @@ private:
   // FrogPilot variables
   bool parentToggleOpen;
   bool subParentToggleOpen;
+  bool subSubParentToggleOpen;
 
   int previousScrollPosition;
 };
@@ -68,9 +70,6 @@ private slots:
 
 private:
   Params params;
-
-  // FrogPilot variables
-  Params paramsMemory{"/dev/shm/params"};
 };
 
 class TogglesPanel : public ListWidget {

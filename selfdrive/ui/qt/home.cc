@@ -56,6 +56,7 @@ void HomeWindow::showSidebar(bool show) {
 
 void HomeWindow::showMapPanel(bool show) {
   onroad->showMapPanel(show);
+  uiState()->scene.map_open = true;
 }
 
 void HomeWindow::updateState(const UIState &s) {

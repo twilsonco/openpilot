@@ -32,6 +32,7 @@ ACCEL_MAX_PLUS = 4.0
 ACCEL_MIN = -3.5
 FRICTION_THRESHOLD = 0.3
 
+NEURAL_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/neural_ff_weights.json')
 TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/params.toml')
 TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override.toml')
 TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.toml')
@@ -214,7 +215,7 @@ class CarInterfaceBase(ABC):
     nnff_supported = self.initialize_lat_torque_nn(CP.carFingerprint, eps_firmware)
     use_comma_nnff = self.check_comma_nn_ff_support(CP.carFingerprint)
     self.use_nnff = not use_comma_nnff and nnff_supported and lateral_tune and self.params.get_bool("NNFF")
-    self.use_nnff_lite = not use_comma_nnff and not nnff_supported and lateral_tune and self.params.get_bool("NNFFLite")
+    self.use_nnff_lite = not use_comma_nnff and not self.use_nnff and lateral_tune and self.params.get_bool("NNFFLite")
 
     self.belowSteerSpeed_shown = False
     self.disable_belowSteerSpeed = False
@@ -229,14 +230,10 @@ class CarInterfaceBase(ABC):
     return self.lat_torque_nn_model.evaluate(x)
 
   def check_comma_nn_ff_support(self, car):
-    try:
-      with open("../car/torque_data/neural_ff_weights.json", "r") as file:
-        data = json.load(file)
-      return car in data
+    with open(NEURAL_PARAMS_PATH, 'r') as file:
+      data = json.load(file)
+    return car in data
 
-    except FileNotFoundError:
-      print("Failed to open neural_ff_weights file.")
-      return False
 
   def initialize_lat_torque_nn(self, car, eps_firmware):
     self.lat_torque_nn_model, _ = get_nn_model(car, eps_firmware)
@@ -380,7 +377,7 @@ class CarInterfaceBase(ABC):
         cp.update_strings(can_strings)
 
     # get CarState
-    ret = self._update(c, frogpilot_variables)
+    ret, fp_ret = self._update(c, frogpilot_variables)
 
     ret.canValid = all(cp.can_valid for cp in self.can_parsers if cp is not None)
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
@@ -399,16 +396,18 @@ class CarInterfaceBase(ABC):
     if ret.cruiseState.speedCluster == 0:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
 
-    distance_button = self.CS.distance_button or self.params_memory.get_bool("OnroadDistanceButtonPressed")
-    self.params_memory.put_bool("DistanceLongPressed", self.frogpilot_distance_functions(distance_button, self.prev_distance_button, frogpilot_variables))
-    self.prev_distance_button = distance_button
+    if self.CP.carName != "mock":
+      distance_button = self.CS.distance_button or self.params_memory.get_bool("OnroadDistanceButtonPressed")
+      fp_ret.distanceLongPressed = self.frogpilot_distance_functions(distance_button, self.prev_distance_button, frogpilot_variables)
+      self.prev_distance_button = distance_button
 
     # copy back for next iteration
     reader = ret.as_reader()
+    frogpilot_reader = fp_ret.as_reader()
     if self.CS is not None:
       self.CS.out = reader
 
-    return reader
+    return reader, frogpilot_reader
 
   @abstractmethod
   def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[bytes]]:
@@ -549,8 +548,6 @@ class CarStateBase(ABC):
     self.v_ego_kf = KF1D(x0=x0, A=A, C=C[0], K=K)
 
     # FrogPilot variables
-    self.params_memory = Params("/dev/shm/params")
-
     self.cruise_decreased = False
     self.cruise_decreased_previously = False
     self.cruise_increased = False

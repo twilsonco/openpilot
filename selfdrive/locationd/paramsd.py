@@ -135,8 +135,8 @@ def main():
 
   steer_ratio_stock = params_reader.get_float("SteerRatioStock")
   if steer_ratio_stock != CP.steerRatio:
-    params_reader.put_float("SteerRatio", CP.steerRatio)
-    params_reader.put_float("SteerRatioStock", CP.steerRatio)
+    params_reader.put_float_nonblocking("SteerRatio", CP.steerRatio)
+    params_reader.put_float_nonblocking("SteerRatioStock", CP.steerRatio)
 
   min_sr, max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
 
@@ -244,7 +244,7 @@ def main():
         0.2 <= liveParameters.stiffnessFactor <= 5.0,
         min_sr <= liveParameters.steerRatio <= max_sr,
       ))
-      if (CP.carName == "subaru" and CP.lateralTuning.which() == "torque"):
+      if CP.carFingerprint == "RAM_HD" or CP.carName == "subaru" and CP.lateralTuning.which() == "torque":
         liveParameters.valid = True
       liveParameters.steerRatioStd = float(P[States.STEER_RATIO].item())
       liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS].item())

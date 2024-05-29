@@ -18,6 +18,7 @@ private:
 
   bool metric_;
   Params params;
+  Params paramsTracking{"/persist/tracking"};
   QJsonDocument stats_;
   struct StatsLabels {
     QLabel *routes, *distance, *distance_unit, *hours;
