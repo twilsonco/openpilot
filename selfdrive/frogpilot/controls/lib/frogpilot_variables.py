@@ -149,6 +149,7 @@ class FrogPilotVariables:
     toggles.turn_desires = lateral_tune and self.params.get_bool("TurnDesires")
 
     toggles.long_pitch = openpilot_longitudinal and car_name == "gm" and self.params.get_bool("LongPitch")
+    toggles.volt_sng = car_name == "gm" and self.params.get_bool("VoltSNG")
 
     longitudinal_tune = openpilot_longitudinal and self.params.get_bool("LongitudinalTune")
     toggles.acceleration_profile = self.params.get_int("AccelerationProfile") if longitudinal_tune else 0

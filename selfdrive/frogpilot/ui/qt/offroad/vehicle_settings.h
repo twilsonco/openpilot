@@ -29,7 +29,7 @@ private:
 
   QStringList models;
 
-  std::set<QString> gmKeys = {"GasRegenCmd", "LongPitch"};
+  std::set<QString> gmKeys = {"GasRegenCmd", "LongPitch", "VoltSNG"};
   std::set<QString> subaruKeys = {"CrosstrekTorque"};
   std::set<QString> toyotaKeys = {"ClusterOffset", "ToyotaTune", "SNGHack", "ToyotaDoors"};
 
