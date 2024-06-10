@@ -449,6 +449,9 @@ class Controls:
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
 
+    # Update FrogPilot events
+    self.update_frogpilot_events(CS)
+
   def data_sample(self):
     """Receive data from sockets and update carState"""
 
@@ -913,9 +916,6 @@ class Controls:
 
     self.CS_prev = CS
 
-    # Update FrogPilot events
-    self.update_frogpilot_events(CS)
-
     # Update FrogPilot variables
     self.update_frogpilot_variables(CS)
 
@@ -1127,8 +1127,9 @@ class Controls:
         self.random_event_timer = 0
         self.params_memory.remove("CurrentRandomEvent")
 
-    signal_check = CS.vEgo >= self.frogpilot_toggles.pause_lateral_below_speed or not (CS.leftBlinker or CS.rightBlinker) or CS.standstill
-    self.speed_check = CS.vEgo >= self.frogpilot_toggles.pause_lateral_below_speed or CS.standstill or signal_check and self.frogpilot_toggles.pause_lateral_below_signal
+    self.speed_check = CS.vEgo >= self.frogpilot_toggles.pause_lateral_below_speed
+    self.speed_check |= self.frogpilot_toggles.pause_lateral_below_signal and not (CS.leftBlinker or CS.rightBlinker)
+    self.speed_check |= CS.standstill
 
     self.FPCC.trafficModeActive = self.frogpilot_toggles.traffic_mode and self.params_memory.get_bool("TrafficModeActive")
 
