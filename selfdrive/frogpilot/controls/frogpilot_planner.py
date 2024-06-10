@@ -221,6 +221,8 @@ class FrogPilotPlanner:
 
       if frogpilot_toggles.mtsc_curvature_check and self.road_curvature < 1.0 and not mtsc_active:
         self.mtsc_target = v_cruise
+      if self.mtsc_target == CRUISING_SPEED:
+        self.mtsc_target = v_cruise
     else:
       self.mtsc_target = v_cruise if v_cruise != V_CRUISE_UNSET else 0
 
@@ -250,7 +252,7 @@ class FrogPilotPlanner:
       else:
         self.overridden_speed = 0
     else:
-      self.slc_target = v_cruise if v_cruise != V_CRUISE_UNSET else 0
+      self.slc_target = v_cruise + v_ego_diff if v_cruise != V_CRUISE_UNSET else 0
 
     # Pfeiferj's Vision Turn Controller
     if frogpilot_toggles.vision_turn_controller and v_ego > CRUISING_SPEED and controlsState.enabled:
