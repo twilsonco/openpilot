@@ -1,14 +1,9 @@
-from openpilot.common.conversions import Conversions as CV
-from openpilot.common.numpy_fast import interp
 from openpilot.common.params import Params
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
 from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import MovingAverageCalculator
 from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import CITY_SPEED_LIMIT, CRUISING_SPEED, PROBABILITY
 from openpilot.selfdrive.frogpilot.controls.lib.speed_limit_controller import SpeedLimitController
-
-SLOW_DOWN_BP = [0., 10., 20., 30., 40., 50., 55., 60.]
-SLOW_DOWN_DISTANCE = [20, 30., 50., 70., 80., 90., 105., 120.]
 
 class ConditionalExperimentalMode:
   def __init__(self):
@@ -141,7 +136,7 @@ class ConditionalExperimentalMode:
   # Stop sign/stop light detection - Credit goes to the DragonPilot team!
   def stop_sign_and_light(self, lead_distance, modelData, standstill, v_ego, v_lead, frogpilot_toggles):
     lead_check = frogpilot_toggles.conditional_stop_lights_lead or not self.lead_slowing_down(lead_distance, v_ego, v_lead) or standstill
-    model_stopping = modelData.position.x[ModelConstants.IDX_N - 1] < interp(v_ego * CV.MS_TO_KPH, SLOW_DOWN_BP, SLOW_DOWN_DISTANCE)
+    model_stopping = modelData.position.x[ModelConstants.IDX_N - 1] < v_ego * ModelConstants.T_IDXS[ModelConstants.IDX_N - ModelConstants.CONFIDENCE_BUFFER_LEN]
     model_filtered = not (self.curve_detected or self.slower_lead_detected)
 
     self.stop_light_mac.add_data(lead_check and model_stopping and model_filtered)
