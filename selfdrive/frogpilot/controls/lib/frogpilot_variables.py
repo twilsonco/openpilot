@@ -87,7 +87,7 @@ class FrogPilotVariables:
     toggles.conditional_stop_lights_lead = toggles.conditional_stop_lights and self.params.get_bool("CEStopLightsLead")
 
     custom_alerts = self.params.get_bool("CustomAlerts")
-    toggles.green_light_alert = custom_alerts and self.params.get_bool("GreenLightAlert")
+    toggles.green_light_alert = False
     toggles.lead_departing_alert = custom_alerts and self.params.get_bool("LeadDepartingAlert")
     toggles.loud_blindspot_alert = custom_alerts and self.params.get_bool("LoudBlindspotAlert")
 
