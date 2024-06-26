@@ -37,12 +37,17 @@ def lr_to_df(route_name: str, lr: LogReader | MultiLogIterator):
       elif msg.which() == 'liveLocationKalman':
         m = msg.liveLocationKalman
         pitch = m.orientationNED.value[1]
+        data['roll'].append((t, m.orientationNED.value[0]))
       elif msg.which() == 'carState':
         m = msg.carState
         vEgo = m.vEgo
         aEgo = m.aEgo
         user_gas = m.gas
         user_brake = m.brake
+      elif msg.which() == 'controlsState':
+        m = msg.controlsState
+        data['lat_accel'].append((t, m.lateralControlState.torqueState.actualLateralAccel))
+        data['steer_cmd'].append((t, m.lateralControlState.torqueState.output))
   except IndexError:
     pass
 

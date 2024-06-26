@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
+import sys
+print(sys.version)
 import gc
 import os
 import re
 import bisect
 import pickle
 import datetime
-import pandas as pd
+# import pandas as pd
 import copy
 from tqdm import tqdm  # type: ignore
 import numpy as np
 from scipy.stats import describe
-from sklearn.cluster import DBSCAN
-from sklearn.mixture import GaussianMixture
-from sklearn.preprocessing import StandardScaler
-from sklearn.neighbors import LocalOutlierFactor
+# from sklearn.cluster import DBSCAN
+# from sklearn.mixture import GaussianMixture
+# from sklearn.preprocessing import StandardScaler
+# from sklearn.neighbors import LocalOutlierFactor
 from sklearn.linear_model import LinearRegression
 import math
 import random
@@ -21,18 +23,46 @@ import unicodedata
 from collections import deque, defaultdict
 from common.numpy_fast import interp
 import pyarrow.feather as feather
-import selfdrive.car.toyota.values as toyota
+# import selfdrive.car.toyota.values as toyota
 from matplotlib import pyplot as plt
 from matplotlib.cm import ScalarMappable
 from typing import List
 import time
 
-DEBUG=0 # number of segments to load. 0 for no debugging
+DEBUG=5 # number of segments to load. 0 for no debugging
 MAX_LAT_FILES = 7000
 
 DONGLE_ID_BLACKLIST = {}
 
 STEER_AND_EPS_SOURCE_CARS = ["GENESIS", "MAZDA", "SUBARU"]
+
+def align_curves(x, y1, y2, max_shift=1.0, step=0.1):
+    # Normalize the curves
+    y1_norm = (y1 - np.min(y1)) / (np.max(y1) - np.min(y1))
+    # y2_norm = (y2 - np.min(y2)) / (np.max(y2) - np.min(y2))
+
+    # Initialize variables to store the best correlation and corresponding shift
+    best_correlation = -1
+    best_shift = 0
+
+    # Iterate over possible positive shifts
+    for shift in np.arange(0, max_shift + step, step):
+        # Shift y2 to the right by the current shift value
+        y2_shifted = interp(x + shift, x, y2)
+        y2_shifted_norm = (y2_shifted - np.min(y2_shifted)) / (np.max(y2_shifted) - np.min(y2_shifted))
+
+        # Calculate the correlation between y1 and the shifted y2
+        correlation = np.corrcoef(y1_norm, y2_shifted_norm)[0, 1]
+
+        # Update the best correlation and corresponding shift if necessary
+        if correlation > best_correlation:
+            best_correlation = correlation
+            best_shift = shift
+        
+        # print update
+        print(f"Shift: {shift:.1f}, Correlation: {correlation:.2f}")
+
+    return best_shift
 
 def sanitize(filename):
     """Return a fairly safe version of the filename.
@@ -689,6 +719,7 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
         except:
           continue
         pickle_incremented = False
+        file_clean_samples = []
         for s in pk:
           eps_fp = s.car_eps_fp
           if not pickle_incremented:
@@ -699,9 +730,27 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
             continue
           if s.v_ego < 0.1 or (s.car_make in ["chrysler"] and abs(s.lateral_accel) > 0.1 and s.lateral_accel_device == 0.0):
             continue
+          file_clean_samples.append(CleanLatSample(s, pickle_file))
           tot_num_points += 1
           tot_num_points_by_eps_firmware[s.car_eps_fp] += 1
-          samples.append(CleanLatSample(s, pickle_file))
+        if len(file_clean_samples) > 0:
+          steer_cmd = [s.steer_cmd for s in file_clean_samples]
+          lateral_accel = [s.lateral_accel for s in file_clean_samples]
+          torque_eps = [s.torque_eps for s in file_clean_samples]
+          torque_driver = [s.torque_driver for s in file_clean_samples]
+          t = np.array([s.t for s in file_clean_samples])
+          # Get delta_t values for aligning variables
+          delta_t_values = [align_curves(t, np.array(lateral_accel), np.array(y)) for y in [steer_cmd, torque_eps, torque_driver]]
+          # print
+          print(f"delta_t values : steer {delta_t_values[0]}, eps {delta_t_values[1]}, driver {delta_t_values[2]}")
+          # Align the variables
+          for s in file_clean_samples:
+            cs = CleanLatSample(s, pickle_file)
+            cs.steer_cmd = interp(t + delta_t_values[0], t, steer_cmd)
+            cs.torque_eps = interp(t + delta_t_values[1], t, torque_eps)
+            cs.torque_driver = interp(t + delta_t_values[2], t, torque_driver)
+            samples.append(cs)
+          # samples.append(CleanLatSample(s, pickle_file))
         if DEBUG and i > DEBUG:
           break
         i += 1
@@ -1219,9 +1268,10 @@ def has_upper_word(text):
 
 # iterate over all directories and subdirectories in the specified path
 whitelist = [] + STEER_AND_EPS_SOURCE_CARS
+whitelist = ["VOLT"]
 blacklist = ["nissan", "ford", "mock"]
 dirlist=[]
-ignore_files_with_past_num_days = 0
+ignore_files_with_past_num_days = 3
 check_time = time.time() - ignore_files_with_past_num_days * 86400
 print_stats = True
 save_output = True
