@@ -3,18 +3,19 @@ import http.server
 import os
 import threading
 import time
+import pytest
 
 from functools import wraps
 
 import cereal.messaging as messaging
 from openpilot.common.params import Params
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.hardware import PC
 from openpilot.system.version import training_version, terms_version
 
 
 def set_params_enabled():
-  os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
+  os.environ['FINGERPRINT'] = "TOYOTA_COROLLA_TSS2"
   os.environ['LOGPRINT'] = "debug"
 
   params = Params()
@@ -32,15 +33,15 @@ def phone_only(f):
   @wraps(f)
   def wrap(self, *args, **kwargs):
     if PC:
-      self.skipTest("This test is not meant to run on PC")
-    f(self, *args, **kwargs)
+      pytest.skip("This test is not meant to run on PC")
+    return f(self, *args, **kwargs)
   return wrap
 
 def release_only(f):
   @wraps(f)
   def wrap(self, *args, **kwargs):
     if "RELEASE" not in os.environ:
-      self.skipTest("This test is only for release branches")
+      pytest.skip("This test is only for release branches")
     f(self, *args, **kwargs)
   return wrap
 
@@ -118,6 +119,18 @@ def with_http_server(func, handler=http.server.BaseHTTPRequestHandler, setup=Non
 def DirectoryHttpServer(directory) -> type[http.server.SimpleHTTPRequestHandler]:
   # creates an http server that serves files from directory
   class Handler(http.server.SimpleHTTPRequestHandler):
+    API_NO_RESPONSE = False
+    API_BAD_RESPONSE = False
+
+    def do_GET(self):
+      if self.API_NO_RESPONSE:
+        return
+
+      if self.API_BAD_RESPONSE:
+        self.send_response(500, "")
+        return
+      super().do_GET()
+
     def __init__(self, *args, **kwargs):
       super().__init__(*args, directory=str(directory), **kwargs)
 

@@ -11,7 +11,6 @@ $Cxx.namespace("cereal");
 struct FrogPilotCarControl @0x81c2f05a394cf4af {
   alwaysOnLateral @0 :Bool;
   speedLimitChanged @1 :Bool;
-  trafficModeActive @2 :Bool;
 }
 
 struct FrogPilotCarState @0xaedffd8f31e7b55d {
@@ -21,12 +20,14 @@ struct FrogPilotCarState @0xaedffd8f31e7b55d {
     }
   }
 
-  brakeLights @0 :Bool;
-  dashboardSpeedLimit @1 :Float32;
-  distanceLongPressed @2 :Bool;
-  ecoGear @3 :Bool;
-  hasCamera @4 :Bool;
-  sportGear @5 :Bool;
+  alwaysOnLateralDisabled @0 :Bool;
+  brakeLights @1 :Bool;
+  dashboardSpeedLimit @2 :Float32;
+  distanceLongPressed @3 :Bool;
+  ecoGear @4 :Bool;
+  hasMenu @5 :Bool;
+  sportGear @6 :Bool;
+  trafficModeActive @7 :Bool;
 }
 
 struct FrogPilotDeviceState @0xf35cc4560bbf6ec2 {
@@ -43,28 +44,31 @@ struct FrogPilotNavigation @0xda96579883444c35 {
 struct FrogPilotPlan @0x80ae746ee2596b11 {
   accelerationJerk @0 :Float32;
   accelerationJerkStock @1 :Float32;
-  adjustedCruise @2 :Float64;
-  conditionalExperimental @3 :Bool;
-  desiredFollowDistance @4 :Int16;
-  laneWidthLeft @5 :Float32;
-  laneWidthRight @6 :Float32;
-  leadDeparting @7 :Bool;
-  maxAcceleration @8 :Float32;
-  minAcceleration @9 :Float32;
-  redLight @10 :Bool;
-  safeObstacleDistance @11 :Int16;
-  safeObstacleDistanceStock @12 :Int16;
-  slcOverridden @13 :Bool;
-  slcOverriddenSpeed @14 :Float64;
-  slcSpeedLimit @15 :Float64;
-  slcSpeedLimitOffset @16 :Float32;
-  speedJerk @17 :Float32;
-  speedJerkStock @18 :Float32;
-  stoppedEquivalenceFactor @19 :Int16;
-  tFollow @20 :Float32;
-  unconfirmedSlcSpeedLimit @21 :Float64;
-  vCruise @22 :Float32;
-  vtscControllingCurve @23 :Bool;
+  adjustedCruise @2 :Float32;
+  conditionalExperimentalActive @3 :Bool;
+  dangerJerk @4 :Float32;
+  desiredFollowDistance @5 :Int16;
+  greenLight @6 :Bool;
+  laneWidthLeft @7 :Float32;
+  laneWidthRight @8 :Float32;
+  leadDeparting @9 :Bool;
+  maxAcceleration @10 :Float32;
+  minAcceleration @11 :Float32;
+  roadCurvature @12 :Float32;
+  safeObstacleDistance @13 :Int16;
+  safeObstacleDistanceStock @14 :Int16;
+  slcOverridden @15 :Bool;
+  slcOverriddenSpeed @16 :Float32;
+  slcSpeedLimit @17 :Float32;
+  slcSpeedLimitOffset @18 :Float32;
+  speedJerk @19 :Float32;
+  speedJerkStock @20 :Float32;
+  stoppedEquivalenceFactor @21 :Int16;
+  takingCurveQuickly @22 :Bool;
+  tFollow @23 :Float32;
+  unconfirmedSlcSpeedLimit @24 :Float32;
+  vCruise @25 :Float32;
+  vtscControllingCurve @26 :Bool;
 }
 
 struct CustomReserved5 @0xa5cd762cd951a455 {

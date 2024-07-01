@@ -35,7 +35,7 @@ class CarController(CarControllerBase):
       torque -= deadband
     return torque
 
-  def update(self, CC, CS, now_nanos, frogpilot_variables):
+  def update(self, CC, CS, now_nanos, frogpilot_toggles):
 
     torque_l = 0
     torque_r = 0
@@ -75,7 +75,7 @@ class CarController(CarControllerBase):
     can_sends = []
     can_sends.append(bodycan.create_control(self.packer, torque_l, torque_r))
 
-    new_actuators = CC.actuators.copy()
+    new_actuators = CC.actuators.as_builder()
     new_actuators.accel = torque_l
     new_actuators.steer = torque_r
     new_actuators.steerOutputCan = torque_r

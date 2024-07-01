@@ -67,7 +67,6 @@ private:
 
   // FrogPilot variables
   Params params;
-  UIScene &scene;
 
   ItemStatus cpu_status, memory_status, storage_status;
 

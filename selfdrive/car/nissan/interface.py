@@ -23,15 +23,15 @@ class CarInterface(CarInterfaceBase):
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.radarUnavailable = True
 
-    if candidate == CAR.ALTIMA:
+    if candidate == CAR.NISSAN_ALTIMA:
       # Altima has EPS on C-CAN unlike the others that have it on V-CAN
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_NISSAN_ALT_EPS_BUS
 
     return ret
 
   # returns a car.CarState
-  def _update(self, c, frogpilot_variables):
-    ret, fp_ret = self.CS.update(self.cp, self.cp_adas, self.cp_cam, frogpilot_variables)
+  def _update(self, c, frogpilot_toggles):
+    ret, fp_ret = self.CS.update(self.cp, self.cp_adas, self.cp_cam, frogpilot_toggles)
 
     ret.buttonEvents = [
       *create_button_events(self.CS.distance_button, self.CS.prev_distance_button, {1: ButtonType.gapAdjustCruise}),
@@ -46,6 +46,3 @@ class CarInterface(CarInterfaceBase):
     ret.events = events.to_msg()
 
     return ret, fp_ret
-
-  def apply(self, c, now_nanos, frogpilot_variables):
-    return self.CC.update(c, self.CS, now_nanos, frogpilot_variables)

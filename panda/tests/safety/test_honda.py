@@ -24,8 +24,6 @@ HONDA_BOSCH = 1
 #  * Nidec
 #    * normal (PCM-enable)
 #    * alt SCM messages  (PCM-enable)
-#    * gas interceptor (button-enable)
-#    * gas interceptor with alt SCM messages (button-enable)
 #  * Bosch
 #    * Bosch with Longitudinal Support
 #  * Bosch Radarless

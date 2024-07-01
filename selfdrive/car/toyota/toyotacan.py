@@ -33,7 +33,7 @@ def create_lta_steer_command(packer, steer_control_type, steer_angle, steer_req,
   return packer.make_can_msg("STEERING_LTA", 0, values)
 
 
-def create_accel_command(packer, accel, accel_raw, pcm_cancel, standstill_req, lead, acc_type, fcw_alert, distance, frogpilot_variables):
+def create_accel_command(packer, accel, accel_raw, pcm_cancel, standstill_req, lead, acc_type, fcw_alert, distance, frogpilot_toggles):
   # TODO: find the exact canceling bit that does not create a chime
   values = {
     "ACCEL_CMD": accel,  # compensated accel command
@@ -43,7 +43,7 @@ def create_accel_command(packer, accel, accel_raw, pcm_cancel, standstill_req, l
     "PERMIT_BRAKING": 1,
     "RELEASE_STANDSTILL": not standstill_req,
     "CANCEL_REQ": pcm_cancel,
-    "ALLOW_LONG_PRESS": 2 if frogpilot_variables.reverse_cruise_increase else 1,
+    "ALLOW_LONG_PRESS": 2 if frogpilot_toggles.reverse_cruise_increase else 1,
     "ACC_CUT_IN": fcw_alert,  # only shown when ACC enabled
     "ACCEL_CMD_ALT": accel_raw,  # raw accel command, pcm uses this to calculate a compensatory force
   }
@@ -80,7 +80,7 @@ def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_dep
     "LDA_ALERT": steer,
     "RIGHT_LINE": 0 if not lat_active else 3 if right_lane_depart else 1 if right_line else 2,
     "LEFT_LINE": 0 if not lat_active else 3 if left_lane_depart else 1 if left_line else 2,
-    "BARRIERS": 1 if enabled else 0,
+    "BARRIERS": 1 if lat_active else 0,
 
     # static signals
     "SET_ME_X02": 2,

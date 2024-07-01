@@ -31,11 +31,9 @@ class ThemeManager:
 
   @staticmethod
   def calculate_thanksgiving(year):
-    fourth_thursday = 4
     november_first = datetime.datetime(year, 11, 1)
     day_of_week = november_first.weekday()
-    thanksgiving = november_first + datetime.timedelta(days=((fourth_thursday - day_of_week) % 7) + 21)
-    return thanksgiving
+    return november_first + datetime.timedelta(days=(3 - day_of_week + 21) % 7 + 21)
 
   @staticmethod
   def is_within_week_of(target_date, current_date):
@@ -62,24 +60,14 @@ class ThemeManager:
     }
 
     for holiday, (date, theme_id) in holidays.items():
-      if holiday.endswith("_week"):
-        if self.is_within_week_of(date, current_date):
-          if theme_id != self.previous_theme_id:
-            update_holiday = threading.Thread(target=self.update_holiday_theme, args=(theme_id,))
-            update_holiday.start()
-          self.previous_theme_id = theme_id
-          return
-
-      elif current_date.date() == date.date():
+      if holiday.endswith("_week") and self.is_within_week_of(date, current_date) or current_date.date() == date.date():
         if theme_id != self.previous_theme_id:
-          update_holiday = threading.Thread(target=self.update_holiday_theme, args=(theme_id,))
-          update_holiday.start()
+          threading.Thread(target=self.update_holiday_theme, args=(theme_id,)).start()
         self.previous_theme_id = theme_id
         return
 
     if self.previous_theme_id != 0:
-      update_holiday = threading.Thread(target=self.update_holiday_theme, args=(0,))
-      update_holiday.start()
+      threading.Thread(target=self.update_holiday_theme, args=(0,)).start()
     self.previous_theme_id = 0
 
   def update_holiday_theme(self, theme_id):

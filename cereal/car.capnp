@@ -96,7 +96,6 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     fanMalfunction @91;
     cameraMalfunction @92;
     cameraFrameRate @110;
-    gpsMalfunction @94;
     processNotRunning @95;
     dashcamMode @96;
     controlsInitializing @98;
@@ -116,28 +115,32 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     locationdPermanentError @118;
     paramsdTemporaryError @50;
     paramsdPermanentError @119;
+    actuatorsApiUnavailable @120;
 
     # FrogPilot Events
-    accel30 @120;
-    accel35 @121;
-    accel40 @122;
-    blockUser @123;
-    firefoxSteerSaturated @124;
-    goatSteerSaturated @125;
-    greenLight @126;
-    holidayActive @127;
-    laneChangeBlockedLoud @128;
-    leadDeparting @129;
-    noLaneAvailable @130;
-    openpilotCrashed @131;
-    openpilotCrashedRandomEvents @132;
-    pedalInterceptorNoBrake @133;
-    speedLimitChanged @134;
-    torqueNNLoad @135;
-    turningLeft @136;
-    turningRight @137;
-    vCruise69 @138;
-    yourFrogTriedToKillMe @139;
+    accel30 @121;
+    accel35 @122;
+    accel40 @123;
+    blockUser @124;
+    dejaVuCurve @125;
+    firefoxSteerSaturated @126;
+    goatSteerSaturated @127;
+    greenLight @128;
+    holidayActive @129;
+    laneChangeBlockedLoud @130;
+    leadDeparting @131;
+    noLaneAvailable @132;
+    openpilotCrashed @133;
+    openpilotCrashedRandomEvents @134;
+    pedalInterceptorNoBrake @135;
+    speedLimitChanged @136;
+    torqueNNLoad @137;
+    trafficModeActive @138;
+    trafficModeInactive @139;
+    turningLeft @140;
+    turningRight @141;
+    vCruise69 @142;
+    yourFrogTriedToKillMe @143;
 
     radarCanErrorDEPRECATED @15;
     communityFeatureDisallowedDEPRECATED @62;
@@ -164,6 +167,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     noTargetDEPRECATED @25;
     brakeUnavailableDEPRECATED @2;
     plannerErrorDEPRECATED @32;
+    gpsMalfunctionDEPRECATED @94;
   }
 }
 
@@ -176,6 +180,7 @@ struct CarState {
   # CAN health
   canValid @26 :Bool;       # invalid counter/checksums
   canTimeout @40 :Bool;     # CAN bus dropped out
+  canErrorCounter @48 :UInt32;
 
   # car speed
   vEgo @1 :Float32;          # best estimate of speed
@@ -241,6 +246,9 @@ struct CarState {
   fuelGauge @41 :Float32; # battery or fuel tank level from 0.0 to 1.0
   charging @43 :Bool;
 
+  # process meta
+  cumLagMs @50 :Float32;
+
   struct WheelSpeeds {
     # optional wheel speeds
     fl @0 :Float32;
@@ -298,6 +306,7 @@ struct CarState {
   brakeLightsDEPRECATED @19 :Bool;
   steeringRateLimitedDEPRECATED @29 :Bool;
   canMonoTimesDEPRECATED @12: List(UInt64);
+  canRcvTimeoutDEPRECATED @49 :Bool;
 }
 
 # ******* radar state @ 20hz *******
@@ -431,15 +440,16 @@ struct CarControl {
 
       # Random Events
       angry @9;
-      doc @10;
-      fart @11;
-      firefox @12;
-      nessie @13;
-      noice @14;
-      uwu @15;
+      dejaVu @10;
+      doc @11;
+      fart @12;
+      firefox @13;
+      nessie @14;
+      noice @15;
+      uwu @16;
 
       # Other
-      goat @16;
+      goat @17;
     }
   }
 
@@ -467,7 +477,6 @@ struct CarParams {
 
   notCar @66 :Bool;  # flag for non-car robotics platforms
 
-  enableGasInterceptor @2 :Bool;
   pcmCruise @3 :Bool;        # is openpilot's state tied to the PCM's cruise state?
   enableDsu @5 :Bool;        # driving support unit
   enableBsm @56 :Bool;       # blind spot monitoring
@@ -519,8 +528,7 @@ struct CarParams {
   startingState @70 :Bool; # Does this car make use of special starting state
 
   steerActuatorDelay @36 :Float32; # Steering wheel actuator delay in seconds
-  longitudinalActuatorDelayLowerBound @61 :Float32; # Gas/Brake actuator delay in seconds, lower bound
-  longitudinalActuatorDelayUpperBound @58 :Float32; # Gas/Brake actuator delay in seconds, upper bound
+  longitudinalActuatorDelay @58 :Float32; # Gas/Brake actuator delay in seconds
   openpilotLongitudinalControl @37 :Bool; # is openpilot doing the longitudinal control?
   carVin @38 :Text; # VIN number queried during fingerprinting
   dashcamOnly @41: Bool;
@@ -712,6 +720,7 @@ struct CarParams {
     gateway @1;    # Integration at vehicle's CAN gateway
   }
 
+  enableGasInterceptor @2 :Bool;
   enableCameraDEPRECATED @4 :Bool;
   enableApgsDEPRECATED @6 :Bool;
   steerRateCostDEPRECATED @33 :Float32;
@@ -731,4 +740,5 @@ struct CarParams {
   brakeMaxVDEPRECATED @16 :List(Float32);
   directAccelControlDEPRECATED @30 :Bool;
   maxSteeringAngleDegDEPRECATED @54 :Float32;
+  longitudinalActuatorDelayLowerBoundDEPRECATEDDEPRECATED @61 :Float32;
 }

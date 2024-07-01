@@ -22,7 +22,7 @@ class CarState(CarStateBase):
     self.prev_distance_button = 0
     self.distance_button = 0
 
-  def update(self, cp, cp_cam, frogpilot_variables):
+  def update(self, cp, cp_cam, frogpilot_toggles):
     ret = car.CarState.new_message()
     fp_ret = custom.FrogPilotCarState.new_message()
 
@@ -58,7 +58,8 @@ class CarState(CarStateBase):
       ret.steerFaultTemporary |= cp.vl["Lane_Assist_Data3_FD1"]["LatCtlSte_D_Stat"] not in (1, 2, 3)
 
     # cruise state
-    ret.cruiseState.speed = cp.vl["EngBrakeData"]["Veh_V_DsplyCcSet"] * CV.MPH_TO_MS
+    is_metric = cp.vl["INSTRUMENT_PANEL"]["METRIC_UNITS"] == 1 if not self.CP.flags & FordFlags.CANFD else False
+    ret.cruiseState.speed = cp.vl["EngBrakeData"]["Veh_V_DsplyCcSet"] * (CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS)
     ret.cruiseState.enabled = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (4, 5)
     ret.cruiseState.available = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (3, 4, 5)
     ret.cruiseState.nonAdaptive = cp.vl["Cluster_Info1_FD1"]["AccEnbl_B_RqDrv"] == 0
@@ -107,9 +108,9 @@ class CarState(CarStateBase):
     self.acc_tja_status_stock_values = cp_cam.vl["ACCDATA_3"]
     self.lkas_status_stock_values = cp_cam.vl["IPMA_Data"]
 
-    # FrogPilot carstate functions
+    # FrogPilot CarState functions
     self.lkas_previously_enabled = self.lkas_enabled
-    self.lkas_enabled = bool(cp.vl["Steering_Data_FD1"]["TjaButtnOnOffPress"])
+    self.lkas_enabled = ret.genericToggle
 
     return ret, fp_ret
 
@@ -135,6 +136,10 @@ class CarState(CarStateBase):
     if CP.flags & FordFlags.CANFD:
       messages += [
         ("Lane_Assist_Data3_FD1", 33),
+      ]
+    else:
+      messages += [
+        ("INSTRUMENT_PANEL", 1),
       ]
 
     if CP.transmissionType == TransmissionType.automatic:

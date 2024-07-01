@@ -30,8 +30,11 @@ def plannerd_thread(frogpilot_toggles):
 
   longitudinal_planner = LongitudinalPlanner(CP)
   pm = messaging.PubMaster(['longitudinalPlan', 'uiPlan'])
-  sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2', 'frogpilotCarControl', 'frogpilotPlan'],
+  sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2', 'frogpilotCarControl', 'frogpilotCarState', 'frogpilotPlan'],
                            poll='modelV2', ignore_avg_freq=['radarState'])
+
+  # FrogPilot variables
+  update_toggles = False
 
   while True:
     sm.update()
@@ -42,7 +45,10 @@ def plannerd_thread(frogpilot_toggles):
 
     # Update FrogPilot parameters
     if FrogPilotVariables.toggles_updated:
+      update_toggles = True
+    elif update_toggles:
       FrogPilotVariables.update_frogpilot_params()
+      update_toggles = False
 
 def main():
   plannerd_thread(FrogPilotVariables.toggles)

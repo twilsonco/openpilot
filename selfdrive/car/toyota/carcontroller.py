@@ -1,8 +1,7 @@
 from cereal import car
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.params import Params
-from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, \
-                          create_gas_interceptor_command, make_can_msg
+from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, create_gas_interceptor_command, make_can_msg
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.car.toyota import toyotacan
 from openpilot.selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
@@ -28,8 +27,8 @@ MAX_LTA_ANGLE = 94.9461  # deg
 MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
 
 # Lock / unlock door commands - Credit goes to AlexandreSato!
-LOCK_CMD = b'\x40\x05\x30\x11\x00\x80\x00\x00'
-UNLOCK_CMD = b'\x40\x05\x30\x11\x00\x40\x00\x00'
+LOCK_CMD = b"\x40\x05\x30\x11\x00\x80\x00\x00"
+UNLOCK_CMD = b"\x40\x05\x30\x11\x00\x40\x00\x00"
 
 PARK = car.CarState.GearShifter.park
 
@@ -79,7 +78,7 @@ class CarController(CarControllerBase):
     self.doors_locked = False
     self.doors_unlocked = True
 
-  def update(self, CC, CS, now_nanos, frogpilot_variables):
+  def update(self, CC, CS, now_nanos, frogpilot_toggles):
     actuators = CC.actuators
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
@@ -108,14 +107,6 @@ class CarController(CarControllerBase):
       if self.frame % 2 == 0:
         # EPS uses the torque sensor angle to control with, offset to compensate
         apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
-
-        # PFEIFER - TSH {{
-        # Ignore limits while overriding, this prevents pull when releasing the wheel. This will cause messages to be
-        # blocked by panda safety, usually while the driver is overriding and limited to at most 1 message while the
-        # driver is not overriding.
-        if CS.out.steeringPressed:
-          self.last_angle = apply_angle
-        # }} PFEIFER - TSH
 
         # Angular rate limit based on speed
         apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgoRaw, self.params)
@@ -179,48 +170,30 @@ class CarController(CarControllerBase):
     else:
       accel_offset = 0.
 
+    if CC.longActive and self.frogs_go_moo_tune:
+      wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
+      gas_accel = compute_gb_toyota(actuators.accel, CS.out.vEgo) + wind_brake
+      self.pcm_accel_comp = clip(gas_accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.03, self.pcm_accel_comp + 0.03)
+
     # only calculate pcm_accel_cmd when long is active to prevent disengagement from accelerator depression
     if CC.longActive:
-      if frogpilot_variables.sport_plus:
+      if frogpilot_toggles.sport_plus:
         if self.frogs_go_moo_tune:
-          wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
-
-          gas_accel = compute_gb_toyota(actuators.accel, CS.out.vEgo) + wind_brake
-          self.pcm_accel_comp = clip(gas_accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.03, self.pcm_accel_comp + 0.03)
-          pcm_accel_cmd = gas_accel + self.pcm_accel_comp
-
-          if not CC.longActive:
-            pcm_accel_cmd = 0.0
-
-          pcm_accel_cmd = clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX_PLUS)
+          pcm_accel_cmd = clip(gas_accel + self.pcm_accel_comp, self.params.ACCEL_MIN, self.params.ACCEL_MAX_PLUS)
         else:
           pcm_accel_cmd = clip(actuators.accel + accel_offset, self.params.ACCEL_MIN, self.params.ACCEL_MAX_PLUS)
       else:
         if self.frogs_go_moo_tune:
-          wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
-
-          gas_accel = compute_gb_toyota(actuators.accel, CS.out.vEgo) + wind_brake
-          self.pcm_accel_comp = clip(gas_accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.03, self.pcm_accel_comp + 0.03)
-          pcm_accel_cmd = gas_accel + self.pcm_accel_comp
-
-          if not CC.longActive:
-            pcm_accel_cmd = 0.0
-
-          pcm_accel_cmd = clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
+          pcm_accel_cmd = clip(gas_accel + self.pcm_accel_comp, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
         else:
           pcm_accel_cmd = clip(actuators.accel + accel_offset, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
     else:
       pcm_accel_cmd = 0.
 
-    # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
-    # than CS.cruiseState.enabled. confirm they're not meaningfully different
-    if not CC.enabled and CS.pcm_acc_status:
-      pcm_cancel_cmd = 1
-
     # on entering standstill, send standstill request
-    if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor) and not frogpilot_variables.sng_hack:
+    if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor):
       self.standstill_req = True
-    if CS.pcm_acc_status != 8:
+    if CS.pcm_acc_status != 8 or frogpilot_toggles.sng_hack:
       # pcm entered standstill or it's disabled
       self.standstill_req = False
 
@@ -249,10 +222,10 @@ class CarController(CarControllerBase):
         can_sends.append(toyotacan.create_acc_cancel_command(self.packer))
       elif self.CP.openpilotLongitudinalControl:
         can_sends.append(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, accel_raw, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type, fcw_alert,
-                                                        self.distance_button, frogpilot_variables))
+                                                        self.distance_button, frogpilot_toggles))
         self.accel = pcm_accel_cmd
       else:
-        can_sends.append(toyotacan.create_accel_command(self.packer, 0, 0, pcm_cancel_cmd, False, lead, CS.acc_type, False, self.distance_button, frogpilot_variables))
+        can_sends.append(toyotacan.create_accel_command(self.packer, 0, 0, pcm_cancel_cmd, False, lead, CS.acc_type, False, self.distance_button, frogpilot_toggles))
 
     if self.frame % 2 == 0 and self.CP.enableGasInterceptor and self.CP.openpilotLongitudinalControl:
       # send exactly zero if gas cmd is zero. Interceptor will send the max between read value and gas cmd.
@@ -261,7 +234,7 @@ class CarController(CarControllerBase):
       self.gas = interceptor_gas_cmd
 
     # *** hud ui ***
-    if self.CP.carFingerprint != CAR.PRIUS_V:
+    if self.CP.carFingerprint != CAR.TOYOTA_PRIUS_V:
       # ui mesg is at 1Hz but we send asap if:
       # - there is something to display
       # - there is something to stop displaying
@@ -291,7 +264,7 @@ class CarController(CarControllerBase):
     if self.frame % 20 == 0 and self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
       can_sends.append([0x750, 0, b"\x0F\x02\x3E\x00\x00\x00\x00\x00", 0])
 
-    new_actuators = actuators.copy()
+    new_actuators = actuators.as_builder()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
     new_actuators.steerOutputCan = apply_steer
     new_actuators.steeringAngleDeg = self.last_angle
@@ -300,13 +273,13 @@ class CarController(CarControllerBase):
 
     # Lock doors when in drive / unlock doors when in park
     if self.doors_unlocked and CS.out.gearShifter != PARK:
-      if frogpilot_variables.lock_doors:
+      if frogpilot_toggles.lock_doors:
         can_sends.append(make_can_msg(0x750, LOCK_CMD, 0))
       self.doors_locked = True
       self.doors_unlocked = False
 
     elif self.doors_locked and CS.out.gearShifter == PARK:
-      if frogpilot_variables.unlock_doors:
+      if frogpilot_toggles.unlock_doors:
         can_sends.append(make_can_msg(0x750, UNLOCK_CMD, 0))
       self.doors_locked = False
       self.doors_unlocked = True

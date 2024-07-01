@@ -24,7 +24,7 @@ void Sidebar::drawMetric(QPainter &p, const QPair<QString, QString> &label, QCol
   p.drawText(rect.adjusted(22, 0, 0, 0), Qt::AlignCenter, label.first + "\n" + label.second);
 }
 
-Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(false), settings_pressed(false), scene(uiState()->scene) {
+Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(false), settings_pressed(false) {
   home_img = loadPixmap("../assets/images/button_home.png", home_btn.size());
   flag_img = loadPixmap("../assets/images/button_flag.png", home_btn.size());
   settings_img = loadPixmap("../assets/images/button_settings.png", settings_btn.size(), Qt::IgnoreAspectRatio);
@@ -40,13 +40,16 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"userFlag"});
 
   // FrogPilot variables
+  UIState *s = uiState();
+  UIScene &scene = s->scene;
+
   holidayThemeConfiguration = {
     {0, {"stock", {QColor(255, 255, 255)}}},
     {1, {"april_fools", {QColor(255, 165, 0)}}},
     {2, {"christmas", {QColor(0, 72, 255)}}},
     {3, {"cinco_de_mayo", {QColor(0, 104, 71)}}},
     {4, {"easter", {QColor(200, 150, 200)}}},
-    {5, {"fourth_of_july", {QColor(0, 72, 255)}}},
+    {5, {"fourth_of_july", {QColor(10, 49, 97)}}},
     {6, {"halloween", {QColor(255, 0, 0)}}},
     {7, {"new_years_day", {QColor(23, 134, 68)}}},
     {8, {"st_patricks_day", {QColor(0, 128, 0)}}},
@@ -89,6 +92,11 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
 }
 
 void Sidebar::mousePressEvent(QMouseEvent *event) {
+  UIState *s = uiState();
+  UIScene &scene = s->scene;
+
+  QPoint pos = event->pos();
+
   QRect cpuRect = {30, 496, 240, 126};
   QRect memoryRect = {30, 654, 240, 126};
   QRect tempRect = {30, 338, 240, 126};
@@ -97,7 +105,7 @@ void Sidebar::mousePressEvent(QMouseEvent *event) {
   static int showMemory = 0;
   static int showTemp = 0;
 
-  if (cpuRect.contains(event->pos()) && sidebarMetrics) {
+  if (cpuRect.contains(pos) && sidebarMetrics) {
     showChip = (showChip + 1) % 3;
 
     isCPU = (showChip == 1);
@@ -110,7 +118,8 @@ void Sidebar::mousePressEvent(QMouseEvent *event) {
     params.putBoolNonBlocking("ShowGPU", isGPU);
 
     update();
-  } else if (memoryRect.contains(event->pos()) && sidebarMetrics) {
+    return;
+  } else if (memoryRect.contains(pos) && sidebarMetrics) {
     showMemory = (showMemory + 1) % 4;
 
     isMemoryUsage = (showMemory == 1);
@@ -126,7 +135,8 @@ void Sidebar::mousePressEvent(QMouseEvent *event) {
     params.putBoolNonBlocking("ShowStorageUsed", isStorageUsed);
 
     update();
-  } else if (tempRect.contains(event->pos()) && sidebarMetrics) {
+    return;
+  } else if (tempRect.contains(pos) && sidebarMetrics) {
     showTemp = (showTemp + 1) % 3;
 
     scene.fahrenheit = showTemp == 2;
@@ -136,12 +146,15 @@ void Sidebar::mousePressEvent(QMouseEvent *event) {
     params.putBoolNonBlocking("NumericalTemp", showTemp != 0);
 
     update();
-  } else if (onroad && home_btn.contains(event->pos())) {
+    return;
+  } else if (onroad && home_btn.contains(pos)) {
     flag_pressed = true;
     update();
-  } else if (settings_btn.contains(event->pos())) {
+    return;
+  } else if (settings_btn.contains(pos)) {
     settings_pressed = true;
     update();
+    return;
   }
 }
 
@@ -150,7 +163,7 @@ void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
     flag_pressed = settings_pressed = false;
     update();
   }
-  if (home_btn.contains(event->pos())) {
+  if (onroad && home_btn.contains(event->pos())) {
     MessageBuilder msg;
     msg.initEvent().initUserFlag();
     pm->send("userFlag", msg);
@@ -175,6 +188,8 @@ void Sidebar::updateState(const UIState &s) {
   setProperty("netStrength", strength > 0 ? strength + 1 : 0);
 
   // FrogPilot properties
+  const UIScene &scene = s.scene;
+
   if (scene.current_holiday_theme != 0) {
     home_img = holiday_home_imgs[scene.current_holiday_theme];
     flag_img = holiday_flag_imgs[scene.current_holiday_theme];
@@ -203,7 +218,7 @@ void Sidebar::updateState(const UIState &s) {
 
   if (isCPU || isGPU) {
     auto cpu_loads = deviceState.getCpuUsagePercent();
-    int cpu_usage = std::accumulate(cpu_loads.begin(), cpu_loads.end(), 0) / cpu_loads.size();
+    int cpu_usage = cpu_loads.size() != 0 ? std::accumulate(cpu_loads.begin(), cpu_loads.end(), 0) / cpu_loads.size() : 0;
     int gpu_usage = deviceState.getGpuUsagePercent();
 
     QString cpu = QString::number(cpu_usage) + "%";

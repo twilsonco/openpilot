@@ -28,7 +28,7 @@ def get_can_messages(CP, gearbox_msg):
     ("STEER_MOTOR_TORQUE", 0),  # TODO: not on every car
   ]
 
-  if CP.carFingerprint == CAR.ODYSSEY_CHN:
+  if CP.carFingerprint == CAR.HONDA_ODYSSEY_CHN:
     messages += [
       ("SCM_FEEDBACK", 25),
       ("SCM_BUTTONS", 50),
@@ -39,7 +39,7 @@ def get_can_messages(CP, gearbox_msg):
       ("SCM_BUTTONS", 25),
     ]
 
-  if CP.carFingerprint in (CAR.CRV_HYBRID, CAR.CIVIC_BOSCH_DIESEL, CAR.ACURA_RDX_3G, CAR.HONDA_E):
+  if CP.carFingerprint in (CAR.HONDA_CRV_HYBRID, CAR.HONDA_CIVIC_BOSCH_DIESEL, CAR.ACURA_RDX_3G, CAR.HONDA_E):
     messages.append((gearbox_msg, 50))
   else:
     messages.append((gearbox_msg, 100))
@@ -47,7 +47,7 @@ def get_can_messages(CP, gearbox_msg):
   if CP.flags & HondaFlags.BOSCH_ALT_BRAKE:
     messages.append(("BRAKE_MODULE", 50))
 
-  if CP.carFingerprint in (HONDA_BOSCH | {CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN, CAR.CLARITY}):
+  if CP.carFingerprint in (HONDA_BOSCH | {CAR.HONDA_CIVIC, CAR.HONDA_CLARITY, CAR.HONDA_ODYSSEY, CAR.HONDA_ODYSSEY_CHN}):
     messages.append(("EPB_STATUS", 50))
 
   if CP.carFingerprint in HONDA_BOSCH:
@@ -58,16 +58,16 @@ def get_can_messages(CP, gearbox_msg):
         ("ACC_CONTROL", 50),
       ]
   else:  # Nidec signals
-    if CP.carFingerprint == CAR.ODYSSEY_CHN:
+    if CP.carFingerprint == CAR.HONDA_ODYSSEY_CHN:
       messages.append(("CRUISE_PARAMS", 10))
     else:
       messages.append(("CRUISE_PARAMS", 50))
 
   # TODO: clean this up
-  if CP.carFingerprint in (CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT,
-                           CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_3G):
+  if CP.carFingerprint in (CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_BOSCH_DIESEL, CAR.HONDA_CRV_HYBRID, CAR.HONDA_INSIGHT,
+                           CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.HONDA_CIVIC_2022, CAR.HONDA_HRV_3G):
     pass
-  elif CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.FREED, CAR.HRV):
+  elif CP.carFingerprint in (CAR.HONDA_ODYSSEY_CHN, CAR.HONDA_FREED, CAR.HONDA_HRV):
     pass
   else:
     messages.append(("DOORS_STATUS", 3))
@@ -78,7 +78,7 @@ def get_can_messages(CP, gearbox_msg):
 
   if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
     messages.append(("CRUISE_FAULT_STATUS", 50))
-  elif CP.carFingerprint == CAR.CLARITY:
+  elif CP.carFingerprint == CAR.HONDA_CLARITY:
     messages.append(("BRAKE_ERROR", 100)),
   elif CP.openpilotLongitudinalControl:
     messages.append(("STANDSTILL", 50))
@@ -91,7 +91,7 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.gearbox_msg = "GEARBOX"
-    if CP.carFingerprint == CAR.ACCORD and CP.transmissionType == TransmissionType.cvt:
+    if CP.carFingerprint == CAR.HONDA_ACCORD and CP.transmissionType == TransmissionType.cvt:
       self.gearbox_msg = "GEARBOX_15T"
 
     self.main_on_sig_msg = "SCM_FEEDBACK"
@@ -110,7 +110,7 @@ class CarState(CarStateBase):
     # However, on cars without a digital speedometer this is not always present (HRV, FIT, CRV 2016, ILX and RDX)
     self.dash_speed_seen = False
 
-  def update(self, cp, cp_cam, cp_body, frogpilot_variables):
+  def update(self, cp, cp_cam, cp_body, frogpilot_toggles):
     ret = car.CarState.new_message()
     fp_ret = custom.FrogPilotCarState.new_message()
 
@@ -132,10 +132,10 @@ class CarState(CarStateBase):
     # panda checks if the signal is non-zero
     ret.standstill = cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] < 1e-5
     # TODO: find a common signal across all cars
-    if self.CP.carFingerprint in (CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT,
-                                  CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_3G):
+    if self.CP.carFingerprint in (CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_BOSCH_DIESEL, CAR.HONDA_CRV_HYBRID, CAR.HONDA_INSIGHT,
+                                  CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.HONDA_CIVIC_2022, CAR.HONDA_HRV_3G):
       ret.doorOpen = bool(cp.vl["SCM_FEEDBACK"]["DRIVERS_DOOR_OPEN"])
-    elif self.CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.FREED, CAR.HRV):
+    elif self.CP.carFingerprint in (CAR.HONDA_ODYSSEY_CHN, CAR.HONDA_FREED, CAR.HONDA_HRV):
       ret.doorOpen = bool(cp.vl["SCM_BUTTONS"]["DRIVERS_DOOR_OPEN"])
     else:
       ret.doorOpen = any([cp.vl["DOORS_STATUS"]["DOOR_OPEN_FL"], cp.vl["DOORS_STATUS"]["DOOR_OPEN_FR"],
@@ -150,7 +150,7 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
       ret.accFaulted = bool(cp.vl["CRUISE_FAULT_STATUS"]["CRUISE_FAULT"])
-    elif self.CP.carFingerprint == CAR.CLARITY:
+    elif self.CP.carFingerprint == CAR.HONDA_CLARITY:
       ret.accFaulted = bool(cp.vl["BRAKE_ERROR"]["BRAKE_ERROR_1"] or cp.vl["BRAKE_ERROR"]["BRAKE_ERROR_2"])
     else:
       # On some cars, these two signals are always 1, this flag is masking a bug in release
@@ -190,7 +190,7 @@ class CarState(CarStateBase):
     ret.brakeHoldActive = cp.vl["VSA_STATUS"]["BRAKE_HOLD_ACTIVE"] == 1
 
     # TODO: set for all cars
-    if self.CP.carFingerprint in (HONDA_BOSCH | {CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN, CAR.CLARITY}):
+    if self.CP.carFingerprint in (HONDA_BOSCH | {CAR.HONDA_CIVIC, CAR.HONDA_CLARITY, CAR.HONDA_ODYSSEY, CAR.HONDA_ODYSSEY_CHN}):
       ret.parkingBrake = cp.vl["EPB_STATUS"]["EPB_STATE"] != 0
 
     gear = int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"])
@@ -246,7 +246,7 @@ class CarState(CarStateBase):
     ret.cruiseState.available = bool(cp.vl[self.main_on_sig_msg]["MAIN_ON"])
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
-    if self.CP.carFingerprint in (CAR.PILOT, CAR.RIDGELINE):
+    if self.CP.carFingerprint in (CAR.HONDA_PILOT, CAR.HONDA_RIDGELINE):
       if ret.brake > 0.1:
         ret.brakePressed = True
 
@@ -255,7 +255,7 @@ class CarState(CarStateBase):
       if self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:
         ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
     else:
-      aeb_sig = "COMPUTER_BRAKE_ALT" if self.CP.carFingerprint == CAR.CLARITY else "COMPUTER_BRAKE"
+      aeb_sig = "COMPUTER_BRAKE_ALT" if self.CP.carFingerprint == CAR.HONDA_CLARITY else "COMPUTER_BRAKE"
       ret.stockAeb = bool(cp_cam.vl["BRAKE_COMMAND"]["AEB_REQ_1"] and cp_cam.vl["BRAKE_COMMAND"][aeb_sig] > 1e-5)
 
     self.acc_hud = False
@@ -273,13 +273,11 @@ class CarState(CarStateBase):
       ret.leftBlindspot = cp_body.vl["BSM_STATUS_LEFT"]["BSM_ALERT"] == 1
       ret.rightBlindspot = cp_body.vl["BSM_STATUS_RIGHT"]["BSM_ALERT"] == 1
 
-    # FrogPilot carstate functions
-    brake_light_cars = (CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN, CAR.CRV_5G, CAR.ACCORD, CAR.CIVIC_BOSCH,
-                        CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.ACURA_RDX_3G, CAR.HONDA_E)
+    # FrogPilot CarState functions
+    brake_light_cars = (CAR.HONDA_CIVIC, CAR.HONDA_ODYSSEY, CAR.HONDA_ODYSSEY_CHN, CAR.HONDA_CRV_5G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_BOSCH,
+                        CAR.HONDA_CIVIC_BOSCH_DIESEL, CAR.HONDA_CRV_HYBRID, CAR.ACURA_RDX_3G, CAR.HONDA_E)
 
-    if self.CP.carFingerprint in brake_light_cars:
-      fp_ret.brakeLights = bool(cp.vl["ACC_CONTROL"]['BRAKE_LIGHTS'] != 0 or ret.brake > 0.4) if not self.CP.openpilotLongitudinalControl else bool(ret.brake > 0.4)
-    elif self.CP.carFingerprint in HONDA_BOSCH and self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:
+    if self.CP.carFingerprint in brake_light_cars or (self.CP.carFingerprint in HONDA_BOSCH and self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS):
       fp_ret.brakeLights = bool(cp.vl["ACC_CONTROL"]['BRAKE_LIGHTS'] != 0 or ret.brake > 0.4) if not self.CP.openpilotLongitudinalControl else bool(ret.brake > 0.4)
 
     self.prev_distance_button = self.distance_button

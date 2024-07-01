@@ -2,15 +2,12 @@ import datetime
 import http.client
 import os
 import socket
-import time
 import urllib.error
 import urllib.request
 
-import cereal.messaging as messaging
-
-from cereal import log
+from cereal import log, messaging
 from openpilot.common.params import Params
-from openpilot.common.realtime import DT_MDL, Priority, config_realtime_process
+from openpilot.common.realtime import Priority, config_realtime_process
 from openpilot.common.time import system_time_valid
 from openpilot.system.hardware import HARDWARE
 
@@ -37,9 +34,9 @@ def automatic_update_check(params):
   if update_ready:
     HARDWARE.reboot()
   elif update_available:
-    os.system("pkill -SIGHUP -f selfdrive.updated.updated")
+    os.system("pkill -SIGHUP -f system.updated.updated")
   elif update_state_idle:
-    os.system("pkill -SIGUSR1 -f selfdrive.updated.updated")
+    os.system("pkill -SIGUSR1 -f system.updated.updated")
 
 def time_checks(automatic_updates, deviceState, maps_downloaded, now, params, params_memory):
   populate_models()
@@ -70,7 +67,7 @@ def update_maps(maps_downloaded, now, params, params_memory):
     return
 
   if params.get("OSMDownloadProgress") is None:
-    params_memory.put("OSMDownloadLocations", params.get("MapsSelected"))
+    params_memory.put("OSMDownloadLocations", maps_selected)
     params.put("LastMapsUpdate", todays_date)
 
 def frogpilot_thread(frogpilot_toggles):
@@ -83,64 +80,58 @@ def frogpilot_thread(frogpilot_toggles):
   frogpilot_planner = FrogPilotPlanner()
   theme_manager = ThemeManager()
 
-  current_day = None
-
-  first_run = True
   maps_downloaded = os.path.exists('/data/media/0/osm/offline') or params.get("MapsSelected") is None
-  model_list_empty = params.get("AvailableModelsNames", encoding='utf-8') is None
   time_validated = system_time_valid()
+  update_toggles = False
 
   pm = messaging.PubMaster(['frogpilotPlan'])
   sm = messaging.SubMaster(['carState', 'controlsState', 'deviceState', 'frogpilotCarControl', 'frogpilotCarState', 'frogpilotNavigation',
-                            'frogpilotPlan', 'liveLocationKalman', 'longitudinalPlan', 'modelV2', 'radarState'],
+                            'frogpilotPlan', 'longitudinalPlan', 'modelV2', 'radarState'],
                             poll='modelV2', ignore_avg_freq=['radarState'])
 
   while True:
     sm.update()
 
     now = datetime.datetime.now()
-
     deviceState = sm['deviceState']
     started = deviceState.started
 
     if started and sm.updated['modelV2']:
       frogpilot_planner.update(sm['carState'], sm['controlsState'], sm['frogpilotCarControl'], sm['frogpilotCarState'],
-                               sm['frogpilotNavigation'], sm['liveLocationKalman'], sm['modelV2'], sm['radarState'], frogpilot_toggles)
+                               sm['frogpilotNavigation'], sm['modelV2'], sm['radarState'], frogpilot_toggles)
       frogpilot_planner.publish(sm, pm, frogpilot_toggles)
 
     if params_memory.get("ModelToDownload", encoding='utf-8') is not None:
       download_model()
 
     if FrogPilotVariables.toggles_updated:
+      update_toggles = True
+    elif update_toggles:
       FrogPilotVariables.update_frogpilot_params(started)
 
       if not frogpilot_toggles.model_selector:
         params.put("Model", DEFAULT_MODEL)
         params.put("ModelName", DEFAULT_MODEL_NAME)
 
-      if not started and time_validated:
+      if time_validated and not started:
         frogpilot_functions.backup_toggles()
 
-    if not time_validated:
-      time_validated = system_time_valid()
+      update_toggles = False
+
+    if now.second == 0 or not time_validated:
+      if not started:
+        if github_pinged():
+          time_checks(frogpilot_toggles.automatic_updates, deviceState, maps_downloaded, now, params, params_memory)
+
+        if not maps_downloaded:
+          maps_downloaded = os.path.exists('/data/media/0/osm/offline') or params.get("OSMDownloadProgress") is not None or params.get("MapsSelected") is None
+
       if not time_validated:
-        continue
-
-    if now.second == 0 or first_run or params_memory.get_bool("ManualUpdateInitiated"):
-      if (not started or not maps_downloaded) and github_pinged():
-        time_checks(frogpilot_toggles.automatic_updates, deviceState, maps_downloaded, now, params, params_memory)
-        maps_downloaded = os.path.exists('/data/media/0/osm/offline') or params.get("OSMDownloadProgress") is not None or params.get("MapsSelected") is None
-        model_list_empty = params.get("AvailableModelsNames", encoding='utf-8') is None
-
-      if now.day != current_day:
-        params.remove("FingerprintLogged")
-        current_day = now.day
+        time_validated = system_time_valid()
+        if not time_validated:
+          continue
 
       theme_manager.update_holiday()
-
-    first_run = False
-
-    time.sleep(DT_MDL)
 
 def main():
   frogpilot_thread(FrogPilotVariables.toggles)

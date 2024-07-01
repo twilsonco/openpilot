@@ -245,6 +245,10 @@ void OffroadHome::hideEvent(QHideEvent *event) {
 void OffroadHome::refresh() {
   QString model = QString::fromStdString(params.get("ModelName"));
 
+  if (model.contains("(Default)")) {
+    model = model.remove("(Default)").trimmed();
+  }
+
   date->setText(QLocale(uiState()->language.mid(5)).toString(QDateTime::currentDateTime(), "dddd, MMMM d"));
   version->setText(getBrand() + " v" + getVersion().left(14).trimmed() + " - " + model);
 

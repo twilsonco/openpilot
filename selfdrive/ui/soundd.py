@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import os
 import time
 import wave
 
@@ -44,6 +43,7 @@ sound_list: dict[int, tuple[str, int | None, float]] = {
 
   # Random Events
   AudibleAlert.angry: ("angry.wav", 1, MAX_VOLUME),
+  AudibleAlert.dejaVu: ("dejaVu.wav", 1, MAX_VOLUME),
   AudibleAlert.doc: ("doc.wav", 1, MAX_VOLUME),
   AudibleAlert.fart: ("fart.wav", 1, MAX_VOLUME),
   AudibleAlert.firefox: ("firefox.wav", 1, MAX_VOLUME),
@@ -83,6 +83,7 @@ class Soundd:
 
     self.random_events_map = {
       AudibleAlert.angry: MAX_VOLUME,
+      AudibleAlert.dejaVu: MAX_VOLUME,
       AudibleAlert.doc: MAX_VOLUME,
       AudibleAlert.fart: MAX_VOLUME,
       AudibleAlert.firefox: MAX_VOLUME,
@@ -91,6 +92,8 @@ class Soundd:
       AudibleAlert.noice: MAX_VOLUME,
       AudibleAlert.uwu: MAX_VOLUME,
     }
+
+    self.update_toggles = False
 
     self.update_frogpilot_sounds()
 
@@ -206,8 +209,11 @@ class Soundd:
 
         # Update FrogPilot parameters
         if FrogPilotVariables.toggles_updated:
+          self.update_toggles = True
+        elif self.update_toggles:
           FrogPilotVariables.update_frogpilot_params()
           self.update_frogpilot_sounds()
+          self.update_toggles = False
 
   def update_frogpilot_sounds(self):
     self.volume_map = {

@@ -29,9 +29,11 @@ private:
 
   QStringList models;
 
-  std::set<QString> gmKeys = {"GasRegenCmd", "LongPitch", "VoltSNG"};
+  QMap<QString, QString> carModels;
+
+  std::set<QString> gmKeys = {"LongPitch", "VoltSNG"};
   std::set<QString> subaruKeys = {"CrosstrekTorque"};
-  std::set<QString> toyotaKeys = {"ClusterOffset", "ToyotaTune", "SNGHack", "ToyotaDoors"};
+  std::set<QString> toyotaKeys = {"ClusterOffset", "SNGHack", "ToyotaDoors", "ToyotaTune"};
 
   std::map<std::string, AbstractControl*> toggles;
 
@@ -40,7 +42,7 @@ private:
   bool hasExperimentalOpenpilotLongitudinal;
   bool hasOpenpilotLongitudinal;
   bool hasSNG;
-  bool isGMTruck;
+  bool isGMPCMCruise;
   bool isImpreza;
   bool started;
 };

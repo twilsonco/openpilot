@@ -6,6 +6,7 @@ LaneChangeState = log.LaneChangeState
 LaneChangeDirection = log.LaneChangeDirection
 TurnDirection = log.Desire
 
+LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
 
 DESIRES = {
@@ -48,7 +49,7 @@ class DesireHelper:
     # FrogPilot variables
     self.lane_change_completed = False
 
-    self.lane_change_wait_timer = 0
+    self.lane_change_wait_timer = 0.0
 
     self.turn_direction = TurnDirection.none
 
@@ -67,7 +68,7 @@ class DesireHelper:
       self.lane_change_state = LaneChangeState.off
       self.lane_change_direction = LaneChangeDirection.none
       self.turn_direction = TurnDirection.none
-    elif one_blinker and below_lane_change_speed and frogpilot_toggles.turn_desires:
+    elif one_blinker and below_lane_change_speed and not carstate.standstill and frogpilot_toggles.turn_desires:
       self.lane_change_state = LaneChangeState.off
       self.lane_change_direction = LaneChangeDirection.none
       self.turn_direction = TurnDirection.turnLeft if carstate.leftBlinker else TurnDirection.turnRight
@@ -78,7 +79,7 @@ class DesireHelper:
       if self.lane_change_state == LaneChangeState.off and one_blinker and not self.prev_one_blinker and not below_lane_change_speed:
         self.lane_change_state = LaneChangeState.preLaneChange
         self.lane_change_ll_prob = 1.0
-        self.lane_change_wait_timer = 0
+        self.lane_change_wait_timer = 0.0
 
       # LaneChangeState.preLaneChange
       elif self.lane_change_state == LaneChangeState.preLaneChange:
@@ -100,13 +101,13 @@ class DesireHelper:
         blindspot_detected = ((carstate.leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
                               (carstate.rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
 
-        if not one_blinker or below_lane_change_speed:
+        if not one_blinker or below_lane_change_speed or self.lane_change_completed:
           self.lane_change_state = LaneChangeState.off
           self.lane_change_direction = LaneChangeDirection.none
-        elif torque_applied and not blindspot_detected and lane_available and not self.lane_change_completed and self.lane_change_wait_timer >= frogpilot_toggles.lane_change_delay:
+        elif torque_applied and not blindspot_detected and lane_available and self.lane_change_wait_timer >= frogpilot_toggles.lane_change_delay:
           self.lane_change_state = LaneChangeState.laneChangeStarting
-          self.lane_change_completed = True if frogpilot_toggles.one_lane_change else False
-          self.lane_change_wait_timer = 0
+          self.lane_change_completed = frogpilot_toggles.one_lane_change
+          self.lane_change_wait_timer = 0.0
 
       # LaneChangeState.laneChangeStarting
       elif self.lane_change_state == LaneChangeState.laneChangeStarting:

@@ -5,11 +5,11 @@ import tomllib
 from abc import abstractmethod, ABC
 from difflib import SequenceMatcher
 from enum import StrEnum
-from json import load
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, NamedTuple
 from collections.abc import Callable
+from functools import cache
 
-from cereal import car
+from cereal import car, custom
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
@@ -23,6 +23,7 @@ from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 
 ButtonType = car.CarState.ButtonEvent.Type
+FrogPilotButtonType = custom.FrogPilotCarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
 
@@ -33,12 +34,27 @@ ACCEL_MIN = -3.5
 FRICTION_THRESHOLD = 0.3
 
 NEURAL_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/neural_ff_weights.json')
+TORQUE_NN_MODEL_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/lat_models')
 TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/params.toml')
 TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override.toml')
 TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.toml')
-TORQUE_NN_MODEL_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/lat_models')
 
-def similarity(s1:str, s2:str) -> float:
+# dict used to rename activation functions whose names aren't valid python identifiers
+ACTIVATION_FUNCTION_NAMES = {'σ': 'sigmoid'}
+
+GEAR_SHIFTER_MAP: dict[str, car.CarState.GearShifter] = {
+  'P': GearShifter.park, 'PARK': GearShifter.park,
+  'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,
+  'N': GearShifter.neutral, 'NEUTRAL': GearShifter.neutral,
+  'E': GearShifter.eco, 'ECO': GearShifter.eco,
+  'T': GearShifter.manumatic, 'MANUAL': GearShifter.manumatic,
+  'D': GearShifter.drive, 'DRIVE': GearShifter.drive,
+  'S': GearShifter.sport, 'SPORT': GearShifter.sport,
+  'L': GearShifter.low, 'LOW': GearShifter.low,
+  'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
+}
+
+def similarity(s1: str, s2: str) -> float:
   return SequenceMatcher(None, s1, s2).ratio()
 
 class LatControlInputs(NamedTuple):
@@ -51,43 +67,47 @@ class LatControlInputs(NamedTuple):
 TorqueFromLateralAccelCallbackType = Callable[[LatControlInputs, car.CarParams.LateralTorqueTuning, float, float, bool, bool], float]
 
 
-def get_torque_params(candidate):
+@cache
+def get_torque_params():
   with open(TORQUE_SUBSTITUTE_PATH, 'rb') as f:
     sub = tomllib.load(f)
-  if candidate in sub:
-    candidate = sub[candidate]
-
   with open(TORQUE_PARAMS_PATH, 'rb') as f:
     params = tomllib.load(f)
   with open(TORQUE_OVERRIDE_PATH, 'rb') as f:
     override = tomllib.load(f)
 
-  # Ensure no overlap
-  if sum([candidate in x for x in [sub, params, override]]) > 1:
-    raise RuntimeError(f'{candidate} is defined twice in torque config')
+  torque_params = {}
+  for candidate in (sub.keys() | params.keys() | override.keys()) - {'legend'}:
+    if sum([candidate in x for x in [sub, params, override]]) > 1:
+      raise RuntimeError(f'{candidate} is defined twice in torque config')
 
-  if candidate in override:
-    out = override[candidate]
-  elif candidate in params:
-    out = params[candidate]
-  else:
-    raise NotImplementedError(f"Did not find torque params for {candidate}")
-  return {key: out[i] for i, key in enumerate(params['legend'])}
+    sub_candidate = sub.get(candidate, candidate)
 
+    if sub_candidate in override:
+      out = override[sub_candidate]
+    elif sub_candidate in params:
+      out = params[sub_candidate]
+    else:
+      raise NotImplementedError(f"Did not find torque params for {sub_candidate}")
+
+    torque_params[sub_candidate] = {key: out[i] for i, key in enumerate(params['legend'])}
+    if candidate in sub:
+      torque_params[candidate] = torque_params[sub_candidate]
+
+  return torque_params
 
 # Twilsonco's Lateral Neural Network Feedforward
 class FluxModel:
-  # dict used to rename activation functions whose names aren't valid python identifiers
-  activation_function_names = {'σ': 'sigmoid'}
   def __init__(self, params_file, zero_bias=False):
     with open(params_file, "r") as f:
-      params = load(f)
+      params = json.load(f)
 
     self.input_size = params["input_size"]
     self.output_size = params["output_size"]
     self.input_mean = np.array(params["input_mean"], dtype=np.float32).T
     self.input_std = np.array(params["input_std"], dtype=np.float32).T
     self.layers = []
+    self.friction_override = False
 
     for layer_params in params["layers"]:
       W = np.array(layer_params[next(key for key in layer_params.keys() if key.endswith('_W'))], dtype=np.float32).T
@@ -95,7 +115,7 @@ class FluxModel:
       if zero_bias:
         b = np.zeros_like(b)
       activation = layer_params["activation"]
-      for k, v in self.activation_function_names.items():
+      for k, v in ACTIVATION_FUNCTION_NAMES.items():
         activation = activation.replace(k, v)
       self.layers.append((W, b, activation))
 
@@ -104,10 +124,12 @@ class FluxModel:
 
   # Begin activation functions.
   # These are called by name using the keys in the model json file
-  def sigmoid(self, x):
+  @staticmethod
+  def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
-  def identity(self, x):
+  @staticmethod
+  def identity(x):
     return x
   # End activation functions
 
@@ -144,12 +166,12 @@ class FluxModel:
     y = self.evaluate([10.0, 0.0, 0.2])
     self.friction_override = (y < 0.1)
 
-def get_nn_model_path(car, eps_firmware) -> Tuple[Union[str, None, float]]:
+def get_nn_model_path(car, eps_firmware) -> tuple[str | None, float]:
   def check_nn_path(check_model):
     model_path = None
     max_similarity = -1.0
     for f in os.listdir(TORQUE_NN_MODEL_PATH):
-      if f.endswith(".json") and car in f:
+      if f.endswith(".json"):
         model = f.replace(".json", "").replace(f"{TORQUE_NN_MODEL_PATH}/", "")
         similarity_score = similarity(model, check_model)
         if similarity_score > max_similarity:
@@ -163,18 +185,18 @@ def get_nn_model_path(car, eps_firmware) -> Tuple[Union[str, None, float]]:
   else:
     check_model = car
   model_path, max_similarity = check_nn_path(check_model)
-  if max_similarity < 0.9:
+  if car not in model_path or 0.0 <= max_similarity < 0.9:
     check_model = car
     model_path, max_similarity = check_nn_path(check_model)
-    if max_similarity < 0.9:
+    if car not in model_path or 0.0 <= max_similarity < 0.9:
       model_path = None
-  return model_path, max_similarity
+  return model_path
 
-def get_nn_model(car, eps_firmware) -> Tuple[Union[FluxModel, None, float]]:
-  model, similarity_score = get_nn_model_path(car, eps_firmware)
+def get_nn_model(car, eps_firmware) -> tuple[FluxModel | None, float]:
+  model = get_nn_model_path(car, eps_firmware)
   if model is not None:
     model = FluxModel(model)
-  return model, similarity_score
+  return model
 
 # generic car and radar interfaces
 
@@ -182,7 +204,6 @@ class CarInterfaceBase(ABC):
   def __init__(self, CP, CarController, CarState):
     self.CP = CP
     self.VM = VehicleModel(CP)
-    eps_firmware = str(next((fw.fwVersion for fw in CP.carFw if fw.ecu == "eps"), ""))
 
     self.frame = 0
     self.steering_unpressed = 0
@@ -191,37 +212,38 @@ class CarInterfaceBase(ABC):
     self.silent_steer_warning = True
     self.v_ego_cluster_seen = False
 
-    self.CS = None
-    self.can_parsers = []
-    if CarState is not None:
-      self.CS = CarState(CP)
+    self.CS = CarState(CP)
+    self.cp = self.CS.get_can_parser(CP)
+    self.cp_cam = self.CS.get_cam_can_parser(CP)
+    self.cp_adas = self.CS.get_adas_can_parser(CP)
+    self.cp_body = self.CS.get_body_can_parser(CP)
+    self.cp_loopback = self.CS.get_loopback_can_parser(CP)
+    self.can_parsers = [self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback]
 
-      self.cp = self.CS.get_can_parser(CP)
-      self.cp_cam = self.CS.get_cam_can_parser(CP)
-      self.cp_adas = self.CS.get_adas_can_parser(CP)
-      self.cp_body = self.CS.get_body_can_parser(CP)
-      self.cp_loopback = self.CS.get_loopback_can_parser(CP)
-      self.can_parsers = [self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback]
-
-    self.CC = None
-    if CarController is not None:
-      self.CC = CarController(self.cp.dbc_name, CP, self.VM)
+    dbc_name = "" if self.cp is None else self.cp.dbc_name
+    self.CC: CarControllerBase = CarController(dbc_name, CP, self.VM)
 
     # FrogPilot variables
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
 
-    lateral_tune = self.params.get_bool("LateralTune")
-    nnff_supported = self.initialize_lat_torque_nn(CP.carFingerprint, eps_firmware)
-    use_comma_nnff = self.check_comma_nn_ff_support(CP.carFingerprint)
-    self.use_nnff = not use_comma_nnff and nnff_supported and lateral_tune and self.params.get_bool("NNFF")
-    self.use_nnff_lite = not use_comma_nnff and not self.use_nnff and lateral_tune and self.params.get_bool("NNFFLite")
+    eps_firmware = str(next((fw.fwVersion for fw in CP.carFw if fw.ecu == "eps"), ""))
 
+    comma_nnff_supported = self.check_comma_nn_ff_support(CP.carFingerprint)
+    nnff_supported = self.initialize_lat_torque_nn(CP.carFingerprint, eps_firmware)
+
+    lateral_tune = self.params.get_bool("LateralTune")
+    self.use_nnff = not comma_nnff_supported and nnff_supported and lateral_tune and self.params.get_bool("NNFF")
+    self.use_nnff_lite = not self.use_nnff and lateral_tune and self.params.get_bool("NNFFLite")
+
+    self.always_on_lateral_disabled = False
     self.belowSteerSpeed_shown = False
     self.disable_belowSteerSpeed = False
     self.disable_resumeRequired = False
+    self.is_gm = self.CP.carName == "gm"
     self.prev_distance_button = False
     self.resumeRequired_shown = False
+    self.traffic_mode_active = False
     self.traffic_mode_changed = False
 
     self.gap_counter = 0
@@ -234,14 +256,16 @@ class CarInterfaceBase(ABC):
       data = json.load(file)
     return car in data
 
+  def initialize_lat_torque_nn(self, car, eps_firmware) -> bool:
+    self.lat_torque_nn_model = get_nn_model(car, eps_firmware)
+    return self.lat_torque_nn_model is not None
 
-  def initialize_lat_torque_nn(self, car, eps_firmware):
-    self.lat_torque_nn_model, _ = get_nn_model(car, eps_firmware)
-    return (self.lat_torque_nn_model is not None)
+  def apply(self, c: car.CarControl, now_nanos: int, frogpilot_toggles) -> tuple[car.CarControl.Actuators, list[tuple[int, int, bytes, int]]]:
+    return self.CC.update(c, self.CS, now_nanos, frogpilot_toggles)
 
   @staticmethod
-  def get_pid_accel_limits(CP, current_speed, cruise_speed, frogpilot_variables):
-    if frogpilot_variables.sport_plus:
+  def get_pid_accel_limits(CP, current_speed, cruise_speed, frogpilot_toggles):
+    if frogpilot_toggles.sport_plus:
       return ACCEL_MIN, ACCEL_MAX_PLUS
     else:
       return ACCEL_MIN, ACCEL_MAX
@@ -254,7 +278,7 @@ class CarInterfaceBase(ABC):
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False, False)
 
   @classmethod
-  def get_params(cls, params, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[car.CarParams.CarFw], disable_openpilot_long: bool, experimental_long: bool, docs: bool):
+  def get_params(cls, params: Params, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[car.CarParams.CarFw], disable_openpilot_long: bool, experimental_long: bool, docs: bool):
     ret = CarInterfaceBase.get_std_params(candidate)
 
     platform = PLATFORMS[candidate]
@@ -273,9 +297,9 @@ class CarInterfaceBase(ABC):
     if ret.steerControlType != car.CarParams.SteerControlType.angle and params.get_bool("LateralTune") and params.get_bool("NNFF"):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       eps_firmware = str(next((fw.fwVersion for fw in car_fw if fw.ecu == "eps"), ""))
-      model, similarity_score = get_nn_model_path(candidate, eps_firmware)
+      model = get_nn_model_path(candidate, eps_firmware)
       if model is not None:
-        params.put("NNFFModelName", candidate)
+        params.put("NNFFModelName", candidate.replace("_", " "))
 
     # Vehicle mass is published curb weight plus assumed payload such as a human driver; notCars have no assumed payload
     if not ret.notCar:
@@ -321,7 +345,7 @@ class CarInterfaceBase(ABC):
     ret.carFingerprint = candidate
 
     # Car docs fields
-    ret.maxLateralAccel = get_torque_params(candidate)['MAX_LAT_ACCEL_MEASURED']
+    ret.maxLateralAccel = get_torque_params()[candidate]['MAX_LAT_ACCEL_MEASURED']
     ret.autoResumeSng = True  # describes whether car can resume from a stop automatically
 
     # standard ALC params
@@ -339,22 +363,19 @@ class CarInterfaceBase(ABC):
     ret.vEgoStopping = 0.5
     ret.vEgoStarting = 0.5
     ret.stoppingControl = True
-    ret.longitudinalTuning.deadzoneBP = [0.]
-    ret.longitudinalTuning.deadzoneV = [0.]
     ret.longitudinalTuning.kf = 1.
     ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [1.]
+    ret.longitudinalTuning.kpV = [0.]
     ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [1.]
+    ret.longitudinalTuning.kiV = [0.]
     # TODO estimate car specific lag, use .15s for now
-    ret.longitudinalActuatorDelayLowerBound = 0.15
-    ret.longitudinalActuatorDelayUpperBound = 0.15
+    ret.longitudinalActuatorDelay = 0.15
     ret.steerLimitTimer = 1.0
     return ret
 
   @staticmethod
   def configure_torque_tune(candidate, tune, steering_angle_deadzone_deg=0.0, use_steering_angle=True):
-    params = get_torque_params(candidate)
+    params = get_torque_params()[candidate]
 
     tune.init('torque')
     tune.torque.useSteeringAngle = use_steering_angle
@@ -370,14 +391,14 @@ class CarInterfaceBase(ABC):
   def _update(self, c: car.CarControl) -> car.CarState:
     pass
 
-  def update(self, c: car.CarControl, can_strings: list[bytes], frogpilot_variables) -> car.CarState:
+  def update(self, c: car.CarControl, can_strings: list[bytes], frogpilot_toggles) -> car.CarState:
     # parse can
     for cp in self.can_parsers:
       if cp is not None:
         cp.update_strings(can_strings)
 
     # get CarState
-    ret, fp_ret = self._update(c, frogpilot_variables)
+    ret, fp_ret = self._update(c, frogpilot_toggles)
 
     ret.canValid = all(cp.can_valid for cp in self.can_parsers if cp is not None)
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
@@ -396,22 +417,21 @@ class CarInterfaceBase(ABC):
     if ret.cruiseState.speedCluster == 0:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
 
-    if self.CP.carName != "mock":
-      distance_button = self.CS.distance_button or self.params_memory.get_bool("OnroadDistanceButtonPressed")
-      fp_ret.distanceLongPressed = self.frogpilot_distance_functions(distance_button, self.prev_distance_button, frogpilot_variables)
-      self.prev_distance_button = distance_button
+    # Add any additional frogpilotCarStates
+    fp_ret.alwaysOnLateralDisabled = self.always_on_lateral_disabled
+    distance_button = self.CS.distance_button or self.params_memory.get_bool("OnroadDistanceButtonPressed")
+    fp_ret.distanceLongPressed = self.frogpilot_distance_functions(distance_button, self.prev_distance_button, frogpilot_toggles)
+    fp_ret.ecoGear |= ret.gearShifter == GearShifter.eco
+    fp_ret.sportGear |= ret.gearShifter == GearShifter.sport
+    fp_ret.trafficModeActive = frogpilot_toggles.traffic_mode and self.traffic_mode_active
+    self.prev_distance_button = distance_button
 
     # copy back for next iteration
-    reader = ret.as_reader()
-    frogpilot_reader = fp_ret.as_reader()
     if self.CS is not None:
-      self.CS.out = reader
+      self.CS.out = ret.as_reader()
 
-    return reader, frogpilot_reader
+    return ret, fp_ret
 
-  @abstractmethod
-  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[bytes]]:
-    pass
 
   def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True,
                            enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):
@@ -446,6 +466,10 @@ class CarInterfaceBase(ABC):
       events.add(EventName.accFaulted)
     if cs_out.steeringPressed:
       events.add(EventName.steerOverride)
+    if cs_out.brakePressed and cs_out.standstill:
+      events.add(EventName.preEnableStandstill)
+    if cs_out.gasPressed:
+      events.add(EventName.gasPressedOverride)
 
     # Handle button presses
     for b in cs_out.buttonEvents:
@@ -455,6 +479,10 @@ class CarInterfaceBase(ABC):
       # Disable on rising and falling edge of cancel for both stock and OP long
       if b.type == ButtonType.cancel:
         events.add(EventName.buttonCancel)
+
+      # FrogPilot button presses
+      if b.type == FrogPilotButtonType.lkas:
+        self.always_on_lateral_disabled = not self.always_on_lateral_disabled
 
     # Handle permanent and temporary steering faults
     self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
@@ -486,14 +514,14 @@ class CarInterfaceBase(ABC):
 
     return events
 
-  def frogpilot_distance_functions(self, distance_button, prev_distance_button, frogpilot_variables):
+  def frogpilot_distance_functions(self, distance_button, prev_distance_button, frogpilot_toggles):
     if distance_button:
       self.gap_counter += 1
     elif not prev_distance_button:
       self.gap_counter = 0
 
-    if self.gap_counter == CRUISE_LONG_PRESS * 1.5 and frogpilot_variables.experimental_mode_via_distance or self.traffic_mode_changed:
-      if frogpilot_variables.conditional_experimental_mode:
+    if self.gap_counter == CRUISE_LONG_PRESS * (1.5 if self.is_gm else 1) and frogpilot_toggles.experimental_mode_via_distance or self.traffic_mode_changed:
+      if frogpilot_toggles.conditional_experimental_mode:
         conditional_status = self.params_memory.get_int("CEStatus")
         override_value = 0 if conditional_status in {1, 2, 3, 4, 5, 6} else 1 if conditional_status >= 7 else 2
         self.params_memory.put_int("CEStatus", override_value)
@@ -502,10 +530,9 @@ class CarInterfaceBase(ABC):
         self.params.put_bool("ExperimentalMode", not experimental_mode)
       self.traffic_mode_changed = False
 
-    if self.gap_counter == CRUISE_LONG_PRESS * 5 and frogpilot_variables.traffic_mode:
-      traffic_mode = self.params_memory.get_bool("TrafficModeActive")
-      self.params_memory.put_bool("TrafficModeActive", not traffic_mode)
-      self.traffic_mode_changed = frogpilot_variables.experimental_mode_via_distance
+    if self.gap_counter == CRUISE_LONG_PRESS * 5 and frogpilot_toggles.traffic_mode:
+      self.traffic_mode_active = not self.traffic_mode_active
+      self.traffic_mode_changed = frogpilot_toggles.experimental_mode_via_distance
 
     return self.gap_counter >= CRUISE_LONG_PRESS
 
@@ -616,19 +643,11 @@ class CarStateBase(ABC):
   def parse_gear_shifter(gear: str | None) -> car.CarState.GearShifter:
     if gear is None:
       return GearShifter.unknown
+    return GEAR_SHIFTER_MAP.get(gear.upper(), GearShifter.unknown)
 
-    d: dict[str, car.CarState.GearShifter] = {
-      'P': GearShifter.park, 'PARK': GearShifter.park,
-      'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,
-      'N': GearShifter.neutral, 'NEUTRAL': GearShifter.neutral,
-      'E': GearShifter.eco, 'ECO': GearShifter.eco,
-      'T': GearShifter.manumatic, 'MANUAL': GearShifter.manumatic,
-      'D': GearShifter.drive, 'DRIVE': GearShifter.drive,
-      'S': GearShifter.sport, 'SPORT': GearShifter.sport,
-      'L': GearShifter.low, 'LOW': GearShifter.low,
-      'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
-    }
-    return d.get(gear.upper(), GearShifter.unknown)
+  @staticmethod
+  def get_can_parser(CP):
+    return None
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -651,8 +670,11 @@ SendCan = tuple[int, int, bytes, int]
 
 
 class CarControllerBase(ABC):
+  def __init__(self, dbc_name: str, CP, VM):
+    pass
+
   @abstractmethod
-  def update(self, CC, CS, now_nanos) -> tuple[car.CarControl.Actuators, list[SendCan]]:
+  def update(self, CC: car.CarControl.Actuators, CS: car.CarState, now_nanos: int) -> tuple[car.CarControl.Actuators, list[SendCan]]:
     pass
 
 

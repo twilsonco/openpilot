@@ -32,9 +32,9 @@ class CarState(CarStateBase):
 
     return button_events
 
-  def update(self, pt_cp, cam_cp, ext_cp, trans_type, frogpilot_variables):
+  def update(self, pt_cp, cam_cp, ext_cp, trans_type, frogpilot_toggles):
     if self.CP.flags & VolkswagenFlags.PQ:
-      return self.update_pq(pt_cp, cam_cp, ext_cp, trans_type, frogpilot_variables)
+      return self.update_pq(pt_cp, cam_cp, ext_cp, trans_type, frogpilot_toggles)
 
     ret = car.CarState.new_message()
     fp_ret = custom.FrogPilotCarState.new_message()
@@ -115,21 +115,24 @@ class CarState(CarStateBase):
 
     # Update ACC radar status.
     self.acc_type = ext_cp.vl["ACC_06"]["ACC_Typ"]
-    if pt_cp.vl["TSK_06"]["TSK_Status"] == 2:
-      # ACC okay and enabled, but not currently engaged
-      ret.cruiseState.available = True
-      ret.cruiseState.enabled = False
-    elif pt_cp.vl["TSK_06"]["TSK_Status"] in (3, 4, 5):
-      # ACC okay and enabled, currently regulating speed (3) or driver accel override (4) or brake only (5)
-      ret.cruiseState.available = True
-      ret.cruiseState.enabled = True
+
+    # ACC okay but disabled (1), ACC ready (2), a radar visibility or other fault/disruption (6 or 7)
+    # currently regulating speed (3), driver accel override (4), brake only (5)
+    ret.cruiseState.available = pt_cp.vl["TSK_06"]["TSK_Status"] in (2, 3, 4, 5)
+    ret.cruiseState.enabled = pt_cp.vl["TSK_06"]["TSK_Status"] in (3, 4, 5)
+
+    if self.CP.pcmCruise:
+      # Cruise Control mode; check for distance UI setting from the radar.
+      # ECM does not manage this, so do not need to check for openpilot longitudinal
+      ret.cruiseState.nonAdaptive = ext_cp.vl["ACC_02"]["ACC_Gesetzte_Zeitluecke"] == 0
     else:
-      # ACC okay but disabled (1), or a radar visibility or other fault/disruption (6 or 7)
-      ret.cruiseState.available = False
-      ret.cruiseState.enabled = False
+      # Speed limiter mode; ECM faults if we command ACC while not pcmCruise
+      ret.cruiseState.nonAdaptive = bool(pt_cp.vl["TSK_06"]["TSK_Limiter_ausgewaehlt"])
+
+    ret.accFaulted = pt_cp.vl["TSK_06"]["TSK_Status"] in (6, 7)
+
     self.esp_hold_confirmation = bool(pt_cp.vl["ESP_21"]["ESP_Haltebestaetigung"])
     ret.cruiseState.standstill = self.CP.pcmCruise and self.esp_hold_confirmation
-    ret.accFaulted = pt_cp.vl["TSK_06"]["TSK_Status"] in (6, 7)
 
     # Update ACC setpoint. When the setpoint is zero or there's an error, the
     # radar sends a set-speed of ~90.69 m/s / 203mph.
@@ -150,14 +153,16 @@ class CarState(CarStateBase):
     # Digital instrument clusters expect the ACC HUD lead car distance to be scaled differently
     self.upscale_lead_car_signal = bool(pt_cp.vl["Kombi_03"]["KBI_Variante"])
 
-    self.frame += 1
-
-    # FrogPilot carstate functions
+    # FrogPilot CarState functions
     fp_ret.brakeLights = bool(pt_cp.vl["ESP_05"]['ESP_Status_Bremsdruck'])
 
+    self.prev_distance_button = self.distance_button
+    self.distance_button = bool(pt_cp.vl["GRA_ACC_01"]["GRA_Verstellung_Zeitluecke"])
+
+    self.frame += 1
     return ret, fp_ret
 
-  def update_pq(self, pt_cp, cam_cp, ext_cp, trans_type, frogpilot_variables):
+  def update_pq(self, pt_cp, cam_cp, ext_cp, trans_type, frogpilot_toggles):
     ret = car.CarState.new_message()
     fp_ret = custom.FrogPilotCarState.new_message()
     # Update vehicle speed and acceleration from ABS wheel speeds.
@@ -254,11 +259,13 @@ class CarState(CarStateBase):
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = bool(pt_cp.vl["Bremse_1"]["ESP_Passiv_getastet"])
 
-    self.frame += 1
-
-    # FrogPilot carstate functions
+    # FrogPilot CarState functions
     fp_ret.brakeLights = bool(pt_cp.vl["Motor_2"]['Bremstestschalter'])
 
+    self.prev_distance_button = self.distance_button
+    self.distance_button = bool(pt_cp.vl["GRA_Neu"]["GRA_Zeitluecke"])
+
+    self.frame += 1
     return ret, fp_ret
 
   def update_hca_state(self, hca_status):
@@ -266,7 +273,7 @@ class CarState(CarStateBase):
     # DISABLED means the EPS hasn't been configured to support Lane Assist
     self.eps_init_complete = self.eps_init_complete or (hca_status in ("DISABLED", "READY", "ACTIVE") or self.frame > 600)
     perm_fault = hca_status == "DISABLED" or (self.eps_init_complete and hca_status in ("INITIALIZING", "FAULT"))
-    temp_fault = hca_status == "REJECTED" or not self.eps_init_complete
+    temp_fault = hca_status in ("REJECTED", "PREEMPTED") or not self.eps_init_complete
     return temp_fault, perm_fault
 
   @staticmethod

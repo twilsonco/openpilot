@@ -1,3 +1,4 @@
 # teleoprtc
 
-Set of abstractions for webRTC communication with the comma three.
+Set of abstractions for webRTC communication with [openpilot](https://github.com/commaai/openpilot).
+

@@ -6,7 +6,7 @@ from cereal import log
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.numpy_fast import interp
 from openpilot.selfdrive.car.interfaces import LatControlInputs
-from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, apply_deadzone
+from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.selfdrive.controls.lib.pid import PIDController
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
@@ -134,6 +134,7 @@ class LatControlTorque(LatControl):
     else:
       actual_curvature_vm = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
       roll_compensation = params.roll * ACCELERATION_DUE_TO_GRAVITY
+      actual_lateral_jerk = 0.0
       if self.use_steering_angle:
         actual_curvature = actual_curvature_vm
         curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
@@ -144,7 +145,6 @@ class LatControlTorque(LatControl):
         actual_curvature_llk = llk.angularVelocityCalibrated.value[2] / CS.vEgo
         actual_curvature = interp(CS.vEgo, [2.0, 5.0], [actual_curvature_vm, actual_curvature_llk])
         curvature_deadzone = 0.0
-        actual_lateral_jerk = 0.0
       desired_lateral_accel = desired_curvature * CS.vEgo ** 2
 
       # desired rate is the desired rate of change in the setpoint, not the absolute desired curvature
@@ -158,33 +158,30 @@ class LatControlTorque(LatControl):
 
       lateral_jerk_setpoint = 0
       lateral_jerk_measurement = 0
-
-      if self.use_nnff or self.use_nnff_lite:
-        # prepare "look-ahead" desired lateral jerk
-        lat_accel_friction_factor = self.lat_accel_friction_factor
-        if len(model_data.acceleration.y) == ModelConstants.IDX_N:
-          lookahead = interp(CS.vEgo, self.friction_look_ahead_bp, self.friction_look_ahead_v)
-          friction_upper_idx = next((i for i, val in enumerate(ModelConstants.T_IDXS) if val > lookahead), 16)
-          predicted_lateral_jerk = get_predicted_lateral_jerk(model_data.acceleration.y, self.t_diffs)
-          desired_lateral_jerk = (interp(self.desired_lat_jerk_time, ModelConstants.T_IDXS, model_data.acceleration.y) - actual_lateral_accel) / self.desired_lat_jerk_time
-          lookahead_lateral_jerk = get_lookahead_value(predicted_lateral_jerk[LAT_PLAN_MIN_IDX:friction_upper_idx], desired_lateral_jerk)
-          if self.use_steering_angle or lookahead_lateral_jerk == 0.0:
-            lookahead_lateral_jerk = 0.0
-            actual_lateral_jerk = 0.0
-            lat_accel_friction_factor = 1.0
-          lateral_jerk_setpoint = self.lat_jerk_friction_factor * lookahead_lateral_jerk
-          lateral_jerk_measurement = self.lat_jerk_friction_factor * actual_lateral_jerk
-        else:
-          lateral_jerk_setpoint = 0.0
-          lateral_jerk_measurement = 0.0
-          lookahead_lateral_jerk = 0.0
+      lookahead_lateral_jerk = 0
 
       model_good = model_data is not None and len(model_data.orientation.x) >= CONTROL_N
+      if model_good and (self.use_nnff or self.use_nnff_lite):
+        # prepare "look-ahead" desired lateral jerk
+        lookahead = interp(CS.vEgo, self.friction_look_ahead_bp, self.friction_look_ahead_v)
+        friction_upper_idx = next((i for i, val in enumerate(ModelConstants.T_IDXS) if val > lookahead), 16)
+        predicted_lateral_jerk = get_predicted_lateral_jerk(model_data.acceleration.y, self.t_diffs)
+        desired_lateral_jerk = (interp(self.desired_lat_jerk_time, ModelConstants.T_IDXS, model_data.acceleration.y) - desired_lateral_accel) / self.desired_lat_jerk_time
+        lookahead_lateral_jerk = get_lookahead_value(predicted_lateral_jerk[LAT_PLAN_MIN_IDX:friction_upper_idx], desired_lateral_jerk)
+        if self.use_steering_angle or lookahead_lateral_jerk == 0.0:
+          lookahead_lateral_jerk = 0.0
+          actual_lateral_jerk = 0.0
+          self.lat_accel_friction_factor = 1.0
+        lateral_jerk_setpoint = self.lat_jerk_friction_factor * lookahead_lateral_jerk
+        lateral_jerk_measurement = self.lat_jerk_friction_factor * actual_lateral_jerk
+
       if self.use_nnff and model_good:
         # update past data
+        pitch = 0
         roll = params.roll
-        pitch = self.pitch.update(llk.calibratedOrientationNED.value[1]) if len(llk.calibratedOrientationNED.value) > 1 else 0.0
-        roll = roll_pitch_adjust(roll, pitch)
+        if len(llk.calibratedOrientationNED.value) > 1:
+          pitch = self.pitch.update(llk.calibratedOrientationNED.value[1])
+          roll = roll_pitch_adjust(roll, pitch)
         self.roll_deque.append(roll)
         self.lateral_accel_desired_deque.append(desired_lateral_accel)
 
@@ -202,18 +199,25 @@ class LatControlTorque(LatControl):
                               + past_rolls + future_rolls
         # past lateral accel error shouldn't count, so use past desired like the setpoint input
         nnff_measurement_input = [CS.vEgo, measurement, lateral_jerk_measurement, roll] \
-                              + [measurement] * self.past_future_len \
-                              + past_rolls + future_rolls
+                                 + [measurement] * self.past_future_len \
+                                 + past_rolls + future_rolls
         torque_from_setpoint = self.torque_from_nn(nnff_setpoint_input)
         torque_from_measurement = self.torque_from_nn(nnff_measurement_input)
+
         pid_log.error = torque_from_setpoint - torque_from_measurement
+        error_blend_factor = interp(abs(desired_lateral_accel), [1.0, 2.0], [0.0, 1.0])
+        if error_blend_factor > 0.0:  # blend in stronger error response when in high lat accel
+          nnff_error_input = [CS.vEgo, setpoint - measurement, lateral_jerk_setpoint - lateral_jerk_measurement, 0.0]
+          torque_from_error = self.torque_from_nn(nnff_error_input)
+          if sign(pid_log.error) == sign(torque_from_error) and abs(pid_log.error) < abs(torque_from_error):
+            pid_log.error = pid_log.error * (1.0 - error_blend_factor) + torque_from_error * error_blend_factor
 
         # compute feedforward (same as nn setpoint output)
         error = setpoint - measurement
-        friction_input = lat_accel_friction_factor * error + self.lat_jerk_friction_factor * lookahead_lateral_jerk
+        friction_input = self.lat_accel_friction_factor * error + self.lat_jerk_friction_factor * lookahead_lateral_jerk
         nn_input = [CS.vEgo, desired_lateral_accel, friction_input, roll] \
-                              + past_lateral_accels_desired + future_planned_lateral_accels \
-                              + past_rolls + future_rolls
+                   + past_lateral_accels_desired + future_planned_lateral_accels \
+                   + past_rolls + future_rolls
         ff = self.torque_from_nn(nn_input)
 
         # apply friction override for cars with low NN friction response
@@ -230,7 +234,7 @@ class LatControlTorque(LatControl):
         pid_log.error = torque_from_setpoint - torque_from_measurement
         error = desired_lateral_accel - actual_lateral_accel
         if self.use_nnff_lite:
-          friction_input = lat_accel_friction_factor * error + self.lat_jerk_friction_factor * lookahead_lateral_jerk
+          friction_input = self.lat_accel_friction_factor * error + self.lat_jerk_friction_factor * lookahead_lateral_jerk
         else:
           friction_input = error
         ff = self.torque_from_lateral_accel(LatControlInputs(gravity_adjusted_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,

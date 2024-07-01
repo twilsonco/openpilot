@@ -24,9 +24,9 @@ class CarControllerParams:
       self.STEER_MAX = 1000
       self.STEER_DELTA_UP = 40
       self.STEER_DELTA_DOWN = 40
-    elif CP.carFingerprint == CAR.IMPREZA_2020:
+    elif CP.carFingerprint == CAR.SUBARU_IMPREZA_2020:
       self.STEER_MAX = 1439
-    elif CP.carFingerprint == CAR.IMPREZA and Params().get_bool("CrosstrekTorque"):
+    elif CP.carFingerprint == CAR.SUBARU_IMPREZA and Params().get_bool("CrosstrekTorque"):
       self.STEER_MAX = 3071
     else:
       self.STEER_MAX = 2047
@@ -41,7 +41,7 @@ class CarControllerParams:
   BRAKE_MAX = 600                # about -3.5m/s2 from testing
 
   RPM_MIN = 0
-  RPM_MAX = 2400
+  RPM_MAX = 3600
 
   RPM_INACTIVE = 600             # a good base rpm for zero acceleration
 
@@ -123,23 +123,19 @@ class SubaruGen2PlatformConfig(SubaruPlatformConfig):
 
 class CAR(Platforms):
   # Global platform
-  ASCENT = SubaruPlatformConfig(
-    "SUBARU ASCENT LIMITED 2019",
+  SUBARU_ASCENT = SubaruPlatformConfig(
     [SubaruCarDocs("Subaru Ascent 2019-21", "All")],
     CarSpecs(mass=2031, wheelbase=2.89, steerRatio=13.5),
   )
-  OUTBACK = SubaruGen2PlatformConfig(
-    "SUBARU OUTBACK 6TH GEN",
+  SUBARU_OUTBACK = SubaruGen2PlatformConfig(
     [SubaruCarDocs("Subaru Outback 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b]))],
     CarSpecs(mass=1568, wheelbase=2.67, steerRatio=17),
   )
-  LEGACY = SubaruGen2PlatformConfig(
-    "SUBARU LEGACY 7TH GEN",
+  SUBARU_LEGACY = SubaruGen2PlatformConfig(
     [SubaruCarDocs("Subaru Legacy 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b]))],
-    OUTBACK.specs,
+    SUBARU_OUTBACK.specs,
   )
-  IMPREZA = SubaruPlatformConfig(
-    "SUBARU IMPREZA LIMITED 2019",
+  SUBARU_IMPREZA = SubaruPlatformConfig(
     [
       SubaruCarDocs("Subaru Impreza 2017-19"),
       SubaruCarDocs("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
@@ -147,8 +143,7 @@ class CAR(Platforms):
     ],
     CarSpecs(mass=1568, wheelbase=2.67, steerRatio=15),
   )
-  IMPREZA_2020 = SubaruPlatformConfig(
-    "SUBARU IMPREZA SPORT 2020",
+  SUBARU_IMPREZA_2020 = SubaruPlatformConfig(
     [
       SubaruCarDocs("Subaru Impreza 2020-22"),
       SubaruCarDocs("Subaru Crosstrek 2020-23"),
@@ -158,75 +153,65 @@ class CAR(Platforms):
     flags=SubaruFlags.STEER_RATE_LIMITED,
   )
   # TODO: is there an XV and Impreza too?
-  CROSSTREK_HYBRID = SubaruPlatformConfig(
-    "SUBARU CROSSTREK HYBRID 2020",
+  SUBARU_CROSSTREK_HYBRID = SubaruPlatformConfig(
     [SubaruCarDocs("Subaru Crosstrek Hybrid 2020", car_parts=CarParts.common([CarHarness.subaru_b]))],
     CarSpecs(mass=1668, wheelbase=2.67, steerRatio=17),
     flags=SubaruFlags.HYBRID,
   )
-  FORESTER = SubaruPlatformConfig(
-    "SUBARU FORESTER 2019",
+  SUBARU_FORESTER = SubaruPlatformConfig(
     [SubaruCarDocs("Subaru Forester 2019-21", "All")],
     CarSpecs(mass=1568, wheelbase=2.67, steerRatio=17),
     flags=SubaruFlags.STEER_RATE_LIMITED,
   )
-  FORESTER_HYBRID = SubaruPlatformConfig(
-    "SUBARU FORESTER HYBRID 2020",
+  SUBARU_FORESTER_HYBRID = SubaruPlatformConfig(
     [SubaruCarDocs("Subaru Forester Hybrid 2020")],
-    FORESTER.specs,
+    SUBARU_FORESTER.specs,
     flags=SubaruFlags.HYBRID,
   )
   # Pre-global
-  FORESTER_PREGLOBAL = SubaruPlatformConfig(
-    "SUBARU FORESTER 2017 - 2018",
+  SUBARU_FORESTER_PREGLOBAL = SubaruPlatformConfig(
     [SubaruCarDocs("Subaru Forester 2017-18")],
     CarSpecs(mass=1568, wheelbase=2.67, steerRatio=20),
     dbc_dict('subaru_forester_2017_generated', None),
     flags=SubaruFlags.PREGLOBAL,
   )
-  LEGACY_PREGLOBAL = SubaruPlatformConfig(
-    "SUBARU LEGACY 2015 - 2018",
+  SUBARU_LEGACY_PREGLOBAL = SubaruPlatformConfig(
     [SubaruCarDocs("Subaru Legacy 2015-18")],
     CarSpecs(mass=1568, wheelbase=2.67, steerRatio=12.5),
     dbc_dict('subaru_outback_2015_generated', None),
     flags=SubaruFlags.PREGLOBAL,
   )
-  OUTBACK_PREGLOBAL = SubaruPlatformConfig(
-    "SUBARU OUTBACK 2015 - 2017",
+  SUBARU_OUTBACK_PREGLOBAL = SubaruPlatformConfig(
     [SubaruCarDocs("Subaru Outback 2015-17")],
-    FORESTER_PREGLOBAL.specs,
+    SUBARU_FORESTER_PREGLOBAL.specs,
     dbc_dict('subaru_outback_2015_generated', None),
     flags=SubaruFlags.PREGLOBAL,
   )
-  OUTBACK_PREGLOBAL_2018 = SubaruPlatformConfig(
-    "SUBARU OUTBACK 2018 - 2019",
+  SUBARU_OUTBACK_PREGLOBAL_2018 = SubaruPlatformConfig(
     [SubaruCarDocs("Subaru Outback 2018-19")],
-    FORESTER_PREGLOBAL.specs,
+    SUBARU_FORESTER_PREGLOBAL.specs,
     dbc_dict('subaru_outback_2019_generated', None),
     flags=SubaruFlags.PREGLOBAL,
   )
   # Angle LKAS
-  FORESTER_2022 = SubaruPlatformConfig(
-    "SUBARU FORESTER 2022",
+  SUBARU_FORESTER_2022 = SubaruPlatformConfig(
     [SubaruCarDocs("Subaru Forester 2022-24", "All", car_parts=CarParts.common([CarHarness.subaru_c]))],
-    FORESTER.specs,
+    SUBARU_FORESTER.specs,
     flags=SubaruFlags.LKAS_ANGLE,
   )
-  OUTBACK_2023 = SubaruGen2PlatformConfig(
-    "SUBARU OUTBACK 7TH GEN",
+  SUBARU_OUTBACK_2023 = SubaruGen2PlatformConfig(
     [SubaruCarDocs("Subaru Outback 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d]))],
-    OUTBACK.specs,
+    SUBARU_OUTBACK.specs,
     flags=SubaruFlags.LKAS_ANGLE,
   )
-  ASCENT_2023 = SubaruGen2PlatformConfig(
-    "SUBARU ASCENT 2023",
+  SUBARU_ASCENT_2023 = SubaruGen2PlatformConfig(
     [SubaruCarDocs("Subaru Ascent 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d]))],
-    ASCENT.specs,
+    SUBARU_ASCENT.specs,
     flags=SubaruFlags.LKAS_ANGLE,
   )
 
 
-PREGLOBAL_CARS = {CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018}
+PREGLOBAL_CARS = {CAR.SUBARU_FORESTER_PREGLOBAL, CAR.SUBARU_LEGACY_PREGLOBAL, CAR.SUBARU_OUTBACK_PREGLOBAL, CAR.SUBARU_OUTBACK_PREGLOBAL_2018}
 
 SUBARU_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
@@ -293,6 +278,3 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 DBC = CAR.create_dbc_map()
-
-if __name__ == "__main__":
-  CAR.print_debug(SubaruFlags)

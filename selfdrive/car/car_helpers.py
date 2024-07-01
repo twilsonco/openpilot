@@ -5,8 +5,6 @@ from collections.abc import Callable
 
 from cereal import car
 from openpilot.common.params import Params
-from openpilot.common.basedir import BASEDIR
-from openpilot.system.version import get_short_branch, is_comma_remote, is_tested_branch
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
@@ -14,16 +12,21 @@ from openpilot.selfdrive.car.fw_versions import get_fw_versions_ordered, get_pre
 from openpilot.selfdrive.car.mock.values import CAR as MOCK
 from openpilot.common.swaglog import cloudlog
 import cereal.messaging as messaging
-import openpilot.selfdrive.sentry as sentry
+import openpilot.system.sentry as sentry
 from openpilot.selfdrive.car import gen_empty_fingerprint
+from openpilot.system.version import get_build_metadata
 
 FRAME_FINGERPRINT = 100  # 1s
 
 EventName = car.CarEvent.EventName
 
 
-def get_startup_event(car_recognized, controller_available, fw_seen):
-  if is_comma_remote() and is_tested_branch():
+def get_startup_event(car_recognized, controller_available, fw_seen, block_user):
+  if block_user:
+    return EventName.blockUser
+
+  build_metadata = get_build_metadata()
+  if build_metadata.openpilot.comma_remote and build_metadata.tested_channel:
     event = EventName.startup
   else:
     event = EventName.startupMaster
@@ -50,17 +53,8 @@ def load_interfaces(brand_names):
   for brand_name in brand_names:
     path = f'openpilot.selfdrive.car.{brand_name}'
     CarInterface = __import__(path + '.interface', fromlist=['CarInterface']).CarInterface
-
-    if os.path.exists(BASEDIR + '/' + path.replace('.', '/') + '/carstate.py'):
-      CarState = __import__(path + '.carstate', fromlist=['CarState']).CarState
-    else:
-      CarState = None
-
-    if os.path.exists(BASEDIR + '/' + path.replace('.', '/') + '/carcontroller.py'):
-      CarController = __import__(path + '.carcontroller', fromlist=['CarController']).CarController
-    else:
-      CarController = None
-
+    CarState = __import__(path + '.carstate', fromlist=['CarState']).CarState
+    CarController = __import__(path + '.carcontroller', fromlist=['CarController']).CarController
     for model_name in brand_names[brand_name]:
       ret[model_name] = (CarInterface, CarController, CarState)
   return ret
@@ -150,10 +144,10 @@ def fingerprint(logcan, sendcan, num_pandas):
       # VIN query only reliably works through OBDII
       vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (0, 1))
       ecu_rx_addrs = get_present_ecus(logcan, sendcan, num_pandas=num_pandas)
-      car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, num_pandas=num_pandas)
+      car_fw = get_fw_versions_ordered(logcan, sendcan, vin, ecu_rx_addrs, num_pandas=num_pandas)
       cached = False
 
-    exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
+    exact_fw_match, fw_candidates = match_fw_to_car(car_fw, vin)
   else:
     vin_rx_addr, vin_rx_bus, vin = -1, -1, VIN_UNKNOWN
     exact_fw_match, fw_candidates, car_fw = True, set(), []
@@ -202,7 +196,6 @@ def get_car_interface(CP):
 
 
 def get_car(params, logcan, sendcan, disable_openpilot_long, experimental_long_allowed, num_pandas=1):
-  car_brand = params.get("CarMake", encoding='utf-8')
   car_model = params.get("CarModel", encoding='utf-8')
 
   force_fingerprint = params.get_bool("ForceFingerprint")
@@ -214,15 +207,13 @@ def get_car(params, logcan, sendcan, disable_openpilot_long, experimental_long_a
       candidate = car_model
     else:
       cloudlog.event("car doesn't match any fingerprints", fingerprints=repr(fingerprints), error=True)
-      candidate = "mock"
-
-  if car_model is None and candidate != "mock":
-    params.put("CarMake", candidate.split(' ')[0].title())
+      candidate = "MOCK"
+  else:
+    params.put("CarMake", candidate.split('_')[0].title())
     params.put("CarModel", candidate)
 
-  if get_short_branch() == "FrogPilot-Development" and not Params("/persist/params").get_bool("FrogsGoMoo"):
-    cloudlog.event("Blocked user from using the 'FrogPilot-Development' branch", fingerprints=repr(fingerprints), error=True)
-    candidate = "mock"
+  if get_build_metadata().channel == "FrogPilot-Development" and params.get("DongleId").decode('utf-8') != "FrogsGoMoo":
+    candidate = "MOCK"
     fingerprint_log = threading.Thread(target=sentry.capture_fingerprint, args=(candidate, params, True,))
     fingerprint_log.start()
   elif not params.get_bool("FingerprintLogged"):

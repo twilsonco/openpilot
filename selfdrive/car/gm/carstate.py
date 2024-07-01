@@ -5,7 +5,7 @@ from openpilot.common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import CarStateBase
-from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD, GMFlags, CAMERA_ACC_CAR, CC_ONLY_CAR, SDGM_CAR
+from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD, GMFlags, CC_ONLY_CAR, CAMERA_ACC_CAR, SDGM_CAR
 
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
@@ -30,10 +30,10 @@ class CarState(CarStateBase):
     self.prev_distance_button = 0
     self.distance_button = 0
 
-    # FrogPilot variables
     self.single_pedal_mode = False
+    self.pedal_steady = 0.
 
-  def update(self, pt_cp, cam_cp, loopback_cp, frogpilot_variables):
+  def update(self, pt_cp, cam_cp, loopback_cp, frogpilot_toggles):
     ret = car.CarState.new_message()
     fp_ret = custom.FrogPilotCarState.new_message()
 
@@ -146,7 +146,6 @@ class CarState(CarStateBase):
 
     ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
-    self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
     if self.CP.networkLocation == NetworkLocation.fwdCamera and not self.CP.flags & GMFlags.NO_CAMERA.value:
       if self.CP.carFingerprint not in CC_ONLY_CAR:
         ret.cruiseState.speed = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] * CV.KPH_TO_MS
@@ -170,16 +169,18 @@ class CarState(CarStateBase):
         ret.leftBlindspot = cam_cp.vl["BCMBlindSpotMonitor"]["LeftBSM"] == 1
         ret.rightBlindspot = cam_cp.vl["BCMBlindSpotMonitor"]["RightBSM"] == 1
 
-    # FrogPilot carstate functions
-    fp_ret.hasCamera = not (self.CP.flags & GMFlags.NO_CAMERA.value) and self.CP.carFingerprint not in CC_ONLY_CAR
-
-    fp_ret.sportGear = pt_cp.vl["SportMode"]["SportMode"] == 1
+    # FrogPilot CarState functions
+    fp_ret.hasMenu = not (self.CP.flags & GMFlags.NO_CAMERA.value or self.CP.carFingerprint in CC_ONLY_CAR)
 
     self.lkas_previously_enabled = self.lkas_enabled
     if self.CP.carFingerprint in SDGM_CAR:
       self.lkas_enabled = cam_cp.vl["ASCMSteeringButton"]["LKAButton"]
     else:
       self.lkas_enabled = pt_cp.vl["ASCMSteeringButton"]["LKAButton"]
+
+    self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
+
+    fp_ret.sportGear = pt_cp.vl["SportMode"]["SportMode"] == 1
 
     return ret, fp_ret
 

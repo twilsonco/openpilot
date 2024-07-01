@@ -6,8 +6,8 @@ from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
-EventName = car.CarEvent.EventName
 FrogPilotButtonType = custom.FrogPilotCarState.ButtonEvent.Type
+EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
 
@@ -24,7 +24,7 @@ class CarInterface(CarInterfaceBase):
 
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    if candidate not in (CAR.CX5_2022, ):
+    if candidate not in (CAR.MAZDA_CX5_2022, ):
       ret.minSteerSpeed = LKAS_LIMITS.DISABLE_SPEED * CV.KPH_TO_MS
 
     ret.centerToFront = ret.wheelbase * 0.41
@@ -32,8 +32,8 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def _update(self, c, frogpilot_variables):
-    ret, fp_ret = self.CS.update(self.cp, self.cp_cam, frogpilot_variables)
+  def _update(self, c, frogpilot_toggles):
+    ret, fp_ret = self.CS.update(self.cp, self.cp_cam, frogpilot_toggles)
 
      # TODO: add button types for inc and dec
     ret.buttonEvents = [
@@ -52,6 +52,3 @@ class CarInterface(CarInterfaceBase):
     ret.events = events.to_msg()
 
     return ret, fp_ret
-
-  def apply(self, c, now_nanos, frogpilot_variables):
-    return self.CC.update(c, self.CS, now_nanos, frogpilot_variables)

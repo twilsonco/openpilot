@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import asyncio
+import sys
 import unittest
 
 from aiortc.mediastreams import AudioStreamTrack, VideoStreamTrack
@@ -9,6 +10,36 @@ from parameterized import parameterized
 from teleoprtc.builder import WebRTCOfferBuilder, WebRTCAnswerBuilder
 from teleoprtc.stream import StreamingOffer
 from teleoprtc.info import parse_info_from_offer
+
+
+if sys.version_info >= (3, 11):
+  timeout = asyncio.timeout
+else:
+  class Timeout:
+    def __init__(self, delay: float):
+      self._delay = delay
+      self._task = None
+      self._timeout_handle = None
+
+    def _timeout(self):
+      if self._task:
+        self._task.cancel()
+
+    async def __aenter__(self):
+      self._task = asyncio.current_task()
+      loop = asyncio.events.get_running_loop()
+      self._timeout_handle = loop.call_later(self._delay, self._timeout)
+      return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+      if self._timeout_handle:
+        self._timeout_handle.cancel()
+      if exc_type is asyncio.CancelledError and self._task and self._task.cancelled():
+        raise asyncio.TimeoutError from exc
+      return False
+
+  def timeout(delay):
+    return Timeout(delay)
 
 
 class SimpleAnswerProvider:
@@ -57,7 +88,7 @@ class TestStreamIntegration(unittest.IsolatedAsyncioTestCase):
     self.assertTrue(stream.is_started)
 
     try:
-      async with asyncio.timeout(2):
+      async with timeout(2):
         await stream.wait_for_connection()
     except TimeoutError:
       self.fail("Timed out waiting for connection")
@@ -77,7 +108,7 @@ class TestStreamIntegration(unittest.IsolatedAsyncioTestCase):
       self.assertEqual(track.kind, "audio")
       # test audio recv
       try:
-        async with asyncio.timeout(1):
+        async with timeout(1):
           await track.recv()
       except TimeoutError:
         self.fail("Timed out waiting for audio frame")
@@ -91,7 +122,7 @@ class TestStreamIntegration(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(track.kind, "video")
         # test video recv
         try:
-          async with asyncio.timeout(1):
+          async with timeout(1):
             await stream.get_incoming_video_track(cam, False).recv()
         except TimeoutError:
           self.fail("Timed out waiting for video frame")

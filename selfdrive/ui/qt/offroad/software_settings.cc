@@ -6,7 +6,6 @@
 
 #include <QDebug>
 #include <QLabel>
-#include <QProcess>
 
 #include "common/params.h"
 #include "common/util.h"
@@ -18,10 +17,10 @@
 
 
 void SoftwarePanel::checkForUpdates() {
-  std::system("pkill -SIGUSR1 -f selfdrive.updated.updated");
+  std::system("pkill -SIGUSR1 -f system.updated.updated");
 }
 
-SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent), scene(uiState()->scene) {
+SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   onroadLbl = new QLabel(tr("Updates are only downloaded while the car is off or in park."));
   onroadLbl->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left; padding-top: 30px; padding-bottom: 30px;");
   addItem(onroadLbl);
@@ -43,7 +42,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent), scene(uiStat
     if (downloadBtn->text() == tr("CHECK")) {
       checkForUpdates();
     } else {
-      std::system("pkill -SIGHUP -f selfdrive.updated.updated");
+      std::system("pkill -SIGHUP -f system.updated.updated");
     }
     paramsMemory.putBool("ManualUpdateInitiated", true);
   });
@@ -62,7 +61,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent), scene(uiStat
   connect(targetBranchBtn, &ButtonControl::clicked, [=]() {
     auto current = params.get("GitBranch");
     QStringList branches = QString::fromStdString(params.get("UpdaterAvailableBranches")).split(",");
-    if (!Params("/persist/params").getBool("FrogsGoMoo")) {
+    if (getDongleId().value_or("") != "FrogsGoMoo") {
       branches.removeAll("FrogPilot-Development");
       branches.removeAll("FrogPilot-New");
       branches.removeAll("MAKE-PRS-HERE");
@@ -125,6 +124,9 @@ void SoftwarePanel::showEvent(QShowEvent *event) {
 }
 
 void SoftwarePanel::updateLabels() {
+  UIState *s = uiState();
+  UIScene &scene = s->scene;
+
   // add these back in case the files got removed
   fs_watch->addParam("LastUpdateTime");
   fs_watch->addParam("UpdateFailedCount");

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import bisect
 import math
 import os
 from enum import IntEnum
@@ -7,10 +8,10 @@ from collections.abc import Callable
 from cereal import log, car
 import cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
+from openpilot.common.git import get_short_branch
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
-from openpilot.system.version import get_short_branch
 
 params = Params()
 params_memory = Params("/dev/shm/params")
@@ -54,7 +55,7 @@ class Events:
   def __init__(self):
     self.events: list[int] = []
     self.static_events: list[int] = []
-    self.events_prev = dict.fromkeys(EVENTS.keys(), 0)
+    self.event_counters = dict.fromkeys(EVENTS.keys(), 0)
 
   @property
   def names(self) -> list[int]:
@@ -65,11 +66,11 @@ class Events:
 
   def add(self, event_name: int, static: bool=False) -> None:
     if static:
-      self.static_events.append(event_name)
-    self.events.append(event_name)
+      bisect.insort(self.static_events, event_name)
+    bisect.insort(self.events, event_name)
 
   def clear(self) -> None:
-    self.events_prev = {k: (v + 1 if k in self.events else 0) for k, v in self.events_prev.items()}
+    self.event_counters = {k: (v + 1 if k in self.events else 0) for k, v in self.event_counters.items()}
     self.events = self.static_events.copy()
 
   def contains(self, event_type: str) -> bool:
@@ -88,7 +89,7 @@ class Events:
           if not isinstance(alert, Alert):
             alert = alert(*callback_args)
 
-          if DT_CTRL * (self.events_prev[e] + 1) >= alert.creation_delay:
+          if DT_CTRL * (self.event_counters[e] + 1) >= alert.creation_delay:
             alert.alert_type = f"{EVENT_NAME[e]}/{et}"
             alert.event_type = et
             ret.append(alert)
@@ -96,7 +97,7 @@ class Events:
 
   def add_from_msg(self, events):
     for e in events:
-      self.events.append(e.name.raw)
+      bisect.insort(self.events, e.name.raw)
 
   def to_msg(self):
     ret = []
@@ -255,13 +256,6 @@ def calibration_incomplete_alert(CP: car.CarParams, CS: car.CarState, sm: messag
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2)
 
 
-def no_gps_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
-  return Alert(
-    "Poor GPS reception",
-    "Hardware malfunctioning if sky is visible",
-    AlertStatus.normal, AlertSize.mid,
-    Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2, creation_delay=300.)
-
 def torque_nn_load_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   model_name = params.get("NNFFModelName", encoding='utf-8')
   if model_name == "":
@@ -269,7 +263,7 @@ def torque_nn_load_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
       "NNFF Torque Controller not available",
       "Donate logs to Twilsonco to get your car supported!",
       AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 5.0)
+      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 10.0)
   else:
     return Alert(
       "NNFF Torque Controller loaded",
@@ -374,7 +368,7 @@ def holiday_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, 
     message,
     "",
     AlertStatus.normal, AlertSize.small,
-    Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 5.)
+    Priority.LOWEST, VisualAlert.none, AudibleAlert.engage, 5.)
 
 def no_lane_available_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   lane_width = sm['frogpilotPlan'].laneWidthLeft if CS.leftBlinker else sm['frogpilotPlan'].laneWidthRight
@@ -390,6 +384,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   # ********** events with no alerts **********
 
   EventName.stockFcw: {},
+  EventName.actuatorsApiUnavailable: {},
 
   # ********** events only containing alerts displayed in all states **********
 
@@ -486,7 +481,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.preDriverDistracted: {
-    ET.WARNING: Alert(
+    ET.PERMANENT: Alert(
       "Pay Attention",
       "",
       AlertStatus.normal, AlertSize.small,
@@ -494,7 +489,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.promptDriverDistracted: {
-    ET.WARNING: Alert(
+    ET.PERMANENT: Alert(
       "Pay Attention",
       "Driver Distracted",
       AlertStatus.userPrompt, AlertSize.mid,
@@ -502,7 +497,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.driverDistracted: {
-    ET.WARNING: Alert(
+    ET.PERMANENT: Alert(
       "DISENGAGE IMMEDIATELY",
       "Driver Distracted",
       AlertStatus.critical, AlertSize.full,
@@ -510,7 +505,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.preDriverUnresponsive: {
-    ET.WARNING: Alert(
+    ET.PERMANENT: Alert(
       "Touch Steering Wheel: No Face Detected",
       "",
       AlertStatus.normal, AlertSize.small,
@@ -518,7 +513,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.promptDriverUnresponsive: {
-    ET.WARNING: Alert(
+    ET.PERMANENT: Alert(
       "Touch Steering Wheel",
       "Driver Unresponsive",
       AlertStatus.userPrompt, AlertSize.mid,
@@ -526,7 +521,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.driverUnresponsive: {
-    ET.WARNING: Alert(
+    ET.PERMANENT: Alert(
       "DISENGAGE IMMEDIATELY",
       "Driver Unresponsive",
       AlertStatus.critical, AlertSize.full,
@@ -546,7 +541,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "Press Resume to Exit Standstill",
       "",
       AlertStatus.userPrompt, AlertSize.small,
-      Priority.MID, VisualAlert.none, AudibleAlert.none, .2),
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
   },
 
   EventName.belowSteerSpeed: {
@@ -612,9 +607,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   # Unused
-  EventName.gpsMalfunction: {
-    ET.PERMANENT: NormalPermanentAlert("GPS Malfunction", "Likely Hardware Issue"),
-  },
 
   EventName.locationdTemporaryError: {
     ET.NO_ENTRY: NoEntryAlert("locationd Temporary Error"),
@@ -749,7 +741,11 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.noGps: {
-    ET.PERMANENT: no_gps_alert,
+    ET.PERMANENT: Alert(
+      "Poor GPS reception",
+      "Ensure device has a clear view of the sky",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2, creation_delay=600.)
   },
 
   EventName.soundsUnavailable: {
@@ -1059,7 +1055,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "openpilot crashed",
       "Please post the error log in the FrogPilot Discord!",
       AlertStatus.normal, AlertSize.mid,
-      Priority.HIGHEST, VisualAlert.none, AudibleAlert.none, 10.),
+      Priority.HIGH, VisualAlert.none, AudibleAlert.none, 10.),
   },
 
   EventName.pedalInterceptorNoBrake: {
@@ -1080,6 +1076,22 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.torqueNNLoad: {
     ET.PERMANENT: torque_nn_load_alert,
+  },
+
+  EventName.trafficModeActive: {
+    ET.PERMANENT: Alert(
+      "Traffic Mode Enabled",
+      "",
+      AlertStatus.frogpilot, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 3.),
+  },
+
+  EventName.trafficModeInactive: {
+    ET.PERMANENT: Alert(
+      "Traffic Mode Disabled",
+      "",
+      AlertStatus.frogpilot, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 3.),
   },
 
   EventName.turningLeft: {
@@ -1121,6 +1133,14 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "🚗💨",
       AlertStatus.frogpilot, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.doc, 4.),
+  },
+
+  EventName.dejaVuCurve: {
+    ET.WARNING: Alert(
+      "♬♪ Deja Vu! ᕕ(⌐■_■)ᕗ ♪♬",
+      "🏎️",
+      AlertStatus.frogpilot, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.dejaVu, 4.),
   },
 
   EventName.firefoxSteerSaturated: {

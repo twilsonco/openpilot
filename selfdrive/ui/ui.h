@@ -1,6 +1,5 @@
 #pragma once
 
-#include <map>
 #include <memory>
 #include <string>
 
@@ -25,7 +24,6 @@ const int UI_HEADER_HEIGHT = 420;
 
 const int UI_FREQ = 20; // Hz
 const int BACKLIGHT_OFFROAD = 50;
-typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 const float MIN_DRAW_DISTANCE = 10.0;
 const float MAX_DRAW_DISTANCE = 100.0;
@@ -50,64 +48,6 @@ constexpr vec3 default_face_kpts_3d[] = {
   {18.02, -49.14, 8.00}, {6.36, -51.20, 8.00}, {-5.98, -51.20, 8.00},
 };
 
-struct Alert {
-  QString text1;
-  QString text2;
-  QString type;
-  cereal::ControlsState::AlertSize size;
-  cereal::ControlsState::AlertStatus status;
-  AudibleAlert sound;
-
-  bool equal(const Alert &a2) {
-    return text1 == a2.text1 && text2 == a2.text2 && type == a2.type && sound == a2.sound;
-  }
-
-  static Alert get(const SubMaster &sm, uint64_t started_frame) {
-    const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-    const uint64_t controls_frame = sm.rcv_frame("controlsState");
-
-    Alert alert = {};
-    if (controls_frame >= started_frame) {  // Don't get old alert.
-      alert = {cs.getAlertText1().cStr(), cs.getAlertText2().cStr(),
-               cs.getAlertType().cStr(), cs.getAlertSize(),
-               cs.getAlertStatus(),
-               cs.getAlertSound()};
-    }
-
-    if (!sm.updated("controlsState") && (sm.frame - started_frame) > 5 * UI_FREQ) {
-      const int CONTROLS_TIMEOUT = 5;
-      const int controls_missing = (nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9;
-
-      // Handle controls timeout
-      if (std::ifstream("/data/community/crashes/error.txt")) {
-        alert = {"openpilot crashed", "Please post the error log in the FrogPilot Discord!",
-                 "controlsWaiting", cereal::ControlsState::AlertSize::MID,
-                 cereal::ControlsState::AlertStatus::NORMAL,
-                 AudibleAlert::NONE};
-      } else if (controls_frame < started_frame) {
-        // car is started, but controlsState hasn't been seen at all
-        alert = {"openpilot Unavailable", "Waiting for controls to start",
-                 "controlsWaiting", cereal::ControlsState::AlertSize::MID,
-                 cereal::ControlsState::AlertStatus::NORMAL,
-                 AudibleAlert::NONE};
-      } else if (controls_missing > CONTROLS_TIMEOUT && !Hardware::PC()) {
-        // car is started, but controls is lagging or died
-        if (cs.getEnabled() && (controls_missing - CONTROLS_TIMEOUT) < 10) {
-          alert = {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
-                   "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
-                   cereal::ControlsState::AlertStatus::CRITICAL,
-                   AudibleAlert::WARNING_IMMEDIATE};
-        } else {
-          alert = {"Controls Unresponsive", "Reboot Device",
-                   "controlsUnresponsivePermanent", cereal::ControlsState::AlertSize::MID,
-                   cereal::ControlsState::AlertStatus::NORMAL,
-                   AudibleAlert::NONE};
-        }
-      }
-    }
-    return alert;
-  }
-};
 
 typedef enum UIStatus {
   STATUS_DISENGAGED,
@@ -123,7 +63,8 @@ typedef enum UIStatus {
 } UIStatus;
 
 enum PrimeType {
-  UNKNOWN = -1,
+  UNKNOWN = -2,
+  UNPAIRED = -1,
   NONE = 0,
   MAGENTA = 1,
   LITE = 2,
@@ -145,12 +86,6 @@ const QColor bg_colors [] = {
   [STATUS_TRAFFIC_MODE_ACTIVE] = QColor(0xc9, 0x22, 0x31, 0xf1),
 };
 
-static std::map<cereal::ControlsState::AlertStatus, QColor> alert_colors = {
-  {cereal::ControlsState::AlertStatus::NORMAL, QColor(0x15, 0x15, 0x15, 0xf1)},
-  {cereal::ControlsState::AlertStatus::USER_PROMPT, QColor(0xDA, 0x6F, 0x25, 0xf1)},
-  {cereal::ControlsState::AlertStatus::CRITICAL, QColor(0xC9, 0x22, 0x31, 0xf1)},
-  {cereal::ControlsState::AlertStatus::FROGPILOT, QColor(0x17, 0x86, 0x44, 0xf1)},
-};
 
 typedef struct UIScene {
   bool calibration_valid = false;
@@ -180,7 +115,7 @@ typedef struct UIScene {
   bool navigate_on_openpilot = false;
   cereal::LongitudinalPersonality personality;
 
-  float light_sensor;
+  float light_sensor = -1;
   bool started, ignition, is_metric, map_on_left, longitudinal_control;
   bool world_objects_visible = false;
   uint64_t started_frame;
@@ -206,9 +141,9 @@ typedef struct UIScene {
   bool experimental_mode;
   bool experimental_mode_via_screen;
   bool fahrenheit;
-  bool fps_counter;
   bool full_map;
   bool has_auto_tune;
+  bool has_lead;
   bool hide_alerts;
   bool hide_lead_marker;
   bool hide_map_icon;
@@ -242,11 +177,13 @@ typedef struct UIScene {
   bool show_aol_status_bar;
   bool show_blind_spot;
   bool show_cem_status_bar;
+  bool show_fps;
   bool show_jerk;
   bool show_signal;
   bool show_slc_offset;
   bool show_slc_offset_ui;
   bool show_steering;
+  bool show_stopping_point;
   bool show_tuning;
   bool sidebar_metrics;
   bool speed_limit_changed;
@@ -255,6 +192,7 @@ typedef struct UIScene {
   bool standby_mode;
   bool standstill;
   bool static_pedals_on_ui;
+  bool stopped_timer;
   bool tethering_enabled;
   bool traffic_mode;
   bool traffic_mode_active;
@@ -267,6 +205,8 @@ typedef struct UIScene {
   bool vtsc_controlling_curve;
   bool wake_up_screen;
   bool wheel_speed;
+
+  double fps;
 
   float acceleration;
   float acceleration_jerk;
@@ -281,6 +221,7 @@ typedef struct UIScene {
   float lead_detection_threshold;
   float path_edge_width;
   float path_width;
+  float road_curvature;
   float road_edge_width;
   float speed_jerk;
   float speed_jerk_difference;
@@ -303,15 +244,19 @@ typedef struct UIScene {
   int custom_signals;
   int desired_follow;
   int driver_camera_timer;
+  int lead_distance;
   int map_style;
+  int model_length;
   int obstacle_distance;
   int obstacle_distance_stock;
   int screen_brightness;
   int screen_brightness_onroad;
   int screen_timeout;
   int screen_timeout_onroad;
+  int started_timer;
   int steering_angle_deg;
   int stopped_equivalence;
+  int tethering_config;
   int wheel_icon;
 
   QPolygonF track_adjacent_vertices[6];
@@ -331,7 +276,7 @@ public:
 
   void setPrimeType(PrimeType type);
   inline PrimeType primeType() const { return prime_type; }
-  inline bool hasPrime() const { return prime_type != PrimeType::UNKNOWN && prime_type != PrimeType::NONE; }
+  inline bool hasPrime() const { return prime_type > PrimeType::NONE; }
 
   int fb_w = 0, fb_h = 0;
 

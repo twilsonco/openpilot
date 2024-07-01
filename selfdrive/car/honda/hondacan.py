@@ -66,7 +66,7 @@ def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_ca
     "AEB_STATUS": 0,
   }
 
-  if car_fingerprint == CAR.CLARITY:
+  if car_fingerprint == CAR.HONDA_CLARITY:
     values["COMPUTER_BRAKE_ALT"] = apply_brake
     values["BRAKE_PUMP_REQUEST_ALT"] = apply_brake > 0
   else:
@@ -201,7 +201,7 @@ def create_ui_commands(packer, CAN, CP, enabled, pcm_speed, hud, is_metric, acc_
     }
     commands.append(packer.make_can_msg('RADAR_HUD', CAN.pt, radar_hud_values))
 
-    if CP.carFingerprint == CAR.CIVIC_BOSCH:
+    if CP.carFingerprint == CAR.HONDA_CIVIC_BOSCH:
       commands.append(packer.make_can_msg("LEGACY_BRAKE_COMMAND", CAN.pt, {}))
 
   return commands

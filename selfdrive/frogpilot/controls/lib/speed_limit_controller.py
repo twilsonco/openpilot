@@ -9,7 +9,6 @@ from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogP
 
 R = 6373000.0  # approximate radius of earth in meters
 TO_RADIANS = math.pi / 180
-TO_DEGREES = 180 / math.pi
 
 # points should be in radians
 # output is meters
@@ -40,10 +39,10 @@ class SpeedLimitController:
   def get_param_memory(self, key, is_json=False, default=None):
     try:
       data = self.params_memory.get(key)
-      if not is_json and data is not None:
-        return float(data.decode('utf-8'))
-      return json.loads(data) if is_json else data
-    except:
+      if data is None:
+        return default
+      return json.loads(data) if is_json else float(data.decode('utf-8'))
+    except (TypeError, ValueError):
       return default
 
   def write_map_state(self, v_ego):
@@ -58,15 +57,14 @@ class SpeedLimitController:
     lat = position.get("latitude", 0)
     lon = position.get("longitude", 0)
 
-    if self.prv_speed_limit < next_map_speed_limit_value > 1:
+    if next_map_speed_limit_value > 1:
       d = distance_to_point(lat * TO_RADIANS, lon * TO_RADIANS, next_map_speed_limit_lat * TO_RADIANS, next_map_speed_limit_lon * TO_RADIANS)
-      max_d = self.frogpilot_toggles.map_speed_lookahead_higher * v_ego
-      if d < max_d:
-        self.map_speed_limit = next_map_speed_limit_value
 
-    if self.prv_speed_limit > next_map_speed_limit_value > 1:
-      d = distance_to_point(lat * TO_RADIANS, lon * TO_RADIANS, next_map_speed_limit_lat * TO_RADIANS, next_map_speed_limit_lon * TO_RADIANS)
-      max_d = self.frogpilot_toggles.map_speed_lookahead_higher_lower * v_ego
+      if self.prv_speed_limit < next_map_speed_limit_value:
+        max_d = v_ego * self.frogpilot_toggles.map_speed_lookahead_higher
+      else:
+        max_d = v_ego * self.frogpilot_toggles.map_speed_lookahead_lower
+
       if d < max_d:
         self.map_speed_limit = next_map_speed_limit_value
 
@@ -77,7 +75,7 @@ class SpeedLimitController:
 
     if self.frogpilot_toggles.speed_limit_priority_highest and filtered_limits:
       return float(max(filtered_limits))
-    elif self.frogpilot_toggles.speed_limit_priority_lowest and filtered_limits:
+    if self.frogpilot_toggles.speed_limit_priority_lowest and filtered_limits:
       return float(min(filtered_limits))
 
     speed_limits = {
@@ -86,14 +84,12 @@ class SpeedLimitController:
       "Navigation": self.nav_speed_limit,
     }
 
-    priorities = [
+    for priority in [
       self.frogpilot_toggles.speed_limit_priority1,
       self.frogpilot_toggles.speed_limit_priority2,
       self.frogpilot_toggles.speed_limit_priority3,
-    ]
-
-    for priority in priorities:
-      if priority in speed_limits and speed_limits[priority] in filtered_limits:
+    ]:
+      if speed_limits.get(priority, 0) in filtered_limits:
         return float(speed_limits[priority])
 
     if self.frogpilot_toggles.use_previous_limit:
@@ -105,20 +101,18 @@ class SpeedLimitController:
   def offset(self):
     if self.speed_limit < 13.5:
       return self.frogpilot_toggles.offset1
-    elif self.speed_limit < 24:
+    if self.speed_limit < 24:
       return self.frogpilot_toggles.offset2
-    elif self.speed_limit < 29:
+    if self.speed_limit < 29:
       return self.frogpilot_toggles.offset3
-    else:
-      return self.frogpilot_toggles.offset4
+    return self.frogpilot_toggles.offset4
 
   @property
   def desired_speed_limit(self):
     if self.speed_limit > 1:
       self.update_previous_limit(self.speed_limit)
       return self.speed_limit + self.offset
-    else:
-      return 0
+    return 0
 
   def update_previous_limit(self, speed_limit):
     if self.prv_speed_limit != speed_limit:

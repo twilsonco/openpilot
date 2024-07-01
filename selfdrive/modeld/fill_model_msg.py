@@ -44,7 +44,7 @@ def fill_xyvat(builder, t, x, y, v, a, x_std=None, y_std=None, v_std=None, a_std
 def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: dict[str, np.ndarray], publish_state: PublishState,
                    vipc_frame_id: int, vipc_frame_id_extra: int, frame_id: int, frame_drop: float,
                    timestamp_eof: int, timestamp_llk: int, model_execution_time: float,
-                   nav_enabled: bool, valid: bool) -> None:
+                   nav_enabled: bool, valid: bool, secret_good_openpilot: bool) -> None:
   frame_age = frame_id - vipc_frame_id if frame_id > vipc_frame_id else 0
   msg.valid = valid
 
@@ -96,26 +96,28 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: dict[str, 
   # lane lines
   modelV2.init('laneLines', 6)
   for i in range(6):
+    lane_line = modelV2.laneLines[i]
     if i < 4:
-      lane_line = modelV2.laneLines[i]
       fill_xyzt(lane_line, PLAN_T_IDXS, np.array(ModelConstants.X_IDXS), net_output_data['lane_lines'][0,i,:,0], net_output_data['lane_lines'][0,i,:,1])
     else:
-      lane_line = modelV2.laneLines[i]
       far_lane, near_lane, road_edge = (0, 1, 0) if i == 4 else (3, 2, 1)
 
-      lane_diff = np.abs(net_output_data['lane_lines'][0,near_lane] - net_output_data['lane_lines'][0,far_lane])
-      road_edge_diff = np.abs(net_output_data['lane_lines'][0,near_lane] - net_output_data['road_edges'][0,road_edge])
+      near_lane_y = net_output_data['lane_lines'][0,near_lane,:,0]
+      road_edge_y = net_output_data['road_edges'][0,road_edge,:,0]
+      far_lane_y = net_output_data['lane_lines'][0,far_lane,:,0]
 
-      y_min = net_output_data['lane_lines'][0, near_lane,:,0]
-      z_min = net_output_data['lane_lines'][0, near_lane,:,1]
+      road_edge_distance = abs(np.linalg.norm(road_edge_y - near_lane_y))
+      far_lane_distance = abs(np.linalg.norm(far_lane_y - near_lane_y))
 
-      y_min += np.where(lane_diff[:,0] < road_edge_diff[:,0], net_output_data['lane_lines'][0,far_lane,:,0], net_output_data['road_edges'][0,road_edge,:,0])
-      z_min += np.where(lane_diff[:,1] < road_edge_diff[:,1], net_output_data['lane_lines'][0,far_lane,:,1], net_output_data['road_edges'][0,road_edge,:,1])
+      if road_edge_distance < far_lane_distance:
+        closest_lane_y = road_edge_y
+      else:
+        closest_lane_y = far_lane_y
 
-      y_min /= 2
-      z_min /= 2
+      diff_y = closest_lane_y - near_lane_y
+      new_lane_y = near_lane_y + diff_y / 2
 
-      fill_xyzt(lane_line, PLAN_T_IDXS, np.array(ModelConstants.X_IDXS), y_min, z_min)
+      fill_xyzt(lane_line, PLAN_T_IDXS, np.array(ModelConstants.X_IDXS), new_lane_y, net_output_data['lane_lines'][0,near_lane,:,1])
 
   modelV2.laneLineStds = net_output_data['lane_lines_stds'][0,:,0,0].tolist()
   modelV2.laneLineProbs = net_output_data['lane_lines_prob'][0,1::2].tolist()
@@ -137,7 +139,10 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: dict[str, 
 
   # meta
   meta = modelV2.meta
-  meta.desireState = net_output_data['desire_state'][0].reshape(-1).tolist()
+  if secret_good_openpilot:
+    meta.desireState = np.zeros((ModelConstants.DESIRE_PRED_WIDTH,), dtype=np.float32).reshape(-1).tolist() # TODO
+  else:
+    meta.desireState = net_output_data['desire_state'][0].reshape(-1).tolist()
   meta.desirePrediction = net_output_data['desire_pred'][0].reshape(-1).tolist()
   meta.engagedProb = net_output_data['meta'][0,Meta.ENGAGED].item()
   meta.init('disengagePredictions')
@@ -160,10 +165,16 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: dict[str, 
 
   # temporal pose
   temporal_pose = modelV2.temporalPose
-  temporal_pose.trans = net_output_data['sim_pose'][0,:3].tolist()
-  temporal_pose.transStd = net_output_data['sim_pose_stds'][0,:3].tolist()
-  temporal_pose.rot = net_output_data['sim_pose'][0,3:].tolist()
-  temporal_pose.rotStd = net_output_data['sim_pose_stds'][0,3:].tolist()
+  if secret_good_openpilot:
+    temporal_pose.trans = np.zeros((3,), dtype=np.float32).reshape(-1).tolist()
+    temporal_pose.transStd = np.zeros((3,), dtype=np.float32).reshape(-1).tolist()
+    temporal_pose.rot = np.zeros((3,), dtype=np.float32).reshape(-1).tolist()
+    temporal_pose.rotStd = np.zeros((3,), dtype=np.float32).reshape(-1).tolist()
+  else:
+    temporal_pose.trans = net_output_data['sim_pose'][0,:3].tolist()
+    temporal_pose.transStd = net_output_data['sim_pose_stds'][0,:3].tolist()
+    temporal_pose.rot = net_output_data['sim_pose'][0,3:].tolist()
+    temporal_pose.rotStd = net_output_data['sim_pose_stds'][0,3:].tolist()
 
   # confidence
   if vipc_frame_id % (2*ModelConstants.MODEL_FREQ) == 0:

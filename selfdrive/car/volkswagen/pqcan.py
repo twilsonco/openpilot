@@ -9,7 +9,7 @@ def create_steering_control(packer, bus, apply_steer, lkas_enabled):
   return packer.make_can_msg("HCA_1", bus, values)
 
 
-def create_lka_hud_control(packer, bus, ldw_stock_values, enabled, steering_pressed, hud_alert, hud_control, lat_active):
+def create_lka_hud_control(packer, bus, ldw_stock_values, lat_active, steering_pressed, hud_alert, hud_control):
   values = {}
   if len(ldw_stock_values):
     values = {s: ldw_stock_values[s] for s in [

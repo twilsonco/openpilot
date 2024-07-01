@@ -29,6 +29,7 @@ struct InitData {
   osVersion @18 :Text;
 
   dongleId @2 :Text;
+  bootlogId @22 :Text;
 
   deviceType @3 :DeviceType;
   version @4 :Text;
@@ -198,6 +199,13 @@ struct Thumbnail {
   frameId @0 :UInt32;
   timestampEof @1 :UInt64;
   thumbnail @2 :Data;
+  encoding @3 :Encoding;
+
+  enum Encoding {
+    unknown @0;
+    jpeg @1;
+    keyframe @2;
+  }
 }
 
 struct GPSNMEAData {
@@ -448,7 +456,6 @@ struct PandaState @0xa7649e2575e4591e {
   ignitionLine @2 :Bool;
   rxBufferOverflow @7 :UInt32;
   txBufferOverflow @8 :UInt32;
-  gmlanSendErrs @9 :UInt32;
   pandaType @10 :PandaType;
   ignitionCan @13 :Bool;
   faultStatus @15 :FaultStatus;
@@ -496,7 +503,7 @@ struct PandaState @0xa7649e2575e4591e {
     interruptRateCan2 @3;
     interruptRateCan3 @4;
     interruptRateTach @5;
-    interruptRateGmlan @6;
+    interruptRateGmlanDEPRECATED @6;
     interruptRateInterrupts @7;
     interruptRateSpiDma @8;
     interruptRateSpiCs @9;
@@ -582,6 +589,7 @@ struct PandaState @0xa7649e2575e4591e {
   gasInterceptorDetectedDEPRECATED @4 :Bool;
   startedSignalDetectedDEPRECATED @5 :Bool;
   hasGpsDEPRECATED @6 :Bool;
+  gmlanSendErrsDEPRECATED @9 :UInt32;
   fanSpeedRpmDEPRECATED @11 :UInt16;
   usbPowerModeDEPRECATED @12 :PeripheralState.UsbPowerModeDEPRECATED;
   safetyParamDEPRECATED @20 :Int16;
@@ -719,7 +727,6 @@ struct ControlsState @0x97ff69c53601abf1 {
   engageable @41 :Bool;  # can OP be engaged?
 
   cumLagMs @15 :Float32;
-  canErrorCounter @57 :UInt32;
 
   lateralControlState :union {
     indiState @52 :LateralINDIState;
@@ -866,6 +873,7 @@ struct ControlsState @0x97ff69c53601abf1 {
   steeringAngleDesiredDegDEPRECATED @29 :Float32;
   canMonoTimesDEPRECATED @21 :List(UInt64);
   desiredCurvatureRateDEPRECATED @62 :Float32;
+  canErrorCounterDEPRECATED @57 :UInt32;
 }
 
 # All SI units and in device frame
@@ -1061,6 +1069,11 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   accels @32 :List(Float32);
   speeds @33 :List(Float32);
   jerks @34 :List(Float32);
+  aTarget @18 :Float32;
+  shouldStop @37: Bool;
+  allowThrottle @38: Bool;
+  allowBrake @39: Bool;
+
 
   solverExecutionTime @35 :Float32;
 
@@ -1077,7 +1090,6 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   aCruiseDEPRECATED @17 :Float32;
   vTargetDEPRECATED @3 :Float32;
   vTargetFutureDEPRECATED @14 :Float32;
-  aTargetDEPRECATED @18 :Float32;
   vStartDEPRECATED @26 :Float32;
   aStartDEPRECATED @27 :Float32;
   vMaxDEPRECATED @20 :Float32;
@@ -1139,29 +1151,6 @@ struct LateralPlan @0xe1e9318e2ae8b51e {
   struct SolverState {
     x @0 :List(List(Float32));
     u @1 :List(Float32);
-  }
-
-  enum Desire {
-    none @0;
-    turnLeft @1;
-    turnRight @2;
-    laneChangeLeft @3;
-    laneChangeRight @4;
-    keepLeft @5;
-    keepRight @6;
-  }
-
-  enum LaneChangeState {
-    off @0;
-    preLaneChange @1;
-    laneChangeStarting @2;
-    laneChangeFinishing @3;
-  }
-
-  enum LaneChangeDirection {
-    none @0;
-    left @1;
-    right @2;
   }
 
   # deprecated
@@ -2285,7 +2274,6 @@ struct Event {
     liveLocationKalman @72 :LiveLocationKalman;
     modelV2 @75 :ModelDataV2;
     driverStateV2 @92 :DriverStateV2;
-    navModel @104 :NavModelData;
 
     # camera stuff, each camera state has a matching encode idx
     roadCameraState @2 :FrameData;
@@ -2389,5 +2377,6 @@ struct Event {
     driverStateDEPRECATED @59 :DriverStateDEPRECATED;
     sensorEventsDEPRECATED @11 :List(SensorEventData);
     lateralPlanDEPRECATED @64 :LateralPlan;
+    navModel @104 :NavModelData;
   }
 }

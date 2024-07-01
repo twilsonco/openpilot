@@ -18,17 +18,12 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerControlType = car.CarParams.SteerControlType.angle
 
-    # Set kP and kI to 0 over the whole speed range to have the planner accel as actuator command
-    ret.longitudinalTuning.kpBP = [0]
-    ret.longitudinalTuning.kpV = [0]
-    ret.longitudinalTuning.kiBP = [0]
-    ret.longitudinalTuning.kiV = [0]
-    ret.longitudinalActuatorDelayUpperBound = 0.5 # s
+    ret.longitudinalActuatorDelay = 0.5 # s
     ret.radarTimeStep = (1.0 / 8) # 8Hz
 
     # Check if we have messages on an auxiliary panda, and that 0x2bf (DAS_control) is present on the AP powertrain bus
     # If so, we assume that it is connected to the longitudinal harness.
-    flags = (Panda.FLAG_TESLA_RAVEN if candidate == CAR.MODELS_RAVEN else 0)
+    flags = (Panda.FLAG_TESLA_RAVEN if candidate == CAR.TESLA_MODELS_RAVEN else 0)
     if (CANBUS.autopilot_powertrain in fingerprint.keys()) and (0x2bf in fingerprint[CANBUS.autopilot_powertrain].keys()):
       ret.openpilotLongitudinalControl = not disable_openpilot_long
       flags |= Panda.FLAG_TESLA_LONG_CONTROL
@@ -44,12 +39,9 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.25
     return ret
 
-  def _update(self, c, frogpilot_variables):
-    ret, fp_ret = self.CS.update(self.cp, self.cp_cam, frogpilot_variables)
+  def _update(self, c, frogpilot_toggles):
+    ret, fp_ret = self.CS.update(self.cp, self.cp_cam, frogpilot_toggles)
 
     ret.events = self.create_common_events(ret).to_msg()
 
     return ret, fp_ret
-
-  def apply(self, c, now_nanos, frogpilot_variables):
-    return self.CC.update(c, self.CS, now_nanos, frogpilot_variables)

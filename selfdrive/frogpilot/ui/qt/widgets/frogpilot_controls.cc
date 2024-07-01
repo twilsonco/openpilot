@@ -1,5 +1,3 @@
-#include <filesystem>
-
 #include "selfdrive/ui/ui.h"
 
 Params paramsMemory{"/dev/shm/params"};

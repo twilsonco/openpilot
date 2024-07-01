@@ -80,6 +80,12 @@ class PandaJungle(Panda):
       return McuType.F4
     elif hw_type in PandaJungle.H7_DEVICES:
       return McuType.H7
+    else:
+      # have to assume F4, see comment in Panda.connect
+      # initially Jungle V1 has HW type: bytearray(b'')
+      if hw_type == b'' or self._assume_f4_mcu:
+        return McuType.F4
+
     raise ValueError(f"unknown HW type: {hw_type}")
 
   def up_to_date(self, fn=None) -> bool:
@@ -141,6 +147,9 @@ class PandaJungle(Panda):
 
   def set_can_silent(self, silent):
     self._handle.controlWrite(PandaJungle.REQUEST_OUT, 0xf5, int(silent), 0, b'')
+
+  def set_generated_can(self, enabled):
+    self._handle.controlWrite(PandaJungle.REQUEST_OUT, 0xa4, int(enabled), 0, b'')
 
   # ******************* serial *******************
 

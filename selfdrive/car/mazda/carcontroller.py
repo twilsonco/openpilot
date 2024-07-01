@@ -16,7 +16,7 @@ class CarController(CarControllerBase):
     self.brake_counter = 0
     self.frame = 0
 
-  def update(self, CC, CS, now_nanos, frogpilot_variables):
+  def update(self, CC, CS, now_nanos, frogpilot_toggles):
     can_sends = []
 
     apply_steer = 0
@@ -58,7 +58,7 @@ class CarController(CarControllerBase):
     can_sends.append(mazdacan.create_steering_control(self.packer, self.CP,
                                                       self.frame, apply_steer, CS.cam_lkas))
 
-    new_actuators = CC.actuators.copy()
+    new_actuators = CC.actuators.as_builder()
     new_actuators.steer = apply_steer / CarControllerParams.STEER_MAX
     new_actuators.steerOutputCan = apply_steer
 

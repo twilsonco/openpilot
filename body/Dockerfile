@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONPATH /tmp/openpilot:$PYTHONPATH
 
@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     make \
     patch \
     pkg-config \
+    python3-pip \
     zlib1g-dev \
  && rm -rf /var/lib/apt/lists/*
 
@@ -28,14 +29,8 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
-
 COPY requirements.txt /tmp/
-RUN pyenv install 3.11.4 && \
-    pyenv global 3.11.4 && \
-    pyenv rehash && \
-    pip install --no-cache-dir -r /tmp/requirements.txt
+RUN pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.txt
 
 COPY . /tmp/openpilot/body
 RUN rm -rf /tmp/openpilot/body/.git

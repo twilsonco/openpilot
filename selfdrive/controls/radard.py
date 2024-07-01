@@ -2,7 +2,7 @@
 import importlib
 import math
 from collections import deque
-from typing import Any, Optional
+from typing import Any
 
 import capnp
 from cereal import messaging, log, car
@@ -215,7 +215,9 @@ class RadarD:
     # FrogPilot variables
     self.frogpilot_toggles = FrogPilotVariables.toggles
 
-  def update(self, sm: messaging.SubMaster, rr: Optional[car.RadarData]):
+    self.update_toggles = False
+
+  def update(self, sm: messaging.SubMaster, rr):
     self.ready = sm.seen['modelV2']
     self.current_time = 1e-9*max(sm.logMonoTime.values())
 
@@ -258,7 +260,7 @@ class RadarD:
     self.radar_state.radarErrors = list(radar_errors)
     self.radar_state.carStateMonoTime = sm.logMonoTime['carState']
 
-    if len(sm['modelV2'].temporalPose.trans):
+    if len(sm['modelV2'].temporalPose.trans) and not self.frogpilot_toggles.secretgoodopenpilot_model:
       model_v_ego = sm['modelV2'].temporalPose.trans[0]
     else:
       model_v_ego = self.v_ego
@@ -269,7 +271,10 @@ class RadarD:
 
     # Update FrogPilot parameters
     if FrogPilotVariables.toggles_updated:
+      self.update_toggles = True
+    elif self.update_toggles:
       FrogPilotVariables.update_frogpilot_params()
+      self.update_toggles = False
 
   def publish(self, pm: messaging.PubMaster, lag_ms: float):
     assert self.radar_state is not None
@@ -292,7 +297,7 @@ class RadarD:
       }
     pm.send('liveTracks', tracks_msg)
 
-  def update_radardless(self, rr: Optional[car.RadarData]):
+  def update_radardless(self, rr):
     radar_points = []
     radar_errors = []
     if rr is not None:

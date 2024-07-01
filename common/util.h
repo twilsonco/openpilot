@@ -8,7 +8,6 @@
 #include <atomic>
 #include <chrono>
 #include <csignal>
-#include <ctime>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -37,9 +36,9 @@ const double MS_TO_KPH = 3.6;
 const double MS_TO_MPH = MS_TO_KPH * KM_TO_MILE;
 const double METER_TO_MILE = KM_TO_MILE / 1000.0;
 const double METER_TO_FOOT = 3.28084;
-const double FOOT_TO_METER = 1 / METER_TO_FOOT;
-const double CM_TO_INCH = 1 / 2.54;
-const double INCH_TO_CM = 1 / CM_TO_INCH;
+const double FOOT_TO_METER = 1. / METER_TO_FOOT;
+const double CM_TO_INCH = 1. / 2.54;
+const double INCH_TO_CM = 1. / CM_TO_INCH;
 
 namespace util {
 
@@ -47,10 +46,6 @@ void set_thread_name(const char* name);
 int set_realtime_priority(int level);
 int set_core_affinity(std::vector<int> cores);
 int set_file_descriptor_limit(uint64_t limit);
-
-// ***** Time helpers *****
-struct tm get_time();
-bool time_valid(struct tm sys_time);
 
 // ***** math helpers *****
 
@@ -78,9 +73,8 @@ int getenv(const char* key, int default_val);
 float getenv(const char* key, float default_val);
 
 std::string hexdump(const uint8_t* in, const size_t size);
-std::string dir_name(std::string const& path);
 bool starts_with(const std::string &s1, const std::string &s2);
-bool ends_with(const std::string &s1, const std::string &s2);
+bool ends_with(const std::string &s, const std::string &suffix);
 
 // ***** random helpers *****
 int random_int(int min, int max);
@@ -182,3 +176,10 @@ void update_max_atomic(std::atomic<T>& max, T const& value) {
   T prev = max;
   while (prev < value && !max.compare_exchange_weak(prev, value)) {}
 }
+
+typedef struct Rect {
+  int x;
+  int y;
+  int w;
+  int h;
+} Rect;

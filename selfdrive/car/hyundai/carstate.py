@@ -69,9 +69,9 @@ class CarState(CarStateBase):
       speed_limit = cp.vl["Navi_HU"]["SpeedLim_Nav_Clu"]
       return speed_limit if speed_limit not in (0, 255) else 0
 
-  def update(self, cp, cp_cam, frogpilot_variables):
+  def update(self, cp, cp_cam, frogpilot_toggles):
     if self.CP.carFingerprint in CANFD_CAR:
-      return self.update_canfd(cp, cp_cam, frogpilot_variables)
+      return self.update_canfd(cp, cp_cam, frogpilot_toggles)
 
     ret = car.CarState.new_message()
     fp_ret = custom.FrogPilotCarState.new_message()
@@ -136,6 +136,7 @@ class CarState(CarStateBase):
     ret.brakePressed = cp.vl["TCS13"]["DriverOverride"] == 2  # 2 includes regen braking by user on HEV/EV
     ret.brakeHoldActive = cp.vl["TCS15"]["AVH_LAMP"] == 2  # 0 OFF, 1 ERROR, 2 ACTIVE, 3 READY
     ret.parkingBrake = cp.vl["TCS13"]["PBRAKE_ACT"] == 1
+    ret.espDisabled = cp.vl["TCS11"]["TCS_PAS"] == 1
     ret.accFaulted = cp.vl["TCS13"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
     if self.CP.flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV):
@@ -185,7 +186,7 @@ class CarState(CarStateBase):
     if self.prev_main_buttons == 0 and self.main_buttons[-1] != 0:
       self.main_enabled = not self.main_enabled
 
-    # FrogPilot carstate functions
+    # FrogPilot CarState functions
     fp_ret.brakeLights = bool(cp.vl["TCS13"]["BrakeLight"])
 
     fp_ret.dashboardSpeedLimit = self.calculate_speed_limit(cp, cp_cam) * speed_conv
@@ -199,7 +200,7 @@ class CarState(CarStateBase):
 
     return ret, fp_ret
 
-  def update_canfd(self, cp, cp_cam, frogpilot_variables):
+  def update_canfd(self, cp, cp_cam, frogpilot_toggles):
     ret = car.CarState.new_message()
     fp_ret = custom.FrogPilotCarState.new_message()
 
@@ -241,7 +242,7 @@ class CarState(CarStateBase):
 
     # TODO: alt signal usage may be described by cp.vl['BLINKERS']['USE_ALT_LAMP']
     left_blinker_sig, right_blinker_sig = "LEFT_LAMP", "RIGHT_LAMP"
-    if self.CP.carFingerprint == CAR.KONA_EV_2ND_GEN:
+    if self.CP.carFingerprint == CAR.HYUNDAI_KONA_EV_2ND_GEN:
       left_blinker_sig, right_blinker_sig = "LEFT_LAMP_ALT", "RIGHT_LAMP_ALT"
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"][left_blinker_sig],
                                                                       cp.vl["BLINKERS"][right_blinker_sig])
@@ -283,13 +284,13 @@ class CarState(CarStateBase):
       self.hda2_lfa_block_msg = copy.copy(cp_cam.vl["CAM_0x362"] if self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING
                                           else cp_cam.vl["CAM_0x2a4"])
 
-    # FrogPilot carstate functions
-    fp_ret.brakeLights = cp.vl["TCS"]["DriverBraking"] == 1
+    # FrogPilot CarState functions
+    fp_ret.brakeLights = bool(cp.vl["TCS"]["DriverBraking"])
 
     fp_ret.dashboardSpeedLimit = self.calculate_speed_limit(cp, cp_cam) * speed_factor
 
     self.prev_distance_button = self.distance_button
-    self.distance_button = self.cruise_buttons[-1] == Buttons.GAP_DIST and self.prev_cruise_buttons == 0
+    self.distance_button = self.cruise_buttons[-1] == Buttons.GAP_DIST
 
     drive_mode = cp.vl["DRIVE_MODE"]["DRIVE_MODE2"]
 
@@ -312,6 +313,7 @@ class CarState(CarStateBase):
     messages = [
       # address, frequency
       ("MDPS12", 50),
+      ("TCS11", 100),
       ("TCS13", 50),
       ("TCS15", 10),
       ("CLU11", 50),

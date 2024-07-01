@@ -107,7 +107,8 @@ bool honda_fwd_brake = false;
 bool honda_bosch_long = false;
 bool honda_bosch_radarless = false;
 bool honda_clarity_brake_msg = false;
-enum {HONDA_NIDEC, HONDA_BOSCH} honda_hw = HONDA_NIDEC;
+typedef enum {HONDA_NIDEC, HONDA_BOSCH} HondaHw;
+HondaHw honda_hw = HONDA_NIDEC;
 
 
 int honda_get_pt_bus(void) {
@@ -414,6 +415,7 @@ static safety_config honda_nidec_init(uint16_t param) {
   safety_config ret;
 
   bool enable_nidec_alt = GET_FLAG(param, HONDA_PARAM_NIDEC_ALT);
+
   if (enable_nidec_alt) {
     enable_gas_interceptor ? SET_RX_CHECKS(honda_nidec_alt_interceptor_rx_checks, ret) : \
                              SET_RX_CHECKS(honda_nidec_alt_rx_checks, ret);

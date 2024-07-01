@@ -8,14 +8,14 @@ from cereal import car, log
 from pathlib import Path
 from setproctitle import setproctitle
 from cereal.messaging import PubMaster, SubMaster
-from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
+from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.common.transformations.model import get_warp_matrix
-from openpilot.selfdrive import sentry
+from openpilot.system import sentry
 from openpilot.selfdrive.car.car_helpers import get_demo_car_params
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
@@ -25,21 +25,26 @@ from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 
 from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
-from openpilot.selfdrive.frogpilot.controls.lib.model_manager import DEFAULT_MODEL, MODELS_PATH, NAVIGATION_MODELS, RADARLESS_MODELS
+from openpilot.selfdrive.frogpilot.controls.lib.model_manager import DEFAULT_MODEL, MODELS_PATH
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
-MODEL_NAME = Params().get("Model", block=True, encoding='utf-8')
+MODEL_NAME = FrogPilotVariables.toggles.model
 
-DISABLE_NAV = MODEL_NAME not in NAVIGATION_MODELS
-DISABLE_RADAR = MODEL_NAME in RADARLESS_MODELS
+DISABLE_NAV = FrogPilotVariables.toggles.navigationless_model
+DISABLE_RADAR = FrogPilotVariables.toggles.radarless_model
+SECRET_GOOD_OPENPILOT = FrogPilotVariables.toggles.secretgoodopenpilot_model
 
 MODEL_PATHS = {
   ModelRunner.THNEED: Path(__file__).parent / ('models/supercombo.thneed' if MODEL_NAME == DEFAULT_MODEL else f'{MODELS_PATH}/{MODEL_NAME}.thneed'),
   ModelRunner.ONNX: Path(__file__).parent / 'models/supercombo.onnx'}
 
-METADATA_PATH = Path(__file__).parent / 'models/supercombo_metadata.pkl'
+METADATA_PATH = Path(__file__).parent / ('models/supercombo_metadata.pkl' if not SECRET_GOOD_OPENPILOT else f'{MODELS_PATH}/{MODEL_NAME}_metadata.pkl')
+
+MODEL_WIDTH = 512
+MODEL_HEIGHT = 256
+MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 // 2
 
 class FrameMeta:
   frame_id: int = 0
@@ -62,16 +67,23 @@ class ModelState:
     self.frame = ModelFrame(context)
     self.wide_frame = ModelFrame(context)
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
+    self.full_features_20Hz = np.zeros((ModelConstants.FULL_HISTORY_BUFFER_LEN, ModelConstants.FEATURE_LEN), dtype=np.float32)
+    self.desire_20Hz =  np.zeros((ModelConstants.FULL_HISTORY_BUFFER_LEN + 1, ModelConstants.DESIRE_LEN), dtype=np.float32)
     self.inputs = {
-      'desire': np.zeros(ModelConstants.DESIRE_LEN * (ModelConstants.HISTORY_BUFFER_LEN+1), dtype=np.float32),
+      'desire': np.zeros(ModelConstants.DESIRE_LEN * (ModelConstants.HISTORY_BUFFER_LEN_SECRET+1 if SECRET_GOOD_OPENPILOT else ModelConstants.HISTORY_BUFFER_LEN+1), dtype=np.float32),
       'traffic_convention': np.zeros(ModelConstants.TRAFFIC_CONVENTION_LEN, dtype=np.float32),
       'lateral_control_params': np.zeros(ModelConstants.LATERAL_CONTROL_PARAMS_LEN, dtype=np.float32),
-      'prev_desired_curv': np.zeros(ModelConstants.PREV_DESIRED_CURV_LEN * (ModelConstants.HISTORY_BUFFER_LEN+1), dtype=np.float32),
+      'prev_desired_curv': np.zeros(ModelConstants.PREV_DESIRED_CURV_LEN * (ModelConstants.HISTORY_BUFFER_LEN_SECRET+1 if SECRET_GOOD_OPENPILOT else ModelConstants.HISTORY_BUFFER_LEN+1), dtype=np.float32),
       **({'nav_features': np.zeros(ModelConstants.NAV_FEATURE_LEN, dtype=np.float32),
           'nav_instructions': np.zeros(ModelConstants.NAV_INSTRUCTION_LEN, dtype=np.float32)} if not DISABLE_NAV else {}),
-      'features_buffer': np.zeros(ModelConstants.HISTORY_BUFFER_LEN * ModelConstants.FEATURE_LEN, dtype=np.float32),
+      'features_buffer': np.zeros((ModelConstants.HISTORY_BUFFER_LEN_SECRET if SECRET_GOOD_OPENPILOT else ModelConstants.HISTORY_BUFFER_LEN) * ModelConstants.FEATURE_LEN, dtype=np.float32),
       **({'radar_tracks': np.zeros(ModelConstants.RADAR_TRACKS_LEN * ModelConstants.RADAR_TRACKS_WIDTH, dtype=np.float32)} if DISABLE_RADAR else {}),
     }
+
+    self.input_imgs_20hz = np.zeros(MODEL_FRAME_SIZE*5, dtype=np.float32)
+    self.big_input_imgs_20hz = np.zeros(MODEL_FRAME_SIZE*5, dtype=np.float32)
+    self.input_imgs = np.zeros(MODEL_FRAME_SIZE*2, dtype=np.float32)
+    self.big_input_imgs = np.zeros(MODEL_FRAME_SIZE*2, dtype=np.float32)
 
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
@@ -97,8 +109,16 @@ class ModelState:
                 inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire'][0] = 0
-    self.inputs['desire'][:-ModelConstants.DESIRE_LEN] = self.inputs['desire'][ModelConstants.DESIRE_LEN:]
-    self.inputs['desire'][-ModelConstants.DESIRE_LEN:] = np.where(inputs['desire'] - self.prev_desire > .99, inputs['desire'], 0)
+
+    if SECRET_GOOD_OPENPILOT:
+      new_desire = np.where(inputs['desire'] - self.prev_desire > .99, inputs['desire'], 0)
+      self.desire_20Hz[:-1] = self.desire_20Hz[1:]
+      self.desire_20Hz[-1] = new_desire
+      self.inputs['desire'][:] = self.desire_20Hz.reshape((25,4,-1)).max(axis=1).flatten()
+    else:
+      self.inputs['desire'][:-ModelConstants.DESIRE_LEN] = self.inputs['desire'][ModelConstants.DESIRE_LEN:]
+      self.inputs['desire'][-ModelConstants.DESIRE_LEN:] = np.where(inputs['desire'] - self.prev_desire > .99, inputs['desire'], 0)
+
     self.prev_desire[:] = inputs['desire']
 
     self.inputs['traffic_convention'][:] = inputs['traffic_convention']
@@ -109,10 +129,25 @@ class ModelState:
     if DISABLE_RADAR:
       self.inputs['radar_tracks'][:] = inputs['radar_tracks']
 
-    # if getCLBuffer is not None, frame will be None
-    self.model.setInputBuffer("input_imgs", self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs")))
-    if wbuf is not None:
-      self.model.setInputBuffer("big_input_imgs", self.wide_frame.prepare(wbuf, transform_wide.flatten(), self.model.getCLBuffer("big_input_imgs")))
+    if SECRET_GOOD_OPENPILOT:
+      new_img = self.frame.prepareSecret(buf, transform.flatten(), self.model.getCLBuffer("input_imgs"))
+      self.input_imgs_20hz[:-MODEL_FRAME_SIZE] = self.input_imgs_20hz[MODEL_FRAME_SIZE:]
+      self.input_imgs_20hz[-MODEL_FRAME_SIZE:] = new_img
+      self.input_imgs[:MODEL_FRAME_SIZE] = self.input_imgs_20hz[:MODEL_FRAME_SIZE]
+      self.input_imgs[MODEL_FRAME_SIZE:] = self.input_imgs_20hz[-MODEL_FRAME_SIZE:]
+      self.model.setInputBuffer("input_imgs", self.input_imgs)
+      if wbuf is not None:
+        new_big_img = self.wide_frame.prepareSecret(wbuf, transform_wide.flatten(), self.model.getCLBuffer("big_input_imgs"))
+        self.big_input_imgs_20hz[:-MODEL_FRAME_SIZE] = self.big_input_imgs_20hz[MODEL_FRAME_SIZE:]
+        self.big_input_imgs_20hz[-MODEL_FRAME_SIZE:] = new_big_img
+        self.big_input_imgs[:MODEL_FRAME_SIZE] = self.big_input_imgs_20hz[:MODEL_FRAME_SIZE]
+        self.big_input_imgs[MODEL_FRAME_SIZE:] = self.big_input_imgs_20hz[-MODEL_FRAME_SIZE:]
+        self.model.setInputBuffer("big_input_imgs", self.big_input_imgs)
+    else:
+      # if getCLBuffer is not None, frame will be None
+      self.model.setInputBuffer("input_imgs", self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs")))
+      if wbuf is not None:
+        self.model.setInputBuffer("big_input_imgs", self.wide_frame.prepare(wbuf, transform_wide.flatten(), self.model.getCLBuffer("big_input_imgs")))
 
     if prepare_only:
       return None
@@ -120,8 +155,15 @@ class ModelState:
     self.model.execute()
     outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
 
-    self.inputs['features_buffer'][:-ModelConstants.FEATURE_LEN] = self.inputs['features_buffer'][ModelConstants.FEATURE_LEN:]
-    self.inputs['features_buffer'][-ModelConstants.FEATURE_LEN:] = outputs['hidden_state'][0, :]
+    if SECRET_GOOD_OPENPILOT:
+      self.full_features_20Hz[:-1] = self.full_features_20Hz[1:]
+      self.full_features_20Hz[-1] = outputs['hidden_state'][0, :]
+      idxs = np.arange(-4,-100,-4)[::-1]
+      self.inputs['features_buffer'][:] = self.full_features_20Hz[idxs].flatten()
+    else:
+      self.inputs['features_buffer'][:-ModelConstants.FEATURE_LEN] = self.inputs['features_buffer'][ModelConstants.FEATURE_LEN:]
+      self.inputs['features_buffer'][-ModelConstants.FEATURE_LEN:] = outputs['hidden_state'][0, :]
+
     self.inputs['prev_desired_curv'][:-ModelConstants.PREV_DESIRED_CURV_LEN] = self.inputs['prev_desired_curv'][ModelConstants.PREV_DESIRED_CURV_LEN:]
     self.inputs['prev_desired_curv'][-ModelConstants.PREV_DESIRED_CURV_LEN:] = outputs['desired_curvature'][0, :]
     return outputs
@@ -199,6 +241,9 @@ def main(demo=False, frogpilot_toggles=None):
 
   DH = DesireHelper()
 
+  # FrogPilot variables
+  update_toggles = False
+
   while True:
     # Keep receiving frames until we are at least 1 frame ahead of previous extra frame
     while meta_main.timestamp_sof < meta_extra.timestamp_sof + 25000000:
@@ -208,7 +253,7 @@ def main(demo=False, frogpilot_toggles=None):
         break
 
     if buf_main is None:
-      cloudlog.error("vipc_client_main no frame")
+      cloudlog.debug("vipc_client_main no frame")
       continue
 
     if use_extra_client:
@@ -220,13 +265,12 @@ def main(demo=False, frogpilot_toggles=None):
           break
 
       if buf_extra is None:
-        cloudlog.error("vipc_client_extra no frame")
+        cloudlog.debug("vipc_client_extra no frame")
         continue
 
       if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > 10000000:
-        cloudlog.error("frames out of sync! main: {} ({:.5f}), extra: {} ({:.5f})".format(
-          meta_main.frame_id, meta_main.timestamp_sof / 1e9,
-          meta_extra.frame_id, meta_extra.timestamp_sof / 1e9))
+        cloudlog.error(f"frames out of sync! main: {meta_main.frame_id} ({meta_main.timestamp_sof / 1e9:.5f}),\
+                         extra: {meta_extra.frame_id} ({meta_extra.timestamp_sof / 1e9:.5f})")
 
     else:
       # Use single camera
@@ -314,7 +358,7 @@ def main(demo=False, frogpilot_toggles=None):
       modelv2_send = messaging.new_message('modelV2')
       posenet_send = messaging.new_message('cameraOdometry')
       fill_model_msg(modelv2_send, model_output, publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio,
-                      meta_main.timestamp_eof, timestamp_llk, model_execution_time, nav_enabled, live_calib_seen)
+                      meta_main.timestamp_eof, timestamp_llk, model_execution_time, nav_enabled, live_calib_seen, SECRET_GOOD_OPENPILOT)
 
       desire_state = modelv2_send.modelV2.meta.desireState
       l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
@@ -333,7 +377,10 @@ def main(demo=False, frogpilot_toggles=None):
 
     # Update FrogPilot parameters
     if FrogPilotVariables.toggles_updated:
+      update_toggles = True
+    elif update_toggles:
       FrogPilotVariables.update_frogpilot_params()
+      update_toggles = False
 
 if __name__ == "__main__":
   try:

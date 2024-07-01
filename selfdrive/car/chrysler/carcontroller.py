@@ -2,7 +2,7 @@ from opendbc.can.packer import CANPacker
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import apply_meas_steer_torque_limits
 from openpilot.selfdrive.car.chrysler import chryslercan
-from openpilot.selfdrive.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags
+from openpilot.selfdrive.car.chrysler.values import RAM_CARS, RAM_DT, CarControllerParams, ChryslerFlags
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 
 
@@ -20,7 +20,7 @@ class CarController(CarControllerBase):
     self.packer = CANPacker(dbc_name)
     self.params = CarControllerParams(CP)
 
-  def update(self, CC, CS, now_nanos, frogpilot_variables):
+  def update(self, CC, CS, now_nanos, frogpilot_toggles):
     can_sends = []
 
     lkas_active = CC.latActive and self.lkas_control_bit_prev
@@ -32,12 +32,12 @@ class CarController(CarControllerBase):
       # ACC cancellation
       if CC.cruiseControl.cancel:
         self.last_button_frame = self.frame
-        can_sends.append(chryslercan.create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, cancel=True))
+        can_sends.append(chryslercan.create_cruise_buttons(self.packer, self.CP, CS.button_counter + 1, das_bus, cancel=True))
 
       # ACC resume from standstill
       elif CC.cruiseControl.resume:
         self.last_button_frame = self.frame
-        can_sends.append(chryslercan.create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, resume=True))
+        can_sends.append(chryslercan.create_cruise_buttons(self.packer, self.CP, CS.button_counter + 1, das_bus, resume=True))
 
     # HUD alerts
     if self.frame % 25 == 0:
@@ -51,7 +51,12 @@ class CarController(CarControllerBase):
 
       # TODO: can we make this more sane? why is it different for all the cars?
       lkas_control_bit = self.lkas_control_bit_prev
-      if CS.out.vEgo > self.CP.minSteerSpeed:
+      if self.CP.carFingerprint in RAM_DT:
+        if self.CP.minEnableSpeed <= CS.out.vEgo <= self.CP.minEnableSpeed + 0.5:
+          lkas_control_bit = True
+        if (self.CP.minEnableSpeed >= 14.5) and (CS.out.gearShifter != 2):
+          lkas_control_bit = False
+      elif CS.out.vEgo > self.CP.minSteerSpeed:
         lkas_control_bit = True
       elif self.CP.flags & ChryslerFlags.HIGHER_MIN_STEERING_SPEED:
         if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
@@ -78,7 +83,7 @@ class CarController(CarControllerBase):
 
     self.frame += 1
 
-    new_actuators = CC.actuators.copy()
+    new_actuators = CC.actuators.as_builder()
     new_actuators.steer = self.apply_steer_last / self.params.STEER_MAX
     new_actuators.steerOutputCan = self.apply_steer_last
 

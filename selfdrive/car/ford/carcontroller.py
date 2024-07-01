@@ -37,7 +37,7 @@ class CarController(CarControllerBase):
     self.steer_alert_last = False
     self.lead_distance_bars_last = None
 
-  def update(self, CC, CS, now_nanos, frogpilot_variables):
+  def update(self, CC, CS, now_nanos, frogpilot_toggles):
     can_sends = []
 
     actuators = CC.actuators
@@ -94,7 +94,7 @@ class CarController(CarControllerBase):
     # send acc msg at 50Hz
     if self.CP.openpilotLongitudinalControl and (self.frame % CarControllerParams.ACC_CONTROL_STEP) == 0:
       # Both gas and accel are in m/s^2, accel is used solely for braking
-      if frogpilot_variables.sport_plus:
+      if frogpilot_toggles.sport_plus:
         accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX_PLUS)
       else:
         accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
@@ -123,7 +123,7 @@ class CarController(CarControllerBase):
     self.steer_alert_last = steer_alert
     self.lead_distance_bars_last = hud_control.leadDistanceBars
 
-    new_actuators = actuators.copy()
+    new_actuators = actuators.as_builder()
     new_actuators.curvature = self.apply_curvature_last
 
     self.frame += 1

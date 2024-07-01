@@ -498,7 +498,7 @@ void Primeless::updateState() {
 }
 
 void Primeless::createMapboxKeyControl(ButtonControl *&control, const QString &label, const std::string &paramKey, const QString &prefix) {
-  control = new ButtonControl(label, "", tr("Manage your %1."), this);
+  control = new ButtonControl(label, "", tr("Manage your %1.").arg(label), this);
   QObject::connect(control, &ButtonControl::clicked, this, [this, control, label, paramKey, prefix] {
     if (control->text() == tr("ADD")) {
       QString key = InputDialog::getText(tr("Enter your %1").arg(label), this);
@@ -509,7 +509,9 @@ void Primeless::createMapboxKeyControl(ButtonControl *&control, const QString &l
         params.put(paramKey, key.toStdString());
       }
     } else {
-      params.remove(paramKey);
+      if (FrogPilotConfirmationDialog::yesorno(tr("Are you sure you want to remove your %1?").arg(label), this)) {
+        params.remove(paramKey);
+      }
     }
   });
   list->addItem(control);

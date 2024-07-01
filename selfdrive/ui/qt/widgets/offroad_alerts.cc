@@ -37,7 +37,6 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
   disable_check_btn->setFixedSize(625, 125);
   footer_layout->addWidget(disable_check_btn, 1, Qt::AlignBottom | Qt::AlignCenter);
   QObject::connect(disable_check_btn, &QPushButton::clicked, [=]() {
-    params.putBool("SnoozeUpdate", true);
     params.putBool("DeviceManagement", true);
     params.putBool("OfflineMode", true);
   });

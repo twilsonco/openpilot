@@ -15,7 +15,7 @@ class CarController(CarControllerBase):
     self.pt_packer = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.tesla_can = TeslaCAN(self.packer, self.pt_packer)
 
-  def update(self, CC, CS, now_nanos, frogpilot_variables):
+  def update(self, CC, CS, now_nanos, frogpilot_toggles):
     actuators = CC.actuators
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
@@ -60,7 +60,7 @@ class CarController(CarControllerBase):
 
     # TODO: HUD control
 
-    new_actuators = actuators.copy()
+    new_actuators = actuators.as_builder()
     new_actuators.steeringAngleDeg = self.apply_angle_last
 
     self.frame += 1

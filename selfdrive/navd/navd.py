@@ -31,7 +31,6 @@ class RouteEngine:
     self.pm = pm
 
     self.params = Params()
-    self.params_memory = Params("/dev/shm/params")
 
     # Get last gps position from params
     self.last_position = coordinate_from_param("LastGPSPosition", self.params)
@@ -73,6 +72,7 @@ class RouteEngine:
 
     self.approaching_intersection = False
     self.approaching_turn = False
+    self.update_toggles = False
 
     self.nav_speed_limit = 0
 
@@ -96,7 +96,10 @@ class RouteEngine:
 
     # Update FrogPilot parameters
     if FrogPilotVariables.toggles_updated:
+      self.update_toggles = True
+    elif self.update_toggles:
       FrogPilotVariables.update_frogpilot_params()
+      self.update_toggles = False
 
   def update_location(self):
     location = self.sm['liveLocationKalman']
@@ -386,7 +389,7 @@ class RouteEngine:
 
     if self.frogpilot_toggles.conditional_navigation:
       v_ego = self.sm['carState'].vEgo
-      seconds_to_stop = interp(v_ego, [0, 22.3, 44.7], [5, 10, 10])
+      seconds_to_stop = interp(v_ego, [0, 22.5, 45], [5, 10, 10])
 
       closest_condition_indices = [idx for idx in self.stop_signal if idx >= closest_idx]
       if closest_condition_indices:

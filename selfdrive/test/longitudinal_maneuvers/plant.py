@@ -50,7 +50,7 @@ class Plant:
     from openpilot.selfdrive.car.honda.values import CAR
     from openpilot.selfdrive.car.honda.interface import CarInterface
 
-    self.planner = LongitudinalPlanner(CarInterface.get_non_essential_params(CAR.CIVIC), init_v=self.speed)
+    self.planner = LongitudinalPlanner(CarInterface.get_non_essential_params(CAR.HONDA_CIVIC), init_v=self.speed)
 
   @property
   def current_time(self):
@@ -83,7 +83,7 @@ class Plant:
 
     lead = log.RadarState.LeadData.new_message()
     lead.dRel = float(d_rel)
-    lead.yRel = float(0.0)
+    lead.yRel = 0.0
     lead.vRel = float(v_rel)
     lead.aRel = float(a_lead - self.acceleration)
     lead.vLead = float(v_lead)

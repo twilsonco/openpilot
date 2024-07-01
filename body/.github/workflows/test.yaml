@@ -12,7 +12,7 @@ env:
 jobs:
   docker_push:
     name: docker push
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/body'
     steps:
@@ -28,7 +28,7 @@ jobs:
 
   build:
     name: build
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v2
@@ -39,7 +39,7 @@ jobs:
 
   python_linter:
     name: python linter
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v2

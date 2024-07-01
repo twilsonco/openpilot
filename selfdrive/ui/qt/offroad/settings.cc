@@ -1,5 +1,3 @@
-#include "selfdrive/ui/qt/offroad/settings.h"
-
 #include <cassert>
 #include <cmath>
 #include <iomanip>
@@ -11,20 +9,14 @@
 #include <QDebug>
 #include <QScrollBar>
 
-#include "selfdrive/ui/qt/network/networking.h"
-
-#include "common/params.h"
 #include "common/watchdog.h"
 #include "common/util.h"
-#include "system/hardware/hw.h"
-#include "selfdrive/ui/qt/widgets/controls.h"
-#include "selfdrive/ui/qt/widgets/input.h"
+#include "selfdrive/ui/qt/network/networking.h"
+#include "selfdrive/ui/qt/offroad/settings.h"
+#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/widgets/prime.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
-#include "selfdrive/ui/qt/widgets/toggle.h"
-#include "selfdrive/ui/ui.h"
-#include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/qt_window.h"
 
 #include "selfdrive/frogpilot/navigation/ui/navigation_settings.h"
 #include "selfdrive/frogpilot/ui/qt/offroad/control_settings.h"
@@ -131,6 +123,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     updateToggles();
   });
 
+  // FrogPilot signals
   connect(toggles["IsMetric"], &ToggleControl::toggleFlipped, [=]() {
     updateMetric();
   });
@@ -170,21 +163,14 @@ void TogglesPanel::updateToggles() {
                                           "<h4>%2</h4><br>"
                                           "%3<br>"
                                           "<h4>%4</h4><br>"
-                                          "%5<br>"
-                                          "<h4>%6</h4><br>"
-                                          "%7")
+                                          "%5<br>")
                                   .arg(tr("openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:"))
                                   .arg(tr("End-to-End Longitudinal Control"))
                                   .arg(tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
                                           "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; "
                                           "mistakes should be expected."))
-                                  .arg(tr("Navigate on openpilot"))
-                                  .arg(tr("When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right "
-                                          "appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around "
-                                          "exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc."))
                                   .arg(tr("New Driving Visualization"))
-                                  .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. "
-                                          "When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green."));
+                                  .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner."));
 
   const bool is_release = params.getBool("IsReleaseBranch");
   auto cp_bytes = params.get("CarParamsPersistent");
@@ -240,6 +226,14 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(new LabelControl(tr("Dongle ID"), getDongleId().value_or(tr("N/A"))));
   addItem(new LabelControl(tr("Serial"), params.get("HardwareSerial").c_str()));
 
+  pair_device = new ButtonControl(tr("Pair Device"), tr("PAIR"),
+                                  tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."));
+  connect(pair_device, &ButtonControl::clicked, [=]() {
+    PairingPopup popup(this);
+    popup.exec();
+  });
+  addItem(pair_device);
+
   // offroad-only buttons
 
   auto dcamBtn = new ButtonControl(tr("Driver Camera"), tr("PREVIEW"),
@@ -287,6 +281,17 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(translateBtn);
 
+  QObject::connect(uiState(), &UIState::primeTypeChanged, [this] (PrimeType type) {
+    pair_device->setVisible(type == PrimeType::UNPAIRED);
+  });
+  QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
+    for (auto btn : findChildren<ButtonControl *>()) {
+      if (btn != pair_device) {
+        btn->setEnabled(offroad);
+      }
+    }
+  });
+
   // Backup FrogPilot
   std::vector<QString> frogpilotBackupOptions{tr("Backup"), tr("Delete"), tr("Restore")};
   FrogPilotButtonsControl *frogpilotBackup = new FrogPilotButtonsControl(tr("FrogPilot Backups"), tr("Backup, delete, or restore your FrogPilot backups."), "", frogpilotBackupOptions);
@@ -302,23 +307,16 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 
           std::string fullBackupPath = backupDir.absolutePath().toStdString() + "/" + nameSelection.toStdString();
 
-          std::ostringstream commandStream;
-          commandStream << "mkdir -p " << std::quoted(fullBackupPath)
-                        << " && rsync -av /data/openpilot/ " << std::quoted(fullBackupPath + "/");
-          std::string command = commandStream.str();
+          std::string command = "mkdir -p " + fullBackupPath + " && rsync -av /data/openpilot/ " + fullBackupPath + "/";
 
           int result = std::system(command.c_str());
           if (result == 0) {
-            std::cout << "Backup successful to " << fullBackupPath << std::endl;
             frogpilotBackup->setValue(tr("Success!"));
-            std::this_thread::sleep_for(std::chrono::seconds(3));
-            frogpilotBackup->setValue("");
           } else {
-            std::cerr << "Backup failed with error code: " << result << std::endl;
             frogpilotBackup->setValue(tr("Failed..."));
-            std::this_thread::sleep_for(std::chrono::seconds(3));
-            frogpilotBackup->setValue("");
           }
+          std::this_thread::sleep_for(std::chrono::seconds(3));
+          frogpilotBackup->setValue("");
         }).detach();
       }
     } else if (id == 1) {
@@ -352,26 +350,24 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
           std::string targetPath = "/data/safe_staging/finalized";
           std::string consistentFilePath = targetPath + "/.overlay_consistent";
 
-          std::ostringstream commandStream;
-          commandStream << "rsync -av --delete --exclude='.overlay_consistent' " << std::quoted(sourcePath + "/") << " " << std::quoted(targetPath + "/");
-          std::string command = commandStream.str();
+          std::string command = "rsync -av --delete --exclude='.overlay_consistent' " + sourcePath + "/ " + targetPath + "/";
           int result = std::system(command.c_str());
 
           if (result == 0) {
-            std::cout << "Restore successful from " << sourcePath << " to " << targetPath << std::endl;
             std::ofstream consistentFile(consistentFilePath);
             if (consistentFile) {
               consistentFile.close();
-              std::cout << ".overlay_consistent file created successfully." << std::endl;
             } else {
-              std::cerr << "Failed to create .overlay_consistent file." << std::endl;
               frogpilotBackup->setValue(tr("Failed..."));
               std::this_thread::sleep_for(std::chrono::seconds(3));
               frogpilotBackup->setValue("");
+              return;
             }
             Hardware::reboot();
           } else {
-            std::cerr << "Restore failed with error code: " << result << std::endl;
+            frogpilotBackup->setValue(tr("Failed..."));
+            std::this_thread::sleep_for(std::chrono::seconds(3));
+            frogpilotBackup->setValue("");
           }
         }).detach();
       }
@@ -394,23 +390,16 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 
           std::string fullBackupPath = backupDir.absolutePath().toStdString() + "/" + nameSelection.toStdString() + "/";
 
-          std::ostringstream commandStream;
-          commandStream << "mkdir -p " << std::quoted(fullBackupPath)
-                        << " && rsync -av /data/params/d/ " << std::quoted(fullBackupPath);
-          std::string command = commandStream.str();
+          std::string command = "mkdir -p " + fullBackupPath + " && rsync -av /data/params/d/ " + fullBackupPath;
 
           int result = std::system(command.c_str());
           if (result == 0) {
-            std::cout << "Backup successful to " << fullBackupPath << std::endl;
             toggleBackup->setValue(tr("Success!"));
-            std::this_thread::sleep_for(std::chrono::seconds(3));
-            toggleBackup->setValue("");
           } else {
-            std::cerr << "Backup failed with error code: " << result << std::endl;
             toggleBackup->setValue(tr("Failed..."));
-            std::this_thread::sleep_for(std::chrono::seconds(3));
-            toggleBackup->setValue("");
           }
+          std::this_thread::sleep_for(std::chrono::seconds(3));
+          toggleBackup->setValue("");
         }).detach();
       }
     } else if (id == 1) {
@@ -443,24 +432,17 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
           std::string sourcePath = backupDir.absolutePath().toStdString() + "/" + selection.toStdString() + "/";
           std::string targetPath = "/data/params/d/";
 
-          std::ostringstream commandStream;
-          commandStream << "rsync -av --delete " << std::quoted(sourcePath) << " " << std::quoted(targetPath);
-          std::string command = commandStream.str();
-
+          std::string command = "rsync -av --delete " + sourcePath + " " + targetPath;
           int result = std::system(command.c_str());
 
           if (result == 0) {
-            std::cout << "Restore successful from " << sourcePath << " to " << targetPath << std::endl;
             toggleBackup->setValue(tr("Success!"));
             updateFrogPilotToggles();
-            std::this_thread::sleep_for(std::chrono::seconds(3));
-            toggleBackup->setValue("");
           } else {
-            std::cerr << "Restore failed with error code: " << result << std::endl;
             toggleBackup->setValue(tr("Failed..."));
-            std::this_thread::sleep_for(std::chrono::seconds(3));
-            toggleBackup->setValue("");
           }
+          std::this_thread::sleep_for(std::chrono::seconds(3));
+          toggleBackup->setValue("");
         }).detach();
       }
     }
@@ -472,31 +454,34 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     "stored driving footage and data from your device. Ideal for maintaining privacy or freeing up space.")
   );
   connect(deleteDrivingDataBtn, &ButtonControl::clicked, [=]() {
-    if (!ConfirmationDialog::confirm(tr("Are you sure you want to permanently delete all of your driving footage and data?"), tr("Delete"), this)) return;
-    std::thread([&] {
-      deleteDrivingDataBtn->setValue(tr("Deleting footage..."));
-      std::system("rm -rf /data/media/0/realdata");
-      deleteDrivingDataBtn->setValue(tr("Deleted!"));
-      std::this_thread::sleep_for(std::chrono::seconds(3));
-      deleteDrivingDataBtn->setValue("");
-    }).detach();
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to permanently delete all of your driving footage and data?"), tr("Delete"), this)) {
+      std::thread([&] {
+        deleteDrivingDataBtn->setValue(tr("Deleting footage..."));
+        std::system("rm -rf /data/media/0/realdata");
+        deleteDrivingDataBtn->setValue(tr("Deleted!"));
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+        deleteDrivingDataBtn->setValue("");
+      }).detach();
+    }
   });
   addItem(deleteDrivingDataBtn);
 
-  // Delete long term toggle storage button
+  // Reset toggles to default button
   auto resetTogglesBtn = new ButtonControl(tr("Reset Toggles To Default"), tr("RESET"), tr("Reset your toggle settings back to their default settings."));
   connect(resetTogglesBtn, &ButtonControl::clicked, [=]() {
-    if (!ConfirmationDialog::confirm(tr("Are you sure you want to completely reset all of your toggle settings?"), tr("Reset"), this)) return;
-    std::thread([&] {
-      resetTogglesBtn->setValue(tr("Resetting toggles..."));
-      std::system("rm -rf /persist/params");
-      params.putBool("DoToggleReset", true);
-      resetTogglesBtn->setValue(tr("Reset!"));
-      std::this_thread::sleep_for(std::chrono::seconds(2));
-      resetTogglesBtn->setValue(tr("Rebooting..."));
-      std::this_thread::sleep_for(std::chrono::seconds(3));
-      Hardware::reboot();
-    }).detach();
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to completely reset all of your toggle settings?"), tr("Reset"), this)) {
+      std::thread([&] {
+        resetTogglesBtn->setValue(tr("Resetting toggles..."));
+        std::system("rm -rf /persist/params");
+        params.putBool("DoToggleReset", true);
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        resetTogglesBtn->setValue(tr("Reset!"));
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        resetTogglesBtn->setValue(tr("Rebooting..."));
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+        Hardware::reboot();
+      }).detach();
+    }
   });
   addItem(resetTogglesBtn);
 
@@ -514,21 +499,11 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
         process.start("/bin/sh", QStringList{"-c", "./flash.py"});
         process.waitForFinished();
 
-        process.setWorkingDirectory("/data/openpilot/panda/tests");
-        process.start("/bin/sh", QStringList{"-c", "python reflash_internal_panda.py"});
-        process.waitForFinished();
-
         Hardware::reboot();
       }).detach();
     }
   });
   addItem(flashPandaBtn);
-
-  QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
-    for (auto btn : findChildren<ButtonControl *>()) {
-      btn->setEnabled(offroad);
-    }
-  });
 
   // power buttons
   QHBoxLayout *power_layout = new QHBoxLayout();
@@ -607,6 +582,11 @@ void DevicePanel::poweroff() {
   }
 }
 
+void DevicePanel::showEvent(QShowEvent *event) {
+  pair_device->setVisible(uiState()->primeType() == PrimeType::UNPAIRED);
+  ListWidget::showEvent(event);
+}
+
 void SettingsWindow::hideEvent(QHideEvent *event) {
   closeParentToggle();
 
@@ -640,14 +620,13 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QPushButton *close_btn = new QPushButton(tr("← Back"));
   close_btn->setStyleSheet(R"(
     QPushButton {
-      color: white;
-      border-radius: 25px;
-      background: #292929;
       font-size: 50px;
+      border-radius: 25px;
+      background-color: #292929;
       font-weight: 500;
     }
     QPushButton:pressed {
-      color: #ADADAD;
+      background-color: #ADADAD;
     }
   )");
   close_btn->setFixedSize(300, 125);

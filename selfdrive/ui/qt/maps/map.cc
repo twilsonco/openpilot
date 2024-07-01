@@ -5,6 +5,7 @@
 
 #include <QDebug>
 
+#include "common/swaglog.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/ui.h"
@@ -162,6 +163,14 @@ void MapWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
   update();
 
+  // on rising edge of a valid system time, reinitialize the map to set a new token
+  if (sm.valid("clocks") && !prev_time_valid) {
+    LOGW("Time is now valid, reinitializing map");
+    m_settings.setApiKey(get_mapbox_token());
+    initializeGL();
+  }
+  prev_time_valid = sm.valid("clocks");
+
   if (sm.updated("modelV2")) {
     // set path color on change, and show map on rising edge of navigate on openpilot
     bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled() &&
@@ -182,30 +191,21 @@ void MapWindow::updateState(const UIState &s) {
     auto locationd_pos = locationd_location.getPositionGeodetic();
     auto locationd_orientation = locationd_location.getCalibratedOrientationNED();
     auto locationd_velocity = locationd_location.getVelocityCalibrated();
+    auto locationd_ecef = locationd_location.getPositionECEF();
 
-    // Check std norm
-    auto pos_ecef_std = locationd_location.getPositionECEF().getStd();
-    bool pos_accurate_enough = sqrt(pow(pos_ecef_std[0], 2) + pow(pos_ecef_std[1], 2) + pow(pos_ecef_std[2], 2)) < 100;
-
-    locationd_valid = (locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid() && pos_accurate_enough);
+    locationd_valid = (locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid() && locationd_ecef.getValid());
+    if (locationd_valid) {
+      // Check std norm
+      auto pos_ecef_std = locationd_ecef.getStd();
+      bool pos_accurate_enough = sqrt(pow(pos_ecef_std[0], 2) + pow(pos_ecef_std[1], 2) + pow(pos_ecef_std[2], 2)) < 100;
+      locationd_valid = pos_accurate_enough;
+    }
 
     if (locationd_valid) {
       last_position = QMapLibre::Coordinate(locationd_pos.getValue()[0], locationd_pos.getValue()[1]);
       last_bearing = RAD2DEG(locationd_orientation.getValue()[2]);
       velocity_filter.update(std::max(10.0, locationd_velocity.getValue()[0]));
     }
-  }
-
-  // Credit to jakethesnake420
-  if (loaded_once && (sm.rcv_frame("uiPlan") != model_rcv_frame)) {
-    auto locationd_location = sm["liveLocationKalman"].getLiveLocationKalman();
-    auto model_path = model_to_collection(locationd_location.getCalibratedOrientationECEF(), locationd_location.getPositionECEF(), sm["uiPlan"].getUiPlan().getPosition());
-    QMapLibre::Feature model_path_feature(QMapLibre::Feature::LineStringType, model_path, {}, {});
-    QVariantMap modelV2Path;
-    modelV2Path["type"] =  "geojson";
-    modelV2Path["data"] = QVariant::fromValue<QMapLibre::Feature>(model_path_feature);
-    m_map->updateSource("modelPathSource", modelV2Path);
-    model_rcv_frame = sm.rcv_frame("uiPlan");
   }
 
   if (sm.updated("navRoute") && sm["navRoute"].getNavRoute().getCoordinates().size()) {
@@ -294,6 +294,18 @@ void MapWindow::updateState(const UIState &s) {
     updateDestinationMarker();
   }
 
+  // Credit to jakethesnake420
+  if (loaded_once && (sm.rcv_frame("uiPlan") != model_rcv_frame)) {
+    auto locationd_location = sm["liveLocationKalman"].getLiveLocationKalman();
+    auto model_path = model_to_collection(locationd_location.getCalibratedOrientationECEF(), locationd_location.getPositionECEF(), sm["uiPlan"].getUiPlan().getPosition());
+    QMapLibre::Feature model_path_feature(QMapLibre::Feature::LineStringType, model_path, {}, {});
+    QVariantMap modelV2Path;
+    modelV2Path["type"] =  "geojson";
+    modelV2Path["data"] = QVariant::fromValue<QMapLibre::Feature>(model_path_feature);
+    m_map->updateSource("modelPathSource", modelV2Path);
+    model_rcv_frame = sm.rcv_frame("uiPlan");
+  }
+
   // Map Styling - Credit goes to OPKR!
   int map_style = uiState()->scene.map_style;
 
@@ -353,6 +365,10 @@ void MapWindow::initializeGL() {
     if (change == QMapLibre::Map::MapChange::MapChangeDidFinishLoadingMap) {
       loaded_once = true;
     }
+  });
+
+  QObject::connect(m_map.data(), &QMapLibre::Map::mapLoadingFailed, [=](QMapLibre::Map::MapLoadingFailure err_code, const QString &reason) {
+    LOGE("Map loading failed with %d: '%s'\n", err_code, reason.toStdString().c_str());
   });
 }
 

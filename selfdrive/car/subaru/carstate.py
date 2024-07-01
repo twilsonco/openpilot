@@ -16,7 +16,7 @@ class CarState(CarStateBase):
 
     self.angle_rate_calulator = CanSignalRateCalculator(50)
 
-  def update(self, cp, cp_cam, cp_body, frogpilot_variables):
+  def update(self, cp, cp_cam, cp_body, frogpilot_toggles):
     ret = car.CarState.new_message()
     fp_ret = custom.FrogPilotCarState.new_message()
 
@@ -126,7 +126,7 @@ class CarState(CarStateBase):
     if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
       self.es_infotainment_msg = copy.copy(cp_cam.vl["ES_Infotainment"])
 
-    # FrogPilot carstate functions
+    # FrogPilot CarState functions
     if self.car_fingerprint not in PREGLOBAL_CARS:
       fp_ret.brakeLights = bool(cp_cam.vl["ES_DashStatus"]["Brake_Lights"])
       self.lkas_previously_enabled = self.lkas_enabled
@@ -205,6 +205,7 @@ class CarState(CarStateBase):
       messages = [
         ("ES_DashStatus", 20),
         ("ES_Distance", 20),
+        ("ES_Brake", 20),
       ]
     else:
       messages = [
