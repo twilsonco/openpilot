@@ -41,6 +41,7 @@ from openpilot.system.loggerd.xattr_cache import getxattr
 
 # otisserv conversion
 from urllib.parse import parse_qs, quote
+import openpilot.system.sentry as sentry
 
 pi = 3.1415926535897932384626
 x_pi = 3.14159265358979324 * 3000.0 / 180.0
@@ -62,7 +63,7 @@ if PC:
   ERROR_LOGS_PATH = os.path.join(str(Path.home()), ".comma", "community", "crashes", "")
 else:
   SCREENRECORD_PATH = "/data/media/0/videos/"
-  ERROR_LOGS_PATH = "/data/community/crashes/"
+  ERROR_LOGS_PATH = sentry.CRASHES_DIR
 
 
 def list_files(path): # still used for footage

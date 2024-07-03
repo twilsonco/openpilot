@@ -537,7 +537,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
                 progressTimer->deleteLater();
 
                 QTimer::singleShot(3000, this, [this]() {
-                  if (paramsMemory.get("ModelDownloadProgress").empty()) {
+                  if (paramsMemory.get("ModelToDownload").empty()) {
                     downloadModelBtn->setValue("");
                   }
                 });

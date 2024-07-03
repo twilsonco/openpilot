@@ -39,104 +39,84 @@ def determine_url(model, file_type):
 def delete_deprecated_models():
   populate_models()
 
-  model_name = params.get("ModelName")
-  if model_name is None:
-    return
+  model_name = params.get("ModelName", encoding='utf-8')
+  if model_name and "(Default)" in model_name and model_name != DEFAULT_MODEL_NAME:
+    params.put("ModelName", model_name.replace(" (Default)", ""))
 
-  model_name = model_name.decode('utf-8')
-  if "(Default)" in model_name and model_name != DEFAULT_MODEL_NAME:
-    stripped_name = model_name.replace(" (Default)", "")
-    params.put("ModelName", stripped_name)
-  params_memory.put("ModelToDownload", params.get("Model", encoding='utf-8'))
+  current_model = params.get("Model", encoding='utf-8')
+  current_model_path = os.path.join(MODELS_PATH, f"{current_model}.thneed")
+  if not os.path.exists(current_model_path):
+    params_memory.put("ModelToDownload", current_model)
 
   available_models = params.get("AvailableModels", encoding='utf-8').split(',')
-
-  current_model = params.get("Model", block=True, encoding='utf-8')
-  current_model_file = os.path.join(MODELS_PATH, f"{current_model}.thneed")
-
-  if current_model not in available_models or not os.path.exists(current_model_file):
+  if current_model not in available_models or not os.path.exists(current_model_path):
     params.put("Model", DEFAULT_MODEL)
     params.put("ModelName", DEFAULT_MODEL_NAME)
 
   for model_file in os.listdir(MODELS_PATH):
-    if (model_file.endswith('.thneed') or model_file.endswith('_metadata.pkl')) and model_file[:-7] not in available_models:
+    if model_file.endswith('.thneed') and model_file[:-7] not in available_models:
       os.remove(os.path.join(MODELS_PATH, model_file))
 
 def download_model():
   model = params_memory.get("ModelToDownload", encoding='utf-8')
   model_path = os.path.join(MODELS_PATH, f"{model}.thneed")
-  metadata_path = os.path.join(MODELS_PATH, f"{model}_metadata.pkl")
 
-  if os.path.exists(model_path) and os.path.exists(metadata_path):
+  if os.path.exists(model_path):
     print(f"Model {model} already exists, skipping download.")
     params_memory.remove("ModelToDownload")
     return
 
-  url_thneed = determine_url(model, '.thneed')
-  url_metadata = determine_url(model, '_metadata.pkl')
+  url = determine_url(model, '.thneed')
 
   for attempt in range(3):
     try:
-      total_size = get_total_size(url_thneed, url_metadata)
-      download_file(url_thneed, model_path, 0, total_size)
-      download_file(url_metadata, metadata_path, os.path.getsize(model_path), total_size)
-      verify_download(model, model_path, metadata_path)
+      total_size = get_total_size(url)
+      download_file(url, model_path, total_size)
+      verify_download(model, model_path)
       return
+
     except Exception as e:
-      handle_download_error(model_path, metadata_path, attempt, e, url_thneed)
+      handle_download_error(model_path, attempt, e)
       time.sleep(2**attempt)
 
-def get_total_size(url_thneed, url_metadata):
+def get_total_size(url):
   try:
-    thneed_size = int(urllib.request.urlopen(url_thneed).getheader('Content-Length'))
-    metadata_size = int(urllib.request.urlopen(url_metadata).getheader('Content-Length'))
-    return thneed_size + metadata_size
+    return int(urllib.request.urlopen(url).getheader('Content-Length'))
   except Exception as e:
     print(f"Failed to get total size. Error: {e}")
     raise
 
-def download_file(url, path, progress_start, total_size):
+def download_file(url, path, total_size):
   try:
-    with urllib.request.urlopen(url) as f:
-      total_file_size = int(f.getheader('Content-Length'))
-      if total_file_size == 0:
-        raise ValueError("File is empty")
-
+    with urllib.request.urlopen(url) as response:
       with open(path, 'wb') as output:
-        for chunk in iter(lambda: f.read(8192), b''):
+        for chunk in iter(lambda: response.read(8192), b''):
           output.write(chunk)
-          progress = progress_start + output.tell()
+          progress = output.tell()
           params_memory.put_int("ModelDownloadProgress", int((progress / total_size) * 100))
         os.fsync(output)
 
-  except urllib.error.HTTPError as e:
-    print(f"HTTP Error: {e.code} - {e.reason}")
-    raise
-  except urllib.error.URLError as e:
-    print(f"URL Error: {e.reason}")
-    raise
-  except socket.timeout:
-    print("Socket timeout occurred")
-    raise
   except Exception as e:
-    print(f"Unexpected error: {e}")
+    print(f"Error downloading file: {e}")
     raise
 
-def verify_download(model, model_path, metadata_path):
-  total_size = os.path.getsize(model_path) + os.path.getsize(metadata_path)
-  if total_size == (os.path.getsize(model_path) + os.path.getsize(metadata_path)):
-    print(f"Successfully downloaded the {model} model and metadata!")
-  else:
-    raise Exception("Downloaded file sizes do not match expected sizes.")
+def verify_download(model, model_path):
+  expected_size = os.path.getsize(model_path)
+  actual_size = os.path.getsize(model_path)
 
-def handle_download_error(model_path, metadata_path, attempt, exception, url):
+  if expected_size == actual_size:
+    print(f"Successfully downloaded the {model} model!")
+  else:
+    raise Exception("Downloaded file size does not match expected size.")
+
+def handle_download_error(model_path, attempt, exception):
   print(f"Attempt {attempt + 1} failed with error: {exception}. Retrying...")
+
   if os.path.exists(model_path):
     os.remove(model_path)
-  if os.path.exists(metadata_path):
-    os.remove(metadata_path)
+
   if attempt == 2:
-    print(f"Failed to download the model after 3 attempts from {url}")
+    print(f"Failed to download the model after 3 attempts.")
 
 def populate_models():
   url = f"{GITHUB_REPOSITORY_URL}Versions/model_names_{VERSION}.txt" if ping_url(GITHUB_REPOSITORY_URL) else f"{GITLAB_REPOSITORY_URL}Versions/model_names_{VERSION}.txt"
@@ -148,28 +128,6 @@ def populate_models():
     print(f"Failed to update models list. Error: {e}")
 
 def update_params(model_info):
-  available_models = ','.join(model[0] for model in model_info)
-  params.put("AvailableModels", available_models)
+  params.put("AvailableModels", ','.join(model[0] for model in model_info))
   params.put("AvailableModelsNames", ','.join(model[1] for model in model_info))
   print("Models list updated successfully.")
-
-def check_metadata():
-  for model_file in os.listdir(MODELS_PATH):
-    if model_file.endswith('.thneed'):
-      model_name = model_file[:-7]
-      metadata_file = f"{model_name}_metadata.pkl"
-      metadata_path = os.path.join(MODELS_PATH, metadata_file)
-
-      if not os.path.exists(metadata_path):
-        print(f"Metadata for {model_name} is missing, downloading...")
-        url_metadata = determine_url(model_name, '_metadata.pkl')
-
-        for attempt in range(3):
-          try:
-            total_size = int(urllib.request.urlopen(url_metadata).getheader('Content-Length'))
-            download_file(url_metadata, metadata_path, 0, total_size)
-            print(f"Successfully downloaded metadata for {model_name}.")
-            break
-          except Exception as e:
-            handle_download_error('', metadata_path, attempt, e, url_metadata)
-            time.sleep(2**attempt)

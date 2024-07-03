@@ -45,12 +45,14 @@ class FrogPilotVariables:
     if msg_bytes is None:
       always_on_lateral_set = False
       car_make = "mock"
+      car_model = "mock"
       openpilot_longitudinal = False
       pcm_cruise = False
     else:
       with car.CarParams.from_bytes(msg_bytes) as CP:
         always_on_lateral_set = self.params.get_bool("AlwaysOnLateralSet")
         car_make = CP.carName
+        car_model = CP.carFingerprint
         openpilot_longitudinal = CP.openpilotLongitudinalControl
         pcm_cruise = CP.pcmCruise
 
@@ -166,7 +168,7 @@ class FrogPilotVariables:
     toggle.turn_desires = lateral_tune and self.params.get_bool("TurnDesires")
 
     toggle.long_pitch = openpilot_longitudinal and car_make == "gm" and self.params.get_bool("LongPitch")
-    toggle.volt_sng = car_make == "gm" and self.params.get_bool("VoltSNG")
+    toggle.volt_sng = car_model == "CHEVROLET_VOLT" and self.params.get_bool("VoltSNG")
 
     longitudinal_tune = openpilot_longitudinal and self.params.get_bool("LongitudinalTune")
     toggle.acceleration_profile = self.params.get_int("AccelerationProfile") if longitudinal_tune else 0

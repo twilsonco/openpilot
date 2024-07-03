@@ -353,6 +353,7 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.road_name_ui = custom_onroad_ui && params.getBool("RoadNameUI");
   scene.rotating_wheel = custom_onroad_ui && params.getBool("RotatingWheel");
   scene.show_stopping_point = custom_onroad_ui && params.getBool("ShowStoppingPoint");
+  scene.show_stopping_point_metrics = scene.show_stopping_point && params.getBool("ShowStoppingPointMetrics");
   scene.wheel_icon = custom_onroad_ui ? params.getInt("WheelIcon") : 0;
 
   bool custom_theme = params.getBool("CustomTheme");

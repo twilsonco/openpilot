@@ -247,11 +247,13 @@ void FrogPilotVehiclesPanel::updateCarToggles() {
     hasSNG = CP.getMinEnableSpeed() <= 0;
     isGMPCMCruise = CP.getCarName() == "gm" && CP.getPcmCruise();
     isImpreza = carFingerprint == "SUBARU_IMPREZA";
+    isVolt = carFingerprint == "CHEVROLET_VOLT";
   } else {
     hasExperimentalOpenpilotLongitudinal = false;
     hasOpenpilotLongitudinal = true;
     hasSNG = false;
     isImpreza = true;
+    isVolt = true;
   }
 
   hideToggles();
@@ -276,6 +278,7 @@ void FrogPilotVehiclesPanel::hideToggles() {
   std::set<QString> imprezaKeys = {"CrosstrekTorque"};
   std::set<QString> longitudinalKeys = {"ToyotaTune", "LongPitch", "SNGHack"};
   std::set<QString> sngKeys = {"SNGHack"};
+  std::set<QString> voltKeys = {"VoltSNG"};
 
   for (auto &[key, toggle] : toggles) {
     if (toggle) {
@@ -290,6 +293,10 @@ void FrogPilotVehiclesPanel::hideToggles() {
       }
 
       if (!isImpreza && imprezaKeys.find(key.c_str()) != imprezaKeys.end()) {
+        continue;
+      }
+
+      if (!isVolt && voltKeys.find(key.c_str()) != voltKeys.end()) {
         continue;
       }
 

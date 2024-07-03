@@ -44,5 +44,6 @@ private:
   bool hasSNG;
   bool isGMPCMCruise;
   bool isImpreza;
+  bool isVolt;
   bool started;
 };

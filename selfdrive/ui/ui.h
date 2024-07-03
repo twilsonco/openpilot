@@ -184,6 +184,7 @@ typedef struct UIScene {
   bool show_slc_offset_ui;
   bool show_steering;
   bool show_stopping_point;
+  bool show_stopping_point_metrics;
   bool show_tuning;
   bool sidebar_metrics;
   bool speed_limit_changed;

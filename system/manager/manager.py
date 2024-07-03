@@ -23,7 +23,7 @@ from openpilot.common.time import system_time_valid
 from openpilot.system.version import get_build_metadata, terms_version, training_version
 
 from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import FrogPilotFunctions
-from openpilot.selfdrive.frogpilot.controls.lib.model_manager import DEFAULT_MODEL, DEFAULT_MODEL_NAME, check_metadata, delete_deprecated_models
+from openpilot.selfdrive.frogpilot.controls.lib.model_manager import DEFAULT_MODEL, DEFAULT_MODEL_NAME, delete_deprecated_models
 
 
 def frogpilot_boot_functions(frogpilot_functions):
@@ -47,12 +47,6 @@ def frogpilot_boot_functions(frogpilot_functions):
     delete_deprecated_models()
   except subprocess.CalledProcessError as e:
     print(f"Failed to delete deprecated models. Error: {e}")
-    return
-
-  try:
-    check_metadata()
-  except subprocess.CalledProcessError as e:
-    print(f"Failed to check metadata models. Error: {e}")
     return
 
 def manager_init(frogpilot_functions) -> None:
@@ -281,6 +275,7 @@ def manager_init(frogpilot_functions) -> None:
     ("ShowSLCOffsetUI", "1"),
     ("ShowSteering", "1"),
     ("ShowStoppingPoint", "0"),
+    ("ShowStoppingPointMetrics", "0"),
     ("ShowStorageLeft", "0"),
     ("ShowStorageUsed", "0"),
     ("Sidebar", "0"),
@@ -328,7 +323,7 @@ def manager_init(frogpilot_functions) -> None:
     ("UseSI", "1"),
     ("UseVienna", "0"),
     ("VisionTurnControl", "1"),
-    ("VoltSNG", "1"),
+    ("VoltSNG", "0"),
     ("WarningImmediateVolume", "100"),
     ("WarningSoftVolume", "100"),
     ("WheelIcon", "3"),

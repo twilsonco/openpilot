@@ -18,7 +18,7 @@ from openpilot.system.hardware import HARDWARE, PC
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_build_metadata, get_version
 
-CRASHES_DIR = "/data/community/crashes/"
+CRASHES_DIR = "/data/crashes/"
 
 class SentryProject(Enum):
   # python project

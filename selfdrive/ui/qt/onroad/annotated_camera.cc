@@ -421,17 +421,19 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s, c
       QPointF adjusted_point = last_point - QPointF(stopSignImg.width() / 2, stopSignImg.height());
       painter.drawPixmap(adjusted_point, stopSignImg);
 
-      QString text = QString::number(scene.model_length * distanceConversion) + leadDistanceUnit;
-      QFont font = InterFont(35, QFont::DemiBold);
-      QFontMetrics fm(font);
-      int text_width = fm.horizontalAdvance(text);
-      QPointF text_position = last_point - QPointF(text_width / 2, stopSignImg.height() + 35);
+      if (scene.show_stopping_point_metrics) {
+        QString text = QString::number(scene.model_length * distanceConversion) + leadDistanceUnit;
+        QFont font = InterFont(35, QFont::DemiBold);
+        QFontMetrics fm(font);
+        int text_width = fm.horizontalAdvance(text);
+        QPointF text_position = last_point - QPointF(text_width / 2, stopSignImg.height() + 35);
 
-      painter.save();
-      painter.setFont(font);
-      painter.setPen(Qt::white);
-      painter.drawText(text_position, text);
-      painter.restore();
+        painter.save();
+        painter.setFont(font);
+        painter.setPen(Qt::white);
+        painter.drawText(text_position, text);
+        painter.restore();
+      }
     }
   }
 

@@ -40,7 +40,7 @@ MODEL_PATHS = {
   ModelRunner.THNEED: Path(__file__).parent / ('models/supercombo.thneed' if MODEL_NAME == DEFAULT_MODEL else f'{MODELS_PATH}/{MODEL_NAME}.thneed'),
   ModelRunner.ONNX: Path(__file__).parent / 'models/supercombo.onnx'}
 
-METADATA_PATH = Path(__file__).parent / ('models/supercombo_metadata.pkl' if not SECRET_GOOD_OPENPILOT else f'{MODELS_PATH}/{MODEL_NAME}_metadata.pkl')
+METADATA_PATH = Path(__file__).parent / ('models/supercombo_metadata.pkl' if not SECRET_GOOD_OPENPILOT else 'models/secret-good-openpilot_metadata.pkl')
 
 MODEL_WIDTH = 512
 MODEL_HEIGHT = 256
