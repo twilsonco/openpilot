@@ -81,6 +81,7 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
   }
   stack->addWidget(uploading);
 
+  // not uploading data
   QWidget *notUploading = new QWidget;
   QVBoxLayout *not_uploading_layout = new QVBoxLayout(notUploading);
   not_uploading_layout->setContentsMargins(64, 56, 64, 56);

@@ -216,7 +216,7 @@ def get_car(params, logcan, sendcan, disable_openpilot_long, experimental_long_a
     candidate = "MOCK"
     fingerprint_log = threading.Thread(target=sentry.capture_fingerprint, args=(candidate, params, True,))
     fingerprint_log.start()
-  elif not params.get_bool("FingerprintLogged"):
+  elif False:
     fingerprint_log = threading.Thread(target=sentry.capture_fingerprint, args=(candidate, params,))
     fingerprint_log.start()
 

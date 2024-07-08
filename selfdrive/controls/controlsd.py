@@ -205,7 +205,7 @@ class Controls:
     self.speed_check = False
     self.speed_limit_changed = False
     self.update_toggles = False
-    self.use_old_long = self.CP.carName == "hyundai"
+    self.use_old_long = self.CP.carName == "hyundai" and not self.params.get_bool("NewLongAPI")
     self.vCruise69_alert_played = False
 
     self.display_timer = 0
@@ -1063,7 +1063,8 @@ class Controls:
           override_value = 0 if conditional_status in {1, 2, 3, 4, 5, 6} else 3 if conditional_status >= 7 else 4
           self.params_memory.put_int("CEStatus", override_value)
         else:
-          self.params.put_bool_nonblocking("ExperimentalMode", not self.experimental_mode)
+          self.experimental_mode = not self.experimental_mode
+          self.params.put_bool_nonblocking("ExperimentalMode", self.experimental_mode)
 
     self.previously_enabled |= (self.enabled or self.always_on_lateral_active) and CS.vEgo > CRUISING_SPEED
     self.previously_enabled &= driving_gear

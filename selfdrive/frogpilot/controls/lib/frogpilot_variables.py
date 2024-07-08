@@ -1,3 +1,5 @@
+import os
+
 from types import SimpleNamespace
 
 from cereal import car
@@ -7,7 +9,7 @@ from openpilot.selfdrive.controls.lib.desire_helper import LANE_CHANGE_SPEED_MIN
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.system.version import get_build_metadata
 
-from openpilot.selfdrive.frogpilot.controls.lib.model_manager import NAVIGATION_MODELS, RADARLESS_MODELS
+from openpilot.selfdrive.frogpilot.controls.lib.model_manager import MODELS_PATH, NAVIGATION_MODELS, RADARLESS_MODELS
 
 CITY_SPEED_LIMIT = 25                   # 55mph is typically the minimum speed for highways
 CRUISING_SPEED = 5                      # Roughly the speed cars go when not touching the gas while in drive
@@ -40,7 +42,7 @@ class FrogPilotVariables:
     openpilot_installed = self.params.get_bool("HasAcceptedTerms")
 
     key = "CarParams" if started else "CarParamsPersistent"
-    msg_bytes = self.params.get(key, block=started and openpilot_installed)
+    msg_bytes = self.params.get(key, block=openpilot_installed and started)
 
     if msg_bytes is None:
       always_on_lateral_set = False
@@ -60,11 +62,16 @@ class FrogPilotVariables:
     distance_conversion = 1. if toggle.is_metric else CV.FOOT_TO_METER
     speed_conversion = CV.KPH_TO_MS if toggle.is_metric else CV.MPH_TO_MS
 
-    if not started:
-      toggle.model = self.params.get("Model", block=openpilot_installed, encoding='utf-8')
+    if openpilot_installed and not started:
+      toggle.model_selector = self.params.get_bool("ModelSelector", block=True)
+      toggle.model = self.params.get("Model", block=True, encoding='utf-8') if toggle.model_selector else DEFAULT_MODEL
+      if not os.path.exists(os.path.join(MODELS_PATH, f"{toggle.model}.thneed")):
+        toggle.model = DEFAULT_MODEL
       toggle.navigationless_model = toggle.model not in NAVIGATION_MODELS
       toggle.radarless_model = not self.release and toggle.model in RADARLESS_MODELS
       toggle.secretgoodopenpilot_model = not self.release and toggle.model == "secret-good-openpilot"
+      if self.release and toggle.model in RADARLESS_MODELS | {"secret_good_openpilot"}:
+        toggle.model = DEFAULT_MODEL
 
     toggle.alert_volume_control = self.params.get_bool("AlertVolumeControl")
     toggle.disengage_volume = self.params.get_int("DisengageVolume") if toggle.alert_volume_control else 100
@@ -113,7 +120,7 @@ class FrogPilotVariables:
     toggle.random_events = custom_themes and self.params.get_bool("RandomEvents")
 
     custom_ui = self.params.get_bool("CustomUI")
-    custom_paths = self.params.get_bool("CustomPaths")
+    custom_paths = custom_ui and self.params.get_bool("CustomPaths")
     toggle.adjacent_lanes = custom_paths and self.params.get_bool("AdjacentPath")
     toggle.blind_spot_path = custom_paths and self.params.get_bool("BlindSpotPath")
 
@@ -184,18 +191,16 @@ class FrogPilotVariables:
     toggle.mtsc_curvature_check = toggle.map_turn_speed_controller and self.params.get_bool("MTSCCurvatureCheck")
     self.params_memory.put_float("MapTargetLatA", 2 * (self.params.get_int("MTSCAggressiveness") / 100.))
 
-    toggle.model_selector = self.params.get_bool("ModelSelector")
-
     quality_of_life_controls = self.params.get_bool("QOLControls")
     toggle.custom_cruise_increase = self.params.get_int("CustomCruise") if quality_of_life_controls and not pcm_cruise else 1
     toggle.custom_cruise_increase_long = self.params.get_int("CustomCruiseLong") if quality_of_life_controls and not pcm_cruise else 5
     toggle.force_standstill = quality_of_life_controls and self.params.get_bool("ForceStandstill")
-    toggle.force_stops = quality_of_life_controls and self.params.get_bool("ForceStops")
+    toggle.force_stops = toggle.force_standstill and self.params.get_bool("ForceStops")
     map_gears = quality_of_life_controls and self.params.get_bool("MapGears")
     toggle.map_acceleration = map_gears and self.params.get_bool("MapAcceleration")
     toggle.map_deceleration = map_gears and self.params.get_bool("MapDeceleration")
     toggle.pause_lateral_below_speed = self.params.get_int("PauseLateralSpeed") * speed_conversion if quality_of_life_controls else 0
-    toggle.pause_lateral_below_signal = quality_of_life_controls and self.params.get_bool("PauseLateralOnSignal")
+    toggle.pause_lateral_below_signal = toggle.pause_lateral_below_speed != 0 and self.params.get_bool("PauseLateralOnSignal")
     toggle.reverse_cruise_increase = quality_of_life_controls and pcm_cruise and self.params.get_bool("ReverseCruise")
     toggle.set_speed_offset = self.params.get_int("SetSpeedOffset") * (1. if toggle.is_metric else CV.MPH_TO_KPH) if quality_of_life_controls and not pcm_cruise else 0
 

@@ -140,6 +140,8 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
     {"LongPitch", tr("Long Pitch Compensation"), tr("Smoothen out the gas and pedal controls."), ""},
     {"VoltSNG", tr("2017 Volt SNG"), tr("Enable the 'Stop and Go' hack for 2017 Chevy Volts."), ""},
 
+    {"NewLongAPI", tr("Use comma's New Longitudinal API"), tr("Use comma's new longitudinal controls that have shown great improvement with acceleration and braking, but has a few issues on Hyundai/Kia/Genesis."), ""},
+
     {"CrosstrekTorque", tr("Subaru Crosstrek Torque Increase"), tr("Increases the maximum allowed torque for the Subaru Crosstrek."), ""},
 
     {"ToyotaDoors", tr("Automatically Lock/Unlock Doors"), tr("Automatically lock the doors when in drive and unlock when in park."), ""},
@@ -271,6 +273,7 @@ void FrogPilotVehiclesPanel::hideToggles() {
   selectModelButton->setValue(carModel);
   selectModelButton->setVisible(!carMake.isEmpty());
 
+  bool hyundai = carMake == "Genesis" || carMake == "Hyundai" || carMake == "Kia";
   bool gm = carMake == "Buick" || carMake == "Cadillac" || carMake == "Chevrolet" || carMake == "GM" || carMake == "GMC";
   bool subaru = carMake == "Subaru";
   bool toyota = carMake == "Lexus" || carMake == "Toyota";
@@ -300,7 +303,9 @@ void FrogPilotVehiclesPanel::hideToggles() {
         continue;
       }
 
-      if (gm) {
+      if (hyundai) {
+        toggle->setVisible(hyundaiKeys.find(key.c_str()) != hyundaiKeys.end());
+      } else if (gm) {
         toggle->setVisible(gmKeys.find(key.c_str()) != gmKeys.end());
       } else if (subaru) {
         toggle->setVisible(subaruKeys.find(key.c_str()) != subaruKeys.end());

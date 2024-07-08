@@ -3,6 +3,7 @@ import http.client
 import os
 import sentry_sdk
 import socket
+import subprocess
 import time
 import traceback
 import urllib.request
@@ -39,6 +40,26 @@ def bind_user() -> None:
   sentry_sdk.set_user({"id": HARDWARE.get_serial()})
 
 
+def capture_tmux() -> None:
+  try:
+    result = subprocess.run(['tmux', 'capture-pane', '-p', '-S', '-250'], stdout=subprocess.PIPE)
+    lines = result.stdout.decode('utf-8').splitlines()
+
+    if lines:
+      while True:
+        if sentry_pinged():
+          with sentry_sdk.configure_scope() as scope:
+            bind_user()
+            scope.set_extra("tmux_log", "\n".join(lines))
+            sentry_sdk.capture_message("User's UI crashed", level='error')
+            sentry_sdk.flush()
+          break
+        time.sleep(60)
+
+  except Exception:
+    cloudlog.exception("Failed to capture tmux log")
+
+
 def report_tombstone(fn: str, message: str, contents: str) -> None:
   FrogPilot = "frogai" in get_build_metadata().openpilot.git_origin.lower()
   if not FrogPilot or PC:
@@ -63,48 +84,52 @@ def report_tombstone(fn: str, message: str, contents: str) -> None:
       time.sleep(no_internet * 60)
 
 
-def chunk_data(data):
-  return [[item] for item in data]
-
-
-def format_params(params):
-  return [f"{key.decode() if isinstance(key, bytes) else key}: "
-          f"{value.decode() if isinstance(value, bytes) else format(value, '.12g').rstrip('0').rstrip('.') if isinstance(value, float) else value}"
-          for key, value in sorted(params.items())]
-
-
-def get_frogpilot_params_by_type(param_type, params):
-  return {key.decode() if isinstance(key, bytes) else key:
-          (params.get(key).decode() if isinstance(params.get(key), bytes) else params.get(key) or '0')
-          for key in params.all_keys() if params.get_key_type(key) & param_type}
-
-
-def set_sentry_scope(scope, chunks, label):
-  scope.set_extra(label, '\n'.join(chunk[0] for chunk in chunks))
-
-
 def capture_fingerprint(candidate, params, blocked=False):
   bind_user()
 
-  param_types = [
-    ParamKeyType.FROGPILOT_CONTROLS,
-    ParamKeyType.FROGPILOT_VEHICLES,
-    ParamKeyType.FROGPILOT_VISUALS,
-    ParamKeyType.FROGPILOT_OTHER,
-    ParamKeyType.FROGPILOT_TRACKING
-  ]
-  labels = ["FrogPilot Controls", "FrogPilot Vehicles", "FrogPilot Visuals", "FrogPilot Other", "FrogPilot Tracking"]
+  params_tracking = Params("/persist/tracking")
 
-  chunks_labels = [(chunk_data(format_params(get_frogpilot_params_by_type(t, params))), label)
-                   for t, label in zip(param_types, labels)]
+  param_types = {
+    "FrogPilot Controls": ParamKeyType.FROGPILOT_CONTROLS,
+    "FrogPilot Vehicles": ParamKeyType.FROGPILOT_VEHICLES,
+    "FrogPilot Visuals": ParamKeyType.FROGPILOT_VISUALS,
+    "FrogPilot Other": ParamKeyType.FROGPILOT_OTHER,
+    "FrogPilot Tracking": ParamKeyType.FROGPILOT_TRACKING
+  }
+
+  matched_params = {label: {} for label in param_types}
+  for key in params.all_keys():
+    for label, key_type in param_types.items():
+      if params.get_key_type(key) & key_type:
+        if key_type == ParamKeyType.FROGPILOT_TRACKING:
+          try:
+            value = params_tracking.get_int(key)
+          except Exception:
+            value = "0"
+        else:
+          try:
+            value = params.get(key)
+            if isinstance(value, bytes):
+              value = value.decode('utf-8')
+            if isinstance(value, str) and value.replace('.', '', 1).isdigit():
+              value = float(value) if '.' in value else int(value)
+          except Exception:
+            value = "0"
+        matched_params[label][key.decode('utf-8')] = value
+
+  for label, key_values in matched_params.items():
+    if label == "FrogPilot Tracking":
+      matched_params[label] = {k: f"{v:,}" for k, v in key_values.items()}
+    else:
+      matched_params[label] = {k: int(v) if isinstance(v, float) and v.is_integer() else v for k, v in sorted(key_values.items())}
 
   no_internet = 0
   while True:
     if sentry_pinged():
-      for chunks, label in chunks_labels:
-        with sentry_sdk.configure_scope() as scope:
-          set_sentry_scope(scope, chunks, label)
-          scope.fingerprint = [candidate, HARDWARE.get_serial()]
+      with sentry_sdk.configure_scope() as scope:
+        scope.fingerprint = [candidate, HARDWARE.get_serial()]
+        for label, key_values in matched_params.items():
+          scope.set_extra(label, "\n".join([f"{k}: {v}" for k, v in key_values.items()]))
 
       if blocked:
         sentry_sdk.capture_message("Blocked user from using the development branch", level='error')
@@ -172,7 +197,7 @@ def set_tag(key: str, value: str) -> None:
 
 def init(project: SentryProject) -> bool:
   build_metadata = get_build_metadata()
-  if not is_registered_device() or PC:
+  if PC:
     return False
 
   params = Params()
@@ -199,7 +224,7 @@ def init(project: SentryProject) -> bool:
                   release=get_version(),
                   integrations=integrations,
                   traces_sample_rate=1.0,
-                  max_value_length=8192,
+                  max_value_length=98304,
                   environment=env)
 
   build_metadata = get_build_metadata()

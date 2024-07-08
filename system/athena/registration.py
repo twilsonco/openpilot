@@ -2,6 +2,7 @@
 import time
 import json
 import jwt
+import os
 import random, string
 from pathlib import Path
 
@@ -32,7 +33,7 @@ def register(show_spinner=False) -> str | None:
   needs_registration = None in (IMEI, HardwareSerial, dongle_id)
 
   pubkey = Path(Paths.persist_root()+"/comma/id_rsa.pub")
-  if Params("/persist/params").get_bool("FrogsGoMoo"):
+  if os.path.isfile("/persist/frogsgomoo.py"):
     dongle_id = "FrogsGoMoo"
   elif not pubkey.is_file():
     dongle_id = UNREGISTERED_DONGLE_ID

@@ -442,15 +442,19 @@ def transform_lng(lng, lat):
 
 def get_all_toggle_values():
   toggle_values = {}
+
   for key in params.all_keys():
     key = key.decode('utf-8') if isinstance(key, bytes) else key
     if params.get_key_type(key) & ParamKeyType.FROGPILOT_STORAGE:
       try:
         value = params.get(key)
         value = value.decode('utf-8') if isinstance(value, bytes) else value
+        if isinstance(value, str) and value.replace('.', '', 1).isdigit():
+          value = float(value) if '.' in value else int(value)
       except Exception:
         value = "0"
       toggle_values[key] = value if value is not None else "0"
+
   return toggle_values
 
 def store_toggle_values(updated_values):

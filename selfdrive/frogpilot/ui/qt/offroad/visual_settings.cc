@@ -196,8 +196,8 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
       std::vector<QString> lateralToggleNames{tr("Auto Tune")};
       visualToggle = new FrogPilotParamToggleControl(param, title, desc, icon, lateralToggles, lateralToggleNames);
     } else if (param == "LongitudinalMetrics") {
-      std::vector<QString> longitudinalToggles{"JerkInfo", "LeadInfo"};
-      std::vector<QString> longitudinalToggleNames{tr("Longitudinal Jerk"), tr("Lead Info")};
+      std::vector<QString> longitudinalToggles{"LeadInfo", "JerkInfo"};
+      std::vector<QString> longitudinalToggleNames{tr("Lead Info"), tr("Longitudinal Jerk")};
       visualToggle = new FrogPilotParamToggleControl(param, title, desc, icon, longitudinalToggles, longitudinalToggleNames);
     } else if (param == "NumericalTemp") {
       std::vector<QString> temperatureToggles{"Fahrenheit"};

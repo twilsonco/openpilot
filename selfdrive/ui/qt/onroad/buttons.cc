@@ -99,18 +99,16 @@ void ExperimentalButton::updateState(const UIState &s, bool leadInfo) {
     delete gifLabel;
     gifLabel = nullptr;
   } else if (randomEvent == 1 || randomEvent == 2 || randomEvent == 3 || randomEvent == 4) {
-    if (!gifLabel) {
-      gifLabel = new QLabel(this);
-      QMovie *movie = wheelImagesGif[randomEvent - 1];
-      if (movie) {
-        gifLabel->setMovie(movie);
-        gifLabel->setFixedSize(img_size, img_size);
-        gifLabel->move((width() - gifLabel->width()) / 2, (height() - gifLabel->height()) / 2 + y_offset);
-        gifLabel->movie()->start();
-      }
+    gifLabel = new QLabel(this);
+
+    QMovie *movie = wheelImagesGif[randomEvent - 1];
+    if (movie) {
+      movie->setScaledSize(QSize(img_size, img_size));
+      gifLabel->setMovie(movie);
+      gifLabel->move((width() - gifLabel->width()) / 2, (height() - gifLabel->height()) / 2 + y_offset);
+      gifLabel->movie()->start();
     }
 
-    gifLabel->show();
     wheelIconGif = randomEvent - 1;
     update();
   } else if (rotatingWheel && steeringAngleDeg != scene.steering_angle_deg) {
