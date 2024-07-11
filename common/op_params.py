@@ -746,11 +746,11 @@ class opParams:
       
       'MET_05': Param('STEERING_ANGLE_ERROR', [int,str], 'UI metric in top row left column. Enter the name of the metric or it\'s number.', allowed_vals=UI_METRICS, param_param='MeasureSlot05', param_param_use_ord=True, param_param_read_on_startup=True),
       
-      'MET_06': Param('STEERING_TORQUE_EPS', [int,str], 'UI metric in second row from top, left column. Enter the name of the metric or it\'s number.', allowed_vals=UI_METRICS, param_param='MeasureSlot06', param_param_use_ord=True, param_param_read_on_startup=True),
+      'MET_06': Param('LANE_DIST_FROM_CENTER', [int,str], 'UI metric in second row from top, left column. Enter the name of the metric or it\'s number.', allowed_vals=UI_METRICS, param_param='MeasureSlot06', param_param_use_ord=True, param_param_read_on_startup=True),
       
       'MET_07': Param('LAT_ACCEL', [int,str], 'UI metric in third row from top, left column. Enter the name of the metric or it\'s number.', allowed_vals=UI_METRICS, param_param='MeasureSlot07', param_param_use_ord=True, param_param_read_on_startup=True),
       
-      'MET_08': Param('EV_EFF_RECENT', [int,str], 'UI metric in fourth row from top, left column. Enter the name of the metric or it\'s number.', allowed_vals=UI_METRICS, param_param='MeasureSlot08', param_param_use_ord=True, param_param_read_on_startup=True),
+      'MET_08': Param('INTERVENTION_TIMER', [int,str], 'UI metric in fourth row from top, left column. Enter the name of the metric or it\'s number.', allowed_vals=UI_METRICS, param_param='MeasureSlot08', param_param_use_ord=True, param_param_read_on_startup=True),
       
       'MET_09': Param('MEMORY_USAGE_PERCENT', [int,str], 'UI metric in bottom row left column. Enter the name of the metric or it\'s number.', allowed_vals=UI_METRICS, param_param='MeasureSlot09', param_param_use_ord=True, param_param_read_on_startup=True),
       
@@ -901,7 +901,31 @@ class opParams:
           if opparam_mtime > param_param_mtime:
             cloudlog.warning(f'opParams: {key}: Overwriting param param ({self.fork_params[key].param_param}) with opparam ({key})')
             self.put_params(key, param.value)
-          
+            # need to now update the param value with the same value to keep its modification date newer than the param param
+            _write_param(key, param.value, reason="overwriting param param with opparam", do_log=False)
+          # else:
+          #   cloudlog.warning(f'opParams: {key}: Overwriting opparam with param param ({self.fork_params[key].param_param})')
+          #   if param.param_param_use_ord and param.has_allowed_vals:
+          #     val = int(param._params.get(param.param_param, encoding="utf8"))
+          #     if val < len(param.allowed_vals):
+          #       param.value = param.allowed_vals[val]
+          #     else:
+          #       param.value = param._params.get(param.param_param)
+          #   else:
+          #     param.value = param._params.get(param.param_param)
+          #   if param.has_allowed_types and type(param.value) not in param.allowed_types:
+          #     for t in param.allowed_types:
+          #       try:
+          #         param.value = t(param.value)
+          #         break
+          #       except:
+          #         continue
+          #     if type(param.value) not in param.allowed_types:
+          #       raise ValueError
+          #   self.put(key, param.value, reason="overwriting opparam with param param", do_log=False)
+          #   # need to now update the param param with the same value to keep its modification date newer than the opparam
+          #   self.put_params(key, param.value)
+                
   
   def _load_params(self, can_import=False):
     if not os.path.exists(PARAMS_DIR):

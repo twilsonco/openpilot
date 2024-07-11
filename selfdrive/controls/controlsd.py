@@ -349,7 +349,7 @@ class Controls:
         self.intervention_last_t = t
         self.distraction_last_t = t
       else:
-        car_interaction = CS.brakePressed or CS.gas > 1e-5 or CS.steeringPressed
+        car_interaction = CS.brakePressed or CS.gas > 1e-5 or (CS.steeringPressed and CS.vEgo > self.CP.minSteerSpeed)
         if screen_tapped or car_interaction or self.CI.driver_interacted:
           if self.interaction_timer > 2.0:
             self.interaction_count_session += 1

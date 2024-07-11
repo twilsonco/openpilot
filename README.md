@@ -23,12 +23,9 @@
     - [Appreciate My Work?](#appreciate-my-work)
 - [Fork Details](#fork-details)
   - [Current Fork Features](#current-fork-features---optional-via-toggle)
-  - [Planned Fork Features](#planned-fork-features-in-no-particular-order)
   - [Supported Hardware](#supported-hardware)
   - [Installation Instructions](#installation-instructions)
   - [Automatic Updates](#automatic-updates)
-  - [Tuning](#tuning)
-  - [Lateral Tuning](#lateral-tuning)
 - [Commaai Table of Contents](#commaai-table-of-contents)
   - [What is openpilot?](#what-is-openpilot)
   - [Running in a car](#running-in-a-car)
@@ -242,41 +239,6 @@ If you're device stays connected to your car all the time, you'll be presented w
     * enter your own OpenWeatherMap api key (instead of freeloading off mine!)
     * *perform a reboot-less restart on your Comma Three by running `./opparams.py -r`*
     * *Started from @Shane's opParams implementation and added TONS of features. Thanks Shane!*
-
-#### Planned Fork Features (in no particular order):
------
-
-- [ ] Chevy Bolt support
-- [ ] Record screen button
-- [ ] Redo UI metrics as themed "widgets" instead that can be activated independently and stack against the right (and left if necessary) side of the screen
-  * Follow widget: a colored vertical bar indicating follow distance with lines indicating the actual and desired (length/time) follow distances. Tap to include more info items like current distance cost
-  * Openpilot widget: a similar vertical bar (or maybe something like a circular progress bar or a speedometer--looking thing) showing the gas/braking being requested by OP. Also include Driver monitoring info.
-  * Car widget: Acceleration/jerk, tire pressures, low voltage battery info, ...
-  * Geo widget: GPS signal/coords/#satellites, altitude, percent grade of current road, ...
-  * Device widget: CPU/memory/temps/fans/...
-  * EV widget: high voltage battery info similar to that shown in the LeafSpyPro app
-
-### Tuning
-------
-
-* Remember to make small adjustments to 1 value at a time and then test.
-* Use [PlotJugger](https://github.com/commaai/openpilot/tree/master/tools/plotjuggler) to make sure you are going in the right direction.
-
-#### Lateral Tuning
-------
-**Note**: All of these parameters interact with each other so finding the balance is a bit experimental.
-
-* **Kp too high** - The vehicle overshoots and undershoots center.
-* **Kp too low** - The vehicle doesn't turn enough.
-
-* **Ki too high** - The vehicle gets to center without oscillations, but it takes too long to center. If you hit a bump or give the wheel a quick nudge, it should oscillate 3 - 5 times before coming to steady-state. If the wheel oscillates forever (critically damped), then your Kp or Ki or both are too high.
-* **Ki too low** - The vehicle oscillates trying to reach the center.
-
-* **steerRatio too high** - The vehicle ping pongs on straights and turns. If you're on a turn and the wheel is oversteering and then correcting, steerRatio is too high, and it's fighting with Kp and Ki (which you don't want) - although in the past it has been observed having an oscillating oversteering tune which could do tighter turns, but the turns weren't pleasant.
-
-* **steerRatio too low** - The vehicle doesn't turn enough on curves.
-
-* **Kf** - Lower this if your car oscillates and you've done everything else. It can be lowered to 0.
 
 ---
 
