@@ -97,7 +97,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   // hide map settings button for alerts and flip for right hand DM
   if (map_settings_btn->isEnabled()) {
     map_settings_btn->setVisible(!hideBottomIcons && compass && !hideMapIcon);
-    main_layout->setAlignment(map_settings_btn, (rightHandDM ? Qt::AlignLeft : Qt::AlignRight) | Qt::AlignTop);
+    main_layout->setAlignment(map_settings_btn, (rightHandDM && !compass || !rightHandDM && compass ? Qt::AlignLeft : Qt::AlignRight) | Qt::AlignBottom);
   }
 }
 
@@ -353,16 +353,18 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s, c
 
     // Copy of the acceleration vector
     std::vector<float> acceleration;
-    for (int i = 0; i < acceleration_const.size(); i++) {
+    acceleration.reserve(acceleration_const.size());
+    for (size_t i = 0; i < acceleration_const.size(); i++) {
       acceleration.push_back(acceleration_const[i]);
     }
 
     for (int i = 0; i < max_len; ++i) {
       // Some points are out of frame
-      if (scene.track_vertices[i].y() < 0 || scene.track_vertices[i].y() > height()) continue;
+      int track_idx = (scene.track_vertices.length() / 2) - i;  // flip idx to start from top
+      if (scene.track_vertices[track_idx].y() < 0 || scene.track_vertices[track_idx].y() > height()) continue;
 
       // Flip so 0 is bottom of frame
-      float lin_grad_point = (height() - scene.track_vertices[i].y()) / height();
+      float lin_grad_point = (height() - scene.track_vertices[track_idx].y()) / height();
 
       // If acceleration is between -0.25 and 0.25, resort to the theme color
       if (std::abs(acceleration[i]) < 0.25 && (currentHolidayTheme != 0)) {
@@ -410,30 +412,24 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s, c
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices);
 
-  if (scene.show_stopping_point) {
-    bool curve_detected = sqrt(1.0 / scene.road_curvature) < v_ego;
-    bool following_lead = scene.has_lead && (scene.lead_distance < fmax(scene.model_length, 25));
-    bool model_stopping = scene.model_length < v_ego * (10 - 3);
+  if (scene.show_stopping_point && scene.red_light && v_ego > 1 && !(conditionalStatus == 1 || conditionalStatus == 3 || conditionalStatus == 5)) {
+    QPointF last_point = scene.track_vertices.last();
 
-    if (model_stopping && !curve_detected && !following_lead) {
-      QPointF last_point = scene.track_vertices.last();
+    QPointF adjusted_point = last_point - QPointF(stopSignImg.width() / 2, stopSignImg.height());
+    painter.drawPixmap(adjusted_point, stopSignImg);
 
-      QPointF adjusted_point = last_point - QPointF(stopSignImg.width() / 2, stopSignImg.height());
-      painter.drawPixmap(adjusted_point, stopSignImg);
+    if (scene.show_stopping_point_metrics) {
+      QString text = QString::number(scene.model_length * distanceConversion) + leadDistanceUnit;
+      QFont font = InterFont(35, QFont::DemiBold);
+      QFontMetrics fm(font);
+      int text_width = fm.horizontalAdvance(text);
+      QPointF text_position = last_point - QPointF(text_width / 2, stopSignImg.height() + 35);
 
-      if (scene.show_stopping_point_metrics) {
-        QString text = QString::number(scene.model_length * distanceConversion) + leadDistanceUnit;
-        QFont font = InterFont(35, QFont::DemiBold);
-        QFontMetrics fm(font);
-        int text_width = fm.horizontalAdvance(text);
-        QPointF text_position = last_point - QPointF(text_width / 2, stopSignImg.height() + 35);
-
-        painter.save();
-        painter.setFont(font);
-        painter.setPen(Qt::white);
-        painter.drawText(text_position, text);
-        painter.restore();
-      }
+      painter.save();
+      painter.setFont(font);
+      painter.setPen(Qt::white);
+      painter.drawText(text_position, text);
+      painter.restore();
     }
   }
 
@@ -544,7 +540,11 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
   // base icon
   int offset = UI_BORDER_SIZE + btn_size / 2;
   int x = rightHandDM ? width() - offset : offset;
-  x += onroadDistanceButton ? 250 : 0;
+  if (rightHandDM && map_settings_btn->isEnabled() && !hideMapIcon) {
+    x -= 250;
+  } else if (onroadDistanceButton) {
+    x += 250;
+  }
   offset += showAlwaysOnLateralStatusBar || showConditionalExperimentalStatusBar || roadNameUI ? 25 : 0;
   int y = height() - offset;
   float opacity = dmActive ? 0.65 : 0.2;
@@ -624,11 +624,13 @@ void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::ModelDataV
     painter.setPen(Qt::white);
     painter.setFont(InterFont(35, QFont::Bold));
 
-    QString text = QString("%1 %2 | %3 %4")
+    QString text = QString("%1 %2 | %3 %4 | %5 %6")
                     .arg(qRound(d_rel * distanceConversion))
                     .arg(leadDistanceUnit)
                     .arg(qRound(lead_speed * speedConversion))
-                    .arg(leadSpeedUnit);
+                    .arg(leadSpeedUnit)
+                    .arg(QString::number(d_rel / std::max(v_ego, 1.0f), 'f', 1))
+                    .arg("s");
 
     QFontMetrics metrics(painter.font());
     int middle_x = (chevron[2].x() + chevron[0].x()) / 2;
@@ -713,7 +715,7 @@ void AnnotatedCameraWidget::paintEvent(QPaintEvent *event) {
         const auto &lead = model.getLeadsV3()[i];
         auto lead_drel = lead.getX()[0];
         if (s->scene.has_lead && (prev_drel < 0 || std::abs(lead_drel - prev_drel) > 3.0)) {
-          drawLead(painter, lead, s->scene.lead_vertices[i], v_ego);
+          drawLead(painter, lead, s->scene.lead_vertices[i], (speed / (is_metric ? MS_TO_KPH : MS_TO_MPH)));
         }
         prev_drel = lead_drel;
       }
@@ -751,7 +753,6 @@ void AnnotatedCameraWidget::showEvent(QShowEvent *event) {
   CameraWidget::showEvent(event);
 
   ui_update_params(uiState());
-  ui_update_frogpilot_params(uiState());
   prev_draw_t = millis_since_boot();
 }
 
@@ -760,16 +761,16 @@ void AnnotatedCameraWidget::initializeFrogPilotWidgets() {
   bottom_layout = new QHBoxLayout();
 
   distance_btn = new DistanceButton(this);
-  bottom_layout->addWidget(distance_btn);
+  bottom_layout->addWidget(distance_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
 
   QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
   bottom_layout->addItem(spacer);
 
   compass_img = new Compass(this);
-  bottom_layout->addWidget(compass_img);
+  bottom_layout->addWidget(compass_img, 0, Qt::AlignBottom | Qt::AlignRight);
 
   map_settings_btn_bottom = new MapSettingsButton(this);
-  bottom_layout->addWidget(map_settings_btn_bottom);
+  bottom_layout->addWidget(map_settings_btn_bottom, 0, Qt::AlignBottom | Qt::AlignRight);
 
   main_layout->addLayout(bottom_layout);
 
@@ -831,14 +832,14 @@ void AnnotatedCameraWidget::initializeFrogPilotWidgets() {
   // Initialize the timer for the screen recorder
   QTimer *recordTimer = new QTimer(this);
   QObject::connect(recordTimer, &QTimer::timeout, this, [this] {
-    recorder->update_screen();
+    recorder->updateScreen();
   });
-  recordTimer->start(1000 / UI_FREQ);
+  recordTimer->start(75);
 }
 
 void AnnotatedCameraWidget::paintFrogPilotWidgets(QPainter &painter, const UIScene &scene) {
   if (is_metric || useSI) {
-    accelerationUnit = tr(" m/s²");
+    accelerationUnit = tr("m/s²");
     leadDistanceUnit = tr(mapOpen ? "m" : "meters");
     leadSpeedUnit = useSI ? tr("m/s") : tr("kph");
 
@@ -916,7 +917,7 @@ void AnnotatedCameraWidget::paintFrogPilotWidgets(QPainter &painter, const UISce
   map_settings_btn_bottom->setEnabled(map_settings_btn->isEnabled());
   if (map_settings_btn_bottom->isEnabled()) {
     map_settings_btn_bottom->setVisible(!hideBottomIcons && !compass && !hideMapIcon);
-    bottom_layout->setAlignment(map_settings_btn_bottom, rightHandDM ? Qt::AlignLeft : Qt::AlignRight);
+    bottom_layout->setAlignment(map_settings_btn_bottom, (rightHandDM ? Qt::AlignLeft : Qt::AlignRight) | Qt::AlignBottom);
   }
 
   onroadDistanceButton = scene.onroad_distance_button;
@@ -924,7 +925,7 @@ void AnnotatedCameraWidget::paintFrogPilotWidgets(QPainter &painter, const UISce
   distance_btn->setVisible(enableDistanceButton);
   if (enableDistanceButton) {
     distance_btn->updateState(scene);
-    bottom_layout->setAlignment(distance_btn, (rightHandDM ? Qt::AlignRight : Qt::AlignLeft));
+    bottom_layout->setAlignment(distance_btn, (rightHandDM ? Qt::AlignRight : Qt::AlignLeft) | Qt::AlignBottom);
   }
 
   bool enablePedalIcons = scene.pedals_on_ui && !bigMapOpen;
@@ -1293,7 +1294,7 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
   p.setOpacity(1.0);
   p.drawRoundedRect(statusBarRect, 30, 30);
 
-  static const std::map<int, QString> conditionalStatusMap = {
+  std::map<int, QString> conditionalStatusMap = {
     {0, tr("Conditional Experimental Mode ready")},
     {1, tr("Conditional Experimental overridden")},
     {2, tr("Experimental Mode manually activated")},
@@ -1301,16 +1302,17 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
     {4, tr("Experimental Mode manually activated")},
     {5, tr("Conditional Experimental overridden")},
     {6, tr("Experimental Mode manually activated")},
-    {7, tr("Experimental Mode activated for") + (mapOpen ? tr(" low speed") : tr(" speed being less than ") + QString::number(conditionalSpeedLead) + leadSpeedUnit)},
-    {8, tr("Experimental Mode activated for") + (mapOpen ? tr(" low speed") : tr(" speed being less than ") + QString::number(conditionalSpeed) + leadSpeedUnit)},
+    {7, tr("Experimental Mode activated for") + (mapOpen ? tr(" low speed") : tr(" speed being less than ") + QString::number(conditionalSpeedLead) + (is_metric ? tr("kph") : tr("mph")))},
+    {8, tr("Experimental Mode activated for") + (mapOpen ? tr(" low speed") : tr(" speed being less than ") + QString::number(conditionalSpeed) + (is_metric ? tr("kph") : tr("mph")))},
     {9, tr("Experimental Mode activated for turn") + (mapOpen ? "" : tr(" / lane change"))},
     {10, tr("Experimental Mode activated for intersection")},
     {11, tr("Experimental Mode activated for upcoming turn")},
     {12, tr("Experimental Mode activated for curve")},
-    {13, tr("Experimental Mode activated for slower lead")},
-    {14, tr("Experimental Mode activated for stopped lead")},
+    {13, tr("Experimental Mode activated for stopped lead")},
+    {14, tr("Experimental Mode activated for slower lead")},
     {15, tr("Experimental Mode activated for stop light") + (mapOpen ? tr("") : tr(" or stop sign"))},
-    {16, tr("Experimental Mode activated due to no speed limit")},
+    {16, tr("Experimental Mode forced on for stop light") + (mapOpen ? tr("") : tr(" or stop sign"))},
+    {17, tr("Experimental Mode activated due to no speed limit")},
   };
 
   if (alwaysOnLateralActive && showAlwaysOnLateralStatusBar) {
@@ -1322,8 +1324,8 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
   static const std::map<int, QString> suffixMap = {
     {1, tr(". Long press the \"distance\" button to revert")},
     {2, tr(". Long press the \"distance\" button to revert")},
-    {3, tr(". Double press the \"LKAS\" button to revert")},
-    {4, tr(". Double press the \"LKAS\" button to revert")},
+    {3, tr(". Click the \"LKAS\" button to revert")},
+    {4, tr(". Click the \"LKAS\" button to revert")},
     {5, tr(". Double tap the screen to revert")},
     {6, tr(". Double tap the screen to revert")},
   };

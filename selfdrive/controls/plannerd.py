@@ -19,7 +19,7 @@ def publish_ui_plan(sm, pm, longitudinal_planner):
   uiPlan.accel = longitudinal_planner.a_desired_trajectory_full.tolist()
   pm.send('uiPlan', ui_send)
 
-def plannerd_thread(frogpilot_toggles):
+def plannerd_thread():
   config_realtime_process(5, Priority.CTRL_LOW)
 
   cloudlog.info("plannerd is waiting for CarParams")
@@ -34,6 +34,8 @@ def plannerd_thread(frogpilot_toggles):
                            poll='modelV2', ignore_avg_freq=['radarState'])
 
   # FrogPilot variables
+  frogpilot_toggles = FrogPilotVariables.toggles
+
   update_toggles = False
 
   while True:
@@ -51,7 +53,7 @@ def plannerd_thread(frogpilot_toggles):
       update_toggles = False
 
 def main():
-  plannerd_thread(FrogPilotVariables.toggles)
+  plannerd_thread()
 
 
 if __name__ == "__main__":

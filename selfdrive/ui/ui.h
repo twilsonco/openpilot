@@ -15,6 +15,7 @@
 #include "common/params.h"
 #include "common/timing.h"
 #include "selfdrive/ui/qt/network/wifi_manager.h"
+#include "selfdrive/ui/qt/util.h"
 #include "system/hardware/hw.h"
 
 #include "selfdrive/frogpilot/ui/qt/widgets/frogpilot_controls.h"
@@ -160,6 +161,7 @@ typedef struct UIScene {
   bool lead_info;
   bool live_valid;
   bool map_open;
+  bool model_randomizer;
   bool model_ui;
   bool numerical_temp;
   bool online;
@@ -167,6 +169,7 @@ typedef struct UIScene {
   bool parked;
   bool pedals_on_ui;
   bool random_events;
+  bool red_light;
   bool reverse;
   bool reverse_cruise;
   bool reverse_cruise_ui;
@@ -222,7 +225,6 @@ typedef struct UIScene {
   float lead_detection_threshold;
   float path_edge_width;
   float path_width;
-  float road_curvature;
   float road_edge_width;
   float speed_jerk;
   float speed_jerk_difference;
@@ -245,7 +247,6 @@ typedef struct UIScene {
   int custom_signals;
   int desired_follow;
   int driver_camera_timer;
-  int lead_distance;
   int map_style;
   int model_length;
   int obstacle_distance;
@@ -299,6 +300,9 @@ signals:
   void primeChanged(bool prime);
   void primeTypeChanged(PrimeType prime_type);
 
+  // FrogPilot signals
+  void driveRated();
+  void reviewModel();
 private slots:
   void update();
 
@@ -360,4 +364,4 @@ void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
                       float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert);
 
 // FrogPilot functions
-void ui_update_frogpilot_params(UIState *s);
+void ui_update_frogpilot_params(UIState *s, Params &params);

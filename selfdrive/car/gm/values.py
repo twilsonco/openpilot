@@ -188,7 +188,7 @@ class CAR(Platforms):
   CHEVROLET_BOLT_CC = GMPlatformConfig(
     [
       GMCarDocs("Chevrolet Bolt EUV 2022-23 - No-ACC"),
-      GMCarDocs("Chevrolet Bolt EV 2017-21 - No-ACC"),
+      GMCarDocs("Chevrolet Bolt EV 2017-23 - No-ACC"),
     ],
     CHEVROLET_BOLT_EUV.specs,
   )

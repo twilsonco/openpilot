@@ -243,6 +243,16 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
   p.fillRect(rect, bgColor);
 
   if (showSteering) {
+    static float smoothedSteer = 0.0;
+
+    smoothedSteer = 0.1 * std::abs(steer) + 0.9 * smoothedSteer;
+
+    if (std::abs(smoothedSteer - steer) < 0.01) {
+      smoothedSteer = steer;
+    }
+
+    int visibleHeight = rect.height() * smoothedSteer;
+
     QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
     gradient.setColorAt(0.0, bg_colors[STATUS_TRAFFIC_MODE_ACTIVE]);
     gradient.setColorAt(0.15, bg_colors[STATUS_EXPERIMENTAL_MODE_ACTIVE]);
@@ -252,9 +262,6 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 
     QBrush brush(gradient);
     int fillWidth = UI_BORDER_SIZE;
-
-    steer = 0.10 * std::abs(steer) + 0.90 * steer;
-    int visibleHeight = rect.height() * steer;
 
     if (steeringAngleDeg != 0) {
       QRect rectToFill, rectToHide;

@@ -20,6 +20,8 @@ from openpilot.common.realtime import set_realtime_priority
 from openpilot.common.transformations.orientation import rot_from_euler, euler_from_rot
 from openpilot.common.swaglog import cloudlog
 
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
+
 MIN_SPEED_FILTER = 15 * CV.MPH_TO_MS
 MAX_VEL_ANGLE_STD = np.radians(0.25)
 MAX_YAW_RATE_FILTER = np.radians(2)  # per second
@@ -59,13 +61,21 @@ def moving_avg_with_linear_decay(prev_mean: np.ndarray, new_val: np.ndarray, idx
 
 class Calibrator:
   def __init__(self, param_put: bool = False):
+    # FrogPilot variables
+    self.frogpilot_toggles = FrogPilotVariables.toggles
+
+    self.update_toggles = False
+
     self.param_put = param_put
 
     self.not_car = False
 
     # Read saved calibration
     self.params = Params()
-    calibration_params = self.params.get("CalibrationParams")
+    if self.params.check_key(self.frogpilot_toggles.part_model_param + "CalibrationParams"):
+      calibration_params = self.params.get(self.frogpilot_toggles.part_model_param + "CalibrationParams")
+    else:
+      calibration_params = self.params.get("CalibrationParams")
     rpy_init = RPY_INIT
     wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
     height = HEIGHT_INIT
@@ -164,7 +174,14 @@ class Calibrator:
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if self.param_put and write_this_cycle:
-      self.params.put_nonblocking("CalibrationParams", self.get_msg(True).to_bytes())
+      self.params.put_nonblocking(self.frogpilot_toggles.part_model_param + "CalibrationParams", self.get_msg(True).to_bytes())
+
+    # Update FrogPilot parameters
+    if FrogPilotVariables.toggles_updated:
+      self.update_toggles = True
+    elif self.update_toggles:
+      FrogPilotVariables.update_frogpilot_params()
+      self.update_toggles = False
 
   def handle_v_ego(self, v_ego: float) -> None:
     self.v_ego = v_ego

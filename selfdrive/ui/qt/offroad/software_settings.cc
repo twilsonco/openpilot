@@ -64,6 +64,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
     if (getDongleId().value_or("") != "FrogsGoMoo") {
       branches.removeAll("FrogPilot-Development");
       branches.removeAll("FrogPilot-New");
+      branches.removeAll("FrogPilot-Test");
       branches.removeAll("MAKE-PRS-HERE");
     }
     for (QString b : {current.c_str(), "devel-staging", "devel", "nightly", "master-ci", "master"}) {
@@ -82,9 +83,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
       checkForUpdates();
     }
   });
-  if (!params.getBool("IsTestedBranch")) {
-    addItem(targetBranchBtn);
-  }
+  addItem(targetBranchBtn);
 
   // uninstall button
   auto uninstallBtn = new ButtonControl(tr("Uninstall %1").arg(getBrand()), tr("UNINSTALL"));

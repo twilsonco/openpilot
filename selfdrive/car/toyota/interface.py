@@ -22,7 +22,7 @@ class CarInterface(CarInterfaceBase):
       return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
-  def _get_params(ret, params, candidate, fingerprint, car_fw, disable_openpilot_long, experimental_long, docs):
+  def _get_params(ret, candidate, fingerprint, car_fw, disable_openpilot_long, experimental_long, docs, params):
     ret.carName = "toyota"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.toyota)]
     ret.safetyConfigs[0].safetyParam = EPS_SCALE[candidate]
@@ -136,36 +136,21 @@ class CarInterface(CarInterfaceBase):
     ret.minEnableSpeed = -1. if (candidate in STOP_AND_GO_CAR or ret.enableGasInterceptor) else MIN_ACC_SPEED
 
     tune = ret.longitudinalTuning
-    if params.get_bool("CydiaTune"):
+    if params.get_bool("CydiaTune") or params.get_bool("FrogsGoMooTune"):
+      ret.stopAccel = -2.5             # on stock Toyota this is -2.5
       ret.stoppingDecelRate = 0.3      # reach stopping target smoothly
-      if candidate in TSS2_CAR:
+      if candidate in TSS2_CAR or ret.enableGasInterceptor:
         tune.kpV = [0.0]
         tune.kiV = [0.5]
-        ret.vEgoStopping = 0.25
-        ret.vEgoStarting = 0.25
+        if params.get_bool("FrogsGoMooTune"):
+          ret.vEgoStopping = 0.15
+          ret.vEgoStarting = 0.15
+        else:
+          ret.vEgoStopping = 0.25
+          ret.vEgoStarting = 0.25
       else:
         tune.kpV = [0.0]
         tune.kiV = [1.2]               # appears to produce minimal oscillation on TSS-P
-    elif (candidate in TSS2_CAR or ret.enableGasInterceptor) and params.get_bool("DragonPilotTune"):
-      # Credit goes to the DragonPilot team!
-      if candidate in TSS2_CAR:
-        tune.kiBP = [0., 0.1, 1., 2., 3., 5., 8., 12., 14., 20., 26., 36., 50]
-        tune.kiV = [0.346, 0.35, 0.33, 0.309, 0.287, 0.228, 0.222, 0.2085, 0.19, 0.17, 0.10, 0.06, 0.01]
-        ret.vEgoStopping = 0.25
-        ret.vEgoStarting = 0.25
-        ret.stopAccel = -0.40
-        ret.stoppingDecelRate = 0.40
-      else:
-        tune.kiBP = [0., 35.]
-        tune.kpV = [3.6, 2.4, 1.5]
-        tune.kiV = [0.54, 0.36]
-    elif params.get_bool("FrogsGoMooTune"):
-      tune.kpV = [0.0]
-      tune.kiV = [0.5]
-      ret.stopAccel = -0.4             # Toyota requests -0.4 when stopped
-      ret.stoppingDecelRate = 0.1     # reach stopping target smoothly
-      ret.vEgoStopping = 0.15          # car is near 0.1 to 0.2 when car starts requesting stopping accel
-      ret.vEgoStarting = 0.15          # needs to be > or == vEgoStopping
     elif candidate in TSS2_CAR or ret.enableGasInterceptor:
       tune.kpV = [0.0]
       tune.kiV = [0.5]

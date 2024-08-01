@@ -80,25 +80,6 @@ private:
   QVBoxLayout inner_layout;
 };
 
-class FrogPilotDualParamControl : public QFrame {
-  Q_OBJECT
-
-public:
-  FrogPilotDualParamControl(ParamControl *control1, ParamControl *control2, QWidget *parent = nullptr, bool split=false)
-    : QFrame(parent) {
-    QHBoxLayout *hlayout = new QHBoxLayout(this);
-
-    control1->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
-    control1->setMaximumWidth(split ? 850 : 700);
-
-    control2->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-    control2->setMaximumWidth(split ? 700 : 850);
-
-    hlayout->addWidget(control1);
-    hlayout->addWidget(control2);
-  }
-};
-
 class FrogPilotButtonControl : public AbstractControl {
   Q_OBJECT
 
@@ -207,7 +188,7 @@ class FrogPilotButtonsControl : public ParamControl {
   Q_OBJECT
 public:
   FrogPilotButtonsControl(const QString &title, const QString &desc, const QString &icon,
-                          const std::vector<QString> &button_texts, const int minimum_button_width = 225)
+                          const std::vector<QString> &button_texts, const bool checkable = false, const int minimum_button_width = 225)
     : ParamControl("", title, desc, icon) {
     const QString style = R"(
       QPushButton {
@@ -218,6 +199,9 @@ public:
         padding: 0 25px 0 25px;
         color: #E4E4E4;
         background-color: #393939;
+      }
+      QPushButton:checked {
+        background-color: #33Ab4C;
       }
       QPushButton:pressed {
         background-color: #33Ab4C;
@@ -232,6 +216,7 @@ public:
     for (size_t i = 0; i < button_texts.size(); i++) {
       QPushButton *button = new QPushButton(button_texts[i], this);
       button->setStyleSheet(style);
+      button->setCheckable(checkable);
       button->setMinimumWidth(minimum_button_width);
       hlayout->addWidget(button);
       button_group->addButton(button, static_cast<int>(i));
@@ -242,6 +227,18 @@ public:
     }
 
     toggle.hide();
+  }
+
+  void updateButtonStyles(int id) {
+    for (auto button : button_group->buttons()) {
+      button->setChecked(button_group->id(button) == id);
+    }
+  }
+
+  void setEnabled(bool enable) {
+    for (auto btn : button_group->buttons()) {
+      btn->setEnabled(enable);
+    }
   }
 
 signals:
@@ -705,4 +702,30 @@ private:
   Params params;
   QButtonGroup *button_group;
   QMap<QString, QPushButton*> buttons;
+};
+
+class FrogPilotDualParamControl : public QFrame {
+  Q_OBJECT
+
+public:
+  FrogPilotDualParamControl(FrogPilotParamValueControl *control1, FrogPilotParamValueControl *control2, QWidget *parent = nullptr)
+      : QFrame(parent), control1(control1), control2(control2) {
+    QHBoxLayout *hlayout = new QHBoxLayout(this);
+    hlayout->addWidget(control1);
+    hlayout->addWidget(control2);
+  }
+
+  void updateControl(float newMinValue, float newMaxValue, const QString &newLabel, float newDivision = 1.0f) {
+    control1->updateControl(newMinValue, newMaxValue, newLabel, newDivision);
+    control2->updateControl(newMinValue, newMaxValue, newLabel, newDivision);
+  }
+
+  void refresh() {
+    control1->refresh();
+    control2->refresh();
+  }
+
+private:
+  FrogPilotParamValueControl *control1;
+  FrogPilotParamValueControl *control2;
 };

@@ -1,27 +1,22 @@
-#include "selfdrive/ui/qt/widgets/drive_stats.h"
-
-#include <QDebug>
-#include <QGridLayout>
-#include <QJsonObject>
-#include <QVBoxLayout>
-
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/util.h"
 
-static QLabel* newLabel(const QString& text, const QString &type) {
-  QLabel* label = new QLabel(text);
+#include "selfdrive/frogpilot/ui/qt/widgets/drive_stats.h"
+
+static QLabel *newLabel(const QString &text, const QString &type) {
+  QLabel *label = new QLabel(text);
   label->setProperty("type", type);
   return label;
 }
 
-DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
-  metric_ = params.getBool("IsMetric");
+DriveStats::DriveStats(QWidget *parent) : QFrame(parent) {
+  metric = params.getBool("IsMetric");
 
-  QVBoxLayout* main_layout = new QVBoxLayout(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(50, 25, 50, 20);
 
-  auto add_stats_layouts = [=](const QString &title, StatsLabels& labels, bool FrogPilot=false) {
-    QGridLayout* grid_layout = new QGridLayout;
+  auto add_stats_layouts = [=](const QString &title, StatsLabels &labels, bool FrogPilot=false) {
+    QGridLayout *grid_layout = new QGridLayout;
     grid_layout->setVerticalSpacing(10);
     grid_layout->setContentsMargins(0, 10, 0, 10);
 
@@ -41,13 +36,13 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
     main_layout->addStretch(1);
   };
 
-  add_stats_layouts(tr("ALL TIME"), all_);
-  add_stats_layouts(tr("PAST WEEK"), week_);
-  add_stats_layouts(tr("FROGPILOT"), frogPilot_, true);
+  add_stats_layouts(tr("ALL TIME"), all);
+  add_stats_layouts(tr("PAST WEEK"), week);
+  add_stats_layouts(tr("FROGPILOT"), frogPilot, true);
 
   if (auto dongleId = getDongleId()) {
     QString url = CommaApi::BASE_URL + "/v1.1/devices/" + *dongleId + "/stats";
-    RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_DriveStats", 30);
+    RequestRepeater *repeater = new RequestRepeater(this, url, "ApiCache_DriveStats", 30);
     QObject::connect(repeater, &RequestRepeater::requestDone, this, &DriveStats::parseResponse);
   }
 
@@ -65,29 +60,29 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
 }
 
 void DriveStats::updateStats() {
-  QJsonObject json = stats_.object();
+  QJsonObject json = stats.object();
 
-  auto updateFrogPilot = [this](const QJsonObject& obj, StatsLabels& labels) {
+  auto updateFrogPilot = [this](const QJsonObject &obj, StatsLabels &labels) {
     labels.routes->setText(QString::number(paramsTracking.getInt("FrogPilotDrives")));
-    labels.distance->setText(QString::number(int(paramsTracking.getFloat("FrogPilotKilometers") * (metric_ ? 1 : KM_TO_MILE))));
+    labels.distance->setText(QString::number(int(paramsTracking.getFloat("FrogPilotKilometers") * (metric ? 1 : KM_TO_MILE))));
     labels.distance_unit->setText(getDistanceUnit());
     labels.hours->setText(QString::number(int(paramsTracking.getFloat("FrogPilotMinutes") / 60)));
   };
 
-  updateFrogPilot(json["frogpilot"].toObject(), frogPilot_);
+  updateFrogPilot(json["frogpilot"].toObject(), frogPilot);
 
-  auto update = [=](const QJsonObject& obj, StatsLabels& labels) {
+  auto update = [=](const QJsonObject &obj, StatsLabels &labels) {
     labels.routes->setText(QString::number((int)obj["routes"].toDouble()));
-    labels.distance->setText(QString::number(int(obj["distance"].toDouble() * (metric_ ? MILE_TO_KM : 1))));
+    labels.distance->setText(QString::number(int(obj["distance"].toDouble() * (metric ? MILE_TO_KM : 1))));
     labels.distance_unit->setText(getDistanceUnit());
     labels.hours->setText(QString::number((int)(obj["minutes"].toDouble() / 60)));
   };
 
-  update(json["all"].toObject(), all_);
-  update(json["week"].toObject(), week_);
+  update(json["all"].toObject(), all);
+  update(json["week"].toObject(), week);
 }
 
-void DriveStats::parseResponse(const QString& response, bool success) {
+void DriveStats::parseResponse(const QString &response, bool success) {
   if (!success) return;
 
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
@@ -95,11 +90,11 @@ void DriveStats::parseResponse(const QString& response, bool success) {
     qDebug() << "JSON Parse failed on getting past drives statistics";
     return;
   }
-  stats_ = doc;
+  stats = doc;
   updateStats();
 }
 
-void DriveStats::showEvent(QShowEvent* event) {
-  metric_ = params.getBool("IsMetric");
+void DriveStats::showEvent(QShowEvent *event) {
+  metric = params.getBool("IsMetric");
   updateStats();
 }

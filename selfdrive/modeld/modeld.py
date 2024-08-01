@@ -25,16 +25,19 @@ from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 
 from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
-from openpilot.selfdrive.frogpilot.controls.lib.model_manager import DEFAULT_MODEL, MODELS_PATH
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import MODELS_PATH
+from openpilot.selfdrive.frogpilot.controls.lib.model_manager import DEFAULT_MODEL
+
+frogpilot_toggles = FrogPilotVariables.toggles
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
-MODEL_NAME = FrogPilotVariables.toggles.model
+MODEL_NAME = frogpilot_toggles.model
 
-DISABLE_NAV = FrogPilotVariables.toggles.navigationless_model
-DISABLE_RADAR = FrogPilotVariables.toggles.radarless_model
-SECRET_GOOD_OPENPILOT = FrogPilotVariables.toggles.secretgoodopenpilot_model
+DISABLE_NAV = frogpilot_toggles.navigationless_model
+DISABLE_RADAR = frogpilot_toggles.radarless_model
+SECRET_GOOD_OPENPILOT = frogpilot_toggles.secretgoodopenpilot_model
 
 MODEL_PATHS = {
   ModelRunner.THNEED: Path(__file__).parent / ('models/supercombo.thneed' if MODEL_NAME == DEFAULT_MODEL else f'{MODELS_PATH}/{MODEL_NAME}.thneed'),
@@ -153,7 +156,7 @@ class ModelState:
       return None
 
     self.model.execute()
-    outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
+    outputs = self.parser.parse_outputs(self.slice_outputs(self.output), SECRET_GOOD_OPENPILOT)
 
     if SECRET_GOOD_OPENPILOT:
       self.full_features_20Hz[:-1] = self.full_features_20Hz[1:]
@@ -169,7 +172,7 @@ class ModelState:
     return outputs
 
 
-def main(demo=False, frogpilot_toggles=None):
+def main(demo=False):
   cloudlog.warning("modeld init")
 
   sentry.set_tag("daemon", PROCESS_NAME)
@@ -388,7 +391,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--demo', action='store_true', help='A boolean for demo mode.')
     args = parser.parse_args()
-    main(demo=args.demo, frogpilot_toggles=FrogPilotVariables.toggles)
+    main(demo=args.demo)
   except KeyboardInterrupt:
     cloudlog.warning(f"child {PROCESS_NAME} got SIGINT")
   except Exception:

@@ -248,10 +248,6 @@ def get_SearchInput():
   SearchInput = params.get_int("SearchInput")
   return SearchInput
 
-def get_PrimeType():
-  PrimeType = params.get_int("PrimeType")
-  return PrimeType
-
 def get_last_lon_lat():
   last_pos = params.get("LastGPSPosition")
   if last_pos:
@@ -460,6 +456,8 @@ def get_all_toggle_values():
 def store_toggle_values(updated_values):
   for key, value in updated_values.items():
     try:
+      if isinstance(value, (int, float)):
+        value = str(value)
       params.put(key, value.encode('utf-8'))
       params_storage.put(key, value.encode('utf-8'))
     except Exception as e:

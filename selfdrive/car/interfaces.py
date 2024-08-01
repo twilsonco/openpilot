@@ -278,7 +278,7 @@ class CarInterfaceBase(ABC):
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False, False)
 
   @classmethod
-  def get_params(cls, params: Params, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[car.CarParams.CarFw], disable_openpilot_long: bool, experimental_long: bool, docs: bool):
+  def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[car.CarParams.CarFw], disable_openpilot_long: bool, experimental_long: bool, params: Params, docs: bool):
     ret = CarInterfaceBase.get_std_params(candidate)
 
     platform = PLATFORMS[candidate]
@@ -291,7 +291,7 @@ class CarInterfaceBase(ABC):
     ret.tireStiffnessFactor = platform.config.specs.tireStiffnessFactor
     ret.flags |= int(platform.config.flags)
 
-    ret = cls._get_params(ret, params, candidate, fingerprint, car_fw, disable_openpilot_long, experimental_long, docs)
+    ret = cls._get_params(ret, candidate, fingerprint, car_fw, disable_openpilot_long, experimental_long, docs, params)
 
     # Enable torque controller for all cars that do not use angle based steering
     if ret.steerControlType != car.CarParams.SteerControlType.angle and params.get_bool("LateralTune") and params.get_bool("NNFF"):
@@ -299,7 +299,7 @@ class CarInterfaceBase(ABC):
       eps_firmware = str(next((fw.fwVersion for fw in car_fw if fw.ecu == "eps"), ""))
       model = get_nn_model_path(candidate, eps_firmware)
       if model is not None:
-        params.put("NNFFModelName", candidate.replace("_", " "))
+        params.put_nonblocking("NNFFModelName", candidate.replace("_", " "))
 
     # Vehicle mass is published curb weight plus assumed payload such as a human driver; notCars have no assumed payload
     if not ret.notCar:
@@ -419,12 +419,10 @@ class CarInterfaceBase(ABC):
 
     # Add any additional frogpilotCarStates
     fp_ret.alwaysOnLateralDisabled = self.always_on_lateral_disabled
-    distance_button = self.CS.distance_button or self.params_memory.get_bool("OnroadDistanceButtonPressed")
-    fp_ret.distanceLongPressed = self.frogpilot_distance_functions(distance_button, self.prev_distance_button, frogpilot_toggles)
+    fp_ret.distanceLongPressed = self.frogpilot_distance_functions(frogpilot_toggles)
     fp_ret.ecoGear |= ret.gearShifter == GearShifter.eco
     fp_ret.sportGear |= ret.gearShifter == GearShifter.sport
     fp_ret.trafficModeActive = frogpilot_toggles.traffic_mode and self.traffic_mode_active
-    self.prev_distance_button = distance_button
 
     # copy back for next iteration
     if self.CS is not None:
@@ -481,7 +479,7 @@ class CarInterfaceBase(ABC):
         events.add(EventName.buttonCancel)
 
       # FrogPilot button presses
-      if b.type == FrogPilotButtonType.lkas:
+      if b.type == FrogPilotButtonType.lkas and b.pressed:
         self.always_on_lateral_disabled = not self.always_on_lateral_disabled
 
     # Handle permanent and temporary steering faults
@@ -514,10 +512,12 @@ class CarInterfaceBase(ABC):
 
     return events
 
-  def frogpilot_distance_functions(self, distance_button, prev_distance_button, frogpilot_toggles):
+  def frogpilot_distance_functions(self, frogpilot_toggles):
+    distance_button = self.CS.distance_button or self.params_memory.get_bool("OnroadDistanceButtonPressed")
+
     if distance_button:
       self.gap_counter += 1
-    elif not prev_distance_button:
+    elif not self.prev_distance_button:
       self.gap_counter = 0
 
     if self.gap_counter == CRUISE_LONG_PRESS * (1.5 if self.is_gm else 1) and frogpilot_toggles.experimental_mode_via_distance or self.traffic_mode_changed:
@@ -534,6 +534,7 @@ class CarInterfaceBase(ABC):
       self.traffic_mode_active = not self.traffic_mode_active
       self.traffic_mode_changed = frogpilot_toggles.experimental_mode_via_distance
 
+    self.prev_distance_button = distance_button
     return self.gap_counter >= CRUISE_LONG_PRESS
 
 class RadarInterfaceBase(ABC):
@@ -576,14 +577,9 @@ class CarStateBase(ABC):
 
     # FrogPilot variables
     self.cruise_decreased = False
-    self.cruise_decreased_previously = False
     self.cruise_increased = False
-    self.cruise_increased_previously = False
+    self.distance_button = False
     self.lkas_enabled = False
-    self.lkas_previously_enabled = False
-
-    self.prev_distance_button = 0
-    self.distance_button = 0
 
   def update_speed_kf(self, v_ego_raw):
     if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed

@@ -259,7 +259,6 @@ class CarController(CarControllerBase):
 
       if self.CP.openpilotLongitudinalControl and self.CP.carFingerprint not in HONDA_BOSCH:
         self.speed = pcm_speed
-
         if not self.CP.enableGasInterceptor:
           self.gas = pcm_accel / self.params.NIDEC_GAS_MAX
 

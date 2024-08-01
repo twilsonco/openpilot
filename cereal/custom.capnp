@@ -10,7 +10,8 @@ $Cxx.namespace("cereal");
 # you can rename the struct, but don't change the identifier
 struct FrogPilotCarControl @0x81c2f05a394cf4af {
   alwaysOnLateral @0 :Bool;
-  speedLimitChanged @1 :Bool;
+  resumePressed @1 :Bool;
+  speedLimitChanged @2 :Bool;
 }
 
 struct FrogPilotCarState @0xaedffd8f31e7b55d {
@@ -47,28 +48,29 @@ struct FrogPilotPlan @0x80ae746ee2596b11 {
   adjustedCruise @2 :Float32;
   conditionalExperimentalActive @3 :Bool;
   dangerJerk @4 :Float32;
-  desiredFollowDistance @5 :Int16;
-  greenLight @6 :Bool;
-  laneWidthLeft @7 :Float32;
-  laneWidthRight @8 :Float32;
-  leadDeparting @9 :Bool;
-  maxAcceleration @10 :Float32;
-  minAcceleration @11 :Float32;
-  roadCurvature @12 :Float32;
-  safeObstacleDistance @13 :Int16;
-  safeObstacleDistanceStock @14 :Int16;
-  slcOverridden @15 :Bool;
-  slcOverriddenSpeed @16 :Float32;
-  slcSpeedLimit @17 :Float32;
-  slcSpeedLimitOffset @18 :Float32;
-  speedJerk @19 :Float32;
-  speedJerkStock @20 :Float32;
-  stoppedEquivalenceFactor @21 :Int16;
-  takingCurveQuickly @22 :Bool;
-  tFollow @23 :Float32;
-  unconfirmedSlcSpeedLimit @24 :Float32;
-  vCruise @25 :Float32;
-  vtscControllingCurve @26 :Bool;
+  desiredFollowDistance @5 :Float32;
+  forcingStop @6 :Bool;
+  greenLight @7 :Bool;
+  laneWidthLeft @8 :Float32;
+  laneWidthRight @9 :Float32;
+  leadDeparting @10 :Bool;
+  maxAcceleration @11 :Float32;
+  minAcceleration @12 :Float32;
+  redLight @13 :Bool;
+  safeObstacleDistance @14 :Int16;
+  safeObstacleDistanceStock @15 :Int16;
+  slcOverridden @16 :Bool;
+  slcOverriddenSpeed @17 :Float32;
+  slcSpeedLimit @18 :Float32;
+  slcSpeedLimitOffset @19 :Float32;
+  speedJerk @20 :Float32;
+  speedJerkStock @21 :Float32;
+  stoppedEquivalenceFactor @22 :Int16;
+  takingCurveQuickly @23 :Bool;
+  tFollow @24 :Float32;
+  unconfirmedSlcSpeedLimit @25 :Float32;
+  vCruise @26 :Float32;
+  vtscControllingCurve @27 :Bool;
 }
 
 struct CustomReserved5 @0xa5cd762cd951a455 {

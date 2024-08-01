@@ -50,7 +50,6 @@ void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model_data) {
     const auto &lead = model_data.getLeadsV3()[i];
     if (s->scene.has_lead) {
       float d_rel = lead.getX()[0];
-      s->scene.lead_distance = d_rel;
       float y_rel = lead.getY()[0];
       float z = line.getZ()[get_path_length_idx(line, d_rel)];
       calib_frame_to_full_frame(s, d_rel, y_rel, z + 1.22, &s->scene.lead_vertices[i]);
@@ -248,7 +247,7 @@ static void update_state(UIState *s) {
     auto controlsState = sm["controlsState"].getControlsState();
     scene.alert_size = controlsState.getAlertSize() == cereal::ControlsState::AlertSize::MID ? 350 : controlsState.getAlertSize() == cereal::ControlsState::AlertSize::SMALL ? 200 : 0;
     scene.enabled = controlsState.getEnabled();
-    scene.experimental_mode = controlsState.getExperimentalMode();
+    scene.experimental_mode = scene.enabled && controlsState.getExperimentalMode();
   }
   if (sm.updated("deviceState")) {
     auto deviceState = sm["deviceState"].getDeviceState();
@@ -274,7 +273,7 @@ static void update_state(UIState *s) {
     scene.lane_width_right = frogpilotPlan.getLaneWidthRight();
     scene.obstacle_distance = frogpilotPlan.getSafeObstacleDistance();
     scene.obstacle_distance_stock = frogpilotPlan.getSafeObstacleDistanceStock();
-    scene.road_curvature = frogpilotPlan.getRoadCurvature();
+    scene.red_light = frogpilotPlan.getRedLight();
     scene.speed_jerk = frogpilotPlan.getSpeedJerk();
     scene.speed_jerk_difference = frogpilotPlan.getSpeedJerkStock() - scene.speed_jerk;
     scene.speed_limit = frogpilotPlan.getSlcSpeedLimit();
@@ -318,18 +317,19 @@ void ui_update_params(UIState *s) {
   auto params = Params();
   s->scene.is_metric = params.getBool("IsMetric");
   s->scene.map_on_left = params.getBool("NavSettingLeftSide");
+
+  ui_update_frogpilot_params(s, params);
 }
 
-void ui_update_frogpilot_params(UIState *s) {
+void ui_update_frogpilot_params(UIState *s, Params &params) {
   UIScene &scene = s->scene;
-  Params params = Params();
 
   auto carParams = params.get("CarParamsPersistent");
-  if (!carParams.empty() && !scene.started) {
+  if (!carParams.empty()) {
     AlignedBuffer aligned_buf;
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(carParams.data(), carParams.size()));
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
-    scene.longitudinal_control = CP.getOpenpilotLongitudinalControl() && !params.getBool("DisableOpenpilotLongitudinal");
+    scene.longitudinal_control = hasLongitudinalControl(CP);
   }
 
   bool always_on_lateral = params.getBool("AlwaysOnLateral");
@@ -401,6 +401,9 @@ void ui_update_frogpilot_params(UIState *s) {
   bool radarless_model = params.get("Model") == "radical-turtle";
   scene.lead_detection_threshold = longitudinal_tune && !radarless_model ? params.getInt("LeadDetectionThreshold") / 100.0f : 0.5;
 
+  bool model_manager = params.getBool("ModelManagement");
+  scene.model_randomizer = model_manager && params.getBool("ModelRandomizer");
+
   scene.model_ui = params.getBool("ModelUI");
   scene.dynamic_path_width = scene.model_ui && params.getBool("DynamicPathWidth");
   scene.hide_lead_marker = scene.model_ui && params.getBool("HideLeadMarker");
@@ -466,11 +469,16 @@ void UIState::updateStatus() {
     scene.wake_up_screen = controls_state.getAlertStatus() != cereal::ControlsState::AlertStatus::NORMAL || status != previous_status;
   }
 
+  scene.started |= paramsMemory.getBool("ForceOnroad");
+  scene.started &= !paramsMemory.getBool("ForceOffroad");
+
   // Handle onroad/offroad transition
   if (scene.started != started_prev || sm->frame == 1) {
     if (scene.started) {
       status = STATUS_DISENGAGED;
       scene.started_frame = sm->frame;
+    } else if (scene.started_timer > 15*60*UI_FREQ && scene.model_randomizer) {
+      emit reviewModel();
     }
     started_prev = scene.started;
     scene.world_objects_visible = false;
@@ -505,7 +513,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   // FrogPilot variables
   wifi = new WifiManager(this);
 
-  ui_update_frogpilot_params(this);
+  ui_update_params(this);
 }
 
 void UIState::update() {
@@ -524,8 +532,13 @@ void UIState::update() {
   if (paramsMemory.getBool("FrogPilotTogglesUpdated")) {
     update_toggles = true;
   } else if (update_toggles) {
-    ui_update_frogpilot_params(this);
+    ui_update_params(this);
     update_toggles = false;
+  }
+
+  if (paramsMemory.getBool("DriveRated")) {
+    emit driveRated();
+    paramsMemory.remove("DriveRated");
   }
 
   // FrogPilot variables that need to be constantly updated
@@ -533,7 +546,7 @@ void UIState::update() {
   scene.current_holiday_theme = scene.holiday_themes ? paramsMemory.getInt("CurrentHolidayTheme") : 0;
   scene.current_random_event = scene.random_events ? paramsMemory.getInt("CurrentRandomEvent") : 0;
   scene.driver_camera_timer = scene.driver_camera && scene.reverse ? scene.driver_camera_timer + 1 : 0;
-  scene.started_timer = scene.started ? scene.started_timer + 1 : 0;
+  scene.started_timer = scene.started || started_prev ? scene.started_timer + 1 : 0;
 }
 
 void UIState::setPrimeType(PrimeType type) {

@@ -1,4 +1,5 @@
 import os
+import random
 
 from types import SimpleNamespace
 
@@ -6,16 +7,14 @@ from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.desire_helper import LANE_CHANGE_SPEED_MIN
-from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.system.version import get_build_metadata
 
-from openpilot.selfdrive.frogpilot.controls.lib.model_manager import MODELS_PATH, NAVIGATION_MODELS, RADARLESS_MODELS
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import MODELS_PATH
+from openpilot.selfdrive.frogpilot.controls.lib.model_manager import DEFAULT_MODEL, DEFAULT_MODEL_NAME, process_model_name
 
-CITY_SPEED_LIMIT = 25                   # 55mph is typically the minimum speed for highways
-CRUISING_SPEED = 5                      # Roughly the speed cars go when not touching the gas while in drive
-PROBABILITY = 0.6                       # 60% chance of condition being true
-THRESHOLD = 5                           # Time threshold (0.25s)
-TRAJECTORY_SIZE = ModelConstants.IDX_N  # Minimum path length
+CITY_SPEED_LIMIT = 25  # 55mph is typically the minimum speed for highways
+CRUISING_SPEED = 5     # Roughly the speed cars go when not touching the gas while in drive
+PROBABILITY = 0.6      # 60% chance of condition being true
 
 class FrogPilotVariables:
   def __init__(self):
@@ -24,7 +23,8 @@ class FrogPilotVariables:
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
 
-    self.release = get_build_metadata().channel == "FrogPilot"
+    self.has_prime = self.params.get_int("PrimeType") > 0
+    self.release = get_build_metadata().release_channel
 
     self.update_frogpilot_params(False)
 
@@ -44,34 +44,23 @@ class FrogPilotVariables:
     key = "CarParams" if started else "CarParamsPersistent"
     msg_bytes = self.params.get(key, block=openpilot_installed and started)
 
-    if msg_bytes is None:
-      always_on_lateral_set = False
-      car_make = "mock"
-      car_model = "mock"
-      openpilot_longitudinal = False
-      pcm_cruise = False
-    else:
+    if msg_bytes:
       with car.CarParams.from_bytes(msg_bytes) as CP:
         always_on_lateral_set = self.params.get_bool("AlwaysOnLateralSet")
         car_make = CP.carName
         car_model = CP.carFingerprint
         openpilot_longitudinal = CP.openpilotLongitudinalControl
         pcm_cruise = CP.pcmCruise
+    else:
+      always_on_lateral_set = False
+      car_make = "mock"
+      car_model = "mock"
+      openpilot_longitudinal = False
+      pcm_cruise = False
 
     toggle.is_metric = self.params.get_bool("IsMetric")
     distance_conversion = 1. if toggle.is_metric else CV.FOOT_TO_METER
     speed_conversion = CV.KPH_TO_MS if toggle.is_metric else CV.MPH_TO_MS
-
-    if openpilot_installed and not started:
-      toggle.model_selector = self.params.get_bool("ModelSelector", block=True)
-      toggle.model = self.params.get("Model", block=True, encoding='utf-8') if toggle.model_selector else DEFAULT_MODEL
-      if not os.path.exists(os.path.join(MODELS_PATH, f"{toggle.model}.thneed")):
-        toggle.model = DEFAULT_MODEL
-      toggle.navigationless_model = toggle.model not in NAVIGATION_MODELS
-      toggle.radarless_model = not self.release and toggle.model in RADARLESS_MODELS
-      toggle.secretgoodopenpilot_model = not self.release and toggle.model == "secret-good-openpilot"
-      if self.release and toggle.model in RADARLESS_MODELS | {"secret_good_openpilot"}:
-        toggle.model = DEFAULT_MODEL
 
     toggle.alert_volume_control = self.params.get_bool("AlertVolumeControl")
     toggle.disengage_volume = self.params.get_int("DisengageVolume") if toggle.alert_volume_control else 100
@@ -123,6 +112,7 @@ class FrogPilotVariables:
     custom_paths = custom_ui and self.params.get_bool("CustomPaths")
     toggle.adjacent_lanes = custom_paths and self.params.get_bool("AdjacentPath")
     toggle.blind_spot_path = custom_paths and self.params.get_bool("BlindSpotPath")
+    toggle.show_stopping_point = custom_ui and self.params.get_bool("ShowStoppingPoint")
 
     toggle.device_management = self.params.get_bool("DeviceManagement")
     device_shutdown_setting = self.params.get_int("DeviceShutdown") if toggle.device_management else 33
@@ -140,12 +130,12 @@ class FrogPilotVariables:
     toggle.aggressive_follow = self.params.get_float("AggressiveFollow") if aggressive_profile else 1.25
     standard_profile = toggle.custom_personalities and self.params.get_bool("StandardPersonalityProfile")
     toggle.standard_jerk_acceleration = self.params.get_int("StandardJerkAcceleration") / 100. if standard_profile else 1.0
-    toggle.standard_jerk_danger = self.params.get_int("StandardJerkDanger") / 100. if aggressive_profile else 0.5
+    toggle.standard_jerk_danger = self.params.get_int("StandardJerkDanger") / 100. if standard_profile else 0.5
     toggle.standard_jerk_speed = self.params.get_int("StandardJerkSpeed") / 100. if standard_profile else 1.0
     toggle.standard_follow = self.params.get_float("StandardFollow") if standard_profile else 1.45
     relaxed_profile = toggle.custom_personalities and self.params.get_bool("RelaxedPersonalityProfile")
     toggle.relaxed_jerk_acceleration = self.params.get_int("RelaxedJerkAcceleration") / 100. if relaxed_profile else 1.0
-    toggle.relaxed_jerk_danger = self.params.get_int("RelaxedJerkDanger") / 100. if aggressive_profile else 0.5
+    toggle.relaxed_jerk_danger = self.params.get_int("RelaxedJerkDanger") / 100. if relaxed_profile else 0.5
     toggle.relaxed_jerk_speed = self.params.get_int("RelaxedJerkSpeed") / 100. if relaxed_profile else 1.0
     toggle.relaxed_follow = self.params.get_float("RelaxedFollow") if relaxed_profile else 1.75
     traffic_profile = toggle.custom_personalities and self.params.get_bool("TrafficPersonalityProfile")
@@ -191,6 +181,45 @@ class FrogPilotVariables:
     toggle.mtsc_curvature_check = toggle.map_turn_speed_controller and self.params.get_bool("MTSCCurvatureCheck")
     self.params_memory.put_float("MapTargetLatA", 2 * (self.params.get_int("MTSCAggressiveness") / 100.))
 
+    toggle.model_manager = self.params.get_bool("ModelManagement", block=openpilot_installed)
+    available_models = self.params.get("AvailableModels", block=toggle.model_manager, encoding='utf-8')
+    available_model_names = self.params.get("AvailableModelsNames", block=toggle.model_manager, encoding='utf-8')
+    current_model = self.params_memory.get("CurrentModel", encoding='utf-8')
+    current_model_name = self.params_memory.get("CurrentModelName", encoding='utf-8')
+    if toggle.model_manager and available_models and current_model is None:
+      toggle.model_randomizer = self.params.get_bool("ModelRandomizer")
+      if toggle.model_randomizer:
+        blacklisted_models = (self.params.get("BlacklistedModels", encoding='utf-8') or '').split(',')
+        existing_models = [model for model in available_models.split(',') if model not in blacklisted_models and os.path.exists(os.path.join(MODELS_PATH, f"{model}.thneed"))]
+        toggle.model = random.choice(existing_models) if existing_models else DEFAULT_MODEL
+      else:
+        toggle.model = self.params.get("Model", block=True, encoding='utf-8')
+    else:
+      toggle.model = current_model
+    if not os.path.exists(os.path.join(MODELS_PATH, f"{toggle.model}.thneed")):
+      toggle.model = DEFAULT_MODEL
+      current_model_name = DEFAULT_MODEL_NAME
+      toggle.part_model_param = ""
+    elif available_model_names is None:
+      current_model_name = DEFAULT_MODEL_NAME
+      toggle.part_model_param = ""
+    else:
+      current_model_name = available_model_names.split(',')[available_models.split(',').index(toggle.model)]
+      toggle.part_model_param = process_model_name(current_model_name)
+    navigation_models = self.params.get("NavigationModels", encoding='utf-8')
+    if navigation_models is not None:
+      toggle.navigationless_model = toggle.model not in navigation_models.split(',')
+    else:
+      toggle.navigationless_model = False
+    radarless_model = self.params.get("RadarlessModels", encoding='utf-8')
+    if radarless_model is not None:
+      toggle.radarless_model = toggle.model in radarless_model.split(',')
+    else:
+      toggle.radarless_model = False
+    toggle.secretgoodopenpilot_model = toggle.model == "secret-good-openpilot"
+    self.params_memory.put("CurrentModel", toggle.model)
+    self.params_memory.put("CurrentModelName", current_model_name)
+
     quality_of_life_controls = self.params.get_bool("QOLControls")
     toggle.custom_cruise_increase = self.params.get_int("CustomCruise") if quality_of_life_controls and not pcm_cruise else 1
     toggle.custom_cruise_increase_long = self.params.get_int("CustomCruiseLong") if quality_of_life_controls and not pcm_cruise else 5
@@ -222,6 +251,7 @@ class FrogPilotVariables:
     speed_limit_controller_override = self.params.get_int("SLCOverride") if toggle.speed_limit_controller else 0
     toggle.speed_limit_controller_override_manual = speed_limit_controller_override == 1
     toggle.speed_limit_controller_override_set_speed = speed_limit_controller_override == 2
+    toggle.use_set_speed = toggle.speed_limit_controller and self.params.get_int("SLCFallback") == 0
     toggle.use_experimental_mode = toggle.speed_limit_controller and self.params.get_int("SLCFallback") == 1
     toggle.use_previous_limit = toggle.speed_limit_controller and self.params.get_int("SLCFallback") == 2
     toggle.speed_limit_priority1 = self.params.get("SLCPriority1", encoding='utf-8') if toggle.speed_limit_controller else None

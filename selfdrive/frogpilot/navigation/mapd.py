@@ -1,40 +1,29 @@
 # PFEIFER - MAPD - Modified by FrogAi for FrogPilot to automatically update
 import os
-import socket
 import stat
 import subprocess
-import time
-import urllib.error
 import urllib.request
+import json
 
 from openpilot.common.realtime import Ratekeeper
 
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import is_url_pingable
+
 VERSION = 'v1'
-GITHUB_VERSION_URL = f"https://github.com/FrogAi/FrogPilot-Resources/raw/Versions/mapd_version_{VERSION}.txt"
-GITLAB_VERSION_URL = f"https://gitlab.com/FrogAi/FrogPilot-Resources/-/raw/Versions/mapd_version_{VERSION}.txt"
+
+GITHUB_VERSION_URL = f"https://github.com/FrogAi/FrogPilot-Resources/raw/Versions/mapd_version_{VERSION}.json"
+GITLAB_VERSION_URL = f"https://gitlab.com/FrogAi/FrogPilot-Resources/-/raw/Versions/mapd_version_{VERSION}.json"
 
 MAPD_PATH = '/data/media/0/osm/mapd'
 VERSION_PATH = '/data/media/0/osm/mapd_version'
-
-def ping_url(url, timeout=5):
-  no_internet = 0
-  while True:
-    if no_internet > 5:
-      break
-    try:
-      urllib.request.urlopen(url, timeout=timeout)
-      return True
-    except (urllib.error.URLError, socket.timeout):
-      no_internet += 1
-      time.sleep(10)
-  return False
 
 def get_latest_version():
   urls = [GITHUB_VERSION_URL, GITLAB_VERSION_URL]
   for url in urls:
     try:
       with urllib.request.urlopen(url) as response:
-        return response.read().decode('utf-8').strip()
+        data = json.loads(response.read().decode('utf-8'))
+        return data['version']
     except Exception as e:
       print(f"Failed to get latest version from {url}. Error: {e}")
   print("Failed to get latest version from both sources.")
@@ -73,7 +62,7 @@ def mapd_thread(sm=None, pm=None):
 
   while True:
     try:
-      if ping_url("https://github.com"):
+      if is_url_pingable("https://github.com"):
         current_version = get_latest_version()
         if current_version:
           if not os.path.exists(MAPD_PATH):

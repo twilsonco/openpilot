@@ -1,12 +1,11 @@
 import datetime
-import time
-import threading
 
 from openpilot.common.params import Params
 
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import update_frogpilot_toggles
+
 class ThemeManager:
   def __init__(self):
-    self.params = Params()
     self.params_memory = Params("/dev/shm/params")
 
     self.previous_theme_id = 0
@@ -62,16 +61,12 @@ class ThemeManager:
     for holiday, (date, theme_id) in holidays.items():
       if holiday.endswith("_week") and self.is_within_week_of(date, current_date) or current_date.date() == date.date():
         if theme_id != self.previous_theme_id:
-          threading.Thread(target=self.update_holiday_theme, args=(theme_id,)).start()
+          self.params_memory.put_int("CurrentHolidayTheme", theme_id)
+          update_frogpilot_toggles()
         self.previous_theme_id = theme_id
         return
 
     if self.previous_theme_id != 0:
-      threading.Thread(target=self.update_holiday_theme, args=(0,)).start()
+      self.params_memory.put_int("CurrentHolidayTheme", "0")
+      update_frogpilot_toggles()
     self.previous_theme_id = 0
-
-  def update_holiday_theme(self, theme_id):
-    self.params_memory.put_int("CurrentHolidayTheme", theme_id)
-    self.params_memory.put_bool("FrogPilotTogglesUpdated", True)
-    time.sleep(1)
-    self.params_memory.put_bool("FrogPilotTogglesUpdated", False)

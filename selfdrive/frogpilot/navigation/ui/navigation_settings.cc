@@ -152,7 +152,7 @@ void FrogPilotNavigationPanel::updateDownloadedLabel() {
                        (day == 3 || day == 23) ? "rd" : "th";
   std::string lastMapsUpdate = date.toString("MMMM d").toStdString() + suffix + date.toString(", yyyy").toStdString();
   lastMapsDownload->setText(QString::fromStdString(lastMapsUpdate));
-  params.put("LastMapsUpdate", lastMapsUpdate);
+  params.putNonBlocking("LastMapsUpdate", lastMapsUpdate);
 }
 
 void FrogPilotNavigationPanel::cancelDownload(QWidget *parent) {
@@ -197,7 +197,7 @@ void FrogPilotNavigationPanel::setMaps() {
     json.insert("states", QJsonArray::fromStringList(states));
     json.insert("nations", QJsonArray::fromStringList(countries));
 
-    params.put("MapsSelected", QJsonDocument(json).toJson(QJsonDocument::Compact).toStdString());
+    params.putNonBlocking("MapsSelected", QJsonDocument(json).toJson(QJsonDocument::Compact).toStdString());
 
     if (!states.isEmpty() || !countries.isEmpty()) {
       downloadOfflineMapsButton->setVisible(true);
@@ -506,7 +506,7 @@ void Primeless::createMapboxKeyControl(ButtonControl *&control, const QString &l
         key = prefix + key;
       }
       if (key.length() >= 80) {
-        params.put(paramKey, key.toStdString());
+        params.putNonBlocking(paramKey, key.toStdString());
       }
     } else {
       if (FrogPilotConfirmationDialog::yesorno(tr("Are you sure you want to remove your %1?").arg(label), this)) {

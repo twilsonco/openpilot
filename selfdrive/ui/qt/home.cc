@@ -7,12 +7,14 @@
 
 #include "selfdrive/ui/qt/offroad/experimental_mode.h"
 #include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/widgets/drive_stats.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
 
 #ifdef ENABLE_MAPS
 #include "selfdrive/ui/qt/maps/map_settings.h"
 #endif
+
+#include "selfdrive/frogpilot/ui/qt/widgets/drive_stats.h"
+#include "selfdrive/frogpilot/ui/qt/widgets/model_reviewer.h"
 
 // HomeWindow: the container for the offroad and onroad UIs
 
@@ -56,7 +58,6 @@ void HomeWindow::showSidebar(bool show) {
 
 void HomeWindow::showMapPanel(bool show) {
   onroad->showMapPanel(show);
-  uiState()->scene.map_open = true;
 }
 
 void HomeWindow::updateState(const UIState &s) {
@@ -70,6 +71,9 @@ void HomeWindow::updateState(const UIState &s) {
 
   if (s.scene.started) {
     showDriverView(s.scene.driver_camera_timer >= 10, true);
+    if (s.scene.map_open) {
+      showSidebar(false);
+    }
   }
 }
 
@@ -79,8 +83,8 @@ void HomeWindow::offroadTransition(bool offroad) {
   if (offroad) {
     slayout->setCurrentWidget(home);
   } else {
+    showSidebar(params.getBool("Sidebar"));
     slayout->setCurrentWidget(onroad);
-    uiState()->scene.map_open = onroad->isMapVisible();
   }
 }
 
@@ -104,7 +108,6 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // Handle sidebar collapsing
   if ((onroad->isVisible() || body->isVisible()) && (!sidebar->isVisible() || e->x() > sidebar->width())) {
     sidebar->setVisible(!sidebar->isVisible() && !onroad->isMapVisible());
-    uiState()->scene.map_open = onroad->isMapVisible();
     params.putBool("Sidebar", sidebar->isVisible());
   }
 }
@@ -163,19 +166,22 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     home_layout->setContentsMargins(0, 0, 0, 0);
     home_layout->setSpacing(30);
 
-    // left: MapSettings/PrimeAdWidget
+    // left: MapSettings
     QStackedWidget *left_widget = new QStackedWidget(this);
 #ifdef ENABLE_MAPS
     left_widget->addWidget(new MapSettings);
 #else
     left_widget->addWidget(new QWidget);
 #endif
-    left_widget->addWidget(new PrimeAdWidget);
     left_widget->addWidget(new DriveStats);
+    left_widget->addWidget(new ModelReview);
     left_widget->setStyleSheet("border-radius: 10px;");
 
-    left_widget->setCurrentIndex(2);
-    connect(uiState(), &UIState::primeChanged, [=](bool prime) {
+    left_widget->setCurrentIndex(1);
+    connect(uiState(), &UIState::driveRated, [=]() {
+      left_widget->setCurrentIndex(1);
+    });
+    connect(uiState(), &UIState::reviewModel, [=]() {
       left_widget->setCurrentIndex(2);
     });
 
@@ -247,6 +253,10 @@ void OffroadHome::refresh() {
 
   if (model.contains("(Default)")) {
     model = model.remove("(Default)").trimmed();
+  }
+
+  if (uiState()->scene.model_randomizer) {
+    model = "Mystery Model 👻";
   }
 
   date->setText(QLocale(uiState()->language.mid(5)).toString(QDateTime::currentDateTime(), "dddd, MMMM d"));

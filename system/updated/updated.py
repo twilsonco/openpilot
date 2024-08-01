@@ -310,7 +310,7 @@ class Updater:
         with open(os.path.join(basedir, "common", "version.h")) as f:
           version = f.read().split('"')[1]
 
-        commit_unix_ts = run(["git", "show", "-s", "--format=%ct", "HEAD"], basedir).rstrip()
+        commit_unix_ts = run(["git", "show", "-s", "--format=%ct", "HEAD"], basedir).split()[0]
         dt = datetime.datetime.fromtimestamp(int(commit_unix_ts))
         commit_date = dt.strftime("%b %d")
       except Exception:
@@ -411,7 +411,7 @@ class Updater:
     cloudlog.info("finalize success!")
 
     # Format "Updated" to Phoenix time zone
-    self.params.put("Updated", datetime.datetime.now().astimezone(ZoneInfo('America/Phoenix')).strftime("%B %d, %Y - %I:%M%p").encode('utf8'))
+    self.params.put_nonblocking("Updated", datetime.datetime.now().astimezone(ZoneInfo('America/Phoenix')).strftime("%B %d, %Y - %I:%M%p").encode('utf8'))
 
 def main() -> None:
   params = Params()
@@ -448,7 +448,7 @@ def main() -> None:
 
     # Run the update loop
     first_run = True
-    install_date_set = params.get("InstallDate") is not None and params.get("Updated") is not None
+    install_date_set = params.get("InstallDate", encoding='utf-8') is not None and params.get("Updated", encoding='utf-8') is not None
 
     while True:
       wait_helper.ready_event.clear()
@@ -469,7 +469,7 @@ def main() -> None:
 
         # Format "InstallDate" to Phoenix time zone
         if not install_date_set:
-          params.put("InstallDate", datetime.datetime.now().astimezone(ZoneInfo('America/Phoenix')).strftime("%B %d, %Y - %I:%M%p").encode('utf8'))
+          params.put_nonblocking("InstallDate", datetime.datetime.now().astimezone(ZoneInfo('America/Phoenix')).strftime("%B %d, %Y - %I:%M%p").encode('utf8'))
           install_date_set = True
 
         if not (params.get_bool("AutomaticUpdates") or params_memory.get_bool("ManualUpdateInitiated")):

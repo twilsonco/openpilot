@@ -80,7 +80,6 @@ private:
 
   bool trafficModeActive;
 
-  int elapsed;
   int personality;
 
   QElapsedTimer transitionTimer;

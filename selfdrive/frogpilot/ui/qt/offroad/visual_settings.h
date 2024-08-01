@@ -16,7 +16,7 @@ signals:
 
 private:
   void hideToggles();
-  void showEvent(QShowEvent *event);
+  void showEvent(QShowEvent *event) override;
   void updateCarToggles();
   void updateMetric();
   void updateState(const UIState &s);
@@ -34,6 +34,7 @@ private:
 
   Params params;
 
+  bool disableOpenpilotLongitudinal;
   bool hasAutoTune;
   bool hasBSM;
   bool hasOpenpilotLongitudinal;

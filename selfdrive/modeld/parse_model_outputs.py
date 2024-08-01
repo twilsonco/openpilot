@@ -1,8 +1,6 @@
 import numpy as np
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
-
 def sigmoid(x):
   return 1. / (1. + np.exp(-x))
 
@@ -18,9 +16,6 @@ def softmax(x, axis=-1):
 class Parser:
   def __init__(self, ignore_missing=False):
     self.ignore_missing = ignore_missing
-
-    # FrogPilot variables
-    self.secret_good_openpilot = FrogPilotVariables.toggles.secretgoodopenpilot_model
 
   def check_missing(self, outs, name):
     if name not in outs and not self.ignore_missing:
@@ -86,14 +81,14 @@ class Parser:
     outs[name] = pred_mu_final.reshape(final_shape)
     outs[name + '_stds'] = pred_std_final.reshape(final_shape)
 
-  def parse_outputs(self, outs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+  def parse_outputs(self, outs: dict[str, np.ndarray], secret_good_openpilot) -> dict[str, np.ndarray]:
     self.parse_mdn('plan', outs, in_N=ModelConstants.PLAN_MHP_N, out_N=ModelConstants.PLAN_MHP_SELECTION,
                    out_shape=(ModelConstants.IDX_N,ModelConstants.PLAN_WIDTH))
     self.parse_mdn('lane_lines', outs, in_N=0, out_N=0, out_shape=(ModelConstants.NUM_LANE_LINES,ModelConstants.IDX_N,ModelConstants.LANE_LINES_WIDTH))
     self.parse_mdn('road_edges', outs, in_N=0, out_N=0, out_shape=(ModelConstants.NUM_ROAD_EDGES,ModelConstants.IDX_N,ModelConstants.LANE_LINES_WIDTH))
     self.parse_mdn('pose', outs, in_N=0, out_N=0, out_shape=(ModelConstants.POSE_WIDTH,))
     self.parse_mdn('road_transform', outs, in_N=0, out_N=0, out_shape=(ModelConstants.POSE_WIDTH,))
-    if not self.secret_good_openpilot:
+    if not secret_good_openpilot:
       self.parse_mdn('sim_pose', outs, in_N=0, out_N=0, out_shape=(ModelConstants.POSE_WIDTH,))
     self.parse_mdn('wide_from_device_euler', outs, in_N=0, out_N=0, out_shape=(ModelConstants.WIDE_FROM_DEVICE_WIDTH,))
     self.parse_mdn('lead', outs, in_N=ModelConstants.LEAD_MHP_N, out_N=ModelConstants.LEAD_MHP_SELECTION,
@@ -104,7 +99,7 @@ class Parser:
       self.parse_mdn('desired_curvature', outs, in_N=0, out_N=0, out_shape=(ModelConstants.DESIRED_CURV_WIDTH,))
     for k in ['lead_prob', 'lane_lines_prob', 'meta']:
       self.parse_binary_crossentropy(k, outs)
-    if not self.secret_good_openpilot:
+    if not secret_good_openpilot:
       self.parse_categorical_crossentropy('desire_state', outs, out_shape=(ModelConstants.DESIRE_PRED_WIDTH,))
     self.parse_categorical_crossentropy('desire_pred', outs, out_shape=(ModelConstants.DESIRE_PRED_LEN,ModelConstants.DESIRE_PRED_WIDTH))
     return outs

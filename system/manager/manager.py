@@ -2,10 +2,8 @@
 import datetime
 import os
 import signal
-import subprocess
 import sys
 import threading
-import time
 import traceback
 
 from cereal import log
@@ -19,56 +17,31 @@ from openpilot.system.manager.process import ensure_running
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.athena.registration import register, UNREGISTERED_DONGLE_ID
 from openpilot.common.swaglog import cloudlog, add_file_handler
-from openpilot.common.time import system_time_valid
 from openpilot.system.version import get_build_metadata, terms_version, training_version
 
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import FrogPilotFunctions
-from openpilot.selfdrive.frogpilot.controls.lib.model_manager import DEFAULT_MODEL, DEFAULT_MODEL_NAME, delete_deprecated_models
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import frogpilot_boot_functions, setup_frogpilot, uninstall_frogpilot
+from openpilot.selfdrive.frogpilot.controls.lib.model_manager import DEFAULT_MODEL, DEFAULT_MODEL_NAME
 
 
-def frogpilot_boot_functions(frogpilot_functions):
-  while not system_time_valid():
-    print("Waiting for system time to become valid...")
-    time.sleep(1)
-
-  try:
-    frogpilot_functions.backup_frogpilot()
-  except subprocess.CalledProcessError as e:
-    print(f"Failed to backup FrogPilot. Error: {e}")
-    return
-
-  try:
-    frogpilot_functions.backup_toggles()
-  except subprocess.CalledProcessError as e:
-    print(f"Failed to backup toggles. Error: {e}")
-    return
-
-  try:
-    delete_deprecated_models()
-  except subprocess.CalledProcessError as e:
-    print(f"Failed to delete deprecated models. Error: {e}")
-    return
-
-def manager_init(frogpilot_functions) -> None:
-  frogpilot_boot = threading.Thread(target=frogpilot_boot_functions, args=(frogpilot_functions,))
-  frogpilot_boot.start()
-
+def manager_init() -> None:
   save_bootlog()
 
   build_metadata = get_build_metadata()
 
+  setup_frogpilot(build_metadata)
+
   params = Params()
   params_storage = Params("/persist/params")
-  params_tracking = Params("/persist/tracking")
   params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
   params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
   params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
   if build_metadata.release_channel:
     params.clear_all(ParamKeyType.DEVELOPMENT_ONLY)
 
-  frogpilot_functions.convert_params(params, params_storage, params_tracking)
+  threading.Thread(target=frogpilot_boot_functions, args=(build_metadata, params, params_storage,)).start()
 
   default_params: list[tuple[str, str | bytes]] = [
+    ("AlwaysOnDM", "0"),
     ("CarParamsPersistent", ""),
     ("CompletedTrainingVersion", "0"),
     ("DisengageOnAccelerator", "0"),
@@ -92,7 +65,7 @@ def manager_init(frogpilot_functions) -> None:
 
     # Default FrogPilot parameters
     ("AccelerationPath", "1"),
-    ("AccelerationProfile", "3"),
+    ("AccelerationProfile", "2"),
     ("AdjacentPath", "0"),
     ("AdjacentPathMetrics", "0"),
     ("AggressiveAcceleration", "1"),
@@ -107,10 +80,12 @@ def manager_init(frogpilot_functions) -> None:
     ("AlwaysOnLateralMain", "1"),
     ("AMapKey1", ""),
     ("AMapKey2", ""),
+    ("AutomaticallyUpdateModels", "0"),
     ("AutomaticUpdates", "1"),
     ("AvailableModels", ""),
     ("AvailableModelsNames", ""),
     ("BigMap", "0"),
+    ("BlacklistedModels", ""),
     ("BlindSpotMetrics", "0"),
     ("BlindSpotPath", "1"),
     ("BorderMetrics", "1"),
@@ -125,6 +100,10 @@ def manager_init(frogpilot_functions) -> None:
     ("CENavigationIntersections", "1"),
     ("CENavigationLead", "1"),
     ("CENavigationTurns", "1"),
+    ("CertifiedHerbalistCalibrationParams", ""),
+    ("CertifiedHerbalistDrives", "0"),
+    ("CertifiedHerbalistLiveTorqueParameters", ""),
+    ("CertifiedHerbalistScore", "0"),
     ("CESignal", "1"),
     ("CESlowerLead", "1"),
     ("CESpeed", "0"),
@@ -158,13 +137,17 @@ def manager_init(frogpilot_functions) -> None:
     ("DisableOpenpilotLongitudinal", "0"),
     ("DisableVTSCSmoothing", "0"),
     ("DisengageVolume", "100"),
-    ("DragonPilotTune", "0"),
     ("DriverCamera", "0"),
     ("DrivingPersonalities", "0"),
+    ("DuckAmigoCalibrationParams", ""),
+    ("DuckAmigoDrives", "0"),
+    ("DuckAmigoLiveTorqueParameters", ""),
+    ("DuckAmigoScore", "0"),
     ("DynamicPathWidth", "0"),
     ("DynamicPedalsOnUI", "1"),
     ("EngageVolume", "100"),
     ("ExperimentalModeActivation", "1"),
+    ("ExperimentalModels", ""),
     ("ExperimentalModeViaDistance", "1"),
     ("ExperimentalModeViaLKAS", "1"),
     ("ExperimentalModeViaTap", "0"),
@@ -207,27 +190,46 @@ def manager_init(frogpilot_functions) -> None:
     ("LongitudinalMetrics", "1"),
     ("LongitudinalTune", "1"),
     ("LongPitch", "1"),
+    ("LosAngelesCalibrationParams", ""),
+    ("LosAngelesDrives", "0"),
+    ("LosAngelesLiveTorqueParameters", ""),
+    ("LosAngelesScore", "0"),
     ("LoudBlindspotAlert", "0"),
     ("LowVoltageShutdown", "11.8"),
     ("MapAcceleration", "0"),
     ("MapDeceleration", "0"),
     ("MapGears", "0"),
-    ("MapsSelected", ""),
     ("MapboxPublicKey", ""),
     ("MapboxSecretKey", ""),
+    ("MapsSelected", ""),
     ("MapStyle", "10"),
     ("MinimumLaneChangeSpeed", "20"),
-    ("MTSCAggressiveness", "100"),
-    ("MTSCCurvatureCheck", "0"),
     ("Model", DEFAULT_MODEL),
+    ("ModelManagement", "0"),
     ("ModelName", DEFAULT_MODEL_NAME),
     ("ModelSelector", "0"),
     ("ModelUI", "1"),
+    ("MTSCAggressiveness", "100"),
+    ("MTSCCurvatureCheck", "0"),
     ("MTSCEnabled", "1"),
+    ("NavigationModels", ""),
     ("NewLongAPI", "0"),
+    ("NewLongAPIGM", "1"),
     ("NNFF", "1"),
     ("NNFFLite", "1"),
     ("NoLogging", "0"),
+    ("NorthDakotaCalibrationParams", ""),
+    ("NorthDakotaDrives", "0"),
+    ("NorthDakotaLiveTorqueParameters", ""),
+    ("NorthDakotaScore", "0"),
+    ("NorthDakotaV2CalibrationParams", ""),
+    ("NorthDakotaV2Drives", "0"),
+    ("NorthDakotaV2LiveTorqueParameters", ""),
+    ("NorthDakotaV2Score", "0"),
+    ("NotreDameCalibrationParams", ""),
+    ("NotreDameDrives", "0"),
+    ("NotreDameLiveTorqueParameters", ""),
+    ("NotreDameScore", "0"),
     ("NoUploads", "0"),
     ("NudgelessLaneChange", "1"),
     ("NumericalTemp", "1"),
@@ -249,7 +251,16 @@ def manager_init(frogpilot_functions) -> None:
     ("PromptVolume", "100"),
     ("QOLControls", "1"),
     ("QOLVisuals", "1"),
+    ("RadarlessModels", ""),
+    ("RadicalTurtleCalibrationParams", ""),
+    ("RadicalTurtleDrives", "0"),
+    ("RadicalTurtleLiveTorqueParameters", ""),
+    ("RadicalTurtleScore", "0"),
     ("RandomEvents", "0"),
+    ("RecertifiedHerbalistCalibrationParams", ""),
+    ("RecertifiedHerbalistDrives", "0"),
+    ("RecertifiedHerbalistLiveTorqueParameters", ""),
+    ("RecertifiedHerbalistScore", "0"),
     ("RefuseVolume", "100"),
     ("RelaxedFollow", "1.75"),
     ("RelaxedJerkAcceleration", "100"),
@@ -268,6 +279,10 @@ def manager_init(frogpilot_functions) -> None:
     ("ScreenTimeout", "30"),
     ("ScreenTimeoutOnroad", "30"),
     ("SearchInput", "0"),
+    ("SecretGoodOpenpilotCalibrationParams", ""),
+    ("SecretGoodOpenpilotDrives", "0"),
+    ("SecretGoodOpenpilotLiveTorqueParameters", ""),
+    ("SecretGoodOpenpilotScore", "0"),
     ("SetSpeedLimit", "0"),
     ("SetSpeedOffset", "0"),
     ("ShowCPU", "1"),
@@ -285,8 +300,8 @@ def manager_init(frogpilot_functions) -> None:
     ("SidebarMetrics", "1"),
     ("SignalMetrics", "0"),
     ("SLCConfirmation", "1"),
-    ("SLCConfirmationLower", "1"),
     ("SLCConfirmationHigher", "1"),
+    ("SLCConfirmationLower", "1"),
     ("SLCFallback", "2"),
     ("SLCLookaheadHigher", "5"),
     ("SLCLookaheadLower", "5"),
@@ -329,6 +344,10 @@ def manager_init(frogpilot_functions) -> None:
     ("VoltSNG", "0"),
     ("WarningImmediateVolume", "100"),
     ("WarningSoftVolume", "100"),
+    ("WD40CalibrationParams", ""),
+    ("WD40Drives", "0"),
+    ("WD40LiveTorqueParameters", ""),
+    ("WD40Score", "0"),
     ("WheelIcon", "3"),
     ("WheelSpeed", "0")
   ]
@@ -348,7 +367,7 @@ def manager_init(frogpilot_functions) -> None:
     else:
       params_storage.put(k, params.get(k))
 
-  params.put_bool("DoToggleReset", False)
+  params.put_bool_nonblocking("DoToggleReset", False)
 
   # Create folders needed for msgq
   try:
@@ -480,10 +499,8 @@ def manager_thread() -> None:
       break
 
 
-def main(frogpilot_functions) -> None:
-  frogpilot_functions.setup_frogpilot()
-
-  manager_init(frogpilot_functions)
+def main() -> None:
+  manager_init()
   if os.getenv("PREPAREONLY") is not None:
     return
 
@@ -501,7 +518,7 @@ def main(frogpilot_functions) -> None:
   params = Params()
   if params.get_bool("DoUninstall"):
     cloudlog.warning("uninstalling")
-    frogpilot_functions.uninstall_frogpilot()
+    uninstall_frogpilot()
   elif params.get_bool("DoReboot"):
     cloudlog.warning("reboot")
     HARDWARE.reboot()
@@ -514,7 +531,7 @@ if __name__ == "__main__":
   unblock_stdout()
 
   try:
-    main(FrogPilotFunctions())
+    main()
   except KeyboardInterrupt:
     print("got CTRL-C, exiting")
   except Exception:

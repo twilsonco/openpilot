@@ -62,7 +62,7 @@ QStringList getCarNames(const QString &carMake, QMap<QString, QString> &carModel
       QRegularExpressionMatch match = carDocsIt.next();
       QString carName = match.captured(1);
 
-      if (carName.contains(QRegularExpression("^[A-Za-z0-9 .()-]+$")) && carName.count(" ") >= 1) {
+      if (carName.contains(QRegularExpression("^[A-Za-z0-9 Š.()-]+$")) && carName.count(" ") >= 1) {
         QStringList nameParts = carName.split(" ");
         if (nameParts.contains(carMake, Qt::CaseInsensitive)) {
           if (!uniqueNames.contains(carName)) {
@@ -139,6 +139,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
   std::vector<std::tuple<QString, QString, QString, QString>> vehicleToggles {
     {"LongPitch", tr("Long Pitch Compensation"), tr("Smoothen out the gas and pedal controls."), ""},
     {"VoltSNG", tr("2017 Volt SNG"), tr("Enable the 'Stop and Go' hack for 2017 Chevy Volts."), ""},
+    {"NewLongAPIGM", tr("Use comma's New Longitudinal API"), tr("Use comma's new longitudinal controls that have shown great improvement with acceleration and braking, but has a few issues on some GM vehicles."), ""},
 
     {"NewLongAPI", tr("Use comma's New Longitudinal API"), tr("Use comma's new longitudinal controls that have shown great improvement with acceleration and braking, but has a few issues on Hyundai/Kia/Genesis."), ""},
 
@@ -165,7 +166,6 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
       std::vector<std::pair<QString, QString>> tuneOptions{
         {"StockTune", tr("Stock")},
         {"CydiaTune", tr("Cydia")},
-        {"DragonPilotTune", tr("DragonPilot")},
         {"FrogsGoMooTune", tr("FrogPilot")},
       };
 
@@ -245,7 +245,7 @@ void FrogPilotVehiclesPanel::updateCarToggles() {
     auto carFingerprint = CP.getCarFingerprint();
 
     hasExperimentalOpenpilotLongitudinal = CP.getExperimentalLongitudinalAvailable();
-    hasOpenpilotLongitudinal = CP.getOpenpilotLongitudinalControl() && !params.getBool("DisableOpenpilotLongitudinal");
+    hasOpenpilotLongitudinal = hasLongitudinalControl(CP);
     hasSNG = CP.getMinEnableSpeed() <= 0;
     isGMPCMCruise = CP.getCarName() == "gm" && CP.getPcmCruise();
     isImpreza = carFingerprint == "SUBARU_IMPREZA";
@@ -273,8 +273,8 @@ void FrogPilotVehiclesPanel::hideToggles() {
   selectModelButton->setValue(carModel);
   selectModelButton->setVisible(!carMake.isEmpty());
 
-  bool hyundai = carMake == "Genesis" || carMake == "Hyundai" || carMake == "Kia";
   bool gm = carMake == "Buick" || carMake == "Cadillac" || carMake == "Chevrolet" || carMake == "GM" || carMake == "GMC";
+  bool hyundai = carMake == "Genesis" || carMake == "Hyundai" || carMake == "Kia";
   bool subaru = carMake == "Subaru";
   bool toyota = carMake == "Lexus" || carMake == "Toyota";
 

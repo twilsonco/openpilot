@@ -22,19 +22,20 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 import os
-import random
-import secrets
-import threading
-import time
-
-from flask import Flask, jsonify, render_template, Response, request, send_from_directory, session, redirect, url_for
 import requests
-from requests.exceptions import ConnectionError
-from openpilot.common.realtime import set_core_affinity
-import openpilot.selfdrive.frogpilot.fleetmanager.helpers as fleet
-from openpilot.system.hardware.hw import Paths
-from openpilot.common.swaglog import cloudlog
+import secrets
 import traceback
+
+import openpilot.selfdrive.frogpilot.fleetmanager.helpers as fleet
+
+from flask import Flask, Response, jsonify, redirect, render_template, request, send_from_directory, session, url_for
+from requests.exceptions import ConnectionError
+
+from openpilot.common.realtime import set_core_affinity
+from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware.hw import Paths
+
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
 
 app = Flask(__name__)
 
@@ -173,7 +174,6 @@ def addr_input():
   token = fleet.get_public_token()
   s_token = fleet.get_app_token()
   gmap_key = fleet.get_gmap_key()
-  PrimeType = fleet.get_PrimeType()
   lon = float(0.0)
   lat = float(0.0)
   if request.method == 'POST':
@@ -190,7 +190,7 @@ def addr_input():
       return redirect(url_for('nav_confirmation', addr=addr, lon=lon, lat=lat))
     else:
       return render_template("error.html")
-  elif PrimeType != 0:
+  elif FrogPilotVariables.has_prime:
     return render_template("prime.html")
   # amap stuff
   elif SearchInput == 1:

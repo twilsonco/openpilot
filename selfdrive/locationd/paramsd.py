@@ -96,8 +96,9 @@ class ParamsLearner:
       self.steering_angle = msg.steeringAngleDeg
       self.speed = msg.vEgo
 
+      complex_dynamics = abs(msg.aEgo) > 1.0 or abs(msg.steeringRateDeg) > 20
       in_linear_region = abs(self.steering_angle) < 45
-      self.active = self.speed > MIN_ACTIVE_SPEED and in_linear_region
+      self.active = self.speed > MIN_ACTIVE_SPEED and in_linear_region and not complex_dynamics
 
       if self.active:
         self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[math.radians(msg.steeringAngleDeg)]]))
@@ -127,6 +128,7 @@ def main():
   sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll='liveLocationKalman')
 
   params_reader = Params()
+  params_memory = Params("/dev/shm/params")
   # wait for stats about the car to come in from controls
   cloudlog.info("paramsd is waiting for CarParams")
   with car.CarParams.from_bytes(params_reader.get("CarParams", block=True)) as msg:
@@ -141,7 +143,6 @@ def main():
   min_sr, max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
 
   params = params_reader.get("LiveParameters")
-  params_memory = Params("/dev/shm/params")
 
   # Check if car model matches
   if params is not None:

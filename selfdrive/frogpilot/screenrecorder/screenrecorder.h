@@ -1,55 +1,45 @@
 #pragma once
 
-#include <QPushButton>
-
 #include "omx_encoder.h"
 #include "blocking_queue.h"
-#include "selfdrive/ui/ui.h"
+
+#include "selfdrive/ui/qt/onroad/buttons.h"
 
 class ScreenRecorder : public QPushButton {
-#ifdef NO_SR
-  public:
-    explicit ScreenRecorder(QWidget *parent = nullptr){}
-    ~ScreenRecorder() override{}
-
-    void update_screen(){}
-    void toggle(){}
-#else
   Q_OBJECT
 
 public:
-  explicit ScreenRecorder(QWidget *parent = nullptr);
+  explicit ScreenRecorder(QWidget *parent = 0);
   ~ScreenRecorder() override;
 
-  void update_screen();
-  void toggle();
-
-protected:
-  void paintEvent(QPaintEvent *event) override;
+  void updateScreen();
 
 private:
-  void applyColor();
   void closeEncoder();
-  void encoding_thread_func();
-  void initializeEncoder();
-  void openEncoder(const char *filename);
+  void encodingThreadFunction();
+  void openEncoder(const std::string &filename);
+  void paintEvent(QPaintEvent *event) override;
   void start();
   void stop();
+  void toggleRecording();
 
   bool recording;
+
   int frame;
-  int recording_height;
-  int recording_width;
-  int screen_height;
-  int screen_width;
-  long long started = 0;
+  int screenHeight;
+  int screenWidth;
+
+  long long started;
 
   std::unique_ptr<OmxEncoder> encoder;
-  std::unique_ptr<uint8_t[]> rgb_scale_buffer;
-  std::thread encoding_thread;
+  std::unique_ptr<uint8_t[]> rgbScaleBuffer;
 
-  BlockingQueue<QImage> image_queue;
-  QColor recording_color;
+  std::thread encodingThread;
+
+  BlockingQueue<QImage> imageQueue{30};
+
   QWidget *rootWidget;
-#endif //NO_SR
+
+  QPixmap recorderIcon;
+  QPixmap recordingIcon;
 };

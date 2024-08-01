@@ -127,9 +127,9 @@ class CarState(CarStateBase):
       self.es_infotainment_msg = copy.copy(cp_cam.vl["ES_Infotainment"])
 
     # FrogPilot CarState functions
+    self.lkas_previously_enabled = self.lkas_enabled
     if self.car_fingerprint not in PREGLOBAL_CARS:
       fp_ret.brakeLights = bool(cp_cam.vl["ES_DashStatus"]["Brake_Lights"])
-      self.lkas_previously_enabled = self.lkas_enabled
       self.lkas_enabled = cp_cam.vl["ES_LKAS_State"]["LKAS_Dash_State"]
     else:
       fp_ret.brakeLights = bool(cp_cam.vl["ES_Brake"]["Cruise_Brake_Lights"])

@@ -31,7 +31,7 @@ class CarState(CarStateBase):
     fp_ret = custom.FrogPilotCarState.new_message()
 
     self.prev_distance_button = self.distance_button
-    self.distance_button = cp.vl["CRUISE_BUTTONS"]["ACC_Distance_Dec"]
+    self.distance_button = cp.vl[self.button_message]["ACC_Distance_Dec"]
 
     # lock info
     ret.doorOpen = any([cp.vl["BCM_1"]["DOOR_OPEN_FL"],

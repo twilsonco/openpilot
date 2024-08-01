@@ -138,13 +138,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
       QObject::connect(customUIToggle, &FrogPilotParamManageControl::manageButtonClicked, this, [this]() {
         openParentToggle();
         for (auto &[key, toggle] : toggles) {
-          std::set<QString> modifiedCustomOnroadUIKeys = customOnroadUIKeys;
-
-          if (!hasOpenpilotLongitudinal && !hasAutoTune) {
-            modifiedCustomOnroadUIKeys.erase("DeveloperUI");
-          }
-
-          toggle->setVisible(modifiedCustomOnroadUIKeys.find(key.c_str()) != modifiedCustomOnroadUIKeys.end());
+          toggle->setVisible(customOnroadUIKeys.find(key.c_str()) != customOnroadUIKeys.end());
         }
       });
       visualToggle = customUIToggle;
@@ -234,7 +228,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
         for (auto &[key, toggle] : toggles) {
           std::set<QString> modifiedModelUIKeysKeys = modelUIKeys;
 
-          if (!hasOpenpilotLongitudinal) {
+          if (!hasOpenpilotLongitudinal || disableOpenpilotLongitudinal) {
             modifiedModelUIKeysKeys.erase("HideLeadMarker");
           }
 
@@ -369,7 +363,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
 }
 
 void FrogPilotVisualsPanel::showEvent(QShowEvent *event) {
-  hasOpenpilotLongitudinal &= !params.getBool("DisableOpenpilotLongitudinal");
+  disableOpenpilotLongitudinal = params.getBool("DisableOpenpilotLongitudinal");
 }
 
 void FrogPilotVisualsPanel::updateState(const UIState &s) {
@@ -388,7 +382,7 @@ void FrogPilotVisualsPanel::updateCarToggles() {
 
     hasAutoTune = (carName == "hyundai" || carName == "toyota") && CP.getLateralTuning().which() == cereal::CarParams::LateralTuning::TORQUE;
     hasBSM = CP.getEnableBsm();
-    hasOpenpilotLongitudinal = CP.getOpenpilotLongitudinalControl() && !params.getBool("DisableOpenpilotLongitudinal");
+    hasOpenpilotLongitudinal = hasLongitudinalControl(CP);
   } else {
     hasAutoTune = true;
     hasBSM = true;

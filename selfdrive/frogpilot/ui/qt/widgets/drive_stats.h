@@ -1,28 +1,29 @@
 #pragma once
 
-#include <QJsonDocument>
-#include <QLabel>
-
-#include "common/params.h"
+#include "selfdrive/ui/ui.h"
 
 class DriveStats : public QFrame {
   Q_OBJECT
 
 public:
-  explicit DriveStats(QWidget* parent = 0);
+  explicit DriveStats(QWidget *parent = 0);
 
 private:
+  inline QString getDistanceUnit() const { return metric ? tr("KM") : tr("Miles"); }
+
   void showEvent(QShowEvent *event) override;
   void updateStats();
-  inline QString getDistanceUnit() const { return metric_ ? tr("KM") : tr("Miles"); }
 
-  bool metric_;
   Params params;
   Params paramsTracking{"/persist/tracking"};
-  QJsonDocument stats_;
+
+  bool metric;
+
+  QJsonDocument stats;
+
   struct StatsLabels {
     QLabel *routes, *distance, *distance_unit, *hours;
-  } all_, week_, frogPilot_;
+  } all, week, frogPilot;
 
 private slots:
   void parseResponse(const QString &response, bool success);

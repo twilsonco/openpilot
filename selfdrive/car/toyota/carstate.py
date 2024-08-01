@@ -27,6 +27,22 @@ PERM_STEER_FAULTS = (3, 17)
 ZSS_THRESHOLD = 4.0
 ZSS_THRESHOLD_COUNT = 10
 
+# Traffic signals for Speed Limit Controller - Credit goes to the DragonPilot team!
+@staticmethod
+def calculate_speed_limit(cp_cam, frogpilot_toggles):
+  signals = ["TSGN1", "SPDVAL1", "SPLSGN1", "TSGN2", "SPLSGN2", "TSGN3", "SPLSGN3", "TSGN4", "SPLSGN4"]
+  traffic_signals = {signal: cp_cam.vl["RSA1"].get(signal, cp_cam.vl["RSA2"].get(signal)) for signal in signals}
+
+  tsgn1 = traffic_signals.get("TSGN1", None)
+  spdval1 = traffic_signals.get("SPDVAL1", None)
+
+  if tsgn1 == 1 and not frogpilot_toggles.force_mph_dashboard:
+    return spdval1 * CV.KPH_TO_MS
+  elif tsgn1 == 36 or frogpilot_toggles.force_mph_dashboard:
+    return spdval1 * CV.MPH_TO_MS
+  else:
+    return 0
+
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
@@ -59,21 +75,6 @@ class CarState(CarStateBase):
     self.pcm_neutral_force = 0
     self.zss_angle_offset = 0
     self.zss_threshold_count = 0
-
-  # Traffic signals for Speed Limit Controller - Credit goes to the DragonPilot team!
-  def calculate_speed_limit(self, cp_cam, frogpilot_toggles):
-    signals = ["TSGN1", "SPDVAL1", "SPLSGN1", "TSGN2", "SPLSGN2", "TSGN3", "SPLSGN3", "TSGN4", "SPLSGN4"]
-    traffic_signals = {signal: cp_cam.vl["RSA1"].get(signal, cp_cam.vl["RSA2"].get(signal)) for signal in signals}
-
-    tsgn1 = traffic_signals.get("TSGN1", None)
-    spdval1 = traffic_signals.get("SPDVAL1", None)
-
-    if tsgn1 == 1 and not frogpilot_toggles.force_mph_dashboard:
-      return spdval1 * CV.KPH_TO_MS
-    elif tsgn1 == 36 or frogpilot_toggles.force_mph_dashboard:
-      return spdval1 * CV.MPH_TO_MS
-    else:
-      return 0
 
   def update(self, cp, cp_cam, frogpilot_toggles):
     ret = car.CarState.new_message()
@@ -215,7 +216,7 @@ class CarState(CarStateBase):
     self.cruise_increased_previously = self.cruise_increased
     self.cruise_increased = self.pcm_acc_status == 9
 
-    fp_ret.dashboardSpeedLimit = self.calculate_speed_limit(cp_cam, frogpilot_toggles)
+    fp_ret.dashboardSpeedLimit = calculate_speed_limit(cp_cam, frogpilot_toggles)
 
     fp_ret.ecoGear = cp.vl["GEAR_PACKET"]['ECON_ON'] == 1
     fp_ret.sportGear = cp.vl["GEAR_PACKET"]['SPORT_ON_2' if self.CP.flags & ToyotaFlags.NO_DSU else 'SPORT_ON'] == 1
@@ -232,12 +233,12 @@ class CarState(CarStateBase):
     if self.CP.flags & ToyotaFlags.ZSS and self.zss_threshold_count < ZSS_THRESHOLD_COUNT:
       zorro_steer = cp.vl["SECONDARY_STEER_ANGLE"]["ZORRO_STEER"]
 
-      # Only compute ZSS offset when acc is active
-      zss_cruise_active = ret.cruiseState.available
-      if zss_cruise_active and not self.zss_cruise_active_last:
+      # Only compute ZSS offset when cruise is active
+      cruise_active = ret.cruiseState.available
+      if cruise_active and not self.zss_cruise_active_last:
         self.zss_compute = True  # Cruise was just activated, so allow offset to be recomputed
         self.zss_threshold_count = 0
-      self.zss_cruise_active_last = zss_cruise_active
+      self.zss_cruise_active_last = cruise_active
 
       # Compute ZSS offset
       if self.zss_compute:
@@ -245,13 +246,12 @@ class CarState(CarStateBase):
           self.zss_compute = False
           self.zss_angle_offset = zorro_steer - ret.steeringAngleDeg
 
-      # Error check
-      new_steering_angle_deg = zorro_steer - self.zss_angle_offset
-      if abs(ret.steeringAngleDeg - new_steering_angle_deg) > ZSS_THRESHOLD:
+      # Safety checks
+      steering_angle_deg = zorro_steer - self.zss_angle_offset
+      if abs(ret.steeringAngleDeg - steering_angle_deg) > ZSS_THRESHOLD:
         self.zss_threshold_count += 1
       else:
-        # Apply offset
-        ret.steeringAngleDeg = new_steering_angle_deg
+        ret.steeringAngleDeg = steering_angle_deg
 
     return ret, fp_ret
 
