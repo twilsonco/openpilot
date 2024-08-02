@@ -551,81 +551,96 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
     } else if (param == "DownloadModel") {
       downloadModelBtn = new ButtonControl(title, tr("DOWNLOAD"), desc);
       QObject::connect(downloadModelBtn, &ButtonControl::clicked, [=]() {
-        QMap<QString, QString> labelToModelMap;
-        QStringList existingModelFiles = modelDir.entryList({"*.thneed"}, QDir::Files);
-        QStringList downloadableModelLabels;
+        if (downloadModelBtn->text() == tr("CANCEL")) {
+          paramsMemory.remove("ModelToDownload");
+          paramsMemory.putBool("CancelModelDownload", true);
+          cancellingDownload = true;
+        } else {
+          QMap<QString, QString> labelToModelMap;
+          QStringList existingModelFiles = modelDir.entryList({"*.thneed"}, QDir::Files);
+          QStringList downloadableModelLabels;
 
-        for (int i = 0; i < availableModels.size(); ++i) {
-          QString modelFileName = availableModels[i] + ".thneed";
-          if (!existingModelFiles.contains(modelFileName) && !availableModelNames[i].contains("(Default)")) {
-            downloadableModelLabels.append(availableModelNames[i]);
-            labelToModelMap.insert(availableModelNames[i], availableModels[i]);
-          }
-        }
-
-        QString modelToDownload = MultiOptionDialog::getSelection(tr("Select a driving model to download"), downloadableModelLabels, "", this);
-        if (!modelToDownload.isEmpty()) {
-          modelDownloading = true;
-          paramsMemory.put("ModelToDownload", labelToModelMap.value(modelToDownload).toStdString());
-          paramsMemory.put("ModelDownloadProgress", "0%");
-
-          downloadModelBtn->setValue(tr("Downloading %1...").arg(modelToDownload.remove(QRegularExpression("[🗺️👀📡]")).trimmed()));
-
-          QTimer *progressTimer = new QTimer(this);
-          progressTimer->setInterval(100);
-
-          QObject::connect(progressTimer, &QTimer::timeout, this, [=]() {
-            QString progress = QString::fromStdString(paramsMemory.get("ModelDownloadProgress"));
-            bool downloadFailed = progress.contains(QRegularExpression("exists|Failed|offline", QRegularExpression::CaseInsensitiveOption));
-
-            if (progress != "0%") {
-              downloadModelBtn->setValue(progress);
+          for (int i = 0; i < availableModels.size(); ++i) {
+            QString modelFileName = availableModels[i] + ".thneed";
+            if (!existingModelFiles.contains(modelFileName) && !availableModelNames[i].contains("(Default)")) {
+              downloadableModelLabels.append(availableModelNames[i]);
+              labelToModelMap.insert(availableModelNames[i], availableModels[i]);
             }
+          }
 
-            if (progress == "Downloaded!" || downloadFailed) {
-              bool lastModelDownloaded = !downloadFailed;
+          QString modelToDownload = MultiOptionDialog::getSelection(tr("Select a driving model to download"), downloadableModelLabels, "", this);
+          if (!modelToDownload.isEmpty()) {
+            modelDownloading = true;
+            paramsMemory.put("ModelToDownload", labelToModelMap.value(modelToDownload).toStdString());
+            paramsMemory.put("ModelDownloadProgress", "0%");
 
-              if (!downloadFailed) {
-                haveModelsDownloaded = true;
-                update();
+            downloadModelBtn->setValue(tr("Downloading %1...").arg(modelToDownload.remove(QRegularExpression("[🗺️👀📡]")).trimmed()));
+
+            QTimer *progressTimer = new QTimer(this);
+            progressTimer->setInterval(100);
+
+            QObject::connect(progressTimer, &QTimer::timeout, this, [=]() {
+              QString progress = QString::fromStdString(paramsMemory.get("ModelDownloadProgress"));
+              bool downloadFailed = progress.contains(QRegularExpression("cancelled|exists|Failed|offline", QRegularExpression::CaseInsensitiveOption));
+
+              if (progress != "0%") {
+                downloadModelBtn->setValue(progress);
               }
 
-              if (lastModelDownloaded) {
-                for (const QString &model : availableModels) {
-                  if (!QFile::exists(modelDir.filePath(model + ".thneed"))) {
-                    lastModelDownloaded = false;
-                    break;
-                  }
+              if (progress == "Downloaded!" || downloadFailed) {
+                bool lastModelDownloaded = !downloadFailed;
+
+                if (!downloadFailed) {
+                  haveModelsDownloaded = true;
+                  update();
                 }
-              }
-
-              downloadModelBtn->setValue(progress);
-              paramsMemory.remove("ModelDownloadProgress");
-
-              progressTimer->stop();
-              progressTimer->deleteLater();
-
-              QTimer::singleShot(downloadFailed ? 10000 : 2000, this, [=]() {
-                modelDownloading = false;
-                downloadModelBtn->setValue("");
 
                 if (lastModelDownloaded) {
-                  modelsDownloaded = true;
-                  update();
-
-                  params.putBoolNonBlocking("ModelsDownloaded", modelsDownloaded);
+                  for (const QString &model : availableModels) {
+                    if (!QFile::exists(modelDir.filePath(model + ".thneed"))) {
+                      lastModelDownloaded = false;
+                      break;
+                    }
+                  }
                 }
-              });
-            }
-          });
-          progressTimer->start();
+
+                downloadModelBtn->setValue(progress);
+
+                paramsMemory.remove("ModelDownloadProgress");
+
+                progressTimer->stop();
+                progressTimer->deleteLater();
+
+                QTimer::singleShot(2000, this, [=]() {
+                  cancellingDownload = false;
+                  modelDownloading = false;
+                  downloadModelBtn->setValue("");
+                  paramsMemory.remove("CancelModelDownload");
+
+                  if (lastModelDownloaded) {
+                    modelsDownloaded = true;
+                    update();
+
+                    params.putBoolNonBlocking("ModelsDownloaded", modelsDownloaded);
+                  }
+                });
+              }
+            });
+            progressTimer->start();
+          }
         }
       });
       controlToggle = reinterpret_cast<AbstractControl*>(downloadModelBtn);
     } else if (param == "DownloadAllModels") {
       downloadAllModelsBtn = new ButtonControl(title, tr("DOWNLOAD"), desc);
       QObject::connect(downloadAllModelsBtn, &ButtonControl::clicked, [=]() {
-        startDownloadAllModels();
+        if (downloadAllModelsBtn->text() == tr("CANCEL")) {
+          paramsMemory.remove("DownloadAllModels");
+          paramsMemory.putBool("CancelModelDownload", true);
+          cancellingDownload = true;
+        } else {
+          startDownloadAllModels();
+        }
       });
       controlToggle = reinterpret_cast<AbstractControl*>(downloadAllModelsBtn);
     } else if (param == "SelectModel") {
@@ -1097,9 +1112,12 @@ void FrogPilotControlsPanel::updateState(const UIState &s) {
   if (!isVisible()) return;
 
   if (modelManagementOpen) {
+    downloadAllModelsBtn->setText(modelDownloading && allModelsDownloading ? tr("CANCEL") : tr("DOWNLOAD"));
+    downloadModelBtn->setText(modelDownloading && !allModelsDownloading ? tr("CANCEL") : tr("DOWNLOAD"));
+
     deleteModelBtn->setEnabled(!modelDeleting && !modelDownloading);
-    downloadAllModelsBtn->setEnabled(s.scene.online && !modelDeleting && !modelDownloading && !modelsDownloaded);
-    downloadModelBtn->setEnabled(s.scene.online && !modelDeleting && !modelDownloading && !modelsDownloaded);
+    downloadAllModelsBtn->setEnabled(s.scene.online && !cancellingDownload && !modelDeleting && (!modelDownloading || allModelsDownloading) && !modelsDownloaded);
+    downloadModelBtn->setEnabled(s.scene.online && !cancellingDownload && !modelDeleting && !allModelsDownloading && !modelsDownloaded);
     selectModelBtn->setEnabled(!modelDeleting && !modelDownloading && !modelRandomizer);
   }
 
@@ -1256,9 +1274,10 @@ void FrogPilotControlsPanel::updateMetric() {
 }
 
 void FrogPilotControlsPanel::startDownloadAllModels() {
+  allModelsDownloading = true;
   modelDownloading = true;
 
-  paramsMemory.putBoolNonBlocking("DownloadAllModels", true);
+  paramsMemory.putBool("DownloadAllModels", true);
 
   downloadAllModelsBtn->setValue(tr("Downloading models..."));
 
@@ -1267,7 +1286,7 @@ void FrogPilotControlsPanel::startDownloadAllModels() {
 
   QObject::connect(checkDownloadTimer, &QTimer::timeout, this, [=]() {
     QString progress = QString::fromStdString(paramsMemory.get("ModelDownloadProgress"));
-    bool downloadFailed = progress.contains(QRegularExpression("exists|Failed|offline", QRegularExpression::CaseInsensitiveOption));
+    bool downloadFailed = progress.contains(QRegularExpression("cancelled|exists|Failed|offline", QRegularExpression::CaseInsensitiveOption));
 
     if (!progress.isEmpty() && progress != "0%") {
       downloadAllModelsBtn->setValue(progress);
@@ -1280,9 +1299,12 @@ void FrogPilotControlsPanel::startDownloadAllModels() {
       }
 
       QTimer::singleShot(2000, this, [=]() {
+        allModelsDownloading = false;
+        cancellingDownload = false;
         modelDownloading = false;
         downloadAllModelsBtn->setValue("");
         modelsDownloaded = params.getBool("ModelsDownloaded");
+        paramsMemory.remove("CancelModelDownload");
         update();
       });
 

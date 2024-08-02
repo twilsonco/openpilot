@@ -70,6 +70,8 @@ private:
   Params paramsMemory{"/dev/shm/params"};
   Params paramsStorage{"/persist/params"};
 
+  bool allModelsDownloading;
+  bool cancellingDownload;
   bool customPersonalitiesOpen;
   bool disableOpenpilotLongitudinal;
   bool hasAutoTune;

@@ -45,8 +45,8 @@ def process_model_name(model_name):
 def handle_download_error(destination, error_message, error, params_memory):
   print(f"Error occurred: {error}")
   params_memory.put("ModelDownloadProgress", error_message)
-  params_memory.remove("ModelToDownload")
   params_memory.remove("DownloadAllModels")
+  params_memory.remove("ModelToDownload")
   delete_file(destination)
 
 def verify_download(file_path, model_url):
@@ -68,6 +68,9 @@ def download_file(destination, url, params_memory):
 
       with open(destination, 'wb') as f:
         for chunk in r.iter_content(chunk_size=8192):
+          if params_memory.get_bool("CancelModelDownload"):
+            handle_download_error(destination, "Download cancelled...", "Download cancelled...", params_memory)
+            return
           if chunk:
             f.write(chunk)
             downloaded_size += len(chunk)
@@ -94,6 +97,10 @@ def handle_existing_model(model, params_memory):
   params_memory.remove("ModelToDownload")
 
 def handle_verification_failure(model, model_path, model_url, params_memory):
+  if params_memory.get_bool("CancelModelDownload"):
+    handle_download_error(model_path, "Download cancelled...", "Download cancelled...", params_memory)
+    return
+
   handle_download_error(model_path, "Issue connecting to Github, trying Gitlab", f"Model {model} verification failed. Redownloading from Gitlab...", params_memory)
   second_model_url = f"{GITLAB_REPOSITORY_URL}Models/{model}.thneed"
   download_file(model_path, second_model_url, params_memory)
@@ -110,18 +117,19 @@ def download_model(model_to_download, params_memory):
     return
 
   repo_url = get_repository_url()
-  if repo_url is not None:
-    model_url = f"{repo_url}Models/{model_to_download}.thneed"
-    download_file(model_path, model_url, params_memory)
-
-    if verify_download(model_path, model_url):
-      print(f"Model {model_to_download} downloaded and verified successfully!")
-      params_memory.put("ModelDownloadProgress", "Downloaded!")
-      params_memory.remove("ModelToDownload")
-    else:
-      handle_verification_failure(model_to_download, model_path, model_url, params_memory)
-  else:
+  if repo_url is None:
     handle_download_error(model_path, "Github and Gitlab are offline...", "Github and Gitlab are offline...", params_memory)
+    return
+
+  model_url = f"{repo_url}Models/{model_to_download}.thneed"
+  download_file(model_path, model_url, params_memory)
+
+  if verify_download(model_path, model_url):
+    print(f"Model {model_to_download} downloaded and verified successfully!")
+    params_memory.put("ModelDownloadProgress", "Downloaded!")
+    params_memory.remove("ModelToDownload")
+  else:
+    handle_verification_failure(model_to_download, model_path, model_url, params_memory)
 
 def fetch_models(url):
   try:
@@ -249,13 +257,16 @@ def download_all_models(params, params_memory):
 
   repo_url = get_repository_url()
   if repo_url is None:
-    print("Repository URL not available.")
+    handle_download_error(None, "Github and Gitlab are offline...", "Github and Gitlab are offline...", params_memory)
     return
 
   available_models = params.get("AvailableModels", encoding='utf-8').split(',')
   available_model_names = params.get("AvailableModelsNames", encoding='utf-8').split(',')
 
   for model in available_models:
+    if params_memory.get_bool("CancelModelDownload"):
+      handle_download_error(None, "Download cancelled...", "Download cancelled...", params_memory)
+      return
     model_path = os.path.join(MODELS_PATH, f"{model}.thneed")
     if not os.path.exists(model_path):
       model_index = available_models.index(model)
@@ -269,6 +280,9 @@ def download_all_models(params, params_memory):
 
   all_downloaded = False
   while not all_downloaded:
+    if params_memory.get_bool("CancelModelDownload"):
+      handle_download_error(None, "Download cancelled...", "Download cancelled...", params_memory)
+      return
     all_downloaded = all([os.path.exists(os.path.join(MODELS_PATH, f"{model}.thneed")) for model in available_models])
     time.sleep(1)
 

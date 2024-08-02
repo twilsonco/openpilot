@@ -123,7 +123,7 @@ class FrogPilotPlanner:
     self.override_force_stop |= carState.gasPressed
     self.override_force_stop |= frogpilot_toggles.force_stops and carState.standstill and self.tracking_lead
     self.override_force_stop |= frogpilotCarControl.resumePressed
-    self.road_curvature = calculate_road_curvature(modelData, v_ego) if not carState.standstill and driving_gear else 1
+    self.road_curvature = calculate_road_curvature(modelData, v_ego) if v_ego > CRUISING_SPEED and driving_gear else 1
 
     if frogpilot_toggles.random_events and v_ego > CRUISING_SPEED and driving_gear:
       self.taking_curve_quickly = v_ego > (1 / self.road_curvature)**0.5 * 2 > CRUISING_SPEED * 2 and abs(carState.steeringAngleDeg) > 30

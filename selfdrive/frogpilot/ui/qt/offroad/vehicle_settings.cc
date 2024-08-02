@@ -47,6 +47,7 @@ QStringList getCarNames(const QString &carMake, QMap<QString, QString> &carModel
   file.close();
 
   fileContent.remove(QRegularExpression("#[^\n]*"));
+  fileContent.remove(QRegularExpression("footnotes=\\[[^\\]]*\\],\\s*"));
 
   QRegularExpression carModelRegex(R"delimiter((\w+)\s*=\s*\w+\s*\(\s*\[([\s\S]*?)\]\s*,)delimiter");
   QRegularExpression carDocsRegex(R"delimiter(CarDocs\(\s*"([^"]+)"[^)]*\))delimiter");
