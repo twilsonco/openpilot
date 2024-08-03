@@ -42,7 +42,7 @@ def process_model_name(model_name):
   print(f'Processed Model Name: {cleaned_name}')
   return cleaned_name
 
-def handle_download_error(destination, error_message, error, params_memory):
+def handle_error(destination, error_message, error, params_memory):
   print(f"Error occurred: {error}")
   params_memory.put("ModelDownloadProgress", error_message)
   params_memory.remove("DownloadAllModels")
@@ -69,7 +69,7 @@ def download_file(destination, url, params_memory):
       with open(destination, 'wb') as f:
         for chunk in r.iter_content(chunk_size=8192):
           if params_memory.get_bool("CancelModelDownload"):
-            handle_download_error(destination, "Download cancelled...", "Download cancelled...", params_memory)
+            handle_error(destination, "Download cancelled...", "Download cancelled...", params_memory)
             return
           if chunk:
             f.write(chunk)
@@ -81,15 +81,15 @@ def download_file(destination, url, params_memory):
               params_memory.put("ModelDownloadProgress", "Verifying authenticity...")
 
   except requests.HTTPError as http_error:
-    handle_download_error(destination, f"Failed: Server error ({http_error.response.status_code})", http_error, params_memory)
+    handle_error(destination, f"Failed: Server error ({http_error.response.status_code})", http_error, params_memory)
   except requests.ConnectionError as connection_error:
-    handle_download_error(destination, "Failed: Connection dropped...", connection_error, params_memory)
+    handle_error(destination, "Failed: Connection dropped...", connection_error, params_memory)
   except requests.Timeout as timeout_error:
-    handle_download_error(destination, "Failed: Download timed out...", timeout_error, params_memory)
+    handle_error(destination, "Failed: Download timed out...", timeout_error, params_memory)
   except requests.RequestException as request_error:
-    handle_download_error(destination, "Failed: Network request error. Check connection.", request_error, params_memory)
+    handle_error(destination, "Failed: Network request error. Check connection.", request_error, params_memory)
   except Exception as e:
-    handle_download_error(destination, "Failed: Unexpected error.", e, params_memory)
+    handle_error(destination, "Failed: Unexpected error.", e, params_memory)
 
 def handle_existing_model(model, params_memory):
   print(f"Model {model} already exists, skipping download...")
@@ -98,10 +98,10 @@ def handle_existing_model(model, params_memory):
 
 def handle_verification_failure(model, model_path, model_url, params_memory):
   if params_memory.get_bool("CancelModelDownload"):
-    handle_download_error(model_path, "Download cancelled...", "Download cancelled...", params_memory)
+    handle_error(model_path, "Download cancelled...", "Download cancelled...", params_memory)
     return
 
-  handle_download_error(model_path, "Issue connecting to Github, trying Gitlab", f"Model {model} verification failed. Redownloading from Gitlab...", params_memory)
+  handle_error(model_path, "Issue connecting to Github, trying Gitlab", f"Model {model} verification failed. Redownloading from Gitlab...", params_memory)
   second_model_url = f"{GITLAB_REPOSITORY_URL}Models/{model}.thneed"
   download_file(model_path, second_model_url, params_memory)
 
@@ -118,7 +118,7 @@ def download_model(model_to_download, params_memory):
 
   repo_url = get_repository_url()
   if repo_url is None:
-    handle_download_error(model_path, "Github and Gitlab are offline...", "Github and Gitlab are offline...", params_memory)
+    handle_error(model_path, "Github and Gitlab are offline...", "Github and Gitlab are offline...", params_memory)
     return
 
   model_url = f"{repo_url}Models/{model_to_download}.thneed"
@@ -257,15 +257,22 @@ def download_all_models(params, params_memory):
 
   repo_url = get_repository_url()
   if repo_url is None:
-    handle_download_error(None, "Github and Gitlab are offline...", "Github and Gitlab are offline...", params_memory)
+    handle_error(None, "Github and Gitlab are offline...", "Github and Gitlab are offline...", params_memory)
     return
+
+  model_info = fetch_models(f"{repo_url}Versions/model_names_{VERSION}.json")
+  if model_info is None:
+    handle_error(None, "Unable to update model list...", "Unable to update model list...", params_memory)
+    return
+
+  update_model_params(model_info, repo_url, params, params_memory)
 
   available_models = params.get("AvailableModels", encoding='utf-8').split(',')
   available_model_names = params.get("AvailableModelsNames", encoding='utf-8').split(',')
 
   for model in available_models:
     if params_memory.get_bool("CancelModelDownload"):
-      handle_download_error(None, "Download cancelled...", "Download cancelled...", params_memory)
+      handle_error(None, "Download cancelled...", "Download cancelled...", params_memory)
       return
     model_path = os.path.join(MODELS_PATH, f"{model}.thneed")
     if not os.path.exists(model_path):
@@ -281,7 +288,7 @@ def download_all_models(params, params_memory):
   all_downloaded = False
   while not all_downloaded:
     if params_memory.get_bool("CancelModelDownload"):
-      handle_download_error(None, "Download cancelled...", "Download cancelled...", params_memory)
+      handle_error(None, "Download cancelled...", "Download cancelled...", params_memory)
       return
     all_downloaded = all([os.path.exists(os.path.join(MODELS_PATH, f"{model}.thneed")) for model in available_models])
     time.sleep(1)
