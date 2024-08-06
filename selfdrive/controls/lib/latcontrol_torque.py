@@ -89,8 +89,13 @@ class LatControlTorque(LatControl):
 
       # Scaling the lateral acceleration "friction response" could be helpful for some.
       # Increase for a stronger response, decrease for a weaker response.
-      self.lat_jerk_friction_factor = 0.4
-      self.lat_accel_friction_factor = 0.7 # in [0, 3], in 0.05 increments. 3 is arbitrary safety limit
+
+      nnff_lateral_jerk_factor = 1.0 # replace with ---> CI.nnff_lateral_jerk_factor
+      nnff_lateral_jerk_factor = max(0.0, min(1.0, self.nnff_lateral_jerk_factor)) # combine with previous line if you want
+
+      self.lat_jerk_friction_factor = 0.4 * nnff_lateral_jerk_factor
+      # lat_accel_friction_factor is upscaled to account for any decrease in lat_jerk_friction_factor from the default value
+      self.lat_accel_friction_factor = 0.7 + (0.3 * (1.0 - nnff_lateral_jerk_factor)) # in [0, 3], in 0.05 increments. 3 is arbitrary safety limit
 
       # precompute time differences between ModelConstants.T_IDXS
       self.t_diffs = np.diff(ModelConstants.T_IDXS)
