@@ -149,6 +149,7 @@ class CarState(CarStateBase):
     self.gasPressed = False
     
     self.one_pedal_mode_enabled = self.MADS_enabled and self._params.get_bool("MADSOnePedalMode")
+    self.one_pedal_mode_max_toggle_speed = self._op_params.get('MADS_OP_one_pedal_max_toggle_speed_mph', force_update=True) * CV.MPH_TO_MS
     self.MADS_lead_braking_enabled = self.MADS_enabled and self._params.get_bool("MADSLeadBraking")
     self.MADS_lead_braking_active = False
     self.one_pedal_dl_coasting_enabled = True
@@ -222,6 +223,7 @@ class CarState(CarStateBase):
     
     self.hvb_wattage.update_alpha(self._op_params.get('MET_power_meter_smoothing_factor'))
     self.one_pedal_mode_regen_paddle_double_press_time = self._op_params.get('MADS_OP_double_press_time_s')
+    self.one_pedal_mode_max_toggle_speed = self._op_params.get('MADS_OP_one_pedal_max_toggle_speed_mph') * CV.MPH_TO_MS
     self.min_lane_change_speed = self._op_params.get('MADS_steer_pause_speed_mph') * CV.MPH_TO_MS
     GAS_PRESSED_THRESHOLD = max(1e-5, self._op_params.get('TUNE_LONG_gas_overlap_cutoff') * 0.01)
     
@@ -408,7 +410,7 @@ class CarState(CarStateBase):
         cloudlog.info("Deactivating temporary one-pedal mode with gas press")
       
       if regen_paddle_pressed and not self.regen_paddle_pressed:
-        if self.MADS_enabled and t - self.regen_paddle_pressed_last_t <= self.one_pedal_mode_regen_paddle_double_press_time:
+        if self.MADS_enabled and t - self.regen_paddle_pressed_last_t <= self.one_pedal_mode_regen_paddle_double_press_time and self.vEgo <= self.one_pedal_mode_max_toggle_speed:
           self.one_pedal_mode_active = not self.one_pedal_mode_active
           self.one_pedal_mode_temporary = False
           put_nonblocking("MADSOnePedalMode", str(int(self.one_pedal_mode_active))) # persists across drives

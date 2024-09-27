@@ -443,6 +443,8 @@ class opParams:
       
       'MADS_steer_allow_nudgeless_lane_change': Param(False, bool, 'If true, nudgeless lane changes will apply when in MADS mode'),
       
+      'MADS_OP_one_pedal_max_toggle_speed_mph': Param(1.0, float, 'Above this speed, regen paddle double-tap will not toggle one pedal mode.', min_val=0.1, unit='mph'),
+      
       'MADS_OP_decel_ms2': Param([-1.0, -0.9], [list, float], 'The amount of desired one-pedal deceleration at "low" and "high" speeds when the regen paddle is not pressed.', min_val=-2.5, max_val=0.0, unit='m/s²'),
       
       'MADS_OP_regen_paddle_decel_factor': Param(1.3, float, 'When the regen paddle is pressed, the deceleration values defined above are scaled according to this value.', min_val=1.0, max_val=3.0),
