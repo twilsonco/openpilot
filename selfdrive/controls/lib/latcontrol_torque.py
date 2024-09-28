@@ -93,6 +93,9 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_bp = [0.0, 30.0]
     self.low_speed_factor_v = [15.0, 5.0]
     
+    self.kp_scale_bp = self._op_params.get('TUNE_LAT_TRX_kp_scale_bp', force_update=True)
+    self.kp_scale_v = self._op_params.get('TUNE_LAT_TRX_kp_scale_v', force_update=True)
+    
     self.max_lat_accel = 3.5 # m/s^2
     self.error_downscale = 1.0
     self.error_downscale_LJ_factor = 0.7
@@ -151,6 +154,8 @@ class LatControlTorque(LatControl):
     self.pid._k_11 = [[0], [self._op_params.get('TUNE_LAT_TRX_kp_e')]]
     self.pid._k_12 = [[0], [self._op_params.get('TUNE_LAT_TRX_ki_e')]]
     self.pid._k_13 = [[0], [self._op_params.get('TUNE_LAT_TRX_kd_e')]]
+    self.kp_scale_bp = self._op_params.get('TUNE_LAT_TRX_kp_scale_bp')
+    self.kp_scale_v = self._op_params.get('TUNE_LAT_TRX_kp_scale_v')
     self.pid.k_f = self._op_params.get('TUNE_LAT_TRX_kf')
     self.friction = self._op_params.get('TUNE_LAT_TRX_friction')
     self.roll_k = self._op_params.get('TUNE_LAT_TRX_roll_compensation')
@@ -259,6 +264,8 @@ class LatControlTorque(LatControl):
       ff += friction_compensation
       ff += error_friction
       
+      self.pid.k_p = interp(CS.aEgo, self.kp_scale_bp, self.kp_scale_v)
+      
       model_planner_good = None not in [lat_plan, model_data] and all([len(i) >= CONTROL_N for i in [model_data.orientation.x, lat_plan.curvatures]])
       if self.use_nn_ff and model_planner_good:
         # update measurements with controls
@@ -319,6 +326,8 @@ class LatControlTorque(LatControl):
         nnff_log = nnff_input + nnff_setpoint_input + nnff_measurement_input
       else:
         ff_nn = ff
+      
+      
       
       output_torque = self.pid.update(setpoint, measurement,
                                       override=CS.steeringPressed, 

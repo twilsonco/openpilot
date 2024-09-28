@@ -595,6 +595,10 @@ class opParams:
       
       'TUNE_LAT_TRX_kd': Param(0.04, float, kd_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
+      'TUNE_LAT_TRX_kp_scale_bp': Param([-2.0, 0.0, 2.0], [list, float], 'Due to alignment/brake issues, there can be a lateral force introduced caused by longitudinal acceleration. One approach to deal with this is to increase the proportional error term when under long accel. Here we define the lookup values of long accel for increasing P response.', live=True, min_val=-5.0, max_val=5.0, unit='m/s²', show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      
+      'TUNE_LAT_TRX_kp_scale_v': Param([1.0, 1.0, 1.0], [list, float], 'Due to alignment/brake issues, there can be a lateral force introduced caused by longitudinal acceleration. One approach to deal with this is to increase the proportional error term when under long accel. Here we define the scaling of kp.', live=True, min_val=0.5, max_val=5.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
+      
       'TUNE_LAT_TRX_kp_e': Param(1.0, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kp is able to change.", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
       
       'TUNE_LAT_TRX_ki_e': Param(1.0, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much ki is able to change.", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='torque'),
