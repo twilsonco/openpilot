@@ -264,7 +264,7 @@ class LatControlTorque(LatControl):
       ff += friction_compensation
       ff += error_friction
       
-      self.pid.k_p = interp(CS.aEgo, self.kp_scale_bp, self.kp_scale_v)
+      self.pid._k_p = [[0], [interp(CS.aEgo, self.kp_scale_bp, self.kp_scale_v)]]
       
       model_planner_good = None not in [lat_plan, model_data] and all([len(i) >= CONTROL_N for i in [model_data.orientation.x, lat_plan.curvatures]])
       if self.use_nn_ff and model_planner_good:
