@@ -74,6 +74,7 @@ class LatControlTorque(LatControl):
                             pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
     self.friction = CP.lateralTuning.torque.friction
+    self.kp = CP.lateralTuning.torque.kp
     self.CI = CI
     self.use_nn_ff = Params().get_bool("EnableNNFF")
     self.CI.initialize_feedforward_function_torque_nn()
@@ -93,8 +94,8 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_bp = [0.0, 30.0]
     self.low_speed_factor_v = [15.0, 5.0]
     
-    self.kp_scale_bp = self._op_params.get('TUNE_LAT_TRX_kp_scale_bp', force_update=True)
-    self.kp_scale_v = self._op_params.get('TUNE_LAT_TRX_kp_scale_v', force_update=True)
+    self.kp_scale_bp = [0.0]
+    self.kp_scale_v = [1.0]
     
     self.max_lat_accel = 3.5 # m/s^2
     self.error_downscale = 1.0
@@ -148,7 +149,8 @@ class LatControlTorque(LatControl):
     if not self.tune_override:
       return
     self.use_steering_angle = self._op_params.get('TUNE_LAT_TRX_use_steering_angle')
-    self.pid._k_p = [[0], [self._op_params.get('TUNE_LAT_TRX_kp')]]
+    self.kp = self._op_params.get('TUNE_LAT_TRX_kp')
+    self.pid._k_p = [[0], [self.kp]]
     self.pid._k_i = [[0], [self._op_params.get('TUNE_LAT_TRX_ki')]]
     self.pid._k_d = [[0], [self._op_params.get('TUNE_LAT_TRX_kd')]]
     self.pid._k_11 = [[0], [self._op_params.get('TUNE_LAT_TRX_kp_e')]]
@@ -264,7 +266,7 @@ class LatControlTorque(LatControl):
       ff += friction_compensation
       ff += error_friction
       
-      self.pid._k_p = [[0], [interp(CS.aEgo, self.kp_scale_bp, self.kp_scale_v)]]
+      self.pid._k_p = [[0], [self.kp * interp(CS.aEgo, self.kp_scale_bp, self.kp_scale_v)]]
       
       model_planner_good = None not in [lat_plan, model_data] and all([len(i) >= CONTROL_N for i in [model_data.orientation.x, lat_plan.curvatures]])
       if self.use_nn_ff and model_planner_good:
