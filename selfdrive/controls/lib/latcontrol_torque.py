@@ -96,7 +96,7 @@ class LatControlTorque(LatControl):
     
     self.kp_scale_bp = [0.0]
     self.kp_scale_v = [1.0]
-    self.a_ego = FirstOrderFilter(0.0, 0.1, DT_CTRL)
+    self.a_ego = FirstOrderFilter(0.0, 1.0, DT_CTRL)
     self.pitch = FirstOrderFilter(0.0, 0.5, DT_CTRL)
     
     self.max_lat_accel = 3.5 # m/s^2
