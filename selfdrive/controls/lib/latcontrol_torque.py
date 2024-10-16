@@ -206,7 +206,7 @@ class LatControlTorque(LatControl):
       actual_curvature_rate = -VM.calc_curvature(math.radians(CS.steeringRateDeg), CS.vEgo, 0.)
       self.actual_lateral_jerk._D.x = actual_curvature_rate * CS.vEgo**2
     else:
-      actual_curvature = (llk.angularVelocityCalibrated.value[2] / CS.vEgo) if len(llk.angularVelocityCalibrated.value) > 2 else 0.0
+      actual_curvature = (llk.angularVelocityCalibrated.value[2] / max(0.1, CS.vEgo)) if len(llk.angularVelocityCalibrated.value) > 2 else 0.0
     actual_lateral_accel = actual_curvature * CS.vEgo**2
     self.lat_plan_last = lat_plan
 
