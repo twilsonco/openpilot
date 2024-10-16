@@ -94,8 +94,15 @@ class LatControlTorque(LatControl):
     self.low_speed_factor_bp = [0.0, 30.0]
     self.low_speed_factor_v = [15.0, 5.0]
     
+<<<<<<< HEAD
     self.kp_scale_bp = [0.0]
     self.kp_scale_v = [1.0]
+=======
+    self.kp_scale_bp = self._op_params.get('TUNE_LAT_TRX_kp_scale_bp', force_update=True)
+    self.kp_scale_v = self._op_params.get('TUNE_LAT_TRX_kp_scale_v', force_update=True)
+    self.a_ego = FirstOrderFilter(0.0, 0.1, DT_CTRL)
+    self.pitch = FirstOrderFilter(0.0, 0.5, DT_CTRL)
+>>>>>>> 570662e34 (scaled lat torque kp uses pitch-adjusted aego, and is filtered so that higher kp persists longer.)
     
     self.max_lat_accel = 3.5 # m/s^2
     self.error_downscale = 1.0
@@ -111,7 +118,6 @@ class LatControlTorque(LatControl):
       # NNFF model takes current v_ego, lateral_accel, lat accel/jerk error, roll, and past/future/planned data
       # of lat accel and roll
       # Past value is computed using previous desired lat accel and observed roll
-      self.pitch = FirstOrderFilter(0.0, 0.5, 0.01)
       self.torque_from_nn = CI.get_ff_nn
       
       # setup future time offsets
@@ -200,7 +206,7 @@ class LatControlTorque(LatControl):
       actual_curvature_rate = -VM.calc_curvature(math.radians(CS.steeringRateDeg), CS.vEgo, 0.)
       self.actual_lateral_jerk._D.x = actual_curvature_rate * CS.vEgo**2
     else:
-      actual_curvature = llk.angularVelocityCalibrated.value[2] / CS.vEgo
+      actual_curvature = (llk.angularVelocityCalibrated.value[2] / CS.vEgo) if len(llk.angularVelocityCalibrated.value) > 2 else 0.0
     actual_lateral_accel = actual_curvature * CS.vEgo**2
     self.lat_plan_last = lat_plan
 
@@ -266,13 +272,19 @@ class LatControlTorque(LatControl):
       ff += friction_compensation
       ff += error_friction
       
-      self.pid._k_p = [[0], [self.kp * interp(CS.aEgo, self.kp_scale_bp, self.kp_scale_v)]]
+      pitch = self.pitch.update((llk.calibratedOrientationNED.value[1]) if len(llk.calibratedOrientationNED.value) > 1 else 0.0)
+      
+      a_ego = (ACCELERATION_DUE_TO_GRAVITY * math.sin(self.pitch)) + CS.aEgo
+      if abs(a_ego) > abs(self.a_ego):
+        self.a_ego.x = a_ego
+      else:
+        self.a_ego.update(a_ego)
+      self.pid._k_p = [[0], [self.kp * interp(self.a_ego, self.kp_scale_bp, self.kp_scale_v)]]
       
       model_planner_good = None not in [lat_plan, model_data] and all([len(i) >= CONTROL_N for i in [model_data.orientation.x, lat_plan.curvatures]])
       if self.use_nn_ff and model_planner_good:
         # update measurements with controls
         roll = params.roll
-        pitch = self.pitch.update(llk.calibratedOrientationNED.value[1])
         roll = roll_pitch_adjust(roll, pitch)
         self.roll_deque.append(roll)
         past_rolls = [self.roll_deque[min(len(self.roll_deque)-1, i)] for i in self.history_frame_offsets]
