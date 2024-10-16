@@ -270,12 +270,12 @@ class LatControlTorque(LatControl):
       pitch = self.pitch.update((llk.calibratedOrientationNED.value[1]) if len(llk.calibratedOrientationNED.value) > 1 else 0.0)
       
       if len(self.kp_scale_bp) > 1:
-        a_ego = (ACCELERATION_DUE_TO_GRAVITY * math.sin(self.pitch)) + CS.aEgo
+        a_ego = (ACCELERATION_DUE_TO_GRAVITY * math.sin(self.pitch.x)) + CS.aEgo
         if abs(a_ego) > abs(self.a_ego):
           self.a_ego.x = a_ego
         else:
           self.a_ego.update(a_ego)
-        self.pid._k_p = [[0], [self.kp * interp(self.a_ego, self.kp_scale_bp, self.kp_scale_v)]]
+        self.pid._k_p = [[0], [self.kp * interp(self.a_ego.x, self.kp_scale_bp, self.kp_scale_v)]]
       
       model_planner_good = None not in [lat_plan, model_data] and all([len(i) >= CONTROL_N for i in [model_data.orientation.x, lat_plan.curvatures]])
       if self.use_nn_ff and model_planner_good:
