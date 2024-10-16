@@ -271,7 +271,7 @@ class LatControlTorque(LatControl):
       
       if len(self.kp_scale_bp) > 1:
         a_ego = (ACCELERATION_DUE_TO_GRAVITY * math.sin(self.pitch.x)) + CS.aEgo
-        if abs(a_ego) > abs(self.a_ego):
+        if abs(a_ego) > abs(self.a_ego.x):
           self.a_ego.x = a_ego
         else:
           self.a_ego.update(a_ego)
