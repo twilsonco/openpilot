@@ -339,6 +339,8 @@ class LeadMpc():
     self._params = Params()
     self._op_params = opParams(calling_function="lead mpc LeadMpc")
     self.stopping_distance_offset = self._op_params.get('FP_stop_distance_offset_m', force_update=True)
+    self.jerk_cost = self._op_params.get('FP_jerk_cost', force_update=True)
+    self.jerk_cost_last = self.jerk_cost
     
     self._follow_profiles = FOLLOW_PROFILES[:]
     self.update_op_params()
@@ -380,6 +382,8 @@ class LeadMpc():
     self._follow_profiles[1][1] = [new_medium_follow_towards, new_medium_follow_away]
     
     self.stopping_distance_offset = self._op_params.get('FP_stop_distance_offset_m')
+    
+    self.jerk_cost = self._op_params.get('FP_jerk_cost')
 
   def update(self, CS, radarstate, v_cruise, a_target, active):
     v_ego = CS.vEgo
@@ -455,10 +459,11 @@ class LeadMpc():
       dist_cost = MPC_COST_LONG.DISTANCE
       accel_cost = MPC_COST_LONG.ACCELERATION
     
-    if dist_cost != self.dist_cost_last or accel_cost != self.accel_cost_last:
-      self.libmpc.change_costs(MPC_COST_LONG.TTC, dist_cost, accel_cost, MPC_COST_LONG.JERK)
+    if dist_cost != self.dist_cost_last or accel_cost != self.accel_cost_last or self.jerk_cost != self.jerk_cost_last:
+      self.libmpc.change_costs(MPC_COST_LONG.TTC, dist_cost, accel_cost, self.jerk_cost)
       self.dist_cost_last = dist_cost
       self.accel_cost_last = accel_cost
+      self.jerk_cost_last = self.jerk_cost
     
     
     if not self.tr_override:

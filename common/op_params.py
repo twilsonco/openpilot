@@ -385,6 +385,8 @@ class opParams:
       
       #####
       
+      'FP_jerk_cost': Param(20.0, float, 'Adjust the longitudinal jerk cost for the lead MPC. Higher values mean less jerk will be allowed.', live=True, min_val=1.0, max_val=200.0),
+      
       'FP_stop_distance_offset_m': Param(1.0, float, 'Adjusts the stopping distances for all follow profiles. Increase to increase distance between you and stopped lead car.', live=True, min_val=-0.5, max_val=5.0, unit='meters'),
       
       'FP_close_gas_factor': Param(1.0, float, 'Controls how proactively OpenPilot will adjust in response to a change in the lead car velocity when using the close follow profile. Increase to make close follow more responsive.', live=True, min_val=0.0, max_val=2.0),
