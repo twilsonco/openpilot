@@ -215,7 +215,7 @@ class Planner():
     if sm['carState'].gas > 1e-5:
       accel_limits[0] = 0.0
       
-    accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
+    accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg - sm['liveParameters'].angleOffsetAverageDeg, accel_limits, self.CP)
     if force_slow_decel:
       # if required so, force a smooth deceleration
       accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
