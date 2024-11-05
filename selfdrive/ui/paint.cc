@@ -267,7 +267,7 @@ static void ui_draw_path(const UIState* s) {
         if (forward) pos_t[i] = (pos_t[i] + 1) % (int)max_t;
         else if (--pos_t[i] < 0) pos_t[i] = (int)max_t - 1;
     }
-    // 0~150M까지 display해준다... 
+    // 0~150M까지 display해준다...
     // 높이시작은 0.8 ~ s->show_z_offset(max_distance)
 
 }
@@ -432,7 +432,7 @@ void DrawApilot::drawLaneLines(const UIState* s) {
             switch (show_path_mode) {
             case 13: g = 0.2; gc = 0.10; break;
             case 14: g = 0.45; gc = 0.05; break;
-            case 15: 
+            case 15:
             default:
                 g = 0.05; gc = 0.05; break;
             }
@@ -643,7 +643,7 @@ void DrawPlot::makePlotData(const UIState* s, float& data1, float& data2, char *
     const auto position = model.getPosition();
     const auto velocity = model.getVelocity();
 
-    auto lead_radar = sm["radarState"].getRadarState().getLeadOne();    
+    auto lead_radar = sm["radarState"].getRadarState().getLeadOne();
 
     switch (s->show_plot_mode) {
     case 0:
@@ -770,8 +770,11 @@ void DrawApilot::drawRadarInfo(const UIState* s) {
             if (rv < -1.0 || rv > 1.0) {
                 sprintf(str, "%.0f", rv * 3.6);
                 wStr = 35 * (strlen(str) + 0);
-                ui_fill_rect(s->vg, { (int)(rx - wStr / 2), (int)(ry - 35), wStr, 42 }, (!radar)?COLOR_BLUE:(rv>0.)?COLOR_GREEN:COLOR_RED, 15);
-                ui_draw_text(s, rx, ry, str, 40, COLOR_WHITE, BOLD);
+                if (radar) {
+                    ui_fill_rect(s->vg, { (int)(rx - wStr / 2), (int)(ry - 35), wStr, 42 }, COLOR_GREEN, 15);
+                    ui_draw_text(s, rx, ry, str, 40, COLOR_WHITE, BOLD);
+                }
+                //ui_fill_rect(s->vg, { (int)(rx - wStr / 2), (int)(ry - 35), wStr, 42 }, (!radar)?COLOR_BLUE:(rv>0.)?COLOR_GREEN:COLOR_RED, 15);
                 if (s->show_radar_info >= 2) {
                     sprintf(str, "%.1f", ry_rel);
                     ui_draw_text(s, rx, ry - 40, str, 30, COLOR_WHITE, BOLD);
@@ -970,7 +973,7 @@ void DrawApilot::drawAccel(const UIState* s, int x, int y) {
         ui_draw_text(s, x + dx + 20, y + 160, "ACC", 25, COLOR_WHITE, BOLD);
     }
 }
-void DrawApilot::drawRpm(const UIState* s, int x, int y) 
+void DrawApilot::drawRpm(const UIState* s, int x, int y)
 {
     // RPM표시
     SubMaster& sm = *(s->sm);
@@ -1367,7 +1370,7 @@ void DrawApilot::drawSpeed(const UIState* s, int x, int y) {
                 }
 
                 bx = left_dist_x;
-                by = left_dist_y;             
+                by = left_dist_y;
                 left_dist_flag = false;
 
                 if (s->left_dist > 0) {
@@ -1424,7 +1427,7 @@ void DrawApilot::drawSpeed(const UIState* s, int x, int y) {
             ui_draw_image(s, { bx - 60, by - 50, 120, 150 }, "ic_road_speed", 1.0f);
             sprintf(str, "%d", s->roadLimitSpeed);
             ui_draw_text(s, bx, by + 75, str, 50, COLOR_BLACK, BOLD, 0.0f, 0.0f);
-        }        
+        }
     }
 }
 void DrawApilot::drawTurnInfo(const UIState* s, int x, int y) {
@@ -1492,7 +1495,7 @@ void DrawApilot::drawTurnInfo(const UIState* s, int x, int y) {
     if (false) {
         if (bsd_l) ui_draw_image(s, { x - icon_size / 2, y - icon_size / 2, icon_size, icon_size }, "ic_bsd_l", 1.0f);
         if (bsd_r) ui_draw_image(s, { x - icon_size / 2, y - icon_size / 2, icon_size, icon_size }, "ic_bsd_r", 1.0f);
-    }   
+    }
 
     static float navi_turn_point_x[2] = { 0.0, };
     static float navi_turn_point_y[2] = { 0.0, };
@@ -1760,7 +1763,7 @@ void DrawApilot::drawPathEnd(const UIState* s, int x, int y, int path_x, int pat
 
     }
 
-    if (true) { 
+    if (true) {
 
         float px[7], py[7];
         NVGcolor rcolor = isLeadSCC() ? COLOR_RED : COLOR_ORANGE;
@@ -1902,7 +1905,7 @@ void DrawApilot::drawLeadApilot(const UIState* s) {
         x = path_bx;
     }
 
-    if(s->show_mode==1) 
+    if(s->show_mode==1)
         x = std::clamp((float)x, 550.f, s->fb_w - 550.f);
 
     //if ((desireStateTurnLeft > 0.5) || (desireStateTurnRight > 0.5) || (desireStateLaneChangeLeft > 0.5) || (desireStateLaneChangeRight > 0.5)) {
@@ -1987,19 +1990,19 @@ void DrawApilot::drawDeviceState(UIState* s, bool show) {
         }
         cpuTemp = cpuTemp / (float)std::size(cpuTempC);
     }
-    auto car_state = sm["carState"].getCarState();
+    //auto car_state = sm["carState"].getCarState();
     //const cereal::ModelDataV2::Reader& model = sm["modelV2"].getModelV2();
     sprintf(str, "MEM: %d%% STORAGE: %.0f%% CPU: %.0f°C", memoryUsagePercent, freeSpacePercent, cpuTemp);
     int r = interp<float>(cpuTemp, { 50.f, 90.f }, { 200.f, 255.f }, false);
     int g = interp<float>(cpuTemp, { 50.f, 90.f }, { 255.f, 200.f }, false);
     NVGcolor textColor = nvgRGBA(r, g, 200, 255);
-    float engineRpm = car_state.getEngineRpm();
-    float motorRpm = car_state.getMotorRpm();
-    if (s->fb_w > 1200 && show) {
+    //float engineRpm = car_state.getEngineRpm();
+    //float motorRpm = car_state.getMotorRpm();
+    //if (s->fb_w > 1200 && show) {
         ui_draw_text(s, s->fb_w - 20, 40, str, 35, textColor, BOLD);
-        sprintf(str, "FPS: %d, %s: %.0f CHARGE: %.0f%%                           ", g_fps, (motorRpm > 0.0) ? "MOTOR" : "RPM", (motorRpm > 0.0) ? motorRpm : engineRpm, car_state.getChargeMeter());
-        ui_draw_text(s, s->fb_w - 20, 85, str, 35, textColor, BOLD);
-    }
+        //sprintf(str, "FPS: %d, %s: %.0f CHARGE: %.0f%%                           ", g_fps, (motorRpm > 0.0) ? "MOTOR" : "RPM", (motorRpm > 0.0) ? motorRpm : engineRpm, car_state.getChargeMeter());
+        //ui_draw_text(s, s->fb_w - 20, 85, str, 35, textColor, BOLD);
+    //}
     //nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BOTTOM);
     //ui_draw_text(s, s->fb_w - 20, s->fb_h - 15, (read_ip_count < 30) ? ip_address : gitBranch.toStdString().c_str(), 30, COLOR_WHITE, BOLD);
 
@@ -2059,7 +2062,7 @@ void DrawApilot::drawDebugText(UIState* s, bool show) {
 
     const int text_x = s->fb_w - 220;
     const auto live_torque_params = sm["liveTorqueParameters"].getLiveTorqueParameters();
-    
+
     sprintf(str, "LT[%.0f]:%s (%.4f/%.4f)", live_torque_params.getTotalBucketPoints(), live_torque_params.getLiveValid() ? "ON" : "OFF", live_torque_params.getLatAccelFactorFiltered(), live_torque_params.getFrictionCoefficientFiltered());
     ui_draw_text(s, text_x, y, str, 35, COLOR_WHITE, BOLD, 0.0f, 0.0f);
 

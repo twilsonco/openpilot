@@ -111,6 +111,60 @@
     </message>
 </context>
 <context>
+    <name>CarrotPanel</name>
+    <message>
+        <source>Cruise</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tuning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disp</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Speed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SpeedCameraControl(1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CarsPanel</name>
+    <message>
+        <source>Select your car</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Common</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hyundai</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Toyota</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -295,15 +349,78 @@
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>Pareie seu dispositivo com comma connect (connect.comma.ai) e reivindique sua oferta de comma prime.</translation>
+        <translation type="vanished">Pareie seu dispositivo com comma connect (connect.comma.ai) e reivindique sua oferta de comma prime.</translation>
     </message>
     <message>
         <source>Pair Device</source>
-        <translation>Parear Dispositivo</translation>
+        <translation type="vanished">Parear Dispositivo</translation>
     </message>
     <message>
         <source>PAIR</source>
-        <translation>PAREAR</translation>
+        <translation type="vanished">PAREAR</translation>
+    </message>
+    <message>
+        <source>Powwer Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SHUTDOWN</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shutdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set to default(%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DEFAULT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Are you sure you want to set to default?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Execute</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>DrawApilot</name>
+    <message>
+        <source>ECO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAFE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NORM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>HIGH</source>
+        <translation type="unfinished">ALTA</translation>
+    </message>
+    <message>
+        <source>ERRM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lane Follow</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Laneless</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -369,6 +486,10 @@
     <message>
         <source>Manage at connect.comma.ai</source>
         <translation>Gerencie em connect.comma.ai</translation>
+    </message>
+    <message>
+        <source>Manage at %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -492,23 +613,23 @@
     <name>OnroadAlerts</name>
     <message>
         <source>openpilot Unavailable</source>
-        <translation>openpilot Indisponível</translation>
+        <translation type="vanished">openpilot Indisponível</translation>
     </message>
     <message>
         <source>Waiting for controls to start</source>
-        <translation>Aguardando controles para iniciar</translation>
+        <translation type="vanished">Aguardando controles para iniciar</translation>
     </message>
     <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
-        <translation>ASSUMA IMEDIATAMENTE</translation>
+        <translation type="vanished">ASSUMA IMEDIATAMENTE</translation>
     </message>
     <message>
         <source>Controls Unresponsive</source>
-        <translation>Controles Não Respondem</translation>
+        <translation type="vanished">Controles Não Respondem</translation>
     </message>
     <message>
         <source>Reboot Device</source>
-        <translation>Reinicie o Dispositivo</translation>
+        <translation type="vanished">Reinicie o Dispositivo</translation>
     </message>
 </context>
 <context>
@@ -636,7 +757,7 @@
     </message>
     <message>
         <source>now</source>
-        <translation>agora</translation>
+        <translation type="vanished">agora</translation>
     </message>
 </context>
 <context>
@@ -681,6 +802,17 @@ Isso pode levar até um minuto.</translation>
     </message>
 </context>
 <context>
+    <name>SelectCar</name>
+    <message>
+        <source>Back</source>
+        <translation type="unfinished">Voltar</translation>
+    </message>
+    <message>
+        <source>[ Not selected ]</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SettingsWindow</name>
     <message>
         <source>×</source>
@@ -701,6 +833,18 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>Software</source>
         <translation>Software</translation>
+    </message>
+    <message>
+        <source>Map</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Carrot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cars</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1163,7 +1307,31 @@ Isso pode levar até um minuto.</translation>
         <translation>Neutro é o recomendado. No modo disputa o openpilot seguirá o carro da frente mais de perto e será mais agressivo com a aceleração e frenagem. No modo calmo o openpilot se manterá mais longe do carro da frente. Em carros compatíveis, você pode alternar esses temperamentos com o botão de distância do volante.</translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. </source>
+        <source>Always on Lateral</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>WARNING: Always on lateral has not been tested on all cars. You may receive cruise faults when disabling longitudinal control if this is not compatible with your car. Please test in a safe environment before using on road.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When enabled lateral control will remain engaged after longitudinal is disengaged. Main cruise button toggles lateral control off.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Relaxed2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigate on openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
