@@ -767,42 +767,27 @@ void DrawApilot::drawRadarInfo(const UIState* s) {
         for (auto const& vrd : s->scene.lead_vertices_side) {
             auto [rx, ry, rd, rv, ry_rel, v_lat, radar] = vrd;
 
-            if (rv < -1.0 || rv > 1.0) {
+            if (rv < 0) {
                 sprintf(str, "%.0f", rv * 3.6);
                 wStr = 35 * (strlen(str) + 0);
                 if (radar) {
-                    ui_fill_rect(s->vg, { (int)(rx - wStr / 2), (int)(ry - 35), wStr, 42 }, COLOR_GREEN, 15);
-                    ui_draw_text(s, rx, ry, str, 40, COLOR_WHITE, BOLD);
+                    ui_fill_rect(s->vg, { (int)(rx - wStr), (int)(ry - 70), wStr * 2, 84 }, COLOR_RED, 30);
+                    ui_draw_text(s, rx, ry, str, 80, COLOR_WHITE, BOLD);
                 }
-                //ui_fill_rect(s->vg, { (int)(rx - wStr / 2), (int)(ry - 35), wStr, 42 }, (!radar)?COLOR_BLUE:(rv>0.)?COLOR_GREEN:COLOR_RED, 15);
-                if (s->show_radar_info >= 2) {
-                    sprintf(str, "%.1f", ry_rel);
-                    ui_draw_text(s, rx, ry - 40, str, 30, COLOR_WHITE, BOLD);
-                    sprintf(str, "%.2f", v_lat);
-                    //sprintf(str, "%.1f", rd);
-                    ui_draw_text(s, rx, ry + 30, str, 30, COLOR_WHITE, BOLD);
-                }
+    
             }
-#if 0
-            else if (v_lat < -1.0 || v_lat > 1.0) {
-                sprintf(str, "%.0f", (rv + v_lat) * 3.6);
+
+            if (rv > 0) {
+                sprintf(str, "%.0f", rv * 3.6);
                 wStr = 35 * (strlen(str) + 0);
-                ui_fill_rect(s->vg, { (int)(rx - wStr / 2), (int)(ry - 35), wStr, 42 }, COLOR_ORANGE, 15);
-                ui_draw_text(s, rx, ry, str, 40, COLOR_WHITE, BOLD);
-                if (s->show_radar_info >= 2) {
-                    sprintf(str, "%.1f", ry_rel);
-                    ui_draw_text(s, rx, ry - 40, str, 30, COLOR_WHITE, BOLD);
+                if (radar) {
+                    ui_fill_rect(s->vg, { (int)(rx - wStr), (int)(ry - 70), wStr * 2, 84 }, COLOR_GREEN, 30);
+                    ui_draw_text(s, rx, ry, str, 80, COLOR_WHITE, BOLD);
                 }
-            }
-#endif
-            else if (s->show_radar_info >= 3) {
-                //sprintf(str, "%.1f", ry_rel);
-                //ui_draw_text(s, rx, ry - 40, str, 30, COLOR_WHITE, BOLD);
-                strcpy(str, "*");
-                ui_draw_text(s, rx, ry, str, 40, COLOR_WHITE, BOLD);
+    
             }
         }
-    }
+    }        
 }
 void DrawApilot::makeLeadData(const UIState* s) {
     SubMaster& sm = *(s->sm);
@@ -1185,10 +1170,21 @@ void DrawApilot::drawGapInfo2(const UIState* s, int x, int y) {
     if (strcmp(strLatControlMode, _strLatControlMode)) ui_draw_text_a(s, dx, dy, strLatControlMode, 30, COLOR_WHITE, BOLD);
     strcpy(_strLatControlMode, strLatControlMode);
 
-    dx = x + 220;
+    dx = x + 180;
     dy = y + 77;
     sprintf(str, "%d", gap);
-    ui_draw_text(s, dx, dy, str, 40, COLOR_WHITE, BOLD);
+    if (gap == 1) {
+        ui_draw_text(s, dx, dy, "CLOSE", 40, COLOR_WHITE, BOLD);
+    }
+
+    if (gap == 2) {
+        ui_draw_text(s, dx, dy, "MID", 40, COLOR_WHITE, BOLD);
+    }
+
+    if (gap == 3) {
+        ui_draw_text(s, dx, dy, "RELAX", 40, COLOR_WHITE, BOLD);
+    }
+    
     static int _gap1 = 0;
     if (_gap1 != gap) ui_draw_text_a(s, dx, dy, str, 40, COLOR_WHITE, BOLD);
     _gap1 = gap;
@@ -1274,14 +1270,14 @@ void DrawApilot::drawSpeed(const UIState* s, int x, int y) {
         static char _speed_str[128] = "";
         if (isEnabled() && (isLongActive() || (longOverride && isBlinkerOn()))) {
             sprintf(str, "%d", (int)(cruiseMaxSpeed * (s->scene.is_metric ? 1.0 : KM_TO_MILE) + 0.5));
-            if (strcmp(_speed_str, str)) ui_draw_text_a(s, bx + 170, by + 15, str, 60, COLOR_GREEN, BOLD);
+            if (strcmp(_speed_str, str)) ui_draw_text_a(s, bx + 170, by + 15, str, 60, COLOR_WHITE, BOLD);
             strcpy(_speed_str, str);
         }
         else strcpy(str, "--");
-        ui_draw_text(s, bx + 170, by + 15, str, 60, COLOR_GREEN, BOLD, 1.0, 5.0, COLOR_BLACK, COLOR_BLACK);
+        ui_draw_text(s, bx + 170, by + 15, str, 60, COLOR_WHITE, BOLD, 1.0, 5.0, COLOR_BLACK, COLOR_BLACK);
 
         if (isEnabled() && isLongActive() && applyMaxSpeed > 0) {
-            NVGcolor textColor = COLOR_GREEN;
+            NVGcolor textColor = COLOR_WHITE;
             str[0] = 0;
             char str_source[128] = "";
             static float dispApplyMaxSpeed = 0.0;

@@ -245,7 +245,7 @@ class StartupAlert(Alert):
     def __init__(
         self,
         alert_text_1: str,
-        alert_text_2: str = "Always keep hands on wheel and eyes on road",
+        alert_text_2: str = "",
         alert_status=AlertStatus.normal,
     ):
         super().__init__(
@@ -319,11 +319,7 @@ def startup_master_alert(
     if "REPLAY" in os.environ:
         branch = "replay"
 
-    return StartupAlert(
-        "WARNING: This branch is not tested",
-        branch,
-        alert_status=AlertStatus.userPrompt,
-    )
+    return StartupAlert(" ")
 
 
 def below_engage_speed_alert(
