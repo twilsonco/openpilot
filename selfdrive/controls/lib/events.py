@@ -7,6 +7,11 @@ from common.op_params import opParams
 from common.realtime import DT_CTRL
 from selfdrive.config import Conversions as CV
 from selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
+from selfdrive.manager.process_config import managed_processes
+
+IGNORE_PROCESSES = {"rtshield", "uploader", "deleter", "loggerd", "logmessaged", "tombstoned", "gpsd",
+                    "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad", "mapd"} | \
+                    {k for k, v in managed_processes.items() if not v.enabled}
 
 AlertSize = log.ControlsState.AlertSize
 AlertStatus = log.ControlsState.AlertStatus
@@ -288,6 +293,15 @@ def comm_issue_alert_no_entry(CP: car.CarParams, sm: messaging.SubMaster, metric
     AlertStatus.normal,
     AlertSize.mid, Priority.LOW, VisualAlert.none,
     AudibleAlert.chimeDisengage, .4, 2., 3.)
+  
+def process_not_running_alert_no_entry(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  not_running = set(p.name for p in sm['managerState'].processes if not p.running) - IGNORE_PROCESSES
+  return Alert(
+    "Error, please reboot. Process(es) not running",
+    ", ".join(not_running),
+    AlertStatus.normal, AlertSize.mid,
+    Priority.MID, VisualAlert.none,
+    AudibleAlert.chimeDisengage, .1, 2., 3.)
   
 def radar_fault_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   return Alert(
@@ -964,8 +978,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   # Thrown when manager detects a service exited unexpectedly while driving
   EventName.processNotRunning: {
-    ET.NO_ENTRY: NoEntryAlert("System Malfunction: Reboot Your Device",
-                              audible_alert=AudibleAlert.chimeDisengage),
+    ET.NO_ENTRY: process_not_running_alert_no_entry,
   },
 
   EventName.radarFault: {

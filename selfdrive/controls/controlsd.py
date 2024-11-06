@@ -48,7 +48,7 @@ MAX_ABS_PRED_PITCH_DELTA = MAX_ABS_PITCH * 0.5 * DT_CTRL # 10% grade per second
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
 IGNORE_PROCESSES = {"rtshield", "uploader", "deleter", "loggerd", "logmessaged", "tombstoned", "gpsd",
-                    "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad"} | \
+                    "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad", "mapd"} | \
                     {k for k, v in managed_processes.items() if not v.enabled}
 
 ACTUATOR_FIELDS = set(car.CarControl.Actuators.schema.fields.keys())
