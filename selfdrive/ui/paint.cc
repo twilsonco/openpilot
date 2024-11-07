@@ -771,7 +771,7 @@ void DrawApilot::drawRadarInfo(const UIState* s) {
                 sprintf(str, "%.0f", rv * 3.6);
                 wStr = 26.25 * (strlen(str) + 0); // 25% smaller
                 if (radar) {
-                    ui_fill_rect(s->vg, { (int)(rx - wStr), (int)(ry - 52.5), (int)(wStr * 1.5), 63 }, COLOR_RED, 22.5); // 25% smaller
+                    ui_fill_rect(s->vg, { (int)(rx - wStr), (int)(ry - 52.5), (int)(wStr * 1.5), 63 }, COLOR_RED, 30); // 25% smaller
                     ui_draw_text(s, rx, ry, str, 60, COLOR_WHITE, BOLD); // 25% smaller
                 }
 
@@ -1158,7 +1158,7 @@ void DrawApilot::drawGapInfo2(const UIState* s, int x, int y) {
 
     int dx = x + 50;
     int dy = y + 110;
-    ui_draw_text(s, dx-50, dy-133, strDrivingMode, 30, COLOR_WHITE, BOLD);
+    ui_draw_text(s, dx-50, dy-83, strDrivingMode, 30, COLOR_WHITE, BOLD);
     static char _strDrivingMode[128] = "";
     if (strcmp(strDrivingMode, _strDrivingMode)) ui_draw_text_a(s, dx, dy, strDrivingMode, 30, COLOR_WHITE, BOLD);
     strcpy(_strDrivingMode, strDrivingMode);
@@ -1174,19 +1174,19 @@ void DrawApilot::drawGapInfo2(const UIState* s, int x, int y) {
     dy = y + 77;
     sprintf(str, "%d", gap);
     if (gap == 1) {
-        ui_draw_text(s, dx-80, dy-100, "CLOSE", 40, COLOR_WHITE, BOLD);
+        ui_draw_text(s, dx-80, dy-50, "CLOSE", 30, COLOR_WHITE, BOLD);
     }
 
     if (gap == 2) {
-        ui_draw_text(s, dx-80, dy-100, "MID", 30, COLOR_WHITE, BOLD);
+        ui_draw_text(s, dx-80, dy-50, "MID", 30, COLOR_WHITE, BOLD);
     }
 
     if (gap == 3) {
-        ui_draw_text(s, dx-80, dy-100, "RELAX", 40, COLOR_WHITE, BOLD);
+        ui_draw_text(s, dx-80, dy-50, "RELAX", 30, COLOR_WHITE, BOLD);
     }
     
     static int _gap1 = 0;
-    if (_gap1 != gap) ui_draw_text_a(s, dx, dy, str, 40, COLOR_WHITE, BOLD);
+    if (_gap1 != gap) ui_draw_text_a(s, dx, dy, str, 30, COLOR_WHITE, BOLD);
     _gap1 = gap;
 }
 
@@ -1257,8 +1257,8 @@ void DrawApilot::drawSpeed(const UIState* s, int x, int y) {
 
         char speed[128];
         sprintf(speed, "%.0f", cur_speed);
-        ui_draw_text(s, bx, by - 100, speed, 120, COLOR_WHITE, BOLD, 3.0f, 8.0f);
-        ui_draw_image(s, { bx - 100, by - 180 , 350, 150 }, "ic_speed_bg", 1.0f);
+        ui_draw_text(s, bx, by - 50, speed, 120, COLOR_WHITE, BOLD, 3.0f, 8.0f);
+        ui_draw_image(s, { bx - 100, by - 130 , 350, 150 }, "ic_speed_bg", 1.0f);
 
         //color = QColor(255, 255, 255, 255);
 #ifdef __TEST
@@ -1274,7 +1274,7 @@ void DrawApilot::drawSpeed(const UIState* s, int x, int y) {
             strcpy(_speed_str, str);
         }
         else strcpy(str, "--");
-        ui_draw_text(s, bx + 170, by - 100, str, 60, COLOR_WHITE, BOLD, 1.0, 5.0, COLOR_BLACK, COLOR_BLACK);
+        ui_draw_text(s, bx + 170, by - 50, str, 60, COLOR_WHITE, BOLD, 1.0, 5.0, COLOR_BLACK, COLOR_BLACK);
 
         if (isEnabled() && isLongActive() && applyMaxSpeed > 0) {
             NVGcolor textColor = COLOR_WHITE;
@@ -1737,7 +1737,7 @@ void DrawApilot::drawPathEnd(const UIState* s, int x, int y, int path_x, int pat
                 sprintf(str, "%.1f", dist);
                 wStr = 32 * (strlen(str) + 0);
                 ui_fill_rect(s->vg, { (int)(x + w - wStr / 2), (int)(disp_y - 35), wStr, 42 }, COLOR_BLUE, 15);
-                ui_draw_text(s, x + w, disp_y, "DETECTED", 40, COLOR_WHITE, BOLD);
+                ui_draw_text(s, x + w, disp_y, "OK", 40, COLOR_WHITE, BOLD);
             }
         }
         if (!isLeadDetected()) {
