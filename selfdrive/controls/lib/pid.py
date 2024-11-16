@@ -15,7 +15,7 @@ def apply_deadzone(error, deadzone):
 
 
 class PIDController:
-  def __init__(self, k_p=0., k_i=0., k_d=0., k_f=1., k_11=0., k_12=0., k_13=0., k_period=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, derivative_period=1.):
+  def __init__(self, k_p=0., k_i=0., k_d=0., k_f=1., k_11=0., k_12=0., k_13=0., k_period=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, derivative_period=1., pos_p_limit=None, neg_p_limit=None):
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
     self._k_d = k_d  # derivative gain
@@ -39,6 +39,9 @@ class PIDController:
 
     self.pos_limit = pos_limit
     self.neg_limit = neg_limit
+    
+    self.pos_p_limit = pos_p_limit
+    self.neg_p_limit = neg_p_limit
 
     self.sat_count_rate = 1.0 / rate
     self.i_unwind_rate = 0.3 / rate
@@ -136,11 +139,14 @@ class PIDController:
           self.ki = self.ki * (0.3 + self.k_12 * gain_update_factor)
           self.kd = self.kd * (1. + self.k_13 * abs_guf)
 
-      
-    
     self.p = error * self.kp
+    if self.pos_p_limit is not None and self.p > self.pos_p_limit:
+      self.p = self.pos_p_limit
+    elif self.neg_p_limit is not None and self.p < self.neg_p_limit:
+      self.p = self.neg_p_limit
+
     self.f = feedforward * self.k_f
-    
+
     if self.outputs is not None and len(self.outputs) == int(self._d_period):  # makes sure we have enough history for period
       self.error_rate = (self.outputs[-1] - self.outputs[0]) * self._d_period_recip
       if D is None:

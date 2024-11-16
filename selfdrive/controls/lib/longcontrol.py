@@ -84,8 +84,8 @@ class LongControl():
                             (CP.longitudinalTuning.kdBP, CP.longitudinalTuning.kdV),
                             derivative_period=0.1,
                             k_11 = 0.2, k_12 = 0.4, k_13 = 0.4, k_period=0.1,
-                            rate=RATE,
-                            sat_limit=0.8)
+                            rate=RATE, sat_limit=0.8,
+                            pos_p_limit=0.0)
     self.v_pid = 0.0
     self.lead_present_last = False
     self.lead_gone_t = 0.
