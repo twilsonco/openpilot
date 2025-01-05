@@ -659,9 +659,9 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
     print("Loading pickle files...")
     columns = [
       'v_ego',
-      # 'a_ego',
+      'a_ego',
       'lateral_accel',
-      'lateral_jerk',
+      # 'lateral_jerk',
       'roll', # actually lateral gravitational acceleration
       'steer_cmd',
       # "lateral_accel_1",
@@ -1111,9 +1111,7 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
           steer_delay_ind = int(steer_delay * CTRL_RATE)
           record_times_strings = [f"{'m' if i < 0.0 else 'p'}{int(abs(round(i*10))):02d}" for i in record_times]
           record_times = np.array(record_times)
-          columns = ['steer_cmd', 'v_ego', 'lateral_accel', 'lateral_jerk', 'roll'] \
-                  + [f"lateral_accel_{i}" for i in record_times_strings] \
-                  + [f"roll_{i}" for i in record_times_strings]
+          columns = ['steer_cmd', 'v_ego', 'a_ego', 'lateral_accel', 'lateral_jerk', 'roll']
           max_time = max(record_times) - (min(record_times+[0.0])) + 0.04
           zero_time_ind = 0 if min(record_times) > 0.0 else int((-min(record_times+[0.0]) + 0.04) * CTRL_RATE)
           print(f"Record times: {record_times}")
@@ -1169,11 +1167,11 @@ def pickle_files_to_csv(input_dir, check_modified=True, print_stats=False, save_
                   sout = sample_deque[zero_time_ind]
                   # fix steer delay, fetching the torque (steer_cmd) from steer_delay seconds ago so it corresponds to the conditions now.
                   # sout['steer_cmd'] = sample_deque[zero_time_ind - steer_delay_ind]['steer_cmd']
-                  Ts = [(s['t'] - sout['t']) * 1e-9 for s in sample_deque]
-                  if approx_lat_jerk:
-                    sout['lateral_jerk'] = (interp(0.15, Ts, lat_accel_deque) - interp(-0.15, Ts, lat_accel_deque)) / 0.3
-                  sout = {**sout, **{f"lateral_accel_{ts}": interp(t, Ts, lat_accel_deque) for t,ts in zip(record_times, record_times_strings)}}
-                  sout = {**sout, **{f"roll_{ts}": interp(t, Ts, roll_deque) for t,ts in zip(record_times, record_times_strings)}}
+                  # Ts = [(s['t'] - sout['t']) * 1e-9 for s in sample_deque]
+                  # if approx_lat_jerk:
+                  #   sout['lateral_jerk'] = (interp(0.15, Ts, lat_accel_deque) - interp(-0.15, Ts, lat_accel_deque)) / 0.3
+                  # sout = {**sout, **{f"lateral_accel_{ts}": interp(t, Ts, lat_accel_deque) for t,ts in zip(record_times, record_times_strings)}}
+                  # sout = {**sout, **{f"roll_{ts}": interp(t, Ts, roll_deque) for t,ts in zip(record_times, record_times_strings)}}
                   sout = {k: sout[k] for k in columns}
                   outdata.append(sout)
             
@@ -1219,6 +1217,7 @@ def has_upper_word(text):
 
 # iterate over all directories and subdirectories in the specified path
 whitelist = [] + STEER_AND_EPS_SOURCE_CARS
+whitelist = ["VOLT"]
 blacklist = ["nissan", "ford", "mock"]
 dirlist=[]
 ignore_files_with_past_num_days = 0
@@ -1255,7 +1254,7 @@ for root, dirs, files in os.walk(input_dir):
             print(f"Processing {d}...")
             # try:
             # dirlist.append(d)
-            model = pickle_files_to_csv(d, check_modified=False, print_stats=True, save_output=True)
+            model = pickle_files_to_csv(d, check_modified=False, print_stats=False, save_output=True)
             # blacklist.append(dir_name)
             # except Exception as e:
             #   print(f"Error processing {d}: {e}")
