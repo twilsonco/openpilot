@@ -96,17 +96,19 @@ class CarController(CarControllerBase):
     self.steady_speed = 0
     self.hkg_can_smooth_stop = self.param_s.get_bool("HkgSmoothStop")
     self.lead_distance = 0
+    self.lead_rel_speed = 0
+    self.lead_lat_pos = 0
 
-  def calculate_lead_distance(self, hud_control: car.CarControl.HUDControl) -> float:
+  def calculate_lead_distance(self, hud_control: car.CarControl.HUDControl):
     lead_one = self.sm["radarState"].leadOne
     lead_two = self.sm["radarState"].leadTwo
 
     if lead_one.status and (not lead_two.status or lead_one.dRel < lead_two.dRel):
-      return lead_one.dRel
+      return lead_one.dRel, lead_one.vRel, lead_one.yRel
     if lead_two.status:
-      return lead_two.dRel
+      return lead_two.dRel, lead_two.vRel, lead_two.yRel
 
-    return 200 if hud_control.leadVisible else 0
+    return 200, 0, 0 if hud_control.leadVisible else 0, 0, 0
 
   def update(self, CC, CS, now_nanos):
     if not self.CP.pcmCruiseSpeed or (self.CP.openpilotLongitudinalControl and self.frame % 5 == 0):
@@ -268,7 +270,7 @@ class CarController(CarControllerBase):
 
       # Parse lead distance from radarState and display the corresponding distance in the car's cluster
       if self.CP.openpilotLongitudinalControl and self.sm.updated['radarState'] and self.frame % 5 == 0:
-        self.lead_distance = self.calculate_lead_distance(hud_control)
+        self.lead_distance, self.lead_rel_speed, self.lead_lat_pos = self.calculate_lead_distance(hud_control)
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
         if self.hkg_can_smooth_stop:
@@ -279,7 +281,7 @@ class CarController(CarControllerBase):
         use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
         can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled and CS.out.cruiseState.enabled, accel, jerk, int(self.frame / 2),
                                                         hud_control, set_speed_in_units, stopping,
-                                                        CC.cruiseControl.override, use_fca, CS, escc, self.CP, self.lead_distance))
+                                                        CC.cruiseControl.override, use_fca, CS, escc, self.CP, self.lead_distance, self.lead_rel_speed, self.lead_lat_pos))
 
       # 20 Hz LFA MFA message
       if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:
