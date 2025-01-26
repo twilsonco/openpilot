@@ -106,7 +106,7 @@ class CarController(CarControllerBase):
     if lead_two.status:
       return lead_two.dRel
 
-    return 200 if hud_control.leadVisible else 0
+    return 19 if hud_control.leadVisible else 0
 
   def update(self, CC, CS, now_nanos):
     if not self.CP.pcmCruiseSpeed or (self.CP.openpilotLongitudinalControl and self.frame % 5 == 0):

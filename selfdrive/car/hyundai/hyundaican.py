@@ -131,7 +131,7 @@ def create_lfahda_mfc(packer, enabled, lat_active, lateral_paused, blinking_icon
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
 def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca,
-                        CS, escc, CP, lead_distance, lead_rel_speed=0, lead_lat_position=0):
+                        CS, escc, CP, lead_distance):
   commands = []
 
   scc11_values = {
@@ -139,11 +139,11 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
     "TauGapSet": hud_control.leadDistanceBars,
     "VSetDis": set_speed if enabled else 0,
     "AliveCounterACC": idx % 0x10,
-    "ObjValid": 1 if lead_distance < 200 else 0, # close lead makes controls tighter
-    "ACC_ObjStatus": 1 if lead_distance < 200 else 0, # close lead makes controls tighter
-    "ACC_ObjLatPos": -lead_lat_position, # flipped sign compared to radarState yRel
-    "ACC_ObjRelSpd": lead_rel_speed,
-    "ACC_ObjDist": lead_distance, # close lead makes controls tighter
+    "ObjValid": 1, # close lead makes controls tighter
+    "ACC_ObjStatus": 1, # close lead makes controls tighter
+    "ACC_ObjLatPos": 0,
+    "ACC_ObjRelSpd": 0,
+    "ACC_ObjDist": 1, # close lead makes controls tighter
     }
   commands.append(packer.make_can_msg("SCC11", 0, scc11_values))
 
@@ -151,7 +151,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
     "ACCMode": 2 if enabled and long_override else 1 if enabled else 0,
     "StopReq": 1 if stopping else 0,
     "aReqRaw": accel,
-    "aReqValue": -10.23,  # stock ramps up and down respecting jerk limit until it reaches aReqRaw
+    "aReqValue": accel,  # stock ramps up and down respecting jerk limit until it reaches aReqRaw
     "CR_VSM_Alive": idx % 0xF,
   }
 
@@ -170,21 +170,12 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
   scc12_values["CR_VSM_ChkSum"] = 0x10 - sum(sum(divmod(i, 16)) for i in scc12_dat) % 0x10
 
   commands.append(packer.make_can_msg("SCC12", 0, scc12_values))
-  
-  comfort_band_mid = accel / 5 + 0.82 # determined in plotjuggler using dashcam data
-  if lead_distance < 200:
-    comfort_band_offset = 0.05 if accel < 0 else 0.01
-    comfort_band_lower = comfort_band_mid - comfort_band_offset
-    comfort_band_upper = comfort_band_mid + comfort_band_offset
-  else:
-    comfort_band_lower = 0.84
-    comfort_band_upper = 0.84
 
   scc14_values = {
-    "ComfortBandUpper": comfort_band_upper, # stock usually is 0 but sometimes uses higher values
-    "ComfortBandLower": comfort_band_lower, # stock usually is 0 but sometimes uses higher values
+    "ComfortBandUpper": 0.0, # stock usually is 0 but sometimes uses higher values
+    "ComfortBandLower": 0.0, # stock usually is 0 but sometimes uses higher values
     "JerkUpperLimit": upper_jerk, # stock usually is 1.0 but sometimes uses higher values
-    "JerkLowerLimit": 0.2, # stock usually is 0.5 but sometimes uses higher values
+    "JerkLowerLimit": 5.0, # stock usually is 0.5 but sometimes uses higher values
     "ACCMode": 2 if enabled and long_override else 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
     "ObjGap": get_object_gap(lead_distance), # 5: >30, m, 4: 25-30 m, 3: 20-25 m, 2: < 20 m, 0: no lead
   }
