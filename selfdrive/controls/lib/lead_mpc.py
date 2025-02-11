@@ -335,7 +335,7 @@ class LeadMpc():
     self.long_control_active = False
     
     self.params_check_last_t = 0.
-    self.params_check_freq = 0.5 # check params at 2Hz
+    self.params_check_freq = 1.0 # check params at 2Hz
     self._params = Params()
     self._op_params = opParams(calling_function="lead mpc LeadMpc")
     self.stopping_distance_offset = self._op_params.get('FP_stop_distance_offset_m', force_update=True)

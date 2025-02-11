@@ -121,7 +121,7 @@ class CarState(CarStateBase):
     self.time_in_drive_one_pedal = 0.0
     self.MADS_long_min_time_in_drive = 3.0 # [s]
     self.params_check_last_t = 0.
-    self.params_check_freq = 0.25 # check params at 10Hz
+    self.params_check_freq = 1.0 # check params at 10Hz
     
     self.resume_button_pressed = False
     self.resume_required = False

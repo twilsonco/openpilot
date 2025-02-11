@@ -120,7 +120,7 @@ class Planner():
     self._params = Params()
     self._op_params = opParams(calling_function="longitudinal planner")
     self.params_check_last_t = 0.
-    self.params_check_freq = 0.1 # check params at 10Hz
+    self.params_check_freq = 1.0 # check params at 10Hz
     
     self.MADS_enabled = Params().get_bool("MADSEnabled")
     self.MADS_lead_braking_enabled = self.MADS_enabled and self._params.get_bool("MADSLeadBraking")
