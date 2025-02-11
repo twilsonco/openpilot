@@ -81,6 +81,12 @@ class Controls:
     self.use_sensors = False
     
     self.gpsWasOK = False
+    
+    # Last frame values so that we only need to update lat/lon when model updates
+    self.desired_curvature_last = 0.0
+    self.desired_curvature_rate_last = 0.0
+    self.actuators_last = None
+    self.lac_log_last = None
 
     # Setup sockets
     self.pm = pm
@@ -808,16 +814,30 @@ class Controls:
         self.pitch = apply_deadzone(self.sm['liveParameters'].pitchFutureLong, self.pitch_accel_deadzone)
       actuators.accelPitchCompensated = actuators.accel + ((ACCELERATION_DUE_TO_GRAVITY * math.sin(self.pitch)) if self.use_sensors else 0.0)
 
-      # Steering PID loop and lateral MPC
-      desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
-                                                                             lat_plan.psis,
-                                                                             lat_plan.curvatures,
-                                                                             lat_plan.curvatureRates)
-      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.lat_active, 
-                                                                             CS, self.CP, self.VM, params, 
-                                                                             desired_curvature, desired_curvature_rate, self.sm['liveLocationKalman'],
-                                                                             use_roll=self.use_sensors, lat_plan=lat_plan,
-                                                                             model_data=self.sm['modelV2'])
+      # Steering PID loop and lateral MPC; only update when planner/model updates
+      if self.sm.updated['lateralPlan']:
+        desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
+                                                                            lat_plan.psis,
+                                                                            lat_plan.curvatures,
+                                                                            lat_plan.curvatureRates)
+        self.desired_curvature_last = desired_curvature
+        self.desired_curvature_rate_last = desired_curvature_rate
+      else:
+        desired_curvature = self.desired_curvature_last
+        desired_curvature_rate = self.desired_curvature_rate_last
+      
+      if self.sm.updated['modelV2']:
+        actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.lat_active, 
+                                                                            CS, self.CP, self.VM, params, 
+                                                                            desired_curvature, desired_curvature_rate, self.sm['liveLocationKalman'],
+                                                                            use_roll=self.use_sensors, lat_plan=lat_plan,
+                                                                            model_data=self.sm['modelV2'])
+        self.actuators_last = actuators
+        self.lac_log_last = lac_log
+      else:
+        actuators.steer = self.actuators_last.steer
+        actuators.steeringAngleDeg = self.actuators_last.steeringAngleDeg
+        lac_log = self.lac_log_last
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0 and self.active:
