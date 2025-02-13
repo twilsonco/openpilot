@@ -70,7 +70,7 @@ class LatControlTorque(LatControl):
                             k_d=CP.lateralTuning.torque.kd,
                             k_11 = 1.0, k_12 = 1.0, k_13 = 12.0, k_period=0.1,
                             k_f=CP.lateralTuning.torque.kf,
-                            derivative_period=0.1,
+                            rate=20, derivative_period=0.1,
                             pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
     self.friction = CP.lateralTuning.torque.friction

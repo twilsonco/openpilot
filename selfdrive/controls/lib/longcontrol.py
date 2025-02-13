@@ -23,7 +23,7 @@ DECEL_THRESHOLD_TO_PID = 0.8
 
 DECEL_STOPPING_TARGET = 0.25  # apply at least this amount of brake to maintain the vehicle stationary
 
-RATE = 100.0
+RATE = 20.0
 
 # As NOT per ISO 15622:2018 for all speeds
 ACCEL_MIN_ISO = -3.5 # m/s^2
