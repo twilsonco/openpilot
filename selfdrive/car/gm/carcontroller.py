@@ -64,6 +64,12 @@ class CarController():
     self.packer_obj = CANPacker(DBC[CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[CP.carFingerprint]['chassis'])
     
+    self.mass = CP.mass
+    self.tireRadius = 0.075 * CP.wheelbase + 0.1453
+    self.frontalArea = 1.05 * CP.wheelbase + 0.0679
+    self.coeffDrag = 0.30
+    self.airDensity = 1.225
+    
     # pid runs at 25Hz
     self.one_pedal_pid = PIDController(k_p=(CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV), 
                                       k_i=(CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV), 
@@ -154,23 +160,29 @@ class CarController():
         t = sec_since_boot()
         k = interp(CS.out.vEgo, ACCEL_PITCH_FACTOR_BP, ACCEL_PITCH_FACTOR_V)
         brake_accel = k * actuators.accelPitchCompensated + (1. - k) * actuators.accel
+        brake_accel = min(brake_accel/(self.tireRadius*self.mass), 0)
         if CS.out.onePedalModeActive and (not CS.MADS_lead_braking_enabled or t - self.lead_accel_last_t > ONE_PEDAL_LEAD_ACCEL_RATE_LOCKOUT_T):
           one_pedal_speed = max(CS.vEgo, ONE_PEDAL_MIN_SPEED)
-          self.threshold_accel = self.params.update_gas_brake_threshold(one_pedal_speed, CS.engineRPM > 0)
+          self.threshold_accel = P.update_gas_brake_threshold(one_pedal_speed, CS.engineRPM > 0)
         else:
-          self.threshold_accel = self.params.update_gas_brake_threshold(CS.out.vEgo, CS.engineRPM > 0)
-        self.apply_gas = interp(actuators.accelPitchCompensated, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
+          self.threshold_accel = P.update_gas_brake_threshold(CS.out.vEgo, CS.engineRPM > 0)
+
+        accel = clip(actuators.accelPitchCompensated, P.ACCEL_MIN, P.ACCEL_MAX)
+        torque = self.tireRadius * ((self.mass*accel) + (0.5*self.coeffDrag*self.frontalArea*self.airDensity*CS.out.vEgo**2))
+        scaled_torque = torque + P.ZERO_GAS
+        apply_gas_torque = clip(scaled_torque, P.MAX_ACC_REGEN, P.MAX_GAS)
+        
+        self.apply_gas = int(round(apply_gas_torque))
         no_pitch_apply_gas = interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)
         self.apply_brake_out = interp(brake_accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)
         self.apply_brake_in = round(int(self.apply_brake_out))
-        
-        
+
         CS.MADS_lead_braking_active = CS.MADS_lead_braking_enabled and not enabled and CS.coasting_lead_d > 0.0 and actuators.accel < -0.1 and CS.coasting_long_plan in BRAKE_SOURCES
-        
+
         v_rel = CS.coasting_lead_v - CS.vEgo
         ttc = min(-CS.coasting_lead_d / v_rel if (CS.coasting_lead_d > 0. and v_rel < 0.) else 100.,100.)
         d_time = CS.coasting_lead_d / CS.vEgo if (CS.coasting_lead_d > 0. and CS.vEgo > 0. and CS.tr > 0.) else 10.
-        
+
         if CS.coasting_lead_d > 0. and (ttc < CS.lead_ttc_long_gas_lockout_bp[-1] \
           or v_rel < CS.lead_v_rel_long_gas_lockout_bp[-1] \
           or CS.coasting_lead_v < CS.lead_v_long_gas_lockout_bp[-1] \
