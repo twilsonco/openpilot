@@ -120,7 +120,7 @@ class Planner():
     self._params = Params()
     self._op_params = opParams(calling_function="longitudinal planner")
     self.params_check_last_t = 0.
-    self.params_check_freq = 0.1 # check params at 10Hz
+    self.params_check_freq = 1.0 # check params at 10Hz
     
     self.MADS_enabled = Params().get_bool("MADSEnabled")
     self.MADS_lead_braking_enabled = self.MADS_enabled and self._params.get_bool("MADSLeadBraking")
@@ -215,7 +215,7 @@ class Planner():
     if sm['carState'].gas > 1e-5:
       accel_limits[0] = 0.0
       
-    accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
+    accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg - sm['liveParameters'].angleOffsetAverageDeg, accel_limits, self.CP)
     if force_slow_decel:
       # if required so, force a smooth deceleration
       accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)

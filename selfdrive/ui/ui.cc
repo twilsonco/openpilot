@@ -420,14 +420,17 @@ static void update_state(UIState *s) {
     const int center_y = offset_button_y(s, s->fb_h - footer_h / 2, radius);
     scene.screen_dim_touch_rect = {center_x - (1+scene.screen_dim_mode_max-scene.screen_dim_mode) * radius, center_y - (1+scene.screen_dim_mode_max-scene.screen_dim_mode) * radius, (2*(1+scene.screen_dim_mode_max-scene.screen_dim_mode)) * radius, (2*(1+scene.screen_dim_mode_max-scene.screen_dim_mode)) * radius};
     
-    if (s->status == STATUS_WARNING){
+    if (s->status == STATUS_WARNING && scene.screen_dim_mode_cur == 0){
       scene.screen_dim_mode_cur = scene.screen_dim_mode + 1;
       if (scene.screen_dim_mode_cur > scene.screen_dim_mode_max){
         scene.screen_dim_mode_cur = scene.screen_dim_mode_max;
       }
     }
     else if (s->status == STATUS_ALERT){
-      scene.screen_dim_mode_cur = scene.screen_dim_mode_max;
+      scene.screen_dim_mode_cur = scene.screen_dim_mode + 1;
+      if (scene.screen_dim_mode_cur > scene.screen_dim_mode_max){
+        scene.screen_dim_mode_cur = scene.screen_dim_mode_max;
+      }
       scene.screen_dim_fade = scene.screen_dim_modes_v[scene.screen_dim_mode_cur];
     }
     else{

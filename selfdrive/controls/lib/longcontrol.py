@@ -23,7 +23,7 @@ DECEL_THRESHOLD_TO_PID = 0.8
 
 DECEL_STOPPING_TARGET = 0.25  # apply at least this amount of brake to maintain the vehicle stationary
 
-RATE = 100.0
+RATE = 20.0
 
 # As NOT per ISO 15622:2018 for all speeds
 ACCEL_MIN_ISO = -3.5 # m/s^2
@@ -84,8 +84,8 @@ class LongControl():
                             (CP.longitudinalTuning.kdBP, CP.longitudinalTuning.kdV),
                             derivative_period=0.1,
                             k_11 = 0.2, k_12 = 0.4, k_13 = 0.4, k_period=0.1,
-                            rate=RATE,
-                            sat_limit=0.8)
+                            rate=RATE, sat_limit=0.8,
+                            pos_p_limit=0.0)
     self.v_pid = 0.0
     self.lead_present_last = False
     self.lead_gone_t = 0.

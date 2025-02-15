@@ -279,7 +279,7 @@ class VisionTurnController():
       sr = max(self._liveparams.steerRatio, 0.1)
       self._VM.update_params(x, sr)
       roll_compensation = self._VM.roll_compensation(self._liveparams.roll, self._vf * self._v_ego)
-      angle_offset = self._liveparams.angleOffsetDeg
+      angle_offset = self._liveparams.angleOffsetAverageDeg
     else:
       roll_compensation = 0.
       angle_offset = 0.
@@ -298,19 +298,19 @@ class VisionTurnController():
     if self._controls_state is not None and self._lat_sat_t >= 0:
       lat_type = self._controls_state.lateralControlState.which()
       if lat_type == 'indiState':
-        lat_sat = (self._controls_state.lateralControlState.indiState.output >= 0.95)
+        lat_sat = (abs(self._controls_state.lateralControlState.indiState.output) >= 0.95)
       elif lat_type == 'pidState':
-        lat_sat = (self._controls_state.lateralControlState.pidState.output >= 0.95)
+        lat_sat = (abs(self._controls_state.lateralControlState.pidState.output) >= 0.95)
       elif lat_type == 'lqrState':
-        lat_sat = (self._controls_state.lateralControlState.lqrState.output >= 0.95)
+        lat_sat = (abs(self._controls_state.lateralControlState.lqrState.output) >= 0.95)
       elif lat_type == 'angleState':
-        lat_sat = (self._controls_state.lateralControlState.angleState.output >= 0.95)
+        lat_sat = (abs(self._controls_state.lateralControlState.angleState.output) >= 0.95)
       elif lat_type == 'torqueState':
-        lat_sat = (self._controls_state.lateralControlState.torqueState.output >= 0.95)
+        lat_sat = (abs(self._controls_state.lateralControlState.torqueState.output) >= 0.95)
       elif lat_type == 'torqueIndiState':
-        lat_sat = (self._controls_state.lateralControlState.torqueIndiState.output >= 0.95)
+        lat_sat = (abs(self._controls_state.lateralControlState.torqueIndiState.output) >= 0.95)
       elif lat_type == 'torqueLqrState':
-        lat_sat = (self._controls_state.lateralControlState.torqueLqrState.output >= 0.95)
+        lat_sat = (abs(self._controls_state.lateralControlState.torqueLqrState.output) >= 0.95)
       else: # unknown type
         cloudlog.info(f"Vision controller: unknown lateralControlState: {lat_type}")
         self._lat_sat_t = -1

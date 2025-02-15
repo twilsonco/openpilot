@@ -21,7 +21,7 @@ from selfdrive.hardware import TICI
 LEAD_PATH_YREL_MAX_BP = [0.] # [m] distance to lead
 LEAD_PATH_YREL_MAX_V = [1.2] # [m] constant tolerance
 LEAD_PATH_YREL_LOW_TOL = 0.5 # if the lead closest to the "middle" is farther away than one that is both closer and within this distance of "middle", use that lead
-LEAD_PATH_DREL_MIN = 60 # [m] only care about far away leads
+LEAD_PATH_DREL_MIN = 100 # [m] only care about far away leads
 LEAD_MIN_SMOOTHING_DISTANCE = 145 # [m]
 LEAD_MAX_DISTANCE = 152 # [m] beyond this distance, lead data is too noisy to use
 LEAD_MAX_Y_REL = 12.0 # [m] beyond this Y distance, long range leads are ignored

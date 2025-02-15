@@ -72,7 +72,7 @@ class CarInterface(CarInterfaceBase):
     self.cruise_enabled_last = False
     
   params_check_last_t = 0.
-  params_check_freq = 0.1 # check params at 10Hz
+  params_check_freq = 1.0 # check params at 10Hz
   params = CarControllerParams()
   
   @staticmethod
