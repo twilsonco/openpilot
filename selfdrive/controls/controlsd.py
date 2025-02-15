@@ -83,8 +83,6 @@ class Controls:
     self.gpsWasOK = False
     
     # Last frame values so that we only need to update lat/lon when model updates
-    self.desired_curvature_last = None
-    self.desired_curvature_rate_last = None
     self.actuators_last = None
     self.lac_log_last = None
 
@@ -805,28 +803,20 @@ class Controls:
 
     if not self.joystick_mode:
       # accel PID loop
-      pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS, self.CI)
-      t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
-      actuators.accel = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits, t_since_plan, MADS_lead_braking_enabled=self.MADS_lead_braking_enabled)
-      
-      # compute pitch-compensated accel
-      if self.sm.updated['liveParameters']:
-        self.pitch = apply_deadzone(self.sm['liveParameters'].pitchFutureLong, self.pitch_accel_deadzone)
-      actuators.accelPitchCompensated = actuators.accel + ((ACCELERATION_DUE_TO_GRAVITY * math.sin(self.pitch)) if self.use_sensors else 0.0)
-
-      # Steering PID loop and lateral MPC; only update when planner/model updates
-      if self.sm.updated['lateralPlan'] or self.desired_curvature_last is None:
+      if self.sm.updated['longitudinalPlan'] or self.sm.updated['lateralPlan'] or self.actuators_last is None:
+        pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS, self.CI)
+        t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
+        actuators.accel = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits, t_since_plan, MADS_lead_braking_enabled=self.MADS_lead_braking_enabled)
+        
+        # compute pitch-compensated accel
+        if self.sm.updated['liveParameters']:
+          self.pitch = apply_deadzone(self.sm['liveParameters'].pitchFutureLong, self.pitch_accel_deadzone)
+        actuators.accelPitchCompensated = actuators.accel + ((ACCELERATION_DUE_TO_GRAVITY * math.sin(self.pitch)) if self.use_sensors else 0.0)
+        
         desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                             lat_plan.psis,
                                                                             lat_plan.curvatures,
                                                                             lat_plan.curvatureRates)
-        self.desired_curvature_last = desired_curvature
-        self.desired_curvature_rate_last = desired_curvature_rate
-      else:
-        desired_curvature = self.desired_curvature_last
-        desired_curvature_rate = self.desired_curvature_rate_last
-      
-      if self.sm.updated['modelV2'] or self.actuators_last is None:
         actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.lat_active, 
                                                                             CS, self.CP, self.VM, params, 
                                                                             desired_curvature, desired_curvature_rate, self.sm['liveLocationKalman'],
@@ -837,6 +827,8 @@ class Controls:
       else:
         actuators.steer = self.actuators_last.steer
         actuators.steeringAngleDeg = self.actuators_last.steeringAngleDeg
+        actuators.accel = self.actuators_last.accel
+        actuators.accelPitchCompensated = self.actuators_last.accelPitchCompensated
         lac_log = self.lac_log_last
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
