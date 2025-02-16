@@ -36,7 +36,10 @@ class CarInterface(CarInterfaceBase):
       ACCEL_MAX_BP = [cruise_speed - 2., cruise_speed - .2]
       return CarControllerParams.NIDEC_ACCEL_MIN, interp(current_speed, ACCEL_MAX_BP, ACCEL_MAX_VALS)
 
-  def torque_from_lateral_accel_modded(self, latcontrol_inputs: LatControlInputs, torque_params: car.CarParams.LateralTorqueTuning, lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
+  def torque_from_lateral_accel_modded(self, latcontrol_inputs: LatControlInputs,
+                                       torque_params: car.CarParams.LateralTorqueTuning,
+                                       lateral_accel_error: float, lateral_accel_deadzone: float,
+                                       friction_compensation: bool, gravity_adjusted: bool) -> float:
     threshold = 0.8
     threshold_lat_accel = 1/torque_params.latAccelFactor * threshold
     mod_factor = 2.0 # <-- CHANGE THIS
@@ -52,7 +55,7 @@ class CarInterface(CarInterfaceBase):
     return torque + friction
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
-    if self.CP.enableGasInterceptorDEPRECATED:
+    if self.CP.flags & HondaFlags.EPS_MODIFIED:
       return self.torque_from_lateral_accel_modded
     else:
       return self.torque_from_lateral_accel_linear
@@ -112,6 +115,7 @@ class CarInterface(CarInterfaceBase):
     for fw in car_fw:
       if fw.ecu == "eps" and b"," in fw.fwVersion:
         eps_modified = True
+        ret.flags |= HondaFlags.EPS_MODIFIED.value
 
     if candidate == CAR.HONDA_CIVIC:
       if eps_modified:
