@@ -1,3 +1,18 @@
+Version tw-0.8.12-20 (2025-02-17)
+========================
+ * IMPROVED: More accurate long control at higher speeds thanks to Mochi's incorporation of drag and rolling resistance
+ * IMPROVED: Decrease CPU use of controls by around 20% by only updating lat/lon controllers when modeld updates (which is at 20Hz rather than 100Hz)
+   * FIXED: Hotfix for running lat/lon controls at plannerd rate
+ * Decrease params update frequency in hopes of reducing IO overhead
+ * Smoother long control, especually stops, by preventing positive-accel P-error response
+ * Brightness control: only increase brightness for "warning"-level alerts if on darkest setting, and only increase brightness for alerts by one "level" (i.e. low to medium, or medium to high) regarless of brightness setting
+ * Vision turn speed controller (curve braking) bug fix for more accurate lateral torque saturation-based braking
+ * opparams:
+   * max-speed parameter for one-pedal mode, so that it won't toggle (using double regen paddle press) unless you're below the configured max speed (i.e. like Nissan and other brands' one-pedal modes)
+   * lateral torque controller kp-scaling based on long accel; i.e. you can lower kp when you're not accelerating/decelerating for smoother lat control, but then when stopping or accelerating, tighten lat control
+   * add long mpc tuning parameters to opparams
+   * update default opparams for long-range leads to prevent phantom braking due to long range leads
+
 Version tw-0.8.12-19 (2023-11-15)
 ========================
  * ATTENTION!!! OpenStreetMap-based features must not be used unless you have an external hotspot or your own sim card for data.
