@@ -123,7 +123,7 @@ class LatControlTorque(LatControl):
       
       # setup past time offsets
       self.past_times = [-0.3, -0.2, -0.1]
-      history_check_frames = [int(abs(i)*100) for i in self.past_times]
+      history_check_frames = [int(abs(i)*20) for i in self.past_times]
       self.history_frame_offsets = [history_check_frames[0] - i for i in history_check_frames]
       self.lateral_accel_desired_deque = deque(maxlen=history_check_frames[0])
       self.roll_deque = deque(maxlen=history_check_frames[0])
