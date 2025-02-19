@@ -21,6 +21,9 @@ from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_G
 LOW_SPEED_X = [0, 10, 20, 30]
 LOW_SPEED_Y = [15, 13, 10, 5]
 
+# Full friction at or below ||0.6 m/s^2||, no friction at or above ||0.8 m/s^2||
+FRICTION_X = [0.6, 0.8] # m/s^2 lateral acceleration
+FRICTION_Y = [1.0, 0.0]
 
 class LatControlTorque(LatControl):
   def __init__(self, CP, CI):
@@ -69,8 +72,11 @@ class LatControlTorque(LatControl):
       torque_from_measurement = self.torque_from_lateral_accel(LatControlInputs(measurement, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
                                                                measurement, lateral_accel_deadzone, friction_compensation=False, gravity_adjusted=False)
       pid_log.error = float(torque_from_setpoint - torque_from_measurement)
+      # Downscale friction input error based on the desired lateral acceleration
+      friction_input = desired_lateral_accel - actual_lateral_accel
+      friction_input *= np.interp(abs(desired_lateral_accel), FRICTION_X, FRICTION_Y)
       ff = self.torque_from_lateral_accel(LatControlInputs(gravity_adjusted_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
-                                          desired_lateral_accel - actual_lateral_accel, lateral_accel_deadzone, friction_compensation=True,
+                                          friction_input, lateral_accel_deadzone, friction_compensation=True,
                                           gravity_adjusted=True)
 
       freeze_integrator = steer_limited or CS.steeringPressed or CS.vEgo < 5
