@@ -740,6 +740,12 @@ class opParams:
       
       'TUNE_LONG_deadzone_ms2': Param([0.0, 0.0, 0.0], [list, float], 'Values of deadzone used at the corresponding speeds in TUNE_LONG_mph. Deadzone sets a minimum amount of desired acceleration before the gas or brakes are actually actuated. Deadzones are used to smooth jerky long control, if the gas/brake controls are too sensitive or if the planning is noisy.', live=True, min_val=0.0, max_val=5.0, unit='m/s²'),
       
+      'TUNE_LONG_brake_rate_limit_speed_mph': Param([0.0, 12.0], [list, float], 'Lookup speeds used for corresponding values of brake command rate limit', live=True, min_val=0.0, max_val=90.0, unit='mph'),
+      
+      'TUNE_LONG_brake_rate_up_limit': Param([5, 50], [list, int], 'Values of brake command rate limit used at the corresponding speeds in TUNE_LONG_brake_rate_limit_speed_mph. This is the maximum rate at which the brake command can increase (i.e. increase brake force) per frame, at 25 frames per second. If the rate is too low, the car will take too long to stop. There is no such rate limit in OpenPilot by default, so at "too high" rate is not a concern.', live=True, min_val=1, max_val=350, unit='0.01 ⨉ m/s²'),
+      
+      'TUNE_LONG_brake_rate_down_limit': Param([5, 50], [list, int], 'Values of brake command rate limit used at the corresponding speeds in TUNE_LONG_brake_rate_limit_speed_mph. This is the maximum rate at which the brake command can decrease (i.e. decrease brake force) per frame, at 25 frames per second. If the rate is too low, the car will take too long to stop. There is no such rate limit in OpenPilot by default, so at "too high" rate is not a concern.', live=True, min_val=1, max_val=350, unit='0.01 ⨉ m/s²'),
+      
       #####
       
       'MET_00': Param('PERCENT_GRADE_DEVICE', [int,str], 'UI metric in top row right column. Enter the name of the metric or it\'s number.', allowed_vals=UI_METRICS, param_param='MeasureSlot00', param_param_use_ord=True, param_param_read_on_startup=True),
