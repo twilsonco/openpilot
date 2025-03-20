@@ -300,7 +300,7 @@ class LatControlTorque(LatControl):
         # compute NN error response.
         lookahead_lateral_jerk = apply_deadzone(lookahead_lateral_jerk, self.lat_jerk_deadzone)
         lat_accel_friction_factor = self.lat_accel_friction_factor
-        if self.use_steering_angle or lookahead_lateral_jerk == 0.0:
+        if not self.use_steering_angle or lookahead_lateral_jerk == 0.0:
           lookahead_lateral_jerk = 0.0
           self.actual_lateral_jerk._D.x = 0.0
           lat_accel_friction_factor = 1.0
