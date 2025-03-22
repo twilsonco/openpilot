@@ -511,7 +511,7 @@ class opParams:
       
       #####
       
-      'LP_auto_auto_minimum_speed_mph': Param(50.0, float, 'Minimum speed at which traffic-based "auto auto lane position" will activate', min_val=5.0, max_val=90.0, unit='mph'),
+      'LP_auto_auto_minimum_speed_mph': Param(50.0, float, 'Minimum speed at which traffic-based "auto auto lane position" will activate', min_val=0.0, max_val=90.0, unit='mph'),
       
       'LP_auto_auto_minimum_laneline_prob': Param(0.5, float, 'The minimum laneline probability one of the lanelines must have (from 0 to 1) in order for auto auto lane position to activate.', live=True, min_val=0.2, max_val=1.0),
       
