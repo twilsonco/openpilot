@@ -446,7 +446,7 @@ class LongitudinalMpc:
     self.trafficState = TrafficState.off
     # carrot
     self.comfort_brake = self.comfortBrake
-    applyStopDistance = self.stop_distance  * (2.0 - self.mySafeFactor)
+    applyStopDistance = self.stop_distance
     t_follow = self.update_tf(v_ego, t_follow)
     t_follow = self.update_dynamic_tf(t_follow, radarstate.leadOne, a_ego, v_ego)
     carrotTest3 = Params().get_int("CarrotTest3")
