@@ -752,12 +752,14 @@ class LongitudinalMpc:
 
     mode = 'blended' if self.xState in [XState.e2ePrepare] else 'acc'
 
-    self.comfort_brake *= self.mySafeFactor
+    #self.comfort_brake *= self.mySafeFactor
+    self.comfort_brake *= 1
+    
     self.stopDist = max(0, self.stopDist - (v_ego * DT_MDL))
     if stop_x == 1000.0:
       self.stopDist = 0.0
     elif self.stopDist > 0:
-      self.stopDist = max(self.stopDist, v_ego ** 2 / (self.comfort_brake * 2))
+      self.stopDist = max(self.stopDist, v_ego ** 2)
       stop_x = 0.0
     #self.debugLongText = "XState({}),stop_x={:.1f},stopDist={:.1f},Traffic={}".format(str(self.xState), stop_x, self.stopDist, str(self.trafficState))
     #번호를 읽을때는 self.xState.value
