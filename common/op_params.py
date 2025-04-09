@@ -622,17 +622,15 @@ class opParams:
 
       #####
       
-      'TUNE_LAT_PID_link_ls_hs': Param(False, bool, 'Set to true to make changes to a low-speed (ls) parameter also apply to its high-speed (hs) counterpart. With PID it seems the k values need to be higher at high speed, but in INDI other (Hyundai) car tunes only use one value, so the ls and hs values are the same. When linked, redundant params are not shown.', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid', fake_live=True),
-      
       'TUNE_LAT_PID_roll_compensation': Param(1.0, float, 'Scale the amount of roll compensation for the pid controller', live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
       'TUNE_LAT_PID_kf': Param(1.0, float, kf_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
-      'TUNE_LAT_PID_kp': Param([0.0, 0.16], [list, float], kp_desc + 'This scales the low-speed response.', live=True, min_val=0.0, max_val=10.0, linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_kp': Param([0.0, 0.16], [list, float], kp_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
-      'TUNE_LAT_PID_ki': Param([0.015, 0.02], [list, float], ki_desc + 'This scales the low-speed response.', live=True, min_val=0.0, max_val=10.0,  linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_ki': Param([0.015, 0.02], [list, float], ki_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
-      'TUNE_LAT_PID_kd': Param([0.007, 0.007], [list, float], kd_desc + 'This scales the low-speed response.', live=True, min_val=0.0, max_val=10.0, linked_op_param_check_param='TUNE_LAT_PID_link_ls_hs', show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
+      'TUNE_LAT_PID_kd': Param([0.007, 0.007], [list, float], kd_desc, live=True, min_val=0.0, max_val=10.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
       'TUNE_LAT_PID_kp_e': Param(0.5, float, "This fork uses an \"autotuned\" PID controller, where the kp, ki, and kd values change based on the rate of change of controller error (actually the output, but that's based on the error). This controls how much kp is able to change. ", live=True, min_val=0.0, max_val=1000.0, show_op_param='TUNE_LAT_type', show_op_param_check_val='pid'),
       
