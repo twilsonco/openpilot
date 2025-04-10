@@ -178,15 +178,15 @@ class LatControlPID():
                               + [CS.steeringAngleDeg] * self.past_future_len \
                               + past_rolls + future_rolls
         nnff_error_input = [CS.vEgo, angle_steers_des - CS.steeringAngleDeg, steer_rate_desired_lookahead - steer_rate_actual, 0.0]
-        torque_from_setpoint = self.torque_from_nn(nnff_setpoint_input)
-        torque_from_measurement = self.torque_from_nn(nnff_measurement_input)
+        torque_from_setpoint = self.CI.get_ff_nn(nnff_setpoint_input)
+        torque_from_measurement = self.CI.get_ff_nn(nnff_measurement_input)
         
         error = torque_from_setpoint - torque_from_measurement
         
         desired_lateral_accel = desired_curvature * CS.vEgo**2
         error_blend_factor = interp(abs(desired_lateral_accel), [1.0, 2.0], [0.0, 1.0])
         if error_blend_factor > 0.0:
-          torque_from_error = self.torque_from_nn(nnff_error_input)
+          torque_from_error = self.CI.get_ff_nn(nnff_error_input)
           if sign(error) == sign(torque_from_error) and abs(error) < abs(torque_from_error):
             error = error * (1.0 - error_blend_factor) + torque_from_error * error_blend_factor
         
