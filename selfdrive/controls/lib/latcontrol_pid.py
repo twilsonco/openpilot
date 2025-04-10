@@ -143,10 +143,6 @@ class LatControlPID():
           # pid_log.angleError *= self.error_scale_factor.x
           # angle_steers_des = CS.steeringAngleDeg + pid_log.angleError
           
-          # set to same as torque controller, since using NN output torque for error rather than steer angle
-          self.pid._k_p = [[0], [1]]
-          self.pid._k_i = [[0], [0.15]]
-          self.pid._k_d = [[0], [0.04]]
         else:
           lookahead_curvature_rate = 0.0
           future_speeds = [CS.vEgo] * len(self.nnff_future_times)
@@ -177,7 +173,6 @@ class LatControlPID():
         nnff_measurement_input = [CS.vEgo, CS.steeringAngleDeg, steer_rate_actual, roll] \
                               + [CS.steeringAngleDeg] * self.past_future_len \
                               + past_rolls + future_rolls
-        nnff_error_input = [CS.vEgo, angle_steers_des - CS.steeringAngleDeg, steer_rate_desired_lookahead - steer_rate_actual, 0.0]
         torque_from_setpoint = self.CI.get_ff_nn(nnff_setpoint_input)
         torque_from_measurement = self.CI.get_ff_nn(nnff_measurement_input)
         
@@ -186,6 +181,7 @@ class LatControlPID():
         desired_lateral_accel = desired_curvature * CS.vEgo**2
         error_blend_factor = interp(abs(desired_lateral_accel), [1.0, 2.0], [0.0, 1.0])
         if error_blend_factor > 0.0:
+          nnff_error_input = [CS.vEgo, angle_steers_des - CS.steeringAngleDeg, steer_rate_desired_lookahead - steer_rate_actual, 0.0]
           torque_from_error = self.CI.get_ff_nn(nnff_error_input)
           if sign(error) == sign(torque_from_error) and abs(error) < abs(torque_from_error):
             error = error * (1.0 - error_blend_factor) + torque_from_error * error_blend_factor
@@ -196,6 +192,10 @@ class LatControlPID():
                     + past_rolls + future_rolls
         ff_nn = self.CI.get_ff_nn(nnff_input)
         
+        # set to same as torque controller, since using NN output torque for error rather than steer angle
+        self.pid._k_p = [[0], [1.5]]
+        self.pid._k_i = [[0], [0.15]]
+        self.pid._k_d = [[0], [0.04]]
       else:
         ff_nn = 0.0
 
