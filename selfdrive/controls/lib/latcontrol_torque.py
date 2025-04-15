@@ -123,7 +123,7 @@ class LatControlTorque(LatControl):
       
       # setup past time offsets
       self.past_times = [-0.3, -0.2, -0.1]
-      history_check_frames = [int(abs(i)*100) for i in self.past_times]
+      history_check_frames = [int(abs(i)*20) for i in self.past_times]
       self.history_frame_offsets = [history_check_frames[0] - i for i in history_check_frames]
       self.lateral_accel_desired_deque = deque(maxlen=history_check_frames[0])
       self.roll_deque = deque(maxlen=history_check_frames[0])
@@ -300,7 +300,7 @@ class LatControlTorque(LatControl):
         # compute NN error response.
         lookahead_lateral_jerk = apply_deadzone(lookahead_lateral_jerk, self.lat_jerk_deadzone)
         lat_accel_friction_factor = self.lat_accel_friction_factor
-        if self.use_steering_angle or lookahead_lateral_jerk == 0.0:
+        if not self.use_steering_angle or lookahead_lateral_jerk == 0.0:
           lookahead_lateral_jerk = 0.0
           self.actual_lateral_jerk._D.x = 0.0
           lat_accel_friction_factor = 1.0

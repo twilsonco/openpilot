@@ -20,12 +20,15 @@
 ------
 - [Table of Contents](#table-of-contents)
     - [Infographics](#infographics)
+    - [Videos](#videos)
     - [Appreciate My Work?](#appreciate-my-work)
 - [Fork Details](#fork-details)
-  - [Current Fork Features](#current-fork-features---optional-via-toggle)
-  - [Supported Hardware](#supported-hardware)
-  - [Installation Instructions](#installation-instructions)
-  - [Automatic Updates](#automatic-updates)
+    - [Supported Hardware](#supported-hardware)
+    - [Installation Instructions](#installation-instructions)
+      - [Easy: using comma's openpilot-installer-generator](#easy-using-commas-openpilot-installer-generator)
+      - [Less easy](#less-easy)
+    - [Automatic Updates](#automatic-updates)
+      - [Current Fork Features \[✅ = optional via toggle\]:](#current-fork-features---optional-via-toggle)
 - [Commaai Table of Contents](#commaai-table-of-contents)
   - [What is openpilot?](#what-is-openpilot)
   - [Running in a car](#running-in-a-car)
@@ -78,7 +81,7 @@ Check out the [commit history](https://github.com/twilsonco/openpilot/commits/tw
 > I reference code/concepts to their original authors to the best of my knowledge.
 > Feel free to let me know if I have missed or mistaken a reference.
 
-> **Pleae provide any positive/negative feedback to me, twilsonco#9281, on the [comma](https://discord.comma.ai)/[openpilot](https://discord.gg/SgbgsdGWu5)/[retropilot](https://discord.gg/retropilot-660951518014341124) Discord servers, especially if you'd like your issues addressed.**
+> **Pleae provide any positive/negative feedback to me, twilsonco#9281, on the [comma](https://discord.comma.ai)/[openpilot](https://discord.gg/SgbgsdGWu5) Discord servers, especially if you'd like your issues addressed.**
 
 
 ### Supported Hardware
@@ -145,6 +148,7 @@ If you're device stays connected to your car all the time, you'll be presented w
     * Brake for car in front of lead, avoiding pile-ups and able to brake when lead changes lanes right in front of a column of stopped cars
     * Indicate adjacent oncoming/ongoing traffic
     * Indicate all tracked cars, including those in front of the lead, and print all speeds
+    * Time-to-pass countdown for closest car in adjacent lanes
     * Tap at screen bottom-center (middle of path) to switch where speeds are printed
 - [x] [✅] **Longer range lead detection**, indicated by blue dot over lead indicator
     * 10% more range using radar, or
@@ -247,14 +251,26 @@ If you're device stays connected to your car all the time, you'll be presented w
 Commaai Table of Contents
 =======================
 
-- [What is openpilot?](#what-is-openpilot)
-- [Running in a car](#running-in-a-car)
-- [Running on PC](#running-on-pc)
-- [Community and Contributing](#community-and-contributing)
-- [User Data and comma Account](#user-data-and-comma-account)
-- [Safety and Testing](#safety-and-testing)
-- [Directory Structure](#directory-structure)
-- [Licensing](#licensing)
+- [Table of Contents](#table-of-contents)
+    - [Infographics](#infographics)
+    - [Videos](#videos)
+    - [Appreciate My Work?](#appreciate-my-work)
+- [Fork Details](#fork-details)
+    - [Supported Hardware](#supported-hardware)
+    - [Installation Instructions](#installation-instructions)
+      - [Easy: using comma's openpilot-installer-generator](#easy-using-commas-openpilot-installer-generator)
+      - [Less easy](#less-easy)
+    - [Automatic Updates](#automatic-updates)
+      - [Current Fork Features \[✅ = optional via toggle\]:](#current-fork-features---optional-via-toggle)
+- [Commaai Table of Contents](#commaai-table-of-contents)
+  - [What is openpilot?](#what-is-openpilot)
+  - [Running in a car](#running-in-a-car)
+  - [Running on PC](#running-on-pc)
+  - [Community and Contributing](#community-and-contributing)
+  - [User Data and comma Account](#user-data-and-comma-account)
+  - [Safety and Testing](#safety-and-testing)
+  - [Directory Structure](#directory-structure)
+  - [Licensing](#licensing)
 
 ---
 

@@ -45,7 +45,7 @@ class LatControlPID():
     self.use_nn_ff = Params().get_bool("EnableNNFF")
     self.CI.initialize_feedforward_function_nn()
     self.use_nn_ff = self.use_nn_ff and self.CI.ff_nn_model is not None
-    self.look_ahead_v = [0.3, 1.2]
+    self.look_ahead_v = [0.6, 0.9]
     self.look_ahead_bp = [9.0, 35.0]
     self.error_scale_recip = 2.0
     self.error_scale_factor = FirstOrderFilter(1.0, 0.5, DT_CTRL)
@@ -62,10 +62,19 @@ class LatControlPID():
       self.nnff_time_offset = CP.steerActuatorDelay + 0.2
       future_times = [0.3, 0.8]
       self.nnff_future_times = [i + self.nnff_time_offset for i in future_times]
-      history_check_frames = [30] # 0.3 seconds ago
+      history_check_frames = [6] # 0.3 seconds ago @ 20Hz
       self.history_frame_offsets = [history_check_frames[0] - i for i in history_check_frames]
       self.steer_angle_deque = deque(maxlen=history_check_frames[0])
       self.roll_deque = deque(maxlen=history_check_frames[0])
+      self.past_future_len = len(history_check_frames) + len(self.nnff_future_times)
+      
+      # Finally, steer rate is downscaled so it doesn't dominate the friction error
+      # term.
+      self.steer_rate_friction_factor = 0.4 # in [0, 1] in 0.01 increments
+
+      # Scaling the lateral acceleration "friction response" could be helpful for some.
+      # Increase for a stronger response, decrease for a weaker response.
+      self.steer_angle_error_friction_factor = 0.7 # in [0, 5], in 0.05 increments. 5 is arbitrary safety limit
 
   def update_op_params(self):
     if not self.tune_override:
@@ -112,6 +121,8 @@ class LatControlPID():
 
       steer_feedforward += ((steer_rate_desired - steer_rate_actual) / steer_rate_max)
       
+      error = None
+      
       if self.use_nn_ff:
         # prepare input data for NNFF model
         if len(lat_plan.curvatureRates) > 0 and len(model_data.velocity.x) > 0:
@@ -122,15 +133,16 @@ class LatControlPID():
                                               + interp(t, T_IDXS, model_data.velocity.y)**2) \
                                                 for t in self.nnff_future_times]
           future_curvatures = [interp(t, T_IDXS, lat_plan.curvatures) for t in self.nnff_future_times]
-          max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_curvature], key=lambda x: abs(x))
-          lookahead_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
-          error_scale_factor = 1.0 / (1.0 + min(apply_deadzone(abs(lookahead_lateral_jerk), 0.3) * self.error_scale_recip, self.error_scale_recip - 1))
-          if error_scale_factor < self.error_scale_factor.x:
-            self.error_scale_factor.x = error_scale_factor
-          else:
-            self.error_scale_factor.update(error_scale_factor)
-          pid_log.angleError *= self.error_scale_factor.x
-          angle_steers_des = CS.steeringAngleDeg + pid_log.angleError
+          # max_future_lateral_accel = max([i * CS.vEgo**2 for i in list(lat_plan.curvatures)[LAT_PLAN_MIN_IDX:16]] + [desired_curvature], key=lambda x: abs(x))
+          # lookahead_lateral_jerk = lookahead_curvature_rate * CS.vEgo**2
+          # error_scale_factor = 1.0 / (1.0 + min(apply_deadzone(abs(lookahead_lateral_jerk), 0.3) * self.error_scale_recip, self.error_scale_recip - 1))
+          # if error_scale_factor < self.error_scale_factor.x:
+          #   self.error_scale_factor.x = error_scale_factor
+          # else:
+          #   self.error_scale_factor.update(error_scale_factor)
+          # pid_log.angleError *= self.error_scale_factor.x
+          # angle_steers_des = CS.steeringAngleDeg + pid_log.angleError
+          
         else:
           lookahead_curvature_rate = 0.0
           future_speeds = [CS.vEgo] * len(self.nnff_future_times)
@@ -140,7 +152,7 @@ class LatControlPID():
         
         roll = params.roll
         
-        self.steer_angle_deque.append(angle_steers_des_no_offset)
+        self.steer_angle_deque.append(angle_steers_des)
         self.roll_deque.append(roll)
         past_rolls = [self.roll_deque[min(len(self.roll_deque)-1, i)] for i in self.history_frame_offsets]
         future_rolls = [interp(t, T_IDXS, model_data.orientation.x) + roll for t in self.nnff_future_times]
@@ -148,30 +160,53 @@ class LatControlPID():
         past_steer_angles = [self.steer_angle_deque[min(len(self.steer_angle_deque)-1, i)] for i in self.history_frame_offsets]
         future_steer_angles = [math.degrees(VM.get_steer_from_curvature(-k, v, r * self.roll_k if use_roll else 0.0)) for k, v, r in zip(future_curvatures, future_speeds, future_rolls)]
         
-        nnff_input = [CS.vEgo, angle_steers_des_no_offset, steer_rate_desired_lookahead, roll] \
+        steer_angle_error_friction_factor = self.steer_angle_error_friction_factor
+        if steer_rate_desired_lookahead == 0.0:
+          steer_rate_actual = 0.0
+          steer_angle_error_friction_factor = 1.0
+        
+        # compute NNFF error response
+        nnff_setpoint_input = [CS.vEgo, angle_steers_des, steer_rate_desired_lookahead, roll] \
+                              + [angle_steers_des] * self.past_future_len \
+                              + past_rolls + future_rolls
+        # past lateral accel error shouldn't count, so use past desired like the setpoint input
+        nnff_measurement_input = [CS.vEgo, CS.steeringAngleDeg, steer_rate_actual, roll] \
+                              + [CS.steeringAngleDeg] * self.past_future_len \
+                              + past_rolls + future_rolls
+        torque_from_setpoint = self.CI.get_ff_nn(nnff_setpoint_input)
+        torque_from_measurement = self.CI.get_ff_nn(nnff_measurement_input)
+        
+        error = torque_from_setpoint - torque_from_measurement
+        
+        desired_lateral_accel = desired_curvature * CS.vEgo**2
+        error_blend_factor = interp(abs(desired_lateral_accel), [1.0, 2.0], [0.0, 1.0])
+        if error_blend_factor > 0.0:
+          nnff_error_input = [CS.vEgo, angle_steers_des - CS.steeringAngleDeg, steer_rate_desired_lookahead - steer_rate_actual, 0.0]
+          torque_from_error = self.CI.get_ff_nn(nnff_error_input)
+          if sign(error) == sign(torque_from_error) and abs(error) < abs(torque_from_error):
+            error = error * (1.0 - error_blend_factor) + torque_from_error * error_blend_factor
+        
+        friction_input = pid_log.angleError * steer_angle_error_friction_factor + steer_rate_desired_lookahead * self.steer_rate_friction_factor
+        nnff_input = [CS.vEgo, angle_steers_des_no_offset, friction_input, roll] \
                     + past_steer_angles + future_steer_angles \
                     + past_rolls + future_rolls
         ff_nn = self.CI.get_ff_nn(nnff_input)
         
-        desired_lateral_accel = desired_curvature * CS.vEgo**2
-        actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll if use_roll else 0.0)
-        actual_lateral_accel = actual_curvature * CS.vEgo**2
-        lat_accel_error = desired_lateral_accel - actual_lateral_accel
-        error_friction = interp(lat_accel_error, [-ERR_FRICTION_THRESHOLD, ERR_FRICTION_THRESHOLD], [-0.1, 0.1])
-        error_friction *= interp(CS.vEgo, [20.0, 30.0], [1.0, 0.3])
-        ff_nn += error_friction
+        # set to same as torque controller, since using NN output torque for error rather than steer angle
+        self.pid._k_p = [[0], [1.5]]
+        self.pid._k_i = [[0], [0.15]]
+        self.pid._k_d = [[0], [0.04]]
       else:
         ff_nn = 0.0
-
-      deadzone = 0.0
 
       check_saturation = (CS.vEgo > 10) and not CS.steeringRateLimited and not CS.steeringPressed
       output_steer = self.pid.update(angle_steers_des, CS.steeringAngleDeg, 
                                      check_saturation=check_saturation, 
                                      override=CS.steeringPressed,
                                      feedforward=steer_feedforward if (ff_nn is None or not self.use_nn_ff) else ff_nn,
-                                     D=steer_rate_desired - steer_rate_actual,
-                                     speed=CS.vEgo, deadzone=deadzone)
+                                     D=steer_rate_desired - steer_rate_actual if (ff_nn is None or not self.use_nn_ff) else None,
+                                     speed=CS.vEgo,
+                                     error=error)
       pid_log.active = True
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i

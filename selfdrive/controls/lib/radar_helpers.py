@@ -5,7 +5,7 @@ from selfdrive.config import RADAR_TO_CAMERA
 
 # the longer lead decels, the more likely it will keep decelerating
 # TODO is this a good default?
-_LEAD_ACCEL_TAU = 1.5
+_LEAD_ACCEL_TAU = 0.6
 
 # radar tracks
 SPEED, ACCEL = 0, 1   # Kalman filter states enum
@@ -40,7 +40,7 @@ class Track():
 
     # Learn if constant acceleration
     if abs(self.aLeadK) < 0.5:
-      self.aLeadTau = _LEAD_ACCEL_TAU
+      self.aLeadTau = min(max(self.aLeadTau, 1e-2) * 1.1, _LEAD_ACCEL_TAU)
     else:
       self.aLeadTau *= 0.9
 

@@ -47,6 +47,11 @@ class CarControllerParams():
     self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, -1.1]
     self.BRAKE_LOOKUP_V = [self.MAX_BRAKE, 0]
     
+    # Rate limiting of brake command at low speeds to prevent jerky stops
+    self.BRAKE_RATE_LIMIT_BP = [0., 5.0] # [m/s]
+    self.BRAKE_RATE_UP_LIMIT = [5, 50] # [brake command/frame]
+    self.BRAKE_RATE_DOWN_LIMIT = [5, 50] # [brake command/frame]
+    
     self.v_ego = 100.
     self.future_curvature = 0.
     self.MIN_STEER_DELTA_UP = min(self.STEER_DELTA_UP_V)
