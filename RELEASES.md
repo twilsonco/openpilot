@@ -1,3 +1,9 @@
+Version tw-0.8.12-21 (2025-04-15)
+========================
+ - FIXED: Torque controller NNFF; Increase accuracy by fixing bug preventing use of instantaneous lateral jerk
+ - Try to prevent/reduce phantom braking by fixing issue where lead and lead+1 could be confused for one another
+ - PID NNFF is WIP as I fiddle with some improvements
+
 Version tw-0.8.12-20 (2025-02-17)
 ========================
  * IMPROVED: More accurate long control at higher speeds thanks to Mochi's incorporation of drag and rolling resistance
