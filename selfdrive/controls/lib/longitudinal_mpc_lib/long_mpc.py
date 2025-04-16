@@ -768,7 +768,7 @@ class LongitudinalMpc:
     if stop_x == 1000.0:
       self.stopDist = 0.0
     elif self.stopDist > 0:
-      self.stopDist = max(self.stopDist, v_ego ** 2)
+      self.stopDist = 5.0
       stop_x = 0.0
     #self.debugLongText = "XState({}),stop_x={:.1f},stopDist={:.1f},Traffic={}".format(str(self.xState), stop_x, self.stopDist, str(self.trafficState))
     #번호를 읽을때는 self.xState.value
