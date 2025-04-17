@@ -180,7 +180,8 @@ class CarController(CarControllerBase):
           can_sends.append(create_gas_interceptor_command(self.packer_pt, interceptor_gas_cmd, idx))
         if self.CP.carFingerprint not in CC_ONLY_CAR:
           # print values used in next check
-          cloudlog.info(f"{CS.out.cruiseState.available=}, {CC.longActive=}, {CS.autoHold=}, {CS.autoHoldActive=}, {CS.out.gasPressed=}, {CS.out.gearShifter=}, {CS.out.vEgo=}, {CS.out.regenBraking=}")
+          if self.frame % 100 == 0:
+            cloudlog.info(f"{CS.out.cruiseState.available=}, {CC.longActive=}, {CS.autoHold=}, {CS.autoHoldActive=}, {CS.out.gasPressed=}, {CS.out.gearShifter=}, {CS.out.vEgo=}, {CS.out.regenBraking=}")
           if CS.out.cruiseState.available and not CC.longActive and \
               CS.autoHold and CS.autoHoldActive and not CS.out.gasPressed and \
               CS.out.gearShifter in [GearShifter.drive, GearShifter.low, GearShifter.sport, GearShifter.manumatic, GearShifter.eco] and \
