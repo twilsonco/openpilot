@@ -69,6 +69,10 @@ class LongControl:
     self.longitudinalTuningKf = 1.0
     self.startAccelApply = 0.0
     self.stopAccelApply = 0.0
+        # jerf ff
+    self.jerk_ff_kf = 0.5
+    self.jerk_ff_t_delay = 0.0 # seconds
+    self.jerf_ff_deadzone = 0.2
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
@@ -114,8 +118,13 @@ class LongControl:
 
       v_target = min(v_target_lower, v_target_upper)
       a_target = min(a_target_lower, a_target_upper)
-
       v_target_1sec = interp(self.CP.longitudinalActuatorDelayUpperBound + t_since_plan + 1.0, ModelConstants.T_IDXS[:CONTROL_N], speeds)
+      
+      # jerk ff
+      jerk_target = interp(t_since_plan + self.jerk_ff_t_delay, ModelConstants.T_IDXS[:CONTROL_N], long_plan.jerks)
+      jerk_target = apply_deadzone(jerk_target, self.jerf_ff_deadzone)
+      a_target += self.jerk_ff_kf * jerk_target
+   
     else:
       v_target = 0.0
       v_target_now = 0.0
