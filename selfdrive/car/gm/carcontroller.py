@@ -177,7 +177,7 @@ class CarController(CarControllerBase):
         if self.CP.enableGasInterceptor:
           can_sends.append(create_gas_interceptor_command(self.packer_pt, interceptor_gas_cmd, idx))
         if self.CP.carFingerprint not in CC_ONLY_CAR:
-          if CS.out.cruiseState.available and not CC.longActive and CS.autoHold and CS.autoHoldActive and not CS.out.gasPressed and CS.out.gearShifter in ['drive','low'] and CS.out.vEgo < 0.02 and not CS.out.regenBraking:
+          if CS.out.cruiseState.available and not CC.longActive and CS.autoHold and CS.autoHoldActive and not CS.out.gasPressed and CS.out.gearShifter in [GearShifter.drive, GearShifter.low, GearShifter.sport, GearShifter.manumatic, GearShifter.eco] and CS.out.vEgo < 0.02 and not CS.out.regenBraking:
             # Auto Hold State
             car_stopping = self.apply_gas < self.params.ZERO_GAS
             at_full_stop = at_full_stop and stopping
