@@ -1249,6 +1249,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "",
       AlertStatus.frogpilot, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.mail, 3.),
+  },
   
   EventName.autoHoldActivated: {
     ET.PERMANENT: Alert(
