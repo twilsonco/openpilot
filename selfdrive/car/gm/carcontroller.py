@@ -215,17 +215,17 @@ class CarController(CarControllerBase):
               resume = actuators.longControlState != LongCtrlState.starting or CC.cruiseControl.resume
               at_full_stop = at_full_stop and not resume
 
-          if CC.cruiseControl.resume and CS.pcm_acc_status == AccState.STANDSTILL and frogpilot_toggles.volt_sng:
-            acc_engaged = False
-          else:
-            acc_engaged = CC.enabled
+            if CC.cruiseControl.resume and CS.pcm_acc_status == AccState.STANDSTILL and frogpilot_toggles.volt_sng:
+              acc_engaged = False
+            else:
+              acc_engaged = CC.enabled
 
-          # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
-          can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, acc_engaged, at_full_stop))
-          can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake,
-                                                              idx, CC.enabled, near_stop, at_full_stop, self.CP))
-          
-          CS.autoHoldActivated = False
+            # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
+            can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, acc_engaged, at_full_stop))
+            can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake,
+                                                                idx, CC.enabled, near_stop, at_full_stop, self.CP))
+            
+            CS.autoHoldActivated = False
 
           # Send dashboard UI commands (ACC status)
           send_fcw = hud_alert == VisualAlert.fcw
