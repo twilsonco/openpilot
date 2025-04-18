@@ -444,13 +444,16 @@ class LongitudinalMpc:
     v_ego = self.x0[1]
     a_ego = self.x0[2]
 
-    # Limit acceleration when lead is significantly slower
+    # Limit acceleration when lead is significantly slower and closer than 20 meters
     if radarstate.leadOne.status:
-        lead_speed_ratio = radarstate.leadOne.vLead / v_ego if v_ego > 0.1 else 1.0
-        if lead_speed_ratio < 0.9:  # Lead is 10% slower than ego
-            self.max_a = 0.01  # Limit acceleration to 0.01 m/s²
-        else:
-            self.max_a = self.max_a  # Reset to normal max acceleration
+      lead_distance = radarstate.leadOne.dRel
+      lead_speed_ratio = radarstate.leadOne.vLead / v_ego if v_ego > 0.1 else 1.0
+
+      # Hysteresis for distance and speed
+      if lead_distance < 20.0 and lead_speed_ratio < 0.9:
+        self.max_a = 0.01  # Limit acceleration to 0.01 m/s²
+      elif lead_distance > 25.0 or lead_speed_ratio > 0.95:
+        self.max_a = self.max_a  # Reset to normal max acceleration
 
     self.trafficState = TrafficState.off
     # carrot
