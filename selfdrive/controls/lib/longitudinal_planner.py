@@ -243,18 +243,26 @@ class Planner():
         if 'lead' in key:
           self.mpcs[key].long_control_active = enabled
           self.mpcs[key].MADS_lead_braking_enabled = self.MADS_lead_braking_enabled
+        # if key == 'lead0p1':
+        #   ttc = LEAD_ONE_PLUS_TO_LEAD_ONE_CUTOFF_TTC + 1
+        #   if self.lead_0_plus.status and self.lead_0.status:
+        #     v_rel = self.lead_0_plus.vLeadK - self.lead_0.vLeadK
+        #     ttc = (self.lead_0_plus.dRel - self.lead_0.dRel) / max(v_rel, 0.01)
+        #   if ttc > LEAD_ONE_PLUS_TO_LEAD_ONE_CUTOFF_TTC:
+        #     self.mpcs['lead0p1'].reset_mpc()
+        #     continue
+        #   else:
+        #     tr = self.mpcs['lead0'].tr + LEAD_ONE_PLUS_TR_BUFFER
+        #     self.mpcs['lead0p1'].tr_override = True
+        #     self.mpcs['lead0p1'].tr = tr
         if key == 'lead0p1':
-          ttc = LEAD_ONE_PLUS_TO_LEAD_ONE_CUTOFF_TTC + 1
           if self.lead_0_plus.status and self.lead_0.status:
-            v_rel = self.lead_0_plus.vLeadK - self.lead_0.vLeadK
-            ttc = (self.lead_0_plus.dRel - self.lead_0.dRel) / max(v_rel, 0.01)
-          if ttc > LEAD_ONE_PLUS_TO_LEAD_ONE_CUTOFF_TTC:
-            self.mpcs['lead0p1'].reset_mpc()
-            continue
-          else:
             tr = self.mpcs['lead0'].tr + LEAD_ONE_PLUS_TR_BUFFER
             self.mpcs['lead0p1'].tr_override = True
             self.mpcs['lead0p1'].tr = tr
+          else:
+            self.mpcs['lead0p1'].reset_mpc()
+            continue
         if not sm['controlsState'].active and self.MADS_lead_braking_enabled \
             and (key not in BRAKE_SOURCES or (key == 'custom' and c_source not in BRAKE_SOURCES)):
           self.mpcs[key].reset_mpc()
