@@ -46,7 +46,12 @@ void ModelRenderer::draw(QPainter &painter, const QRect &surface_rect) {
     if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
       drawLead(painter, lead_two, lead_vertices[1], surface_rect);
     }
-  }
+
+    const auto &radar_data = sm["liveTracks"].getLiveTracks();
+    update_radar_tracks(radar_data, model.getPosition());
+    for (const auto &pt : radar_track_vertices) {
+      drawRadarTracks(painter, pt, surface_rect);
+    }
 
   painter.restore();
 }
@@ -57,6 +62,20 @@ void ModelRenderer::update_leads(const cereal::RadarState::Reader &radar_state, 
     if (lead_data.getStatus()) {
       float z = line.getZ()[get_path_length_idx(line, lead_data.getDRel())];
       mapToScreen(lead_data.getDRel(), -lead_data.getYRel(), z + path_offset_z, &lead_vertices[i]);
+    }
+  }
+}
+
+void ModelRenderer::update_radar_tracks(const cereal::RadarData::Reader &radar_data, const cereal::XYZTData::Reader &line) {
+  radar_track_vertices.clear();
+  const auto &radar_tracks = radar_data.getPoints();
+  for (const auto &track : radar_tracks) {
+    if (track.getMeasured()) {
+      float z = line.getZ()[get_path_length_idx(line, track.getDRel())];
+      QPointF pt;
+      if (mapToScreen(track.getDRel(), -track.getYRel(), z + path_offset_z, &pt)) {
+        radar_track_vertices.push_back(pt);
+      }
     }
   }
 }
@@ -217,6 +236,15 @@ void ModelRenderer::drawLead(QPainter &painter, const cereal::RadarState::LeadDa
   QPointF chevron[] = {{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz}};
   painter.setBrush(QColor(201, 34, 49, fillAlpha));
   painter.drawPolygon(chevron, std::size(chevron));
+}
+
+void ModelRenderer::drawRadarTracks(QPainter &painter, const QPointF &vd, const QRect &surface_rect) {
+  float sz = 20.0f;
+  float x = std::clamp<float>(vd.x(), 0.f, surface_rect.width() - sz / 2);
+  float y = std::min<float>(vd.y(), surface_rect.height() - sz * 0.6);
+
+  painter.setBrush(QColor(255, 255, 255, 255));
+  painter.drawEllipse(QPointF(x, y), sz / 2, sz / 2);
 }
 
 // Projects a point in car to space to the corresponding point in full frame image space.

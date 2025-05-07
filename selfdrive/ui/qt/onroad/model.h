@@ -2,6 +2,7 @@
 
 #include <QPainter>
 #include <QPolygonF>
+#include <vector>
 
 #include "selfdrive/ui/ui.h"
 
@@ -16,7 +17,9 @@ private:
   void mapLineToPolygon(const cereal::XYZTData::Reader &line, float y_off, float z_off,
                         QPolygonF *pvd, int max_idx, bool allow_invert = true);
   void drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd, const QRect &surface_rect);
+  void drawRadarTracks(QPainter &painter, const QPointF &vd, const QRect &surface_rect);
   void update_leads(const cereal::RadarState::Reader &radar_state, const cereal::XYZTData::Reader &line);
+  void update_radar_tracks(const cereal::RadarData::Reader &radar_data, const cereal::XYZTData::Reader &line);
   void update_model(const cereal::ModelDataV2::Reader &model, const cereal::RadarState::LeadData::Reader &lead);
   void drawLaneLines(QPainter &painter);
   void drawPath(QPainter &painter, const cereal::ModelDataV2::Reader &model, int height);
@@ -34,6 +37,7 @@ private:
   QPolygonF lane_line_vertices[4] = {};
   QPolygonF road_edge_vertices[2] = {};
   QPointF lead_vertices[2] = {};
+  std::vector<QPointF> radar_track_vertices = {};
   Eigen::Matrix3f car_space_transform = Eigen::Matrix3f::Zero();
   QRectF clip_region;
 };
