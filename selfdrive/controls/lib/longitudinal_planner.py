@@ -68,7 +68,7 @@ def calc_cruise_accel_limits(v_ego, following, accelMode):
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_MODE_LIST[accelMode])
   return [a_cruise_min, a_cruise_max]
 
-LEAD_ONE_PLUS_TR_BUFFER = 1.0 # [s] follow distance between lead and lead+1 to run the lead+1 mpc (negative means the lead+1 doesn't affect planning unless they're rapidly approaching)
+LEAD_ONE_PLUS_TR_BUFFER = -0.3 # [s] follow distance between lead and lead+1 to run the lead+1 mpc (negative means the lead+1 doesn't affect planning unless they're rapidly approaching)
 LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER = 1.0 # [m]
 LEAD_ONE_PLUS_TO_LEAD_ONE_CUTOFF_TTC = 1.5 # if lead TTC to lead+1 is less than this, then consider the lead+1
 
