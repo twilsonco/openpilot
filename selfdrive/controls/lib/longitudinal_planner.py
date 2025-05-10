@@ -2,6 +2,7 @@
 import math
 import numpy as np
 from common.numpy_fast import interp
+from common.filter_simple import FirstOrderFilter
 
 from common.op_params import opParams
 from common.params import Params
@@ -13,7 +14,7 @@ from selfdrive.modeld.constants import T_IDXS
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.longcontrol import LongCtrlState
-from selfdrive.controls.lib.lead_mpc import LeadMpc
+from selfdrive.controls.lib.lead_mpc import LeadMpc, calc_follow_profile, FOLLOW_PROFILES
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 from selfdrive.controls.lib.limits_long_mpc import LimitsLongitudinalMpc
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
@@ -68,9 +69,8 @@ def calc_cruise_accel_limits(v_ego, following, accelMode):
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_MODE_LIST[accelMode])
   return [a_cruise_min, a_cruise_max]
 
-LEAD_ONE_PLUS_TR_BUFFER = -0.3 # [s] follow distance between lead and lead+1 to run the lead+1 mpc (negative means the lead+1 doesn't affect planning unless they're rapidly approaching)
+LEAD_ONE_PLUS_TR_BUFFER = 0.5 # if lead is following too close to lead+1, then increase the follow distance by this amount, plus the difference between the lead to lead+1 follow distance and what it should be (assuming lead is using close follow profile)
 LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER = 1.0 # [m]
-LEAD_ONE_PLUS_TO_LEAD_ONE_CUTOFF_TTC = 1.5 # if lead TTC to lead+1 is less than this, then consider the lead+1
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
@@ -107,6 +107,12 @@ class Planner():
     self.lead_0 = log.RadarState.LeadData.new_message()
     self.lead_1 = log.RadarState.LeadData.new_message()
     self.lead_0_plus = log.RadarState.LeadData.new_message()
+    self.lead_0_plus_tr_buffer = FirstOrderFilter(0.0, 0.5, 0.05, initialized=True)
+    self.lead_0_plus_tr_buffer_last = 0.0
+    self.lead_0_plus_tr_buffer_alpha_slow = 20.0
+    self.lead_0_plus_tr_buffer_alpha_fast = 4.0
+    self.lead_0_plus_too_close_last_t = 0.0
+    self.lead_0_plus_too_close_hold_dur = 5.0
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
@@ -134,12 +140,18 @@ class Planner():
 
 
   def update_op_params(self):
+    global LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER
     self.accel_profile_factors = [
       self._op_params.get('AP_stock_accel_factor'),
       self._op_params.get('AP_sport_accel_factor'),
       self._op_params.get('AP_eco_accel_factor')
     ]
     self.accel_profile_following_factor = self._op_params.get('AP_following_accel_factor')
+    
+    LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER = self._op_params.get('FP_L1P_buffer_s')
+    self.lead_0_plus_tr_buffer_alpha_slow = self._op_params.get('FP_L1P_smoothing_down')
+    self.lead_0_plus_tr_buffer_alpha_fast = self._op_params.get('FP_L1P_smoothing_up')
+    self.lead_0_plus_too_close_hold_dur = self._op_params.get('FP_L1P_hold_s')
   
   def update(self, sm, CP):
     cur_time = sec_since_boot()
@@ -240,21 +252,42 @@ class Planner():
     else:
       next_a = np.inf
       for key in self.mpcs:
+        if key == 'lead0p1':
+          continue
         if 'lead' in key:
           self.mpcs[key].long_control_active = enabled
           self.mpcs[key].MADS_lead_braking_enabled = self.MADS_lead_braking_enabled
-        if key == 'lead0p1':
-          ttc = LEAD_ONE_PLUS_TO_LEAD_ONE_CUTOFF_TTC + 1
-          if self.lead_0_plus.status and self.lead_0.status:
-            v_rel = self.lead_0_plus.vLeadK - self.lead_0.vLeadK
-            ttc = (self.lead_0_plus.dRel - self.lead_0.dRel) / max(v_rel, 0.01)
-          if ttc > LEAD_ONE_PLUS_TO_LEAD_ONE_CUTOFF_TTC:
-            self.mpcs['lead0p1'].reset_mpc()
-            continue
+        if key == 'lead0':
+          tr_buffer = 0.0
+          if self.lead_0.status and not self.mpcs['lead0'].new_lead:
+            if self.lead_0_plus.status:
+              # compute desired follow distance (time) between lead and lead+1 using "close follow" distance
+              tr_leads_desired, _, _ = calc_follow_profile(self.lead_0.vLeadK, self.lead_0_plus.vLeadK, max(0.1, (self.lead_0_plus.dRel - self.lead_0.dRel)), mpcs['lead0'].follow_level, FOLLOW_PROFILES, self.mpcs['lead0']._follow_distance_offsets)
+              tr_leads_actual = (self.lead_0_plus.dRel - self.lead_0.dRel) / max(self.lead_0.vLeadK, 0.01)
+              
+              if tr_leads_actual < tr_leads_desired:
+                # lead is following too close to lead+1
+                tr_buffer = LEAD_ONE_PLUS_TR_BUFFER + (tr_leads_desired - tr_leads_actual)
+                tr_buffer = max(tr_buffer, 0.0)
+                self.lead_0_plus_too_close_last_t = t
+                
+            if tr_buffer > self.lead_0_plus_tr_buffer.x:
+              self.lead_0_plus_tr_buffer.update_alpha(self.lead_0_plus_tr_buffer_alpha_fast)
+            else:
+              self.lead_0_plus_tr_buffer.update_alpha(self.lead_0_plus_tr_buffer_alpha_slow)
+            
+            if t - self.lead_0_plus_too_close_last_t >= self.lead_0_plus_too_close_hold_dur:
+              # lead is not following too close to lead+1 anymore, reset the buffer
+              self.lead_0_plus_tr_buffer.update_alpha(self.lead_0_plus_tr_buffer_alpha_slow)
+              tr_buffer = 0.0
+            self.lead_0_plus_tr_buffer.update(tr_buffer)
+            self.lead_0_plus_tr_buffer_last = self.lead_0_plus_tr_buffer.x
+            
+            self.mpcs['lead0'].tr_buffer = self.lead_0_plus_tr_buffer.x
           else:
-            tr = self.mpcs['lead0'].tr + LEAD_ONE_PLUS_TR_BUFFER
-            self.mpcs['lead0p1'].tr_override = True
-            self.mpcs['lead0p1'].tr = tr
+            self.lead_0_plus_tr_buffer.x = 0.0
+            self.lead_0_plus_tr_buffer_last = 0.0
+            self.mpcs['lead0'].tr_buffer = 0.0
         if not sm['controlsState'].active and self.MADS_lead_braking_enabled \
             and (key not in BRAKE_SOURCES or (key == 'custom' and c_source not in BRAKE_SOURCES)):
           self.mpcs[key].reset_mpc()
