@@ -262,7 +262,7 @@ class Planner():
           if self.lead_0.status and not self.mpcs['lead0'].new_lead:
             if self.lead_0_plus.status:
               # compute desired follow distance (time) between lead and lead+1 using "close follow" distance
-              tr_leads_desired, _, _ = calc_follow_profile(self.lead_0.vLeadK, self.lead_0_plus.vLeadK, max(0.1, (self.lead_0_plus.dRel - self.lead_0.dRel)), mpcs['lead0'].follow_level, FOLLOW_PROFILES, self.mpcs['lead0']._follow_distance_offsets)
+              tr_leads_desired, _, _ = calc_follow_profile(self.lead_0.vLeadK, self.lead_0_plus.vLeadK, max(0.1, (self.lead_0_plus.dRel - self.lead_0.dRel)), max(0, mpcs['lead0'].follow_level - 1), FOLLOW_PROFILES, self.mpcs['lead0']._follow_distance_offsets)
               tr_leads_actual = (self.lead_0_plus.dRel - self.lead_0.dRel) / max(self.lead_0.vLeadK, 0.01)
               
               if tr_leads_actual < tr_leads_desired:
