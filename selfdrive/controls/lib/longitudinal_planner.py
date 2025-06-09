@@ -286,6 +286,11 @@ class Planner():
               self.lead_0_plus_tr_buffer.update_alpha(self.lead_0_plus_tr_buffer_alpha_slow)
               tr_buffer = 0.0
             self.lead_0_plus_tr_buffer.update(tr_buffer)
+            # Now have the smoothed current buffer. We'll downscale this at low speeds,
+            # without smoothing.
+            tr_buffer_speed_k = interp(v_ego, [11., 18.], [0.0, 1.0]) # No buffer at 11m/s, full buffer at 18m/s
+            self.lead_0_plus_tr_buffer.x *= tr_buffer_speed_k
+            
             self.lead_0_plus_tr_buffer_last = self.lead_0_plus_tr_buffer.x
             
             self.mpcs['lead0'].tr_buffer = self.lead_0_plus_tr_buffer.x
