@@ -148,7 +148,7 @@ class Planner():
     ]
     self.accel_profile_following_factor = self._op_params.get('AP_following_accel_factor')
     
-    LEAD_ONE_PLUS_TR_BUFFER = self._op_params.get('FP_L1P_buffer_s')
+    LEAD_ONE_PLUS_TR_BUFFER = self._op_params.get('FP_lead_tailgate_buffer_s')
     self.lead_0_plus_tr_buffer_alpha_slow = self._op_params.get('FP_L1P_smoothing_down')
     self.lead_0_plus_tr_buffer_alpha_fast = self._op_params.get('FP_L1P_smoothing_up')
     self.lead_0_plus_too_close_hold_dur = self._op_params.get('FP_L1P_hold_s')
@@ -288,7 +288,7 @@ class Planner():
             self.lead_0_plus_tr_buffer.update(tr_buffer)
             # Now have the smoothed current buffer. We'll downscale this at low speeds,
             # without smoothing.
-            tr_buffer_speed_k = interp(v_ego, [11., 18.], [0.0, 1.0]) # No buffer at 11m/s, full buffer at 18m/s
+            tr_buffer_speed_k = interp(v_ego, [7., 14.], [0.0, 1.0]) # No buffer at 7m/s, full buffer at 14m/s
             self.lead_0_plus_tr_buffer.x *= tr_buffer_speed_k
             
             self.lead_0_plus_tr_buffer_last = self.lead_0_plus_tr_buffer.x
