@@ -140,7 +140,7 @@ class Planner():
 
 
   def update_op_params(self):
-    global LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER
+    global LEAD_ONE_PLUS_TR_BUFFER
     self.accel_profile_factors = [
       self._op_params.get('AP_stock_accel_factor'),
       self._op_params.get('AP_sport_accel_factor'),
@@ -148,7 +148,7 @@ class Planner():
     ]
     self.accel_profile_following_factor = self._op_params.get('AP_following_accel_factor')
     
-    LEAD_ONE_PLUS_STOPPING_DISTANCE_BUFFER = self._op_params.get('FP_L1P_buffer_s')
+    LEAD_ONE_PLUS_TR_BUFFER = self._op_params.get('FP_L1P_buffer_s')
     self.lead_0_plus_tr_buffer_alpha_slow = self._op_params.get('FP_L1P_smoothing_down')
     self.lead_0_plus_tr_buffer_alpha_fast = self._op_params.get('FP_L1P_smoothing_up')
     self.lead_0_plus_too_close_hold_dur = self._op_params.get('FP_L1P_hold_s')
@@ -269,6 +269,11 @@ class Planner():
                 # lead is following too close to lead+1
                 tr_buffer = LEAD_ONE_PLUS_TR_BUFFER + (tr_leads_desired - tr_leads_actual)
                 tr_buffer = max(tr_buffer, 0.0)
+                # max speed-based tw (can't go past 120m or so).
+                max_lead_dist = 120.0
+                max_tr = max_lead_dist / max(v_ego, 0.01)
+                max_buffer = max(max_tr - self.mpcs['lead0'].tr, 0.0)
+                tr_buffer = min(tr_buffer, max_buffer)
                 self.lead_0_plus_too_close_last_t = t
                 
             if tr_buffer > self.lead_0_plus_tr_buffer.x:
