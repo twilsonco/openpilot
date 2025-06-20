@@ -487,14 +487,18 @@ class LaneOffset:
       self.lane_pos = lane_pos
     offset = self.OFFSET * self.offset_scale * self.lane_pos * lane_width * (self.AUTO_OFFSET_FACTOR if self._auto_is_active else 1.)
     
-    if self._left_traffic_temp == LANE_TRAFFIC.ONCOMING:
-      self.offset_max = 0.0
-    else:
-      self.offset_max = self.OFFSET_MAX
-    if self._right_traffic_temp == LANE_TRAFFIC.ONCOMING:
-      self.offset_min = 0.0
+    if self._auto_is_active:
+      if self._left_traffic_temp == LANE_TRAFFIC.ONCOMING:
+        self.offset_max = 0.0
+      else:
+        self.offset_max = self.OFFSET_MAX
+      if self._right_traffic_temp == LANE_TRAFFIC.ONCOMING:
+        self.offset_min = 0.0
+      else:
+        self.offset_min = -self.OFFSET_MAX
     else:
       self.offset_min = -self.OFFSET_MAX
+      self.offset_max = self.OFFSET_MAX
     
     offset = clip(offset, self.offset_min, self.offset_max)
     
