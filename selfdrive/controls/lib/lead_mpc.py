@@ -469,7 +469,12 @@ class LeadMpc():
     
     if not self.tr_override:
       self.tr = tr
-      
+
+    # max speed-based tr (can't go past 120m or so).
+    max_lead_dist = 120.0
+    max_tr = max_lead_dist / max(v_ego, 0.01)
+    self.tr = min(max_tr, self.tr)
+
     self.dist_cost = dist_cost / MPC_COST_LONG.DISTANCE
     self.accel_cost = accel_cost / MPC_COST_LONG.ACCELERATION
     self.stopping_distance = stopping_distance

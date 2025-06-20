@@ -269,11 +269,6 @@ class Planner():
                 # lead is following too close to lead+1
                 tr_buffer = LEAD_ONE_PLUS_TR_BUFFER + (tr_leads_desired - tr_leads_actual)
                 tr_buffer = max(tr_buffer, 0.0)
-                # max speed-based tw (can't go past 120m or so).
-                max_lead_dist = 120.0
-                max_tr = max_lead_dist / max(v_ego, 0.01)
-                max_buffer = max(max_tr - self.mpcs['lead0'].tr, 0.0)
-                tr_buffer = min(tr_buffer, max_buffer)
                 self.lead_0_plus_too_close_last_t = t
                 
             if tr_buffer > self.lead_0_plus_tr_buffer.x:
