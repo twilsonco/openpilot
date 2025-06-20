@@ -456,11 +456,11 @@ class LaneOffset:
           self._left_traffic = LANE_TRAFFIC.NONE
           self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT_ONCOMING + 1
           
-        if ((not self.AUTO_AUTO_USE_MAX_LANE_PROB and self._lat_plan.lProb < 0.1) or self._max_prob_last < 0.2) and self._left_traffic == LANE_TRAFFIC.NONE \
+        if ((not self.AUTO_AUTO_USE_MAX_LANE_PROB and self._lat_plan.lProb < 0.02) or self._max_prob_last < 0.05) and self._left_traffic == LANE_TRAFFIC.NONE \
             and self._t - self._lane_state_changed_last_t < self.AUTO_LANE_STATE_MIN_TIME:
           self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT_ONCOMING + 1
           
-        if ((not self.AUTO_AUTO_USE_MAX_LANE_PROB and self._lat_plan.rProb < 0.1) or self._max_prob_last < 0.2) and self._right_traffic == LANE_TRAFFIC.NONE \
+        if ((not self.AUTO_AUTO_USE_MAX_LANE_PROB and self._lat_plan.rProb < 0.02) or self._max_prob_last < 0.05) and self._right_traffic == LANE_TRAFFIC.NONE \
             and self._t - self._lane_state_changed_last_t < self.AUTO_LANE_STATE_MIN_TIME:
           self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT_ONCOMING + 1
           
