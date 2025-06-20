@@ -133,7 +133,7 @@ class LateralPlanner():
   def update(self, sm, CP):
     self.second += DT_MDL
     auto_lane_pos_active = self.auto_lane_pos_active
-    if self.second > 1.0:
+    if self.second > 0.3:
       self.update_op_params()
       self.use_lanelines = not Params().get_bool("EndToEndToggle")
       self.laneless_mode = int(Params().get("LanelessMode", encoding="utf8"))
