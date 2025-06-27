@@ -99,6 +99,7 @@ def manager_init():
     ("MADSOnePedalMode", "0"),
     ("MADSLeadBraking", "0"),
     ("MADSPauseBlinkerSteering", "1"),
+    ("MADSRegenPaddleSteeringPause", "0"),
     ("FollowLevel", "2"),
     ("DynamicFollow", "0"),
     ("DynamicFollowToggle", "1"),

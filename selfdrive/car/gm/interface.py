@@ -705,6 +705,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.rebootImminent)
     
     if self.CS.cruiseMain:
+      self.CS.lka_temp_disabled = False
       if ret.vEgo < self.CP.minEnableSpeed:
         events.add(EventName.belowEngageSpeed)
       if self.CS.pause_long_on_gas_press:
@@ -717,6 +718,9 @@ class CarInterface(CarInterfaceBase):
       if not ret.standstill and self.CS.lane_change_steer_factor < 1.:
         events.add(car.CarEvent.EventName.blinkerSteeringPaused)
         steer_paused = True
+      if self.CS.regen_paddle_pressed and not cruiseEnabled and ret.vEgo > self.CP.minSteerSpeed and self.CS.regen_paddle_pause_steering:
+        self.CS.lka_temp_disabled = True
+        events.add(car.CarEvent.EventName.regenPaddleSteeringPaused)
       if ret.vEgo <= self.CP.minSteerSpeed and (not self.CS.autoHoldActivated or self.CS.out.onePedalModeActive):
         if ret.standstill and (self.CS.parked_timer > self.CS.parked_timer_min_time or (cruiseEnabled or self.CS.out.onePedalModeActive) and t - self.CS.sessionInitTime > 10. and not self.CS.resume_required):
           events.add(car.CarEvent.EventName.stoppedWaitForGas)
