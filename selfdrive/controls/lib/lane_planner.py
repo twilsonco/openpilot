@@ -456,11 +456,11 @@ class LaneOffset:
           self._left_traffic = LANE_TRAFFIC.NONE
           self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT_ONCOMING + 1
           
-        if ((not self.AUTO_AUTO_USE_MAX_LANE_PROB and self._lat_plan.lProb < 0.1) or self._max_prob_last < 0.2) and self._left_traffic == LANE_TRAFFIC.NONE \
+        if ((not self.AUTO_AUTO_USE_MAX_LANE_PROB and self._lat_plan.lProb < 0.02) or self._max_prob_last < 0.05) and self._left_traffic == LANE_TRAFFIC.NONE \
             and self._t - self._lane_state_changed_last_t < self.AUTO_LANE_STATE_MIN_TIME:
           self._left_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT_ONCOMING + 1
           
-        if ((not self.AUTO_AUTO_USE_MAX_LANE_PROB and self._lat_plan.rProb < 0.1) or self._max_prob_last < 0.2) and self._right_traffic == LANE_TRAFFIC.NONE \
+        if ((not self.AUTO_AUTO_USE_MAX_LANE_PROB and self._lat_plan.rProb < 0.02) or self._max_prob_last < 0.05) and self._right_traffic == LANE_TRAFFIC.NONE \
             and self._t - self._lane_state_changed_last_t < self.AUTO_LANE_STATE_MIN_TIME:
           self._right_traffic_last_seen_t -= self.AUTO_TRAFFIC_TIMEOUT_ONCOMING + 1
           
@@ -487,14 +487,18 @@ class LaneOffset:
       self.lane_pos = lane_pos
     offset = self.OFFSET * self.offset_scale * self.lane_pos * lane_width * (self.AUTO_OFFSET_FACTOR if self._auto_is_active else 1.)
     
-    if self._left_traffic_temp == LANE_TRAFFIC.ONCOMING:
-      self.offset_max = 0.0
-    else:
-      self.offset_max = self.OFFSET_MAX
-    if self._right_traffic_temp == LANE_TRAFFIC.ONCOMING:
-      self.offset_min = 0.0
+    if self._auto_is_active:
+      if self._left_traffic_temp == LANE_TRAFFIC.ONCOMING:
+        self.offset_max = 0.0
+      else:
+        self.offset_max = self.OFFSET_MAX
+      if self._right_traffic_temp == LANE_TRAFFIC.ONCOMING:
+        self.offset_min = 0.0
+      else:
+        self.offset_min = -self.OFFSET_MAX
     else:
       self.offset_min = -self.OFFSET_MAX
+      self.offset_max = self.OFFSET_MAX
     
     offset = clip(offset, self.offset_min, self.offset_max)
     

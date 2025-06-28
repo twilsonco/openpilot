@@ -72,6 +72,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "When MADS is active, under 20mph with the blinker on and decelerating, steering pauses to make it easier to perform sharp turns (which may be contrary to OpenPilot's plan). Steering is unpaused when you resume acceleration or go above 20mph again.",
                                   "../assets/offroad/icon_hands_on_wheel.png",
                                   this));
+  toggles.append(new ParamControl("MADSRegenPaddleSteeringPause",
+                                  "MADS regen paddle steering pause",
+                                  "When MADS is active, pause steering when the regen paddle is held.",
+                                  "../assets/offroad/icon_hands_on_wheel.png",
+                                  this));
 
   toggles.append(new ParamControl("OPParamsLiveTuneEnabled",
                                   "Customization over SSH (tap me)",

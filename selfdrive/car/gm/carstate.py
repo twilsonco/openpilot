@@ -103,10 +103,12 @@ class CarState(CarStateBase):
     self.follow_level = int(self._params.get("FollowLevel", encoding="utf8"))
     self.follow_level_change_last_t = self.sessionInitTime
     self.lkaEnabled = True
+    self.lka_temp_disabled = False
     self.cruise_offset_enabled = self._params.get_bool("CruiseSpeedOffset")
     set_v_cruise_offset(self._op_params.get('MISC_set_speed_offset_mph', force_update=True) if self.cruise_offset_enabled else 0)
     self.autoHold = self._params.get_bool("GMAutoHold")
     self.MADS_enabled = self._params.get_bool("MADSEnabled")
+    self.regen_paddle_pause_steering = self._params.get_bool("MADSRegenPaddleSteeringPause")
     self.disengage_on_gas = not self.MADS_enabled and not Params().get_bool("DisableDisengageOnGas")
     self.autoHoldActive = False
     self.autoHoldActivated = False
@@ -293,6 +295,7 @@ class CarState(CarStateBase):
       self.update_op_params(t)
       set_v_cruise_offset(self._op_params.get('MISC_set_speed_offset_mph') if self.cruise_offset_enabled else 0)
       self.coasting_allowed = self._params.get_bool("Coasting")
+      self.regen_paddle_pause_steering = self._params.get_bool("MADSRegenPaddleSteeringPause")
       self.coasting_enabled = self.coasting_allowed and self._params.get_bool("CoastingActive")
       accel_mode = int(self._params.get("AccelMode", encoding="utf8"))  # 0 = normal, 1 = sport; 2 = eco
       if accel_mode != self.accel_mode:

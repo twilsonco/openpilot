@@ -119,6 +119,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     autoHoldActivated @111;
     
     blinkerSteeringPaused @112;
+    regenPaddleSteeringPaused @140;
     pauseLongOnGasPress @113;
     stoppedWaitForGas @114;
     buttonMainCancel @115;

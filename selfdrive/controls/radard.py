@@ -517,7 +517,7 @@ class RadarD():
           if abs(sm['carState'].steeringAngleDeg) < 15 and radarState.leadOne.status and radarState.leadOne.modelProb > 0.5:
             check_dist = interp(radarState.leadOne.dRel, LEAD_PLUS_ONE_MIN_REL_DIST_BP, LEAD_PLUS_ONE_MIN_REL_DIST_V)
             # Remove any center leads that are closer than leadOne
-            lc = [l for l in lc if l["dRel"] > radarState.leadOne.dRel]
+            lc = [l for l in lc if l["dRel"] > max(radarState.leadOne.dRel, radarState.leadTwo.dRel) + 1.0]
             lc = [l for l in lc if l["dRel"] > radarState.leadOne.dRel + check_dist and abs(l["yRel"] - radarState.leadOne.yRel) <= LEAD_PLUS_ONE_MAX_YREL_TO_LEAD]
             if len(lc) > 0: # get the lead+1 car
               radarState.leadOnePlus = self.lead_one_plus_lr.update(lc[0], use_v_lat=self.extended_radar_enabled)

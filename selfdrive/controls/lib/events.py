@@ -1191,6 +1191,20 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       AlertStatus.userPrompt, AlertSize.small,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3, creation_delay=0.5),
   },
+  
+  
+  EventName.regenPaddleSteeringPaused: {
+    ET.WARNING: Alert(
+      "Autosteer paused for regen paddle",
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3, creation_delay=0.2),
+    ET.PERMANENT: Alert(
+      "Autosteer paused for regen paddle",
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3, creation_delay=0.2),
+  },
 
   EventName.pauseLongOnGasPress: {
     ET.PERMANENT: Alert(

@@ -132,6 +132,8 @@ class CarController():
       self.lka_steering_cmd_counter_last = CS.lka_steering_cmd_counter
     elif (frame % P.STEER_STEP) == 0:
       lkas_enabled = (enabled or CS.pause_long_on_gas_press or (CS.MADS_enabled and CS.cruiseMain)) and CS.lkaEnabled and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > self.min_steer_speed and CS.lane_change_steer_factor > 0.
+      if CS.lka_temp_disabled:
+        lkas_enabled = False
       if lkas_enabled:
         new_steer = int(round(actuators.steer * P.STEER_MAX * CS.lane_change_steer_factor))
         P.v_ego = CS.out.vEgo
