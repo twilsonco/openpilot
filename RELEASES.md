@@ -1,3 +1,13 @@
+Version tw-0.8.12-22 (2025-06-28)
+========================
+- Add's new lead+1 based planning if extended radar is enabled
+  - This will follow a lead from farther back if the lead is tailgating their lead
+   - Adjustable in opparams in the follow profiles section
+- Add's @ctyrell's requested feature to pause MADS autosteer if the regen paddle is pressed
+  - Enable using the "MADS regen paddle steering pause" in Settings -> Toggles
+- Make lane positioning buttons respond to touch faster
+- Make lane positioning stay enabled even if lanelines become unclear (let me know if you encounter safety issues from this!!)
+
 Version tw-0.8.12-21 (2025-04-15)
 ========================
  - FIXED: Torque controller NNFF; Increase accuracy by fixing bug preventing use of instantaneous lateral jerk
