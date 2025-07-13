@@ -110,10 +110,6 @@ class CarController():
       self.one_pedal_pid._k_p = [bp, self._op_params.get('TUNE_LONG_kp')]
       self.one_pedal_pid._k_i = [bp, self._op_params.get('TUNE_LONG_ki')]
       self.one_pedal_pid._k_d = [bp, self._op_params.get('TUNE_LONG_kd')]
-      
-      self.params.BRAKE_RATE_LIMIT_BP = [i * CV.MPH_TO_MS for i in self._op_params.get('TUNE_LONG_brake_rate_limit_speed_mph')]
-      self.params.BRAKE_RATE_UP_LIMIT = self._op_params.get('TUNE_LONG_brake_rate_up_limit')
-      self.params.BRAKE_RATE_DOWN_LIMIT = self._op_params.get('TUNE_LONG_brake_rate_down_limit')
     
     
   def update(self, enabled, CS, frame, actuators,
@@ -326,13 +322,6 @@ class CarController():
       
       if enabled and self.brakes_allowed:
         self.apply_brake_out = self.apply_brake_in
-        # Apply brake rate limits
-        if self.apply_brake_out > self.apply_brake_out_last:
-          brake_rate_up = int(round(interp(CS.out.vEgo, P.BRAKE_RATE_LIMIT_BP, P.BRAKE_RATE_UP_LIMIT)))
-          self.apply_brake_out = min(self.apply_brake_out, self.apply_brake_out_last + brake_rate_up)
-        else:
-          brake_rate_down = int(round(interp(CS.out.vEgo, P.BRAKE_RATE_LIMIT_BP, P.BRAKE_RATE_DOWN_LIMIT)))
-          self.apply_brake_out = max(self.apply_brake_out, self.apply_brake_out_last - brake_rate_down)
 
       if CS.cruiseMain and not enabled and not CS.park_assist_active and ((CS.autoHold and not CS.regen_paddle_pressed and CS.time_in_drive_autohold >= CS.MADS_long_min_time_in_drive) or (CS.one_pedal_mode_active and CS.time_in_drive_one_pedal >= CS.MADS_long_min_time_in_drive)) and CS.autoHoldActive and not CS.out.gas > 1e-5 and CS.out.vEgo < 0.02:
         # Auto Hold State
