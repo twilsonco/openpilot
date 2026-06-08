@@ -78,3 +78,6 @@ selfdrive/modeld/thneed/compile
 models/*.thneed
 
 *.bz2
+
+.kilo
+.vscode
