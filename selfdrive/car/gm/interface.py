@@ -799,6 +799,10 @@ class CarInterface(CarInterfaceBase):
       # do disable on button down
       if b.type == ButtonType.cancel and b.pressed:
         events.add(EventName.buttonCancel)
+        self.CS.autoHoldActive = False
+        if self.CS.one_pedal_mode_temporary:
+          self.CS.one_pedal_mode_active = False
+          self.CS.one_pedal_mode_temporary = False
       # The ECM independently tracks a ‘speed is set’ state that is reset on main off.
       # To keep controlsd in sync with the ECM state, generate a RESET_V_CRUISE event on main cruise presses.
       if b.type == ButtonType.altButton3 and b.pressed:
