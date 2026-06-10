@@ -1,7 +1,7 @@
-from math import atan2, sqrt
+from math import atan2, radians, sqrt
 
 from cereal import car
-from common.numpy_fast import interp
+from common.numpy_fast import interp, sign
 from common.realtime import DT_DMON
 from selfdrive.hardware import TICI
 from common.filter_simple import FirstOrderFilter
@@ -41,6 +41,10 @@ class DRIVER_MONITOR_SETTINGS():
     self._PITCH_POS_ALLOWANCE = 0.12  # rad, to not be too sensitive on positive pitch
     self._PITCH_NATURAL_OFFSET = 0.02  # people don't seem to look straight when they drive relaxed, rather a bit up
     self._YAW_NATURAL_OFFSET = 0.08  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
+
+    self._POSE_YAW_MIN_STEER_DEG = 30
+    self._POSE_YAW_STEER_FACTOR = 0.15
+    self._POSE_YAW_STEER_MAX_OFFSET = 0.3927
 
     self._HI_STD_FALLBACK_TIME = int(10  / self._DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
     self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
@@ -95,6 +99,7 @@ class DriverPose():
     self.yaw_offseter = RunningStatFilter(max_trackable=max_trackable)
     self.low_std = True
     self.cfactor = 1.
+    self.steer_yaw_offset = 0.
 
 class DriverBlink():
   def __init__(self):
@@ -172,6 +177,13 @@ class DriverStatus():
     if pitch_error > 0.:
       pitch_error = max(pitch_error - self.settings._PITCH_POS_ALLOWANCE, 0.)
     pitch_error *= self.settings._PITCH_WEIGHT
+
+    # Apply steer-based yaw offset correction (PR #37751)
+    if yaw_error * pose.steer_yaw_offset > 0:  # unidirectional
+      yaw_error = max(abs(yaw_error) - min(abs(pose.steer_yaw_offset), self.settings._POSE_YAW_STEER_MAX_OFFSET), 0.)
+    else:
+      yaw_error = abs(yaw_error)
+
     pose_metric = sqrt(yaw_error**2 + pitch_error**2)
 
     if pose_metric > self.settings._METRIC_THRESHOLD*pose.cfactor:
@@ -192,7 +204,7 @@ class DriverStatus():
                                             self.settings._BLINK_THRESHOLD,
                                             self.settings._BLINK_THRESHOLD_SLACK]) / self.settings._BLINK_THRESHOLD
 
-  def get_pose(self, driver_state, cal_rpy, car_speed, op_engaged):
+  def get_pose(self, driver_state, cal_rpy, car_speed, op_engaged, steering_angle_deg=0.):
     if not all(len(x) > 0 for x in [driver_state.faceOrientation, driver_state.facePosition,
                                     driver_state.faceOrientationStd, driver_state.facePositionStd]):
       return
@@ -200,6 +212,15 @@ class DriverStatus():
     self.face_partial = driver_state.partialFace > self.settings._PARTIAL_FACE_THRESHOLD
     self.face_detected = driver_state.faceProb > self.settings._FACE_THRESHOLD or self.face_partial
     self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_state.faceOrientation, driver_state.facePosition, cal_rpy, self.is_rhd_region)
+
+    # Calculate steer-based yaw offset (PR #37751)
+    steer_d = max(abs(steering_angle_deg) - self.settings._POSE_YAW_MIN_STEER_DEG, 0.)
+    self.pose.steer_yaw_offset = radians(steer_d) * -sign(steering_angle_deg) * self.settings._POSE_YAW_STEER_FACTOR
+
+    # Flip steer offset when driver is on right side (same as yaw flip)
+    if self.is_rhd_region:
+      self.pose.steer_yaw_offset *= -1
+
     self.pose.pitch_std = driver_state.faceOrientationStd[0]
     self.pose.yaw_std = driver_state.faceOrientationStd[1]
     # self.pose.roll_std = driver_state.faceOrientationStd[2]
